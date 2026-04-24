@@ -3,24 +3,22 @@
 @section('content')
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Edit Event</h4>
-            <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>
-                Kembali</a>
         </div>
         @if($errors->any())
             <div class="alert alert-danger">
                 <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data"
-                    id="eventForm">@csrf @method('PUT')
+        <div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="editEventModalLabel"><i class="bi bi-pencil-square me-2"></i>Edit Event</h5></div>
+                <div class="modal-body">
+                    <form action="{{ route('admin.events.update', $event) }}" method="POST" enctype="multipart/form-data" id="editEventForm" novalidate>@csrf @method('PUT')
                     <div class="row g-3">
                         <div class="col-lg-8">
                             <div class="mb-3">
-                                <label for="image" class="form-label fw-semibold">Gambar Event</label>
-                                <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                                <label for="gambar" class="form-label fw-semibold">Gambar Event</label>
+                                <input type="file" name="image" id="gambar" class="form-control" accept="image/*">
                                 <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Maks 5MB. <span
                                         id="imageSizeInfo" class="fw-semibold"></span></div>
                                 @if($event->image)
@@ -45,27 +43,44 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Nama Pembicara <span
                                         class="text-danger">*</span></label>
-                                @php $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values(); @endphp
+                                @php
+                                    $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values();
+                                    $existingSpeakers = $event->speakers()->get()->keyBy(fn($s) => mb_strtolower(trim($s->name)));
+                                @endphp
                                 <div id="speakersContainer" class="d-flex flex-column gap-2">
                                     @if($speakerList->count())
                                         @foreach($speakerList as $i => $sp)
-                                            <div class="input-group speaker-row">
-                                                <select name="speakers[]" class="form-select speaker-select"
-                                                    data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                    <option value="" disabled>Memuat pembicara...</option>
-                                                    <option value="{{ $sp }}" selected>{{ $sp }}</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i === 0 ? 'disabled' : '' }} title="Hapus">&times;</button>
+                                            @php $spData = $existingSpeakers->get(mb_strtolower($sp)); @endphp
+                                            <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select name="speakers[]" class="form-select speaker-select"
+                                                        data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
+                                                        <option value="" disabled>Memuat pembicara...</option>
+                                                        <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                        placeholder="Gaji Pembicara/Trainer (Rp)"
+                                                        value="{{ old('speaker_salaries.'.$i, $spData?->salary ?? '') }}"
+                                                        min="0" step="1000">
+                                                    <div class="form-text">Gaji untuk {{ $sp ?: 'pembicara ini' }}</div>
+                                                </div>
                                             </div>
                                         @endforeach
                                     @else
-                                        <div class="input-group speaker-row">
-                                            <select name="speakers[]" class="form-select speaker-select" data-selected=""
-                                                required>
-                                                <option value="" selected disabled>Pilih pembicara</option>
-                                            </select>
-                                            <button type="button" class="btn btn-outline-danger remove-speaker" disabled
-                                                title="Hapus">&times;</button>
+                                        <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                            <div class="d-flex gap-2 align-items-center">
+                                                <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                                    <option value="" selected disabled>Pilih narasumber</option>
+                                                </select>
+                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                            </div>
+                                            <div class="mt-2">
+                                                <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                    placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                                            </div>
                                         </div>
                                     @endif
                                 </div>
@@ -246,7 +261,7 @@
                                 <div id="benefitsContainer"></div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addBenefitRow"><i
                                         class="bi bi-plus-circle me-1"></i>Tambah Benefit</button>
-                                <input type="hidden" name="benefit" id="benefitHidden"
+                                <input type="hidden" name="benefit" id="benefit"
                                     value="{{ old('benefit', $event->benefit) }}">
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
@@ -274,7 +289,7 @@
                             <div class="mb-3">
                                 <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                 <textarea name="terms_and_conditions" id="terms" class="form-control"
-                                    rows="6">{{ old('terms_and_conditions', $event->terms_and_conditions) }}</textarea>
+                                    rows="6">{{ strip_tags(old('terms_and_conditions', $event->terms_and_conditions ?? '')) }}</textarea>
                                 <div class="form-text">Opsional. Tulis aturan/persyaratan peserta (refund, ketentuan sertifikat, dll).</div>
                             </div>
                             <div class="mb-3">
@@ -376,15 +391,22 @@
                         </div>
                     </div>
                     <div class="d-flex justify-content-end mt-3 gap-2">
-                        <a href="{{ url('admin/add-event') }}" class="btn btn-outline-secondary"><i
-                                class="bi bi-x-circle me-1"></i> Batal</a>
-                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled><i
-                                class="bi bi-check-circle me-1"></i> Update Event</button>
+                        @if((bool)($event->is_published ?? false))
+                            <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan publikasi event ini?')">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-megaphone me-1"></i> Batal Terbitkan
+                                </button>
+                            </form>
+                        @endif
+                        <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Batal</a>
+                        <button type="submit" class="btn btn-primary" form="editEventForm" id="editSubmitBtn"><i class="bi bi-check-circle me-1"></i> Update Event</button>
                     </div>
-                    <div class="small text-muted mt-2" id="submitHint" style="display:none;">Lengkapi semua field wajib
-                        untuk mengaktifkan tombol Update.</div>
-                </form>
-            </div>
+                    <div class="small text-muted mt-2" id="editSubmitHint" style="display:none;">Lengkapi semua field wajib untuk mengaktifkan tombol Update.</div>
+                    </form>
+                </div>
+                
+            </div></div>
         </div>
     </div>
 @endsection
@@ -395,16 +417,16 @@
             min-height: 260px
         }
 
-        #eventForm label,
-        #eventForm .form-label,
-        #eventForm input,
-        #eventForm textarea,
-        #eventForm select {
+        #editEventForm label,
+        #editEventForm .form-label,
+        #editEventForm input,
+        #editEventForm textarea,
+        #editEventForm select {
             color: #000
         }
 
-        #eventForm input::placeholder,
-        #eventForm textarea::placeholder {
+        #editEventForm input::placeholder,
+        #editEventForm textarea::placeholder {
             color: #666
         }
 
@@ -429,6 +451,67 @@
         .tooltip-hint-yellow.bs-tooltip-start .tooltip-arrow::before{ border-left-color: var(--bs-warning-bg-subtle); }
         .tooltip-hint-yellow.bs-tooltip-end .tooltip-arrow::before{ border-right-color: var(--bs-warning-bg-subtle); }
     </style>
+    <style>
+        /* Edit modal: position near top */
+        #editEventModal .modal-dialog { margin-top: clamp(2rem, 8vh, 80px); }
+
+        /* Make the right-side helper panel sticky inside the modal-body so it follows when scrolling */
+        #editEventModal .event-side-sticky {
+            position: sticky;
+            top: 0.75rem;
+            z-index: 1060;
+            align-self: flex-start;
+            display: block;
+        }
+
+        /* Blue Tips alert: float to right and appear as a compact floating box */
+        /* Keep the Tips box full-width within the side column (no float) */
+        #editEventModal .event-side-sticky .alert {
+            display: block;
+            float: none;
+            max-width: 100%;
+            width: 100%;
+            text-align: left;
+            color: #000; /* ensure black text */
+        }
+
+        /* Force list items and headings in the side column to be black */
+        #editEventModal .event-side-sticky .list-group-item,
+        #editEventModal .event-side-sticky .list-group-item *,
+        #editEventModal .event-side-sticky .alert,
+        #editEventModal .event-side-sticky .alert * {
+            color: #000 !important;
+        }
+
+        /* Force all form labels, helper text, table headers and modal title inside edit modal to black */
+        #editEventModal label,
+        #editEventModal .form-label,
+        #editEventModal th,
+        #editEventModal .modal-title,
+        #editEventModal .form-text,
+        #editEventModal .text-muted,
+        #editEventModal small {
+            color: #000 !important;
+        }
+
+        /* Also ensure placeholders and muted helper texts appear black */
+        #editEventModal ::placeholder,
+        #editEventModal input::placeholder,
+        #editEventModal textarea::placeholder {
+            color: #000 !important;
+            opacity: 1 !important;
+        }
+
+        /* Stronger target: ensure all labels and small helper texts within the form are black */
+        #editEventModal #editEventForm label,
+        #editEventModal #editEventForm .form-label,
+        #editEventModal #editEventForm .form-label.fw-semibold,
+        #editEventModal #editEventForm small,
+        #editEventModal #editEventForm .form-text,
+        #editEventModal #editEventForm .input-group-text {
+            color: #000 !important;
+        }
+    </style>
 @endsection
 
 @section('scripts')
@@ -452,6 +535,14 @@
                 }
             } catch (_) { }
 
+            // Auto-show edit modal when visiting the edit page
+            try {
+                const modalEl = document.getElementById('editEventModal');
+                if (modalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
+                    const editModal = new bootstrap.Modal(modalEl);
+                    editModal.show();
+                }
+            } catch (e) { console.error(e); }
             // Jenis Acara autocomplete (show after 2 chars)
             (function setupJenisAutocomplete(){
                 const jenisInput = document.getElementById('jenis');
@@ -660,7 +751,16 @@
                 catch (e) { trainersCache = []; }
                 return trainersCache;
             }
-            function updateSpeakerRowsState() { speakersContainer?.querySelectorAll('.speaker-row').forEach((row, idx) => { const sel = row.querySelector('select[name="speakers[]"]'); const rm = row.querySelector('.remove-speaker'); if (sel) sel.required = (idx === 0); if (rm) rm.disabled = (idx === 0); }); }
+            function updateSpeakerRowsState() {
+                if (!speakersContainer) return;
+                const rows = speakersContainer.querySelectorAll('.speaker-row');
+                rows.forEach((row, idx) => {
+                    const sel = row.querySelector('select[name="speakers[]"]');
+                    const rm = row.querySelector('.remove-speaker');
+                    if (sel) sel.required = (idx === 0);
+                    if (rm) rm.disabled = (rows.length <= 1);
+                });
+            }
             function updateSpeakerCombined() { if (!speakerCombined || !speakersContainer) return; const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s => String(s.value || '').trim()).filter(Boolean); speakerCombined.value = names.join(', '); }
             function populateSpeakerSelect(selectEl, selectedName, trainers) {
                 if (!selectEl) return;
@@ -682,9 +782,20 @@
             function addSpeakerRow(prefill = '') {
                 if (!speakersContainer) return;
                 const div = document.createElement('div');
-                div.className = 'input-group speaker-row';
+                div.className = 'speaker-row border rounded p-2';
+                div.style.background = '#f8fafc';
                 const safe = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
-                div.innerHTML = `<select name="speakers[]" class="form-select speaker-select" data-selected="${safe}"><option value="" selected disabled>Pilih pembicara</option></select><button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>`;
+                div.innerHTML = `
+                    <div class="d-flex gap-2 align-items-center">
+                        <select name="speakers[]" class="form-select speaker-select" data-selected="${safe}">
+                            <option value="" selected disabled>Pilih narasumber</option>
+                        </select>
+                        <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <div class="mt-2">
+                        <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                            placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                    </div>`;
                 speakersContainer.appendChild(div);
                 updateSpeakerRowsState();
                 refreshSpeakerSelects();
@@ -745,6 +856,10 @@
 
             // Flatpickr init for tanggal & discount_until
             let eventDateFp = null, discountUntilFp = null;
+            const eventDateInput = document.getElementById('tanggal');
+            if (eventDateInput) {
+                eventDateInput.removeAttribute('min');
+            }
             if (window.flatpickr) {
                 eventDateFp = flatpickr('#tanggal', {
                     locale: 'id',
@@ -752,6 +867,8 @@
                     altInput: true,
                     altFormat: 'l, j F Y',
                     disableMobile: true,
+                    allowInput: true,
+                    defaultDate: eventDateInput?.value || null,
                     onChange: function () {
                         if (typeof updateDiscountUntilBounds === 'function') updateDiscountUntilBounds();
                         if (typeof updateMaterialDeadlineBounds === 'function') updateMaterialDeadlineBounds();
@@ -826,25 +943,49 @@
             updateMaterialDeadlineBounds();
 
             // Schedule dynamic
-            const scheduleTableBody = document.querySelector('#scheduleTable tbody'); const addScheduleBtn = document.getElementById('addScheduleRow'); let scheduleIndex = 0;
-            function createScheduleRow(idx) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`; return tr; }
-            function addScheduleRow() { scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
-            addScheduleBtn?.addEventListener('click', addScheduleRow); scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } }); addScheduleRow();
+            const scheduleTableBody = document.querySelector('#scheduleTable tbody');
+            const addScheduleBtn = document.getElementById('addScheduleRow');
+            let scheduleIndex = 0;
+            if (scheduleTableBody) scheduleIndex = scheduleTableBody.querySelectorAll('tr').length;
+            function createScheduleRow(idx) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
+                return tr;
+            }
+            function addScheduleRow() { if (!scheduleTableBody) return; console.debug('addScheduleRow()', scheduleIndex); scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
+            // prefer delegated click so handler works even if button moves or is re-rendered
+            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addScheduleRow')) { console.debug('delegated addScheduleRow click'); addScheduleRow(); } });
+            // also attach directly to the button when available (reliability across browsers/modal states)
+            if (addScheduleBtn) addScheduleBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addScheduleBtn click'); addScheduleRow(); });
+            scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } });
+            // only add an initial row if there are no existing rows
+            if (scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0) { addScheduleRow(); }
 
             // Expenses dynamic
-            const expensesTableBody = document.querySelector('#expensesTable tbody'); const addExpenseBtn = document.getElementById('addExpenseRow'); const expensesGrandTotalEl = document.getElementById('expensesGrandTotal'); let expenseIndex = 0;
-            function clampNonNeg(input, step = 1) { input.addEventListener('keydown', e => { if (['-', 'Subtract'].includes(e.key) || e.keyCode === 189) e.preventDefault(); }); input.addEventListener('input', () => { if (input.value === '') return; let v = parseFloat(input.value); if (isNaN(v) || v < 0) v = 0; if (step >= 1) v = Math.floor(v); input.value = v; }); }
+            const expensesTableBody = document.querySelector('#expensesTable tbody');
+            const addExpenseBtn = document.getElementById('addExpenseRow');
+            const expensesGrandTotalEl = document.getElementById('expensesGrandTotal');
+            let expenseIndex = 0;
+            if (expensesTableBody) expenseIndex = expensesTableBody.querySelectorAll('tr').length;
+            function clampNonNeg(input, step = 1) { if (!input) return; input.addEventListener('keydown', e => { if (['-', 'Subtract'].includes(e.key) || e.keyCode === 189) e.preventDefault(); }); input.addEventListener('input', () => { if (input.value === '') return; let v = parseFloat(input.value); if (isNaN(v) || v < 0) v = 0; if (step >= 1) v = Math.floor(v); input.value = v; }); }
             function formatRupiah(n) { const v = Math.max(0, Math.floor(n || 0)); return 'Rp' + v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-            function recalcExpensesGrandTotal() { let total = 0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp => { const val = parseFloat(inp.value || '0'); if (!isNaN(val)) total += val; }); expensesGrandTotalEl.textContent = formatRupiah(total); }
-            function recalcExpenseRow(tr) { const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0'); const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0'); const tot = tr.querySelector('input[data-expense-total]'); const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit); if (tot) tot.value = Math.max(0, Math.round(total)); recalcExpensesGrandTotal(); }
-            function createExpenseRow(idx) { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`; const q = tr.querySelector('input[data-expense-qty]'); const u = tr.querySelector('input[data-expense-unit]'); clampNonNeg(q, 1); clampNonNeg(u, 1); q.addEventListener('input', () => recalcExpenseRow(tr)); u.addEventListener('input', () => recalcExpenseRow(tr)); return tr; }
-            function addExpenseRow() { const row = createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
-            addExpenseBtn?.addEventListener('click', addExpenseRow); expensesTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove-expense"]'); if (b) { b.closest('tr').remove(); recalcExpensesGrandTotal(); } }); addExpenseRow();
+            function recalcExpensesGrandTotal() { if (!expensesTableBody || !expensesGrandTotalEl) return; let total = 0; expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(inp => { const val = parseFloat(inp.value || '0'); if (!isNaN(val)) total += val; }); expensesGrandTotalEl.textContent = formatRupiah(total); }
+            function recalcExpenseRow(tr) { if (!tr) return; const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0'); const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0'); const tot = tr.querySelector('input[data-expense-total]'); const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit); if (tot) tot.value = Math.max(0, Math.round(total)); recalcExpensesGrandTotal(); }
+            function createExpenseRow(idx) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td><td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus"><i class="bi bi-trash3"></i></button></td>`;
+                const q = tr.querySelector('input[data-expense-qty]'); const u = tr.querySelector('input[data-expense-unit]'); clampNonNeg(q, 1); clampNonNeg(u, 1); q.addEventListener('input', () => recalcExpenseRow(tr)); u.addEventListener('input', () => recalcExpenseRow(tr)); return tr;
+            }
+            function addExpenseRow() { if (!expensesTableBody) return; console.debug('addExpenseRow()', expenseIndex); const row = createExpenseRow(expenseIndex++); expensesTableBody.appendChild(row); recalcExpenseRow(row); }
+            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addExpenseRow')) { console.debug('delegated addExpenseRow click'); addExpenseRow(); } });
+            if (addExpenseBtn) addExpenseBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addExpenseBtn click'); addExpenseRow(); });
+            expensesTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove-expense"]'); if (b) { b.closest('tr').remove(); recalcExpensesGrandTotal(); } });
+            if (expensesTableBody && expensesTableBody.querySelectorAll('tr').length === 0) { addExpenseRow(); }
 
             // Benefits dynamic (serialize to hidden field)
             const benefitsContainer = document.getElementById('benefitsContainer');
             const addBenefitBtn = document.getElementById('addBenefitRow');
-            const benefitHidden = document.getElementById('benefitHidden');
+            const benefitHidden = document.getElementById('benefit');
             function renderBenefitRow(prefill = '') {
                 if (!benefitsContainer) return;
                 const row = document.createElement('div');
@@ -872,14 +1013,13 @@
                 function fieldFriendlyName(el) { if (!el) return 'Field'; const id = el.id || ''; const name = el.name || ''; if (id === 'image' || name === 'image') return 'Gambar Event'; if (id === 'nama' || name === 'title') return 'Nama Event'; if (name === 'speakers[]') return 'Nama Pembicara'; if (id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat'; if (id === 'deskripsi' || name === 'description') return 'Deskripsi'; if (id === 'tanggal' || name === 'event_date') return 'Tanggal'; if (id === 'masuk1' || name === 'event_time') return 'Waktu Mulai'; if (id === 'lokasi' || name === 'location') return 'Lokasi'; if (id === 'harga' || name === 'price') return 'Harga'; return id || name || 'Field'; }
                 function missingRequired() { return requiredFields.filter(f => !(f.value || '').trim()); }
                 window.updateSubmitState = function () {
-                    const filled = missingRequired().length === 0;
+                    const missing = missingRequired();
                     const sdEl = document.getElementById('short_desc');
                     const sdWords = sdEl ? (sdEl.value || '').trim().split(/\s+/).filter(Boolean).length : 0;
                     const overLimit = sdEl ? sdWords > 40 : false;
-                    if (submitBtn) submitBtn.disabled = (!filled || overLimit);
                     if (submitHint) {
-                        if (!filled) {
-                            submitHint.textContent = 'Lengkapi: ' + missingRequired().map(fieldFriendlyName).join(', ');
+                        if (missing.length) {
+                            submitHint.textContent = 'Cek wajib isi: ' + missing.map(fieldFriendlyName).join(', ');
                             submitHint.style.display = 'block';
                         } else if (overLimit) {
                             submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ').';

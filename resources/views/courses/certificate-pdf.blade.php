@@ -8,17 +8,22 @@
     <style>
         @if(!isset($is_preview) || !$is_preview)
             @page { size: A4 landscape; margin: 0; }
-            body { margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; }
+            * { box-sizing: border-box; }
+            html { margin: 0; padding: 0; height: 21cm; max-height: 21cm; overflow: hidden; }
+            body { margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; height: 21cm; max-height: 21cm; overflow: hidden; font-size: 0; }
         @endif
         
         .certificate-page { 
             width: 29.7cm; 
-            height: 21cm; 
+            height: 21cm;
+            max-height: 21cm;
             position: relative; 
             overflow: hidden; 
             background: white;
             color: #1e293b;
             box-sizing: border-box;
+            page-break-after: avoid;
+            page-break-inside: avoid;
             @if(isset($is_preview) && $is_preview)
                 transform: scale(var(--cert-scale, 1));
                 transform-origin: top left;

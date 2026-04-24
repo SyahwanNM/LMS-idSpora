@@ -19,6 +19,21 @@
                             </h4>
                         </div>
                         <div class="d-flex gap-2">
+                            @if((bool)($event->is_published ?? false))
+                                <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline" id="unpublishEventFormShow">
+                                    @csrf
+                                    <button type="button" class="btn btn-outline-danger" id="unpublishBtnShow">
+                                        <i class="bi bi-megaphone me-1"></i> Batal Terbitkan
+                                    </button>
+                                </form>
+                            @else
+                                <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline" id="publishEventFormShow">
+                                    @csrf
+                                    <button type="button" class="btn btn-success" id="publishBtnShow">
+                                        <i class="bi bi-megaphone me-1"></i> Terbitkan
+                                    </button>
+                                </form>
+                            @endif
                             <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-warning">
                                 <i class="bi bi-pencil me-1"></i> Edit
                             </a>
@@ -189,58 +204,60 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->certificate_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Sertifikat</span>
-                                        <span>
-                                            @if(!empty($event->certificate_path))
-                                                @php $cExt = strtolower(pathinfo($event->certificate_path, PATHINFO_EXTENSION)); @endphp
-                                                @if(in_array($cExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                    <a href="{{ Storage::url($event->certificate_path) }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ Storage::url($event->certificate_path) }}" alt="Sertifikat" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                    </a>
-                                                @elseif($cExt === 'pdf')
-                                                    <a href="{{ Storage::url($event->certificate_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
-                                                @else
-                                                    <a href="{{ Storage::url($event->certificate_path) }}" target="_blank" class="link-primary">Lihat</a>
-                                                @endif
-                                            @else <span class="text-muted">Belum ada</span> @endif
-                                        </span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="list-group-item">
                                         @php
-                                            $hasModuleFile = !empty($event->module_path);
-                                            $moduleApproved = !empty($event->module_verified_at)
-                                                || (((string) ($event->material_status ?? '')) === 'approved' && !empty($event->material_approved_at));
-                                            $moduleRejected = !empty($event->module_rejected_at)
-                                                || (((string) ($event->material_status ?? '')) === 'rejected');
-                                            $modulePending = $hasModuleFile && !$moduleApproved && !$moduleRejected;
+                                            $trainerModules = $event->trainerModules()->with('trainer')->orderByDesc('created_at')->get();
+                                            $hasModuleItems = $trainerModules->isNotEmpty();
+                                            $moduleApproved = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'approved');
+                                            $moduleRejected = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'rejected');
+                                            $modulePending  = $trainerModules->contains('status', 'pending_review');
                                             $moduleIcon = $moduleApproved
                                                 ? 'bi-check-circle text-success'
-                                                : ($moduleRejected
-                                                    ? 'bi-x-circle text-danger'
+                                                : ($moduleRejected ? 'bi-x-circle text-danger'
                                                     : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
                                         @endphp
-                                        <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
-                                        <span>
-                                            @if($moduleApproved && $hasModuleFile)
-                                                <a href="{{ $event->module_file_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
-                                            @elseif($hasModuleFile)
-                                                @if(!empty($event->trainer_id))
-                                                    <a href="{{ route('admin.trainer.show', $event->trainer_id) }}" class="btn btn-sm btn-outline-warning">
-                                                        <i class="bi bi-person-check me-1"></i>Verifikasi di Trainer
-                                                    </a>
-                                                @else
-                                                    <span class="text-warning">{{ $moduleRejected ? 'Perlu revisi' : 'Menunggu verifikasi' }}</span>
-                                                @endif
-                                            @else
-                                                <span class="text-muted">Belum ada</span>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
+                                            @if(!$hasModuleItems)
+                                                <span class="text-muted small">Belum ada</span>
                                             @endif
-                                        </span>
+                                        </div>
+
+                                        @if($hasModuleItems)
+                                            <div class="mt-2">
+                                                @foreach($trainerModules as $tm)
+                                                    @php
+                                                        $borderClass = $tm->status === 'approved' ? 'border-success' : ($tm->status === 'rejected' ? 'border-danger' : 'border-warning');
+                                                    @endphp
+                                                    <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 border-start border-4 {{ $borderClass }}">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <i class="bi bi-file-earmark-text"></i>
+                                                            <div>
+                                                                <div class="fw-bold" style="font-size:0.75rem;">{{ $tm->original_name }}</div>
+                                                                <div class="text-muted" style="font-size:0.7rem;">
+                                                                    {{ $tm->trainer?->name ?? 'Trainer' }} &bull; {{ $tm->created_at?->format('d/m/Y H:i') }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tm->path) }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
+                                                            @if($tm->status === 'approved')
+                                                                <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
+                                                            @elseif($tm->status === 'rejected')
+                                                                <span class="badge bg-danger" style="font-size:0.65rem;">Ditolak</span>
+                                                            @else
+                                                                <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Pending</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </li>
-                                    @if($modulePending)
+                                    @if($modulePending ?? false)
                                         <li class="list-group-item">
                                             <div class="mt-2 small text-warning">
-                                                <i class="bi bi-info-circle me-1"></i>Module ini belum dihitung pada kelengkapan dokumen sampai di-approve (verifikasi dipusatkan di menu Trainer).
+                                                <i class="bi bi-info-circle me-1"></i>Ada modul yang menunggu review. Approve di halaman <a href="{{ route('admin.trainer.show', $event->trainer ?? 1) }}">Admin Trainer</a>.
                                             </div>
                                         </li>
                                     @endif
@@ -305,8 +322,6 @@
                                                 <th style="width:240px;">Email</th>
                                                 <th style="width:120px;">Status</th>
                                                 <th style="width:160px;">Terdaftar</th>
-                                                <th style="width:160px;">Bukti Pembayaran</th>
-                                                <th style="width:160px;">Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -320,48 +335,6 @@
                                                 <span class="badge {{ $st === 'active' ? 'bg-success' : ($st === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">{{ strtoupper($reg->status ?? '-') }}</span>
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
-                                                <td>
-                                                    @php
-                                                        $proofPath = (string) ($reg->payment_proof ?? '');
-                                                        if ($proofPath === '' && $reg->relationLoaded('paymentProofs')) {
-                                                            $latestProof = $reg->paymentProofs->sortByDesc('id')->first();
-                                                            $proofPath = (string) ($latestProof->file_path ?? '');
-                                                        }
-                                                        // Normalize if stored as absolute uploads path
-                                                        $proofPath = preg_replace('#^/?uploads/?#i', '', $proofPath);
-                                                    @endphp
-                                                    @if($proofPath !== '')
-                                                        @php
-                                                            $ppExt = strtolower(pathinfo($proofPath, PATHINFO_EXTENSION));
-                                                            $ppUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($proofPath);
-                                                        @endphp
-                                                        <a href="{{ $ppUrl }}" target="_blank" class="d-inline-block">
-                                                            @if(in_array($ppExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                                <img src="{{ $ppUrl }}" alt="Bukti" class="rounded border" style="width:80px;height:48px;object-fit:cover;">
-                                                            @else
-                                                                <i class="bi bi-file-earmark-text"></i> Lihat
-                                                            @endif
-                                                        </a>
-                                                    @else
-                                                        <span class="text-muted small">-</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if($st === 'pending')
-                                                            <button type="button" class="btn btn-sm btn-success btn-action" 
-                                                                data-action="{{ route('admin.events.registrations.approve', ['event'=>$event->id, 'registration'=>$reg->id]) }}" 
-                                                                data-title="Setujui Pendaftaran" data-message="Setujui pendaftaran ini?" data-variant="approve">
-                                                                Acc
-                                                            </button>
-                                                            <button type="button" class="btn btn-sm btn-danger ms-1 btn-action" 
-                                                                data-action="{{ route('admin.events.registrations.reject', ['event'=>$event->id, 'registration'=>$reg->id]) }}" 
-                                                                data-title="Tolak Pendaftaran" data-message="Tolak pendaftaran ini?" data-variant="reject">
-                                                                Tolak
-                                                            </button>
-                                                        @else
-                                                        <span class="text-muted small">-</span>
-                                                    @endif
-                                                </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
@@ -703,6 +676,12 @@
 .manage-action-create:before { border-left-color:#0f5d2c; }
 .manage-action-manage { background:linear-gradient(135deg,#0d6efd,#3b82f6); }
 .manage-action-manage:before { border-left-color:#093d94; }
+
+#publishEventModalShow .modal-content{ border-radius: 18px; overflow: hidden; }
+#publishEventModalShow .modal-header{ padding: 1.1rem 1.1rem .75rem; border-bottom:0; }
+#publishEventModalShow .modal-body{ padding: 0 1.1rem 1rem; }
+#publishEventModalShow .modal-footer{ padding: .25rem 1.1rem 1.1rem; border-top: 0; }
+#publishEventModalShow .btn{ border-radius: 12px; padding: .6rem 1.25rem; }
 </style>
 @endsection
 
@@ -955,7 +934,18 @@ document.addEventListener('DOMContentLoaded', function(){
                 var title = btn.getAttribute('data-title') || 'Konfirmasi';
                 var message = btn.getAttribute('data-message') || 'Lanjutkan tindakan ini?';
                 
-                if(actionForm) actionForm.setAttribute('action', action);
+                if(actionForm) {
+                    actionForm.setAttribute('action', action);
+                    // Clear existing method spoofing
+                    var oldMethod = actionForm.querySelector('input[name="_method"]');
+                    if(oldMethod) oldMethod.remove();
+
+                    if(variant === 'delete') {
+                        var m = document.createElement('input');
+                        m.type = 'hidden'; m.name = '_method'; m.value = 'DELETE';
+                        actionForm.appendChild(m);
+                    }
+                }
                 if(actionLabel) actionLabel.textContent = title;
                 if(actionMessage) actionMessage.textContent = message;
                 if(actionModal) actionModal.show();
@@ -967,6 +957,48 @@ document.addEventListener('DOMContentLoaded', function(){
     var deleteModalEl = document.getElementById('deleteEventModal');
     var deleteForm = document.getElementById('deleteEventFormShow');
     var deleteBtn = document.getElementById('deleteConfirmBtnShow');
+
+    // Publish/Unpublish show page logic
+    var pubModEl = document.getElementById('publishEventModalShow');
+    var pubMod = (pubModEl && window.bootstrap && typeof bootstrap.Modal === 'function') ? new bootstrap.Modal(pubModEl) : null;
+    var pubModTitle = document.getElementById('publishEventModalShowLabel');
+    var pubModMsg = document.getElementById('publishEventModalShowMessage');
+    var pubModBtn = document.getElementById('publishEventModalShowConfirmBtn');
+    var activeForm = null;
+
+    var pubBtnShow = document.getElementById('publishBtnShow');
+    if(pubBtnShow){
+        pubBtnShow.addEventListener('click', function(){
+            if(pubModTitle) pubModTitle.textContent = 'Konfirmasi Terbitkan Event';
+            if(pubModMsg) pubModMsg.textContent = 'Apakah anda yakin ingin publish event ini? Event akan segera tampil untuk publik.';
+            if(pubModBtn) {
+                pubModBtn.textContent = 'Terbitkan';
+                pubModBtn.className = 'btn btn-primary btn-sm';
+            }
+            activeForm = document.getElementById('publishEventFormShow');
+            if(pubMod) pubMod.show();
+        });
+    }
+
+    var unpubBtnShow = document.getElementById('unpublishBtnShow');
+    if(unpubBtnShow){
+        unpubBtnShow.addEventListener('click', function(){
+            if(pubModTitle) pubModTitle.textContent = 'Konfirmasi Batal Terbitkan';
+            if(pubModMsg) pubModMsg.textContent = 'Apakah Anda yakin ingin membatalkan publikasi event ini? Event tidak akan terlihat lagi oleh publik.';
+            if(pubModBtn) {
+                pubModBtn.textContent = 'Batal Terbitkan';
+                pubModBtn.className = 'btn btn-danger btn-sm';
+            }
+            activeForm = document.getElementById('unpublishEventFormShow');
+            if(pubMod) pubMod.show();
+        });
+    }
+
+    if(pubModBtn){
+        pubModBtn.addEventListener('click', function(){
+            if(activeForm) activeForm.submit();
+        });
+    }
 
     // Fallback: open modal programmatically (covers cases where Bootstrap data-api is not bound)
     document.querySelectorAll('[data-bs-target="#deleteEventModal"]').forEach(function(btn){
@@ -1087,6 +1119,24 @@ document.addEventListener('DOMContentLoaded', function(){
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <!-- Publish/Unpublish Confirmation Modal (Global for this page) -->
+    <div class="modal fade" id="publishEventModalShow" tabindex="-1" aria-labelledby="publishEventModalShowLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="publishEventModalShowLabel">Konfirmasi</h5>
+                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="publishEventModalShowMessage">Are you sure?</p>
+                </div>
+                <div class="modal-footer d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="publishEventModalShowConfirmBtn">Konfirmasi</button>
+                </div>
             </div>
         </div>
     </div>

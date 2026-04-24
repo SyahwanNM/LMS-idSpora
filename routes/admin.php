@@ -24,6 +24,10 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Http\Controllers\User\ResellerController;
 use App\Http\Controllers\Admin\CourseTemplateAdminController;
+use App\Http\Controllers\Public\PublicTrainerProfileController;
+
+// Preview: Trainer public profile (temporary, for admin preview)
+Route::get('/admin/trainer-profile/{trainer}', [PublicTrainerProfileController::class, 'show'])->name('admin.trainer-profile.show');
 
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/report', [CourseReportController::class, 'index'])->name('report');
@@ -33,14 +37,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
-    // Pull non-admin users with event participations for the Manage User table and view modal
+    // Pull regular users only (exclude admin and trainer)
     $users = \App\Models\User::with([
         'eventRegistrations' => function ($q) {
             $q->with('event')->orderBy('created_at', 'desc');
         }
     ])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
-        ->where('role', '!=', 'admin')
+        ->where('role', 'user')
         ->orderBy('name')
         ->get();
     return view('/admin/add-users', compact('users'));
@@ -159,21 +163,23 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
     // Publish event (show on user pages)
     Route::post('/admin/events/{event}/publish', [EventController::class, 'publish'])->name('admin.events.publish');
+    // Unpublish event (batal publish)
+    Route::post('/admin/events/{event}/unpublish', [EventController::class, 'unpublish'])->name('admin.events.unpublish');
     // Event QR actions (admin)
     Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
     Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
     // Utility: resolve Google Maps short links to lat/lng
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
-        // Event document uploads (admin)
-        Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
-        // Admin: verify/reject trainer event module submission
-        Route::post('/admin/events/{event}/module/approve', [EventController::class, 'approveModule'])->name('admin.events.module.approve');
-        Route::post('/admin/events/{event}/module/reject', [EventController::class, 'rejectModule'])->name('admin.events.module.reject');
-        // Event QR actions (admin)
-        Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
-        Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
-        // Utility: resolve Google Maps short links to lat/lng
-        Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
+    // Event document uploads (admin)
+    Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+    // Admin: verify/reject trainer event module submission
+    Route::post('/admin/events/{event}/module/approve', [EventController::class, 'approveModule'])->name('admin.events.module.approve');
+    Route::post('/admin/events/{event}/module/reject', [EventController::class, 'rejectModule'])->name('admin.events.module.reject');
+    // Event QR actions (admin)
+    Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
+    Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');
+    // Utility: resolve Google Maps short links to lat/lng
+    Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
 
     // Quiz management routes
     Route::get('/admin/courses/{course}/modules/{module}/quiz', [QuizController::class, 'index'])->name('admin.courses.modules.quiz.index');

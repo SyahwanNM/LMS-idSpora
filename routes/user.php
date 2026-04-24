@@ -57,7 +57,31 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
         return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi tersedia setelah acara selesai.');
     }
 
-    $path = (string) ($event->module_path ?? '');
+    // Support per-trainer module download via ?module_id=X
+    $moduleId = request()->query('module_id');
+    if ($moduleId) {
+        $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+            ->where('event_id', $event->id)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$module) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Module tidak tersedia.');
+        }
+
+        if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'File module tidak ditemukan.');
+        }
+
+        $fullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($module->path);
+        return response()->download($fullPath, $module->original_name);
+    }
+
+    // Legacy: single module_path on event
+    $path = is_array($event->module_path)
+        ? ($event->module_path[0]['path'] ?? '')
+        : (string) ($event->module_path ?? '');
+
     if ($path === '' || !\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
         return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi belum tersedia.');
     }
@@ -87,6 +111,12 @@ Route::middleware('auth')->group(function () {
         if (!$registration || $registration->status !== 'active') {
             return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
         }
+
+        // Blok jika sudah absen
+        if (!empty($registration->attended_at) || !empty($registration->attendance_scan_qr)) {
+            return redirect()->route('events.registered.detail', $event)->with('info', 'Anda sudah melakukan absensi untuk event ini.');
+        }
+
         // Compute event start/end for gating
         $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
         $startTime = null;
@@ -104,6 +134,17 @@ Route::middleware('auth')->group(function () {
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
+
+        // Blok jika event belum mulai
+        if (!$eventStarted) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Scan QR hanya tersedia saat event sedang berlangsung.');
+        }
+
+        // Blok jika event sudah selesai
+        if ($eventFinished) {
+            return redirect()->route('events.registered.detail', $event)->with('warning', 'Event sudah selesai, absensi tidak dapat dilakukan.');
+        }
+
         return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
     })->name('events.scan');
     // Attendance via scan: persist attendance when QR is decoded

@@ -646,8 +646,12 @@
                                     </td>
                                     <td class="text-center pe-4">
                                         <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{{ route('admin.trainer-profile.show', $trainer) }}"
+                                                class="btn btn-action btn-action-view" title="Preview Public Profile" target="_blank">
+                                                <i class="bi bi-person-bounding-box"></i>
+                                            </a>
                                             <a href="{{ route('admin.trainer.show', $trainer) }}"
-                                                class="btn btn-action btn-action-view" title="Lihat Detail">
+                                                class="btn btn-action btn-action-view" title="Lihat Detail Management">
                                                 <i class="bi bi-eye-fill"></i>
                                             </a>
                                             <a href="{{ route('admin.trainer.edit', $trainer) }}"

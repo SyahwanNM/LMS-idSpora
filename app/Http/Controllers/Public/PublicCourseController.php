@@ -22,7 +22,7 @@ class PublicCourseController extends Controller
             ->withCount([
                 'enrollments as enrollments_count' => function ($q) {
                     $q->select(DB::raw('COUNT(DISTINCT user_id)'))
-                        ->where('status', 'active');
+                        ->whereIn('status', ['active', 'completed']);
                 },
             ])
             ->where('status','active');
@@ -37,17 +37,25 @@ class PublicCourseController extends Controller
             });
         }
 
-        if($level = $request->get('level')){
-            $query->where('level',$level);
+        if ($level = $request->get('level')) {
+            $query->where('level', $level);
         }
 
-        if($request->boolean('free')){
-            $query->where('price',0);
+        if ($category = $request->get('category')) {
+            $query->where('category_id', $category);
         }
 
-        if($sort = $request->get('price')){
-            if(in_array($sort,['asc','desc'])){
-                $query->orderBy('price',$sort);
+        if ($topic = $request->get('topic')) {
+            $query->where('name', 'like', "%$topic%");
+        }
+
+        if ($request->boolean('free')) {
+            $query->where('price', 0);
+        }
+
+        if ($sort = $request->get('price')) {
+            if (in_array($sort, ['asc', 'desc'])) {
+                $query->orderBy('price', $sort);
             }
         } else {
             $query->latest();
@@ -67,6 +75,10 @@ class PublicCourseController extends Controller
             ->take(8)
             ->get();
 
+        // Data for filter dropdowns
+        $categories = \App\Models\Category::orderBy('name')->get();
+        $topics = Course::where('status', 'active')->distinct()->orderBy('name')->pluck('name');
+
         // Get carousel images for course page
         $courseCarousels = Carousel::active()
             ->forLocation('course')
@@ -77,6 +89,15 @@ class PublicCourseController extends Controller
         $continueEnrollments = collect();
         $user = $request->user();
         if ($user) {
+            $userSavedCourseIds = DB::table('user_saved_courses')
+                ->where('user_id', $user->id)
+                ->pluck('course_id')->toArray();
+
+            $courses->getCollection()->transform(function ($c) use ($userSavedCourseIds) {
+                $c->is_saved = in_array($c->id, $userSavedCourseIds);
+                return $c;
+            });
+
             $fromEnrollments = Enrollment::query()
                 ->where('user_id', $user->id)
                 ->where('status', 'active')
@@ -100,7 +121,7 @@ class PublicCourseController extends Controller
                             ->withCount([
                                 'enrollments as enrollments_count' => function ($qq) {
                                     $qq->select(DB::raw('COUNT(DISTINCT user_id)'))
-                                        ->where('status', 'active');
+                                        ->whereIn('status', ['active', 'completed']);
                                 },
                             ]);
                     },
@@ -119,6 +140,6 @@ class PublicCourseController extends Controller
                 ->values();
         }
 
-        return view('course.index', compact('courses','featuredCourses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments'));
+        return view('course.index', compact('courses','featuredCourses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments', 'categories', 'topics'));
     }
 }

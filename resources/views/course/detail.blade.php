@@ -2,8 +2,6 @@
 <!DOCTYPE html>
 <html lang="en">
 
-
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,17 +22,24 @@
     --primary-dark: #4C1D95;
     --secondary: #F4C430;
     --black: #000000;
-    
+
   }
 
-  html, body, .navbar-gradient, .navbar, .dropdown-menu, .nav-link, .btn, .form-control {
+  html,
+  body,
+  .navbar-gradient,
+  .navbar,
+  .dropdown-menu,
+  .nav-link,
+  .btn,
+  .form-control {
     font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
   }
 
   .course-hero {
     background: var(--navy);
     height: fit-content;
-    padding-top: 40px;
+    padding-top: 5px;
     padding-bottom: 20px;
   }
 
@@ -45,13 +50,13 @@
     padding: 0 20px;
     margin-top: 0px;
   }
-  
+
 
   .title-course-hero {
     color: var(--white);
     max-width: 1200px;
     width: 100%;
-    margin: 60px auto 0;
+    margin: 30px auto 0;
     padding: 0 20px;
   }
 
@@ -117,6 +122,7 @@
     object-fit: cover;
     background: #000;
   }
+
   .content-description,
   .comments {
     width: 100%;
@@ -247,6 +253,7 @@
     gap: 16px;
     align-items: flex-start;
   }
+
   .info-box>div {
     display: flex;
     align-items: center;
@@ -254,6 +261,7 @@
     padding: 0;
     justify-content: flex-start;
   }
+
   .info-box>div p {
     text-align: left !important;
   }
@@ -286,6 +294,7 @@
 
   .time-alert .ikon {
     margin-top: 0;
+    display: flex;
   }
 
   .time-alert p {
@@ -488,7 +497,8 @@
   .main-col>*+* {
     margin-top: 20px;
   }
-  .box_kiri_vid_course{
+
+  .box_kiri_vid_course {
     margin-left: 0;
   }
 
@@ -1086,67 +1096,83 @@
 </style> --}}
 
 <body class="course-detail-page">
-  
+
   <section class="course-hero">
-    <nav aria-label="breadcrumb">
-      <div class="hero-inner" style="margin-top: 0;">
+    <div class="breadcrumb-text" style="color:#fff; font-size:15px; font-weight:500;">
+      <div class="hero-inner" style="margin-top: 1px;">
         <div style="color:#fff; font-size:15px; font-weight:500;">
           <span><a href="{{ route('dashboard') }}" style="color:#fff; text-decoration:none;">Home</a></span>
-          <span style="margin: 0 7px;">/</span>
+          <span style="margin: 0 1px;">/</span>
           <span><a href="{{ route('courses.index') }}" style="color:#fff; text-decoration:none;">Course</a></span>
-          <span style="margin: 0 7px;">/</span>
+          <span style="margin: 0 1px;">/</span>
           <span style="color:#fff; font-weight:600;">{{ $course->name }}</span>
         </div>
       </div>
-    </nav>
+      </nav>
 
-    <div class="title-course-hero">
-      <div class="sub-title">
-        <h6>{{ $course->category->name ?? '-' }}</h6>
-        <p>by idSpora</p>
+      <div class="title-course-hero">
+        <div class="sub-title">
+          <h6>{{ $course->category->name ?? '-' }}</h6>
+          <p>by
+            @if($course->trainer)
+              <a href="{{ route('public.trainer-profile.show', $course->trainer->id) }}"
+                style="color: var(--secondary); text-decoration: none; font-weight: 600;">
+                {{ $course->trainer->full_name_with_title ?: $course->trainer->name }}
+              </a>
+            @else
+              idSpora
+            @endif
+          </p>
+        </div>
+        <div class="main-title">
+          <h1>{{ $course->name }}</h1>
+        </div>
+        <div class="container-icon">
+          @if(($course->duration ?? 0) > 0)
+            <div class="icon-time">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill"
+                viewBox="0 0 20 20">
+                <path
+                  d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
+              </svg>
+              <span>{{ $course->duration }} Jam</span>
+            </div>
+          @endif
+          <div class="icon-attendant">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+              class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+              <path
+                d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
+              <path
+                d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
+            </svg>
+            <span>{{ $course->students_count ?? '0' }} Students</span>
+          </div>
+          <div class="icon-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-reception-4"
+              viewBox="0 0 16 16">
+              <path
+                d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
+            </svg>
+            <span>{{ $course->level ?? '-' }}</span>
+          </div>
+          <div class="icon-lesson">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+              class="bi bi-file-earmark-fill" viewBox="0 0 16 16">
+              <path
+                d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
+            </svg>
+            <span>{{ $course->modules->count() ?? 0 }} Lessons</span>
+          </div>
+          <div class="icon-quizzez">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="currentColor"
+                d="M20 2H4c-.53 0-1.04.21-1.41.59C2.21 2.96 2 3.47 2 4v12c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h4l4 4l4-4h4c.53 0 1.04-.21 1.41-.59S22 16.53 22 16V4c0-.53-.21-1.04-.59-1.41C21.04 2.21 20.53 2 20 2m-9.95 4.04c.54-.36 1.25-.54 2.14-.54c.94 0 1.69.21 2.23.62q.81.63.81 1.68c0 .44-.15.83-.44 1.2c-.29.36-.67.64-1.13.85c-.26.15-.43.3-.52.47c-.09.18-.14.4-.14.68h-2c0-.5.1-.84.29-1.08c.21-.24.55-.52 1.07-.84c.26-.14.47-.32.64-.54c.14-.21.22-.46.22-.74c0-.3-.09-.52-.27-.69c-.18-.18-.45-.26-.76-.26c-.27 0-.49.07-.69.21c-.16.14-.26.35-.26.63H9.27c-.05-.69.23-1.29.78-1.65M11 14v-2h2v2Z" />
+            </svg>
+            <span>{{ $course->modules->where('type', 'quiz')->count() ?? 0 }} Quizzes</span>
+          </div>
+        </div>
       </div>
-      <div class="main-title">
-        <h1>{{ $course->name }}</h1>
-      </div>
-      <div class="container-icon">
-        <div class="icon-time">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock-fill"
-            viewBox="0 0 20 20">
-            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-          </svg>
-          <span>{{ $course->duration ?? '-' }} Jam</span>
-        </div>
-        <div class="icon-attendant">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-            class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
-            <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917z" />
-            <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466z" />
-          </svg>
-          <span>{{ $course->students_count ?? '0' }} Students</span>
-        </div>
-        <div class="icon-badge">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-reception-4"
-            viewBox="0 0 16 16">
-            <path d="M0 11.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5zm4-3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5z" />
-          </svg>
-          <span>{{ $course->level ?? '-' }}</span>
-        </div>
-        <div class="icon-lesson">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-            class="bi bi-file-earmark-fill" viewBox="0 0 16 16">
-            <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z" />
-          </svg>
-          <span>{{ $course->modules->count() ?? 0 }} Lessons</span>
-        </div>
-        <div class="icon-quizzez">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-            <path fill="currentColor"
-              d="M20 2H4c-.53 0-1.04.21-1.41.59C2.21 2.96 2 3.47 2 4v12c0 .53.21 1.04.59 1.41c.37.38.88.59 1.41.59h4l4 4l4-4h4c.53 0 1.04-.21 1.41-.59S22 16.53 22 16V4c0-.53-.21-1.04-.59-1.41C21.04 2.21 20.53 2 20 2m-9.95 4.04c.54-.36 1.25-.54 2.14-.54c.94 0 1.69.21 2.23.62q.81.63.81 1.68c0 .44-.15.83-.44 1.2c-.29.36-.67.64-1.13.85c-.26.15-.43.3-.52.47c-.09.18-.14.4-.14.68h-2c0-.5.1-.84.29-1.08c.21-.24.55-.52 1.07-.84c.26-.14.47-.32.64-.54c.14-.21.22-.46.22-.74c0-.3-.09-.52-.27-.69c-.18-.18-.45-.26-.76-.26c-.27 0-.49.07-.69.21c-.16.14-.26.35-.26.63H9.27c-.05-.69.23-1.29.78-1.65M11 14v-2h2v2Z" />
-          </svg>
-          <span>{{ $course->modules->where('type','quiz')->count() ?? 0 }} Quizzes</span>
-        </div>
-      </div>
-    </div>
   </section>
 
   <section class="course-body">
@@ -1163,7 +1189,7 @@
         // Access rules (freemium + paid purchase)
         $priceInt = (int) ($course->price ?? 0);
         $isFreeCourse = $priceInt <= 0;
-        $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
+        $freeAccessMode = (string) ($course->free_access_mode ?? ($isFreeCourse ? 'all' : 'none'));
 
         $userCanAccessCourse = $isFreeCourse;
         if (!$isFreeCourse && auth()->check()) {
@@ -1188,11 +1214,24 @@
 
         $orderedAllModules = $modulesCol->sortBy(fn($m) => (int) ($m->order_no ?? 0))->values();
         $accessibleModuleIds = [];
+
         if ($userCanAccessCourse) {
           if ($isFreeCourse && $freeAccessMode === 'limit_2') {
-            $accessibleModuleIds = $orderedAllModules->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+            // Unlock entire first unit (all modules in unit 1, typically 3: pdf+video+quiz)
+            $firstUnitModules = $orderedAllModules->take(3);
+            $accessibleModuleIds = $firstUnitModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
           } else {
             $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          }
+        } else {
+          if ($freeAccessMode === 'all') {
+            $accessibleModuleIds = $orderedAllModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          } elseif ($freeAccessMode === 'limit_2') {
+            // Unlock entire first unit for non-enrolled users too (freemium preview)
+            $firstUnitModules = $orderedAllModules->take(3);
+            $accessibleModuleIds = $firstUnitModules->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+          } else {
+            $accessibleModuleIds = [];
           }
         }
 
@@ -1218,10 +1257,18 @@
         $quizReadyCount = $quizSlots->filter(fn($m) => ((int) ($m->quiz_questions_count ?? 0)) > 0)->count();
 
         $missingMaterials = [];
-        if ($totalModules <= 0) { $missingMaterials[] = 'Struktur modul'; }
-        if ($pdfSlots->count() > 0 && $pdfUploadedCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
-        if ($videoSlots->count() > 0 && $videoUploadedCount <= 0) { $missingMaterials[] = 'Video'; }
-        if ($quizSlots->count() > 0 && $quizReadyCount <= 0) { $missingMaterials[] = 'Kuis'; }
+        if ($totalModules <= 0) {
+          $missingMaterials[] = 'Struktur modul';
+        }
+        if ($pdfSlots->count() > 0 && $pdfUploadedCount <= 0) {
+          $missingMaterials[] = 'Modul (PDF)';
+        }
+        if ($videoSlots->count() > 0 && $videoUploadedCount <= 0) {
+          $missingMaterials[] = 'Video';
+        }
+        if ($quizSlots->count() > 0 && $quizReadyCount <= 0) {
+          $missingMaterials[] = 'Kuis';
+        }
       @endphp
 
       @if($isPending)
@@ -1239,14 +1286,7 @@
         </div>
       @endif
 
-      @if(!$isPending && !$isRejected && !empty($missingMaterials))
-        <div class="alert alert-warning" role="alert" style="margin-bottom:16px;">
-          <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
-          <div style="margin-top:6px;">
-            {{ implode(', ', $missingMaterials) }} belum ada.
-          </div>
-        </div>
-      @endif
+
 
       @php
         $previewMedia = $course->media ?? null;
@@ -1268,9 +1308,8 @@
       @endphp
 
       <div class="video-container">
-        <div id="video-wrapper"
-             data-media-url="{{ $previewMediaUrl ?? '' }}"
-             data-media-type="{{ $previewMediaType }}"></div>
+        <div id="video-wrapper" data-media-url="{{ $previewMediaUrl ?? '' }}" data-media-type="{{ $previewMediaType }}">
+        </div>
       </div>
 
       @php
@@ -1279,7 +1318,7 @@
           ->values();
         $progressTotal = $progressModules->count();
         $progressCompleted = 0;
-        if(auth()->check() && $progressTotal > 0) {
+        if (auth()->check() && $progressTotal > 0) {
           $moduleIds = $progressModules
             ->pluck('id')
             ->map(fn($id) => (int) $id)
@@ -1344,7 +1383,9 @@
             <div style="color:#6c6c6c;font-size:14px;">{{ $progressCompleted }} / {{ $progressTotal }}</div>
           </div>
           <div style="background:#f3f3f3;border-radius:8px;height:10px;overflow:hidden;">
-            <div style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;"></div>
+            <div
+              style="height:100%;width:{{ $progressPercent }}%;background:#f4c430;border-radius:8px;transition:width .4s ease;">
+            </div>
           </div>
         </div>
       </div>
@@ -1357,9 +1398,9 @@
         </div>
         <div class="tab-content active" id="overview">
           <h5>Overview</h5>
-            <p>
-              {!! $course->description !!}
-            </p>
+          <p>
+            {!! $course->description !!}
+          </p>
         </div>
         <div class="tab-content" id="syllabus">
           <div class="syllabus-list">
@@ -1381,14 +1422,8 @@
                 $existingUnitTitle = (string) optional($unitTitlesByNo->get((int) $unitNo))->title;
                 $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . (int) $unitNo);
 
-                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($userCanAccessCourse, $isFreeCourse, $freeAccessMode, $accessibleModuleIds) {
-                  if (!$userCanAccessCourse) {
-                    return true;
-                  }
-                  if ($isFreeCourse && $freeAccessMode === 'limit_2') {
-                    return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
-                  }
-                  return false;
+                $unitHasLocked = $modulesInUnit->contains(function ($m) use ($accessibleModuleIds) {
+                  return !in_array((int) ($m->id ?? 0), $accessibleModuleIds, true);
                 });
               @endphp
               <div class="syllabus-dropdown-item">
@@ -1403,49 +1438,46 @@
                     </span>
                   </summary>
                   <ul style="counter-reset: lesson-counter;">
-                    @foreach($modulesInUnit as $module)
+                    @php
+                      $materiModules = $modulesInUnit->filter(fn($m) => in_array(strtolower($m->type), ['pdf', 'video']))->values();
+                      $quizModule = $modulesInUnit->first(fn($m) => strtolower($m->type) === 'quiz');
+
+                      $displayItems = [];
+                      if ($materiModules->isNotEmpty()) {
+                        $displayItems[] = [
+                          'title' => 'Materi',
+                          'ids' => $materiModules->pluck('id')->all()
+                        ];
+                      }
+                      if ($quizModule) {
+                        $displayItems[] = [
+                          'title' => 'Quiz',
+                          'ids' => [$quizModule->id]
+                        ];
+                      }
+                    @endphp
+
+                    @foreach($displayItems as $item)
                       @php
-                        $type = strtolower((string) ($module->type ?? ''));
-                        $moduleTitle = trim((string) ($module->title ?? ''));
-                        if ($moduleTitle === '') {
-                          $moduleTitle = 'Materi';
-                        }
-                        $moduleDesc = isset($module->description) ? trim(strip_tags((string) $module->description)) : '';
-                        $quizCount = (int) ($module->quiz_questions_count ?? 0);
-
-                        $hasContent = false;
-                        if ($type === 'quiz') {
-                          $hasContent = $quizCount > 0;
-                        } elseif (in_array($type, ['pdf', 'video'], true)) {
-                          $hasContent = !empty($module->content_url) && (string) $module->content_url !== 'quiz_submitted';
-                        }
-
                         $isLocked = false;
-                        if (!$userCanAccessCourse) {
-                          $isLocked = true;
-                        } elseif ($isFreeCourse && $freeAccessMode === 'limit_2') {
-                          $isLocked = !in_array((int) ($module->id ?? 0), $accessibleModuleIds, true);
+                        foreach ($item['ids'] as $id) {
+                          if (!in_array((int) $id, $accessibleModuleIds, true)) {
+                            $isLocked = true;
+                            break;
+                          }
                         }
-
-                        $typeLabel = match ($type) {
-                          'pdf' => 'PDF',
-                          'video' => 'Video',
-                          'quiz' => 'Kuis',
-                          default => 'Materi',
-                        };
                       @endphp
                       <li>
-                        <div style="font-weight:600;">{{ $typeLabel }}: {{ $moduleTitle }}</div>
+                        <div style="font-weight:600;">{{ $item['title'] }}</div>
                         @if($isLocked)
-                          <div class="text-muted">Terkunci.</div>
-                        @elseif(!$hasContent)
-                          <div class="text-muted">Materi belum tersedia.</div>
-                        @elseif($type === 'quiz')
-                          <div class="text-muted">{{ $quizCount }} soal kuis tersedia.</div>
-                        @elseif($moduleDesc !== '')
-                          <div class="text-muted">{{ Str::limit($moduleDesc, 160) }}</div>
-                        @else
-                          <div class="text-muted">Deskripsi belum tersedia.</div>
+                          <div class="text-muted d-flex align-items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor"
+                              class="bi bi-lock-fill" viewBox="0 0 16 16">
+                              <path
+                                d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+                            </svg>
+                            Terkunci.
+                          </div>
                         @endif
                       </li>
                     @endforeach
@@ -1459,7 +1491,7 @@
         </div>
         <div class="tab-content" id="review">
           <h5>Review ({{ $course->reviews->count() }})</h5>
-          
+
           @forelse($course->reviews as $review)
             <div class="review-card">
               <h4>{{ $review->user->name ?? 'Anonymous' }}</h4>
@@ -1483,7 +1515,7 @@
         </div>
       </div>
 
-      
+
     </div>
 
     <aside class="sidebar">
@@ -1502,51 +1534,39 @@
           @if($isFreeCourse)
             <h4 class="price-text">GRATIS</h4>
           @elseif($hasDiscount)
-            <span class="text-muted text-decoration-line-through">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
-            <h4 class="price-text">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+              <div>
+                <span class="text-muted text-decoration-line-through" style="font-size:15px;">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
+                <h4 class="price-text" style="margin:4px 0;">Rp{{ number_format($discountedPrice, 0, ',', '.') }}</h4>
+                @php
+                  $discountEnd = $course->discount_end ? \Carbon\Carbon::parse($course->discount_end) : null;
+                  $daysLeft = $discountEnd && $discountEnd->isFuture() ? (int) ceil(\Carbon\Carbon::now()->floatDiffInDays($discountEnd)) : null;
+                @endphp
+                <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-alarm" viewBox="0 0 16 16">
+                    <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z"/>
+                    <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/>
+                  </svg>
+                  @if($daysLeft !== null && $daysLeft > 1)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">{{ $daysLeft }} days left at this price!</span>
+                  @elseif($daysLeft === 1)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">1 day left at this price!</span>
+                  @elseif($daysLeft === 0)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">Last day!</span>
+                  @elseif(!$discountEnd)
+                    <span class="text-danger" style="font-size:13px; font-weight:600;">Limited Offer!</span>
+                  @endif
+                </div>
+              </div>
+              <div style="flex-shrink:0;">
+                <span style="display:inline-block; background:#252346; color:#f4c430; font-weight:700; font-size:15px; padding:10px 18px; border-radius:6px; letter-spacing:0.5px;">{{ $course->discount_percent }}% off</span>
+              </div>
+            </div>
           @else
             <h4 class="price-text">Rp{{ number_format($course->price, 0, ',', '.') }}</h4>
           @endif
-          @if(!$isFreeCourse)
-          <div class="box-diskon">
-            <div class="time-alert">
-              <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="ikon bi bi-alarm"
-                viewBox="0 0 16 16">
-                <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z" />
-                <path
-                  d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
-              </svg>
-              @php
-                $now = \Carbon\Carbon::now();
-                $discountEnd = $course->discount_end ? \Carbon\Carbon::parse($course->discount_end) : null;
-                $daysLeft = $discountEnd && $discountEnd->isFuture() ? $now->diffInDays($discountEnd, false) : null;
-              @endphp
-              @if($discountEnd && $daysLeft !== null && $daysLeft > 1)
-                <p class="text-danger">{{ $daysLeft }} days</p>
-              @elseif($discountEnd && $daysLeft === 1)
-                <p class="text-danger">1 day</p>
-              @elseif($discountEnd && $daysLeft === 0)
-                <p class="text-danger">Last day</p>
-              @else
-                <p class="text-danger">Limited time offer</p>
-              @endif
-              @if($hasDiscount)
-                <small class="diskon">{{ $course->discount_percent }}% OFF</small>
-              @endif
-            </div>
-          </div>
-          @endif
           <hr>
           <div class="info-box">
-            <div class="time">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-clock"
-                style="align-items: center;" viewBox="0 0 20 20">
-                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
-                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
-              </svg>
-              <p class="date-judul">Course Duration</p>
-              <p class="date-text">{{ ($course->duration ?? 0) > 0 ? ($course->duration . ' Jam') : '-' }}</p>
-            </div>
             <div class="level">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bar-chart"
                 viewBox="0 0 20 20">
@@ -1566,7 +1586,8 @@
               <p class="location-text">{{ $course->students_count ?? 0 }}</p>
             </div>
             <div class="bahasa">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#A1A5B3" class="ikon bi bi-journal-text" viewBox="0 0 20 20">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#black"
+                class="ikon bi bi-journal-text" viewBox="0 0 20 20">
                 <path
                   d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5" />
                 <path
@@ -1578,7 +1599,7 @@
               <p class="bahasa-text">{{ $courseLanguage ?? 'Indonesia' }}</p>
             </div>
             <div class="sertifikat">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="var(--secondary)"
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black"
                 class="ikon bi bi-book" viewBox="0 0 20 20">
                 <path
                   d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783" />
@@ -1587,39 +1608,82 @@
               <p class="sertifikat-text">{{ $certificateLabel ?? 'Include' }}</p>
             </div>
           </div>
+          <div class="view-biodata-trainer">
+            @if(!empty($course->trainer_id))
+              <button class="view_trainer btn" type="button"
+                onclick="window.location.href='{{ route('public.trainer-profile.show', $course->trainer_id) }}'">
+                View Trainer
+              </button>
+            @else
+              <button class="view_trainer btn" type="button" disabled>
+                View Trainer
+              </button>
+            @endif
+          </div>
           <hr>
+
           @php
             $canLearn = false;
             $paymentUnderReview = false;
             if (auth()->check()) {
-                $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
-                    ->where('course_id', $course->id)
-                    ->where('status', 'active')
-                    ->exists();
+              $enrolledActive = \App\Models\Enrollment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->where('status', 'active')
+                ->exists();
 
-                $hasSettledPayment = \App\Models\ManualPayment::where('user_id', auth()->id())
-                    ->where('course_id', $course->id)
-                    ->where('status', 'settled')
-                    ->exists();
+              $hasSettledPayment = \App\Models\ManualPayment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->where('status', 'settled')
+                ->exists();
 
-                // Payment uploaded / waiting admin verification
-                $paymentUnderReview = \App\Models\ManualPayment::where('user_id', auth()->id())
-                    ->where('course_id', $course->id)
-                    ->where('status', 'pending')
-                    ->exists();
+              // Payment uploaded / waiting admin verification
+              // Only show "Under Review" for manual methods. Midtrans is automatic.
+              $paymentUnderReview = \App\Models\ManualPayment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->where('status', 'pending')
+                ->whereNotIn('method', ['midtrans'])
+                ->exists();
+
+              $paymentFailed = \App\Models\ManualPayment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->whereIn('status', ['expired', 'rejected'])
+                ->exists();
 
               $canLearn = $enrolledActive || $hasSettledPayment;
             }
           @endphp
+          @php
+            $hasPreview = (string) ($course->free_access_mode ?? 'limit_2') === 'limit_2';
+          @endphp
           @if($canLearn)
-            <a href="{{ route('course.learn', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+            <a href="{{ route('course.learn', $course->id) }}" class="enroll"
+              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar
+              Sekarang</a>
           @elseif($paymentUnderReview)
-            <button type="button" class="enroll" disabled style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran sedang ditinjau</button>
+            <button type="button" class="enroll" disabled
+              style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran
+              sedang ditinjau</button>
           @else
-            <a href="{{ route('course.payment', $course->id) }}" class="enroll" style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar Sekarang</a>
+            <a href="{{ route('course.payment', $course->id) }}" class="enroll"
+              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">
+              {{ (isset($paymentFailed) && $paymentFailed) ? 'Bayar Lagi' : 'Daftar Sekarang' }}
+            </a>
+            @if($hasPreview)
+              <a href="{{ route('course.learn', $course->id) }}" class="enroll"
+                style="display:block;text-align:center;text-decoration:none;color:#fff;background:#252346;margin-top:10px;font-weight:600;">
+                Coba Sekarang
+              </a>
+              <p class="text-center text-muted mt-2" style="font-size:12px;">Akses Modul 1 & Kuis secara gratis</p>
+            @endif
           @endif
-          <button class="save">Save</button>
-          <p class="note">Note: all course have 30-days money-back guarantee</p>
+          @php
+            $isSaved = auth()->check() && auth()->user()->savedCourses()->where('course_id', $course->id)->exists();
+          @endphp
+          <button class="save {{ $isSaved ? 'saved' : '' }}" id="btn-save-course" data-course-id="{{ $course->id }}"
+            style="width: 100%; margin-top: 10px; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: {{ $isSaved ? '#dc3545' : '#fff' }}; color: {{ $isSaved ? '#fff' : '#000' }}; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+            <i class="bi {{ $isSaved ? 'bi-bookmark-fill' : 'bi-bookmark' }} me-2"></i>
+            <span id="save-text">{{ $isSaved ? 'Saved' : 'Save' }}</span>
+          </button>
         </div>
         <hr>
 
@@ -1689,15 +1753,18 @@
               <span>Copy Link</span>
             </button>
 
-            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to Facebook">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ $shareUrlEnc }}" target="_blank" rel="noopener"
+              class="share-ico" aria-label="Share to Facebook">
               <i class="bi bi-facebook"></i>
             </a>
 
-            <a href="https://twitter.com/intent/tweet?text={{ $shareTextEnc }}&url={{ $shareUrlEnc }}" target="_blank" rel="noopener" class="share-ico" aria-label="Share to X/Twitter">
+            <a href="https://twitter.com/intent/tweet?text={{ $shareTextEnc }}&url={{ $shareUrlEnc }}" target="_blank"
+              rel="noopener" class="share-ico" aria-label="Share to X/Twitter">
               <i class="bi bi-twitter"></i>
             </a>
 
-            <a href="mailto:?subject={{ $mailSubjectEnc }}&body={{ $shareMessageEnc }}" class="share-ico" aria-label="Share via Email">
+            <a href="mailto:?subject={{ $mailSubjectEnc }}&body={{ $shareMessageEnc }}" class="share-ico"
+              aria-label="Share via Email">
               <i class="bi bi-envelope"></i>
             </a>
 
@@ -1717,8 +1784,22 @@
     function copyLink(url) {
       const text = url || window.location.href;
       const done = () => {
-        // Simple feedback without changing layout
-        try { alert('Link berhasil disalin'); } catch (e) {}
+        // Show inline toast instead of alert
+        let toast = document.getElementById('copy-link-toast');
+        if (!toast) {
+          toast = document.createElement('div');
+          toast.id = 'copy-link-toast';
+          toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:opacity .3s;';
+          toast.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#22c55e" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg> Link course berhasil disalin!';
+          document.body.appendChild(toast);
+        }
+        toast.style.opacity = '1';
+        toast.style.display = 'flex';
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => { toast.style.display = 'none'; }, 300);
+        }, 2500);
       };
 
       if (navigator.clipboard && window.isSecureContext) {
@@ -1730,7 +1811,7 @@
           ta.style.top = '-9999px';
           document.body.appendChild(ta);
           ta.select();
-          try { document.execCommand('copy'); done(); } catch (e) {}
+          try { document.execCommand('copy'); done(); } catch (e) { }
           document.body.removeChild(ta);
         });
         return;
@@ -1743,7 +1824,7 @@
       ta.style.top = '-9999px';
       document.body.appendChild(ta);
       ta.select();
-      try { document.execCommand('copy'); done(); } catch (e) {}
+      try { document.execCommand('copy'); done(); } catch (e) { }
       document.body.removeChild(ta);
     }
 
@@ -1819,6 +1900,52 @@
           document.getElementById(tab.dataset.tab).classList.add("active");
         });
       });
+
+      // --- LOGIKA SAVE COURSE ---
+      const btnSaveCourse = document.getElementById('btn-save-course');
+      if (btnSaveCourse) {
+        btnSaveCourse.addEventListener('click', function () {
+          const courseId = this.dataset.courseId;
+          const saveText = document.getElementById('save-text');
+          const saveIcon = this.querySelector('i');
+
+          fetch(`/courses/${courseId}/save`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+            .then(response => {
+              if (response.status === 401) {
+                window.location.href = "{{ route('login') }}";
+                return;
+              }
+              return response.json();
+            })
+            .then(data => {
+              if (data && data.success) {
+                if (data.saved) {
+                  this.classList.add('saved');
+                  this.style.background = '#dc3545';
+                  this.style.color = '#fff';
+                  saveText.textContent = 'Saved';
+                  saveIcon.classList.remove('bi-bookmark');
+                  saveIcon.classList.add('bi-bookmark-fill');
+                } else {
+                  this.classList.remove('saved');
+                  this.style.background = '#fff';
+                  this.style.color = '#000';
+                  saveText.textContent = 'Save';
+                  saveIcon.classList.remove('bi-bookmark-fill');
+                  saveIcon.classList.add('bi-bookmark');
+                }
+              }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+      }
     });
   </script>
 

@@ -135,6 +135,28 @@
                         </svg>
                         <p>1 UNIT</p>
                       </div>
+                      <div class="total-path">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cash-coin"
+                          viewBox="0 0 16 16">
+                          <path fill-rule="evenodd"
+                            d="M11 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8m0 1A5 5 0 1 0 11 6a5 5 0 0 0 0 10" />
+                          <path
+                            d="M12.5 10.5a.5.5 0 0 1-.5.5h-1v1a.5.5 0 0 1-1 0v-1H9a.5.5 0 0 1 0-1h1V9H9a.5.5 0 0 1 0-1h1V7a.5.5 0 0 1 1 0v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 .5.5" />
+                          <path d="M4 0a2 2 0 0 0-2 2v1h1V2a1 1 0 0 1 1-1h1V0z" />
+                          <path d="M2 6h4V5H2z" />
+                          <path d="M5 8H2v1h3z" />
+                        </svg>
+                        @if((float) ($event->fee_per_participant ?? 0) > 0)
+                          <p>
+                            Rp {{ number_format((float) $event->fee_per_participant, 0, ',', '.') }}/peserta
+                            @if((bool) ($event->is_fallback_to_event_price ?? false))
+                              (harga event)
+                            @endif
+                          </p>
+                        @else
+                          <p>Fee belum diatur</p>
+                        @endif
+                      </div>
                     </div>
                     <button class="btn-detail-course" title="Detail">
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"

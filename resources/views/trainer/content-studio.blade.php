@@ -98,6 +98,111 @@
             gap: var(--spacing-lg);
         }
 
+        .processing-banner {
+            margin-bottom: var(--spacing-lg);
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid #d8e3f3;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+        }
+
+        .processing-banner-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .processing-banner-title {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #334155;
+        }
+
+        .processing-banner-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .processing-stat {
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .processing-stat .value {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1.1;
+            margin-bottom: 3px;
+        }
+
+        .processing-stat .label {
+            display: block;
+            font-size: 0.72rem;
+            color: #64748b;
+            line-height: 1.35;
+        }
+
+        .video-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .video-status-pill.assigned {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .video-status-pill.uploaded {
+            background: #ecfeff;
+            color: #0f766e;
+        }
+
+        .video-status-pill.revision {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .video-status-pill.ready {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .video-status-pill.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        @media (max-width: 992px) {
+            .processing-banner-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .processing-banner-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .panel {
             background: var(--white-clr);
             border: 1px solid #e3e9f2;

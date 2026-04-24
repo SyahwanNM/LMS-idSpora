@@ -34,10 +34,9 @@
 
         /* Footer Full Width */
         .footer-section-wrapper {
-            flex-shrink: 0;   /* Footer tidak boleh mengecil */
-            width: 100%;      /* Lebar penuh */
-            margin-top: auto; /* Dorong ke paling bawah jika konten sedikit */
-            background: #fff; /* Atau sesuaikan dengan warna background footer asli */
+            flex-shrink: 0;
+            width: 100%;
+            margin-top: auto;
         }
 
         /* --- EXISTING STYLES --- */
@@ -46,84 +45,16 @@
         }
 
         /* Event Grid Responsive */
+        
         .event .event-list {
             display: grid;
             row-gap: 40px;
             grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 20px;
+            align-items: stretch;
         }
 
-        @media (max-width: 576px) {
-            .event .event-list {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .event .card-event .thumb-wrapper {
-            position: relative;
-            height: 380px;
-            overflow: hidden;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .event .card-event .card-image-event {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .event .card-event:hover .card-image-event {
-            transform: scale(1.05);
-        }
-
-        /* Media Queries for Thumb Height */
-        @media (max-width:1200px) { .event .card-event .thumb-wrapper { height: 360px; } }
-        @media (max-width:992px) { .event .card-event .thumb-wrapper { height: 340px; } }
-        @media (max-width:768px) { .event .card-event .thumb-wrapper { height: 280px; } }
-
-        /* Event Section Spacing */
-        section.event { margin-top: 55px; }
-        section.event .header-card { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; }
-        section.event .header-card h3 { margin-top: 10px; font-weight: 700; color: #212529; }
-
-        /* Titles */
-        .event .card-event { border: 1px solid #eee; border-radius: 12px; transition: box-shadow 0.3s; background: #fff; }
-        .event .card-event:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-        .event .card-event .card-body { padding: 20px; }
-        .event .card-event .event-title {
-            color: #212529;
-            font-weight: 600;
-            font-size: 1.25rem;
-            margin-bottom: 10px;
-            margin-left: 0;
-            text-align: left;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.4;
-        }
-
-        /* Badges */
-        .event .card-event .discount-badge {
-            position: absolute; bottom: 12px; left: 12px;
-            background: #212f4d; color: #d6bc3a;
-            font-size: 13px; font-weight: 600; padding: 6px 10px 5px;
-            border-radius: 6px; line-height: 1; letter-spacing: .5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
-            display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase;
-        }
-
-        .event .card-event .manage-badge {
-            position: absolute; top: 12px; left: 12px;
-            color: #fff; font-size: 12px; font-weight: 600;
-            padding: 5px 10px; border-radius: 6px;
-            line-height: 1; letter-spacing: .5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .25); text-transform: uppercase;
-        }
-        .event .card-event .manage-badge.manage { background: #0d6efd; }
-        .event .card-event .manage-badge.create { background: #6f42c1; }
+     
 
         /* Tags & Meta */
         .tags { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.85rem; }
@@ -132,7 +63,8 @@
 
         /* Description & Info */
         .desc-event { font-size: 0.9rem; color: #555; margin-bottom: 15px; line-height: 1.5; height: 42px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        
+        /* Push price+button to bottom of card */
+        .event .card-event .card-body .keterangan { margin-top: auto; }
         .keterangan-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #555; }
         .keterangan-item { display: flex; align-items: center; gap: 8px; }
 
@@ -215,7 +147,7 @@
                         @endif
 
                         <img src="{{ $carousel->image_url }}" alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; "
                             onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
                         @if($carousel->title)
@@ -234,7 +166,7 @@
                 @empty
                     <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
                         <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop" alt="Slide 1"
-                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                            style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; ">
                         <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
                             <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
                             <p>Belajar langsung dari praktisi industri dengan kurikulum relevan.</p>
@@ -285,21 +217,21 @@
                             {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'Any Day')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="">Any Day</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="day" data-value="today">Today</a></li>
+                            <li><a class="dropdown-item {{ !request('day') ? 'active' : '' }}" href="#" data-filter="day" data-value="">Any Day</a></li>
+                            <li><a class="dropdown-item {{ request('day') === 'weekdays' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
+                            <li><a class="dropdown-item {{ request('day') === 'weekend' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
+                            <li><a class="dropdown-item {{ request('day') === 'today' ? 'active' : '' }}" href="#" data-filter="day" data-value="today">Today</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'onsite' ? 'Onsite' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
+                            {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'offline' ? 'Offline' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="">Any Type</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="online">Online</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="onsite">Onsite</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
+                            <li><a class="dropdown-item {{ !request('event_type') ? 'active' : '' }}" href="#" data-filter="event_type" data-value="">Any Type</a></li>
+                            <li><a class="dropdown-item {{ request('event_type') === 'online' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="online">Online</a></li>
+                            <li><a class="dropdown-item {{ request('event_type') === 'offline' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="offline">Offline</a></li>
+                            <li><a class="dropdown-item {{ request('event_type') === 'hybrid' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
@@ -307,10 +239,10 @@
                             {{ request('category') ? ucwords(request('category')) : 'Any Category' }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="">Any Category</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="training">Training</a></li>
-                            <li><a class="dropdown-item" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
+                            <li><a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="#" data-filter="category" data-value="">Any Category</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'workshop' ? 'active' : '' }}" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'seminar' ? 'active' : '' }}" href="#" data-filter="category" data-value="seminar">Seminar</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'webinar' ? 'active' : '' }}" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
@@ -401,9 +333,17 @@
                             @if($showDiscountBadge && $percentOff > 0)
                                 <span class="discount-badge">{{ $percentOff }}% off</span>
                             @endif
+                            @php
+                                $isSaved = !empty($event->is_saved);
+                            @endphp
                             <div class="badge-save-group" style="gap:12px;">
-                                <button class="save-btn" aria-label="Save event" type="button">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
+                                <button class="save-btn {{ $isSaved ? 'active' : '' }}" 
+                                        aria-label="Save event" type="button"
+                                        data-event-id="{{ $event->id }}"
+                                        data-save-url="{{ route('events.save', $event) }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                        <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
@@ -422,12 +362,26 @@
                             
                             <div class="keterangan keterangan-row">
                                 <div class="keterangan-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
+                                        <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                                    </svg>
+                                    <span>
+                                        @if($event->trainer)
+                                            <a href="{{ route('public.trainer-profile.show', $event->trainer->id) }}" style="color: inherit; text-decoration: none; font-weight: 500;" onclick="event.stopPropagation();">
+                                                {{ $event->trainer->full_name_with_title ?: $event->trainer->name }}
+                                            </a>
+                                        @else
+                                            {{ $event->speaker ?? 'idSpora Team' }}
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="keterangan-item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-event" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" /><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" /></svg>
                                     <span>{{ $event->event_date?->format('d F Y') ?? '-' }}</span>
                                 </div>
                                 <div class="keterangan-item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
-                                    <span>
+                                <span>
                                         @if($event->location)
                                             {{ $event->location }}@if($event->event_time) • {{ $event->event_time?->format('H:i') }} WIB @endif
                                         @else
@@ -461,8 +415,8 @@
                                 @php 
                                     $registered = !empty($event->is_registered);
                                     $isFinished = ($status === 'finished');
-                                    $btnLabel = $isFinished ? 'Telah Selesai' : ($registered ? 'Anda Terdaftar' : 'Daftar');
-                                    $btnClass = $isFinished ? 'btn-secondary' : ($registered ? 'btn-success' : 'btn-primary');
+                                    $btnLabel = $registered ? 'Anda Terdaftar' : ($isFinished ? 'Telah Selesai' : 'Daftar');
+                                    $btnClass = $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary');
                                 @endphp
                                 <button class="btn-register register-btn btn {{ $btnClass }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
                                     {{ $btnLabel }}
@@ -596,7 +550,11 @@
                     e.preventDefault();
                     const key = this.getAttribute('data-filter');
                     const val = this.getAttribute('data-value') || '';
-                    const hiddenMap = { day: document.getElementById('filter-day'), event_type: document.getElementById('filter-type'), category: document.getElementById('filter-category') };
+                    const hiddenMap = {
+                        day: document.getElementById('filter-day'),
+                        event_type: document.getElementById('filter-type'),
+                        category: document.getElementById('filter-category')
+                    };
                     const hidden = hiddenMap[key]; if(hidden){ hidden.value = val; }
                     submitFilters();
                 });
@@ -651,6 +609,54 @@
                     });
                 });
             })();
+
+            // --- Logika Save Event ---
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const eventId = this.getAttribute('data-event-id');
+                    const url = this.getAttribute('data-save-url');
+                    const svg = this.querySelector('svg');
+                    const path = svg.querySelector('path');
+                    
+                    this.disabled = true;
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (response.status === 401) {
+                            window.location.href = "{{ route('login') }}";
+                            return;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.success) {
+                            if (data.saved) {
+                                this.classList.add('active');
+                                svg.setAttribute('fill', '#dc3545');
+                                path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
+                            } else {
+                                this.classList.remove('active');
+                                svg.setAttribute('fill', 'currentColor');
+                                path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error:', error))
+                    .finally(() => {
+                        this.disabled = false;
+                    });
+                });
+            });
         });
 
         // --- Countdown Script ---
@@ -676,7 +682,22 @@
                     const endAttr = el.getAttribute('data-end-ts');
                     const end = endAttr ? parseInt(endAttr,10) : null;
                     const label = el.closest('[data-countdown-wrapper]')?.querySelector('[data-countdown-label]');
-                    if(end && now > end){ el.textContent = 'Telah Selesai'; el.classList.remove('started'); el.classList.add('expired'); if(label) label.textContent = 'Status:'; return; }
+                    if(end && now > end){
+                        el.textContent = 'Telah Selesai'; el.classList.remove('started'); el.classList.add('expired');
+                        if(label) label.textContent = 'Status:';
+                        // Update register button if not registered
+                        const card = el.closest('.card-event');
+                        if(card){
+                            const btn = card.querySelector('.register-btn');
+                            if(btn && !btn.classList.contains('btn-success')){
+                                btn.textContent = 'Telah Selesai';
+                                btn.classList.remove('btn-primary','btn-warning');
+                                btn.classList.add('btn-secondary');
+                                btn.disabled = true;
+                            }
+                        }
+                        return;
+                    }
                     if(now >= start){ el.textContent = 'Sedang Berlangsung'; el.classList.remove('expired'); el.classList.add('started'); if(label) label.textContent = 'Status:'; return; }
                     const diff = start - now; el.textContent = formatDiff(diff); el.classList.remove('started','expired'); if(label) label.textContent = 'Mulai dalam:';
                 });

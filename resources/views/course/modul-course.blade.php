@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -29,7 +30,7 @@
                 if (!is_array($freeAccessibleModuleIds)) {
                     $freeAccessibleModuleIds = [];
                 }
-                $isFreeLimited = ((int)($course->price ?? 0) <= 0) && ((string)$freeAccessMode === 'limit_2');
+                $isFreeLimited = ((string)($freeAccessMode ?? 'all') === 'limit_2');
 
                 $passedQuizModuleIds = [];
                 if (auth()->check() && $modulesList->isNotEmpty()) {
@@ -123,13 +124,15 @@
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
                                 <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
                             </span>
-                            <span style="display:flex; align-items:center; gap:10px; flex:0 0 auto;">
-                                @if($isLocked)
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#111827" viewBox="0 0 16 16" aria-hidden="true">
-                                        <path d="M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m2 6V4a2 2 0 1 0-4 0v3z"/>
-                                    </svg>
-                                @endif
-                                <span class="arrow">▲</span>
+                            <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
+                                <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    @if($isLocked)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                        </svg>
+                                    @endif
+                                </span>
+                                <span class="arrow" style="width:16px; text-align:center;">▲</span>
                             </span>
                         </button>
                         <div class="accordion-content">
@@ -137,12 +140,13 @@
                             @if($isLocked)
                                 <hr>
                                 @if($lockReason === 'free')
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Course gratis ini hanya membuka 2 modul pertama.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Daftar atau beli course untuk membuka modul ini.</p>
                                 @else
                                     <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
                                 @endif
                             @endif
-                            @if(!empty($descLines))
+                            {{-- HIDE DESKRIPSI DI ACCORDION MENU BAWAH --}}
+                            {{-- @if(!empty($descLines))
                                 <hr>
                                 @foreach($descLines as $idx => $line)
                                     <p>{{ trim($line) }}</p>
@@ -150,7 +154,7 @@
                                         <hr>
                                     @endif
                                 @endforeach
-                            @endif
+                            @endif --}}
                         </div>
                     </div>
                 @empty
@@ -214,7 +218,17 @@
                     $passingPercent = 75;
                     $durationSeconds = (int) ($cm->duration ?? 0);
                     $durationMinutes = $durationSeconds > 0 ? (int) ceil($durationSeconds / 60) : 0;
-                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '5 menit';
+
+                    // Jika durasi tidak di-set, gunakan default: 15 menit untuk kuis terakhir, 10 menit lainnya
+                    if ($durationMinutes <= 0 && $cm) {
+                        $isLastQuiz = !$course->modules()
+                            ->where('type', 'quiz')
+                            ->where('order_no', '>', $cm->order_no)
+                            ->exists();
+                        $durationMinutes = $isLastQuiz ? 15 : 10;
+                    }
+
+                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '10 menit';
 
                     $beforeQuizTitle = null;
                     if ($cm && isset($modulesList) && $modulesList instanceof \Illuminate\Support\Collection) {
@@ -238,6 +252,17 @@
                     }
 
                     $startUrl = (isset($course) && $cm) ? route('user.quiz.start', [$course, $cm]) : '#';
+
+                    // Cooldown: 1 menit setelah attempt tidak lulus
+                    $cooldownSeconds = 60;
+                    $lastFailedAttempt = $attempts->first(fn($a) => !$a->isPassed($passingPercent));
+                    $cooldownEndsAt = null;
+                    $inCooldown = false;
+                    if (!$currentQuizPassed && $lastFailedAttempt && $lastFailedAttempt->completed_at) {
+                        $cooldownEndsAt = $lastFailedAttempt->completed_at->copy()->addSeconds($cooldownSeconds);
+                        $inCooldown = $cooldownEndsAt->isFuture();
+                    }
+                    $cooldownEndsAtIso = $cooldownEndsAt ? $cooldownEndsAt->toISOString() : null;
                 @endphp
 
                 <div class="box_luar_deskripsi_modul">
@@ -249,7 +274,7 @@
                             <li><strong>Jumlah Soal:</strong> {{ $questionCount }} pertanyaan pilihan ganda.</li>
                             <li><strong>Durasi Pengerjaan:</strong> {{ $durationText }}.</li>
                             <li><strong>Nilai Kelulusan:</strong> Minimum {{ $passingPercent }}% untuk dinyatakan lulus.</li>
-                            <li>Jika belum mencapai nilai kelulusan, Anda dapat mengulang kuis setelah 2 menit. Gunakan waktu tersebut untuk mempelajari kembali materi sebelumnya.</li>
+                            <li>Jika belum mencapai nilai kelulusan, Anda dapat mengulang kuis setelah 1 menit.</li>
                             <li>Pastikan Anda menjawab semua pertanyaan sebelum waktu habis.</li>
                         </ol>
                         <p style="margin:0;">Selamat mengerjakan dan semoga sukses!</p>
@@ -260,8 +285,15 @@
                                     style="background:#eafff3; color:#16a34a; border-radius:999px; padding:10px 18px; font-weight:800; cursor:not-allowed;">
                                     Anda telah lulus kuis ini
                                 </button>
+                            @elseif($inCooldown)
+                                <button type="button" class="btn" id="startQuizBtn" disabled
+                                    style="background:#f1f5f9; color:#64748b; border-radius:999px; padding:10px 18px; font-weight:700; cursor:not-allowed;"
+                                    data-start-url="{{ $startUrl }}"
+                                    data-cooldown-ends="{{ $cooldownEndsAtIso }}">
+                                    Tunggu <span id="quizCooldownTimer">...</span>
+                                </button>
                             @else
-                                <a href="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
+                                <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
                                     Start
                                     <span style="margin-left:8px;">›</span>
                                 </a>
@@ -343,12 +375,20 @@
                     data-next-url="{{ route('course.learn', ['course' => $course->id, 'module' => $nextModule->id]) }}"
                 @elseif(isset($course) && !$nextModule && !$lockNext)
                     data-next-url="{{ route('course.rating', ['course' => $course->id]) }}"
+                @elseif($lockNext && $lockNextByFree)
+                    data-is-locked-free="1"
+                    data-buy-url="{{ route('course.payment', $course->id) }}"
+                    data-course-name="{{ $course->name }}"
+                @elseif($lockNext)
+                    data-is-locked-quiz="1"
                 @else
                     disabled style="opacity:.6; cursor:not-allowed;"
                 @endif
             >
                 <p>
-                    @if($lockNext)
+                    @if($lockNext && $lockNextByFree)
+                        Beli Course
+                    @elseif($lockNext)
                         Terkunci
                     @elseif(!$nextModule)
                         Selesai & Beri Ulasan
@@ -357,8 +397,8 @@
                     @endif
                 </p>
                 @if($lockNext)
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="0 0 16 16" aria-hidden="true">
-                        <path d="M8 1a3 3 0 0 0-3 3v3H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-1V4a3 3 0 0 0-3-3m2 6V4a2 2 0 1 0-4 0v3z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                     </svg>
                 @else
                     <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="white" class="bi-right bi-caret-right-fill" viewBox="0 0 16 16">
@@ -406,9 +446,19 @@
                 if (locked) {
                     const reason = item.getAttribute('data-locked-reason') || '';
                     if (reason === 'free') {
-                        alert('Materi ini terkunci. Course gratis ini hanya membuka 2 modul pertama.');
+                        Swal.fire({
+                            title: 'Oops!',
+                            text: 'Materi ini terkunci. Silakan beli atau daftar course ini untuk membuka seluruh materi.',
+                            icon: 'warning',
+                            confirmButtonColor: '#f4c430',
+                        });
                     } else {
-                        alert('Materi ini terkunci. Kamu harus lulus kuis terlebih dahulu.');
+                        Swal.fire({
+                            title: 'Oops!',
+                            text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                            icon: 'warning',
+                            confirmButtonColor: '#f4c430',
+                        });
                     }
                     return;
                 }
@@ -419,11 +469,47 @@
             });
         });
 
-        const nextBtn = document.querySelector('.next_kanan_modul[data-next-url]');
+        const nextBtn = document.querySelector('.next_kanan_modul');
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
                 const url = nextBtn.getAttribute('data-next-url');
-                if (url) window.location.href = url;
+                const isLockedFree = nextBtn.getAttribute('data-is-locked-free') === '1';
+
+                if (isLockedFree) {
+                    const buyUrl = nextBtn.getAttribute('data-buy-url');
+                    const courseName = nextBtn.getAttribute('data-course-name') || 'course';
+                    
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: `Layanan free course ${courseName} ini sudah habis. Ketuk tombol untuk membeli dan menikmati akses penuh.`,
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonText: 'Beli Sekarang',
+                        cancelButtonText: 'Nanti Saja',
+                        confirmButtonColor: '#f4c430',
+                        cancelButtonColor: '#d33',
+                    }).then((result) => {
+                        if (result.isConfirmed && buyUrl) {
+                            window.location.href = buyUrl;
+                        }
+                    });
+                    return;
+                }
+
+                const isLockedQuiz = nextBtn.getAttribute('data-is-locked-quiz') === '1';
+                if (isLockedQuiz) {
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f4c430',
+                    });
+                    return;
+                }
+
+                if (url) {
+                    window.location.href = url;
+                }
             });
         }
 
@@ -475,6 +561,101 @@
                 if (document.hidden || !isRecentlyActive) return;
                 sendHeartbeat(HEARTBEAT_SECONDS);
             }, HEARTBEAT_SECONDS * 1000);
+        })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('error'))
+                Swal.fire({
+                    title: 'Oops!',
+                    text: '{{ session('error') }}',
+                    icon: 'warning',
+                    confirmButtonColor: '#f4c430',
+                });
+            @endif
+            @if(session('success'))
+                Swal.fire({
+                    title: 'Berhasil',
+                    text: '{{ session('success') }}',
+                    icon: 'success',
+                    confirmButtonColor: '#16a34a',
+                });
+            @endif
+        });
+    </script>
+
+    <!-- Quiz Start Confirmation Modal -->
+    <div id="quizStartModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:380px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:quizModalIn .2s ease;">
+            <div style="font-size:48px; margin-bottom:12px;">🎯</div>
+            <h3 style="font-weight:800; font-size:20px; color:#1f2937; margin:0 0 10px 0;">Selamat Mengerjakan!</h3>
+            <p style="color:#6b7280; font-size:14px; margin:0 0 24px 0;">Semoga berhasil dan raih nilai terbaik kamu! 💪</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button id="quizStartCancelBtn" type="button"
+                    style="flex:1; padding:10px 0; border-radius:999px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:600; font-size:14px; cursor:pointer;">
+                    Batal
+                </button>
+                <a id="quizStartConfirmBtn" href="#"
+                    style="flex:1; padding:10px 0; border-radius:999px; background:#f4c430; color:#1f2937; font-weight:700; font-size:14px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+                    Mulai Kuis
+                </a>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes quizModalIn {
+            from { transform: scale(.92); opacity: 0; }
+            to   { transform: scale(1);  opacity: 1; }
+        }
+    </style>
+    <script>
+        (function() {
+            const startBtn = document.getElementById('startQuizBtn');
+            const modal = document.getElementById('quizStartModal');
+            const cancelBtn = document.getElementById('quizStartCancelBtn');
+            const confirmBtn = document.getElementById('quizStartConfirmBtn');
+
+            // Cooldown countdown timer (1 menit)
+            const cooldownTimerEl = document.getElementById('quizCooldownTimer');
+            if (cooldownTimerEl && startBtn && startBtn.getAttribute('data-cooldown-ends')) {
+                const endsAt = new Date(startBtn.getAttribute('data-cooldown-ends')).getTime();
+                function tickCooldown() {
+                    const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+                    const s = remaining % 60;
+                    cooldownTimerEl.textContent = String(s).padStart(2,'0') + 's';
+                    if (remaining <= 0) {
+                        clearInterval(cooldownInterval);
+                        startBtn.disabled = false;
+                        startBtn.style.background = '#f4c430';
+                        startBtn.style.color = '#1f2937';
+                        startBtn.style.cursor = 'pointer';
+                        startBtn.innerHTML = 'Start <span style="margin-left:8px;">›</span>';
+                        startBtn.addEventListener('click', openQuizModal);
+                    }
+                }
+                const cooldownInterval = setInterval(tickCooldown, 1000);
+                tickCooldown();
+            }
+
+            function openQuizModal(e) {
+                e.preventDefault();
+                const url = startBtn.getAttribute('data-start-url') || '#';
+                confirmBtn.href = url;
+                modal.style.display = 'flex';
+            }
+
+            if (!startBtn || !modal) return;
+            if (!startBtn.disabled) {
+                startBtn.addEventListener('click', openQuizModal);
+            }
+
+            cancelBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) modal.style.display = 'none';
+            });
         })();
     </script>
 </body>

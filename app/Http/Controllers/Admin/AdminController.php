@@ -390,6 +390,8 @@ class AdminController extends Controller
 
         // Get events with participants count
         $events = \App\Models\Event::query()
+            ->whereYear('event_date', $selectedDate->year)
+            ->whereMonth('event_date', $selectedDate->month)
             ->withCount('registrations')
             ->orderBy('event_date', 'asc')
             ->get();
@@ -429,18 +431,53 @@ class AdminController extends Controller
         $eventRows = $events->map(function ($e) use ($revenueMap) {
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
-            // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
-            $expense = (float) ($e->expenses_total ?? 0.0);
-            $profit = $revenue - $expense;
+
+            // Detail items for the modal
+            $registeredCount = (int) $e->registrations()->where('status', 'active')->count();
+            $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
+
+            $incomeRows = [
+                ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
+            ];
+
+            $expenseModels = $e->expenses()->get(['item', 'quantity', 'unit_price', 'total']);
+            $expenseRows = $expenseModels->map(function($row) {
+                return [
+                    'label' => $row->item,
+                    'qty' => (int)($row->quantity ?? 0),
+                    'unit' => (float)($row->unit_price ?? 0),
+                    'total' => (float)($row->total ?? 0),
+                ];
+            })->values()->all();
+
+            // Add trainer salaries from event_speakers
+            $speakerSalaries = \App\Models\EventSpeaker::where('event_id', $e->id)
+                ->where('salary', '>', 0)
+                ->get(['name', 'salary']);
+            foreach ($speakerSalaries as $sp) {
+                $expenseRows[] = [
+                    'label' => 'Gaji Trainer: ' . $sp->name,
+                    'qty'   => 1,
+                    'unit'  => (float) $sp->salary,
+                    'total' => (float) $sp->salary,
+                ];
+            }
+            $salaryTotal = $speakerSalaries->sum('salary');
+            $expense = (float) ($e->expenses_total ?? 0.0) + (float) $salaryTotal;
+            $profit  = $revenue - $expense;
+
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
+                'registered_count' => $registeredCount,
                 'price' => (float) $price,
                 'revenue' => $revenue,
                 'expense' => $expense,
                 'profit' => $profit,
+                'income_rows' => $incomeRows,
+                'expense_rows' => $expenseRows,
             ];
         });
 
@@ -456,6 +493,40 @@ class AdminController extends Controller
                 'speaker_rating' => null, // placeholder
             ];
         });
+
+        // Summary stats untuk recap cards pertumbuhan
+        $totalFreeParticipants  = $events->filter(fn($e) => (float)($e->price ?? 0) <= 0)->sum('registrations_count');
+        $totalPaidParticipants  = $events->filter(fn($e) => (float)($e->price ?? 0) > 0)->sum('registrations_count');
+        $totalManageEvents      = $events->filter(fn($e) => strtolower(trim((string)($e->manage_action ?? ''))) === 'manage')->count();
+        $totalCreateEvents      = $events->filter(fn($e) => strtolower(trim((string)($e->manage_action ?? ''))) !== 'manage')->count();
+
+        // Peserta per hari untuk chart (free vs paid participants)
+        $freeParticipantMap = \App\Models\EventRegistration::query()
+            ->join('events', 'events.id', '=', 'event_registrations.event_id')
+            ->whereYear('events.event_date', $selectedDate->year)
+            ->whereMonth('events.event_date', $selectedDate->month)
+            ->whereRaw('COALESCE(events.price, 0) <= 0')
+            ->where('event_registrations.status', 'active')
+            ->selectRaw('DAY(events.event_date) as d, COUNT(event_registrations.id) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $paidParticipantMap = \App\Models\EventRegistration::query()
+            ->join('events', 'events.id', '=', 'event_registrations.event_id')
+            ->whereYear('events.event_date', $selectedDate->year)
+            ->whereMonth('events.event_date', $selectedDate->month)
+            ->whereRaw('COALESCE(events.price, 0) > 0')
+            ->where('event_registrations.status', 'active')
+            ->selectRaw('DAY(events.event_date) as d, COUNT(event_registrations.id) as c')
+            ->groupBy('d')
+            ->pluck('c', 'd');
+
+        $chartFreeParticipantData = [];
+        $chartPaidParticipantData = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $chartFreeParticipantData[] = (int) ($freeParticipantMap[$d] ?? 0);
+            $chartPaidParticipantData[] = (int) ($paidParticipantMap[$d] ?? 0);
+        }
 
         // Build rows for Operasional table (document completeness per event)
         $operationalRows = $events->map(function ($e) {
@@ -497,7 +568,13 @@ class AdminController extends Controller
             'totalPaidEventsSelected',
             'totalFreeEventsSelected',
             'totalCreateEventsSelected',
-            'totalManageEventsSelected'
+            'totalManageEventsSelected',
+            'totalFreeParticipants',
+            'totalPaidParticipants',
+            'totalManageEvents',
+            'totalCreateEvents',
+            'chartFreeParticipantData',
+            'chartPaidParticipantData'
         ));
     }
 

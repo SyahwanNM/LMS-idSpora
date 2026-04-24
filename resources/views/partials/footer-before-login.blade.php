@@ -33,12 +33,10 @@
             <div class="col-lg-3 col-md-6 mb-4">
                 <h6 class="text-white mb-3">Layanan</h6>
                 <ul class="list-unstyled">
-                    <li><a href="#" class="text-light">Live Webinars</a></li>
-                    <li>
-                        <a href="#" class="text-light">Training & Mini Workshops</a>
-                    </li>
-                    <li><a href="#" class="text-light">E-Learning</a></li>
-                    <li><a href="#" class="text-light">Video Production</a></li>
+                    <li><span class="text-light">Live Webinars</span></li>
+                    <li><span class="text-light">Training & Mini Workshops</span></li>
+                    <li><span class="text-light">E-Learning</span></li>
+                    <li><span class="text-light">Video Production</span></li>
                 </ul>
             </div>
             <div class="col-lg-3 col-md-6 mb-4">

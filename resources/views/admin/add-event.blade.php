@@ -28,8 +28,8 @@
         </div>
 
         <div class="card shadow-sm"><div class="card-body">
-            {{-- Month keys removed: using native month picker instead of precomputed list --}}
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-start mb-3 gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
                 <div class="d-flex flex-column" style="max-width:420px">
                     <small class="text-muted fw-semibold mb-1">Cari Nama</small>
                     <div class="input-group">
@@ -77,6 +77,15 @@
                         <button type="button" id="clearMonthFilter" class="btn btn-outline-secondary" title="Reset filter bulan"><i class="bi bi-x-circle"></i></button>
                     </div>
                 </div>
+            </div>
+            <div class="d-flex align-items-end gap-2 flex-shrink-0 ms-auto mt-2 mt-md-0">
+                 <button type="button" class="export-event btn btn-danger" style="height:38px; min-width:110px;">
+                     <i class="bi bi-file-earmark-pdf me-1"></i>Export PDF
+                 </button>
+                 <button type="button" class="export-event btn btn-success" style="height:38px; min-width:120px;">
+                     <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+                 </button>
+            </div>
             </div>
             @if(isset($events) && $events->count())
                 <div class="table-responsive">
@@ -175,6 +184,13 @@
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+                                        
+                                        $missing = [];
+                                        if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+                                        if (!$hasCert) $missing[] = 'Sertifikat';
+                                        if (!$hasModule) $missing[] = 'Module (Trainer)';
+                                        if (!$hasAbs) $missing[] = 'Absensi';
+
                                         // Tooltip ringkas
                                         $tooltip = $isOfflineOnly
                                             ? 'Sertifikat: '.($hasCert ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
@@ -197,21 +213,24 @@
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
                                         @if(!(bool)($event->is_published ?? false))
-                                            <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline publish-form">
                                                 @csrf
-                                                <button type="submit" class="btn btn-outline-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Terbitkan" onclick="return confirm('Terbitkan event ini agar muncul di halaman user?');">
+                                                <button type="button" class="btn btn-outline-success btn-action-icon publish-event-btn" data-doc-pct="{{ $pct }}" data-missing='@json($missing)' data-bs-toggle="tooltip" data-bs-placement="top" title="Terbitkan">
                                                     <i class="bi bi-megaphone"></i><span class="visually-hidden">Terbitkan</span>
                                                 </button>
                                             </form>
                                         @else
-                                            <button type="button" class="btn btn-success btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Sudah Terbit" disabled>
-                                                <i class="bi bi-check2-circle"></i><span class="visually-hidden">Sudah Terbit</span>
-                                            </button>
+                                            <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline unpublish-form">
+                                                @csrf
+                                                <button type="button" class="btn btn-success btn-action-icon unpublish-event-btn" data-bs-toggle="tooltip" data-bs-placement="top" title="Batal Terbitkan">
+                                                    <i class="bi bi-check2-circle"></i><span class="visually-hidden">Batal Terbitkan</span>
+                                                </button>
+                                            </form>
                                         @endif
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Lihat">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
-                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
                                             <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
                                         </a>
                                         <button type="button" class="btn btn-outline-danger btn-action-icon"
@@ -244,8 +263,7 @@
                     const val = manageSel.value || '';
                     const invalid = (val === '' || val === null);
                     if(manageHelp){ manageHelp.style.display = invalid ? 'block' : 'none'; }
-                    return !invalid;
-                };
+                    return !invalid;                };
                 manageSel.addEventListener('change', checkManage);
                 form.addEventListener('submit', function(e){ if(!checkManage()){ e.preventDefault(); manageSel.focus(); } });
             }
@@ -309,6 +327,214 @@
                 currentMonth = 'all';
                 applyFilters();
             });
+
+            // ===== EXPORT PDF & EXCEL =====
+            // Guard: hanya inisialisasi sekali meski script dirender berkali-kali
+            if (!window.__manageEventExportInitialized) {
+                window.__manageEventExportInitialized = true;
+
+            const exportBtns = document.querySelectorAll('.export-event');
+            const exportPdfBtn  = exportBtns[0] ?? null;
+            const exportExcelBtn = exportBtns[1] ?? null;
+
+            function getFilterLabel(){
+                const parts = [];
+                const s = document.getElementById('eventSearch')?.value?.trim();
+                if(s) parts.push('Cari: "' + s + '"');
+                const st = document.getElementById('statusFilter')?.value;
+                if(st && st !== 'all') parts.push('Status: ' + st);
+                const mg = document.getElementById('manageFilter')?.value;
+                if(mg && mg !== 'all') parts.push('Tipe: ' + mg);
+                const mo = document.getElementById('eventMonthFilter')?.value;
+                if(mo) {
+                    const [y,m] = mo.split('-');
+                    const label = new Date(+y, +m-1, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+                    parts.push('Bulan: ' + label);
+                }
+                return parts.length ? parts.join(' · ') : 'Semua Event';
+            }
+
+            function buildExportTable(){
+                // Ambil hanya baris yang terlihat
+                const visibleRows = rows.filter(r => r.style.display !== 'none');
+                const headers = ['No', 'Judul', 'Pembicara', 'Tanggal', 'Lokasi', 'Tipe Kelola', 'Reseller', 'Kelengkapan'];
+
+                const table = document.createElement('table');
+                table.style.cssText = 'border-collapse:collapse; width:100%; font-size:10px; font-family:Arial,sans-serif; table-layout:fixed;';
+
+                // Lebar kolom proporsional agar tidak overflow
+                const colgroup = document.createElement('colgroup');
+                ['4%','18%','14%','12%','14%','10%','10%','18%'].forEach(w => {
+                    const col = document.createElement('col');
+                    col.style.width = w;
+                    colgroup.appendChild(col);
+                });
+                table.appendChild(colgroup);
+
+                // Header
+                const thead = table.createTHead();
+                const hRow = thead.insertRow();
+                headers.forEach(h => {
+                    const th = document.createElement('th');
+                    th.textContent = h;
+                    th.style.cssText = 'background:#1e3a5f; color:#fff; padding:6px 7px; border:1px solid #1e3a5f; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+                    hRow.appendChild(th);
+                });
+
+                // Body
+                const tbody = table.createTBody();
+                const tdBase = 'padding:5px 7px; border:1px solid #d1d5db; vertical-align:middle; overflow:hidden;';
+
+                visibleRows.forEach((row, idx) => {
+                    const cells = row.querySelectorAll('td');
+                    const tr = tbody.insertRow();
+                    tr.style.backgroundColor = idx % 2 === 0 ? '#ffffff' : '#f3f4f6';
+
+                    // No
+                    const tdNo = tr.insertCell();
+                    tdNo.textContent = idx + 1;
+                    tdNo.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+
+                    // Judul
+                    const tdJudul = tr.insertCell();
+                    tdJudul.textContent = cells[1]?.textContent?.trim() ?? '-';
+                    tdJudul.style.cssText = tdBase + 'font-weight:600; word-break:break-word;';
+
+                    // Pembicara
+                    const tdPembicara = tr.insertCell();
+                    tdPembicara.textContent = cells[3]?.textContent?.trim() ?? '-';
+                    tdPembicara.style.cssText = tdBase + 'word-break:break-word;';
+
+                    // Tanggal
+                    const tdTanggal = tr.insertCell();
+                    tdTanggal.textContent = cells[4]?.textContent?.trim() ?? '-';
+                    tdTanggal.style.cssText = tdBase + 'white-space:nowrap;';
+
+                    // Lokasi
+                    const tdLokasi = tr.insertCell();
+                    tdLokasi.textContent = cells[5]?.textContent?.trim() ?? '-';
+                    tdLokasi.style.cssText = tdBase + 'word-break:break-word;';
+
+                    // Tipe Kelola
+                    const tdManage = tr.insertCell();
+                    const manageVal = row.getAttribute('data-manage') || '-';
+                    tdManage.textContent = manageVal === 'manage' ? 'Manage' : manageVal === 'create' ? 'Create' : manageVal;
+                    tdManage.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+
+                    // Reseller
+                    const tdReseller = tr.insertCell();
+                    tdReseller.textContent = cells[7]?.textContent?.trim() ?? '-';
+                    tdReseller.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+
+                    // Kelengkapan
+                    const tdDoc = tr.insertCell();
+                    const docSpan = cells[8]?.querySelector('.doc-pct');
+                    const docSmall = cells[8]?.querySelector('small');
+                    tdDoc.textContent = (docSpan?.textContent?.trim() ?? '') + ' ' + (docSmall?.textContent?.trim() ?? '');
+                    tdDoc.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
+                });
+
+                return table;
+            }
+
+            // Export PDF
+            exportPdfBtn && exportPdfBtn.addEventListener('click', function(){
+                if(typeof window.html2pdf !== 'function'){
+                    alert('Library html2pdf belum dimuat. Coba refresh halaman.');
+                    return;
+                }
+                const filterLabel = getFilterLabel();
+                const printDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+                const table = buildExportTable();
+
+                const printable = document.createElement('div');
+                printable.style.cssText = 'width:880px; padding:16px 24px; background:#fff; color:#111827; font-family:Arial,sans-serif; box-sizing:border-box; font-size:10px; margin:0 auto;';
+                printable.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:3px solid #1e3a5f;">
+                        <div>
+                            <div style="font-size:16px; font-weight:700; color:#1e3a5f;">Laporan Manage Event</div>
+                            <div style="font-size:11px; color:#6b7280; margin-top:3px;">Filter: <strong style="color:#111827;">${filterLabel}</strong></div>
+                        </div>
+                        <div style="text-align:right; font-size:10px; color:#9ca3af; line-height:1.6;">
+                            <div style="font-weight:600; color:#374151; font-size:12px;">LMS IdSpora</div>
+                            <div>Dicetak: ${printDate}</div>
+                        </div>
+                    </div>`;
+                printable.appendChild(table);
+
+                const footer = document.createElement('div');
+                footer.style.cssText = 'margin-top:12px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:9px; color:#9ca3af; display:flex; justify-content:space-between;';
+                footer.innerHTML = `<span>LMS IdSpora — Manage Event</span><span>${printDate}</span>`;
+                printable.appendChild(footer);
+
+                const offscreen = document.createElement('div');
+                offscreen.style.cssText = 'position:fixed; left:0; top:-9999px; z-index:-1;';
+                offscreen.appendChild(printable);
+                document.body.appendChild(offscreen);
+
+                window.html2pdf().set({
+                    margin: [8, 14, 8, 14],
+                    filename: 'manage-event-' + new Date().toISOString().slice(0,10) + '.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, windowWidth: 920, useCORS: true, logging: false, x: 0, y: 0 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                }).from(printable).save().then(() => offscreen.remove()).catch(() => offscreen.remove());
+            });
+
+            // Export Excel
+            exportExcelBtn && exportExcelBtn.addEventListener('click', function(){
+                if(!window.XLSX){
+                    alert('Library XLSX belum dimuat. Coba refresh halaman.');
+                    return;
+                }
+                const filterLabel = getFilterLabel();
+                const printDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+                const visibleRows = rows.filter(r => r.style.display !== 'none');
+
+                const headers = ['No', 'Judul', 'Pembicara', 'Tanggal', 'Lokasi', 'Tipe Kelola', 'Reseller', 'Kelengkapan'];
+                const data = [
+                    ['Laporan Manage Event'],
+                    ['Filter: ' + filterLabel],
+                    ['Dicetak: ' + printDate],
+                    [],
+                    headers,
+                ];
+
+                visibleRows.forEach((row, idx) => {
+                    const cells = row.querySelectorAll('td');
+                    const manageVal = row.getAttribute('data-manage') || '-';
+                    const docSpan = cells[8]?.querySelector('.doc-pct');
+                    const docSmall = cells[8]?.querySelector('small');
+                    data.push([
+                        idx + 1,
+                        cells[1]?.textContent?.trim() ?? '-',
+                        cells[3]?.textContent?.trim() ?? '-',
+                        cells[4]?.textContent?.trim() ?? '-',
+                        cells[5]?.textContent?.trim() ?? '-',
+                        manageVal === 'manage' ? 'Manage' : manageVal === 'create' ? 'Create' : manageVal,
+                        cells[7]?.textContent?.trim() ?? '-',
+                        (docSpan?.textContent?.trim() ?? '') + ' ' + (docSmall?.textContent?.trim() ?? ''),
+                    ]);
+                });
+
+                const wb = window.XLSX.utils.book_new();
+                const ws = window.XLSX.utils.aoa_to_sheet(data);
+
+                // Merge judul di baris pertama
+                if(!ws['!merges']) ws['!merges'] = [];
+                ws['!merges'].push({ s:{r:0,c:0}, e:{r:0,c:7} });
+
+                // Lebar kolom
+                ws['!cols'] = [
+                    {wch:5}, {wch:30}, {wch:20}, {wch:15}, {wch:20},
+                    {wch:12}, {wch:10}, {wch:15}
+                ];
+
+                window.XLSX.utils.book_append_sheet(wb, ws, 'Manage Event');
+                window.XLSX.writeFile(wb, 'manage-event-' + new Date().toISOString().slice(0,10) + '.xlsx');
+            });
+
+            } // end guard __manageEventExportInitialized
         });
         </script>
                     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -336,6 +562,7 @@
                                     $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasCert ? 1 : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     $pct = $event->documents_completion_percent;
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
+                                    $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
                                     <span class="{{ $pctClass }}" title="Kelengkapan Dokumen">{{ $pct }}%</span>
@@ -366,7 +593,7 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
                                         <span>
                                             <i class="bi {{ $hasCert ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
                                             Sertifikat
@@ -393,8 +620,15 @@
                                             <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
                                             Module (Trainer)
                                         </span>
-                                        <span>
-                                            @if($hasModule)
+                                        <span class="d-flex flex-column align-items-end gap-1">
+                                            @if($eventTrainerModulesApproved->isNotEmpty())
+                                                @foreach($eventTrainerModulesApproved as $etm)
+                                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
+                                                        <i class="bi bi-file-earmark-arrow-down me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
+                                                        @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
+                                                    </a>
+                                                @endforeach
+                                            @elseif($hasModule)
                                                 <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
                                             @else
                                                 <span class="text-muted">Belum ada</span>
@@ -467,11 +701,6 @@
                             <div class="modal-footer">
                                 <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                                      <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
-                                      <div class="text-center ">
-                                            <button type="button" class="btn btn-outline-primary px-4" data-edit-doc-toggle="{{ $event->id }}">
-                                                <i class="bi bi-pencil-square me-1"></i>Edit Upload
-                                            </button>
-                                        </div>
                                     <button type="submit" class="btn btn-primary px-4" form="docForm-{{ $event->id }}">
                                         <span class="me-1">Save changes</span>
                                         <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
@@ -485,7 +714,7 @@
                 <div class="mt-3">{{ $events->links() }}</div>
             @else <div class="text-center py-5">Belum ada event.</div> @endif
         </div></div>
-        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable-auto-position="false">
+        <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable="false" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Tambah Event Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
@@ -509,32 +738,48 @@
                                     <div class="form-text">Gunakan judul yang jelas dan spesifik (contoh: "Webinar Laravel Dasar").</div>
                                 </div>
                                 <!-- Pembicara (dynamic, minimal 1 required) -->
+                                <div class="box-trainer-event">
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Nama Pembicara <span class="text-danger">*</span></label>
-                                    @php $oldSpeakers = old('speakers', []); @endphp
+                                    <label class="form-label fw-semibold">Nama Pembicara/Trainer <span class="text-danger">*</span></label>
+                                    @php $oldSpeakers = old('speakers', []); $oldSalaries = old('speaker_salaries', []); @endphp
                                     <div id="speakersContainer" class="d-flex flex-column gap-2">
                                         @if(!empty($oldSpeakers))
                                             @foreach($oldSpeakers as $i => $sp)
-                                            <div class="input-group speaker-row">
-                                                <select name="speakers[]" class="form-select speaker-select" data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                    <option value="" disabled>Memuat pembicara...</option>
-                                                    <option value="{{ $sp }}" selected>{{ $sp }}</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" {{ $i === 0 ? 'disabled' : '' }} title="Hapus">&times;</button>
+                                            <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select name="speakers[]" class="form-select speaker-select" data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
+                                                        <option value="" disabled>Memuat pembicara...</option>
+                                                        <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                        placeholder="Gaji Pembicara/Trainer (Rp)"
+                                                        value="{{ $oldSalaries[$i] ?? '' }}" min="0" step="1000">
+                                                </div>
                                             </div>
                                             @endforeach
                                         @else
-                                            <div class="input-group speaker-row">
-                                                <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
-                                                    <option value="" selected disabled>Pilih pembicara</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" disabled title="Hapus">&times;</button>
+                                            <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                                        <option value="" selected disabled>Pilih pembicara</option>
+                                                    </select>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                        placeholder="Masukkan Gaji Pembicara/Trainer" min="0" step="1000">
+                                                    <div class="form-text">Isikan Gaji untuk Nama Pembicara/Trainer</div>
+                                                </div>
                                             </div>
                                         @endif
                                     </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i class="bi bi-plus-circle me-1"></i>Tambah Nama Pembicara</button>
                                     <input type="hidden" name="speaker" id="speakerCombined" value="{{ old('speaker') }}">
                                     <div class="form-text">Minimal 1 pembicara (wajib). Tambahan pembicara bersifat opsional.</div>
+                                </div>
                                 </div>
                                 <!-- Materi (kategori konten) -->
                                 <div class="mb-3">
@@ -588,18 +833,16 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Reseller Event</label>
                                     
-                                    <input type="hidden" name="is_reseller_event" id="is_reseller_event" value="{{ old('is_reseller_event', 0) ? 1 : 0 }}">
-                                    <div class="btn-group w-100" role="group" aria-label="Reseller Event">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
-                                            <label class="form-check-label" for="flexRadioDefault1">Ya</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-yes" value="1" {{ old('is_reseller_event', 0) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="reseller-event-yes">Ya</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-no" value="0" {{ old('is_reseller_event', 0) ? '' : 'checked' }}>
+                                                <label class="form-check-label" for="reseller-event-no">Tidak</label>
+                                            </div>
                                         </div>
-                                        <div class="form-check" style="margin-left: 30px;">
-                                            <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2">
-                                            <label class="form-check-label" for="flexRadioDefault2">Tidak</label>
-                                        </div>
-                                
-                                    </div>
                                     <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
                                 </div>
                                 <!-- Jenis Acara -->
@@ -631,7 +874,7 @@
                                 <div class="mb-3">
                                     <label for="tanggal" class="form-label fw-semibold">Tanggal Pelaksanaan Event <span class="text-danger">*</span></label>
                                      <input type="date" name="event_date" id="tanggal" class="form-control" required
-                                         value="{{ old('event_date') }}" min="{{ date('Y-m-d') }}">
+                                         value="{{ old('event_date') }}">
                                      <div class="form-text">Pilih tanggal pelaksanaan event.</div>
                                 </div>
                                 <div class="mb-3">
@@ -780,7 +1023,94 @@
                 </div>
             </div></div>
         </div>
-    </div>
+        </div>
+
+        <!-- Publish confirmation modal (global) -->
+        <div class="modal fade" id="publishConfirmModal" tabindex="-1" aria-labelledby="publishConfirmModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="publishConfirmModalLabel">Konfirmasi Terbitkan Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body" id="publishConfirmModalBody"></div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="publishConfirmBtn">Terbitkan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var publishModalEl = document.getElementById('publishConfirmModal');
+            var publishModal = (publishModalEl && window.bootstrap && typeof bootstrap.Modal === 'function') ? new bootstrap.Modal(publishModalEl) : null;
+            var pendingPublishForm = null;
+            document.querySelectorAll('.publish-event-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var pct = parseInt(btn.getAttribute('data-doc-pct') || '0', 10);
+                    var missingJson = btn.getAttribute('data-missing') || '[]';
+                    var missing = [];
+                    try { missing = JSON.parse(missingJson); } catch(e) { missing = []; }
+                    var form = btn.closest('form');
+                    var body = document.getElementById('publishConfirmModalBody');
+                    var title = document.getElementById('publishConfirmModalLabel');
+                    var confirmBtn = document.getElementById('publishConfirmBtn');
+                    
+                    if (title) title.textContent = 'Konfirmasi Terbitkan Event';
+                    if (confirmBtn) {
+                        confirmBtn.textContent = 'Terbitkan';
+                        confirmBtn.classList.remove('btn-danger');
+                        confirmBtn.classList.add('btn-primary');
+                    }
+
+                    if (pct >= 100) {
+                        if (body) body.innerHTML = '<p>Apakah anda yakin ingin publish event ini? Dokumen sudah lengkap dan event akan segera tampil untuk publik.</p>';
+                    } else {
+                        if (body) {
+                            var html = '<p>Kelengkapan dokumen event ini belum lengkap:</p><ul>';
+                            if (Array.isArray(missing) && missing.length) {
+                                missing.forEach(function(it){ html += '<li>' + it + '</li>'; });
+                            } else {
+                                html += '<li>Beberapa dokumen belum lengkap</li>';
+                            }
+                            html += '</ul><p>Apakah anda yakin ingin publish event ini?</p>';
+                            body.innerHTML = html;
+                        }
+                    }
+                    pendingPublishForm = form;
+                    if (publishModal) publishModal.show();
+                });
+            });
+            document.querySelectorAll('.unpublish-event-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var form = btn.closest('form');
+                    var body = document.getElementById('publishConfirmModalBody');
+                    var title = document.getElementById('publishConfirmModalLabel');
+                    var confirmBtn = document.getElementById('publishConfirmBtn');
+                    
+                    if (title) title.textContent = 'Konfirmasi Batal Terbitkan';
+                    if (confirmBtn) {
+                        confirmBtn.textContent = 'Batal Terbitkan';
+                        confirmBtn.classList.remove('btn-primary');
+                        confirmBtn.classList.add('btn-danger');
+                    }
+                    if (body) body.innerHTML = '<p>Apakah Anda yakin ingin membatalkan publikasi event ini? Event tidak akan terlihat lagi oleh publik.</p>';
+                    
+                    pendingPublishForm = form;
+                    if (publishModal) publishModal.show();
+                });
+            });
+            var confirmBtn = document.getElementById('publishConfirmBtn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', function() {
+                    if (pendingPublishForm) pendingPublishForm.submit();
+                });
+            }
+        });
+        </script>
+
     @endsection
     @section('styles')
     <style>
@@ -911,14 +1241,23 @@
             flex: 0 0 auto;
         }
 
+        /* Publish confirmation modal: compact footer/buttons like logout/feedback confirm modal */
+        #publishConfirmModal .modal-content{ border-radius: 18px; overflow: hidden; }
+        #publishConfirmModal .modal-header{ padding: 1.1rem 1.1rem .75rem; }
+        #publishConfirmModal .modal-body{ padding: 0 1.1rem 1rem; }
+        #publishConfirmModal .modal-footer{ padding: .25rem 1.1rem 1.1rem; border-top: 0; }
+        #publishConfirmModal .btn{ border-radius: 12px; padding-top: .6rem; padding-bottom: .6rem; }
+        #publishConfirmModal .modal-footer .btn{ width: auto !important; flex: 0 0 auto; }
+
         /* Slightly shift centered doc modal upward */
         .modal-upload-operasional.show .modal-dialog {
             transform: translate(0, -24px) !important;
         }
 
         /* Prevent modal from sticking to the top header/navbar */
-        #addEventModal .modal-dialog {
-            margin-top: clamp(2rem, 10vh, 120px);
+        #addEventModal .modal-dialog,
+        #editEventModal .modal-dialog {
+            margin-top: 8px;
         }
             /* Draggable modal UX */
             .modal-draggable .modal-header { cursor: move; user-select: none; }
@@ -967,6 +1306,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/id.js"></script>
+    <!-- Export libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
@@ -1055,11 +1397,11 @@
                 }
             }
 
-            function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
+            function hide(){ boxEl.style.display = 'none'; boxEl.innerHTML = ''; }
             function show(items){
                 if(!items.length){ hide(); return; }
-                box.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
-                box.style.display = 'block';
+                boxEl.innerHTML = items.map(v => '<button type="button" class="list-group-item list-group-item-action" data-value="' + String(v).replace(/"/g,'&quot;') + '">' + String(v) + '</button>').join('');
+                boxEl.style.display = 'block';
             }
             function filter(q){
                 const query = lower(q);
@@ -1113,40 +1455,50 @@
                 const query = lower(q);
                 const base = options.map(norm).filter(Boolean);
                 if(!query) return base.slice(0, 30);
-                return base
-                    .filter(v => lower(v).includes(query))
-                    .slice(0, 30);
+                return base.filter(v => lower(v).includes(query)).slice(0, 30);
             }
             function applyValidity(){
-                const raw = norm(materiInput.value);
-                if(!raw){
-                    materiInput.setCustomValidity('');
-                    if(invalidText) invalidText.style.display = 'none';
-                    return;
-                }
-                const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
-                materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
-                if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
+                const raw = norm(inputEl.value);
+                // Validasi dihilangkan: user boleh input materi bebas (tidak harus dari daftar)
+                inputEl.setCustomValidity('');
+                if(invalidEl) invalidEl.style.display = 'none';
             }
 
-            materiInput.addEventListener('input', () => { show(filter(materiInput.value)); applyValidity(); });
-            materiInput.addEventListener('focus', () => { show(filter(materiInput.value)); });
-            materiInput.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
+            inputEl.addEventListener('input', () => { show(filter(inputEl.value)); applyValidity(); });
+            inputEl.addEventListener('focus', () => { show(filter(inputEl.value)); });
+            inputEl.addEventListener('click', () => { show(filter(inputEl.value)); });
+            inputEl.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
 
-            box.addEventListener('mousedown', (e) => {
+            boxEl.addEventListener('mousedown', (e) => {
                 const btn = e.target?.closest('[data-value]');
                 if(!btn) return;
                 e.preventDefault();
-                materiInput.value = btn.getAttribute('data-value') || '';
+                inputEl.value = btn.getAttribute('data-value') || '';
                 hide();
                 applyValidity();
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
             });
             document.addEventListener('click', (e) => {
-                if (e.target === materiInput) return;
-                if (box.contains(e.target)) return;
+                if (e.target === inputEl) return;
+                if (boxEl.contains(e.target)) return;
                 hide();
             });
             applyValidity();
+        }
+
+        (function setupMateriAutocomplete(){
+            const inp = document.getElementById('materi');
+            const box = document.getElementById('materiSuggestions');
+            const inv = document.getElementById('materiInvalidText');
+            if(!inp || !box) return;
+            setupGenericAutocomplete(inp, box, @json($materiMerged ?? []), inv);
+        })();
+
+        (function setupJenisAutocomplete(){
+            const inp = document.getElementById('jenis');
+            const box = document.getElementById('jenisSuggestions');
+            if(!inp || !box) return;
+            setupGenericAutocomplete(inp, box, @json($jenisMerged ?? []));
         })();
         // CKEditor init for deskripsi and terms
         // IMPORTANT: guard ClassicEditor so a missing asset doesn't break the whole page (incl. submit enable/disable).
@@ -1501,7 +1853,7 @@
                 const sel = row.querySelector('select[name="speakers[]"]');
                 const rm  = row.querySelector('.remove-speaker');
                 if(sel){ sel.required = (idx === 0); }
-                if(rm){ rm.disabled = (idx === 0); }
+                if(rm){ rm.disabled = (rows.length <= 1); }
             });
         }
 
@@ -1547,14 +1899,20 @@
         function addSpeakerRow(prefill=''){
             if(!speakersContainer) return;
             const div = document.createElement('div');
-            div.className = 'input-group speaker-row';
+            div.className = 'speaker-row border rounded p-2';
+            div.style.background = '#f8fafc';
             const safeVal = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
             div.innerHTML = `
-                <select name="speakers[]" class="form-select speaker-select" data-selected="${safeVal}">
-                    <option value="" selected disabled>Pilih pembicara</option>
-                </select>
-                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus">&times;</button>
-            `;
+                <div class="d-flex gap-2 align-items-center">
+                    <select name="speakers[]" class="form-select speaker-select" data-selected="${safeVal}">
+                        <option value="" selected disabled>Pilih narasumber</option>
+                    </select>
+                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                </div>
+                <div class="mt-2">
+                    <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                        placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                </div>`;
             speakersContainer.appendChild(div);
             updateSpeakerRowsState();
             refreshSpeakerSelects();
@@ -2472,6 +2830,672 @@ document.addEventListener('DOMContentLoaded', function(){
         syncBtn();
     } catch(e) {
         // swallow - never block the page
+    }
+});
+</script>
+<script>
+function initEditEventLocationAndBenefits(modalEl){
+    if(!modalEl || modalEl.dataset.locationBenefitsInitialized === '1') return;
+    modalEl.dataset.locationBenefitsInitialized = '1';
+
+    const eventDateInput = modalEl.querySelector('#tanggal');
+    const discountUntilInput = modalEl.querySelector('#discount_until');
+    const locationModeEl = modalEl.querySelector('#lokasi');
+    const placeNameGroup = modalEl.querySelector('#placeNameGroup');
+    const placeNameInput = modalEl.querySelector('#place_name');
+    const mapsGroup = modalEl.querySelector('#mapsGroup');
+    const zoomGroup = modalEl.querySelector('#zoomGroup');
+    const mapsInput = modalEl.querySelector('#maps');
+    const mapsPreview = modalEl.querySelector('#mapsPreview');
+    const btnResolveMaps = modalEl.querySelector('#btnResolveMaps');
+    const zoomInput = modalEl.querySelector('#zoom');
+    const mapsRequiredStar = modalEl.querySelector('#mapsRequiredStar');
+    const zoomRequiredStar = modalEl.querySelector('#zoomRequiredStar');
+    const placeNameRequiredStar = modalEl.querySelector('#placeNameRequiredStar');
+    const latitudeInput = modalEl.querySelector('#latitude');
+    const longitudeInput = modalEl.querySelector('#longitude');
+    const form = modalEl.querySelector('#editEventForm');
+    const submitBtn = modalEl.querySelector('#editSubmitBtn');
+    const benefitsContainer = modalEl.querySelector('#benefitsContainer');
+    const addBenefitBtn = modalEl.querySelector('#addBenefitRow');
+    const benefitHidden = modalEl.querySelector('#benefit');
+    const resolveMapsUrl = @json(route('admin.maps.resolve'));
+    const csrfToken = @json(csrf_token());
+    let leafletMap = null;
+    let leafletMarker = null;
+    let eventDateFp = null;
+    let discountUntilFp = null;
+
+    if(eventDateInput){
+        eventDateInput.removeAttribute('min');
+    }
+
+    if(window.flatpickr){
+        if(eventDateInput && !eventDateInput._flatpickr){
+            eventDateFp = flatpickr(eventDateInput, {
+                locale: 'id',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'l, d F Y',
+                disableMobile: true,
+                allowInput: true,
+                defaultDate: eventDateInput.value || null
+            });
+        }else if(eventDateInput?._flatpickr){
+            eventDateFp = eventDateInput._flatpickr;
+        }
+
+        if(discountUntilInput && !discountUntilInput._flatpickr){
+            discountUntilFp = flatpickr(discountUntilInput, {
+                locale: 'id',
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'l, d F Y',
+                disableMobile: true,
+                clickOpens: true
+            });
+        }else if(discountUntilInput?._flatpickr){
+            discountUntilFp = discountUntilInput._flatpickr;
+        }
+    }
+
+    function updateDiscountUntilBounds(){
+        if(!discountUntilInput || !discountUntilFp) return;
+        const dateStr = eventDateInput?.value || '';
+        if(!dateStr) return;
+
+        const eventDate = new Date(dateStr + 'T00:00:00');
+        if(isNaN(eventDate.getTime())) return;
+
+        const maxDate = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if(maxDate < today){
+            discountUntilInput.disabled = true;
+            if(discountUntilFp.altInput) discountUntilFp.altInput.disabled = true;
+            discountUntilInput.value = '';
+            discountUntilFp.clear();
+            return;
+        }
+
+        discountUntilFp.set('minDate', today);
+        discountUntilFp.set('maxDate', maxDate);
+
+        const current = discountUntilInput.value;
+        if(current){
+            const currentDate = new Date(current + 'T00:00:00');
+            if(currentDate >= eventDate){
+                discountUntilFp.clear();
+                discountUntilInput.value = '';
+            }
+        }
+    }
+
+    function parseLatLngFromUrl(url){
+        if(!url) return null;
+        try{
+            const decoded = decodeURIComponent(url);
+            let match = decoded.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            match = decoded.match(/[?&]q=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            match = decoded.match(/[?&]ll=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            match = decoded.match(/[?&]center=\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+            const m3d = decoded.match(/!3d(-?\d+\.\d+)/);
+            const m4d = decoded.match(/!4d(-?\d+\.\d+)/);
+            if(m3d && m4d) return { lat: parseFloat(m3d[1]), lng: parseFloat(m4d[1]) };
+            match = decoded.trim().match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);
+            if(match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        }catch(_){}
+        return null;
+    }
+
+    function ensureMap(){
+        if(!mapsPreview || !window.L) return;
+        if(!leafletMap){
+            leafletMap = L.map(mapsPreview).setView([-6.200, 106.816], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(leafletMap);
+        }
+        setTimeout(function(){ leafletMap.invalidateSize(); }, 50);
+    }
+
+    function showMap(lat, lng){
+        if(latitudeInput) latitudeInput.value = (+lat).toFixed(7);
+        if(longitudeInput) longitudeInput.value = (+lng).toFixed(7);
+        if(!mapsPreview || !window.L) return;
+        mapsPreview.style.display = 'block';
+        ensureMap();
+        if(!leafletMap) return;
+        const position = [lat, lng];
+        leafletMap.setView(position, 14);
+        if(leafletMarker){
+            leafletMarker.setLatLng(position);
+        }else{
+            leafletMarker = L.marker(position).addTo(leafletMap);
+        }
+    }
+
+    function tryRenderMap(){
+        const value = mapsInput?.value || '';
+        const parsed = parseLatLngFromUrl(value);
+        if(parsed){
+            showMap(parsed.lat, parsed.lng);
+            return;
+        }
+        const lat = latitudeInput ? parseFloat(String(latitudeInput.value || '')) : NaN;
+        const lng = longitudeInput ? parseFloat(String(longitudeInput.value || '')) : NaN;
+        if(Number.isFinite(lat) && Number.isFinite(lng)){
+            showMap(lat, lng);
+        }else if(mapsPreview){
+            mapsPreview.style.display = 'none';
+        }
+    }
+
+    function syncMapsUI(){
+        const hasMaps = !!String(mapsInput?.value || '').trim();
+        if(btnResolveMaps) btnResolveMaps.disabled = !hasMaps;
+        if(!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
+    }
+
+    function setResolveMapsLoading(isLoading){
+        if(!btnResolveMaps) return;
+        if(isLoading){
+            if(!btnResolveMaps.dataset.originalHtml){
+                btnResolveMaps.dataset.originalHtml = btnResolveMaps.innerHTML;
+            }
+            btnResolveMaps.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memuat...';
+            btnResolveMaps.setAttribute('aria-busy', 'true');
+        }else{
+            btnResolveMaps.innerHTML = btnResolveMaps.dataset.originalHtml || 'Deteksi';
+            btnResolveMaps.removeAttribute('aria-busy');
+        }
+    }
+
+    function showPlaceNameIfNeeded(forceShow = false){
+        if(!placeNameGroup || !placeNameInput) return;
+        const mode = String(locationModeEl?.value || '').toLowerCase();
+        const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
+        const hasValue = String(placeNameInput.value || '').trim() !== '';
+        const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+        placeNameGroup.classList.toggle('d-none', !shouldShow);
+        placeNameInput.required = shouldShow;
+        if(placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
+    }
+
+    function syncLocationModeUI(){
+        const mode = String(locationModeEl?.value || '').toLowerCase();
+        const isOffline = mode === 'offline';
+        const isOnline = mode === 'online';
+        const isHybrid = mode === 'hybrid';
+
+        if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
+        if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
+
+        if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+        if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+        if(mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+        if(zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
+
+        showPlaceNameIfNeeded(false);
+
+        if(isOnline){
+            if(mapsInput) mapsInput.value = '';
+            if(latitudeInput) latitudeInput.value = '';
+            if(longitudeInput) longitudeInput.value = '';
+            if(mapsPreview) mapsPreview.style.display = 'none';
+            if(btnResolveMaps) btnResolveMaps.disabled = true;
+        }
+        if(isOffline && zoomInput){
+            zoomInput.value = '';
+        }
+
+        syncMapsUI();
+        if(typeof window.updateSubmitState === 'function') window.updateSubmitState();
+    }
+
+    mapsInput?.addEventListener('input', function(){ tryRenderMap(); syncMapsUI(); });
+    mapsInput?.addEventListener('change', function(){ tryRenderMap(); syncMapsUI(); });
+    mapsInput?.addEventListener('blur', function(){ tryRenderMap(); syncMapsUI(); });
+    eventDateInput?.addEventListener('input', updateDiscountUntilBounds);
+    eventDateInput?.addEventListener('change', updateDiscountUntilBounds);
+    locationModeEl?.addEventListener('change', syncLocationModeUI);
+    btnResolveMaps?.addEventListener('click', async function(){
+        showPlaceNameIfNeeded(true);
+        if(placeNameInput && !placeNameGroup?.classList.contains('d-none')){
+            placeNameInput.focus();
+        }
+
+        const url = mapsInput?.value || '';
+        if(!url){
+            alert('Masukkan link Google Maps terlebih dahulu.');
+            return;
+        }
+
+        try{
+            setResolveMapsLoading(true);
+            btnResolveMaps.disabled = true;
+            const response = await fetch(resolveMapsUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ url })
+            });
+            const data = await response.json();
+            if(response.ok && data.lat && data.lng){
+                showMap(data.lat, data.lng);
+            }else{
+                alert(data.message || 'Koordinat tidak ditemukan.');
+            }
+        }catch(_){
+            alert('Gagal mendeteksi koordinat.');
+        }finally{
+            setResolveMapsLoading(false);
+            btnResolveMaps.disabled = false;
+            syncMapsUI();
+        }
+    });
+
+    function renderBenefitRow(prefill = ''){
+        if(!benefitsContainer) return;
+        const row = document.createElement('div');
+        row.className = 'input-group mb-2 benefit-row';
+        const safeValue = String(prefill || '').replace(/"/g, '&quot;');
+        row.innerHTML = `<input type="text" class="form-control" name="benefits[]" placeholder="Tuliskan benefit" value="${safeValue}"><button type="button" class="btn btn-outline-danger" data-action="remove-benefit" title="Hapus"><i class="bi bi-x"></i></button>`;
+        benefitsContainer.appendChild(row);
+    }
+
+    benefitsContainer?.addEventListener('click', function(e){
+        const btn = e.target.closest('button[data-action="remove-benefit"]');
+        if(btn){
+            btn.closest('.benefit-row')?.remove();
+        }
+    });
+
+    addBenefitBtn?.addEventListener('click', function(){
+        renderBenefitRow();
+    });
+
+    if(benefitsContainer){
+        const raw = (benefitHidden?.value || '').trim();
+        const parts = raw ? (raw.includes('|') ? raw.split('|') : raw.split(/\r?\n/)).map(function(item){
+            return (item || '').trim();
+        }).filter(Boolean) : [];
+        if(parts.length){
+            parts.forEach(function(item){ renderBenefitRow(item); });
+        }else{
+            renderBenefitRow();
+        }
+    }
+
+    form?.addEventListener('submit', function(){
+        if(benefitHidden && benefitsContainer){
+            const items = Array.from(benefitsContainer.querySelectorAll('input[name="benefits[]"]'))
+                .map(function(input){ return (input.value || '').trim(); })
+                .filter(Boolean);
+            benefitHidden.value = items.join(' | ');
+        }
+    });
+
+    if(submitBtn && form && submitBtn.dataset.boundEditSubmit !== '1'){
+        submitBtn.dataset.boundEditSubmit = '1';
+        submitBtn.addEventListener('click', function(e){
+            e.preventDefault();
+            if(typeof form.requestSubmit === 'function'){
+                form.requestSubmit();
+            }else{
+                form.submit();
+            }
+        });
+    }
+
+    tryRenderMap();
+    syncMapsUI();
+    syncLocationModeUI();
+    updateDiscountUntilBounds();
+}
+
+function initEditEventDynamicTables(modalEl){
+    if(!modalEl || modalEl.dataset.dynamicTablesInitialized === '1') return;
+    modalEl.dataset.dynamicTablesInitialized = '1';
+
+    const scheduleTableBody = modalEl.querySelector('#scheduleTable tbody');
+    const addScheduleBtn = modalEl.querySelector('#addScheduleRow');
+    let scheduleIndex = scheduleTableBody ? scheduleTableBody.querySelectorAll('tr').length : 0;
+
+    function createScheduleRow(idx){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td>
+            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td>
+            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td>
+            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus">
+                    <i class="bi bi-x"></i>
+                </button>
+            </td>`;
+        return tr;
+    }
+
+    function addScheduleRow(){
+        if(!scheduleTableBody) return;
+        scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++));
+    }
+
+    addScheduleBtn?.addEventListener('click', function(e){
+        e.preventDefault();
+        addScheduleRow();
+    });
+
+    scheduleTableBody?.addEventListener('click', function(e){
+        const btn = e.target.closest('button[data-action="remove"]');
+        if(btn){
+            btn.closest('tr')?.remove();
+        }
+    });
+
+    if(scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0){
+        addScheduleRow();
+    }
+
+    const expensesTableBody = modalEl.querySelector('#expensesTable tbody');
+    const addExpenseBtn = modalEl.querySelector('#addExpenseRow');
+    const expensesGrandTotalEl = modalEl.querySelector('#expensesGrandTotal');
+    let expenseIndex = expensesTableBody ? expensesTableBody.querySelectorAll('tr').length : 0;
+
+    function formatRupiah(value){
+        const n = Math.max(0, Math.floor(Number(value) || 0));
+        return 'Rp' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function clampNonNegativeNumberInput(input){
+        if(!input) return;
+        input.addEventListener('keydown', function(e){
+            if(e.key === '-' || e.key === 'Subtract' || e.keyCode === 189){
+                e.preventDefault();
+            }
+        });
+        input.addEventListener('input', function(){
+            if(input.value === '') return;
+            let v = parseFloat(input.value);
+            if(isNaN(v) || v < 0) v = 0;
+            input.value = Math.floor(v).toString();
+        });
+    }
+
+    function recalcExpensesGrandTotal(){
+        if(!expensesTableBody || !expensesGrandTotalEl) return;
+        let total = 0;
+        expensesTableBody.querySelectorAll('input[data-expense-total]').forEach(function(input){
+            const value = parseFloat(input.value || '0');
+            if(!isNaN(value)) total += value;
+        });
+        expensesGrandTotalEl.textContent = formatRupiah(total);
+    }
+
+    function recalcExpenseRow(tr){
+        if(!tr) return;
+        const qty = parseFloat(tr.querySelector('input[data-expense-qty]')?.value || '0');
+        const unit = parseFloat(tr.querySelector('input[data-expense-unit]')?.value || '0');
+        const totalInput = tr.querySelector('input[data-expense-total]');
+        const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit);
+        if(totalInput) totalInput.value = Math.max(0, Math.round(total));
+        recalcExpensesGrandTotal();
+    }
+
+    function wireExpenseRow(tr){
+        if(!tr || tr.dataset.expenseRowInitialized === '1') return;
+        tr.dataset.expenseRowInitialized = '1';
+
+        const qtyInput = tr.querySelector('input[data-expense-qty]');
+        const unitInput = tr.querySelector('input[data-expense-unit]');
+
+        clampNonNegativeNumberInput(qtyInput);
+        clampNonNegativeNumberInput(unitInput);
+
+        qtyInput?.addEventListener('input', function(){ recalcExpenseRow(tr); });
+        unitInput?.addEventListener('input', function(){ recalcExpenseRow(tr); });
+    }
+
+    function createExpenseRow(idx){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" class="form-control form-control-sm" name="expenses[${idx}][item]" placeholder="Nama barang"></td>
+            <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][quantity]" data-expense-qty min="0" step="1"></td>
+            <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td>
+            <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </td>`;
+        wireExpenseRow(tr);
+        return tr;
+    }
+
+    function addExpenseRow(){
+        if(!expensesTableBody) return;
+        const row = createExpenseRow(expenseIndex++);
+        expensesTableBody.appendChild(row);
+        recalcExpenseRow(row);
+    }
+
+    addExpenseBtn?.addEventListener('click', function(e){
+        e.preventDefault();
+        addExpenseRow();
+    });
+
+    expensesTableBody?.addEventListener('click', function(e){
+        const btn = e.target.closest('button[data-action="remove-expense"]');
+        if(btn){
+            btn.closest('tr')?.remove();
+            recalcExpensesGrandTotal();
+        }
+    });
+
+    if(expensesTableBody){
+        const rows = Array.from(expensesTableBody.querySelectorAll('tr'));
+        if(rows.length === 0){
+            addExpenseRow();
+        }else{
+            rows.forEach(function(row){
+                wireExpenseRow(row);
+                recalcExpenseRow(row);
+            });
+            recalcExpensesGrandTotal();
+        }
+    }
+}
+
+function initEditEventSpeakers(modalEl){
+    if(!modalEl || modalEl.dataset.speakersInitialized === '1') return;
+    modalEl.dataset.speakersInitialized = '1';
+
+    const speakersContainer = modalEl.querySelector('#speakersContainer');
+    const addSpeakerBtn = modalEl.querySelector('#addSpeakerRow');
+    const speakerCombined = modalEl.querySelector('#speakerCombined');
+    const trainersUrl = @json(route('admin.api.trainers'));
+    let trainersCache = null;
+
+    async function fetchTrainers(){
+        if (trainersCache !== null) return trainersCache;
+        try {
+            const res = await fetch(trainersUrl, { headers: { 'Accept': 'application/json' } });
+            const json = await res.json();
+            const list = (json && Array.isArray(json.data)) ? json.data : [];
+            trainersCache = list.map(t => ({ id: t.id, name: String(t.name || '').trim() })).filter(t => t.name !== '');
+        } catch (e) { trainersCache = []; }
+        return trainersCache;
+    }
+
+    function updateSpeakerRowsState() {
+        if (!speakersContainer) return;
+        const rows = speakersContainer.querySelectorAll('.speaker-row');
+        rows.forEach((row, idx) => {
+            const sel = row.querySelector('select[name="speakers[]"]');
+            const rm = row.querySelector('.remove-speaker');
+            if (sel) sel.required = (idx === 0);
+            if (rm) rm.disabled = (rows.length <= 1);
+        });
+    }
+
+    function updateSpeakerCombined() {
+        if (!speakerCombined || !speakersContainer) return;
+        const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]'))
+            .map(s => String(s.value || '').trim())
+            .filter(Boolean);
+        speakerCombined.value = names.join(', ');
+    }
+
+    function populateSpeakerSelect(selectEl, selectedName, trainers) {
+        if (!selectEl) return;
+        const selected = String(selectedName || '').trim();
+        const options = [];
+        options.push('<option value="" disabled ' + (selected ? '' : 'selected') + '>Pilih narasumber</option>');
+        const names = new Set();
+        (trainers || []).forEach(t => {
+            const name = String(t.name || '').trim();
+            if (!name || names.has(name)) return;
+            names.add(name);
+            const isSel = selected && name === selected;
+            options.push('<option value="' + name.replace(/"/g, '&quot;') + '" ' + (isSel ? 'selected' : '') + '>' + name + '</option>');
+        });
+        if (selected && !names.has(selected)) {
+            options.push('<option value="' + selected.replace(/"/g, '&quot;') + '" selected>' + selected + ' (tidak ditemukan)</option>');
+        }
+        selectEl.innerHTML = options.join('');
+        if (selected) { selectEl.value = selected; }
+    }
+
+    async function refreshSpeakerSelects() {
+        if (!speakersContainer) return;
+        const trainers = await fetchTrainers();
+        speakersContainer.querySelectorAll('select[name="speakers[]"]').forEach(sel => {
+            const selected = sel.getAttribute('data-selected') || sel.value || '';
+            populateSpeakerSelect(sel, selected, trainers);
+            sel.setAttribute('data-selected', sel.value || '');
+        });
+        updateSpeakerCombined();
+    }
+
+    function addSpeakerRow(prefill = '') {
+        if (!speakersContainer) return;
+        const div = document.createElement('div');
+        div.className = 'speaker-row border rounded p-2';
+        div.style.background = '#f8fafc';
+        const safe = prefill ? String(prefill).replace(/"/g, '&quot;') : '';
+        div.innerHTML = `
+            <div class="d-flex gap-2 align-items-center">
+                <select name="speakers[]" class="form-select speaker-select" data-selected="${safe}">
+                    <option value="" selected disabled>Pilih narasumber</option>
+                </select>
+                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+            </div>
+            <div class="mt-2">
+                <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                    placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+            </div>`;
+        speakersContainer.appendChild(div);
+        updateSpeakerRowsState();
+        refreshSpeakerSelects();
+    }
+
+    if(speakersContainer){
+        speakersContainer.addEventListener('click', e => {
+            const btn = e.target.closest('.remove-speaker');
+            if (btn) {
+                const row = btn.closest('.speaker-row');
+                if(row) {
+                    row.remove();
+                    updateSpeakerRowsState();
+                    updateSpeakerCombined();
+                }
+            }
+        });
+        speakersContainer.addEventListener('change', e => {
+            const sel = e.target.closest('select[name="speakers[]"]');
+            if(sel){
+                sel.setAttribute('data-selected', sel.value || '');
+                updateSpeakerCombined();
+            }
+        });
+    }
+
+    if(addSpeakerBtn){
+        addSpeakerBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addSpeakerRow();
+        });
+    }
+
+    updateSpeakerRowsState();
+    refreshSpeakerSelects();
+}
+
+function initEditEventAutocomplete(modalEl) {
+    if(!modalEl || modalEl.dataset.autocompleteInitialized === '1') return;
+    modalEl.dataset.autocompleteInitialized = '1';
+
+    const materiInp = modalEl.querySelector('#materi');
+    const materiBox = modalEl.querySelector('#materiSuggestions');
+    const materiInv = modalEl.querySelector('#materiInvalidText');
+    
+    if(materiInp && materiBox) {
+        let options = [];
+        try {
+            const raw = materiInp.getAttribute('data-options');
+            options = raw ? JSON.parse(raw) : [];
+        } catch(e) { options = []; }
+        setupGenericAutocomplete(materiInp, materiBox, options, materiInv);
+    }
+}
+
+// Edit button: load edit modal via AJAX, fallback to full navigation
+document.addEventListener('click', async function(e){
+    const btn = e.target.closest('.edit-event-btn');
+    if(!btn) return;
+    const url = btn.getAttribute('data-edit-url') || btn.href;
+    // allow open-in-new-tab
+    if (e.button === 1 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    e.preventDefault();
+    if(!url) return;
+    try{
+        const existing = document.getElementById('editEventModal');
+        if(existing) existing.remove();
+        const res = await fetch(url, { headers: { 'X-Requested-With':'XMLHttpRequest' } });
+        if(!res.ok){ window.location.href = url; return; }
+        const text = await res.text();
+        const tmp = document.createElement('div'); tmp.innerHTML = text;
+        const modalEl = tmp.querySelector('#editEventModal');
+        if(!modalEl){ window.location.href = url; return; }
+        // Inject forced label color styles into the modal (AJAX responses may lack page-level styles)
+        try{
+            const css = `#editEventModal #editEventForm label,#editEventModal #editEventForm .form-label,#editEventModal #editEventForm small,#editEventModal #editEventForm .form-text,#editEventModal #editEventForm .input-group-text{color:#000!important} #editEventModal ::placeholder{color:#000!important;opacity:1!important} #editEventModal .modal-dialog{margin-top:8px!important;}`;
+            const styleEl = document.createElement('style'); styleEl.type = 'text/css'; styleEl.appendChild(document.createTextNode(css));
+            modalEl.insertBefore(styleEl, modalEl.firstChild);
+        }catch(e){}
+        document.body.appendChild(modalEl);
+        initEditEventLocationAndBenefits(modalEl);
+        initEditEventDynamicTables(modalEl);
+        initEditEventSpeakers(modalEl);
+        initEditEventAutocomplete(modalEl);
+        if(typeof enableDraggableModal === 'function') try{ enableDraggableModal(modalEl); }catch(_){}
+        if(window.bootstrap && typeof bootstrap.Modal === 'function'){
+            const m = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+            m.show();
+        } else {
+            modalEl.classList.add('show'); modalEl.style.display = 'block';
+        }
+    } catch(err){
+        console.error('Edit modal load failed', err);
+        window.location.href = url;
     }
 });
 </script>

@@ -316,20 +316,28 @@
                 <div class="input_biodata">
                     <p>No Whatsapp</p>
                     <div class="whatsapp_biodata">
-                        <div class="dropdown">
-                            <button class="btn_nomor dropdown-toggle" type="button" id="kodeDialBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                                +62
-                            </button>
-                        </div>
-                        <ul class="dropdown-menu" id="kodeDialMenu" aria-labelledby="kodeDialBtn" style="position: absolute;">
-                            <li><a class="dropdown-item" href="#" data-code="+62">+62</a></li>
-                            <li><a class="dropdown-item" href="#" data-code="+60">+60</a></li>
-                            <li><a class="dropdown-item" href="#" data-code="+1">+1</a></li>
-                        </ul>
+                        <span class="btn_nomor" style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;cursor:default;">+62</span>
                         <input type="hidden" name="kode_dial" id="kodeDialInput" value="+62">
                         <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
                     </div>
                 </div>
+                @if((bool) ($course->is_reseller_course ?? false))
+                    <div class="input_biodata">
+                        <p>Kode Referral</p>
+                        <input
+                            class="kolom_input_biodata"
+                            type="text"
+                            id="referralCodeInput"
+                            placeholder="Masukkan kode referral reseller jika ada"
+                            value="{{ request()->query('ref', '') }}"
+                            autocomplete="off"
+                        >
+                        <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
+                        <div style="margin-top:6px; font-size:12px; color:#6b7280;">
+                            Kode valid akan memberi potongan 10%.
+                        </div>
+                    </div>
+                @endif
 
                 <div class="input_biodata">
                     <p>Kode Referral <span style="color:#888; font-weight:400;">(opsional)</span></p>
@@ -468,8 +476,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var kodeDialBtn = document.getElementById('kodeDialBtn');
-            var kodeDialMenu = document.getElementById('kodeDialMenu');
             var kodeDialInput = document.getElementById('kodeDialInput');
             var formKodeDialInput = document.getElementById('formKodeDialInput');
             var whatsappInput = document.getElementById('whatsappNumberInput') || document.querySelector('.input_nomor');
@@ -479,10 +485,17 @@
             var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
             var showQrisBtn = document.getElementById('showQrisBtn');
             var manualPaymentForm = document.getElementById('manualPaymentForm');
+            var referralInput = document.getElementById('referralCodeInput');
+            var referralMessageEl = document.getElementById('referralMessage');
+            var formReferralCodeInput = document.getElementById('formReferralCodeInput');
             var uploadProofForm = document.getElementById('uploadProofForm');
             var confirmProofModalEl = document.getElementById('confirmProofModal');
             var confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
             var pendingProofSubmit = false;
+            var checkReferralUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-referral', $course) : '');
+            var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
+            var referralState = referralInput ? 'idle' : 'disabled';
+            var referralTimer = null;
 
             var isFreeCourse = false;
             if (manualPaymentForm) {
@@ -493,6 +506,23 @@
                 return (value || '').replace(/[^0-9]/g, '');
             }
 
+            async function validateReferralServer(code) {
+                if (!checkReferralUrl || !code) return null;
+                try {
+                    var url = new URL(checkReferralUrl, window.location.origin);
+                    url.searchParams.set('code', code);
+                    var res = await fetch(url.toString(), {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin'
+                    });
+                    if (!res.ok) return null;
+                    return await res.json();
+                } catch (_e) {
+                    return null;
+                }
+            }
+
             function updatePayButtonState() {
                 if (!showQrisBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
@@ -500,31 +530,94 @@
                 showQrisBtn.disabled = (!isFreeCourse) && (wa.length === 0);
             }
 
-            // Show dropdown on button click
-            if (kodeDialBtn) {
-                kodeDialBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    kodeDialMenu.classList.toggle('show');
-                });
-            }
-            // Hide dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (kodeDialBtn && kodeDialMenu && !kodeDialBtn.contains(e.target) && !kodeDialMenu.contains(e.target)) {
-                    kodeDialMenu.classList.remove('show');
+            function updateReferralUIFromResult(data) {
+                var baseAmount = getBaseAmount();
+                if (!referralInput) {
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
                 }
-            });
-            // Select code
-            if (kodeDialMenu) {
-                kodeDialMenu.querySelectorAll('.dropdown-item').forEach(function(item) {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        var code = item.getAttribute('data-code');
-                        kodeDialBtn.textContent = code;
-                        kodeDialInput.value = code;
-                        formKodeDialInput.value = code;
-                        kodeDialMenu.classList.remove('show');
-                    });
-                });
+
+                var code = getReferralCode();
+                syncReferralInput();
+
+                if (code === '') {
+                    referralState = 'idle';
+                    setReferralMessage('', 'info');
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (currentUserReferral && code.toUpperCase() === String(currentUserReferral).trim().toUpperCase()) {
+                    referralState = 'invalid';
+                    setReferralMessage('Kode referral tidak boleh menggunakan kode milik sendiri.', 'error');
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (!data) {
+                    referralState = 'invalid';
+                    setReferralMessage('Gagal memeriksa kode referral. Coba lagi.', 'error');
+                    setTotalAmount(baseAmount);
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (data.valid) {
+                    referralState = 'valid';
+                    setReferralMessage(data.message || 'Kode referral valid. Diskon 10% diterapkan.', 'success');
+                    setTotalAmount(data.final_amount || baseAmount);
+                } else {
+                    referralState = 'invalid';
+                    setReferralMessage(data.message || 'Kode referral tidak valid.', 'error');
+                    setTotalAmount(baseAmount);
+                }
+
+                updatePayButtonState();
+            }
+
+            function scheduleReferralValidation() {
+                if (!referralInput) return;
+                if (referralTimer) {
+                    clearTimeout(referralTimer);
+                }
+
+                var code = getReferralCode();
+                syncReferralInput();
+
+                if (code === '') {
+                    updateReferralUIFromResult({ valid: false, message: '' });
+                    return;
+                }
+
+                referralState = 'checking';
+                setReferralMessage('Memeriksa kode referral...', 'info');
+                setTotalAmount(getBaseAmount());
+                updatePayButtonState();
+
+                referralTimer = setTimeout(async function() {
+                    var data = await validateReferralServer(code);
+                    if (code !== getReferralCode()) {
+                        return;
+                    }
+                    updateReferralUIFromResult(data);
+                }, 400);
+            }
+
+            function showPaymentValidationAlert() {
+                var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
+                if ((!isFreeCourse) && wa.length < 8) {
+                    alert('Nomor WhatsApp tidak valid. Minimal 8 digit angka.');
+                    try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
+                    return;
+                }
+
+                if (referralInput && getReferralCode() !== '' && referralState !== 'valid') {
+                    alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
+                    try { referralInput.focus(); } catch (_e) {}
+                }
             }
 
             // Enable/disable Bayar button based on required fields
@@ -532,6 +625,13 @@
             if (whatsappInput) {
                 whatsappInput.addEventListener('input', updatePayButtonState);
                 whatsappInput.addEventListener('blur', updatePayButtonState);
+            }
+            if (referralInput) {
+                referralInput.addEventListener('input', scheduleReferralValidation);
+                referralInput.addEventListener('blur', scheduleReferralValidation);
+                scheduleReferralValidation();
+            } else {
+                setTotalAmount(getBaseAmount());
             }
 
             // Show QRIS modal when clicking bayar
@@ -541,8 +641,7 @@
                     // guard (in case button enabled state is bypassed)
                     updatePayButtonState();
                     if (showQrisBtn.disabled) {
-                        alert('Silakan isi No Whatsapp terlebih dahulu.');
-                        try { whatsappInput && whatsappInput.focus(); } catch(err) {}
+                        showPaymentValidationAlert();
                         return;
                     }
                     if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
@@ -674,4 +773,4 @@
     </script>
 </body>
 </html>
-@include('partials.footer-before-login')
+@include('partials.footer-after-login')

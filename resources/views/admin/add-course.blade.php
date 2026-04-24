@@ -40,8 +40,8 @@
                             <div class="sanity-msg" data-for="course-title"></div>
                         </div>
 
-                        <div class="row g-3 box_select_level_status">
-                            <div class="col-md-12">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
                                 <label class="form-label text-dark" for="course-level">Level Course <span class="text-danger">*</span></label>
                                 <select id="course-level" name="level" class="form-select" required>
                                     <option value="" selected disabled>Choose your level</option>
@@ -51,22 +51,21 @@
                                 </select>
                                 <div class="sanity-msg" data-for="course-level"></div>
                             </div>
+                            @if(isset($categories) && $categories->count())
+                            <div class="col-md-6">
+                                <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
+                                <select id="course-category" name="category_id" class="form-select" required>
+                                    <option value="" selected disabled>Pilih kategori</option>
+                                    @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="sanity-msg" data-for="course-category"></div>
+                            </div>
+                            @else
+                            <input type="hidden" name="category_id" value="1">
+                            @endif
                         </div>
-
-                        @if(isset($categories) && $categories->count())
-                        <div class="box_select_kategori mb-3">
-                            <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
-                            <select id="course-category" name="category_id" class="form-select" required>
-                                <option value="" selected disabled>Pilih kategori</option>
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                @endforeach
-                            </select>
-                            <div class="sanity-msg" data-for="course-category"></div>
-                        </div>
-                        @else
-                        <input type="hidden" name="category_id" value="1">
-                        @endif
 
                         <div class="box_select_trainer mb-3">
                             <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>
@@ -1160,10 +1159,10 @@
             }
 
             function recalcRow(tr) {
-                const qty = parseInt(tr.querySelector('input[data-expense-qty]')?.value || '0', 10);
+                const qty = Math.max(1, parseInt(tr.querySelector('input[data-expense-qty]')?.value || '1', 10));
                 const unit = parseInt(tr.querySelector('input[data-expense-unit]')?.value || '0', 10);
                 const totalEl = tr.querySelector('input[data-expense-total]');
-                const total = (isNaN(qty) ? 0 : qty) * (isNaN(unit) ? 0 : unit);
+                const total = qty * (isNaN(unit) ? 0 : unit);
                 if (totalEl) totalEl.value = Math.max(0, total);
             }
 
@@ -1180,7 +1179,7 @@
                 tr.innerHTML = `
                     <th scope="row" data-expense-no></th>
                     <td><input type="text" class="form-control form-control-sm" name="expenses[${rowIndex}][item]" placeholder="Nama kebutuhan"></td>
-                    <td style="width:120px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][quantity]" data-expense-qty min="0" step="1" value="0"></td>
+                    <td style="width:120px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][quantity]" data-expense-qty min="1" step="1" value="1"></td>
                     <td style="width:180px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][unit_price]" data-expense-unit min="0" step="1" value="0"></td>
                     <td style="width:180px"><input type="number" class="form-control form-control-sm" name="expenses[${rowIndex}][total]" data-expense-total readonly value="0"></td>
                     <td style="width:80px" class="text-center">

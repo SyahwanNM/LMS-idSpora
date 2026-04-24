@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\Trainer\EventModuleSubmissionController as TrainerE
 
 // Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+// Register new account (5 req/min per IP to prevent spam)
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 // Public events listing throttled to avoid scraping (120 req/min)
 Route::get('/events', [EventController::class, 'index'])->middleware('throttle:120,1');
 Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]+')->middleware('throttle:120,1');
@@ -46,11 +48,18 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
 
     Route::post('/events/{id}/register', [EventController::class, 'register']);
 
-    // tambahan endpoint untuk alur event
+    // Event endpoints
     Route::get('/events/registrations', [EventController::class, 'listRegistrations']);
     Route::get('/events/{id}/registration/status', [EventController::class, 'registrationStatus']);
     Route::post('/events/{id}/payment', [EventController::class, 'createPayment']);
     Route::post('/events/{id}/cancel', [EventController::class, 'cancelRegistration']);
+    Route::post('/events/{id}/feedback', [EventController::class, 'submitFeedback']);
+    Route::get('/events/{id}/materials', [EventController::class, 'materials']);
+
+    // Midtrans payment endpoints untuk event
+    Route::get('/events/{id}/midtrans/pending-order', [EventController::class, 'midtransPendingOrder'])->where('id', '[0-9]+');
+    Route::get('/events/{id}/midtrans/snap-token',    [EventController::class, 'midtransSnapToken'])->where('id', '[0-9]+');
+    Route::post('/events/{id}/midtrans/finalize',     [EventController::class, 'midtransFinalize'])->where('id', '[0-9]+');
 
     // Manual Payment Endpoints
     Route::get('/payments', [PaymentController::class, 'index']);
@@ -72,6 +81,10 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::get('/courses/{course}/modules/{module}', [CourseAccessController::class, 'module'])->whereNumber('course')->whereNumber('module');
     Route::post('/courses/{course}/modules/{module}/complete', [CourseAccessController::class, 'complete'])->whereNumber('course')->whereNumber('module');
     Route::get('/courses/{course}/progress', [CourseAccessController::class, 'progress'])->whereNumber('course');
+
+    // Course reviews
+    Route::get('/courses/{course}/reviews', [CourseController::class, 'reviews'])->whereNumber('course');
+    Route::post('/courses/{course}/reviews', [CourseController::class, 'submitReview'])->whereNumber('course');
 
     // Trainer APIs (RESTful)
     Route::middleware(['trainer', 'throttle:100,1'])->prefix('trainer')->group(function () {

@@ -87,7 +87,7 @@ class CoursePaymentController extends Controller
         }
 
         $validated = $request->validate([
-            'whatsapp' => 'nullable|string|max:32',
+            'whatsapp' => ['nullable', 'string', 'max:32', 'regex:/^[0-9]{8,15}$/'],
             'referral_code' => 'nullable|string|max:64',
         ]);
 

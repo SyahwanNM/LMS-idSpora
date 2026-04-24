@@ -18,9 +18,9 @@ use Illuminate\Support\Str;
 class CourseReportController extends Controller
 {
     /**
-     * Enrollment statuses that indicate a successful (paid/active) enrollment.
+     * Enrollment statuses that indicate a successful (paid/active/completed) enrollment.
      */
-    private const REVENUE_ENROLLMENT_STATUSES = ['active', 'expired'];
+    private const REVENUE_ENROLLMENT_STATUSES = ['active', 'expired', 'completed'];
 
     public function index(Request $request)
     {
@@ -49,6 +49,7 @@ class CourseReportController extends Controller
             to: $to,
             period: $period,
             hasCustomRange: $hasCustomRange,
+            q: $request->query('q', '')
         );
 
         // Growth tab uses its own filter (month + search).
@@ -81,7 +82,8 @@ class CourseReportController extends Controller
         $period = $this->normalizePeriod($request->query('period', 'monthly'));
         [$from, $to, $hasCustomRange] = $this->parseDateRange($request, $period);
 
-        $revenueReport = $this->buildRevenueReport(from: $from, to: $to, period: $period, hasCustomRange: $hasCustomRange);
+        $q = trim((string) $request->query('q', ''));
+        $revenueReport = $this->buildRevenueReport(from: $from, to: $to, period: $period, hasCustomRange: $hasCustomRange, q: $q);
 
         return response()->json($revenueReport);
     }
@@ -255,7 +257,8 @@ class CourseReportController extends Controller
             $subtitle = 'Periode: ' . $periodLabel . ' | Rentang: ' . $from . ' s/d ' . $to;
         } else {
             [$fromDt, $toDt, $hasCustomRange] = $this->parseDateRange($request, $period);
-            $revenue = $this->buildRevenueReport(from: $fromDt, to: $toDt, period: $period, hasCustomRange: $hasCustomRange);
+            $q = trim((string) $request->query('q', ''));
+            $revenue = $this->buildRevenueReport(from: $fromDt, to: $toDt, period: $period, hasCustomRange: $hasCustomRange, q: $q);
             $rows = $revenue['rows'] ?? [];
             $from = (string) ($revenue['totals']['from'] ?? $fromDt->toDateString());
             $to = (string) ($revenue['totals']['to'] ?? $toDt->toDateString());
@@ -310,8 +313,9 @@ class CourseReportController extends Controller
                 ->select('id');
         }
 
-        // Base: paid/valid enrollments in range.
+        // Base: only published/completed courses (exclude on progress)
         $courseAgg = Course::query()
+            ->whereIn('courses.status', ['active', 'published', 'completed'])
             ->leftJoin('enrollments', function ($join) use ($from, $to) {
                 $join->on('courses.id', '=', 'enrollments.course_id')
                     ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -320,13 +324,12 @@ class CourseReportController extends Controller
             ->when($q !== '', function ($query) use ($q) {
                 $query->where('courses.name', 'like', '%' . $q . '%');
             })
-            ->select('courses.id', 'courses.name', 'courses.level')
+            ->select('courses.id', 'courses.name', 'courses.level', 'courses.created_at')
             ->selectRaw('COUNT(enrollments.id) as total_views')
             ->selectRaw('COUNT(DISTINCT enrollments.user_id) as participants_count')
             ->selectRaw('SUM(CASE WHEN enrollments.completed_at IS NOT NULL THEN 1 ELSE 0 END) as completed_count')
-            ->groupBy('courses.id', 'courses.name', 'courses.level')
-            ->havingRaw('COUNT(enrollments.id) > 0')
-            ->orderByDesc(DB::raw('total_views'))
+            ->groupBy('courses.id', 'courses.name', 'courses.level', 'courses.created_at')
+            ->orderByDesc('courses.created_at')
             ->get();
 
         $timeByCourse = LearningTimeDaily::query()
@@ -362,12 +365,16 @@ class CourseReportController extends Controller
 
             $reviewRow = $reviewsByCourse->get($courseId);
             $commentsCount = (int) ($reviewRow->comments_count ?? 0);
-            $ratingAvg = (float) ($reviewRow->rating_avg ?? 0);
+            
+            // Return cumulative rating for the course instead of just the filtered period rating
+            $course = Course::find($courseId);
+            $ratingAvg = $course ? (float) $course->reviews()->avg('rating') : 0.0;
 
             return [
                 'course_id' => $courseId,
                 'course_name' => (string) $r->name,
                 'course_level' => $r->level,
+                'course_created_at' => $r->created_at ? \Carbon\Carbon::parse($r->created_at)->toDateString() : null,
                 'total_views' => $totalViews,
                 'total_views_compact' => $this->formatCompactNumber($totalViews),
                 'participants_count' => $participantsCount,
@@ -377,7 +384,21 @@ class CourseReportController extends Controller
                 'comments_count' => $commentsCount,
                 'rating_avg' => $ratingAvg > 0 ? (float) round($ratingAvg, 1) : 0,
             ];
-        })->values();
+        });
+
+        // Selalu filter berdasarkan created_at course sesuai periode yang dipilih.
+        // Berlaku baik saat ada search query maupun tidak.
+        $courseCreatedMap = \App\Models\Course::whereIn('id', $courseAgg->pluck('id'))
+            ->pluck('created_at', 'id');
+
+        $rows = $rows->filter(function ($row) use ($from, $to, $courseCreatedMap) {
+            $createdAt = $courseCreatedMap->get($row['course_id']);
+            if (!$createdAt) return false;
+            $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
+            return $created->between($from, $to);
+        });
+
+        $rows = $rows->values();
 
         $baseEnrollments = Enrollment::query()
             ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -388,7 +409,7 @@ class CourseReportController extends Controller
         }
 
         $summaryTotalViews = (int) $baseEnrollments->clone()->count();
-        $summaryParticipants = (int) $baseEnrollments->clone()->distinct('user_id')->count('user_id');
+        $summaryParticipants = (int) $rows->sum('participants_count');
 
         $timeAggAllQuery = LearningTimeDaily::query()
             ->whereBetween('learned_on', [$from->toDateString(), $to->toDateString()]);
@@ -399,11 +420,10 @@ class CourseReportController extends Controller
             ->selectRaw('SUM(seconds) as total_seconds')
             ->selectRaw('COUNT(DISTINCT user_id) as viewers')
             ->first();
-        $allSeconds = (int) ($timeAggAll->total_seconds ?? 0);
-        $allViewers = (int) ($timeAggAll->viewers ?? 0);
-        $avgAllSeconds = $allViewers > 0 ? (int) floor($allSeconds / $allViewers) : 0;
-        $avgAllMinutes = (int) round($avgAllSeconds / 60);
+        // Waktu tonton rata-rata dijumlah aja sesuai request user
+        $avgAllMinutes = (int) $rows->sum('avg_watch_minutes');
 
+        // Platform-wide rating (average of all reviews, respecting search filter AND date range)
         $ratingAllQuery = Review::query()
             ->whereBetween('created_at', [$from, $to]);
         if ($courseIdFilter) {
@@ -451,7 +471,15 @@ class CourseReportController extends Controller
     {
         $toRaw = trim((string) $request->query('to', ''));
         $fromRaw = trim((string) $request->query('from', ''));
-        $hasCustomRange = ($toRaw !== '' || $fromRaw !== '');
+        $monthRaw = trim((string) $request->query('month', ''));
+        $hasCustomRange = ($toRaw !== '' || $fromRaw !== '' || $monthRaw !== '');
+
+        if ($monthRaw !== '' && $fromRaw === '' && $toRaw === '') {
+            try {
+                $base = Carbon::createFromFormat('Y-m', $monthRaw)->startOfMonth();
+                return [$base->copy()->startOfMonth()->startOfDay(), $base->copy()->endOfMonth()->endOfDay(), true];
+            } catch (\Throwable $e) { /* ignore */ }
+        }
 
         $to = $toRaw !== '' ? Carbon::parse($toRaw)->endOfDay() : Carbon::now()->endOfDay();
 
@@ -460,7 +488,6 @@ class CourseReportController extends Controller
         } else {
             $from = match ($period) {
                 'daily' => $to->copy()->startOfDay(),
-                // Week-to-date (Monday start) to match common reporting expectations.
                 'weekly' => $to->copy()->startOfWeek(Carbon::MONDAY)->startOfDay(),
                 default => $to->copy()->startOfMonth()->startOfDay(),
             };
@@ -484,11 +511,28 @@ class CourseReportController extends Controller
         };
     }
 
-    private function buildRevenueReport(Carbon $from, Carbon $to, string $period = 'monthly', bool $hasCustomRange = false): array
+    private function revenueEnrollmentQuery()
     {
-        $priceExpr = $this->coursePriceExpr('enrollments.enrolled_at');
+        return Enrollment::query()
+            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+            ->leftJoin('manual_payments', function ($join) {
+                $join->on('enrollments.id', '=', 'manual_payments.enrollment_id')
+                     ->whereIn('manual_payments.status', ['paid', 'verified', 'settled']);
+            });
+    }
 
-        $baseEnrollments = Enrollment::query()
+    private function getRevenuePriceExpr(): string
+    {
+        // Try getting exact paid amount, fallback to calculated generic course price.
+        $calcPrice = $this->coursePriceExpr('enrollments.enrolled_at');
+        return 'COALESCE(manual_payments.amount, ' . $calcPrice . ')';
+    }
+
+    private function buildRevenueReport(Carbon $from, Carbon $to, string $period = 'monthly', bool $hasCustomRange = false, string $q = ''): array
+    {
+        $priceExpr = $this->getRevenuePriceExpr();
+
+        $baseEnrollments = $this->revenueEnrollmentQuery()
             ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
             ->whereBetween('enrollments.enrolled_at', [$from, $to]);
 
@@ -496,47 +540,74 @@ class CourseReportController extends Controller
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'total_revenue' => (float) $baseEnrollments->clone()
-                ->join('courses', 'courses.id', '=', 'enrollments.course_id')
                 ->selectRaw('SUM(' . $priceExpr . ') as total_revenue')
                 ->value('total_revenue') ?: 0,
             'total_transactions' => (int) $baseEnrollments->clone()->count(),
             'unique_buyers' => (int) $baseEnrollments->clone()->distinct('enrollments.user_id')->count('enrollments.user_id'),
         ];
 
-        $rows = Enrollment::query()
-            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
-            ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
-            ->whereBetween('enrollments.enrolled_at', [$from, $to])
-            ->groupBy('enrollments.course_id', 'courses.name', 'courses.level', 'courses.price')
+        $stats = $baseEnrollments->clone()
+            ->groupBy('enrollments.course_id')
             ->selectRaw('enrollments.course_id')
-            ->selectRaw('courses.name as course_name')
-            ->selectRaw('courses.level as course_level')
-            ->selectRaw('courses.price as course_price')
-            ->selectRaw('COUNT(*) as transactions_count')
+            ->selectRaw('COUNT(enrollments.id) as transactions_count')
             ->selectRaw('COUNT(DISTINCT enrollments.user_id) as participants_count')
             ->selectRaw('SUM(' . $priceExpr . ') as revenue_total')
             ->selectRaw('MAX(enrollments.enrolled_at) as last_paid_at')
-            ->orderByDesc(DB::raw('revenue_total'))
             ->get()
-            ->map(function ($r) {
-                return [
-                    'course_id' => (int) $r->course_id,
-                    'course_name' => (string) $r->course_name,
-                    'course_level' => $r->course_level,
-                    'course_price' => (float) $r->course_price,
-                    'participants_count' => (int) $r->participants_count,
-                    'transactions_count' => (int) $r->transactions_count,
-                    'revenue_total' => (float) $r->revenue_total,
-                    'expense_total' => 0.0,
-                    'last_paid_at' => $r->last_paid_at ? Carbon::parse($r->last_paid_at)->toDateString() : null,
-                ];
-            })
-            ->values();
+            ->keyBy('course_id');
 
-        $revenueByLevel = Enrollment::query()
-            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
-            ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
-            ->whereBetween('enrollments.enrolled_at', [$from, $to])
+        $courses = \App\Models\Course::query()
+            ->whereIn('status', ['active', 'published', 'completed'])
+            ->select('id', 'name', 'level', 'price', 'expenses_json', 'created_at')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows = $courses->map(function ($c) use ($stats, $from, $to) {
+            $stat = $stats->get($c->id);
+
+            // Hanya tampilkan course yang memiliki transaksi di periode yang dipilih
+            // Course tanpa transaksi di periode ini tetap ditampilkan tapi dengan nilai 0
+            $expense = 0.0;
+            $expensesArr = $c->expenses_json;
+            if (is_array($expensesArr)) {
+                foreach ($expensesArr as $e) {
+                    if (is_array($e) && isset($e['total'])) {
+                        $expense += (float) $e['total'];
+                    }
+                }
+            }
+
+            return [
+                'course_id' => (int) $c->id,
+                'course_name' => (string) $c->name,
+                'course_level' => $c->level,
+                'course_price' => (float) $c->price,
+                'participants_count' => $stat ? (int) $stat->participants_count : 0,
+                'transactions_count' => $stat ? (int) $stat->transactions_count : 0,
+                'revenue_total' => $stat ? (float) $stat->revenue_total : 0.0,
+                'expense_total' => $expense,
+                // Tanggal transaksi terakhir di periode ini, bukan tanggal pembuatan course
+                'last_paid_at' => $stat && $stat->last_paid_at
+                    ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString()
+                    : null,
+                'created_at' => $c->created_at,
+                'has_transaction_in_period' => $stat !== null,
+            ];
+        });
+
+        // Filter: hanya tampilkan course yang punya transaksi di periode yang dipilih
+        $rows = $rows->filter(fn($row) => $row['has_transaction_in_period']);
+
+        // Show all courses (no period filter) — filter only by search query if provided
+        if (isset($q) && $q !== '') {
+            $rows = $rows->filter(function($row) use ($q) {
+                return stripos($row['course_name'], $q) !== false;
+            });
+        }
+        
+        $rows = $rows->values();
+
+        $revenueByLevel = $baseEnrollments->clone()
             ->groupBy('courses.level')
             ->selectRaw('courses.level as level')
             ->selectRaw('SUM(' . $priceExpr . ') as revenue_total')
@@ -553,22 +624,18 @@ class CourseReportController extends Controller
         $compareTotals = null;
         $compareByLevel = collect();
         if ($compareFrom && $compareTo) {
-            $compareBase = Enrollment::query()
+            $compareBase = $this->revenueEnrollmentQuery()
                 ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
                 ->whereBetween('enrollments.enrolled_at', [$compareFrom, $compareTo]);
 
             $compareTotals = [
                 'total_revenue' => (float) ($compareBase->clone()
-                    ->join('courses', 'courses.id', '=', 'enrollments.course_id')
                     ->selectRaw('SUM(' . $priceExpr . ') as total_revenue')
                     ->value('total_revenue') ?: 0),
                 'total_transactions' => (int) $compareBase->clone()->count(),
             ];
 
-            $compareByLevel = Enrollment::query()
-                ->join('courses', 'courses.id', '=', 'enrollments.course_id')
-                ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
-                ->whereBetween('enrollments.enrolled_at', [$compareFrom, $compareTo])
+            $compareByLevel = $compareBase->clone()
                 ->groupBy('courses.level')
                 ->selectRaw('courses.level as level')
                 ->selectRaw('SUM(' . $priceExpr . ') as revenue_total')
@@ -645,10 +712,9 @@ class CourseReportController extends Controller
 
     private function buildRevenueSeries(Carbon $from, Carbon $to, string $period): array
     {
-        $priceExpr = $this->coursePriceExpr('enrollments.enrolled_at');
+        $priceExpr = $this->getRevenuePriceExpr();
 
-        $query = Enrollment::query()
-            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+        $query = $this->revenueEnrollmentQuery()
             ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
             ->whereBetween('enrollments.enrolled_at', [$from, $to]);
 

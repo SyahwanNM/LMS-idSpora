@@ -59,6 +59,39 @@ class Enrollment extends Model
     }
 
     /**
+     * Get the ID of the next module to continue (first incomplete module).
+     * Returns null if all modules are completed or no modules exist.
+     */
+    public function getNextModuleId(): ?int
+    {
+        if (!$this->relationLoaded('course') || !$this->course) {
+            return null;
+        }
+
+        $modules = $this->course->relationLoaded('modules')
+            ? $this->course->modules->sortBy('order_no')
+            : $this->course->modules()->orderBy('order_no')->get();
+
+        if ($modules->isEmpty()) {
+            return null;
+        }
+
+        $completedIds = $this->relationLoaded('progress')
+            ? $this->progress->where('completed', true)->pluck('course_module_id')->map(fn($id) => (int) $id)->all()
+            : $this->progress()->where('completed', true)->pluck('course_module_id')->map(fn($id) => (int) $id)->all();
+
+        // Find first incomplete module
+        foreach ($modules as $module) {
+            if (!in_array((int) $module->id, $completedIds, true)) {
+                return (int) $module->id;
+            }
+        }
+
+        // All completed — return last module
+        return (int) $modules->last()->id;
+    }
+
+    /**
      * Calculate the progress percentage of the course.
      */
     public function getProgressPercentage(): int

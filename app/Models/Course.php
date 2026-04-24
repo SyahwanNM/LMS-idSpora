@@ -146,6 +146,39 @@ class Course extends Model
     }
 
     /**
+     * Determine if the course has an active discount.
+     */
+    public function hasDiscount(): bool
+    {
+        if ($this->discount_percent <= 0) {
+            return false;
+        }
+
+        $now = now();
+        
+        if ($this->discount_start && $now->lt($this->discount_start)) {
+            return false;
+        }
+        
+        if ($this->discount_end && $now->gt($this->discount_end)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get the price after discount.
+     */
+    public function getDiscountedPriceAttribute()
+    {
+        if ($this->hasDiscount()) {
+            return $this->price * (1 - ($this->discount_percent / 100));
+        }
+        return $this->price;
+    }
+
+    /**
      * Approver relation (admin who approved/rejected)
      */
     public function approver()

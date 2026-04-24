@@ -32,7 +32,7 @@ class CourseReviewController extends Controller
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'trainer_rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
+            'comment' => 'required|string|min:1|max:1000',
         ]);
 
         $user = Auth::user();

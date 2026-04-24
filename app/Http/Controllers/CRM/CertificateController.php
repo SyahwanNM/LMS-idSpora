@@ -223,7 +223,7 @@ class CertificateController extends Controller
         $force = $request->boolean('force');
         
         if(!$certificateReady && !$force) {
-            return redirect()->back()->with('info','Sertifikat belum tersedia (H+3).');
+            return redirect()->back()->with('info','Sertifikat belum tersedia.');
         }
 
         if(!$registration->certificate_number) {
@@ -473,9 +473,7 @@ class CertificateController extends Controller
 
     public function isCertificateReady(Event $event, EventRegistration $registration = null) {
         if ($registration && $registration->certificate_issued_at) return true;
-        if (!$event->event_date) return false;
-        $date = Carbon::parse($event->event_date);
-        return now()->greaterThanOrEqualTo($date->copy()->addDays(3));
+        return $event->isFinished();
     }
 
     private function authorizeAccess($event, $registration) {

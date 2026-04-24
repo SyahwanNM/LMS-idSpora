@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Mail\EventPaymentRejectedMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
 
@@ -59,6 +60,32 @@ class EventController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function syncEventSpeakers(Event $event, array $speakerNames, array $salaries): void
+    {
+        // Delete existing and re-sync
+        \App\Models\EventSpeaker::where('event_id', $event->id)->delete();
+
+        foreach ($speakerNames as $i => $name) {
+            $name = trim((string) $name);
+            if ($name === '') continue;
+
+            $salary = (float) preg_replace('/[^\d.]/', '', (string) ($salaries[$i] ?? 0));
+
+            // Try to find matching trainer
+            $trainer = \App\Models\User::where('role', 'trainer')
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+                ->first();
+
+            \App\Models\EventSpeaker::create([
+                'event_id'   => $event->id,
+                'trainer_id' => $trainer?->id,
+                'name'       => $name,
+                'salary'     => $salary,
+                'order'      => $i,
+            ]);
+        }
     }
 
     private function resolveAssignedTrainerIds(?int $trainerId, ?string $speaker): array
@@ -126,6 +153,7 @@ class EventController extends Controller
     {
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
         $events = Event::query()
+            ->with(['approvedTrainerModules.trainer'])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -145,6 +173,14 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        // Normalize price input: allow formatted values (e.g. "1.000.000") from client-side
+        // by stripping non-digit characters so validation accepts numeric values.
+        $rawPrice = $request->input('price', null);
+        if (!is_null($rawPrice)) {
+            $clean = preg_replace('/\D/', '', (string) $rawPrice);
+            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'trainer_id' => [
@@ -248,10 +284,30 @@ class EventController extends Controller
         }
 
         // Simpan data ke database
+        // Determine reseller flag: prefer explicit hidden field, fallback to radio input
+        $isReseller = null;
+        if ($request->has('is_reseller_event')) {
+            $isReseller = $request->boolean('is_reseller_event');
+        } elseif ($request->has('is_reseller_event_radio')) {
+            $isReseller = ((string) $request->input('is_reseller_event_radio')) === '1';
+        } else {
+            $isReseller = false;
+        }
+
+        $submittedSpeakers = collect((array) $request->input('speakers', []))
+            ->map(fn($speaker) => trim((string) $speaker))
+            ->filter()
+            ->values();
+
+        $normalizedSpeaker = trim((string) $request->input('speaker', ''));
+        if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
+            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+        }
+
         $event = Event::create([
             'trainer_id' => $request->input('trainer_id') ?: null,
             'title' => $request->title,
-            'speaker' => $request->speaker,
+            'speaker' => $normalizedSpeaker,
             'manage_action' => $request->manage_action,
             'materi' => $request->materi,
             'jenis' => $request->jenis,
@@ -274,12 +330,21 @@ class EventController extends Controller
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
+            'is_reseller_event' => (bool) $isReseller,
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
+
+        // Sync speakers with salaries
+        $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
+        $speakerSalaries = (array) $request->input('speaker_salaries', []);
+        if (!empty($speakerNames)) {
+            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
+        }
+
         foreach ($assignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, $trainerId, $source);
@@ -383,6 +448,7 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        $event->load(['trainerModules.trainer', 'approvedTrainerModules.trainer']);
         return view('admin.events.show', compact('event'));
     }
 
@@ -399,6 +465,46 @@ class EventController extends Controller
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
+
+        $submittedSpeakers = collect((array) $request->input('speakers', []))
+            ->map(fn($speaker) => trim((string) $speaker))
+            ->filter()
+            ->values();
+
+        $normalizedSpeaker = trim((string) $request->input('speaker', ''));
+        if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
+            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+        }
+
+        $normalizedLocationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        $normalizedPlaceName = trim((string) $request->input('place_name', ''));
+        if ($normalizedPlaceName === '' && $normalizedLocationMode !== 'online') {
+            $existingLocation = trim((string) $event->location);
+            if ($existingLocation !== '' && strtolower($existingLocation) !== 'online') {
+                $normalizedPlaceName = $existingLocation;
+            }
+        }
+
+        $normalizedMapsUrl = trim((string) $request->input('maps_url', ''));
+        $normalizedZoomLink = trim((string) $request->input('zoom_link', ''));
+        if ($normalizedZoomLink !== '' && !preg_match('#^https?://#i', $normalizedZoomLink)) {
+            $normalizedZoomLink = 'https://' . ltrim($normalizedZoomLink, '/');
+        }
+
+        $request->merge([
+            'speaker' => $normalizedSpeaker,
+            'location_mode' => $normalizedLocationMode,
+            'place_name' => $normalizedPlaceName,
+            'maps_url' => $normalizedMapsUrl,
+            'zoom_link' => $normalizedZoomLink,
+        ]);
+
+        // Normalize price input in case client sent a formatted string (e.g. "1.000.000").
+        $rawPrice = $request->input('price', null);
+        if (!is_null($rawPrice)) {
+            $clean = preg_replace('/\D/', '', (string) $rawPrice);
+            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -544,6 +650,16 @@ class EventController extends Controller
             }
         }
 
+        // Ensure price is numeric (accept formatted strings)
+        if (array_key_exists('price', $data)) {
+            if (is_string($data['price'])) {
+                $clean = preg_replace('/\D/', '', $data['price']);
+                $data['price'] = $clean === '' ? 0 : (float) $clean;
+            } else {
+                $data['price'] = (float) $data['price'];
+            }
+        }
+
         $event->update($data);
 
         $currentAssignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -551,6 +667,14 @@ class EventController extends Controller
             $event->speaker
         );
         $newlyAssignedTrainerIds = array_values(array_diff($currentAssignedTrainerIds, $previousAssignedTrainerIds));
+
+        // Sync speakers with salaries
+        $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
+        $speakerSalaries = (array) $request->input('speaker_salaries', []);
+        if (!empty($speakerNames)) {
+            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
+        }
+
         foreach ($newlyAssignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
             $this->notifyTrainerEventInvitation($event, (int) $trainerId, $source);
@@ -619,12 +743,57 @@ class EventController extends Controller
             return back()->with('success', 'Event sudah diterbitkan.');
         }
 
+        // Prevent publishing if operational documents are incomplete
+        $pct = (int) $event->documents_completion_percent;
+        if ($pct < 100) {
+            // Recompute missing items similarly to admin view logic
+            $hasMapsLink = !empty($event->maps_url);
+            $hasZoomLink = !empty($event->zoom_link);
+            $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+            $hasVbg = !empty($event->vbg_path);
+            $hasModule = !empty($event->module_path);
+            $hasAbsFile = !empty($event->attendance_path);
+            $hasAbsQrImg = !empty($event->attendance_qr_image);
+            $hasAbsQrToken = !empty($event->attendance_qr_token);
+            $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+
+            $missing = [];
+            if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+            if (!$hasModule) $missing[] = 'Module (Trainer)';
+            if (!$hasAbs) $missing[] = 'Absensi';
+
+            $msg = 'Kelengkapan dokumen belum 100%.';
+            if (!empty($missing)) {
+                $msg .= ' Item yang belum lengkap: ' . implode(', ', $missing) . '.';
+            }
+            $msg .= ' Lengkapi dokumen sebelum menerbitkan.';
+
+            return back()->with('error', $msg)->with('publish_missing_items', $missing);
+        }
+
         $event->forceFill([
             'is_published' => true,
             'published_at' => now(),
         ])->save();
 
         return back()->with('success', 'Event berhasil diterbitkan!');
+    }
+
+    /**
+     * Admin: unpublish event (batal publish).
+     */
+    public function unpublish(Request $request, Event $event)
+    {
+        if (!(bool) $event->is_published) {
+            return back()->with('success', 'Event memang belum diterbitkan.');
+        }
+
+        $event->forceFill([
+            'is_published' => false,
+            'published_at' => null,
+        ])->save();
+
+        return back()->with('success', 'Publikasi event berhasil dibatalkan!');
     }
 
     // Public registration (AJAX)
@@ -733,11 +902,11 @@ class EventController extends Controller
         } catch (\Throwable $e) { /* ignore */
         }
         return response()->json([
-            'status' => 'ok',
-            'message' => 'Berhasil daftar event (GRATIS)',
+            'success' => true,
+            'message' => 'Berhasil daftar event (Gratis)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
-            'redirect' => route('events.show', $event)
+            'redirect' => route('events.registered.detail', $event)
         ]);
     }
 
@@ -789,7 +958,7 @@ class EventController extends Controller
 
     /**
      * Admin: approve trainer module submission for an event.
-     * Once approved, module_path will be set and document completeness will increase.
+     * Supports per-trainer module via event_trainer_modules table.
      */
     public function approveModule(Request $request, Event $event)
     {
@@ -797,43 +966,87 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $modulePath = trim((string) ($event->module_path ?? ''));
-        if ($modulePath === '') {
-            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
-                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
-        }
+        $moduleId = $request->input('module_id');
 
-        $event->update([
-            'material_status' => 'approved',
-            'material_approved_at' => now(),
-            'material_approved_by' => auth()->id(),
-            'material_rejection_reason' => null,
+        if ($moduleId) {
+            // Approve specific module
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
 
-            'module_verified_at' => now(),
-            'module_verified_by' => auth()->id(),
-            'module_rejected_at' => null,
-            'module_rejected_by' => null,
-            'module_rejection_reason' => null,
-        ]);
+            $module->update([
+                'status'      => 'approved',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+                'rejection_reason' => null,
+            ]);
 
-        // Notify trainer (if available)
-        try {
-            if (!empty($event->trainer_id)) {
+            // Notify the specific trainer
+            try {
                 \App\Models\TrainerNotification::create([
-                    'trainer_id' => (int) $event->trainer_id,
-                    'type' => 'event_material_approved',
-                    'title' => 'Materi Event Diterima',
-                    'message' => 'Materi event "' . $event->title . '" telah disetujui oleh admin.',
-                    'data' => [
+                    'trainer_id' => $module->trainer_id,
+                    'type'       => 'event_material_approved',
+                    'title'      => 'Materi Event Diterima',
+                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                    'data'       => [
                         'entity_type' => 'event',
-                        'entity_id' => (int) $event->id,
-                        'url' => route('trainer.events.show', $event->id),
+                        'entity_id'   => (int) $event->id,
+                        'url'         => route('trainer.events.show', $event->id),
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
+            } catch (\Throwable $e) {}
+        } else {
+            // Legacy: approve all pending modules for this event
+            $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', 'pending_review')
+                ->get();
+
+            if ($pending->isEmpty()) {
+                return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                    ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
             }
-        } catch (\Throwable $e) {
-            // ignore notification errors
+
+            foreach ($pending as $module) {
+                $module->update([
+                    'status'      => 'approved',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
+                    'rejection_reason' => null,
+                ]);
+
+                try {
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $module->trainer_id,
+                        'type'       => 'event_material_approved',
+                        'title'      => 'Materi Event Diterima',
+                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                        'data'       => [
+                            'entity_type' => 'event',
+                            'entity_id'   => (int) $event->id,
+                            'url'         => route('trainer.events.show', $event->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        // Update event-level material_status if all modules approved
+        $stillPending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+            ->where('status', 'pending_review')->count();
+        if ($stillPending === 0) {
+            $event->update([
+                'material_status'    => 'approved',
+                'material_approved_at' => now(),
+                'material_approved_by' => auth()->id(),
+                'material_rejection_reason' => null,
+                'module_verified_at' => now(),
+                'module_verified_by' => auth()->id(),
+                'module_rejected_at' => null,
+                'module_rejected_by' => null,
+                'module_rejection_reason' => null,
+            ]);
         }
 
         return back()->with('success', 'Module trainer berhasil diverifikasi.')
@@ -849,48 +1062,87 @@ class EventController extends Controller
             abort(403, 'Hanya admin yang dapat melakukan aksi ini.');
         }
 
-        $modulePath = trim((string) ($event->module_path ?? ''));
-        if ($modulePath === '') {
-            return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
-                ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
-        }
-
         $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
+            'reason'    => ['required', 'string', 'max:500'],
+            'module_id' => ['nullable', 'integer'],
         ]);
 
-        $event->update([
-            'material_status' => 'rejected',
-            'material_approved_at' => null,
-            'material_approved_by' => null,
-            'material_rejection_reason' => $validated['reason'],
+        $moduleId = $validated['module_id'] ?? null;
 
-            'module_verified_at' => null,
-            'module_verified_by' => null,
-            'module_rejected_at' => now(),
-            'module_rejected_by' => auth()->id(),
-            'module_rejection_reason' => $validated['reason'],
-        ]);
+        if ($moduleId) {
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
 
-        // Notify trainer (if available)
-        try {
-            if (!empty($event->trainer_id)) {
+            $module->update([
+                'status'           => 'rejected',
+                'reviewed_by'      => auth()->id(),
+                'reviewed_at'      => now(),
+                'rejection_reason' => $validated['reason'],
+            ]);
+
+            try {
                 \App\Models\TrainerNotification::create([
-                    'trainer_id' => (int) $event->trainer_id,
-                    'type' => 'event_material_rejected',
-                    'title' => 'Materi Event Ditolak',
-                    'message' => 'Materi event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
-                    'data' => [
-                        'entity_type' => 'event',
-                        'entity_id' => (int) $event->id,
-                        'url' => route('trainer.events.show', $event->id),
+                    'trainer_id' => $module->trainer_id,
+                    'type'       => 'event_material_rejected',
+                    'title'      => 'Materi Event Ditolak',
+                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                    'data'       => [
+                        'entity_type'      => 'event',
+                        'entity_id'        => (int) $event->id,
+                        'url'              => route('trainer.events.show', $event->id),
                         'rejection_reason' => $validated['reason'],
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
+            } catch (\Throwable $e) {}
+        } else {
+            // Legacy: reject all pending
+            $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', 'pending_review')
+                ->get();
+
+            if ($pending->isEmpty()) {
+                return back()->with('error', 'Tidak ada module yang menunggu verifikasi.')
+                    ->with('module_error', 'Tidak ada module yang menunggu verifikasi.');
             }
-        } catch (\Throwable $e) {
-            // ignore notification errors
+
+            foreach ($pending as $module) {
+                $module->update([
+                    'status'           => 'rejected',
+                    'reviewed_by'      => auth()->id(),
+                    'reviewed_at'      => now(),
+                    'rejection_reason' => $validated['reason'],
+                ]);
+
+                try {
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $module->trainer_id,
+                        'type'       => 'event_material_rejected',
+                        'title'      => 'Materi Event Ditolak',
+                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                        'data'       => [
+                            'entity_type'      => 'event',
+                            'entity_id'        => (int) $event->id,
+                            'url'              => route('trainer.events.show', $event->id),
+                            'rejection_reason' => $validated['reason'],
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                } catch (\Throwable $e) {}
+            }
+
+            $event->update([
+                'material_status'           => 'rejected',
+                'material_approved_at'      => null,
+                'material_approved_by'      => null,
+                'material_rejection_reason' => $validated['reason'],
+                'module_verified_at'        => null,
+                'module_verified_by'        => null,
+                'module_rejected_at'        => now(),
+                'module_rejected_by'        => auth()->id(),
+                'module_rejection_reason'   => $validated['reason'],
+            ]);
         }
 
         return back()->with('success', 'Module trainer ditolak.')
@@ -1167,5 +1419,38 @@ class EventController extends Controller
         }
 
         return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
+    }
+
+    /**
+     * Delete an event registration and cleanup related data/files.
+     */
+    public function destroyRegistration(Event $event, EventRegistration $registration)
+    {
+        try {
+            // Cleanup related manual payments and their physical proof files
+            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
+            foreach ($manuals as $m) {
+                $proofs = \App\Models\PaymentProof::where('manual_payment_id', $m->id)->get();
+                foreach ($proofs as $p) {
+                    if ($p->file_path && Storage::disk('public')->exists($p->file_path)) {
+                        Storage::disk('public')->delete($p->file_path);
+                    }
+                    $p->delete();
+                }
+                $m->delete();
+            }
+
+            // Cleanup the primary payment_proof file if exists
+            if ($registration->payment_proof && Storage::disk('public')->exists($registration->payment_proof)) {
+                Storage::disk('public')->delete($registration->payment_proof);
+            }
+
+            $registration->delete();
+
+            return redirect()->back()->with('success', 'Data pendaftaran berhasil dihapus.');
+        } catch (\Throwable $e) {
+            \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
+        }
     }
 }

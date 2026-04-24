@@ -177,7 +177,7 @@
                             
                             <img src="{{ $carousel->image_url }}"
                                 alt="{{ $carousel->title ?? 'Slide ' . ($index + 1) }}"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);"
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; "
                                 onerror="this.src='https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop'">
 
                             @if($carousel->title)
@@ -197,7 +197,7 @@
                         <div class="carousel-item active" style="height: clamp(250px, 40vh, 420px); position: relative;">
                             <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1600&auto=format&fit=crop"
                                 alt="Slide 1"
-                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.6);">
+                                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; ">
 
                             <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
                                 <h2 class="fw-bold">Upgrade Skill Digitalmu</h2>
@@ -283,7 +283,13 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center pe-4 py-3">
-                                                    <a href="{{ route('course.learn', $course->id) }}"
+                                                    @php
+                                                        $nextModuleId = $enrollment->getNextModuleId();
+                                                        $continueUrl = $nextModuleId
+                                                            ? route('course.learn', $course->id) . '?module=' . $nextModuleId
+                                                            : route('course.learn', $course->id);
+                                                    @endphp
+                                                    <a href="{{ $continueUrl }}"
                                                         class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
                                                         style="width: 36px; height: 36px; background-color: var(--navy);">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
@@ -350,8 +356,11 @@
                                                 data-save-url="{{ route('courses.save', $course) }}"
                                                 onclick="event.stopPropagation(); toggleSaveCourse(this)"
                                                 style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                @php
+                                                    $isSaved = !empty($course->is_saved);
+                                                @endphp
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#ef4444' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
                                         </div>
@@ -380,10 +389,20 @@
                                                 </div>
                                             </div>
 
-                                            <div
-                                                class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
-                                                <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
-                                                    {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                            <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                                <div class="d-flex flex-column">
+                                                    @if($course->hasDiscount())
+                                                        <span class="text-muted text-decoration-line-through mb-1" style="font-size: 11px;">
+                                                            Rp {{ number_format($course->price, 0, ',', '.') }}
+                                                        </span>
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
+                                                        </div>
+                                                    @else
+                                                        <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
+                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                                 <a href="{{ Route::currentRouteName() == 'admin.dashboard' ? route('admin.courses.show', $course->id) : route('course.detail', $course->id) }}"
                                                     class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
@@ -439,8 +458,11 @@
                                                     data-save-url="{{ route('events.save', $event) }}"
                                                     onclick="event.stopPropagation(); toggleSaveEvent(this)"
                                                     style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                @php
+                                                    $isSaved = !empty($event->is_saved);
+                                                @endphp
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#ef4444' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
                                     </div>
@@ -884,12 +906,16 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        btn.style.color = '#ef4444';
+                        svg.setAttribute('fill', '#ef4444');
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
-                        btn.style.color = '#64748b';
+                        svg.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
                     }
                 }
             })
@@ -926,12 +952,16 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        btn.style.color = '#ef4444';
+                        svg.setAttribute('fill', '#ef4444');
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
-                        btn.style.color = '#64748b';
+                        svg.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
                     }
                 }
             })

@@ -136,19 +136,18 @@
     <div class="modal fade" id="publishConfirmModal" tabindex="-1" aria-labelledby="publishConfirmModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header" id="publishModalHeader">
                     <h5 class="modal-title" id="publishConfirmModalLabel">Course belum lengkap</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
-                    <div class="mt-2">Berikut yang belum ada:</div>
+                    <div class="mt-2" id="publishModalSubText">Berikut yang belum ada:</div>
                     <ul id="publishMissingList" class="mt-2 mb-3" style="padding-left: 18px;"></ul>
-                    <div class="text-muted" style="font-size: 0.9rem;">Segera hubungi trainer untuk melengkapi modul, video, dan kuis.</div>
+                    <div class="text-muted" id="publishModalFooterText" style="font-size: 0.9rem;">Segera hubungi trainer untuk melengkapi modul, video, dan kuis.</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Tetap Publish</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Ya, Publish Course</button>
                 </div>
             </div>
         </div>
@@ -204,6 +203,7 @@
                 <thead>
                     <tr>
                         <th>Nama Course</th>
+                        <th>Tanggal Dibuat</th>
                         <th>Level</th>
                         <th>Harga</th>
                         <th>Status Kelengkapan</th>
@@ -226,7 +226,7 @@
                     $videoCount = $videoSlots->count();
                     $quizCount = $quizSlots->count();
 
-                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
+                    $hasMissingPdf = ($pdfCount <= 0) || ($pdfSlots->filter(fn($m) => empty($m->content_url) && empty(trim(strip_tags($m->description ?? ''))))->count() > 0);
                     $hasMissingVideo = ($videoCount <= 0) || ($videoSlots->filter(fn($m) => empty($m->content_url))->count() > 0);
                     $hasMissingQuiz = false;
                     if ($quizCount <= 0) {
@@ -254,15 +254,16 @@
                     @endphp
                     <tr>
                         <td>{{ $course->name }}</td>
+                        <td>{{ $course->created_at ? $course->created_at->format('d M Y') : '-' }}</td>
                         <td>{{ ucfirst($course->level) }}</td>
                         <td>Rp. {{ number_format($course->price, 0, ',', '.') }}</td>
                         <td>
                             @if($isPublished)
-                            <button class="status_kelengkapan_complete">Complete</button>
+                            <div class="status_kelengkapan_complete">Complete</div>
                             @elseif($hasMissingMaterial)
-                            <button class="status_kelengkapan_miss">Missing Material</button>
+                            <div class="status_kelengkapan_miss">Missing Material</div>
                             @else
-                            <button class="status_kelengkapan_inprogress">In Progress</button>
+                            <div class="status_kelengkapan_inprogress">On Progress</div>
                             @endif
                         </td>
                         <td>
@@ -415,7 +416,7 @@
                                         <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
                                     </svg>
                                 </button>
-                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" onsubmit="return confirm('Hapus course ini?')">
+                                <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" class="delete-course-form">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn p-0" title="Delete">
@@ -465,10 +466,6 @@
                                 <button class="tab-btn" data-target="tab-kuis">Kuis</button>
                                 <button class="tab-btn" data-target="tab-participant">Participant</button>
                             </div>
-
-                            <div>
-                                <button id="coursePreviewEditBtn" type="button" class="button_edit_preview">Edit</button>
-                            </div>
                         </div>
 
                     </div>
@@ -493,33 +490,9 @@
                                     <h5>Status</h5>
                                     <h4 id="cp-status">Selesai</h4>
                                 </div>
-                                <div class="list-info info-green">
-                                    <h5>STUDENT ENROLL</h5>
-                                    <h4 id="cp-enroll-count">0 Peserta</h4>
-                                </div>
-                                <div class="list-info info-yellow">
-                                    <h5>Benefit</h5>
-                                    <h4>
-                                        <ol>
-                                            <li>Sertifikat</li>
-                                            <li>Materi</li>
-                                            <li>Video</li>
-                                        </ol>
-                                    </h4>
-                                </div>
+                                
                             </div>
-                            <div class="ringkasan-konten">
-                                <h3>Deskripsi Konten</h3>
-                                <div class="info-ringkasan">
-                                    <p id="cp-content-description">-</p>
-                                </div>
-                            </div>
-                            <div class="ringkasan-konten">
-                                <h3>Syllabus</h3>
-                                <div class="syllabus-ringkasan">
-                                    <ol id="cp-syllabus-list"></ol>
-                                </div>
-                            </div>
+                            
                             <div class="ringkasan-konten">
                                 <h3>Ringkasan Konten</h3>
                                 <div class="info-ringkasan">
@@ -873,6 +846,16 @@
 
                 // --- MODULES PARSING ---
                 var modules = data.modules || [];
+                
+                // --- NORMALIZE MODULE TITLES ---
+                modules.forEach(function(m) {
+                    if (m && m.title) {
+                        if (['PDF Material', 'Video Lesson', 'Quiz', 'Modul PDF', 'Video Pembelajaran', 'Kuis'].includes(m.title)) {
+                            m.title = 'Module 1 - ' + m.title;
+                        }
+                    }
+                });
+
                 var visibleModules = Array.isArray(modules)
                     ? modules.filter(function(m) { return moduleHasContent(m); })
                     : [];
@@ -1040,53 +1023,15 @@
     </script>
 
     <script>
-        (function() {
-            function buildExportUrl(anchorEl, format) {
-                if (!anchorEl) return null;
-
-                var url = new URL(anchorEl.getAttribute('href'), window.location.origin);
-                url.searchParams.set('format', format);
-
-                var qEl = document.querySelector('.cari_course_builder');
-                var monthEl = document.querySelector('.tanggal_course');
-
-                var q = qEl ? String(qEl.value || '').trim() : '';
-                var month = monthEl ? String(monthEl.value || '').trim() : '';
-
-                if (q !== '') url.searchParams.set('q', q);
-                else url.searchParams.delete('q');
-
-                if (month !== '') url.searchParams.set('month', month);
-                else url.searchParams.delete('month');
-
-                return url.toString();
+        document.addEventListener('DOMContentLoaded', function() {
+            // -- Generic Notify Helper (if adminNotify exists) --
+            function notifyError(message, ms) {
+                if (typeof window.adminNotify === 'function') {
+                    window.adminNotify('error', message, ms || 5000);
+                }
             }
 
-            var pdfBtn = document.getElementById('exportPdfBtn');
-            var excelBtn = document.getElementById('exportExcelBtn');
-
-            if (pdfBtn) {
-                pdfBtn.addEventListener('click', function(ev) {
-                    try {
-                        var u = buildExportUrl(pdfBtn, 'pdf');
-                        if (u) pdfBtn.setAttribute('href', u);
-                    } catch (e) {}
-                });
-            }
-
-            if (excelBtn) {
-                excelBtn.addEventListener('click', function(ev) {
-                    try {
-                        var u = buildExportUrl(excelBtn, 'excel');
-                        if (u) excelBtn.setAttribute('href', u);
-                    } catch (e) {}
-                });
-            }
-        })();
-    </script>
-
-    <script>
-        (function() {
+            // -- Filter & Search Logic --
             var applyBtn = document.getElementById('applyRevenueFilter');
             var qEl = document.querySelector('.cari_course_builder');
             var monthEl = document.querySelector('.tanggal_course');
@@ -1103,7 +1048,6 @@
 
                     window.location.href = url.toString();
                 } catch (e) {
-                    // fallback
                     window.location.href = baseUrl;
                 }
             }
@@ -1123,7 +1067,48 @@
                     }
                 });
             }
-        })();
+
+            // -- Export Logic --
+            function buildExportUrl(anchorEl, format) {
+                if (!anchorEl) return null;
+
+                var href = anchorEl.getAttribute('href');
+                if (!href) return null;
+
+                var url = new URL(href, window.location.origin);
+                url.searchParams.set('format', format);
+
+                var q = qEl ? String(qEl.value || '').trim() : '';
+                var month = monthEl ? String(monthEl.value || '').trim() : '';
+
+                if (q !== '') url.searchParams.set('q', q);
+                else url.searchParams.delete('q');
+
+                if (month !== '') url.searchParams.set('month', month);
+                else url.searchParams.delete('month');
+
+                return url.toString();
+            }
+
+            var pdfBtn = document.getElementById('exportPdfBtn');
+            var excelBtn = document.getElementById('exportExcelBtn');
+
+            if (pdfBtn) {
+                pdfBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    var u = buildExportUrl(this, 'pdf');
+                    if (u) window.location.href = u;
+                });
+            }
+
+            if (excelBtn) {
+                excelBtn.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    var u = buildExportUrl(this, 'excel');
+                    if (u) window.location.href = u;
+                });
+            }
+        });
     </script>
 
     <script>
@@ -1152,10 +1137,47 @@
             function openPublishModal(missing, formEl) {
                 pendingPublishForm = formEl || null;
 
-                if (publishMissingList) {
-                    publishMissingList.innerHTML = (missing || []).map(function(x) {
-                        return '<li>' + escapeHtml(x) + ' belum ada</li>';
-                    }).join('');
+                var isComplete = !missing || missing.length === 0;
+
+                var labelEl = document.getElementById('publishConfirmModalLabel');
+                var mainTextEl = document.getElementById('publishModalMainText');
+                var subTextEl = document.getElementById('publishModalSubText');
+                var footerTextEl = document.getElementById('publishModalFooterText');
+                var btnEl = document.getElementById('publishConfirmProceedBtn');
+                var headerEl = document.getElementById('publishModalHeader');
+
+                if (isComplete) {
+                    if (labelEl) labelEl.textContent = 'Konfirmasi Publish Course';
+                    if (headerEl) headerEl.style.background = '';
+                    if (mainTextEl) mainTextEl.textContent = 'Apakah Anda yakin ingin publish course ini?';
+                    if (subTextEl) subTextEl.style.display = 'none';
+                    if (footerTextEl) footerTextEl.textContent = 'Tindakan ini tidak dapat dibatalkan.';
+                    if (btnEl) {
+                        btnEl.textContent = 'Ya, Publish Course';
+                        btnEl.style.display = '';
+                        btnEl.className = 'btn btn-primary';
+                    }
+                    if (publishMissingList) {
+                        publishMissingList.innerHTML = '';
+                        publishMissingList.style.display = 'none';
+                    }
+                } else {
+                    if (labelEl) { labelEl.textContent = 'Course Belum Bisa Dipublikasikan'; labelEl.style.color = '#dc2626'; }
+                    if (headerEl) headerEl.style.background = '#fef2f2';
+                    if (subTextEl) {
+                        subTextEl.textContent = 'Lengkapi Modul Course ini terlebih dahulu:';
+                        subTextEl.style.display = 'block';
+                    }
+                    if (footerTextEl) footerTextEl.textContent = 'Segera lengkapi semua modul sebelum mempublikasikan course ini.';
+                    if (btnEl) {
+                        btnEl.style.display = 'none'; // Sembunyikan tombol publish
+                    }
+                    if (publishMissingList) {
+                        publishMissingList.style.display = 'block';
+                        publishMissingList.innerHTML = (missing || []).map(function(x) {
+                            return '<li style="color:#dc2626;">' + escapeHtml(x) + ' belum ada</li>';
+                        }).join('');
+                    }
                 }
 
                 try {
@@ -1165,8 +1187,14 @@
                     }
                 } catch (e) {}
 
-                // If bootstrap modal is unavailable, fall back to showing warning toast only (no browser popup)
-                notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
+                // If bootstrap modal is unavailable, fall back
+                if (isComplete) {
+                    if (confirm('Apakah Anda yakin ingin publish course ini? Tindakan ini tidak dapat dibatalkan.')) {
+                        if (pendingPublishForm) pendingPublishForm.submit();
+                    }
+                } else {
+                    notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
+                }
                 pendingPublishForm = null;
             }
 
@@ -1204,11 +1232,8 @@
                     missing = [];
                 }
 
-                if (missing.length > 0) {
-                    ev.preventDefault();
-                    openPublishModal(missing, btn.closest('form'));
-                    return;
-                }
+                ev.preventDefault();
+                openPublishModal(missing, btn.closest('form'));
             });
 
             // Reject course manual payment: show modal with rejection reason options (same as event)
@@ -1282,6 +1307,37 @@
             </div>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var deleteForms = document.querySelectorAll('.delete-course-form');
+            deleteForms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Apakah Anda yakin?',
+                            text: 'apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Ya, hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    } else {
+                        if (confirm('apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan')) {
+                            form.submit();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 </body>
-
 </html>

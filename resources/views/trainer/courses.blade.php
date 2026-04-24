@@ -14,6 +14,46 @@
 @push('styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
+    <style>
+        .processing-mini-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 10px 0 12px;
+        }
+
+        .processing-mini-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            line-height: 1;
+        }
+
+        .processing-mini-pill.assigned {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .processing-mini-pill.uploaded {
+            background: #ecfeff;
+            color: #0f766e;
+        }
+
+        .processing-mini-pill.revision {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .processing-mini-pill.ready {
+            background: #dcfce7;
+            color: #166534;
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -110,6 +150,27 @@
                                             <h3>{{ Str::limit($course->name, 44) }}</h3>
                                             <p>{{ Str::limit($course->description ?? 'Deskripsi belum tersedia.', 80) }}</p>
                                         </div>
+
+                                        @if($hasProcessing)
+                                            <div class="processing-mini-row" aria-label="Status proses materi">
+                                                @if($processingAssigned > 0)
+                                                    <span class="processing-mini-pill assigned"><i
+                                                            class="bi bi-send-check"></i>{{ $processingAssigned }} diserahkan</span>
+                                                @endif
+                                                @if($processingUploaded > 0)
+                                                    <span class="processing-mini-pill uploaded"><i
+                                                            class="bi bi-upload"></i>{{ $processingUploaded }} diunggah</span>
+                                                @endif
+                                                @if($processingRevision > 0)
+                                                    <span class="processing-mini-pill revision"><i
+                                                            class="bi bi-arrow-counterclockwise"></i>{{ $processingRevision }} revisi</span>
+                                                @endif
+                                                @if($processingReady > 0)
+                                                    <span class="processing-mini-pill ready"><i
+                                                            class="bi bi-check2-circle"></i>{{ $processingReady }} siap publikasi</span>
+                                                @endif
+                                            </div>
+                                        @endif
 
                                         <div class="bottom-card">
                                             <div class="total-participant-path">

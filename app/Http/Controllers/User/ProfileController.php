@@ -235,6 +235,11 @@ class ProfileController extends Controller
         // Also fetch the full saved items for the 'Saved' tab
         $savedEvents = \App\Models\Event::whereIn('id', $savedEventIds)->get();
         $savedCourses = \App\Models\Course::whereIn('id', $savedCourseIds)->get();
+            
+        $activitiesLogs = \App\Models\ActivityLog::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->take(50)
+            ->get();
 
         return view('profile.history', compact(
             'registrations', 
@@ -249,7 +254,8 @@ class ProfileController extends Controller
             'savedEventIds',
             'savedCourseIds',
             'savedEvents',
-            'savedCourses'
+            'savedCourses',
+            'activitiesLogs'
         ));
     }
     

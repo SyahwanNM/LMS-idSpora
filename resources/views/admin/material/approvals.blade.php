@@ -719,19 +719,19 @@
                                         <td>
                                             <div class="course-info" style="gap:12px;">
                                                 <div>
-                                                    <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
+                                                    <h6 class="course-title">{{ Str::limit($eventModule->event?->title ?? '-', 48) }}</h6>
                                                     <div class="text-muted" style="font-size:0.75rem;">
-                                                        {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
+                                                        {{ $eventModule->event?->jenis ?? '-' }}{{ $eventModule->event?->event_date ? ' • ' . $eventModule->event->event_date->format('d M Y') : '' }}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="trainer-info">
-                                                <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}" class="trainer-avatar">
+                                                <img src="{{ $eventModule->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}" class="trainer-avatar">
                                                 <div>
-                                                    <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
-                                                    <div style="font-size: 0.75rem; color:#64748b;">{{ $event->trainer?->email }}</div>
+                                                    <div class="trainer-name">{{ $eventModule->trainer?->name ?? 'Anonim' }}</div>
+                                                    <div style="font-size: 0.75rem; color:#64748b;">{{ $eventModule->trainer?->email }}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -744,16 +744,17 @@
                                         </td>
                                         <td class="text-end">
                                             <div class="event-action-group">
-                                                <a href="{{ $event->module_file_url }}" target="_blank" class="btn-action btn-icon-action" title="Lihat modul" aria-label="Lihat modul">
+                                                <a href="{{ route('admin.event-material.stream', $eventModule->event_id) }}?assignment_id={{ $eventModule->id }}" target="_blank" class="btn-action btn-icon-action" title="Lihat modul" aria-label="Lihat modul">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
                                                 <form action="{{ route('admin.events.module.approve', $event) }}" method="POST">
                                                     @csrf
-                                                    <button type="submit" class="btn-action btn-icon-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Approve" aria-label="Approve">
+                                                    <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
+                                                    <button type="submit" class="btn-action btn-icon-action" style="color:#166634;border-color:#bbf7d0;background:#f0fdf4;" title="Approve" aria-label="Approve">
                                                         <i class="bi bi-check2-circle"></i>
                                                     </button>
                                                 </form>
-                                                <button class="btn-action btn-icon-action" type="button" data-bs-toggle="collapse" data-bs-target="#rejectEventModule-{{ $event->id }}" aria-expanded="false" aria-controls="rejectEventModule-{{ $event->id }}" style="color:#991b1b;border-color:#fecaca;background:#fef2f2;" title="Tolak" aria-label="Tolak">
+                                                <button class="btn-action btn-icon-action" type="button" data-bs-toggle="collapse" data-bs-target="#rejectEventModule-{{ $eventModule->id }}" aria-expanded="false" style="color:#991b1b;border-color:#fecaca;background:#fef2f2;" title="Tolak" aria-label="Tolak">
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>
                                             </div>

@@ -80,6 +80,7 @@ class Event extends Model
         'longitude' => 'decimal:7',
         'schedule_json' => 'array',
         'expenses_json' => 'array',
+        'is_reseller_event' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
 
@@ -269,6 +270,21 @@ class Event extends Model
     public function feedbacks()
     {
         return $this->hasMany(Feedback::class);
+    }
+
+    public function trainerModules()
+    {
+        return $this->hasMany(\App\Models\EventTrainerModule::class);
+    }
+
+    public function approvedTrainerModules()
+    {
+        return $this->hasMany(\App\Models\EventTrainerModule::class)->where('status', 'approved');
+    }
+
+    public function speakers()
+    {
+        return $this->hasMany(\App\Models\EventSpeaker::class)->orderBy('order');
     }
 
     public function getStartAtAttribute(): ?Carbon

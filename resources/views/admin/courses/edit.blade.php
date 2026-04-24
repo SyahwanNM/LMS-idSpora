@@ -190,66 +190,17 @@
                             </div>
                         </div>
 
-                        <!-- Pengeluaran (Breakdown) -->
-                        <div>
-                            <div class="flex items-center justify-between gap-4 mb-2">
-                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
-                                <button type="button" id="add-expense-row"
-                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
-                                    Tambah Pengeluaran
-                                </button>
-                            </div>
-                            <div class="border border-gray-200 rounded-lg overflow-hidden">
-                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
-                                    <div class="col-span-5">Item</div>
-                                    <div class="col-span-2">Qty</div>
-                                    <div class="col-span-3">Harga Satuan</div>
-                                    <div class="col-span-2">Aksi</div>
-                                </div>
 
-                                <div id="expense-rows" class="divide-y divide-gray-200">
-                                    @foreach($expenseRows as $i => $row)
-                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
-                                            <div class="col-span-12 md:col-span-5">
-                                                <input type="text" name="expenses[{{ $i }}][item]"
-                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
-                                                    placeholder="Contoh: Iklan, Produksi, dll">
-                                            </div>
-                                            <div class="col-span-6 md:col-span-2">
-                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
-                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.quantity', (int) ($row['quantity'] ?? 0)) }}"
-                                                    placeholder="0">
-                                            </div>
-                                            <div class="col-span-6 md:col-span-3">
-                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
-                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
-                                                    placeholder="0">
-                                            </div>
-                                            <div class="col-span-12 md:col-span-2 flex items-center gap-2">
-                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
-                                                    Hapus
-                                                </button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
-                        </div>
-
-                        <!-- Akses Course Gratis -->
+                        <!-- Akses Course (Freemium Mode) -->
                         <div>
-                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course
-                                Gratis</label>
+                            <label for="free_access_mode" class="block text-sm font-medium text-gray-700 mb-2">Akses Course</label>
                             <select name="free_access_mode" id="free_access_mode"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
-                                <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka semua materi</option>
-                                <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Hanya 2 modul/video yang dibuka</option>
+                                <option value="limit_2" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
+                                <option value="all" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
+                                <option value="none" {{ old('free_access_mode', $course->free_access_mode ?? 'limit_2') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
                             </select>
-                            <p class="mt-1 text-xs text-gray-500">Berlaku jika harga course = 0 (gratis).</p>
+                            <p class="mt-1 text-xs text-gray-500">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</p>
                         </div>
 
                         <!-- Deskripsi -->
@@ -300,6 +251,63 @@
                             </div>
                         </div>
 
+                        <!-- Pengeluaran (Breakdown) -->
+                        <div>
+                            <div class="flex items-center justify-between gap-4 mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Pengeluaran</label>
+                                <button type="button" id="add-expense-row"
+                                    class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    Tambah Pengeluaran
+                                </button>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <div class="col-span-4">Item</div>
+                                    <div class="col-span-2">Qty</div>
+                                    <div class="col-span-2">Harga Satuan</div>
+                                    <div class="col-span-2">Harga Total</div>
+                                    <div class="col-span-2">Aksi</div>
+                                </div>
+
+                                <div id="expense-rows" class="divide-y divide-gray-200">
+                                    @foreach($expenseRows as $i => $row)
+                                        <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="{{ $i }}">
+                                            <div class="col-span-12 md:col-span-4">
+                                                <input type="text" name="expenses[{{ $i }}][item]"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.item', (string) ($row['item'] ?? '')) }}"
+                                                    placeholder="Contoh: Iklan, Produksi, dll">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="1" inputmode="numeric" name="expenses[{{ $i }}][quantity]"
+                                                    class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.quantity', max(1, (int) ($row['quantity'] ?? 1))) }}"
+                                                    placeholder="1">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="0" inputmode="numeric" name="expenses[{{ $i }}][unit_price]"
+                                                    class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                                                    value="{{ old('expenses.' . $i . '.unit_price', (int) ($row['unit_price'] ?? 0)) }}"
+                                                    placeholder="0">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2">
+                                                <input type="number" min="0" name="expenses[{{ $i }}][total]"
+                                                    class="expense-total w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-600"
+                                                    value="{{ old('expenses.' . $i . '.total', (int) ($row['total'] ?? 0)) }}"
+                                                    readonly placeholder="0">
+                                            </div>
+                                            <div class="col-span-6 md:col-span-2 flex items-center gap-2">
+                                                <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
+                                                    Hapus
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Isi item, qty, dan harga satuan. Total dihitung otomatis saat disimpan.</p>
+                        </div>
+
                         <!-- Hidden inputs for other required fields not in design (Duration, etc) -->
                         <input type="hidden" name="duration" value="{{ $course->duration ?? 1 }}">
                     </div>
@@ -307,22 +315,27 @@
 
                 <template id="expense-row-template">
                     <div class="expense-row grid grid-cols-12 gap-2 px-4 py-3 items-center" data-index="__INDEX__">
-                        <div class="col-span-12 md:col-span-5">
+                        <div class="col-span-12 md:col-span-4">
                             <input type="text" name="expenses[__INDEX__][item]"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="" placeholder="Contoh: Iklan, Produksi, dll">
                         </div>
                         <div class="col-span-6 md:col-span-2">
-                            <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][quantity]"
+                            <input type="number" min="1" inputmode="numeric" name="expenses[__INDEX__][quantity]"
                                 class="expense-qty w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                                value="0" placeholder="0">
+                                value="1" placeholder="1">
                         </div>
-                        <div class="col-span-6 md:col-span-3">
+                        <div class="col-span-6 md:col-span-2">
                             <input type="number" min="0" inputmode="numeric" name="expenses[__INDEX__][unit_price]"
                                 class="expense-unit w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="0" placeholder="0">
                         </div>
-                        <div class="col-span-12 md:col-span-2 flex items-center gap-2">
+                        <div class="col-span-6 md:col-span-2">
+                            <input type="number" min="0" name="expenses[__INDEX__][total]"
+                                class="expense-total w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-600"
+                                value="0" readonly placeholder="0">
+                        </div>
+                        <div class="col-span-6 md:col-span-2 flex items-center gap-2">
                             <button type="button" class="remove-expense-row px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50">
                                 Hapus
                             </button>
@@ -557,6 +570,19 @@
                 return max + 1;
             }
 
+            function recalcRow(rowEl) {
+                const qtyInp = rowEl.querySelector('.expense-qty');
+                const unitInp = rowEl.querySelector('.expense-unit');
+                let qty = parseInt(qtyInp?.value || '1', 10);
+                if (isNaN(qty) || qty < 1) {
+                    qty = 1;
+                    if (qtyInp) qtyInp.value = 1;
+                }
+                const unit = parseInt(unitInp?.value || '0', 10);
+                const totalEl = rowEl.querySelector('.expense-total');
+                if (totalEl) totalEl.value = Math.max(0, qty * (isNaN(unit) ? 0 : unit));
+            }
+
             function wireRow(rowEl) {
                 const removeBtn = rowEl.querySelector('.remove-expense-row');
                 if (removeBtn) {
@@ -564,6 +590,11 @@
                         rowEl.remove();
                     });
                 }
+                const qtyInp = rowEl.querySelector('.expense-qty');
+                const unitInp = rowEl.querySelector('.expense-unit');
+                if (qtyInp) qtyInp.addEventListener('input', () => recalcRow(rowEl));
+                if (unitInp) unitInp.addEventListener('input', () => recalcRow(rowEl));
+                recalcRow(rowEl);
             }
 
             rowsWrap.querySelectorAll('.expense-row').forEach(wireRow);

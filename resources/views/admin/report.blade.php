@@ -11,6 +11,35 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        /* ===== RESPONSIVE — Report Course ===== */
+        @media (max-width: 1024px) {
+            .box_filter_cari { flex-wrap: wrap; gap: 10px; }
+            .box_filter { flex-wrap: wrap; }
+            .detail_laporan { flex: 1 1 calc(50% - 16px); }
+        }
+        @media (max-width: 640px) {
+            .btn_box_report { flex-direction: column; align-items: flex-start; }
+            .box_unduh { width: 100%; justify-content: flex-start; }
+            .btn_unduh { flex: 1 1 auto; justify-content: center; }
+            .detail_laporan { flex: 1 1 100%; }
+            .box_filter_cari { flex-direction: column; align-items: stretch; }
+            .box_filter { flex-direction: column; align-items: stretch; }
+            .tanggal_course { width: 100% !important; max-width: 100%; }
+            .btn_terapkan { width: 100%; }
+            .cari_course { max-width: 100%; }
+            .box_pendapatan_per_course { width: 100%; }
+            /* Summary cards */
+            .box_detail_laporan { flex-direction: column; }
+            /* Tabel */
+            .tabel_pendapatan th, .tabel_pendapatan td { font-size: 12px; padding: 5px 6px; }
+        }
+        @media (max-width: 480px) {
+            .judul_report { font-size: 1.3rem; }
+            .keterangan_judul { font-size: 14px; }
+            .btn_report, .btn_laporan { font-size: 13px; padding: 7px 10px; }
+        }
+    </style>
 </head>
 
 <body>
@@ -130,12 +159,12 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course" type="text" placeholder="Cari Course">
+                            <input class="cari_course" id="revenueSearch" type="text" placeholder="Cari Course">
                         </div>
                     </div>
                     <div class="box_filter">
                         <p class="mulai_course">Bulan</p>
-                        <input class="tanggal_course" type="month">
+                        <input class="tanggal_course" id="revenueMonth" type="month">
                         <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
                     </div>
 
@@ -218,7 +247,7 @@
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
                                 <h6>Rating Keseluruhan</h6>
-                                <h3 id="courseRating">0 ⭐</h3>
+                                <h3 id="courseRating">{{ number_format((float)(data_get($growthReport, 'summary.rating_avg', 0)), 1) }} ⭐</h3>
                             </div>
                         </div>
                     </div>
@@ -260,6 +289,7 @@
                     <thead>
                         <tr>
                             <th>Nama Course</th>
+                            <th>Tanggal Dibuat</th>
                             <th>Level</th>
                             <th>Total View</th>
                             <th>Waktu tonton rata-rata</th>
@@ -271,6 +301,7 @@
                         @forelse(($growthReport['rows'] ?? []) as $row)
                         <tr>
                             <td>{{ $row['course_name'] ?? '-' }}</td>
+                            <td>{{ $row['course_created_at'] ? \Carbon\Carbon::parse($row['course_created_at'])->format('d/m/Y') : '-' }}</td>
                             <td>{{ $row['course_level'] ?? '-' }}</td>
                             <td>{{ $row['total_views_compact'] ?? '0' }}</td>
                             <td>{{ $row['avg_watch_time_label'] ?? '0 min' }}</td>
@@ -280,7 +311,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted">Belum ada data.</td>
+                            <td colspan="7" class="text-center text-muted">Belum ada data.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -616,8 +647,8 @@
             const topLevelRevenueEl = document.getElementById('topLevelRevenue');
             const totalTransactionsEl = document.getElementById('totalTransactions');
             const tbody = document.getElementById('revenueTableBody');
-            const fromInput = document.getElementById('reportFrom');
-            const toInput = document.getElementById('reportTo');
+            const monthInput = document.getElementById('revenueMonth');
+            const searchInput = document.getElementById('revenueSearch');
             const applyBtn = document.getElementById('applyRevenueFilter');
 
             let currentPeriod = 'monthly';
@@ -717,9 +748,10 @@
                 }
 
                 tbody.innerHTML = rows.map(r => {
-                    const lastPaid = r.last_paid_at ? new Date(r.last_paid_at) : null;
-                    const lastPaidText = lastPaid && !isNaN(lastPaid.getTime()) ?
-                        String(lastPaid.getDate()).padStart(2, '0') + '/' + String(lastPaid.getMonth() + 1).padStart(2, '0') + '/' + lastPaid.getFullYear() :
+                    const dateRaw = r.last_paid_at || r.created_at || null;
+                    const dateObj = dateRaw ? new Date(dateRaw) : null;
+                    const lastPaidText = dateObj && !isNaN(dateObj.getTime()) ?
+                        String(dateObj.getDate()).padStart(2, '0') + '/' + String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + dateObj.getFullYear() :
                         '-';
                     const previewUrl = @json(route('preview-pendapatan')) + '?course_id=' + encodeURIComponent(r.course_id);
                     return `
@@ -744,11 +776,11 @@
             }
 
             async function refresh() {
-                const from = fromInput?.value || '';
-                const to = toInput?.value || '';
+                const month = monthInput?.value || '';
+                const q = searchInput?.value || '';
                 const url = new URL(apiUrl, window.location.origin);
-                if (from) url.searchParams.set('from', from);
-                if (to) url.searchParams.set('to', to);
+                if (month) url.searchParams.set('month', month);
+                if (q) url.searchParams.set('q', q);
                 url.searchParams.set('period', currentPeriod);
 
                 try {
@@ -780,6 +812,15 @@
                     refresh();
                 });
             }
+
+            if (searchInput) {
+                searchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        refresh();
+                    }
+                });
+            }
         })();
     </script>
 
@@ -788,10 +829,10 @@
             const apiUrl = @json(route('admin.report.growth'));
 
             const tbody = document.getElementById('growthTableBody');
-            const completedUsersEl = document.getElementById('growthCompletedUsers');
             const totalViewsEl = document.getElementById('totalViews');
             const avgWatchEl = document.getElementById('avgWatch');
             const totalStudentsEl = document.getElementById('totalStudents');
+            const courseRatingEl = document.getElementById('courseRating');
             const monthInput = document.getElementById('growthMonth');
             const searchInput = document.getElementById('growthSearch');
             const applyBtn = document.getElementById('applyGrowthFilter');
@@ -815,12 +856,21 @@
 
             const renderRows = (rows) => {
                 if (!Array.isArray(rows) || rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada data.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Belum ada data.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = rows.map((r) => {
                     const name = escapeHtml(r.course_name ?? '-');
+                    // Tanggal pembuatan course — tidak berubah meski filter bulan diganti
+                    const rawDate = r.course_created_at || null;
+                    let dateText = '-';
+                    if (rawDate) {
+                        const d = new Date(rawDate);
+                        if (!isNaN(d.getTime())) {
+                            dateText = d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        }
+                    }
                     const level = escapeHtml(r.course_level ?? '-');
                     const views = escapeHtml(r.total_views_compact ?? String(r.total_views ?? 0));
                     const avg = escapeHtml(r.avg_watch_time_label ?? '0 min');
@@ -830,6 +880,7 @@
                     return (
                         '<tr>' +
                         '<td>' + name + '</td>' +
+                        '<td>' + dateText + '</td>' +
                         '<td>' + level + '</td>' +
                         '<td>' + views + '</td>' +
                         '<td>' + avg + '</td>' +
@@ -845,8 +896,9 @@
                 if (totalViewsEl) totalViewsEl.textContent = String(summary.total_views || 0);
                 if (avgWatchEl) avgWatchEl.textContent = String(summary.avg_watch_minutes || 0) + ' Menit';
                 if (totalStudentsEl) totalStudentsEl.textContent = String(summary.participants || 0);
-                if (completedUsersEl && typeof summary.completed_users !== 'undefined') {
-                    completedUsersEl.textContent = String(summary.completed_users || 0);
+                if (courseRatingEl) {
+                    const r = Number(summary.rating_avg || 0);
+                    courseRatingEl.textContent = r > 0 ? (r.toFixed(1) + ' ⭐') : '0 ⭐';
                 }
             };
 

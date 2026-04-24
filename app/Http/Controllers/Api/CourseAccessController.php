@@ -33,7 +33,7 @@ class CourseAccessController extends Controller
         $isFreeCourse = (int) ($course->price ?? 0) <= 0;
         $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
         if ($isFreeCourse && $freeAccessMode === 'limit_2') {
-            $modulesQuery->limit(2);
+            $modulesQuery->limit(3); // unlock full first unit (pdf+video+quiz)
         }
 
         $modules = $modulesQuery->get();
@@ -75,7 +75,7 @@ class CourseAccessController extends Controller
         $isFreeCourse = (int) ($course->price ?? 0) <= 0;
         $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
         if ($isFreeCourse && $freeAccessMode === 'limit_2') {
-            $allowedIds = $course->modules()->orderBy('order_no')->limit(2)->pluck('id')->all();
+            $allowedIds = $course->modules()->orderBy('order_no')->limit(3)->pluck('id')->all();
             if (!in_array((int) $module->id, array_map('intval', $allowedIds), true)) {
                 return response()->json([
                     'status' => 'error',

@@ -160,7 +160,7 @@
 
                         <div class="mb-custom">
                             <label class="form-label-custom" style="margin-bottom:0">Nama Lengkap</label>
-                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3">
+                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3" readonly>
                             <div class="warning-text" style="margin-top:4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
@@ -172,15 +172,19 @@
 
                         <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">No Whatsapp</label>
                             <div class="wa-group">
-                                <select class="form-select-custom" name="dial_code" required>
-                                    <option value="">Kode</option>
-                                    <option value="+62" selected>+62</option>
-                                    <option value="+60">+60</option>
-                                    <option value="+65">+65</option>
-                                </select>
-                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="No Whatsapp" inputmode="numeric" required>
+                                <span style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:#f1f5f9;border:1px solid #FCD34D;border-radius:6px;padding:0 14px;width:64px;flex-shrink:0;height:36px;color:#374151;font-size:13px;">+62</span>
+                                <input type="hidden" name="dial_code" value="+62">
+                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="Contoh: 81234567890" inputmode="numeric" required style="flex:1;min-width:0;">
                             </div>
                         </div>
+                        @if(isset($event) && (bool) ($event->is_reseller_event ?? false))
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Kode Referral (opsional)</label>
+                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Masukkan kode referral jika ada" value="{{ request()->query('ref', '') }}">
+                            <div id="referralMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
+                            <div class="form-text small">Masukkan kode referral reseller untuk mendapatkan diskon/komisi.</div>
+                        </div>
+                        @endif
                          
                     </div>
                      <div class="card-custom">
@@ -248,10 +252,37 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function(){
+        function showAppNotify(message, type = 'info') {
+            const modalEl = document.getElementById('appNotificationModal');
+            const titleEl = document.getElementById('appNotifyTitle');
+            const messageEl = document.getElementById('appNotifyMessage');
+            const iconEl = document.getElementById('appNotifyIcon');
+            if (!modalEl || !messageEl) return;
+            messageEl.textContent = message;
+            let iconHtml = '';
+            let titleText = 'Informasi';
+            let btnClass = 'btn-primary';
+            if (type === 'error') {
+                iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#EF4444" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/></svg></div>';
+                titleText = 'Oops!';
+                btnClass = 'btn-danger';
+            } else if (type === 'success') {
+                iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(22, 163, 74, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#16A34A" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03a.75.75 0 0 0 1.07 0l3.992-3.992a.75.75 0 0 0-1.06-1.06L7.5 9.44 5.53 7.47a.75.75 0 0 0-1.06 1.06z"/></svg></div>';
+                titleText = 'Berhasil';
+                btnClass = 'btn-success';
+            } else {
+                iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(59, 130, 246, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#3B82F6" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>';
+            }
+            if (iconEl) iconEl.innerHTML = iconHtml;
+            if (titleEl) titleEl.textContent = titleText;
+            const btn = modalEl.querySelector('.btn');
+            if (btn) btn.className = 'btn w-100 ' + btnClass;
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+
         const form = document.getElementById('paymentForm');
         if(!form) return;
         const fullName = form.querySelector('input[name="full_name"]');
-        const dial = form.querySelector('select[name="dial_code"]');
         const wa = form.querySelector('input[name="whatsapp"]');
         const proof = form.querySelector('input[name="payment_proof"]');
         const btn = form.querySelector('.btn-pay');
@@ -262,7 +293,7 @@
         function validate(){
             if(isFree){ btn.disabled = false; btn.style.opacity = '1'; return true; }
             const nameOk = fullName && fullName.value.trim().length >= 3;
-            const dialOk = dial && dial.value.trim() !== '';
+            const dialOk = true; // dial code fixed to +62
             const waOk = wa && isValidPhone(wa.value);
             const proofOk = proof && proof.files.length > 0;
             const ok = nameOk && dialOk && waOk && proofOk;
@@ -272,7 +303,6 @@
 
         ['input','change','keyup','blur'].forEach(evt => {
             if(fullName) fullName.addEventListener(evt, validate);
-            if(dial) dial.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
             if(proof) proof.addEventListener(evt, validate);
         });

@@ -164,12 +164,7 @@ class CRMController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $activeTickets = \App\Models\SupportMessage::where('email', $customer->email)
-            ->whereIn('status', ['new', 'processed'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('admin.crm.customers.show', compact('customer', 'registrations', 'enrollments', 'activeTickets'));
+        return view('admin.crm.customers.show', compact('customer', 'registrations', 'enrollments'));
     }
 
     /**
@@ -250,6 +245,8 @@ class CRMController extends Controller
 
         // Base query for events with feedback
         $eventsQuery = Event::withCount(['registrations', 'feedbacks'])
+            ->withAvg('feedbacks', 'rating')
+            ->withAvg('feedbacks', 'speaker_rating')
             ->whereHas('feedbacks', function($q) use ($dateFrom, $dateTo) {
                 if($dateFrom) {
                     $q->whereDate('created_at', '>=', $dateFrom);
@@ -264,7 +261,7 @@ class CRMController extends Controller
             $eventsQuery->where('id', $eventId);
         }
 
-        $events = $eventsQuery->orderBy('event_date', 'desc')->paginate(15);
+        $events = $eventsQuery->orderBy('event_date', 'desc')->paginate(10);
 
         // Overall statistics (with date filter if applied)
         $totalFeedback = (clone $feedbackQuery)->count();
@@ -317,12 +314,13 @@ class CRMController extends Controller
                 ->find($eventId);
 
             if($event) {
-                $eventFeedbacks = Feedback::where('event_id', $eventId)
-                    ->with('user')
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+                $eventFeedbacksQuery = Feedback::where('event_id', $eventId)->with('user');
+                if($dateFrom) $eventFeedbacksQuery->whereDate('created_at', '>=', $dateFrom);
+                if($dateTo) $eventFeedbacksQuery->whereDate('created_at', '<=', $dateTo);
 
-                $eventRatingDistribution = Feedback::where('event_id', $eventId)
+                $eventFeedbacks = $eventFeedbacksQuery->orderBy('created_at', 'desc')->get();
+
+                $eventRatingDistribution = (clone $eventFeedbacksQuery)
                     ->select('rating', DB::raw('count(*) as count'))
                     ->groupBy('rating')
                     ->orderBy('rating', 'desc')
@@ -333,6 +331,12 @@ class CRMController extends Controller
                     'feedbacks' => $eventFeedbacks,
                     'ratingDistribution' => $eventRatingDistribution,
                 ];
+
+                // Override global distribution for the specific view
+                $ratingDistribution = $eventRatingDistribution;
+                $totalFeedback = $eventFeedbacks->count();
+                $avgRating = $event->feedbacks_avg_rating;
+                $avgSpeakerRating = $event->feedbacks_avg_speaker_rating;
             }
         }
 
@@ -340,9 +344,6 @@ class CRMController extends Controller
         $allEvents = Event::whereHas('feedbacks')
             ->orderBy('title')
             ->get();
-
-        // Count feedbacks with speaker rating for display
-        $speakerFeedbackCount = (clone $feedbackQuery)->whereNotNull('speaker_rating')->count();
 
         // ========== COURSE FEEDBACK ANALYSIS ==========
         // Base query for course reviews statistics
@@ -358,6 +359,7 @@ class CRMController extends Controller
 
         // Base query for courses with reviews
         $coursesQuery = Course::withCount('reviews')
+            ->withAvg('reviews', 'rating')
             ->whereHas('reviews', function($q) use ($dateFrom, $dateTo) {
                 if($dateFrom) {
                     $q->whereDate('created_at', '>=', $dateFrom);
@@ -372,7 +374,7 @@ class CRMController extends Controller
             $coursesQuery->where('id', $courseId);
         }
 
-        $courses = $coursesQuery->orderBy('name')->paginate(15);
+        $courses = $coursesQuery->orderBy('name')->paginate(10);
 
         // Overall course statistics (with date filter if applied)
         $totalReviews = (clone $reviewQuery)->count();
@@ -386,28 +388,20 @@ class CRMController extends Controller
             ->get();
 
         // Top rated courses (with date filter if applied)
-        $topRatedCoursesQuery = Course::withCount('reviews')
+        $topRatedCourses = Course::withCount('reviews')
             ->whereHas('reviews', function($q) use ($dateFrom, $dateTo) {
-                if($dateFrom) {
-                    $q->whereDate('created_at', '>=', $dateFrom);
-                }
-                if($dateTo) {
-                    $q->whereDate('created_at', '<=', $dateTo);
-                }
+                if($dateFrom) $q->whereDate('created_at', '>=', $dateFrom);
+                if($dateTo) $q->whereDate('created_at', '<=', $dateTo);
             })
             ->withAvg('reviews', 'rating')
             ->orderBy('reviews_avg_rating', 'desc')
-            ->limit(10);
-        $topRatedCourses = $topRatedCoursesQuery->get();
+            ->limit(10)
+            ->get();
 
         // Recent reviews (with date filter if applied)
         $recentReviewsQuery = Review::with(['user', 'course']);
-        if($dateFrom) {
-            $recentReviewsQuery->whereDate('created_at', '>=', $dateFrom);
-        }
-        if($dateTo) {
-            $recentReviewsQuery->whereDate('created_at', '<=', $dateTo);
-        }
+        if($dateFrom) $recentReviewsQuery->whereDate('created_at', '>=', $dateFrom);
+        if($dateTo) $recentReviewsQuery->whereDate('created_at', '<=', $dateTo);
         $recentReviews = $recentReviewsQuery->orderBy('created_at', 'desc')->limit(10)->get();
 
         // If specific course selected, get detailed analysis
@@ -418,12 +412,13 @@ class CRMController extends Controller
                 ->find($courseId);
 
             if($course) {
-                $courseReviews = Review::where('course_id', $courseId)
-                    ->with('user')
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+                $courseReviewsQuery = Review::where('course_id', $courseId)->with('user');
+                if($dateFrom) $courseReviewsQuery->whereDate('created_at', '>=', $dateFrom);
+                if($dateTo) $courseReviewsQuery->whereDate('created_at', '<=', $dateTo);
+                
+                $courseReviews = $courseReviewsQuery->orderBy('created_at', 'desc')->get();
 
-                $courseRatingDistributionDetail = Review::where('course_id', $courseId)
+                $courseRatingDistributionDetail = (clone $courseReviewsQuery)
                     ->select('rating', DB::raw('count(*) as count'))
                     ->groupBy('rating')
                     ->orderBy('rating', 'desc')
@@ -434,6 +429,11 @@ class CRMController extends Controller
                     'reviews' => $courseReviews,
                     'ratingDistribution' => $courseRatingDistributionDetail,
                 ];
+
+                // Override global distribution for the specific view
+                $courseRatingDistribution = $courseRatingDistributionDetail;
+                $totalReviews = $courseReviews->count();
+                $avgCourseRating = $course->reviews_avg_rating;
             }
         }
 

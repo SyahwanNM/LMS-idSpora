@@ -166,6 +166,9 @@
             <div class="main-tab" id="tab-course" onclick="setMainTab('COURSE')">
                 <i class="bi bi-mortarboard me-2"></i> COURSE
             </div>
+            <div class="main-tab" id="tab-log" onclick="setMainTab('LOG')">
+                <i class="bi bi-clock-history me-2"></i> AKTIVITAS
+            </div>
         </div>
 
         <!-- Stats Section (Dynamic based on tab) -->
@@ -213,7 +216,8 @@
             @foreach($allActivities as $item)
                 <div class="activity-item-card p-6" 
                      data-type="{{ $item['type'] }}" 
-                     data-status="{{ $item['status'] }}">
+                     data-status="{{ $item['status'] }}"
+                     data-is-saved="{{ $item['is_saved'] ? 'true' : 'false' }}">
                     <div class="flex flex-col md:flex-row gap-6">
                         <div class="w-full md:w-52 h-32 shrink-0 rounded-2xl overflow-hidden bg-slate-100">
                             <img src="{{ $item['image'] }}" class="w-full h-full object-cover">
@@ -246,6 +250,34 @@
                 <i class="bi bi-search text-4xl text-slate-300 mb-4"></i>
                 <h4 class="text-xl font-bold text-slate-800">Tidak ada riwayat untuk kategori ini</h4>
                 <p class="text-slate-500">Mulai ambil program belajar baru untuk melihat aktivitasmu.</p>
+            </div>
+
+            <div id="log-section" class="hidden space-y-4">
+                @forelse($activitiesLogs as $log)
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
+                        <div class="stat-icon bg-slate-50 text-slate-600">
+                            @if($log->action == 'Login')
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            @elseif($log->action == 'Save Course' || $log->action == 'Unsave Course')
+                                <i class="bi bi-bookmark"></i>
+                            @else
+                                <i class="bi bi-activity"></i>
+                            @endif
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold text-slate-800">{{ $log->action }}</div>
+                            <div class="text-sm text-slate-500">{{ $log->description }}</div>
+                        </div>
+                        <div class="text-xs font-bold text-slate-400">
+                            {{ $log->created_at->format('d M Y, H:i') }}
+                        </div>
+                    </div>
+                @empty
+                    <div class="py-16 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+                        <i class="bi bi-clock-history text-4xl text-slate-300 mb-4"></i>
+                        <h4 class="text-xl font-bold text-slate-800">Belum ada log aktivitas</h4>
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -291,19 +323,32 @@
 
         function applyFilters() {
             const cards = document.querySelectorAll('.activity-item-card');
+            const logSection = document.getElementById('log-section');
+            const subFilterContainer = document.querySelector('.sub-filter').parentElement;
             let count = 0;
             
-            cards.forEach(card => {
-                const typeMatch = card.dataset.type === currentType;
-                const statusMatch = currentStatus === 'all' || card.dataset.status === currentStatus;
-                
-                if (typeMatch && statusMatch) {
-                    card.classList.remove('hidden-filter');
-                    count++;
-                } else {
-                    card.classList.add('hidden-filter');
-                }
-            });
+            if (currentType === 'LOG') {
+                cards.forEach(c => c.classList.add('hidden-filter'));
+                logSection.classList.remove('hidden');
+                subFilterContainer.classList.add('hidden');
+                count = 1; // dummy so empty-state doesn't show
+            } else {
+                logSection.classList.add('hidden');
+                subFilterContainer.classList.remove('hidden');
+                cards.forEach(card => {
+                    const typeMatch = card.dataset.type === currentType;
+                    const isSaved = card.dataset.isSaved === 'true';
+                    const statusMatch = currentStatus === 'all' || 
+                                       (currentStatus === 'saved' ? isSaved : card.dataset.status === currentStatus);
+                    
+                    if (typeMatch && statusMatch) {
+                        card.classList.remove('hidden-filter');
+                        count++;
+                    } else {
+                        card.classList.add('hidden-filter');
+                    }
+                });
+            }
             
             const empty = document.getElementById('empty-state');
             if (count === 0) empty.classList.remove('hidden');
