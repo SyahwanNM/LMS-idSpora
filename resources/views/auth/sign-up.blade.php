@@ -1,10 +1,10 @@
-<!DOCTYPE html>
-<html lang="id">
+﻿<!DOCTYPE html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daftar - idSPORA</title>
+  <title>Register - idSPORA</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -326,8 +326,8 @@
     </div>
 
     <div class="kanan">
-      <h3>Daftar Akun</h3>
-      <p class="subtitle">Buat akun untuk memulai perjalanan Anda</p>
+      <h3>Create Account</h3>
+      <p class="subtitle">Create an account to start your journey</p>
 
       <form action="{{ route('register.post') }}" method="POST" enctype="multipart/form-data" novalidate id="signupForm">
         @csrf
@@ -343,7 +343,7 @@
         @endif
 
         <div class="input-group-custom">
-          <label>Nama Lengkap</label>
+          <label>Full Name</label>
           <input type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="John Doe" required>
         </div>
 
@@ -353,7 +353,7 @@
         </div>
 
         <div class="input-group-custom">
-          <label>Kata Sandi</label>
+          <label>Password</label>
           <div class="input-group">
             <input id="reg-password" type="password" name="password" class="form-control" placeholder="••••••••" required>
             <button type="button" class="btn btn-outline-light" id="toggle-password">
@@ -369,10 +369,13 @@
               </svg>
             </button>
           </div>
+          <small class="file-hint mt-2">
+            Minimum 8 characters, containing uppercase letters (A-Z), numbers (0-9), and symbols (!@#$%).
+          </small>
         </div>
 
         <div class="input-group-custom">
-          <label>Konfirmasi Kata Sandi</label>
+          <label>Konfirmasi Password</label>
           <div class="input-group">
             <input id="reg-password-confirm" type="password" name="password_confirmation" class="form-control" placeholder="••••••••" required>
             <button type="button" class="btn btn-outline-light" id="toggle-password-confirm">
@@ -391,15 +394,15 @@
         </div>
 
         <div class="mb-4">
-          <label class="form-label-custom">Foto Profil (Opsional)</label>
+          <label class="form-label-custom">Profile Photo (Optional)</label>
           <input type="file" name="avatar" class="form-control" accept="image/*">
-          <small class="file-hint">Format: JPG, PNG, WEBP (Maks. 2MB)</small>
+          <small class="file-hint">Format: JPG, PNG, WEBP (Max. 2MB)</small>
         </div>
 
-        <button type="submit" class="btn-register">Daftar Sekarang</button>
+        <button type="submit" class="btn-register">Register Now</button>
       </form>
 
-      <div class="garis">Atau daftar dengan</div>
+      <div class="garis">Or register with</div>
 
       <a href="{{ route('auth.google') }}" class="btn-google">
         <img src="{{ asset('aset/logo-google.png') }}" alt="Google" width="20">
@@ -407,7 +410,7 @@
       </a>
 
       <div class="text-login">
-        Sudah punya akun? <a href="{{ route('login') }}">Masuk</a>
+        Already have an account? <a href="{{ route('login') }}">Sign In</a>
       </div>
     </div>
   </div>
@@ -444,9 +447,9 @@
             let errorMsg = '';
 
             if (!field.value.trim()) {
-                errorMsg = 'Field ini wajib diisi.';
+                errorMsg = 'This field is required.';
             } else if (field.name === 'name' && !/^[\p{L}\s'\-\.]+$/u.test(field.value.trim())) {
-                errorMsg = 'Nama hanya boleh berisi huruf dan spasi.';
+                errorMsg = 'Name can only contain letters and spaces.';
             }
 
             if (errorMsg) {

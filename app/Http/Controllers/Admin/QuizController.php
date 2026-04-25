@@ -13,6 +13,7 @@ use App\Models\Enrollment;
 use App\Models\Progress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class QuizController extends Controller
 {
@@ -187,8 +188,8 @@ class QuizController extends Controller
             $expiredAt = $startedAt ? $startedAt->copy()->addSeconds($durationSeconds) : null;
 
             if ($expiredAt && $expiredAt->isPast()) {
-                // Attempt sudah expired — auto-complete dengan waktu sekarang agar cooldown 60s dihitung dari sekarang
-                $existingAttempt->update(['completed_at' => now()]);
+                // Attempt sudah expired — auto-complete dengan waktu sekarang (WIB)
+                $existingAttempt->update(['completed_at' => Carbon::now('Asia/Jakarta')]);
                 $this->syncProgressIfPassed($course, $module, $existingAttempt);
                 $existingAttempt = null;
             } else {
@@ -207,7 +208,7 @@ class QuizController extends Controller
         if ($lastFailedAttempt && !$lastFailedAttempt->isPassed($this->passingPercent)) {
             $cooldownEndsAt = $lastFailedAttempt->completed_at->copy()->addSeconds($cooldownSeconds);
             if ($cooldownEndsAt->isFuture()) {
-                $remaining = (int) ceil(now()->diffInSeconds($cooldownEndsAt, false));
+                $remaining = (int) ceil(Carbon::now('Asia/Jakarta')->diffInSeconds($cooldownEndsAt, false));
                 $seconds = $remaining % 60;
                 return redirect()->route('course.learn', $course->id)
                     ->with('error', "Tunggu {$seconds} detik sebelum mengulang kuis ini.")
@@ -220,7 +221,7 @@ class QuizController extends Controller
             'user_id' => Auth::id(),
             'course_module_id' => $module->id,
             'total_questions' => $questions->count(),
-            'started_at' => now(),
+            'started_at' => Carbon::now('Asia/Jakarta'),
         ]);
         return redirect()->route('user.quiz.take', [$course, $module, $attempt]);
     }
@@ -237,7 +238,7 @@ class QuizController extends Controller
 
         // Backfill started_at for legacy attempts so timer works reliably
         if (!$attempt->started_at) {
-            $attempt->forceFill(['started_at' => now()])->save();
+            $attempt->forceFill(['started_at' => Carbon::now('Asia/Jakarta')])->save();
             $attempt->refresh();
         }
 
@@ -249,7 +250,7 @@ class QuizController extends Controller
         $durationSeconds = ($isLastQuiz ? 15 : 10) * 60;
         $expiredAt = $attempt->started_at->copy()->addSeconds($durationSeconds);
         if ($expiredAt->isPast()) {
-            $attempt->update(['completed_at' => now()]);
+            $attempt->update(['completed_at' => Carbon::now('Asia/Jakarta')]);
             $this->syncProgressIfPassed($course, $module, $attempt);
             return redirect()->route('user.quiz.result.short', $attempt);
         }
@@ -276,7 +277,7 @@ class QuizController extends Controller
                 return !in_array($q->id, $answeredQuestionIds, true);
             });
             if ($currentQuestionIndex === false) {
-                $attempt->update(['completed_at' => now()]);
+                $attempt->update(['completed_at' => Carbon::now('Asia/Jakarta')]);
                 return redirect()->route('user.quiz.result.short', $attempt);
             }
         }
@@ -349,7 +350,7 @@ class QuizController extends Controller
             'answer_id' => $answer->id,
             'is_correct' => $answer->is_correct,
             'points' => $answer->is_correct ? $question->points : 0,
-            'answered_at' => now()->toISOString(),
+            'answered_at' => Carbon::now('Asia/Jakarta')->toISOString(),
         ]);
 
         // Keep answers ordered by question order_no for consistent navigation
@@ -368,7 +369,7 @@ class QuizController extends Controller
 
         // Check if quiz is completed
         if ($answers->count() >= $attempt->total_questions) {
-            $attempt->update(['completed_at' => now()]);
+            $attempt->update(['completed_at' => Carbon::now('Asia/Jakarta')]);
             $this->syncProgressIfPassed($course, $module, $attempt);
             return redirect()->route('user.quiz.result.short', $attempt);
         }
@@ -389,7 +390,7 @@ class QuizController extends Controller
             }
         }
         if ($nextIdx === null) {
-            $attempt->update(['completed_at' => now()]);
+            $attempt->update(['completed_at' => Carbon::now('Asia/Jakarta')]);
             $this->syncProgressIfPassed($course, $module, $attempt);
             return redirect()->route('user.quiz.result.short', $attempt);
         }
@@ -403,7 +404,7 @@ class QuizController extends Controller
             abort(403, 'Unauthorized access to quiz attempt');
         }
         if (!$attempt->completed_at) {
-            $attempt->update(['completed_at' => now()]);
+            $attempt->update(['completed_at' => Carbon::now('Asia/Jakarta')]);
         }
         $this->syncProgressIfPassed($course, $module, $attempt);
 

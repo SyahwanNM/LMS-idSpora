@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+﻿@include("partials.navbar-after-login")
 
 <!DOCTYPE html>
 <html lang="en">
@@ -260,9 +260,9 @@
                         <div class="accordion-content">
                             @if($isLocked)
                                 @if($lockReason === 'free')
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Daftar atau beli course untuk membuka modul ini.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Enroll or purchase this course to unlock this module.</p>
                                 @else
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Pass the quiz first to unlock the next material.</p>
                                 @endif
                             @else
                                 <p class="text-muted" style="margin:0; font-size:13px;">Klik untuk mereview materi.</p>
@@ -270,7 +270,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="text-muted" style="padding:12px;">Belum ada modul pada course ini.</div>
+                    <div class="text-muted" style="padding:12px;">No modules available for this course.</div>
                 @endforelse
             </div>
         </div>
@@ -323,7 +323,7 @@
 
                     <div class="tombol_kuis">
                         <button type="button" class="previous_question" data-prev-url="{{ $prevUrl }}">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Send' : 'Send' }}</button>
+                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Submit' : 'Send' }}</button>
                     </div>
                 </form>
             </div>
@@ -395,14 +395,14 @@
                     e.preventDefault();
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Peringatan!',
-                            text: 'Anda harus menyelesaikan soal ini terlebih dahulu',
+                            title: 'Warning!',
+                            text: 'You must answer this question first',
                             icon: 'warning',
-                            confirmButtonText: 'Tutup',
+                            confirmButtonText: 'Close',
                             confirmButtonColor: '#f4c430'
                         });
                     } else {
-                        alert('Anda harus menyelesaikan semua soal kuis ini terlebih dahulu');
+                        alert('You must complete all quiz questions first');
                     }
                     return;
                 }
@@ -413,14 +413,14 @@
                         e.preventDefault();
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
-                                title: 'Peringatan!',
-                                text: 'Anda harus menyelesaikan semua soal kuis terlebih dahulu sebelum lanjut',
+                                title: 'Warning!',
+                                text: 'You must complete all quiz questions before proceeding',
                                 icon: 'warning',
-                                confirmButtonText: 'Tutup',
+                                confirmButtonText: 'Close',
                                 confirmButtonColor: '#f4c430'
                             });
                         } else {
-                            alert('Anda harus menyelesaikan kuis terlebih dahulu sebelum lanjut');
+                            alert('You must complete the quiz before proceeding');
                         }
                         return;
                     }
@@ -436,7 +436,7 @@
         window.addEventListener('beforeunload', function(e) {
             const checked = document.querySelector('input[name="answer_id"]:checked');
             if (_draftDirty && checked) {
-                const msg = 'Jawaban yang sudah kamu pilih belum disimpan. Yakin ingin meninggalkan halaman ini?';
+                const msg = 'You have selected an answer that has not been saved. Are you sure you want to leave this page?';
                 e.preventDefault();
                 e.returnValue = msg;
                 return msg;
@@ -453,12 +453,12 @@
                     e.preventDefault();
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Jawaban Belum Disimpan',
-                            text: 'Kamu sudah memilih jawaban tapi belum menekan "Send". Jawaban ini akan hilang jika kamu pindah soal. Lanjutkan?',
+                            title: 'Unsaved Answer',
+                            text: 'You selected an answer but haven't pressed "Send". It will be lost if you navigate away. Continue?',
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Ya, pindah soal',
-                            cancelButtonText: 'Batal',
+                            confirmButtonText: 'Yes, move on',
+                            cancelButtonText: 'Cancel',
                             confirmButtonColor: '#f4c430',
                         }).then(result => {
                             if (result.isConfirmed) {
@@ -467,7 +467,7 @@
                             }
                         });
                     } else {
-                        if (confirm('Jawaban belum disimpan. Lanjutkan?')) {
+                        if (confirm('Answer not saved. Continue?')) {
                             _draftDirty = false;
                             window.location.href = prevUrl;
                         }
@@ -489,12 +489,12 @@
                     const targetUrl = originalOnclick ? originalOnclick.replace("window.location.href='", '').replace("'", '') : null;
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Jawaban Belum Disimpan',
-                            text: 'Kamu sudah memilih jawaban tapi belum menekan "Send". Jawaban ini akan hilang jika kamu pindah soal. Lanjutkan?',
+                            title: 'Unsaved Answer',
+                            text: 'You selected an answer but haven't pressed "Send". It will be lost if you navigate away. Continue?',
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Ya, pindah soal',
-                            cancelButtonText: 'Batal',
+                            confirmButtonText: 'Yes, move on',
+                            cancelButtonText: 'Cancel',
                             confirmButtonColor: '#f4c430',
                         }).then(result => {
                             if (result.isConfirmed) {
@@ -503,7 +503,7 @@
                             }
                         });
                     } else {
-                        if (confirm('Jawaban belum disimpan. Lanjutkan?')) {
+                        if (confirm('Answer not saved. Continue?')) {
                             _draftDirty = false;
                             if (targetUrl) window.location.href = targetUrl;
                         }
@@ -543,7 +543,7 @@
                     } else {
                         Swal.fire({
                             title: 'Oops!',
-                            text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                            text: 'You must complete the quiz firstahulu baru bisa lanjut ke tahap selanjutnya.',
                             icon: 'warning',
                             confirmButtonColor: '#f4c430',
                         });

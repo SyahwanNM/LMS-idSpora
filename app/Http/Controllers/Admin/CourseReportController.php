@@ -595,8 +595,11 @@ class CourseReportController extends Controller
             ];
         });
 
-        // Filter: hanya tampilkan course yang punya transaksi di periode yang dipilih
-        $rows = $rows->filter(fn($row) => $row['has_transaction_in_period']);
+        // Tampilkan semua course (published) yang dibuat sebelum atau selama periode ini
+        $rows = $rows->filter(function($row) use ($to) {
+            if (empty($row['created_at'])) return true;
+            return \Carbon\Carbon::parse($row['created_at'])->startOfDay()->lessThanOrEqualTo($to);
+        });
 
         // Show all courses (no period filter) — filter only by search query if provided
         if (isset($q) && $q !== '') {

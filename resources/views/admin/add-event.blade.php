@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
@@ -22,8 +22,8 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
-                <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kembali ke Dashboard</a>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Tambah Event</button>
+                <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Add Event</button>
             </div>
         </div>
 
@@ -31,46 +31,46 @@
             <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-md-start mb-3 gap-3">
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <div class="d-flex flex-column" style="max-width:420px">
-                    <small class="text-muted fw-semibold mb-1">Cari Nama</small>
+                    <small class="text-muted fw-semibold mb-1">Search Event Name</small>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" id="eventSearch" class="form-control" placeholder="Cari nama event..." autocomplete="off">
+                        <input type="text" id="eventSearch" class="form-control" placeholder="Search event name..." autocomplete="off">
                     </div>
                 </div>
                 <div class="d-flex flex-column" style="max-width:240px">
-                    <small class="text-muted fw-semibold mb-1">Status Event</small>
+                    <small class="text-muted fw-semibold mb-1">Event Status</small>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-funnel"></i></span>
                         <select id="statusFilter" class="form-select" aria-label="Filter status">
-                            <option value="all" selected>Semua Status</option>
-                            <option value="upcoming">Segera Hadir</option>
-                            <option value="ongoing">Berlangsung</option>
-                            <option value="finished">Telah Selesai</option>
+                            <option value="all" selected>All Status</option>
+                            <option value="upcoming">Upcoming</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="finished">Finished</option>
                         </select>
                     </div>
                 </div>
                 <div class="d-flex flex-column" style="max-width:220px">
                     <small class="text-muted fw-semibold mb-1">
-                        Tipe Kelola
+                        Manage Type
                         <i class="bi bi-info-circle-fill ms-1" role="button" tabindex="0"
                             aria-label="Info tipe kelola"
                             style="color: var(--bs-warning);"
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-custom-class="tooltip-hint-yellow"
-                            title="Manage: event yang dikelola (lanjutan/operasional). Create: event baru yang dibuat dari awal. Filter ini hanya untuk menyaring daftar event."></i>
+                            title="Manage: event managed (ongoing/operationalnal). Create: event baru yang dibuat dari awal. Filter ini hanya untuk menyaring daftar event."></i>
                     </small>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-diagram-3"></i></span>
                         <select id="manageFilter" class="form-select" aria-label="Filter tipe kelola">
-                            <option value="all" selected>Semua Tipe</option>
+                            <option value="all" selected>All Types</option>
                             <option value="manage">Manage</option>
                             <option value="create">Create</option>
                         </select>
                     </div>
                 </div>
                 <div class="d-flex flex-column" style="max-width:260px">
-                    <small class="text-muted fw-semibold mb-1">Bulan Event</small>
+                    <small class="text-muted fw-semibold mb-1">Event Month</small>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-calendar2-month"></i></span>
                         <input type="month" id="eventMonthFilter" class="form-control" aria-label="Filter bulan">
@@ -93,15 +93,15 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Poster</th>
-                                <th>Judul</th>
-                                <th>Deskripsi</th>
-                                <th>Pembicara</th>
-                                <th>Tanggal</th>
-                                <th>Lokasi</th>
+                                <th>Event Name</th>
+                                <th>Description</th>
+                                <th>Speaker</th>
+                                <th>Date</th>
+                                <th>Location</th>
                                 <th>Link</th>
                                 <th>Reseller</th>
-                                <th>Kelengkapan Dokumen</th>
-                                <th class="text-end">Aksi</th>
+                                <th>Documents Completion</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -165,9 +165,9 @@
                                 </td>
                                 <td>
                                     @if((bool) ($event->is_reseller_event ?? false))
-                                        <span class="badge bg-success">Ya</span>
+                                        <span class="badge bg-success">Yes</span>
                                     @else
-                                        <span class="badge bg-secondary">Tidak</span>
+                                        <span class="badge bg-secondary">No</span>
                                     @endif
                                 </td>
                                 <td>
@@ -206,26 +206,26 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/{{ $totalDisplay }} selesai</small>
+                                    <small class="text-muted d-block mt-1">{{ $completedDisplay }}/{{ $totalDisplay }} Completed</small>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm action-btn-group" role="group" aria-label="Aksi event {{ $event->title }}">
                                         @if(!(bool)($event->is_published ?? false))
                                             <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline publish-form">
                                                 @csrf
-                                                <button type="button" class="btn btn-outline-success btn-action-icon publish-event-btn" data-doc-pct="{{ $pct }}" data-missing='@json($missing)' data-bs-toggle="tooltip" data-bs-placement="bottom" title="Terbitkan">
+                                                <button type="button" class="btn btn-outline-success btn-action-icon publish-event-btn" data-doc-pct="{{ $pct }}" data-missing='@json($missing)' data-bs-toggle="tooltip" data-bs-placement="bottom" title="Publish">
                                                     <i class="bi bi-megaphone"></i><span class="visually-hidden">Terbitkan</span>
                                                 </button>
                                             </form>
                                         @else
                                             <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline unpublish-form">
                                                 @csrf
-                                                <button type="button" class="btn btn-success btn-action-icon unpublish-event-btn" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Batal Terbitkan">
+                                                <button type="button" class="btn btn-success btn-action-icon unpublish-event-btn" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Cancel Publish">
                                                     <i class="bi bi-check2-circle"></i><span class="visually-hidden">Batal Terbitkan</span>
                                                 </button>
                                             </form>
                                         @endif
-                                        <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Lihat">
+                                        <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="bottom" title="View Event">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
                                         <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit">
@@ -233,11 +233,11 @@
                                         </a>
                                         <button type="button" class="btn btn-outline-danger btn-action-icon"
                                             data-bs-toggle="modal" data-bs-target="#deleteEventModal"
-                                            title="Hapus"
+                                            title="Delete"
                                             data-url="{{ route('admin.events.destroy',$event) }}"
                                             data-title="{{ $event->title }}"
                                             data-image="{{ $event->image_url ?? '' }}">
-                                            <i class="bi bi-trash"></i><span class="visually-hidden">Hapus</span>
+                                            <i class="bi bi-trash"></i><span class="visually-hidden">Delete</span>
                                         </button>
                                     </div>
                                 </td>
@@ -246,7 +246,7 @@
                         </tbody>
                     </table>
                 </div>
-                {{-- Modals: Kelengkapan Dokumen per Event --}}
+                {{-- Modals: Document Completeness per Event --}}
                 @foreach($events as $event)
                 <div class="modal-upload-operasional modal fade" id="uploadOperasionalModal-{{ $event->id }}" tabindex="-1" aria-labelledby="uploadOperasionalLabel-{{ $event->id }}" aria-hidden="true" data-draggable="false">
 
@@ -338,24 +338,24 @@
             function getFilterLabel(){
                 const parts = [];
                 const s = document.getElementById('eventSearch')?.value?.trim();
-                if(s) parts.push('Cari: "' + s + '"');
+                if(s) parts.push('Search: "' + s + '"');
                 const st = document.getElementById('statusFilter')?.value;
                 if(st && st !== 'all') parts.push('Status: ' + st);
                 const mg = document.getElementById('manageFilter')?.value;
-                if(mg && mg !== 'all') parts.push('Tipe: ' + mg);
+                if(mg && mg !== 'all') parts.push('Type: ' + mg);
                 const mo = document.getElementById('eventMonthFilter')?.value;
                 if(mo) {
                     const [y,m] = mo.split('-');
-                    const label = new Date(+y, +m-1, 1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+                    const label = new Date(+y, +m-1, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
                     parts.push('Bulan: ' + label);
                 }
-                return parts.length ? parts.join(' · ') : 'Semua Event';
+                return parts.length ? parts.join(' · ') : 'All Events';
             }
 
             function buildExportTable(){
                 // Ambil hanya baris yang terlihat
                 const visibleRows = rows.filter(r => r.style.display !== 'none');
-                const headers = ['No', 'Judul', 'Pembicara', 'Tanggal', 'Lokasi', 'Tipe Kelola', 'Reseller', 'Kelengkapan'];
+                const headers = ['No', 'Title', 'Speaker', 'Date', 'Location', 'Manage Type', 'Reseller', 'Completeness'];
 
                 const table = document.createElement('table');
                 table.style.cssText = 'border-collapse:collapse; width:100%; font-size:10px; font-family:Arial,sans-serif; table-layout:fixed;';
@@ -394,24 +394,24 @@
                     tdNo.style.cssText = tdBase + 'text-align:center; white-space:nowrap;';
 
                     // Judul
-                    const tdJudul = tr.insertCell();
-                    tdJudul.textContent = cells[1]?.textContent?.trim() ?? '-';
-                    tdJudul.style.cssText = tdBase + 'font-weight:600; word-break:break-word;';
+                    const tdTitle = tr.insertCell();
+                    tdTitle.textContent = cells[1]?.textContent?.trim() ?? '-';
+                    tdTitle.style.cssText = tdBase + 'font-weight:600; word-break:break-word;';
 
                     // Pembicara
-                    const tdPembicara = tr.insertCell();
-                    tdPembicara.textContent = cells[3]?.textContent?.trim() ?? '-';
-                    tdPembicara.style.cssText = tdBase + 'word-break:break-word;';
+                    const tdSpeaker = tr.insertCell();
+                    tdSpeaker.textContent = cells[3]?.textContent?.trim() ?? '-';
+                    tdSpeaker.style.cssText = tdBase + 'word-break:break-word;';
 
                     // Tanggal
-                    const tdTanggal = tr.insertCell();
-                    tdTanggal.textContent = cells[4]?.textContent?.trim() ?? '-';
-                    tdTanggal.style.cssText = tdBase + 'white-space:nowrap;';
+                    const tdDate = tr.insertCell();
+                    tdDate.textContent = cells[4]?.textContent?.trim() ?? '-';
+                    tdDate.style.cssText = tdBase + 'white-space:nowrap;';
 
                     // Lokasi
-                    const tdLokasi = tr.insertCell();
-                    tdLokasi.textContent = cells[5]?.textContent?.trim() ?? '-';
-                    tdLokasi.style.cssText = tdBase + 'word-break:break-word;';
+                    const tdLocation = tr.insertCell();
+                    tdLocation.textContent = cells[5]?.textContent?.trim() ?? '-';
+                    tdLocation.style.cssText = tdBase + 'word-break:break-word;';
 
                     // Tipe Kelola
                     const tdManage = tr.insertCell();
@@ -442,7 +442,7 @@
                     return;
                 }
                 const filterLabel = getFilterLabel();
-                const printDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+                const printDate = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
                 const table = buildExportTable();
 
                 const printable = document.createElement('div');
@@ -482,18 +482,18 @@
             // Export Excel
             exportExcelBtn && exportExcelBtn.addEventListener('click', function(){
                 if(!window.XLSX){
-                    alert('Library XLSX belum dimuat. Coba refresh halaman.');
+                    alert('XLSX library not loaded. Please refresh the page.');
                     return;
                 }
                 const filterLabel = getFilterLabel();
-                const printDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+                const printDate = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
                 const visibleRows = rows.filter(r => r.style.display !== 'none');
 
-                const headers = ['No', 'Judul', 'Pembicara', 'Tanggal', 'Lokasi', 'Tipe Kelola', 'Reseller', 'Kelengkapan'];
+                const headers = ['No', 'Title', 'Speaker', 'Date', 'Location', 'Manage Type', 'Reseller', 'Completeness'];
                 const data = [
-                    ['Laporan Manage Event'],
+                    ['Manage Event Report'],
                     ['Filter: ' + filterLabel],
-                    ['Dicetak: ' + printDate],
+                    ['Printed: ' + printDate],
                     [],
                     headers,
                 ];
@@ -538,11 +538,11 @@
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="content-operasional-view modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="uploadOperasionalLabel-{{ $event->id }}">Status Dokumen Detail</h5>
+                                <h5 class="modal-title" id="uploadOperasionalLabel-{{ $event->id }}">Detailed Document Status</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <p class="mb-2">Tinjau status semua dokumen terkait acara dan administrasi.</p>
+                                <p class="mb-2">Review the status of all documents related to the event and administration.</p>
                                 @php 
                                     $hasMapsLink = !empty($event->maps_url);
                                     $hasZoomLink = !empty($event->zoom_link);
@@ -562,8 +562,8 @@
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="{{ $pctClass }}" title="Kelengkapan Dokumen">{{ $pct }}%</span>
-                                    <small class="text-muted">{{ $completedDisplay }}/{{ $totalDisplay }} selesai</small>
+                                    <span class="{{ $pctClass }}" title="Completenesspan Dokumen">{{ $pct }}%</span>
+                                    <small class="text-muted">{{ $completedDisplay }}/{{ $totalDisplay }} Completed</small>
                                 </div>
                                 <ul class="list-group list-group-flush mb-3 small">
                                     @if($requiresVbg)
@@ -585,15 +585,15 @@
                                                         <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
                                                     @endif
                                                 @else
-                                                    <span class="text-muted">Belum ada</span>
+                                                    <span class="text-muted">Not available</span>
                                                 @endif
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                                        <span>
-                                            <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
-                                            Module (Trainer)
+                                    <li class="list-group-item d-flex justify-content-between align-items-start px-0">
+                                        <span class="d-flex align-items-center gap-1">
+                                            <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }}"></i>
+                                            <span style="white-space:nowrap;">Module (Trainer)</span>
                                         </span>
                                         <span class="d-flex flex-column align-items-end gap-1">
                                             @if($eventTrainerModulesApproved->isNotEmpty())
@@ -606,12 +606,12 @@
                                             @elseif($hasModule)
                                                 <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
                                             @else
-                                                <span class="text-muted">Belum ada</span>
+                                                <span class="text-muted">Not available</span>
                                             @endif
                                         </span>
                                     </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span>
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <span class="d-flex align-items-center">
                                             <i class="bi {{ $hasAbs ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
                                             Absensi
                                         </span>
@@ -633,10 +633,10 @@
                                                         <img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                     </a>
                                                 @else
-                                                    <span class="badge bg-success">QR Absensi Aktif</span>
+                                                    <span class="badge bg-success">Attendance QR Active</span>
                                                 @endif
                                             @else
-                                                <span class="text-muted">Belum ada</span>
+                                                <span class="text-muted">Not available</span>
                                             @endif
                                         </span>
                                     </li>
@@ -655,7 +655,6 @@
                                                     <div id="vbg-preview-{{ $event->id }}" class="mt-2"></div>
                                                 </div>
                                             @endif
-                                            <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                         </div>
                                     @else
                                         @if($requiresVbg)
@@ -665,7 +664,6 @@
                                                 <div id="vbg-preview-{{ $event->id }}" class="mt-2"></div>
                                             </div>
                                         @endif
-                                        <!-- Absensi upload dihilangkan karena sudah gunakan QR -->
                                     @endif
                                 </form>
                             </div>
@@ -683,35 +681,34 @@
                 </div>
                 @endforeach
                 <div class="mt-3">{{ $events->links() }}</div>
-            @else <div class="text-center py-5">Belum ada event.</div> @endif
+            @else <div class="text-center py-5">No events yet.</div> @endif
         </div></div>
         <div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true" data-bs-focus="false" data-draggable="false" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Tambah Event Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-header"><h5 class="modal-title" id="addEventModalLabel"><i class="bi bi-calendar-plus me-2"></i>Add Event</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
                     <form action="{{ route('admin.events.store') }}" method="POST" enctype="multipart/form-data" id="eventForm">@csrf
                         <div class="text-danger small mb-3">
-                            <strong>*</strong> Wajib diisi.
+                            <strong>*</strong> Must be filled
                         </div>
                         <div class="row g-3">
                             <div class="col-lg-8">
                                 <div class="mb-3">
-                                    <label for="gambar" class="form-label fw-semibold">Gambar Event <span class="text-danger">*</span></label>
+                                    <label for="gambar" class="form-label fw-semibold">Event Image <span class="text-danger">*</span></label>
                                     <input type="file" name="image" id="gambar" class="form-control" accept="image/*" required>
-                                    <div class="form-text">Format: JPG, PNG. Maksimal 5MB. <span id="imageSizeInfo" class="fw-semibold"></span></div>
+                                    <div class="form-text">Formats: JPG, PNG. Max 5MB. <span id="imageSizeInfo" class="fw-semibold"></span></div>
                                     <div id="imagePreview" class="mt-3" style="display:none;">
                                         <img id="previewImg" src="#" alt="Preview" class="img-fluid rounded shadow-sm" style="max-height:200px;width:100%;object-fit:cover;">
                                     </div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="nama" class="form-label fw-semibold">Nama Event <span class="text-danger">*</span></label>
-                                    <input type="text" name="title" id="nama" class="form-control" required value="{{ old('title') }}" placeholder="Masukkan Nama Event">
-                                    <div class="form-text">Gunakan judul yang jelas dan spesifik (contoh: "Webinar Laravel Dasar").</div>
+                                    <label for="nama" class="form-label fw-semibold">Event Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="title" id="nama" class="form-control" required value="{{ old('title') }}" placeholder="Enter Event Name">
+                                    <div class="form-text">Use a clear and specific title (example: "Laravel Basics Webinar").</div>
                                 </div>
-                                <!-- Pembicara (dynamic, minimal 1 required) -->
                                 <div class="box-trainer-event">
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Nama Pembicara/Trainer <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">Trainer Name <span class="text-danger">*</span></label>
                                     @php $oldSpeakers = old('speakers', []); $oldSalaries = old('speaker_salaries', []); @endphp
                                     <div id="speakersContainer" class="d-flex flex-column gap-2">
                                         @if(!empty($oldSpeakers))
@@ -719,14 +716,14 @@
                                             <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
                                                 <div class="d-flex gap-2 align-items-center">
                                                     <select name="speakers[]" class="form-select speaker-select" data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                        <option value="" disabled>Memuat pembicara...</option>
+                                                        <option value="" disabled>Loading Trainer...</option>
                                                         <option value="{{ $sp }}" selected>{{ $sp }}</option>
                                                     </select>
-                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
                                                 </div>
                                                 <div class="mt-2">
                                                     <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
-                                                        placeholder="Gaji Pembicara/Trainer (Rp)"
+                                                        placeholder="Speaker Fee/Trainer (Rp)"
                                                         value="{{ $oldSalaries[$i] ?? '' }}" min="0" step="1000">
                                                 </div>
                                             </div>
@@ -735,59 +732,47 @@
                                             <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
                                                 <div class="d-flex gap-2 align-items-center">
                                                     <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
-                                                        <option value="" selected disabled>Pilih pembicara</option>
+                                                        <option value="" selected disabled>Choose Trainer</option>
                                                     </select>
-                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
                                                 </div>
                                                 <div class="mt-2">
                                                     <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
-                                                        placeholder="Masukkan Gaji Pembicara/Trainer" min="0" step="1000">
-                                                    <div class="form-text">Isikan Gaji untuk Nama Pembicara/Trainer</div>
+                                                        placeholder="Enter Trainer Salary" min="0" step="1000">
+                                                    <div class="form-text">Fill in the Salary for the Trainer Name</div>
                                                 </div>
                                             </div>
                                         @endif
                                     </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i class="bi bi-plus-circle me-1"></i>Tambah Nama Pembicara</button>
                                     <input type="hidden" name="speaker" id="speakerCombined" value="{{ old('speaker') }}">
-                                    <div class="form-text">Minimal 1 pembicara (wajib). Tambahan pembicara bersifat opsional.</div>
+                                    <div class="form-text">Minimum 1 trainer. Additional speakers are optional.</div>
                                 </div>
                                 </div>
-                                <!-- Materi (kategori konten) -->
                                 <div class="mb-3">
-                                    <label for="materi" class="form-label fw-semibold">Materi <span class="text-danger">*</span></label>
+                                    <label for="materi" class="form-label fw-semibold">Subject/Materi <span class="text-danger">*</span></label>
                                     @php
                                         $materiDefaults = [
-                                            'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
-                                            'Frontend Development',
-                                            'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
-                                            'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
+                                            'Artificial Intelligence','Machine Learning','Literatur Review','Digital Marketing','UI/UX Design','IT Management','Programming','Graphic Design'
                                         ];
-                                        $materiFromDb = isset($materiOptions) ? collect($materiOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
-                                        $materiMerged = collect(array_merge($materiDefaults, $materiFromDb))
-                                            ->map(fn($v) => trim((string)$v))
-                                            ->filter()
-                                            ->unique(fn($v) => mb_strtolower($v))
-                                            ->sortBy(fn($v) => mb_strtolower($v))
-                                            ->values()
-                                            ->all();
+                                        $materiMerged = collect($materiDefaults)->values()->all();
                                         $currentMateri = trim((string) old('materi'));
                                     @endphp
                                     <div class="position-relative">
                                         <input type="text" name="materi" id="materi" class="form-control" required
                                                value="{{ $currentMateri }}"
-                                               placeholder="Klik untuk lihat daftar, lalu ketik untuk mencari"
+                                               placeholder="Input to see the list, then type to search."
                                                autocomplete="off">
                                         <div id="materiSuggestions"
                                              class="list-group position-absolute w-100 shadow-sm"
                                              style="display:none; z-index: 1066; max-height: 240px; overflow-y:auto;"></div>
                                     </div>
-                                    <div class="form-text">Klik kolom untuk melihat daftar. Ketik untuk mencari.</div>
-                                    <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
+                                    <div class="form-text">Click a column to see a list. Type to search.</div>
+                                    <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">No material found</div>
                                 </div>
-                                <!-- Kelola Event: Manage / Create -->
                                 <div class="mb-3">
                                     <label for="manage_action" class="form-label fw-semibold">
-                                        Kelola Event
+                                        Action Type
                                         <i class="bi bi-info-circle-fill ms-1" role="button" tabindex="0"
                                             aria-label="Info kelola event"
                                             style="color: var(--bs-warning);"
@@ -798,33 +783,31 @@
                                         <span class="text-danger">*</span>
                                     </label>
                                     <select name="manage_action" id="manage_action" class="form-select" required>
-                                        <option value="" disabled {{ old('manage_action') ? '' : 'selected' }}>Pilih aksi</option>
+                                        <option value="" disabled {{ old('manage_action') ? '' : 'selected' }}>Choose Action Type</option>
                                         <option value="manage" {{ old('manage_action') === 'manage' ? 'selected' : '' }}>Manage</option>
                                         <option value="create" {{ old('manage_action') === 'create' ? 'selected' : '' }}>Create</option>
                                     </select>
                                     <div class="form-text">Manage: event operasional/lanjutan. Create: event baru dari awal.</div>
-                                    <small id="manageActionHelp" class="text-danger" style="display:none">Lengkapi: pilih salah satu (Manage/Create) sebelum menyimpan.</small>
+                                    <small id="manageActionHelp" class="text-danger" style="display:none">Complete: choose one (Manage/Create) before saving.</small>
                                 </div>
 
-                                <!-- Reseller Event -->
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Reseller Event</label>
                                     
                                         <div>
                                             <div class="form-check form-check-inline">
                                                 <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-yes" value="1" {{ old('is_reseller_event', 0) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="reseller-event-yes">Ya</label>
+                                                <label class="form-check-label" for="reseller-event-yes">Yes</label>
                                             </div>
                                             <div class="form-check form-check-inline">
                                                 <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-no" value="0" {{ old('is_reseller_event', 0) ? '' : 'checked' }}>
-                                                <label class="form-check-label" for="reseller-event-no">Tidak</label>
+                                                <label class="form-check-label" for="reseller-event-no">No</label>
                                             </div>
                                         </div>
-                                    <div class="form-text">Jika Ya, event ini akan muncul di Produk Komisi Reseller.</div>
+                                    <div class="form-text">If Yes, this event will appear in the Reseller Commission Products.</div>
                                 </div>
-                                <!-- Jenis Acara -->
                                 <div class="mb-3">
-                                    <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
+                                    <label for="jenis" class="form-label fw-semibold">Event type <span class="text-danger">*</span></label>
                                     <div class="position-relative">
                                         @php
                                             $jenisDefaults = ['Webinar','Seminar','Workshop'];
@@ -834,44 +817,42 @@
                                             $currentJenis = trim((string) old('jenis', ''));
                                         @endphp
                                         <select name="jenis" id="jenis" class="form-select" required>
-                                            <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Pilih jenis acara</option>
+                                            <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Select event type</option>
                                             @foreach($jenisMerged as $opt)
                                                 @php $optStr = (string) $opt; @endphp
                                                 <option value="{{ $optStr }}" {{ $currentJenis === $optStr ? 'selected' : '' }}>{{ $optStr }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="form-text">Pilih jenis acara untuk event ini.</div>
-                                </div>
-                                <!-- Level field removed per request -->
-                                <!-- Penjelasan Singkat (maks 40 kata) -->
-                                <div class="mb-3">
-                                    <label for="short_desc" class="form-label fw-semibold">Penjelasan Singkat <span class="text-danger">*</span></label>
-                                    <textarea name="short_description" id="short_desc" class="form-control" rows="3" required placeholder="Ringkas tujuan atau inti acara (maks 40 kata)">{{ old('short_description') }}</textarea>
-                                    <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40 kata</small>
+                                    <div class="form-text">Choose the event type.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span class="text-danger">*</span></label>
+                                    <label for="short_desc" class="form-label fw-semibold">Short Description <span class="text-danger">*</span></label>
+                                    <textarea name="short_description" id="short_desc" class="form-control" rows="3" required placeholder="Summarize the event's purpose or essence (max 40 words)">{{ old('short_description') }}</textarea>
+                                    <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40 words</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="deskripsi" class="form-label fw-semibold">Description Event <span class="text-danger">*</span></label>
                                     <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description') }}</textarea>
-                                    <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
+                                    <div class="form-text">Describe the event details: topic, target participants, brief agenda, and benefits.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="tanggal" class="form-label fw-semibold">Tanggal Pelaksanaan Event <span class="text-danger">*</span></label>
+                                    <label for="tanggal" class="form-label fw-semibold">Event date <span class="text-danger">*</span></label>
                                      <input type="date" name="event_date" id="tanggal" class="form-control" required
                                          value="{{ old('event_date') }}">
-                                     <div class="form-text">Pilih tanggal pelaksanaan event.</div>
+                                     <div class="form-text">Choose the event date.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Waktu Mulai & Selesai <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-semibold">Start & End Time <span class="text-danger">*</span></label>
                                     <div class="d-flex align-items-center gap-2">
                                         <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time') }}">
                                         <span>s/d</span>
                                         <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}">
                                     </div>
-                                    <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
+                                    <div class="form-text">Fill in the start time (required). End time is optional.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="lokasi" class="form-label fw-semibold">Tipe Pelaksanaan <span class="text-danger">*</span></label>
+                                    <label for="lokasi" class="form-label fw-semibold">Type of Implementation <span class="text-danger">*</span></label>
                                     @php
                                         $oldMode = old('location_mode');
                                         $oldMaps = trim((string) old('maps_url', ''));
@@ -888,127 +869,125 @@
                                         }
                                     @endphp
                                     <select name="location_mode" id="lokasi" class="form-select" required>
-                                        <option value="" disabled {{ $defaultMode ? '' : 'selected' }}>Pilih lokasi</option>
+                                        <option value="" disabled {{ $defaultMode ? '' : 'selected' }}>Select implementation type</option>
                                         <option value="offline" {{ $defaultMode === 'offline' ? 'selected' : '' }}>Offline</option>
                                         <option value="online" {{ $defaultMode === 'online' ? 'selected' : '' }}>Online</option>
                                         <option value="hybrid" {{ $defaultMode === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
                                     </select>
-                                    <div class="form-text">Pilih tipe lokasi event. Field Maps/Zoom akan menyesuaikan.</div>
+                                    <div class="form-text">Select the event location type. Maps/Zoom fields will adjust accordingly.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span class="text-danger">*</span></label>
                                     <input type="text" id="hargaDisplay" class="form-control currency-input" required inputmode="numeric" placeholder="0" autocomplete="off" value="{{ number_format((int)old('price',0),0,',','.') }}">
                                     <input type="hidden" name="price" id="harga" value="{{ (int)old('price',0) }}">
-                                    <small class="text-muted">Gunakan hanya angka. Otomatis diformat: contoh 1.000, 10.000, 100.000.</small>
+                                    <small class="text-muted">Use only numbers. Automatically formatted.</small>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="diskon" class="form-label fw-semibold">Diskon (%)</label>
+                                    <label for="diskon" class="form-label fw-semibold">Discount (%)</label>
                                     <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0" max="100" step="1" value="{{ old('discount_percentage',0) }}" placeholder="0">
-                                    <div class="form-text">Isi 0 jika tidak ada diskon.</div>
+                                    <div class="form-text">Fill in 0 if there is no discount.</div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="discount_until" class="form-label fw-semibold">Jangka Waktu Diskon</label>
+                                    <label for="discount_until" class="form-label fw-semibold">Discount Period</label>
                                     <input type="date" name="discount_until" id="discount_until" class="form-control js-discount-date" value="{{ old('discount_until') }}" disabled>
-                                    <small class="text-muted d-block mt-1">Harus sebelum tanggal event (tidak termasuk hari H).</small>
+                                    <small class="text-muted d-block mt-1">Must be before the event date (excluding the event day).</small>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="benefit" class="form-label fw-semibold">Benefit <span class="text-muted">(Opsional)</span></label>
+                                    <label for="benefit" class="form-label fw-semibold">Benefit <span class="text-muted">(Optional)</span></label>
                                     <div id="benefitsContainer" class="d-flex flex-column gap-2">
-                                        <!-- Rows will be injected by JS; fallback single row for no-JS -->
                                         <div class="input-group benefit-row d-none">
                                             <span class="input-group-text"><i class="bi bi-check2"></i></span>
-                                            <input type="text" class="form-control" name="benefits[]" placeholder="Contoh: Sertifikat peserta">
-                                            <button type="button" class="btn btn-outline-danger remove-benefit" title="Hapus">&times;</button>
+                                            <input type="text" class="form-control" name="benefits[]" placeholder="Example: Participant Certificate">
+                                            <button type="button" class="btn btn-outline-danger remove-benefit" title="Delete">&times;</button>
                                         </div>
                                     </div>
                                     <div class="mt-2">
                                         <button type="button" id="addBenefitRow" class="btn btn-outline-secondary btn-sm">
-                                            <i class="bi bi-plus"></i> Tambah Benefit
+                                            <i class="bi bi-plus"></i> Add Benefit
                                         </button>
                                     </div>
                                     <input type="hidden" name="benefit" id="benefit" value="{{ old('benefit') }}">
-                                    <small class="text-muted d-block mt-1">Masukkan benefit per baris. Klik Tambah untuk menambah item.</small>
+                                    <small class="text-muted d-block mt-1">Enter benefits per row. Click Add to add an item.</small>
                                 </div>
                                 <div class="mb-3 d-none" id="placeNameGroup">
-                                    <label for="place_name" class="form-label fw-semibold">Nama Tempat <span class="text-danger" id="placeNameRequiredStar" style="display:none">*</span></label>
-                                    <input type="text" name="place_name" id="place_name" class="form-control" value="{{ old('place_name') }}" placeholder="Contoh: Hotel ABC / Aula Kampus / Gedung Serbaguna">
-                                    <div class="form-text">Muncul setelah klik "Deteksi" untuk offline/hybrid.</div>
+                                    <label for="place_name" class="form-label fw-semibold">Location Name <span class="text-danger" id="placeNameRequiredStar" style="display:none">*</span></label>
+                                    <input type="text" name="place_name" id="place_name" class="form-control" value="{{ old('place_name') }}" placeholder="Example: Hotel ABC / Aula Kampus / Gedung Serbaguna">
+                                    <div class="form-text">Appears after clicking "Detect" for offline/hybrid events.</div>
                                 </div>
                                 <div class="mb-3" id="mapsGroup">
-                                    <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid) <span class="text-danger" id="mapsRequiredStar" style="display:none">*</span></label>
+                                    <label for="maps" class="form-label fw-semibold">Location Maps (Offline/Hybrid) <span class="text-danger" id="mapsRequiredStar" style="display:none">*</span></label>
                                     <div class="input-group">
-                                        <input type="text" name="maps_url" id="maps" class="form-control" value="{{ old('maps_url') }}" placeholder="Tempel link Google Maps (bisa short link maps.app.goo.gl)">
-                                        <button class="btn btn-outline-secondary" type="button" id="btnResolveMaps">Deteksi</button>
+                                        <input type="text" name="maps_url" id="maps" class="form-control" value="{{ old('maps_url') }}" placeholder="Paste Google Maps link (can be a short link from maps.app.goo.gl)">
+                                        <button class="btn btn-outline-secondary" type="button" id="btnResolveMaps">Detect</button>
                                     </div>
                                     <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
                                     <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
                                     <div id="mapsPreview" class="mt-2 rounded border" style="display:none;height:260px;"></div>
-                                    <div class="form-text">Klik "Deteksi" untuk mencoba membaca koordinat dari short link Google Maps.</div>
+                                    <div class="form-text">Click "Detect" to try reading coordinates from the Google Maps short link.</div>
                                 </div>
                                 <div class="mb-3" id="zoomGroup">
-                                    <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid) <span class="text-danger" id="zoomRequiredStar" style="display:none">*</span></label>
-                                    <input type="text" name="zoom_link" id="zoom" class="form-control" value="{{ old('zoom_link') }}" placeholder="Masukkan Link Zoom">
-                                    <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
+                                    <label for="zoom" class="form-label fw-semibold">Zoom Link (Online/Hybrid) <span class="text-danger" id="zoomRequiredStar" style="display:none">*</span></label>
+                                    <input type="text" name="zoom_link" id="zoom" class="form-control" value="{{ old('zoom_link') }}" placeholder="Enter Zoom Link">
+                                    <div class="form-text">Fill in the meeting link if online/hybrid. Ensure the link is accessible.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                     <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{{ old('terms_and_conditions') }}</textarea>
-                                    <div class="form-text">Opsional. Tulis aturan/persyaratan peserta (refund, ketentuan sertifikat, dll).</div>
+                                    <div class="form-text">Optional. Write rules/requirements for participants (refund, certificate terms, etc.).</div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Schedule <span class="text-muted small">(Opsional)</span></label>
                                     <table class="table table-sm align-middle" id="scheduleTable">
                                         <thead class="table-light">
                                             <tr>
-                                                <th style="width:180px">Waktu Mulai</th>
-                                                <th style="width:180px">Waktu Selesai</th>
-                                                <th>Kegiatan</th>
-                                                <th>Deskripsi</th>
-                                                <th style="width:80px" class="text-center">Aksi</th>
+                                                <th style="width:180px">Start Time</th>
+                                                <th style="width:180px">End Time</th>
+                                                <th>Activity</th>
+                                                <th>Description</th>
+                                                <th style="width:80px" class="text-center">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody></tbody>
                                     </table>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i class="bi bi-plus-circle me-1"></i>Tambah Baris</button>
-                                    <div class="form-text">Opsional. Tambahkan rundown/acara per sesi jika diperlukan.</div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i class="bi bi-plus-circle me-1"></i>Add Row</button>
+                                    <div class="form-text">Optional. Add a schedule/ agenda per session if needed.</div>
                                 </div>
 
-                                <!-- Pengeluaran -->
                                 <div class="mb-3">
-                                    <label class="form-label fw-semibold">Pengeluaran <span class="text-muted small">(Opsional)</span></label>
+                                    <label class="form-label fw-semibold">Expenses <span class="text-muted small">(Optional)</span></label>
                                     <div class="table-responsive">
                                         <table class="table table-sm align-middle" id="expensesTable">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th>Barang</th>
-                                                    <th style="width:120px">Kuantitas</th>
-                                                    <th style="width:160px">Harga Satuan (Rp)</th>
-                                                    <th style="width:180px">Harga Total (Rp)</th>
-                                                    <th style="width:80px" class="text-center">Aksi</th>
+                                                    <th>Item</th>
+                                                    <th style="width:120px">Quantity</th>
+                                                    <th style="width:160px">Unit Price (Rp)</th>
+                                                    <th style="width:180px">Total Price (Rp)</th>
+                                                    <th style="width:80px" class="text-center">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody></tbody>
                                         </table>
                                     </div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="addExpenseRow"><i class="bi bi-plus-circle me-1"></i>Tambah Pengeluaran</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="addExpenseRow"><i class="bi bi-plus-circle me-1"></i>Tambah Expenses</button>
                                     <div class="d-flex justify-content-end mt-2">
-                                        <span class="me-2 fw-semibold">Total Pengeluaran:</span>
+                                        <span class="me-2 fw-semibold">Total Expenses:</span>
                                         <span id="expensesGrandTotal" class="fw-bold">Rp0</span>
                                     </div>
-                                    <div class="form-text">Opsional. Catat biaya untuk kebutuhan laporan/operasional.</div>
+                                    <div class="form-text">Optional. Record costs for reporting/operational purposes.</div>
                                 </div>
                             </div>
                             <div class="col-lg-4">
                                 <div class="event-side-sticky">
                                 <div class="alert alert-info small">
-                                    <strong>Tips:</strong> Pastikan data event sudah benar sebelum disimpan. Gunakan deskripsi yang menarik dan informatif.
+                                    <strong>Tips:</strong> Make sure the event data is correct before saving. Use an engaging and informative description.
                                 </div>
                                 <ul class="list-group mb-3 small">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">Status Harga
-                                        <span class="badge bg-secondary" id="statusHarga">Gratis</span>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">Price Status
+                                        <span class="badge bg-secondary" id="statusHarga">Free</span>
                                     </li>
-                                    <li class="list-group-item">Diskon akan otomatis dihitung jika persentase > 0.</li>
-                                    <li class="list-group-item">Jika event hybrid, isi Maps dan Zoom sekaligus.</li>
+                                    <li class="list-group-item">Discount will be calculated automatically if the percentage is > 0.</li>
+                                    <li class="list-group-item">If the event is hybrid, fill in both Maps and Zoom details.</li>
                                 </ul>
                                 </div>
                             </div>
@@ -1017,29 +996,28 @@
                 </div>
                 <div class="modal-footer">
                     <div class="me-auto small text-danger fw-semibold" id="submitHint" style="display:none;" aria-live="polite">
-                        Lengkapi semua field bertanda * terlebih dahulu untuk mengaktifkan tombol Simpan.
+                        Please complete all fields marked with * before saving.
                     </div>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary" form="eventForm" id="submitBtn">
-                        <i class="bi bi-check-circle me-1"></i> Simpan Event
+                        <i class="bi bi-check-circle me-1"></i> Save Event
                     </button>
                 </div>
             </div></div>
         </div>
         </div>
 
-        <!-- Publish confirmation modal (global) -->
         <div class="modal fade" id="publishConfirmModal" tabindex="-1" aria-labelledby="publishConfirmModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title" id="publishConfirmModalLabel">Konfirmasi Terbitkan Event</h5>
+                <h5 class="modal-title" id="publishConfirmModalLabel">Confirm Publish Event</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body" id="publishConfirmModalBody"></div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary" id="publishConfirmBtn">Terbitkan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="publishConfirmBtn">Publish</button>
               </div>
             </div>
           </div>
@@ -1061,24 +1039,24 @@
                     var title = document.getElementById('publishConfirmModalLabel');
                     var confirmBtn = document.getElementById('publishConfirmBtn');
                     
-                    if (title) title.textContent = 'Konfirmasi Terbitkan Event';
+                    if (title) title.textContent = 'Confirm Publish Event';
                     if (confirmBtn) {
-                        confirmBtn.textContent = 'Terbitkan';
+                        confirmBtn.textContent = 'Publish';
                         confirmBtn.classList.remove('btn-danger');
                         confirmBtn.classList.add('btn-primary');
                     }
 
                     if (pct >= 100) {
-                        if (body) body.innerHTML = '<p>Apakah anda yakin ingin publish event ini? Dokumen sudah lengkap dan event akan segera tampil untuk publik.</p>';
+                        if (body) body.innerHTML = '<p>Are you sure you want to publish this event? All documents are complete and the event will be displayed to the public shortly.</p>';
                     } else {
                         if (body) {
-                            var html = '<p>Kelengkapan dokumen event ini belum lengkap:</p><ul>';
+                            var html = '<p>The document completeness for this event is not yet complete:</p><ul>';
                             if (Array.isArray(missing) && missing.length) {
                                 missing.forEach(function(it){ html += '<li>' + it + '</li>'; });
                             } else {
-                                html += '<li>Beberapa dokumen belum lengkap</li>';
+                                html += '<li>Some documents are not yet complete</li>';
                             }
-                            html += '</ul><p>Apakah anda yakin ingin publish event ini?</p>';
+                            html += '</ul><p>Are you sure you want to publish this event?</p>';
                             body.innerHTML = html;
                         }
                     }
@@ -1093,13 +1071,13 @@
                     var title = document.getElementById('publishConfirmModalLabel');
                     var confirmBtn = document.getElementById('publishConfirmBtn');
                     
-                    if (title) title.textContent = 'Konfirmasi Batal Terbitkan';
+                    if (title) title.textContent = 'Confirm Unpublish Event';
                     if (confirmBtn) {
-                        confirmBtn.textContent = 'Batal Terbitkan';
+                        confirmBtn.textContent = 'Unpublish';
                         confirmBtn.classList.remove('btn-primary');
                         confirmBtn.classList.add('btn-danger');
                     }
-                    if (body) body.innerHTML = '<p>Apakah Anda yakin ingin membatalkan publikasi event ini? Event tidak akan terlihat lagi oleh publik.</p>';
+                    if (body) body.innerHTML = '<p>Are you sure you want to unpublish this event? The event will no longer be visible to the public.</p>';
                     
                     pendingPublishForm = form;
                     if (publishModal) publishModal.show();
@@ -1442,7 +1420,7 @@
                 const sizeMB = (f.size / (1024*1024));
                 if(imageSizeInfo){ imageSizeInfo.textContent = 'Ukuran: ' + sizeMB.toFixed(2) + 'MB'; }
                 if(sizeMB > 5){
-                    alert('Ukuran gambar melebihi 5MB. Silakan pilih file yang lebih kecil.');
+                    alert('Image size exceeds 5MB. Please choose a smaller filebih kecil.');
                     imgInp.value='';
                     preview.style.display='none';
                     if(imageSizeInfo) imageSizeInfo.textContent='';
@@ -1625,7 +1603,7 @@
                 }
 
                 const url = mapsInput?.value || '';
-                if(!url){ alert('Masukkan link Google Maps terlebih dahulu.'); return; }
+                if(!url){ alert('Please enter a Google Maps link first.'); return; }
                 try{
                     setResolveMapsLoading(true);
                     btnResolveMaps.disabled = true;
@@ -1638,10 +1616,10 @@
                     if(resp.ok && data.lat && data.lng){
                         showMap(parseFloat(data.lat), parseFloat(data.lng));
                     }else{
-                        alert(data.message || 'Koordinat tidak ditemukan dari link.');
+                        alert(data.message || 'Coordinates not found from link.');
                     }
                 }catch(err){
-                    alert('Gagal mendeteksi koordinat.');
+                    alert('Failed to detect coordinates.');
                 }finally{
                     setResolveMapsLoading(false);
                     btnResolveMaps.disabled = false;
@@ -1782,7 +1760,7 @@
             if(!selectEl) return;
             const selected = String(selectedName || '').trim();
             const options = [];
-            options.push('<option value="" disabled ' + (selected ? '' : 'selected') + '>Pilih pembicara</option>');
+            options.push('<option value="" disabled ' + (selected ? '' : 'selected') + '>Choose Trainer</option>');
             const names = new Set();
             (trainers || []).forEach(t => {
                 const name = String(t.name || '').trim();
@@ -1818,13 +1796,13 @@
             div.innerHTML = `
                 <div class="d-flex gap-2 align-items-center">
                     <select name="speakers[]" class="form-select speaker-select" data-selected="${safeVal}">
-                        <option value="" selected disabled>Pilih narasumber</option>
+                        <option value="" selected disabled>Choose speaker</option>
                     </select>
-                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="mt-2">
                     <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
-                        placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                        placeholder="Speaker Fee/Trainer (Rp)" min="0" step="1000">
                 </div>`;
             speakersContainer.appendChild(div);
             updateSpeakerRowsState();
@@ -1860,7 +1838,7 @@
             row.innerHTML = `
                 <span class="input-group-text"><i class="bi bi-check2"></i></span>
                 <input type="text" class="form-control" name="benefits[]" placeholder="Contoh: Sertifikat peserta" value="${safeVal}">
-                <button type="button" class="btn btn-outline-danger remove-benefit" title="Hapus">&times;</button>
+                <button type="button" class="btn btn-outline-danger remove-benefit" title="Delete">&times;</button>
             `;
             benefitsContainer.appendChild(row);
         }
@@ -1900,7 +1878,7 @@
                 const val = unformatNumber(hargaDisplay.value);
                 hargaHidden.value = val; // keep hidden in sync
                 hargaDisplay.value = formatThousands(val); // ensure formatting
-                statusHarga.textContent = val === 0 ? 'Gratis' : 'Berbayar';
+                statusHarga.textContent = val === 0 ? 'Free' : 'Paid';
                 statusHarga.className = 'badge ' + (val === 0 ? 'bg-success' : 'bg-primary');
 
                 // Disable discount fields when price is 0
@@ -2037,7 +2015,7 @@
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Delete">
                         <i class="bi bi-x"></i>
                     </button>
                 </td>`;
@@ -2060,7 +2038,7 @@
             addScheduleRow();
         }
 
-        // Pengeluaran (Expenses) dynamic rows and totals
+        // Expenses (Expenses) dynamic rows and totals
         const expensesTableBody = document.querySelector('#expensesTable tbody');
         const addExpenseBtn = document.getElementById('addExpenseRow');
         const expensesGrandTotalEl = document.getElementById('expensesGrandTotal');
@@ -2111,7 +2089,7 @@
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1" value="" /></td>
                 <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0" /></td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Delete">
                         <i class="bi bi-trash3"></i>
                     </button>
                 </td>`;
@@ -2295,20 +2273,20 @@
                 if(!el) return 'Field';
                 const id = el.id || '';
                 const name = el.name || '';
-                if(id === 'gambar' || name === 'image') return 'Gambar Event';
-                if(id === 'nama' || name === 'title') return 'Nama Event';
-                if(name === 'speakers[]') return 'Nama Pembicara (minimal 1)';
-                if(id === 'manage_action' || name === 'manage_action') return 'Kelola Event';
+                if(id === 'gambar' || name === 'image') return 'Event Image';
+                if(id === 'nama' || name === 'title') return 'Event Name';
+                if(name === 'speakers[]') return 'Speaker Name (min. 1)';
+                if(id === 'manage_action' || name === 'manage_action') return 'Event Type';
                 if(id === 'level' || name === 'level') return 'Level';
-                if(id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
-                if(id === 'deskripsi' || name === 'description') return 'Deskripsi Event';
-                if(id === 'tanggal' || name === 'event_date') return 'Tanggal';
-                if(id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
-                if(id === 'lokasi' || name === 'location_mode') return 'Lokasi';
-                if(id === 'place_name' || name === 'place_name') return 'Nama Tempat';
-                if(id === 'maps' || name === 'maps_url') return 'Link Google Maps';
-                if(id === 'zoom' || name === 'zoom_link') return 'Link Zoom';
-                if(id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Harga';
+                if(id === 'short_desc' || name === 'short_description') return 'Short Description';
+                if(id === 'deskripsi' || name === 'description') return 'Event Description';
+                if(id === 'tanggal' || name === 'event_date') return 'Date';
+                if(id === 'masuk1' || name === 'event_time') return 'Start Time';
+                if(id === 'lokasi' || name === 'location_mode') return 'Location';
+                if(id === 'place_name' || name === 'place_name') return 'Venue Name';
+                if(id === 'maps' || name === 'maps_url') return 'Google Maps Link';
+                if(id === 'zoom' || name === 'zoom_link') return 'Zoom Link';
+                if(id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Price';
                 return id || name || 'Field';
             };
             function missingRequired(){
@@ -2581,7 +2559,6 @@
     </script>
     @endsection
 
-<!-- Global Delete Event Modal (modern) -->
 <div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content modal-modern position-relative">
@@ -2590,28 +2567,28 @@
                 <div class="d-flex align-items-center gap-3">
                     <div class="icon-pill"><i class="bi bi-trash-fill fs-4"></i></div>
                     <div>
-                        <h5 class="modal-title mb-0" id="deleteEventLabel">Hapus Event</h5>
-                        <small class="text-muted">Tindakan ini tidak dapat dibatalkan</small>
+                        <h5 class="modal-title mb-0" id="deleteEventLabel">Delete Event</h5>
+                        <small class="text-muted">This action cannot be undone</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Anda akan menghapus event:</p>
+                <p class="mb-2">You are about to delete this event:</p>
                 <div class="p-2 rounded border bg-light"><i class="bi bi-calendar-event me-1"></i> <strong id="deleteEventName">Event</strong></div>
                             <div id="deleteEventImageWrapper" class="mt-3" style="display:none;">
-                                <img id="deleteEventImage" src="" alt="Gambar Event" class="img-fluid rounded shadow-sm" style="max-height:180px;object-fit:cover;">
+                                <img id="deleteEventImage" src="" alt="Event Image" class="img-fluid rounded shadow-sm" style="max-height:180px;object-fit:cover;">
                             </div>
                 <div class="form-check mt-3">
                     <input class="form-check-input" type="checkbox" value="1" id="deleteConfirmCheckbox">
-                    <label class="form-check-label" for="deleteConfirmCheckbox">Saya paham bahwa penghapusan bersifat permanen.</label>
+                    <label class="form-check-label" for="deleteConfirmCheckbox">I understand that this deletion is permanent.</label>
                 </div>
             </div>
             <div class="modal-footer border-0">
                 <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
-                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger confirm-danger-btn px-4" id="deleteConfirmBtn" form="deleteEventFormGlobal" disabled>
-                        <span class="me-1">Hapus Permanen</span>
+                        <span class="me-1">Delete Permanently</span>
                         <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                     </button>
                 </div>
@@ -2909,7 +2886,7 @@ function initEditEventLocationAndBenefits(modalEl){
 
         const url = mapsInput?.value || '';
         if(!url){
-            alert('Masukkan link Google Maps terlebih dahulu.');
+            alert('Please enter a Google Maps link first.');
             return;
         }
 
@@ -2931,7 +2908,7 @@ function initEditEventLocationAndBenefits(modalEl){
                 alert(data.message || 'Koordinat tidak ditemukan.');
             }
         }catch(_){
-            alert('Gagal mendeteksi koordinat.');
+            alert('Failed to detect coordinates.');
         }finally{
             setResolveMapsLoading(false);
             btnResolveMaps.disabled = false;
@@ -2944,7 +2921,7 @@ function initEditEventLocationAndBenefits(modalEl){
         const row = document.createElement('div');
         row.className = 'input-group mb-2 benefit-row';
         const safeValue = String(prefill || '').replace(/"/g, '&quot;');
-        row.innerHTML = `<input type="text" class="form-control" name="benefits[]" placeholder="Tuliskan benefit" value="${safeValue}"><button type="button" class="btn btn-outline-danger" data-action="remove-benefit" title="Hapus"><i class="bi bi-x"></i></button>`;
+        row.innerHTML = `<input type="text" class="form-control" name="benefits[]" placeholder="Tuliskan benefit" value="${safeValue}"><button type="button" class="btn btn-outline-danger" data-action="remove-benefit" title="Delete"><i class="bi bi-x"></i></button>`;
         benefitsContainer.appendChild(row);
     }
 
@@ -3014,7 +2991,7 @@ function initEditEventDynamicTables(modalEl){
             <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td>
             <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td>
             <td class="text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Delete">
                     <i class="bi bi-x"></i>
                 </button>
             </td>`;
@@ -3109,7 +3086,7 @@ function initEditEventDynamicTables(modalEl){
             <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][unit_price]" data-expense-unit min="0" step="1"></td>
             <td><input type="number" class="form-control form-control-sm" name="expenses[${idx}][total]" data-expense-total readonly value="0"></td>
             <td class="text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Hapus">
+                <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-expense" title="Delete">
                     <i class="bi bi-trash3"></i>
                 </button>
             </td>`;
@@ -3195,7 +3172,7 @@ function initEditEventSpeakers(modalEl){
         if (!selectEl) return;
         const selected = String(selectedName || '').trim();
         const options = [];
-        options.push('<option value="" disabled ' + (selected ? '' : 'selected') + '>Pilih narasumber</option>');
+        options.push('<option value="" disabled ' + (selected ? '' : 'selected') + '>Choose speaker</option>');
         const names = new Set();
         (trainers || []).forEach(t => {
             const name = String(t.name || '').trim();
@@ -3231,13 +3208,13 @@ function initEditEventSpeakers(modalEl){
         div.innerHTML = `
             <div class="d-flex gap-2 align-items-center">
                 <select name="speakers[]" class="form-select speaker-select" data-selected="${safe}">
-                    <option value="" selected disabled>Pilih narasumber</option>
+                    <option value="" selected disabled>Choose speaker</option>
                 </select>
-                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
             </div>
             <div class="mt-2">
                 <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
-                    placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                    placeholder="Speaker Fee/Trainer (Rp)" min="0" step="1000">
             </div>`;
         speakersContainer.appendChild(div);
         updateSpeakerRowsState();
@@ -3336,3 +3313,8 @@ document.addEventListener('click', async function(e){
     }
 });
 </script>
+
+
+
+
+

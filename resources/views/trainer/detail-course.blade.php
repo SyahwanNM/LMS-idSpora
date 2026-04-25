@@ -375,9 +375,9 @@
                                         </div>
                                     </div>
                                     <div class="col-submission">
-                                        <p>{{ $attempt->completed_at ? $attempt->completed_at->format('Y-m-d') : 'In Progress' }}
+                                        <p>{{ $attempt->completed_at ? $attempt->completed_at->copy()->subMinutes(7)->format('Y-m-d') : 'In Progress' }}
                                         </p>
-                                        <span>{{ $attempt->completed_at ? $attempt->completed_at->format('H:i') : '--:--' }}</span>
+                                        <span>{{ $attempt->completed_at ? $attempt->completed_at->copy()->subMinutes(7)->format('H:i') : '--:--' }}</span>
                                     </div>
                                     <div class="col-score">
                                         <span

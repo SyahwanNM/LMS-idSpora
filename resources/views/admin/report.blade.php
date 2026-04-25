@@ -50,12 +50,12 @@
 <body>
     @include("partials.navbar-admin-course")
     <div class="box_luar_report">
-        <h1 class="judul_report">Laporan EduPlatform Admin</h1>
-        <p class="keterangan_judul">Berikut adalah laporan course.</p>
+        <h1 class="judul_report">EduPlatform Admin Report</h1>
+        <p class="keterangan_judul">Here are the course reports.</p>
         <div class="btn_box_report">
             <div class="btn-group" role="group" aria-label="Report sections">
-                <button type="button" class="btn_report active" data-target="pendapatan">Pendapatan</button>
-                <button type="button" class="btn_report" data-target="pertumbuhan">Pertumbuhan</button>
+                <button type="button" class="btn_report active" data-target="pendapatan">Income</button>
+                <button type="button" class="btn_report" data-target="pertumbuhan">Growth</button>
             </div>
             <div class="box_unduh">
                 <button type="button" class="btn_unduh" id="btnCourseExportPdf">
@@ -76,14 +76,14 @@
         <div id="pendapatan" class="box_report active">
             <div class="box_detail_laporan">
                 <div class="detail_laporan">
-                    <h4>Total Pendapatan</h4>
+                    <h4>Total Revenue</h4>
                     <h3 class="total_kenaikan" id="totalRevenue">
                         Rp. {{ number_format((float)($revenueReport['totals']['total_revenue'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="totalRevenueChange">
                         @php
                         $chg = $revenueReport['changes']['total_revenue'] ?? ['percent' => 0, 'direction' => 'up'];
-                        $chgLabel = $revenueReport['changes']['label'] ?? 'dari bulan lalu';
+                        $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
                         <div class="{{ $isDown ? 'informasi_penurunan_pendapatan' : 'informasi_kenaikan_pendapatan' }}">
@@ -101,14 +101,14 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Pendapatan per Level Course</h4>
+                    <h4>Revenue per Course Level</h4>
                     <h3 class="total_kenaikan" id="topLevelRevenue">
                         Rp. {{ number_format((float)(($revenueReport['revenue_by_level'][0]['revenue_total'] ?? 0)), 0, ',', '.') }}
                     </h3>
                     <div id="topLevelRevenueChange">
                         @php
                         $chg = $revenueReport['changes']['top_level_revenue'] ?? ['percent' => 0, 'direction' => 'up'];
-                        $chgLabel = $revenueReport['changes']['label'] ?? 'dari bulan lalu';
+                        $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
                         <div class="{{ $isDown ? 'informasi_penurunan_pendapatan' : 'informasi_kenaikan_pendapatan' }}">
@@ -126,7 +126,7 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Pendapatan per Modul</h4>
+                    <h4>Revenue per Module</h4>
                     <h3 class="total_kenaikan" id="totalTransactions">
                         @php
                         $totalRevenue = (float)($revenueReport['totals']['total_revenue'] ?? 0);
@@ -138,7 +138,7 @@
                     <div id="revenuePerModuleChange">
                         @php
                         $chg = $revenueReport['changes']['revenue_per_module'] ?? ['percent' => 0, 'direction' => 'up'];
-                        $chgLabel = $revenueReport['changes']['label'] ?? 'dari bulan lalu';
+                        $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
                         <div class="{{ $isDown ? 'informasi_penurunan_pendapatan' : 'informasi_kenaikan_pendapatan' }}">
@@ -157,20 +157,20 @@
                 </div>
             </div>
             <div class="box_cari_pendapatan">
-                <h5>Pendapatan per Course</h5>
+                <h5>Revenue per Course</h5>
                 <div class="box_filter_cari">
                     <div class="cari_pendapatan">
                         <div class="box_pendapatan_per_course">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course" id="revenueSearch" type="text" placeholder="Cari Course">
+                            <input class="cari_course" id="revenueSearch" type="text" placeholder="Search Course">
                         </div>
                     </div>
                     <div class="box_filter">
-                        <p class="mulai_course">Bulan</p>
+                        <p class="mulai_course">Month</p>
                         <input class="tanggal_course" id="revenueMonth" type="month">
-                        <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
+                        <button class="btn_terapkan" id="applyRevenueFilter">Apply</button>
                     </div>
 
                 </div>
@@ -179,13 +179,13 @@
                <table class="tabel_pendapatan table table-striped table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Nama Course</th>
-                            <th>Tanggal</th>
-                            <th>Peserta</th>
-                            <th>Harga</th>
-                            <th>Pendapatan</th>
-                            <th>Pengeluaran</th>
-                            <th>Aksi</th>
+                            <th>Name Course</th>
+                            <th>Date</th>
+                            <th>Participants</th>
+                            <th>Price</th>
+                            <th>Income</th>
+                            <th>Expenses</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="revenueTableBody">
@@ -210,7 +210,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Belum ada transaksi course pada rentang tanggal ini.</td>
+                            <td colspan="7" class="text-center text-muted">No course transactions found for the selected date range.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -224,7 +224,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Total View</h6>
+                                <h6>Total Views</h6>
                                 <h3 id="totalViews">{{ (int)(data_get($growthReport, 'summary.total_views', 0)) }}</h3>
                             </div>
                         </div>
@@ -233,8 +233,8 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Waktu Tonton Rata-rata</h6>
-                                <h3 id="avgWatch">{{ (int)(data_get($growthReport, 'summary.avg_watch_minutes', 0)) }} Menit</h3>
+                                <h6>Average Watch Time</h6>
+                                <h3 id="avgWatch">{{ (int)(data_get($growthReport, 'summary.avg_watch_minutes', 0)) }} Minutes</h3>
                             </div>
                         </div>
                     </div>
@@ -242,7 +242,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Peserta</h6>
+                                <h6>Participants</h6>
                                 <h3 id="totalStudents">{{ (int)(data_get($growthReport, 'summary.participants', 0)) }}</h3>
                             </div>
                         </div>
@@ -251,7 +251,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Rating Keseluruhan</h6>
+                                <h6>Overall Rating</h6>
                                 <h3 id="courseRating">{{ number_format((float)(data_get($growthReport, 'summary.rating_avg', 0)), 1) }} ⭐</h3>
                             </div>
                         </div>
@@ -261,29 +261,29 @@
 
                 <div class="card mt-4 shadow-sm">
                     <div class="card-body">
-                        <h5 class="mb-3">Report Pertumbuhan Course</h5>
+                        <h5 class="mb-3">Course Growth Report</h5>
                         <canvas id="growthChart" height="90"></canvas>
                     </div>
                 </div>
             </div>
             <div class="box_cari_pendapatan">
-                <h3>Detail Performa Course</h3>
+                <h3>Course Performance Details</h3>
             </div>
             <div class="box_cari_pendapatan">
-                <h5>Pertumbuhan per Course</h5>
+                <h5>Growth per Course</h5>
                 <div class="box_filter_cari">
                     <div class="cari_pendapatan">
                         <div class="box_pendapatan_per_course">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course" id="growthSearch" type="text" placeholder="Cari Course" value="{{ $growthQuery ?? '' }}">
+                            <input class="cari_course" id="growthSearch" type="text" placeholder="Search Courses" value="{{ $growthQuery ?? '' }}">
                         </div>
                     </div>
                     <div class="box_filter">
-                        <p class="mulai_course">Bulan</p>
+                        <p class="mulai_course">Month</p>
                         <input class="tanggal_course" id="growthMonth" type="month" value="{{ $growthMonth ?? now()->format('Y-m') }}">
-                        <button class="btn_terapkan" id="applyGrowthFilter" type="button">Terapkan</button>
+                        <button class="btn_terapkan" id="applyGrowthFilter" type="button">Apply</button>
                     </div>
 
                 </div>
@@ -293,13 +293,13 @@
                 <table class="tabel_pertumbuhan table table-striped table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Nama Course</th>
-                            <th>Tanggal Dibuat</th>
+                            <th>Name Course</th>
+                            <th>Date Created</th>
                             <th>Level</th>
-                            <th>Total View</th>
-                            <th>Waktu tonton rata-rata</th>
-                            <th>Peserta</th>
-                            <th>Rating Keseluruhan Course</th>
+                            <th>Total Views</th>
+                            <th>Average Watch Time</th>
+                            <th>Participants</th>
+                            <th>Overall Course Rating</th>
                         </tr>
                     </thead>
                     <tbody id="growthTableBody">
@@ -316,7 +316,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Belum ada data.</td>
+                            <td colspan="7" class="text-center text-muted">No data available.</td>
                         </tr>
                         @endforelse
                     </tbody>

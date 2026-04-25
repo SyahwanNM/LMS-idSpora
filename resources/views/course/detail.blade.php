@@ -1510,7 +1510,7 @@
             </div>
           @empty
             <div class="text-center py-5">
-              <p class="text-muted">Belum ada penilaian untuk course ini.</p>
+              <p class="text-muted">No ratings for this course yet.</p>
             </div>
           @endforelse
         </div>
@@ -1533,7 +1533,7 @@
               : $course->price;
           @endphp
           @if($isFreeCourse)
-            <h4 class="price-text">GRATIS</h4>
+            <h4 class="price-text">FREE</h4>
           @elseif($hasDiscount)
             <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
               <div>
@@ -1658,8 +1658,7 @@
           @endphp
           @if($canLearn)
             <a href="{{ route('course.learn', $course->id) }}" class="enroll"
-              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Belajar
-              Sekarang</a>
+              style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Start Learn</a>
           @elseif($paymentUnderReview)
             <button type="button" class="enroll" disabled
               style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran
@@ -1696,7 +1695,7 @@
               <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" />
               <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" />
             </svg>
-            <p class="time-text">Akses Seumur Hidup</p>
+            <p class="time-text">Lifetime Access</p>
           </div>
           <div class="materi">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1708,7 +1707,7 @@
               <path
                 d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z" />
             </svg>
-            <p class="materi-text">Materi pembelajaran Lengkap</p>
+            <p class="materi-text">Complete Learning Materials</p>
           </div>
           <div class="sertif">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#f4c430" class="ikon bi bi-trophy"
@@ -1716,7 +1715,7 @@
               <path
                 d="M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5q0 .807-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33 33 0 0 1 2.5.5m.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935m10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935M3.504 1q.01.775.056 1.469c.13 2.028.457 3.546.87 4.667C5.294 9.48 6.484 10 7 10a.5.5 0 0 1 .5.5v2.61a1 1 0 0 1-.757.97l-1.426.356a.5.5 0 0 0-.179.085L4.5 15h7l-.638-.479a.5.5 0 0 0-.18-.085l-1.425-.356a1 1 0 0 1-.757-.97V10.5A.5.5 0 0 1 9 10c.516 0 1.706-.52 2.57-2.864.413-1.12.74-2.64.87-4.667q.045-.694.056-1.469z" />
             </svg>
-            <p class="sertif-text">Sertifikat Kehadiran</p>
+            <p class="sertif-text">Attendance Certificate</p>
           </div>
           <div class="record">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#f4c430" class="ikon bi bi-tv"
@@ -1724,7 +1723,7 @@
               <path
                 d="M2.5 13.5A.5.5 0 0 1 3 13h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5M13.991 3l.024.001a1.5 1.5 0 0 1 .538.143.76.76 0 0 1 .302.254c.067.1.145.277.145.602v5.991l-.001.024a1.5 1.5 0 0 1-.143.538.76.76 0 0 1-.254.302c-.1.067-.277.145-.602.145H2.009l-.024-.001a1.5 1.5 0 0 1-.538-.143.76.76 0 0 1-.302-.254C1.078 10.502 1 10.325 1 10V4.009l.001-.024a1.5 1.5 0 0 1 .143-.538.76.76 0 0 1 .254-.302C1.498 3.078 1.675 3 2 3zM14 2H2C0 2 0 4 0 4v6c0 2 2 2 2 2h12c2 0 2-2 2-2V4c0-2-2-2-2-2" />
             </svg>
-            <p class="record-text">Video Tersedia</p>
+            <p class="record-text">Video Available</p>
           </div>
           <div class="online">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#f4c430" class="ikon bi bi-layers"

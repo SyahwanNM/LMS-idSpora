@@ -324,9 +324,8 @@
                 <div class="input_biodata">
                     <p>No Whatsapp</p>
                     <div class="whatsapp_biodata">
-                        <span class="btn_nomor" style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;cursor:default;">+62</span>
-                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="+62">
-                        <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
+                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="">
+                        <input class="input_nomor" type="text" placeholder="Contoh: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
                     </div>
                 </div>
                 @if((bool) ($course->is_reseller_course ?? false))

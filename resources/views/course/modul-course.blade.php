@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+﻿@include("partials.navbar-after-login")
 
 <!DOCTYPE html>
 <html lang="en">
@@ -14,6 +14,9 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        html, body { overflow: hidden; height: 100%; }
+    </style>
 </head>
 
 <body>
@@ -223,7 +226,7 @@
             {{-- UI tetap seperti sebelumnya, tapi konten dinamis dari backend --}}
             @if(!empty($missingMaterials))
                 <div class="alert alert-warning" role="alert" style="margin: 0 0 12px 0;">
-                    <div style="font-weight:600;">Oops, modul course belum lengkap.</div>
+                    <div style="font-weight:600;">Oops, course modules are incompletep.</div>
                     <div style="margin-top:6px;">{{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.</div>
                 </div>
             @endif
@@ -315,9 +318,9 @@
                             @if($isLocked)
                                 <hr>
                                 @if($lockReason === 'free')
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Daftar atau beli course untuk membuka modul ini.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Enroll or purchase this course to unlock this module.</p>
                                 @else
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Pass the quiz first to unlock the next material.</p>
                                 @endif
                             @endif
                             {{-- HIDE DESKRIPSI DI ACCORDION MENU BAWAH --}}
@@ -333,10 +336,11 @@
                         </div>
                     </div>
                 @empty
-                    <div class="text-muted" style="padding:12px;">Belum ada modul pada course ini.</div>
+                    <div class="text-muted" style="padding:12px;">No modules available for this course.</div>
                 @endforelse
             </div>
         </div>
+        <div class="scroll-modul-box">
         <div class="box_modul_kanan">
             @php
                 $activeKind = $activeDisplay['kind'] ?? (($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') ? 'quiz' : 'material');
@@ -426,7 +430,7 @@
 
             @if(!$isQuiz)
                 <div class="box_luar_deskripsi_modul">
-                    <div class="box_deskripsi_modul" style="padding: 2px;">
+                    <div class="box_deskripsi_modul modul_course" style="padding: 2px;">
                         @if($showHtmlContent)
                             {{-- Trainer rich text HTML content --}}
                             <div class="trainer-html-content" style="padding: 20px; background: #fff; border-radius: 12px; border: none; max-height: 600px; overflow-y: auto;">
@@ -443,7 +447,7 @@
                                     </div>
                                 @else
                                     <p class="deskripsi_modul" style="font-size: 14px; color: #374151;">
-                                        {{ $materialDescription ?: 'Deskripsi modul belum tersedia.' }}
+                                        {{ $materialDescription ?: 'Module description not available.' }}
                                     </p>
                                 @endif
                             </div>
@@ -505,8 +509,8 @@
                                 // Masih berjalan — tampilkan tombol Lanjutkan
                                 $ongoingAttempt = $rawOngoing;
                             } else {
-                                // Sudah expired — complete sekarang agar cooldown 60s dihitung dari now()
-                                $rawOngoing->update(['completed_at' => now()]);
+                                // Sudah expired — complete dengan waktu sekarang (WIB)
+                                $rawOngoing->update(['completed_at' => \Carbon\Carbon::now('Asia/Jakarta')]);
                                 $rawOngoing->refresh();
                             }
                         }
@@ -538,25 +542,26 @@
                         $inCooldown = $cooldownEndsAt->isFuture();
                     }
                    $remainingCooldownSec = 0;
-if ($inCooldown && $cooldownEndsAt) {
-    // Hitung sisa detik murni di sisi server agar aman dari masalah zona waktu/jam PC lambat
-    $remainingCooldownSec = max(0, $cooldownEndsAt->timestamp - now()->timestamp);
-}
+                if ($inCooldown && $cooldownEndsAt) {
+            // Hitung sisa detik murni di sisi server agar aman dari masalah zona waktu/jam PC lambat
+            $remainingCooldownSec = max(0, $cooldownEndsAt->timestamp - \Carbon\Carbon::now('Asia/Jakarta')->timestamp);
+            }
                 @endphp
+                
 
                 <div class="box_luar_deskripsi_modul">
                     <div class="box_deskripsi_modul">
-                        <h4 style="font-weight:700; margin:0 0 12px 0;">Aturan Kuis</h4>
-                        <p style="margin:0 0 10px 0;">Kuis ini bertujuan untuk mengukur pemahaman Anda terhadap materi {{ $beforeQuizTitle }}.</p>
-                        <p style="margin:0 0 10px 0;">Silakan perhatikan ketentuan berikut sebelum memulai:</p>
+                        <h4 style="font-weight:700; margin:0 0 12px 0;">Quiz Rules</h4>
+                        <p style="margin:0 0 10px 0;">This quiz is designed to measure your understanding of the {{ $beforeQuizTitle }} material.</p>
+                        <p style="margin:0 0 10px 0;">Please pay attention to the following conditions before starting:</p>
                         <ol style="padding-left:18px; margin:0 0 14px 0; line-height:1.7;">
-                            <li><strong>Jumlah Soal:</strong> {{ $questionCount }} pertanyaan pilihan ganda.</li>
-                            <li><strong>Durasi Pengerjaan:</strong> {{ $durationText }}.</li>
-                            <li><strong>Nilai Kelulusan:</strong> Minimum {{ $passingPercent }}% untuk dinyatakan lulus.</li>
-                            <li>Jika belum mencapai nilai kelulusan, Anda dapat mengulang kuis setelah 1 menit.</li>
-                            <li>Pastikan Anda menjawab semua pertanyaan sebelum waktu habis.</li>
+                            <li><strong>Number of Questions:</strong> {{ $questionCount }} pertanyaan pilihan ganda.</li>
+                            <li><strong>Duration of Work:</strong> {{ $durationText }}.</li>
+                            <li><strong>Passing Grade:</strong> Minimum {{ $passingPercent }}% to be declared passed.</li>
+                            <li>If you have not reached the passing grade, you can retake the quiz after 1 minute.</li>
+                            <li>Please make sure you answer all questions before time runs out.</li>
                         </ol>
-                        <p style="margin:0;">Selamat mengerjakan dan semoga sukses!</p>
+                        <p style="margin:0;">Good luck and have fun!</p>
 
                         <div style="display:flex; justify-content:flex-end; margin-top:14px;">
                             @if($currentQuizPassed)
@@ -571,11 +576,11 @@ if ($inCooldown && $cooldownEndsAt) {
                                 </a>
                             @elseif($inCooldown)
                                 <button type="button" class="btn" id="startQuizBtn" disabled
-    style="background:#f1f5f9; color:#64748b; border-radius:999px; padding:10px 18px; font-weight:700; cursor:not-allowed;"
-    data-start-url="{{ $startUrl }}"
-    data-cooldown-remaining="{{ $remainingCooldownSec }}">
-    Tunggu <span id="quizCooldownTimer">...</span>
-</button>
+                        style="background:#f1f5f9; color:#64748b; border-radius:999px; padding:10px 18px; font-weight:700; cursor:not-allowed;"
+                        data-start-url="{{ $startUrl }}"
+                        data-cooldown-remaining="{{ $remainingCooldownSec }}">
+                        Wait <span id="quizCooldownTimer">...</span>
+                        </button>
                             @else
                                 <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
                                     Start
@@ -588,13 +593,13 @@ if ($inCooldown && $cooldownEndsAt) {
 
                 <div class="box_luar_deskripsi_modul" style="margin-top:18px;">
                     <div class="box_deskripsi_modul">
-                        <h4 style="font-weight:700; margin:0 0 14px 0;">Riwayat</h4>
+                        <h4 style="font-weight:700; margin:0 0 14px 0;">History</h4>
                         <div style="overflow:auto;">
                             <table class="table" style="margin:0;">
                                 <thead>
                                     <tr style="border-bottom:1px solid rgba(0,0,0,.08);">
-                                        <th style="font-size:13px; color:#374151;">Tanggal</th>
-                                        <th style="font-size:13px; color:#374151;">Persentase</th>
+                                        <th style="font-size:13px; color:#374151;">Date</th>
+                                        <th style="font-size:13px; color:#374151;">Percentage</th>
                                         <th style="font-size:13px; color:#374151;">Status</th>
                                         <th style="font-size:13px; color:#374151;">Action</th>
                                     </tr>
@@ -607,10 +612,11 @@ if ($inCooldown && $cooldownEndsAt) {
                                                 ? 'background:#eafff3; color:#16a34a;'
                                                 : 'background:#ffecec; color:#ef4444;';
                                             $detailsUrl = $att ? route('user.quiz.result.short', $att) : '#';
+                                            $tanggalText = $att->completed_at ? $att->completed_at->copy()->subMinutes(7)->format('d M Y') . ' at ' . $att->completed_at->copy()->subMinutes(7)->format('H:i:s') : '-';
                                         @endphp
                                         <tr style="border-bottom:1px solid rgba(0,0,0,.06);">
                                             <td style="font-size:13px; color:#111827;">
-                                                {{ optional($att->completed_at)->format('d M Y H:i') }}
+                                                {{ $tanggalText }}
                                             </td>
                                             <td style="font-size:13px; color:#111827;">{{ $att->percentage }}%</td>
                                             <td>
@@ -626,7 +632,7 @@ if ($inCooldown && $cooldownEndsAt) {
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-muted">Belum ada riwayat kuis.</td>
+                                            <td colspan="4" class="text-muted">There is no quiz history yet.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -638,6 +644,7 @@ if ($inCooldown && $cooldownEndsAt) {
             @php
                 // Find current item's index in the display list
                 $activeIndexInDisplay = -1;
+                 
                 foreach($displayItems as $idx => $it) {
                     if (($it['key'] ?? null) === ($activeDisplay['key'] ?? null) && ($it['kind'] ?? null) === ($activeDisplay['kind'] ?? null)) {
                         $activeIndexInDisplay = $idx;
@@ -693,11 +700,11 @@ if ($inCooldown && $cooldownEndsAt) {
             >
                 <p>
                     @if($lockNext && $lockNextByFree)
-                        Beli Course
+                        Buy Course
                     @elseif($lockNext)
-                        Terkunci
+                        Locked
                     @elseif(!$nextTargetRep)
-                        Selesai & Beri Ulasan
+                        Finish & Leave a Review
                     @else
                         Next
                     @endif
@@ -713,6 +720,7 @@ if ($inCooldown && $cooldownEndsAt) {
                 @endif
             </button>
         </div>
+</div>
 
     </div>
 
@@ -754,14 +762,14 @@ if ($inCooldown && $cooldownEndsAt) {
                     if (reason === 'free') {
                         Swal.fire({
                             title: 'Oops!',
-                            text: 'Materi ini terkunci. Silakan beli atau daftar course ini untuk membuka seluruh materi.',
+                            text: 'This content is locked. Please purchase or enroll in this course to unlock all materials.',
                             icon: 'warning',
                             confirmButtonColor: '#f4c430',
                         });
                     } else {
                         Swal.fire({
                             title: 'Oops!',
-                            text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                            text: 'You must complete the quiz before proceeding to the next step.',
                             icon: 'warning',
                             confirmButtonColor: '#f4c430',
                         });
@@ -787,11 +795,11 @@ if ($inCooldown && $cooldownEndsAt) {
                     
                     Swal.fire({
                         title: 'Oops!',
-                        text: `Layanan free course ${courseName} ini sudah habis. Ketuk tombol untuk membeli dan menikmati akses penuh.`,
+                        text: `Free access for \ has ended. Tap the button to purchase and enjoy full access.`,
                         icon: 'info',
                         showCancelButton: true,
-                        confirmButtonText: 'Beli Sekarang',
-                        cancelButtonText: 'Nanti Saja',
+                        confirmButtonText: 'Buy Now',
+                        cancelButtonText: 'Maybe Later',
                         confirmButtonColor: '#f4c430',
                         cancelButtonColor: '#d33',
                     }).then((result) => {
@@ -806,7 +814,7 @@ if ($inCooldown && $cooldownEndsAt) {
                 if (isLockedQuiz) {
                     Swal.fire({
                         title: 'Oops!',
-                        text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
+                        text: 'You must complete the quiz before proceeding to the next step.',
                         icon: 'warning',
                         confirmButtonColor: '#f4c430',
                     });
@@ -880,7 +888,7 @@ if ($inCooldown && $cooldownEndsAt) {
             @endif
             @if(session('success'))
                 Swal.fire({
-                    title: 'Berhasil',
+                    title: 'Success',
                     text: '{{ session('success') }}',
                     icon: 'success',
                     confirmButtonColor: '#16a34a',
@@ -893,16 +901,16 @@ if ($inCooldown && $cooldownEndsAt) {
     <div id="quizStartModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
         <div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:380px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:quizModalIn .2s ease;">
             <div style="font-size:48px; margin-bottom:12px;">🎯</div>
-            <h3 style="font-weight:800; font-size:20px; color:#1f2937; margin:0 0 10px 0;">Selamat Mengerjakan!</h3>
-            <p style="color:#6b7280; font-size:14px; margin:0 0 24px 0;">Semoga berhasil dan raih nilai terbaik kamu! 💪</p>
+            <h3 style="font-weight:800; font-size:20px; color:#1f2937; margin:0 0 10px 0;">Good luck with your work!</h3>
+            <p style="color:#6b7280; font-size:14px; margin:0 0 24px 0;">Good luck and get your best grades! 💪</p>
             <div style="display:flex; gap:10px; justify-content:center;">
                 <button id="quizStartCancelBtn" type="button"
                     style="flex:1; padding:10px 0; border-radius:999px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:600; font-size:14px; cursor:pointer;">
-                    Batal
+                    Cancelled
                 </button>
                 <a id="quizStartConfirmBtn" href="#"
                     style="flex:1; padding:10px 0; border-radius:999px; background:#f4c430; color:#1f2937; font-weight:700; font-size:14px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
-                    Mulai Kuis
+                    Start Quiz
                 </a>
             </div>
         </div>
@@ -975,3 +983,4 @@ if (cooldownTimerEl && startBtn && startBtn.hasAttribute('data-cooldown-remainin
 </body>
 
 </html>
+

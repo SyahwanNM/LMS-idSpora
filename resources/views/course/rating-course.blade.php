@@ -90,13 +90,6 @@
                     ></textarea>
                 </div>
 
-                <div class="tata_cara_feedback">
-                    <div style="font-weight:700; margin-bottom:4px;">Bingung cara memberikan feedback?</div>
-                    <div style="color:#4b5563; font-size:14px; line-height:1.5;">
-                        Tuliskan feedback secara spesifik. Jika ada pembahasan yang kurang jelas, Anda bisa menuliskannya agar kami dapat memperbaiki kelas ini.
-                    </div>
-                </div>
-
                 <div class="tombol_next_sertifikat" style="display:flex;">
                     <button type="submit" class="next_halaman_sertif">Next</button>
                 </div>

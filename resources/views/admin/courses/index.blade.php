@@ -50,12 +50,12 @@
             @endphp
             @if(!empty($pwList))
                 <div class="notification error" role="status" data-timeout="6000">
-                    <div class="notif-message">Oops, modul course belum lengkap: {{ implode(', ', $pwList) }} belum ada. Segera hubungi trainer.</div>
+                    <div class="notif-message">Oops, course modules are not complete: {{ implode(', ', $pwList) }} do not exist. Please contact the trainer immediately.</div>
                     <button class="notif-close" aria-label="Close" type="button">&times;</button>
                 </div>
             @elseif(session('already_published'))
                 <div class="notification error" role="status" data-timeout="5000">
-                    <div class="notif-message">Course ini sudah diterbitkan</div>
+                    <div class="notif-message">Course has already been published</div>
                     <button class="notif-close" aria-label="Close" type="button">&times;</button>
                 </div>
             @endif
@@ -137,33 +137,33 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header" id="publishModalHeader">
-                    <h5 class="modal-title" id="publishConfirmModalLabel">Course belum lengkap</h5>
+                    <h5 class="modal-title" id="publishConfirmModalLabel">Course is not complete</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mt-2" id="publishModalSubText">Berikut yang belum ada:</div>
+                    <div class="mt-2" id="publishModalSubText">Here's what's missing:</div>
                     <ul id="publishMissingList" class="mt-2 mb-3" style="padding-left: 18px;"></ul>
-                    <div class="text-muted" id="publishModalFooterText" style="font-size: 0.9rem;">Segera hubungi trainer untuk melengkapi modul, video, dan kuis.</div>
+                    <div class="text-muted" id="publishModalFooterText" style="font-size: 0.9rem;">Please contact the trainer immediately to complete the modules, videos, and quizzes.</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Ya, Publish Course</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Yes, Publish Course</button>
                 </div>
             </div>
         </div>
     </div>
     <div class="box_luar_course_builder">
-        <h1 class="judul_course_builder">Daftar Course</h1>
-        <p class="deskripsi_course_builder">Atur detail course sebelum dipublikasi</p>
+        <h1 class="judul_course_builder">Registration</h1>
+        <p class="deskripsi_course_builder">Manage course details before publishing</p>
 
         <a href="{{ route('admin.add-course') }}" class="tambah_course" style="text-decoration: none;">
             <svg style="margin-top: 7px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2" />
             </svg>
-            <p style="margin-top: 2px;">Tambah Course</p>
+            <p style="margin-top: 2px;">Add Course</p>
         </a>
         <div class="box_daftar_course">
-            <h4 class="judul_daftar_course">Daftar Course yang Ada</h4>
+            <h4 class="judul_daftar_course">List of Existing Courses</h4>
             <div class="box_cari_course_builder">
                 <div class="box_filter_cari">
                     <div class="cari_pendapatan">
@@ -175,9 +175,9 @@
                         </div>
                     </div>
                     <div class="box_filter_course_builder">
-                        <p class="mulai_course">Bulan</p>
+                        <p class="mulai_course">Month</p>
                         <input class="tanggal_course" type="month" value="{{ request('month') }}">
-                        <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
+                        <button class="btn_terapkan" id="applyRevenueFilter">Apply</button>
                     </div>
                     <div class="box_unduh_course">
                         <a class="btn_unduh" id="exportPdfBtn" href="{{ route('admin.courses.export', ['format' => 'pdf']) }}" style="text-decoration:none;">
@@ -201,12 +201,12 @@
             <table class="tabel_daftar_course">
                 <thead>
                     <tr>
-                        <th>Nama Course</th>
-                        <th>Tanggal Dibuat</th>
+                        <th>Name Course </th>
+                        <th>Created Date</th>
                         <th>Level</th>
-                        <th>Harga</th>
-                        <th>Status Kelengkapan</th>
-                        <th>Aksi</th>
+                        <th>Price</th>
+                        <th>Completeness Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -333,7 +333,7 @@
                                     <form method="POST" action="{{ route('admin.courses.unpublish', $course) }}" class="m-0">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-danger btn_unpublish_course">
-                                            Batal Publish
+                                            Unpublish
                                         </button>
                                     </form>
                                 @else
@@ -352,7 +352,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted">Belum ada course.</td>
+                        <td colspan="6" class="text-center text-muted">There are no courses yet.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -373,10 +373,10 @@
                     <div class="option">
                         <div class="list_box_preview">
                             <div class="list-option">
-                                <button class="tab-btn active" data-target="tab-ringkasan">Ringkasan</button>
-                                <button class="tab-btn" data-target="tab-pdf">Modul PDF</button>
+                                <button class="tab-btn active" data-target="tab-ringkasan">Summary</button>
+                                <button class="tab-btn" data-target="tab-pdf">Module</button>
                                 <button class="tab-btn" data-target="tab-video">Video</button>
-                                <button class="tab-btn" data-target="tab-kuis">Kuis</button>
+                                <button class="tab-btn" data-target="tab-kuis">Quiz</button>
                                 <button class="tab-btn" data-target="tab-participant">Participant</button>
                             </div>
                         </div>
@@ -384,11 +384,11 @@
                     </div>
                     <div class="modal-body">
                         <div id="tab-ringkasan" class="tab-content active">
-                            <h3 id="modal-course-name">Nama Course</h3>
-                            <p id="modal-course-desc">Deskripsi singkat course akan muncul di sini.</p>
+                            <h3 id="modal-course-name">Course Name</h3>
+                            <p id="modal-course-desc">A brief description of the course will appear here.</p>
                             <div class="info-detail">
                                 <div class="list-info info-purple">
-                                    <h5>ID Course</h5>
+                                    <h5>Course ID</h5>
                                     <h4>#1</h4>
                                 </div>
                                 <div class="list-info info-blue">
@@ -396,18 +396,18 @@
                                     <h4 id="cp-level">Beginner</h4>
                                 </div>
                                 <div class="list-info info-green">
-                                    <h5>HARGA</h5>
+                                    <h5>PRICE</h5>
                                     <h4 id="cp-price">Rp250.000</h4>
                                 </div>
                                 <div class="list-info info-yellow">
                                     <h5>Status</h5>
-                                    <h4 id="cp-status">Selesai</h4>
+                                    <h4 id="cp-status">Completed</h4>
                                 </div>
                                 
                             </div>
                             
                             <div class="ringkasan-konten">
-                                <h3>Ringkasan Konten</h3>
+                                <h3>Summary Content</h3>
                                 <div class="info-ringkasan">
                                     <div class="list-ringkasan">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-file-earmark" viewBox="0 0 16 16">
@@ -415,7 +415,7 @@
                                         </svg>
                                         <div class="detail-ringkasan">
                                             <h5 id="count-pdf">0</h5>
-                                            <p>Modul PDF</p>
+                                            <p>Module</p>
                                         </div>
                                     </div>
                                     <div class="list-ringkasan">
@@ -424,7 +424,7 @@
                                         </svg>
                                         <div class="detail-ringkasan">
                                             <h5 id="count-video">0</h5>
-                                            <p>Video Pembelajaran</p>
+                                            <p>Video Lessons</p>
                                         </div>
                                     </div>
                                     <div class="list-ringkasan">
@@ -435,7 +435,7 @@
                                         </svg>
                                         <div class="detail-ringkasan">
                                             <h5 id="count-quiz">0</h5>
-                                            <p>Kuis</p>
+                                            <p>Quiz</p>
                                         </div>
                                     </div>
                                 </div>
@@ -449,8 +449,8 @@
                                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5z" />
                                     </svg>
                                     <div class="detail-pdf">
-                                        <h4>Pengenalan UI/UX Dasar</h4>
-                                        <p>Materi dasar tentang UI dan UX design</p>
+                                        <h4>Basic UI/UX Introduction</h4>
+                                        <p>Basic material about UI and UX design</p>
                                     </div>
 
                                 </div>
@@ -541,11 +541,11 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Nama Peserta</th>
+                                            <th>Participant Name</th>
                                             <th>Email</th>
                                             <th>Progress</th>
                                             <th>Status</th>
-                                            <th>Tanggal Aktif</th>
+                                            <th>Active Date</th>
                                         </tr>
                                     </thead>
 
@@ -814,7 +814,7 @@
                     .then(function(json) {
                         var participants = (json && json.participants) ? json.participants : [];
                         if (!participants.length) {
-                            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Belum ada peserta yang enroll course ini.</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No participants have taken this course yet.</td></tr>';
                             return;
                         }
 
@@ -1060,11 +1060,11 @@
                 var headerEl = document.getElementById('publishModalHeader');
 
                 if (isComplete) {
-                    if (labelEl) labelEl.textContent = 'Konfirmasi Publish Course';
+                    if (labelEl) labelEl.textContent = 'Confirm Publish Course';
                     if (headerEl) headerEl.style.background = '';
-                    if (mainTextEl) mainTextEl.textContent = 'Apakah Anda yakin ingin publish course ini?';
+                    if (mainTextEl) mainTextEl.textContent = 'Are you sure you want to publish this course?';
                     if (subTextEl) subTextEl.style.display = 'none';
-                    if (footerTextEl) footerTextEl.textContent = 'Tindakan ini tidak dapat dibatalkan.';
+                    if (footerTextEl) footerTextEl.textContent = 'This action cannot be undone.';
                     if (btnEl) {
                         btnEl.textContent = 'Ya, Publish Course';
                         btnEl.style.display = '';
@@ -1075,13 +1075,13 @@
                         publishMissingList.style.display = 'none';
                     }
                 } else {
-                    if (labelEl) { labelEl.textContent = 'Course Belum Bisa Dipublikasikan'; labelEl.style.color = '#dc2626'; }
+                    if (labelEl) { labelEl.textContent = 'Course Cannot Be Published'; labelEl.style.color = '#dc2626'; }
                     if (headerEl) headerEl.style.background = '#fef2f2';
                     if (subTextEl) {
-                        subTextEl.textContent = 'Lengkapi Modul Course ini terlebih dahulu:';
+                        subTextEl.textContent = 'Complete Course Modules First:';
                         subTextEl.style.display = 'block';
                     }
-                    if (footerTextEl) footerTextEl.textContent = 'Segera lengkapi semua modul sebelum mempublikasikan course ini.';
+                    if (footerTextEl) footerTextEl.textContent = 'Complete all modules before publishing this course.';
                     if (btnEl) {
                         btnEl.style.display = 'none'; // Sembunyikan tombol publish
                     }
@@ -1102,11 +1102,11 @@
 
                 // If bootstrap modal is unavailable, fall back
                 if (isComplete) {
-                    if (confirm('Apakah Anda yakin ingin publish course ini? Tindakan ini tidak dapat dibatalkan.')) {
+                    if (confirm('Are you sure you want to publish this course? This action cannot be undone.')) {
                         if (pendingPublishForm) pendingPublishForm.submit();
                     }
                 } else {
-                    notifyError('Oops, modul course belum lengkap. Segera hubungi trainer untuk melengkapi modul, video, dan kuis.', 6000);
+                    notifyError('Oops, course modules are not complete. Please contact the trainer immediately to complete the modules, videos, and quizzes.', 6000);
                 }
                 pendingPublishForm = null;
             }
@@ -1133,7 +1133,7 @@
 
                 if ((btn.dataset.published || '') === '1') {
                     ev.preventDefault();
-                    notifyError('Course ini sudah diterbitkan', 4500);
+                    notifyError('This course has been published', 4500);
                     return;
                 }
 
@@ -1192,7 +1192,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="rejectCoursePaymentModalLabel">Tolak Pembayaran Course</h5>
+                    <h5 class="modal-title" id="rejectCoursePaymentModalLabel">Reject Course Payment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="rejectCoursePaymentForm" method="POST">
@@ -1230,21 +1230,21 @@
                     e.preventDefault();
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Apakah Anda yakin?',
-                            text: 'apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan',
+                            title: 'Are you sure?',
+                            text: 'Are you sure you want to delete this course? This action cannot be undone',
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonColor: '#d33',
                             cancelButtonColor: '#3085d6',
-                            confirmButtonText: 'Ya, hapus!',
-                            cancelButtonText: 'Batal'
+                            confirmButtonText: 'Yes, delete!',
+                            cancelButtonText: 'Cancel'
                         }).then(function(result) {
                             if (result.isConfirmed) {
                                 form.submit();
                             }
                         });
                     } else {
-                        if (confirm('apakah anda yakin ingin menghapus course ini? tindakan ini tidak dapat dibatalkan')) {
+                        if (confirm('Are you sure you want to delete this course? This action cannot be undone')) {
                             form.submit();
                         }
                     }

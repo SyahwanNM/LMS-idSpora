@@ -45,35 +45,77 @@
             <form action="{{ route('verifikasi.verify') }}" method="post">
                 @csrf
                 <div class="mb-3">
-                    <h6>Masukkan Kode Verifikasi</h6>
-                    <input type="text" name="verification_code" class="form-control"
-                           value="{{ old('verification_code') }}" placeholder="000000" maxlength="6" required>
-                    <small class="text-white">Kode verifikasi telah dikirim ke email Anda</small>
+                    <h6 class="fw-600">Masukkan Kode Verifikasi</h6>
+                    <input type="text" name="verification_code" class="form-control text-center fs-4 fw-bold"
+                           value="{{ old('verification_code') }}" placeholder="000000" maxlength="6" required autofocus>
+                    
+                    <div class="mt-3 text-center">
+                        <div id="otp-timer-container" class="smaller p-2 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10">
+                            <span class="text-white opacity-75">Kode berlaku selama:</span>
+                            <span id="otp-timer" class="fw-bold text-warning ms-1">10:00</span>
+                        </div>
+                        <div id="otp-expired-msg" class="smaller p-2 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-20 text-danger fw-bold d-none">
+                            Kode telah kadaluarsa. Silakan kirim ulang.
+                        </div>
+                    </div>
+                    
+                    <small class="text-white opacity-75 d-block mt-3 text-center">Kode verifikasi telah dikirim ke email Anda</small>
                 </div>
-                <button type="submit" class="btn-register">Verifikasi</button>
+                <button type="submit" id="verifyBtn" class="btn-register">Verifikasi Password</button>
             </form>
 
-            <div style="margin-top:15px; text-align:center; font-size:14px;">
+            <div style="margin-top:25px; text-align:center; font-size:14px;">
                 <form id="resendForm" action="{{ route('forgot-password.resend') }}" method="post" style="display:inline;">
                     @csrf
-                    <button id="resendBtn" type="submit" class="btn btn-link p-0"
-                            style="color:#f4a442; font-weight:bold; text-decoration:none;">
+                    <p class="mb-2 opacity-75">Tidak menerima kode?</p>
+                    <button id="resendBtn" type="submit" class="btn btn-outline-warning rounded-pill px-4 fw-bold smaller">
                         Kirim Ulang Kode
                     </button>
                 </form>
-                <div class="cooldown" id="cooldownText">Tunggu <span id="sec">60</span> detik untuk kirim ulang</div>
+                <div class="cooldown" id="cooldownText" style="margin-top:10px; opacity:0.6;">Tunggu <span id="sec">60</span> detik untuk kirim ulang</div>
             </div>
         </div>
     </div>
 
     <script>
     (function(){
+        // --- OTP Validity Countdown (10 Minutes) ---
+        const expiresAtStr = "{{ session('otp_expires_at') }}";
+        if (expiresAtStr) {
+            const expiresAt = new Date(expiresAtStr).getTime();
+            const timerDisplay = document.getElementById('otp-timer');
+            const timerContainer = document.getElementById('otp-timer-container');
+            const expiredMsg = document.getElementById('otp-expired-msg');
+            const verifyBtn = document.getElementById('verifyBtn');
+
+            const validityInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = expiresAt - now;
+
+                if (distance < 0) {
+                    clearInterval(validityInterval);
+                    timerContainer.classList.add('d-none');
+                    expiredMsg.classList.remove('d-none');
+                    verifyBtn.disabled = true;
+                    verifyBtn.style.opacity = '0.5';
+                    return;
+                }
+
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                timerDisplay.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                
+                if (minutes < 1) timerDisplay.style.color = '#ff4d4d';
+            }, 1000);
+        }
+
+        // --- Resend Cooldown (60 Seconds) ---
         const resendBtn = document.getElementById('resendBtn');
         const cd = document.getElementById('cooldownText');
         const sec = document.getElementById('sec');
         const KEY = 'forgotResendUntil';
 
-        function startCountdown(msLeft) {
+        function startResendCountdown(msLeft) {
             let s = Math.max(0, Math.ceil(msLeft / 1000));
             resendBtn.disabled = true;
             resendBtn.style.opacity = '0.5';
@@ -92,20 +134,17 @@
             }, 1000);
         }
 
-        // Check existing cooldown on page load
         try {
             const until = parseInt(localStorage.getItem(KEY) || '0', 10);
             const msLeft = until - Date.now();
-            if (msLeft > 0) startCountdown(msLeft);
+            if (msLeft > 0) startResendCountdown(msLeft);
         } catch {}
 
-        // On resend click, start 60s cooldown
         const form = document.getElementById('resendForm');
         if (form && resendBtn) {
             form.addEventListener('submit', function() {
                 const until = Date.now() + 60000;
                 try { localStorage.setItem(KEY, String(until)); } catch {}
-                startCountdown(60000);
             });
         }
     })();

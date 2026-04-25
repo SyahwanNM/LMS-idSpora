@@ -74,7 +74,7 @@ class AuthController extends Controller
         // If admin, go to admin dashboard
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')
-                ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+                ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
         }
 
         // (Maintenance for non-admin is handled above before login session is created.)
@@ -88,9 +88,9 @@ class AuthController extends Controller
         // Also honor explicit internal redirect param (used by guest-only links).
         $redirect = trim((string) $request->input('redirect', ''));
         if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
-            return redirect($redirect)->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
+            return redirect($redirect)->with('success', 'Login Successful! Welcome to IdSpora LMS');
         }
-        return redirect()->intended('/dashboard')->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
+        return redirect()->intended('/dashboard')->with('success', 'Login Successful! Welcome to IdSpora LMS');
     }
 
     public function register(Request $request)
@@ -109,18 +109,18 @@ class AuthController extends Controller
             ],
             'avatar' => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
-            'name.required' => 'Nama lengkap harus diisi',
-            'name.regex' => 'Nama lengkap hanya boleh berisi huruf, spasi, tanda petik, strip, dan titik.',
-            'email.required' => 'Email harus diisi',
-            'email.email' => 'Format email tidak valid',
-            'email.unique' => 'Email sudah terdaftar',
-            'password.required' => 'Kata sandi harus diisi',
-            'password.min' => 'Kata sandi minimal 8 karakter',
-            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok',
-            'password.regex' => 'Kata sandi harus mengandung huruf besar, angka, dan tanda baca',
-            'avatar.image' => 'File avatar harus berupa gambar',
-            'avatar.mimes' => 'Format avatar harus jpg, jpeg, png, atau webp',
-            'avatar.max' => 'Ukuran avatar maks 2MB',
+            'name.required' => 'Full name must be filled in',
+            'name.regex' => 'The full name may only contain letters, spaces, quotation marks, dashes and periods.',
+            'email.required' => 'Email is required',
+            'email.email' => 'Invalid email format',
+            'email.unique' => 'Email has been registered',
+            'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 8 characters',
+            'password.confirmed' => 'Confirm password does not match',
+            'password.regex' => 'Password must contain uppercase letters, numbers, and punctuation marks.',
+            'avatar.image' => 'Avatar file must be an image',
+            'avatar.mimes' => 'Avatar format must be jpg, jpeg, png, or webp',
+            'avatar.max' => 'Max avatar size 2MB',
         ]);
 
         if ($validator->fails()) {
@@ -174,7 +174,7 @@ class AuthController extends Controller
         }
 
         return redirect()->route('verifikasi')
-            ->with('success', 'Registrasi berhasil! Kode verifikasi telah dikirim ke email Anda.')
+            ->with('success', 'Registration successful! A verification code has been sent to your email.')
             ->with('register_verify_email', $request->email);
     }
 
@@ -185,7 +185,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/')->with('success', 'Logout berhasil!');
+        return redirect('/')->with('success', 'Logout successful!');
     }
 
     public function showForgotPassword()
@@ -198,9 +198,9 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',
         ], [
-            'email.required' => 'Email harus diisi',
-            'email.email' => 'Format email tidak valid',
-            'email.exists' => 'Email tidak terdaftar dalam sistem',
+            'email.required' => 'Email is required',
+            'email.email' => 'Invalid email format',
+            'email.exists' => 'Email is not registered in the system',
         ]);
 
         if ($validator->fails()) {
@@ -277,12 +277,12 @@ class AuthController extends Controller
             $diff = now()->diffInSeconds($last);
             if ($diff < 60) {
                 $remaining = 60 - $diff;
-                return back()->withErrors(['error' => "Tunggu $remaining detik untuk kirim ulang kode."]);
+                return back()->withErrors(['error' => "Wait $remaining seconds to resend the code."]);
             }
         }
         $email = $request->session()->get('register_verify_email');
         if (!$email) {
-            return redirect()->route('register')->withErrors(['email' => 'Sesi verifikasi tidak ditemukan. Silakan daftar ulang.']);
+            return redirect()->route('register')->withErrors(['email' => 'Verification session not found. Please re-register.']);
         }
         try {
             $expiresMinutes = self::VERIFICATION_CODE_EXPIRES_MINUTES;
@@ -300,10 +300,10 @@ class AuthController extends Controller
             Mail::to($email)->send(new \App\Mail\RegistrationVerificationMail($code, $name, $expiresMinutes));
             // Set cooldown start
             $request->session()->put('register_otp_last_resend_at', now());
-            return back()->with('success', 'Kode verifikasi baru telah dikirim. Periksa folder Inbox/Spam.');
+            return back()->with('success', 'A new verification code has been sent. Please check your Inbox/Spam folder.');
         } catch (\Throwable $e) {
             \Log::error('Resend registration verification failed: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'Gagal mengirim ulang kode verifikasi.']);
+            return back()->withErrors(['error' => 'Failed to resend verification code.']);
         }
     }
 
@@ -316,8 +316,8 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'verification_code' => 'required|string|size:6',
         ], [
-            'verification_code.required' => 'Kode verifikasi harus diisi',
-            'verification_code.size' => 'Kode verifikasi harus 6 digit',
+            'verification_code.required' => 'Verification code must be filled in',
+            'verification_code.size' => 'Verification code must be 6 digits',
         ]);
 
         if ($validator->fails()) {
@@ -334,11 +334,11 @@ class AuthController extends Controller
                 ->where('is_used', false)
                 ->first();
             if (!$resetToken || $resetToken->isExpired()) {
-                return redirect()->back()->withErrors(['verification_code' => 'Kode verifikasi tidak valid atau sudah kadaluarsa']);
+                return redirect()->back()->withErrors(['verification_code' => 'Verification code is invalid or has expired']);
             }
             $payload = $request->session()->get('register_payload');
             if (!$payload || ($payload['email'] ?? null) !== $registerEmail) {
-                return redirect()->route('register')->withErrors(['email' => 'Sesi pendaftaran tidak ditemukan. Silakan daftar ulang.']);
+                return redirect()->route('register')->withErrors(['email' => 'Registration session not found. Please re-register.']);
             }
             $user = User::where('email', $registerEmail)->first();
             if (!$user) {
@@ -360,7 +360,7 @@ class AuthController extends Controller
             $resetToken->update(['is_used' => true]);
             $request->session()->forget(['register_verify_email', 'register_payload']);
             return redirect()->route('login')
-                ->with('success', 'Email berhasil diverifikasi! Silakan login.')
+                ->with('success', 'Email successfully verified! Please log in.')
                 ->withInput(['email' => $user->email]);
         }
 
@@ -371,7 +371,7 @@ class AuthController extends Controller
 
         if (!$resetToken || $resetToken->isExpired()) {
             return redirect()->back()
-                ->withErrors(['verification_code' => 'Kode verifikasi tidak valid atau sudah kadaluarsa']);
+                ->withErrors(['verification_code' => 'Verification code is invalid or has expired']);
         }
 
         // Mark token as used
@@ -381,7 +381,7 @@ class AuthController extends Controller
         $request->session()->put('token', $resetToken->token);
 
         return redirect()->route('new-password')
-            ->with('success', 'Kode verifikasi berhasil');
+            ->with('success', 'Verification code successful');
     }
 
     public function showNewPassword(Request $request)
@@ -408,7 +408,7 @@ class AuthController extends Controller
         $email = $request->session()->get('forgot_password_email');
         if (!$email) {
             return redirect()->route('forgot-password')
-                ->withErrors(['error' => 'Sesi tidak ditemukan. Silakan masukkan email kembali.']);
+                ->withErrors(['error' => 'Session not found. Please re-enter your email address.']);
         }
 
         $user = \App\Models\User::where('email', $email)->first();
@@ -558,7 +558,7 @@ class AuthController extends Controller
         $user = Auth::user();
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')
-                ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+                ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
         }
         // (Maintenance for non-admin is handled above before login session is created.)
         //trainer

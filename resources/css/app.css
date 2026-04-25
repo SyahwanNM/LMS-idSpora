@@ -143,6 +143,7 @@
     margin: 0;
     border-radius: 20px;
     overflow: hidden;
+    margin-top: 50px;
 }
 
 .course-detail-page .video-container video,
@@ -168,6 +169,7 @@
 .course-detail-page .main-title h1 {
     font-size: 34px;
     font-weight: 120%;
+    color: white;
 }
 
 .course-detail-page .container-icon {
@@ -1513,6 +1515,10 @@ body {
     max-width: 1200px;
     box-sizing: border-box;
 }
+.text-center.course-kosong{
+    width: 500px;
+    margin-left: 360px;
+}
 
 .course-card {
     border: 1px solid rgba(0, 0, 0, 0.08);
@@ -2119,26 +2125,23 @@ body {
     font-size: 12px;
     font-weight: 600;
     border-radius: 6px;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
 }
 
 .course-badge.beginner {
-    background: var(--bg-main);
-    opacity: 90%;
+    background: white;
     color: green;
     box-shadow: blur(0px 8px 30px rgba(0, 0, 0, 0.15));
 }
 
 .course-badge.intermediate {
-    background: rgba(0, 122, 255, 0.1);
+    background: white;
     color: #007aff;
     border: 1px solid rgba(0, 122, 255, 0.25);
 }
 
-.course-badge.advance {
-    background: rgba(255, 59, 48, 0.1);
-    color: #ff3b30;
+.course-badge.advanced {
+    background: white;
+    color: #b72119;
     border: 1px solid rgba(255, 59, 48, 0.25);
 }
 
@@ -2413,6 +2416,7 @@ label {
     box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08);
     width: 100%;
     max-width: 400px;
+    margin-top: 50px;
 }
 
 .price-text {
@@ -2864,6 +2868,7 @@ label {
     margin-top: -50px;
 }
 
+
 .link-box {
     display: flex;
     align-items: center;
@@ -3309,6 +3314,12 @@ label {
     border: none;
     padding: 0 20px;
     cursor: pointer;
+}
+@media (max-width: 992px) {
+    .stars-rating-input span{
+        font-size: 20px;
+    }
+    
 }
 
 .overview {
@@ -5290,7 +5301,8 @@ input[type="time"] {
     font-weight: 600;
     color: #111827;
     margin-bottom: 14px;
-    margin-top: 50px;
+    margin-top: 30px;
+    
 }
 
 .box_luar_kuis.quiz-take-v2 .pilihan_jawaban_kuis {
@@ -5476,7 +5488,9 @@ input[type="time"] {
 
 .pertanyaan_kuis {
     margin-left: 80px;
-    text-align: justify;
+    text-align: left;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .pilihan_jawaban_kuis {
@@ -5898,7 +5912,7 @@ body{
 }
 
 .box_judul {
-    margin-left: -150px;
+    margin-left: -210px;
 }
 
 .box_judul h1 {
@@ -5908,6 +5922,7 @@ body{
 
 .box_judul p {
     margin-top: 10px;
+    margin-left: 50px;
 }
 
 .box_form {
@@ -6472,10 +6487,12 @@ body{
 .quiz-result-page .qr-option.is-wrong.is-selected .qr-radio {
     border-color: #ef4444;
     background: #ef4444;
+    margin-bottom: 10px;
 }
 
 .quiz-result-page .qr-option.is-correct {
     background: #dcfce7;
+    margin-bottom: 10px;
 }
 
 .quiz-result-page .qr-option.is-wrong.is-selected {
@@ -6501,6 +6518,9 @@ body{
     min-width: min(100%, 320px);
     max-width: 520px;
     margin: 0;
+    position: sticky;
+    top: 100px;
+
 }
 
 .box_kiri_hasil h5 {
@@ -7173,6 +7193,16 @@ body{
     font-size: 0.8rem;
     color: #dc2626;
     display: none;
+    margin-top: 5px;
+}
+.sanity-msg.title {
+    font-size: 0.8rem;
+    color: #dc2626;
+    display: none;
+    margin-top: -25px;
+}
+.form-text.harga-course{
+    margin-top: -20px;
 }
 
 .sanity-msg.show {
@@ -8205,15 +8235,20 @@ textarea::placeholder {
 .box_modul_luar {
     display: flex;
     gap: 28px;
-    padding: 28px;
+    padding: 50px;
     background: #f7f8fb;
-    min-height: calc(100svh - 56px);
+    height: calc(100vh - 76px);
     box-sizing: border-box;
+    margin-top: 20px;
+    align-items: stretch;
 }
 
 .box_modul_kiri {
     flex: 0 0 320px;
     width: 320px;
+    margin-top: 5px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .box_modul_kanan {
@@ -8222,7 +8257,20 @@ textarea::placeholder {
     display: flex;
     flex-direction: column;
     gap: 18px;
-    padding-top: 24px;
+    padding-top: 8px;
+    padding-bottom: 40px;
+    overflow-x: hidden;
+}
+.scroll-modul-box {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 10px;
+}
+
+.scroll-modul-box::-webkit-scrollbar {
+    width: 6px;
 }
 
 /* Scope accordion styling to module page only (avoid affecting quiz page) */
@@ -8322,6 +8370,18 @@ textarea::placeholder {
     border-radius: 18px;
     padding: 24px 20px 18px;
     box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+    width: 1060px;
+    
+}
+.box_deskripsi_modul.modul_course {
+    height: 400px;
+    max-height: 400px;
+
+}
+.trainer-html-content {
+    height: 400px;
+    max-height: 400px;
+
 }
 
 .judul_modul {
@@ -8502,6 +8562,7 @@ textarea::placeholder {
 
 /* Responsive */
 @media (max-width: 992px) {
+    /*Modul*/
     .box_modul_luar {
         flex-direction: column;
         padding: 18px;
@@ -8511,10 +8572,28 @@ textarea::placeholder {
     .box_modul_kiri {
         width: 100%;
         flex: 0 0 auto;
+        position: static;
     }
 
     .box_modul_kanan {
         padding-top: 0;
+        margin-top: 20px;
+        
+    }
+    .box_luar_deskripsi_modul {
+        width: 100%;
+        padding: 18px;
+        
+    }
+    .box_deskripsi_modul.modul_course {
+        max-height: 300px;
+        height: 300px;
+        
+    }
+    .trainer-html-content {
+        max-height: 300px;
+        height: 300px;
+        
     }
 
     .next_kanan_modul {
@@ -8525,6 +8604,26 @@ textarea::placeholder {
     .judul_modul {
         font-size: 22px;
     }
+    /*Hasil*/
+    .text-center.course-kosong{
+    margin-left: 30px;
+    width: 250px;
+    }
+    .box_kiri_hasil{
+        position: static;
+    }
+    .box_kiri_hasil div{
+        margin-top: 10px;
+    }
+    /*Rating*/
+    .step .circle {
+        width: 40px;
+        height: 28px;
+    }
+    #course_stars{
+        margin-left: 10px;
+    }
+    
 }
 
 /* ============================================================

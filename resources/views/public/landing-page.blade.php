@@ -559,39 +559,39 @@
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-5 mb-lg-0">
                     <span class="d-inline-block py-2 px-4 rounded-pill bg-white text-primary fw-bold border border-primary-subtle shadow-sm mb-4" style="min-height: 44px; display: inline-flex; align-items: center;">
-                        <span id="typewriter-text">Platform Belajar Web Praktis Dan Modern</span>
+                        <span id="typewriter-text">Practical and Modern Web Learning Platform</span>
                     </span>
                     <h1 class="display-3 fw-bold mb-4 text-navy" style="line-height: 1.2;">
-                        Kembangkan 
+                        Develop
                         <span class="word-slider">
                             <span class="word-slider-inner text-gradient" id="word-slider-inner">
-                                <span>Skill</span>
-                                <span>Potensi</span>
+                                <span>Your</span>
+                                <span>Skills Potential</span>
                             </span>
                         </span>
-                        <br>Masa Depanmu
+                        <br>Future
                     </h1>
                     <p class="fs-5 text-muted mb-5" style="max-width: 500px;">
-                        Gabung dengan ribuan learner lainnya dalam webinar eksklusif dan kursus interaktif. Belajar langsung dari praktisi terbaik.
+                       Join thousands of other learners in exclusive webinars and interactive courses. Learn directly from top practitioners.
                     </p>
                     <div class="d-flex flex-wrap gap-3">
                         <a href="#event-section" class="btn-primary-new text-decoration-none btn-magnetic">
-                            Jelajahi Event
+                            Explore Events
                         </a>
                         <a href="{{ route('courses.index') }}" class="btn-outline-new text-decoration-none btn-magnetic">
-                            Lihat Kursus
+                            View Courses
                         </a>
                     </div>
                     
                     <div class="mt-5 pt-4 border-top border-2" style="border-color: rgba(0,0,0,0.05) !important;">
                         <div class="d-flex gap-5">
                             <div>
-                                <h4 class="fw-bold mb-0 text-navy"><span class="counter" data-target="10000">0</span>+</h4>
-                                <span class="fs-small text-muted fw-bold">ALUMNUS</span>
+                                <h4 class="fw-bold mb-0 text-navy"><span class="counter" data-target="500+">0</span>+</h4>
+                                <span class="fs-small text-muted fw-bold">Event Participants</span>
                             </div>
                             <div>
-                                <h4 class="fw-bold mb-0 text-navy"><span class="counter" data-target="500">0</span>+</h4>
-                                <span class="fs-small text-muted fw-bold">WEBINAR</span>
+                                <h4 class="fw-bold mb-0 text-navy"><span class="counter" data-target="200+">0</span>+</h4>
+                                <span class="fs-small text-muted fw-bold">Courses Viewers</span>
                             </div>
                             <div>
                                 <h4 class="fw-bold mb-0 text-navy"><span class="counter" data-target="4.8" data-decimal="1">0</span>/5</h4>
@@ -644,13 +644,13 @@
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-5 mb-lg-0">
                     <div class="pe-lg-5">
-                        <span class="sub text-primary fw-bold text-uppercase ls-1 mb-2 d-block">Tentang idSPORA</span>
-                        <h2 class="display-6 fw-bold text-navy mb-4">Solusi Terpadu Menuju <span class="text-gradient">Karir Profesional</span></h2>
+                        <span class="sub text-primary fw-bold text-uppercase ls-1 mb-2 d-block">About idSpora</span>
+                        <h2 class="display-6 fw-bold text-navy mb-4">Integrated Solutions Towards a <span class="text-gradient">Professional Career</span></h2>
                         <p class="text-muted fs-5 mb-4">
-                            idSPORA hadir sebagai ekosistem pembelajaran yang dirancang khusus untuk menjembatani kesenjangan antara kurikulum akademis dan kebutuhan industri modern.
+                            idSpora is present as a learning ecosystem specifically designed to bridge the gap between academic curriculum and modern industry needs.
                         </p>
                         <p class="text-muted mb-5">
-                            Kami berfokus pada penyediaan materi yang relevan, praktis, dan langsung dibimbing oleh para praktisi yang telah berpengalaman di bidangnya. Visi kami adalah melahirkan talenta digital yang siap bersaing secara global.
+                            We focus on providing relevant, practical, and directly guided materials by experienced practitioners in their fields. Our vision is to nurture digital talents who are ready to compete globally.
                         </p>
                         <div class="row g-4">
                             <div class="col-6">
@@ -658,7 +658,7 @@
                                     <div class="bg-primary-subtle p-2 rounded-3 text-primary">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/></svg>
                                     </div>
-                                    <h6 class="fw-bold text-navy mb-0">Mentor Praktisi</h6>
+                                    <h6 class="fw-bold text-navy mb-0">Practical Mentors</h6>
                                 </div>
                             </div>
                             <div class="col-6">
@@ -666,7 +666,7 @@
                                     <div class="bg-primary-subtle p-2 rounded-3 text-primary">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>
                                     </div>
-                                    <h6 class="fw-bold text-navy mb-0">Kurikulum Industri</h6>
+                                    <h6 class="fw-bold text-navy mb-0">Industry Curriculum</h6>
                                 </div>
                             </div>
                         </div>
@@ -676,8 +676,8 @@
                     <div class="position-relative">
                         <img src="{{ asset('aset/ai.jpg') }}" class="img-fluid rounded-5 shadow-lg" alt="About idSpora" onerror="this.src='{{ asset('aset/poster.png') }}'">
                         <div class="position-absolute bottom-0 start-0 m-4 p-4 bg-white rounded-4 shadow-lg d-none d-md-block" style="max-width: 250px;">
-                            <h5 class="fw-bold text-primary mb-1">Misi Kami</h5>
-                            <p class="small text-muted mb-0">Mendigitalisasi pendidikan untuk masa depan yang lebih cerah.</p>
+                            <h5 class="fw-bold text-primary mb-1">Our Mission</h5>
+                            <p class="small text-muted mb-0">Digitalizing education for a brighter future.</p>
                         </div>
                     </div>
                 </div>
@@ -689,9 +689,9 @@
     <section class="section-padding bg-main reveal" id="layanan">
         <div class="container">
             <div class="section-header">
-                <span class="sub">Layanan Kami</span>
-                <h2>Program Pelatihan</h2>
-                <p>Pilih format belajar yang paling cocok: webinar interaktif, seminar onsite, atau course mandiri.</p>
+                <span class="sub">Our Services</span>
+                <h2>Training Programs</h2>
+                <p>Choose the learning format that best suits you: interactive webinars, onsite seminars, or self-paced courses.</p>
             </div>
 
             <div class="space-y-5">
@@ -702,17 +702,16 @@
                             <span class="badge bg-primary-subtle text-primary fw-bold mb-3 px-3 py-2 rounded-pill"><i class="bi bi-camera-video me-2"></i>Interactive Webinar</span>
                             <h3 class="fw-bold text-navy mb-3">Interactive Webinar (Online)</h3>
                             <p class="text-muted mb-4">
-                                Dapatkan wawasan dari para ahli industri langsung dari kenyamanan rumah Anda. Webinar kami dirancang untuk interaksi dua arah yang intens.
+                                Get insights from industry experts directly from the comfort of your home. Our webinars are designed for intense two-way interaction.
                             </p>
                             <ul class="list-unstyled mb-4 d-grid gap-2">
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Sesi Tanya Jawab Langsung</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Rekaman Sesi Tersedia Selamanya</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> E-Certificate Instan via Dashboard</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Networking Group Telegram/Discord</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Live Q&A Sessions</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Session Recordings Available Forever</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Instant E-Certificates via Dashboard</li>
                             </ul>
                             <div class="d-flex flex-wrap gap-3">
-                                <a href="{{ route('events.index') }}" class="btn btn-primary-new px-4">Cari Webinar</a>
-                                <a href="{{ route('public.support') }}" class="btn btn-outline-new px-4">Butuh Bantuan?</a>
+                                <a href="{{ route('events.index') }}" class="btn btn-primary-new px-4">Find Webinars</a>
+                                <a href="{{ route('public.support') }}" class="btn btn-outline-new px-4">Need Help?</a>
                             </div>
                         </div>
                         <div class="col-lg-6 h-100">
@@ -728,15 +727,14 @@
                             <span class="badge bg-warning-subtle text-warning-emphasis fw-bold mb-3 px-3 py-2 rounded-pill"><i class="bi bi-geo-alt me-2"></i>Exclusive Seminar</span>
                             <h3 class="fw-bold text-navy mb-3">Exclusive Seminar (Onsite)</h3>
                             <p class="text-muted mb-4">
-                                Rasakan atmosfer belajar tatap muka yang tidak tergantikan. Seminar onsite kami fokus pada kolaborasi fisik dan networking tingkat tinggi.
+                                Experience the unparalleled atmosphere of face-to-face learning. Our onsite seminars focus on physical collaboration and high-level networking.
                             </p>
                             <ul class="list-unstyled mb-4 d-grid gap-2">
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-warning"></i> Fasilitas Coffee Break & Lunch</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-warning"></i> Materi Cetak (Handout)</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-warning"></i> Workshop Hands-on Langsung</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-warning"></i> Sertifikat Fisik Bertanda Tangan</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-warning"></i> Printed Materials (Handouts)</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-warning"></i> Hands-on Workshop Sessions</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-warning"></i> Physical Certificates with Signatures</li>
                             </ul>
-                             <a href="{{ route('events.index') }}" class="btn btn-outline-new px-4">Lihat Jadwal Seminar</a>
+                             <a href="{{ route('events.index') }}" class="btn btn-outline-new px-4">View Seminar Schedule</a>
                         </div>
                         <div class="col-lg-6 h-100">
                              <img src="{{ asset('aset/event.png') }}" alt="Seminar" class="img-fluid w-100 h-100 object-fit-cover" style="min-height: 400px;" onerror="this.onerror=null; this.src='{{ asset('aset/poster.png') }}';">
@@ -751,15 +749,14 @@
                             <span class="badge bg-success-subtle text-success fw-bold mb-3 px-3 py-2 rounded-pill"><i class="bi bi-book me-2"></i>Online Course</span>
                             <h3 class="fw-bold text-navy mb-3">Self-Paced Online Course</h3>
                             <p class="text-muted mb-4">
-                                Belajar sesuai ritme Anda sendiri. Kurikulum terstruktur dari tingkat dasar hingga mahir dengan proyek portofolio nyata.
+                                Learn at your own pace. The curriculum is structured from beginner to advanced levels, with real-life portfolio projects.
                             </p>
                             <ul class="list-unstyled mb-4 d-grid gap-2">
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> 100+ Video Pembelajaran HD</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Akses Selamanya (Life-time)</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Kuis & Tugas Per-Modul</li>
-                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Feedback Langsung dari Mentor</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> 100+ HD Learning Videos</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Lifetime Access</li>
+                                <li class="d-flex align-items-center gap-2 text-muted fw-medium"><i class="bi bi-check-circle-fill text-success"></i> Quizzes & Assignments Per-Module</li>
                             </ul>
-                            <a href="{{ route('courses.index') }}" class="btn btn-primary-new px-4">Mulai Belajar Sekarang</a>
+                            <a href="{{ route('courses.index') }}" class="btn btn-primary-new px-4">Start Learning Now</a>
                         </div>
                         <div class="col-lg-6 h-100">
                              <img src="{{ asset('aset/code.png') }}" alt="Course" class="img-fluid w-100 h-100 object-fit-cover" style="min-height: 400px;" onerror="this.onerror=null; this.src='{{ asset('aset/poster.png') }}';">
@@ -774,46 +771,46 @@
     <section class="section-padding bg-main reveal" id="fitur">
         <div class="container">
             <div class="section-header">
-                <span class="sub text-primary">Fitur Unggulan</span>
-                <h2 class="text-navy">Mengapa Belajar di idSPORA?</h2>
-                <p>Kami menyediakan berbagai keunggulan untuk memastikan pengalaman belajarmu maksimal.</p>
+                <span class="sub text-primary">Featured Features</span>
+                <h2 class="text-navy">Why Study at idSpora?</h2>
+                <p>We provide various advantages to ensure your learning experience is maximized.</p>
             </div>
             
             <div class="row g-4">
                 <div class="col-lg-3 col-md-6 reveal reveal-delay-1">
                     <div class="feature-card-premium">
-                        <div class="f-icon-wrap bg-warning-subtle text-warning">
+                        <div class="f-icon-wrap bg-warning-subtle text-warning " style="display:flex;justify-content:center;align-items:center;margin:0 auto 16px;width:60px;height:60px;border-radius:16px;">>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zM3.108 5.575c.123-.141.29-.214.505-.214.198 0 .351.064.457.193.106.129.159.333.159.615 0 .28-.052.483-.155.611-.102.127-.258.19-.467.19a.45.45 0 0 1-.453-.254v.053c0 .354.067.63.2.825.132.196.347.293.645.293.228 0 .413-.045.553-.135v.654c-.161.085-.398.128-.71.128-.426 0-.751-.137-.975-.41-.223-.273-.335-.67-.335-1.192 0-.329.043-.604.13-.824.088-.22.215-.403.383-.548zm.135 1.258h.507c.068 0 .121-.018.158-.054.038-.036.057-.1.057-.193 0-.094-.019-.158-.058-.192-.039-.035-.091-.052-.157-.052-.064 0-.115.018-.152.054-.037.037-.056.1-.056.19v.247z"/></svg>
                         </div>
-                        <h5 class="fw-bold text-navy">Sertifikat Digital</h5>
-                        <p class="text-muted small mb-0">Download sertifikat resmi secara otomatis langsung setelah menyelesaikan event atau kursus sebagai bukti keahlianmu.</p>
+                        <h5 class="fw-bold text-navy">Digital Certificate</h5>
+                        <p class="text-muted small mb-0">Automatically download an official certificate immediately after completing an event or course as proof of your expertise.</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 reveal reveal-delay-2">
                     <div class="feature-card-premium">
-                        <div class="f-icon-wrap bg-primary-subtle text-primary">
+                        <div class="f-icon-wrap bg-primary-subtle text-primary" style="display:flex;justify-content:center;align-items:center;margin:0 auto 16px;width:60px;height:60px;border-radius:16px;">>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 10.1V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
                         </div>
-                        <h5 class="fw-bold text-navy">Akses Selamanya</h5>
-                        <p class="text-muted small mb-0">Beli kursus sekali, akses materi selamanya. Kamu bisa mengulang pembelajaran kapan saja tanpa batas waktu.</p>
+                        <h5 class="fw-bold text-navy">Lifetime Access</h5>
+                        <p class="text-muted small mb-0">Buy a course once, access the material forever. You can review the learning content anytime without time limits.</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 reveal reveal-delay-3">
                     <div class="feature-card-premium">
-                        <div class="f-icon-wrap bg-success-subtle text-success">
+                        <div class="f-icon-wrap bg-success-subtle text-success" style="display:flex;justify-content:center;align-items:center;margin:0 auto 16px;width:60px;height:60px;border-radius:16px;">>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M2 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H2zm10-2.25V4.75a.75.75 0 0 0-1.5 0v7a.75.75 0 0 0 1.5 0z"/><path d="M14.75 10.25a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 1.5 0v-1.5z"/></svg>
                         </div>
-                        <h5 class="fw-bold text-navy">Mentor Ahli</h5>
-                        <p class="text-muted small mb-0">Belajar langsung dari mentor praktisi yang bekerja di perusahaan ternama. Dapatkan insight nyata dari lapangan.</p>
+                        <h5 class="fw-bold text-navy">Expert Mentor</h5>
+                        <p class="text-muted small mb-0">Learn directly from industry experts who work at renowned companies. Get real insights from the field.</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6 reveal reveal-delay-4">
-                    <div class="feature-card-premium">
-                        <div class="f-icon-wrap bg-danger-subtle text-danger">
+                    <div class="feature-card-premium ">
+                        <div class="f-icon-wrap bg-danger-subtle text-danger" style="display:flex;justify-content:center;align-items:center;margin:0 auto 16px;width:60px;height:60px;border-radius:16px;">>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h4v-3zM5 1h6v3H5V1zm6 4H5v3h6V5zm0 4H5v3h6V9zm0 4H5v3h6v-3zM4 1H1v3h3V1zM1 5v3h3V5H1zm0 4v3h3V9H1zm0 4v3h3v-3H1z"/></svg>
                         </div>
-                        <h5 class="fw-bold text-navy">Grup Komunitas</h5>
-                        <p class="text-muted small mb-0">Daftar sekarang dan bergabunglah dengan grup diskusi eksklusif di Telegram/Discord untuk networking.</p>
+                        <h5 class="fw-bold text-navy">Community Group</h5>
+                        <p class="text-muted small mb-0">Sign up now and join our exclusive discussion groups on Telegram/Discord for networking.</p>
                     </div>
                 </div>
             </div>
@@ -824,9 +821,9 @@
     <section class="section-padding bg-surface reveal" id="kategori">
         <div class="container">
             <div class="section-header">
-                <span class="sub text-primary">Eksplorasi</span>
-                <h2 class="text-navy">Kategori Populer</h2>
-                <p>Temukan materi pembelajaran yang sesuai dengan minat dan kebutuhan karirmu.</p>
+                <span class="sub text-primary">Exploration</span>
+                <h2 class="text-navy">Popular Categories</h2>
+                <p>Find learning materials that match your interests and career needs.</p>
             </div>
             
             <div class="row g-4">
@@ -857,9 +854,9 @@
             <div class="d-flex justify-content-between align-items-end mb-5">
                 <div style="max-width: 600px;">
                     <span class="text-primary fw-bold text-uppercase ls-1">Webinar & Workshop</span>
-                    <h2 class="display-6 fw-bold text-navy mt-2">Event Akan Datang</h2>
+                    <h2 class="display-6 fw-bold text-navy mt-2">Upcoming Events</h2>
                 </div>
-                <a href="{{ route('events.index') }}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">Lihat Semua</a>
+                <a href="{{ route('events.index') }}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">View All</a>
             </div>
 
             <div class="row g-4">
@@ -874,7 +871,7 @@
                             </div>
                             <div class="position-absolute bottom-0 start-0 w-100 p-3 bg-gradient-to-t from-black/80 to-transparent">
                                 @if($event->price == 0)
-                                <span class="badge bg-success rounded-pill">Gratis</span>
+                                <span class="badge bg-success rounded-pill">Free</span>
                                 @else
                                 <span class="badge bg-warning text-dark rounded-pill">Rp {{ number_format($event->price,0,',','.') }}</span>
                                 @endif
@@ -902,14 +899,14 @@
                                 {{ $event->speaker }}
                             </div>
                             
-                            <a href="{{ route('events.show', $event->id) }}" class="btn btn-primary-new w-100 mt-auto py-2 fs-small">Daftar Sekarang</a>
+                            <a href="{{ route('events.show', $event->id) }}" class="btn btn-primary-new w-100 mt-auto py-2 fs-small">See Details</a>
                         </div>
                     </div>
                 </div>
                 @empty
                 <div class="col-12 text-center py-5">
                     <img src="{{ asset('aset/calendar-empty.png') }}" style="width: 120px; opacity: 0.5;" class="mb-3">
-                    <h5 class="text-muted">Belum ada event jadwal baru.</h5>
+                    <h5 class="text-muted">No upcoming events.</h5>
                 </div>
                 @endforelse
             </div>
@@ -921,8 +918,8 @@
         <div class="container">
             <div class="section-header">
                 <span class="sub">Upgrade Skill</span>
-                <h2>Kursus Unggulan</h2>
-                <p>Materi terstruktur dengan mentor berpengalaman.</p>
+                <h2>Featured Courses</h2>
+                <p>Structured material with experienced mentors.</p>
             </div>
 
             <div class="row g-4">
@@ -960,24 +957,24 @@
                             <div class="mt-auto pt-3 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
                                 <div>
                                      @if((int)$course->price === 0)
-                                        <span class="text-success fw-bold">GRATIS</span>
+                                        <span class="text-success fw-bold">FREE</span>
                                      @else
                                         <span class="text-white fw-bold">Rp {{ number_format($course->price, 0, ',', '.') }}</span>
                                      @endif
                                 </div>
-                                <a href="{{ route('courses.show', $course) }}" class="btn btn-sm btn-outline-primary rounded-pill">Enroll</a>
+                                <a href="{{ route('courses.show', $course) }}" class="btn btn-sm btn-outline-primary rounded-pill">See Details</a>
                             </div>
                         </div>
                     </div>
                 </div>
                 @empty
                  <div class="col-12 text-center py-5">
-                    <h5 class="text-muted">Kursus akan segera hadir.</h5>
+                    <h5 class="text-muted">Courses are coming soon.</h5>
                 </div>
                 @endforelse
             </div>
              <div class="text-center mt-5">
-                <a href="{{ route('courses.index') }}" class="btn btn-link text-white fw-bold text-decoration-none">Lihat Semua Kursus &rarr;</a>
+                <a href="{{ route('courses.index') }}" class="btn btn-link text-white fw-bold text-decoration-none">View All Courses &rarr;</a>
             </div>
         </div>
     </section>
@@ -986,50 +983,50 @@
     <section class="section-padding bg-surface reveal" id="faq">
         <div class="container">
             <div class="section-header text-center mb-5">
-                <span class="sub text-primary">Tanya Jawab</span>
-                <h2 class="text-navy">Sering Ditanyakan</h2>
-                <p>Punya pertanyaan? Cari jawabannya di sini.</p>
+                <span class="sub text-primary">FAQ</span>
+                <h2 class="text-navy">Frequently Asked Questions</h2>
+                <p>Have questions? Find the answers here.</p>
             </div>
             
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <div class="faq-item">
                         <div class="faq-header">
-                            Apa itu idSPORA?
+                            What is idSpora?
                             <span class="faq-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                         </div>
                         <div class="faq-content">
-                            idSPORA adalah platform pembelajaran digital yang fokus pada webinar praktis, seminar onsite, dan kursus teknologi informasi untuk menjembatani talenta muda dengan kebutuhan industri.
+                            idSpora is a digital learning platform that focuses on practical webinars, onsite seminars, and technology courses to bridge the gap between young talents and industry needs.
                         </div>
                     </div>
                     
                     <div class="faq-item">
                         <div class="faq-header">
-                            Apakah sertifikat yang didapat bisa digunakan untuk melamar kerja?
+                            Can the certificates obtained be used for job applications?
                             <span class="faq-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                         </div>
                         <div class="faq-content">
-                            Tentu! Setiap event dan kursus di idSPORA menyertakan e-certificate resmi yang terverifikasi dan dapat Anda lampirkan di CV atau profil LinkedIn sebagai bukti keahlian industri.
+                            Yes! Each event and course at idSpora includes an official e-certificate that is verified and can be attached to your CV or LinkedIn profile as proof of industrial expertise.
                         </div>
                     </div>
 
                     <div class="faq-item">
                         <div class="faq-header">
-                            Bagaimana cara mengakses materi kursus?
+                            How do I access the course materials?
                             <span class="faq-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                         </div>
                         <div class="faq-content">
-                            Setelah melakukan pendaftaran/pembelian, Anda dapat mengakses seluruh materi video, kuis, dan modul melalui Dashboard User di menu "My Courses". Akses ini berlaku selamanya.
+                            After registering/purchasing, you can access all video materials, quizzes, and modules through the User Dashboard in the "My Courses" menu. This access is available permanently.
                         </div>
                     </div>
 
                     <div class="faq-item">
                         <div class="faq-header">
-                            Apakah webinar dilakukan secara live atau rekaman?
+                            Are the webinars conducted live or recorded?
                             <span class="faq-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                         </div>
                         <div class="faq-content">
-                            Webinar kami dilakukan secara live/langsung agar Anda dapat berinteraksi dan bertanya kepada mentor. Namun, kami juga menyediakan rekaman ulangnya yang bisa diakses kapan saja setelah sesi berakhir.
+                            Our webinars are conducted live so you can interact and ask questions to the mentors. However, we also provide recorded versions that can be accessed at any time after the session ends.
                         </div>
                     </div>
                 </div>
@@ -1041,15 +1038,15 @@
     <section class="section-padding bg-main reveal" id="testimoni">
         <div class="container">
             <div class="section-header">
-                <span class="sub">Apa Kata Mereka</span>
-                <h2>Cerita Sukses Alumni</h2>
+                <span class="sub">What People Say</span>
+                <h2>Alumni Success Stories</h2>
             </div>
 
             <div class="row g-4">
                 <div class="col-md-4">
                     <div class="testi-card-new">
                         <div class="quote-icon">“</div>
-                        <p class="mb-4 text-muted">Kursus React idSpora sangat terstruktur. Saya yang awalnya bingung sekarang sudah bisa bikin project sendiri. Mantap!</p>
+                        <p class="mb-4 text-muted">idSpora's React course is very well-structured. I went from being confused at first to being able to create my own projects. Awesome!</p>
                         <hr class="border-light">
                         <div class="testi-user">
                             <img src="https://ui-avatars.com/api/?name=Sarah+Sechan&background=random" class="testi-avatar" alt="User">
@@ -1063,7 +1060,7 @@
                 <div class="col-md-4">
                     <div class="testi-card-new">
                         <div class="quote-icon">“</div>
-                        <p class="mb-4 text-muted">Webinar-webinar yang diadakan selalu menghadirkan pembicara yang kompeten. Insight-nya daging semua.</p>
+                        <p class="mb-4 text-muted">idSpora's webinars always feature competent speakers and provide valuable insights.</p>
                         <hr class="border-light opacity-10">
                         <div class="testi-user">
                             <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=random" class="testi-avatar" alt="User">
@@ -1077,7 +1074,7 @@
                 <div class="col-md-4">
                     <div class="testi-card-new">
                         <div class="quote-icon">“</div>
-                        <p class="mb-4 text-muted">Platform belajar terbaik untuk upskilling. Harganya terjangkau tapi kualitas materinya premium.</p>
+                        <p class="mb-4 text-muted">idSpora's platform is the best for upskilling. The pricing is affordable but the quality of the materials is premium.</p>
                         <hr class="border-light">
                         <div class="testi-user">
                             <img src="https://ui-avatars.com/api/?name=Diana+P&background=random" class="testi-avatar" alt="User">
@@ -1097,9 +1094,9 @@
         <div class="container">
             <div class="p-5 rounded-5 bg-gradient-primary text-white text-center position-relative overflow-hidden">
                 <div class="position-relative z-2">
-                    <h2 class="fw-bold mb-3">Siap Memulai Perjalanan Karirmu?</h2>
-                    <p class="mb-4 opacity-75 fs-5">Gabung sekarang dan akses ratusan materi premium.</p>
-                    <a href="{{ route('register') }}" class="btn btn-warning btn-lg rounded-pill fw-bold shadow-lg px-5">Daftar Gratis Sekarang</a>
+                    <h2 class="fw-bold mb-3">Ready to Start Your Career Journey?</h2>
+                    <p class="mb-4 opacity-75 fs-5">Join now and access hundreds of premium courses.</p>
+                    <a href="{{ route('register') }}" class="btn btn-warning btn-lg rounded-pill fw-bold shadow-lg px-5">Sign Up for Free Now</a>
                 </div>
                 <div class="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-10" style="background-image: url('data:image/svg+xml,...'); opacity: 0.05;"></div>
             </div>
@@ -1114,11 +1111,11 @@
             // Typewriter Effect
             const textElement = document.getElementById('typewriter-text');
             const phrases = [
-                "Platform Belajar Web Praktis Dan Modern",
-                "Bangun Karir IT Impianmu Bersama Kami",
-                "Mentor Praktisi Dari Industri Ternama",
-                "Kurikulum Up-to-Date & Relevan",
-                "Akses Selamanya & Sertifikat Resmi"
+                "Practical and Modern Web Learning Platform",
+                "Build Your Dream IT Career With Us",
+                "Practitioner Mentors From Leading Industries",
+                "Up-to-Date & Relevant Curriculum",
+                "Lifetime Access & Official Certificate"
             ];
             
             let phraseIndex = 0;

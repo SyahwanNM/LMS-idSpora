@@ -27,14 +27,14 @@
             </a>
             <h1 class="judul_view mb-0">{{ $course->name ?? '-' }}</h1>
         </div>
-        <p class="deskripsi_view">Laporan Detail Financial & Konten Course</p>
+        <p class="deskripsi_view">Financial Detail Report & Course Content</p>
         <div class="tabel_paling_atas">
             <div class="tanggal_view">
-                <p>Tanggal</p>
+                <p>Date</p>
                 <h5>{{ ($stats['created_at'] ?? null) ? ($stats['created_at'])->format('d/m/Y') : '-' }}</h5>
             </div>
             <div class="total_peserta_view">
-                <p>Total peserta</p>
+                <p>Total Participants</p>
                 <h5>{{ (int)($stats['participants'] ?? 0) }}</h5>
             </div>
             <div class="status_view">
@@ -42,7 +42,7 @@
                 <h5>{{ $stats['status'] ?? '-' }}</h5>
             </div>
             <div class="harga_modul_pada_view">
-                <p>Harga Per Unit</p>
+                <p>Price Per Unit</p>
                 <h5>Rp. {{ number_format((float)($stats['unit_price'] ?? 0), 0, ',', '.') }}</h5>
             </div>
         </div>
@@ -51,21 +51,21 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="green" class="bi bi-graph-up-arrow" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5" />
                 </svg>
-                <h2>Breakdown Pendapatan</h2>
+                <h2>Breakdown Income</h2>
             </div>
             <div class="box_dalam_breakdown_pendapatan">
-                <h5>Penjualan Normal</h5>
+                <h5>Normal Sales</h5>
                 <h3>Rp. {{ number_format((float)($stats['revenue_total'] ?? 0), 0, ',', '.') }}</h3>
                 <div class="isi_box_pendapatan">
-                    <p class="peserta">Peserta:</p>
+                    <p class="peserta">Participants:</p>
                     <p>{{ (int)($stats['participants'] ?? 0) }}</p>
                 </div>
                 <div class="isi_harga_perunit">
-                    <p class="peserta">Harga Per Unit:</p>
+                    <p class="peserta">Price Per Unit:</p>
                     <p>Rp. {{ number_format((float)($stats['unit_price'] ?? 0), 0, ',', '.') }}</p>
                 </div>
                 <div class="isi_kalkulasi">
-                    <p class="peserta">Kalkulasi:</p>
+                    <p class="peserta">Calculation:</p>
                     <p>{{ (int)($stats['participants'] ?? 0) }} x Rp. {{ number_format((float)($stats['unit_price'] ?? 0), 0, ',', '.') }}</p>
                 </div>
                 <div class="garis_abu">
@@ -73,7 +73,7 @@
                 </div>
             </div>
             <div class="box_dalam_pendapatan">
-                <h4>Total Pendapatan</h4>
+                <h4>Total Income</h4>
                 <h4 class="satu_juta">Rp. {{ number_format((float)($stats['revenue_total'] ?? 0), 0, ',', '.') }}</h4>
             </div>
         </div>
@@ -82,7 +82,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="red" class="bi bi-graph-down-arrow" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm10 11.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 0-1 0v2.6l-3.613-4.417a.5.5 0 0 0-.74-.037L7.06 8.233 3.404 3.206a.5.5 0 0 0-.808.588l4 5.5a.5.5 0 0 0 .758.06l2.609-2.61L13.445 11H10.5a.5.5 0 0 0-.5.5" />
                 </svg>
-                <h2>Breakdown Pengeluaran</h2>
+                <h2>Breakdown Expenses</h2>
             </div>
             @php
                 $expenseRows = is_array($expense_rows ?? null) ? $expense_rows : [];
@@ -122,15 +122,15 @@
                 @endforeach
             @endif
             <div class="box_dalam_pengeluaran">
-                <h4>Total Pengeluaran</h4>
+                <h4>Total Expenses</h4>
                 <h4 class="satu_juta">Rp. {{ number_format((float)($stats['expense_total'] ?? 0), 0, ',', '.') }}</h4>
             </div>
         </div>
         <div class="box_luar_analisis_keuntungan">
-            <h2>Analisis Keuntungan</h2>
+            <h2>Profit Analysis</h2>
             <div class="box_isi_untung">
                 <div class="box_status">
-                    <h5>Status keuntungan</h5>
+                    <h5>Profit Status</h5>
                     <div class="box_validasi_status">
                         <h5>{{ $stats['profit_status'] ?? '-' }}</h5>
                     </div>
@@ -138,23 +138,23 @@
                 <h3>Rp. {{ number_format((float)($stats['profit'] ?? 0), 0, ',', '.') }}</h3>
             </div>
             <div class="box_dalam_perhitungan">
-                <h5>Cara Perhitungan</h5>
+                <h5>Calculation Method</h5>
                 <div class="pendapatan_kotor">
-                    <p>Pendapatan Kotor</p>
+                    <p>Revenue</p>
                     <h5 class="satu_juta_hitung">Rp. {{ number_format((float)($stats['revenue_total'] ?? 0), 0, ',', '.') }}</h5>
                 </div>
                 <div class="total_pengeluaran">
-                    <p>Total Pengeluaran</p>
+                    <p>Total Expenses</p>
                     <h5 class="seratus_ribu">Rp. {{ number_format((float)($stats['expense_total'] ?? 0), 0, ',', '.') }}</h5>
                 </div>
                 <div class="keuntungan_bersih">
-                    <p>Keuntungan Bersih</p>
+                    <p>Net Profit</p>
                     <h5 class="sembilan_ratus_ribu">Rp. {{ number_format((float)($stats['profit'] ?? 0), 0, ',', '.') }}</h5>
                 </div>
             </div>
         </div>
         <div class="box_luar_financial">
-            <h2>Ringkasan Financial</h2>
+            <h2>Financial Summary</h2>
             <div class="box_chart_financial">
                 <canvas id="financeChart" height="100"></canvas>
             </div>

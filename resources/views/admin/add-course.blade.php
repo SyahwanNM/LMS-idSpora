@@ -11,7 +11,11 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
+    <style>
+        .sanity-msg { min-height: 20px; font-size: 12px; color: #dc3545; display: block; }
+        #course-category-input { margin-top: 2px; }
+        .sanity-msg[data-for="course-category"] { margin-top: -8px; }
+    </style>
 </head>
 
 <body>
@@ -26,18 +30,18 @@
                         <a href="{{ route('admin.add-course') }}" class="text-decoration-none">Add Course</a>
                     </div>
                     <div class="box_judul mb-3">
-                        <h1 class="h3 mb-1">Tambah Course</h1>
-                        <p class="text-muted mb-0">Atur detail course sebelum dipublikasikan</p>
+                        <h1 class="h3 mb-1">Add Course</h1>
+                        <p class="text-muted mb-0">Configure course details before publishing</p>
                     </div>
 
                     <form class="box_form" action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="status" value="archive">
-                        <h4 class="h5 mb-2">Formulir Pengaturan Course</h4>
+                        <h4 class="h5 mb-2">Course Setup Form</h4>
                         <div class="mb-3">
-                            <label class="form-label text-dark" for="course-title">Judul Course <span class="text-danger">*</span></label>
-                            <input id="course-title" name="name" type="text" class="form-control" placeholder="Masukkan Judul Course" required>
-                            <div class="sanity-msg" data-for="course-title"></div>
+                            <label class="form-label text-dark" for="course-title">Course Title <span class="text-danger">*</span></label>
+                            <input id="course-title" name="name" type="text" class="form-control" placeholder="Enter Course Title" required>
+                            <div class="sanity-msg title" data-for="course-title"></div>
                         </div>
 
                         <div class="row g-3 mb-3">
@@ -53,14 +57,71 @@
                             </div>
                             @if(isset($categories) && $categories->count())
                             <div class="col-md-6">
-                                <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
-                                <select id="course-category" name="category_id" class="form-select" required>
-                                    <option value="" selected disabled>Pilih kategori</option>
-                                    @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    @endforeach
-                                </select>
+                                <label class="form-label text-dark" for="course-category">Category <span class="text-danger">*</span></label>
+                                <div style="position:relative;">
+                                    <input type="text" id="course-category-input" class="form-control" placeholder="Type to search category..." autocomplete="off">
+                                    <input type="hidden" id="course-category" name="category_id">
+                                    <input type="hidden" id="course-category-name" name="category_name">
+                                    <ul id="category-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; z-index:999; list-style:none; margin:2px 0 0; padding:4px 0; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.1);">
+                                        @foreach($categories as $cat)
+                                        <li data-id="{{ $cat->id }}" data-name="{{ $cat->name }}" style="padding:8px 14px; cursor:pointer; font-size:14px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">{{ $cat->name }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                                 <div class="sanity-msg" data-for="course-category"></div>
+                                <script>
+                                (function(){
+                                    const inp = document.getElementById('course-category-input');
+                                    const hidden = document.getElementById('course-category');
+                                    const hiddenName = document.getElementById('course-category-name');
+                                    const list = document.getElementById('category-suggestions');
+                                    const allItems = Array.from(list.querySelectorAll('li'));
+
+                                    inp.addEventListener('input', function() {
+                                        const q = this.value.toLowerCase();
+                                        hidden.value = '';
+                                        hiddenName.value = '';
+                                        let any = false;
+                                        allItems.forEach(li => {
+                                            const match = li.dataset.name.toLowerCase().includes(q);
+                                            li.style.display = match ? '' : 'none';
+                                            if (match) any = true;
+                                        });
+                                        list.style.display = (q && any) ? 'block' : 'none';
+                                    });
+
+                                    inp.addEventListener('focus', function() {
+                                        if (!this.value) {
+                                            allItems.forEach(li => li.style.display = '');
+                                            list.style.display = 'block';
+                                        }
+                                    });
+
+                                    // On blur: if no match selected, treat typed text as new category name
+                                    inp.addEventListener('blur', function() {
+                                        const val = this.value.trim();
+                                        if (val && !hidden.value) {
+                                            hiddenName.value = val;
+                                        }
+                                        setTimeout(() => { list.style.display = 'none'; }, 150);
+                                    });
+
+                                    list.addEventListener('click', function(e) {
+                                        const li = e.target.closest('li');
+                                        if (!li) return;
+                                        inp.value = li.dataset.name;
+                                        hidden.value = li.dataset.id;
+                                        hiddenName.value = '';
+                                        list.style.display = 'none';
+                                    });
+
+                                    document.addEventListener('click', function(e) {
+                                        if (!inp.contains(e.target) && !list.contains(e.target)) {
+                                            list.style.display = 'none';
+                                        }
+                                    });
+                                })();
+                                </script>
                             </div>
                             @else
                             <input type="hidden" name="category_id" value="1">
@@ -70,7 +131,7 @@
                         <div class="box_select_trainer mb-3">
                             <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>
                             <select id="course-trainer" name="trainer_id" class="form-select" required data-selected="{{ old('trainer_id') }}">
-                                <option value="" selected disabled>Pilih trainer</option>
+                                <option value="" selected disabled>Choose trainer</option>
                             </select>
                             <div class="sanity-msg" data-for="course-trainer"></div>
                         </div>
@@ -78,21 +139,21 @@
                         <input type="hidden" id="course-duration" name="duration" value="0">
 
                         <div class="box_select_harga mb-3">
-                            <label class="form-label text-dark" for="course-price">Harga <span class="text-danger">*</span></label>
+                            <label class="form-label text-dark" for="course-price">Price <span class="text-danger">*</span></label>
                             <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0" required>
-                            <div class="form-text">Isi 0 untuk course gratis</div>
+                            <div class="form-text harga-course">Enter 0 for free course</div>
                             <div class="sanity-msg" data-for="course-price"></div>
                         </div>
 
                         <!-- Akses Course (Freemium Mode) -->
                         <div class="mb-3">
-                            <label for="free_access_mode" class="form-label text-dark">Akses Course</label>
+                            <label for="free_access_mode" class="form-label text-dark">Access Course</label>
                             <select name="free_access_mode" id="free_access_mode" class="form-select">
-                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
-                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
-                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
+                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Module 1 Open)</option>
+                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Open All Materials</option>
+                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Close Review (Must Purchase First)</option>
                             </select>
-                            <div class="form-text text-muted small">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</div>
+                            <div class="form-text text-muted small">Choose how users can access materials before purchasing (for paid courses) or the access status for free courses.</div>
                         </div>
 
                         <div class="mb-3">
@@ -104,15 +165,15 @@
                                 <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
                                     <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0"
                                         {{ $isResellerCourse === 0 ? 'checked' : '' }}>
-                                    <label class="text-dark" for="is_reseller_course_0">Tidak</label>
+                                    <label class="text-dark" for="is_reseller_course_0">No</label>
                                 </div>
                                 <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
                                     <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1"
                                         {{ $isResellerCourse === 1 ? 'checked' : '' }}>
-                                    <label class="text-dark" for="is_reseller_course_1">Ya</label>
+                                    <label class="text-dark" for="is_reseller_course_1">Yes</label>
                                 </div>
                             </div>
-                            <div class="form-text">Jika Ya, course ini ditandai sebagai course reseller.</div>
+                            <div class="form-text">If Yes, this course will be marked as a reseller course.</div>
                             <style>
                                 .reseller-course-radios input[type="radio"]{
                                     appearance: auto !important;
@@ -134,8 +195,8 @@
                         </div>
 
                         <div class="box_select_deskripsi mb-3">
-                            <label class="form-label text-dark" for="course-description">Deskripsi Course</label>
-                            <textarea id="course-description" name="description" class="form-control" placeholder="Deskripsikan course secara lengkap"></textarea>
+                            <label class="form-label text-dark" for="course-description">Description Course</label>
+                            <textarea id="course-description" name="description" class="form-control" placeholder="Describe the course in detail"></textarea>
                             <div class="sanity-msg" data-for="course-description"></div>
                         </div>
 
@@ -147,7 +208,7 @@
                                     <small class="text-muted">Preview</small>
                                 </div>
                             </div>
-                            <div class="form-text">Bisa upload gambar <b>atau</b> video (mp4, webm, ogg)</div>
+                            <div class="form-text">Can upload images <b>or</b> video (mp4, webm, ogg)</div>
                             <div class="sanity-msg" data-for="course-thumbnail"></div>
                         </div>
                         <div class="box_select_deskripsi mb-3">
@@ -158,44 +219,44 @@
                                     <small class="text-muted">Preview</small>
                                 </div>
                             </div>
-                            <div class="form-text">Upload gambar untuk thumbnail card course (jpg/png/webp)</div>
+                            <div class="form-text">Upload an image for the course card thumbnail (jpg/png/webp)</div>
                             <div class="sanity-msg" data-for="card-thumbnail"></div>
                         </div>
                         <div class="box_select_diskon mb-3">
-                            <label class="form-label text-dark" for="discount-percent">Diskon (%)</label>
-                            <input id="discount-percent" name="discount_percent" type="number" class="form-control" min="0" max="100" placeholder="Masukkan diskon (0-100)">
-                            <div class="form-text">Boleh kosong atau 0%</div>
+                            <label class="form-label text-dark" for="discount-percent">Discount (%)</label>
+                            <input id="discount-percent" name="discount_percent" type="number" class="form-control" min="0" max="100" placeholder="Enter discount (0-100)">
+                            <div class="form-text">Can be empty or 0%</div>
                             <div class="sanity-msg" data-for="discount-percent"></div>
                         </div>
                         <div class="box_select_tanggal_diskon row mb-3">
                             <div class="col-md-6">
-                                <label class="form-label text-dark" for="discount-start">Tanggal Mulai Diskon</label>
+                                <label class="form-label text-dark" for="discount-start">Discount Start Date</label>
                                 <input id="discount-start" name="discount_start" type="date" class="form-control" min="{{ now()->toDateString() }}" value="{{ old('discount_start', now()->toDateString()) }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-dark" for="discount-end">Tanggal Berakhir Diskon</label>
+                                <label class="form-label text-dark" for="discount-end">Discount End Date</label>
                                 <input id="discount-end" name="discount_end" type="date" class="form-control" min="{{ now()->toDateString() }}" value="{{ old('discount_end', now()->toDateString()) }}">
                             </div>
                         </div>
                         <div class="box_select_diskon mb-3">
-                            <label class="form-label text-dark" for="discount-percent">Pengeluaran</label>
+                            <label class="form-label text-dark" for="discount-percent">Expenses</label>
                             <div class="table-responsive">
                             <table class="table" id="courseExpensesTable">
                                 <thead>
                                     <tr>
-                                        <th scope="col">No</th>
-                                        <th scope="col">Nama kebutuhan</th>
-                                        <th scope="col">kuantitas</th>
-                                        <th scope="col">Harga Satuan</th>
-                                        <th scope="col">Harga Total</th>
-                                        <th scope="col">Aksi</th>
+                                        <th scope="col">Number</th>
+                                        <th scope="col">Need Name</th>
+                                        <th scope="col">Quantity</th>
+                                        <th scope="col">Unit Price</th>
+                                        <th scope="col">Total Price</th>
+                                        <th scope="col">Action</th>
 
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
                             </div>
-                            <button type="button" class="tombol_tambah_pengeluaran" id="addCourseExpenseRow">Tambah Pengeluaran</button>
+                            <button type="button" class="tombol_tambah_pengeluaran" id="addCourseExpenseRow">Add Expense</button>
                             <div class="sanity-msg" data-for="discount-percent"></div>
                         </div>
 
@@ -937,7 +998,7 @@
             function validateTitle() {
                 const v = (fields.title.value || '').trim();
                 const ok = v.length > 0;
-                setIndicator('course-title', ok, 'Judul course wajib diisi.');
+                setIndicator('course-title', ok, 'Course title is required.');
                 return ok;
             }
 
@@ -946,22 +1007,24 @@
                 if (!fields.status) return true;
                 const v = fields.status.value;
                 const ok = (v === 'active' || v === 'archive');
-                setIndicator('course-status', ok, 'Status wajib dipilih.');
+                setIndicator('course-status', ok, 'Status is required.');
                 return ok;
             }
 
             function validateLevel() {
                 const v = fields.level.value;
                 const ok = (v === 'beginner' || v === 'intermediate' || v === 'advanced');
-                setIndicator('course-level', ok, 'Level course wajib dipilih.');
+                setIndicator('course-level', ok, 'Course level is required.');
                 return ok;
             }
 
             function validateCategory() {
                 if (!fields.category) return true;
-                const v = (fields.category.value || '').trim();
-                const ok = v.length > 0;
-                setIndicator('course-category', ok, 'Kategori wajib dipilih.');
+                const categoryId = (fields.category.value || '').trim();
+                const categoryName = (document.getElementById('course-category-name')?.value || '').trim();
+                const categoryInput = (document.getElementById('course-category-input')?.value || '').trim();
+                const ok = categoryId.length > 0 || categoryName.length > 0 || categoryInput.length > 0;
+                setIndicator('course-category', ok, 'Category is required.');
                 return ok;
             }
 
@@ -969,7 +1032,7 @@
                 if (!fields.trainer) return true;
                 const v = (fields.trainer.value || '').trim();
                 const ok = v.length > 0;
-                setIndicator('course-trainer', ok, 'Trainer wajib dipilih.');
+                setIndicator('course-trainer', ok, 'Trainer is required.');
                 return ok;
             }
 
@@ -977,19 +1040,19 @@
                 const raw = (fields.price.value || '').trim();
                 const digits = raw.replace(/[^0-9]/g, '');
                 if (digits.length === 0) {
-                    setIndicator('course-price', false, 'Harga wajib diisi.');
+                    setIndicator('course-price', false, 'Price is required.');
                     return false;
                 }
                 const val = parseInt(digits, 10);
                 const ok = !isNaN(val) && val >= 0;
-                setIndicator('course-price', ok, 'Harga harus angka >= 0.');
+                setIndicator('course-price', ok, 'Price must be a number >= 0.');
                 return ok;
             }
 
             function validateThumbnail() {
                 const f = fields.thumbnail.files && fields.thumbnail.files[0];
                 if (!f) {
-                    setIndicator('course-thumbnail', false, 'Intro media wajib dipilih.');
+                    setIndicator('course-thumbnail', false, 'Intro media is required.');
                     return false;
                 }
                 const allowed = [
@@ -997,7 +1060,7 @@
                     'video/mp4', 'video/webm', 'video/ogg'
                 ];
                 if (!allowed.includes(f.type)) {
-                    setIndicator('course-thumbnail', false, 'File harus gambar (jpg/png/webp/gif) atau video (mp4/webm/ogg).');
+                    setIndicator('course-thumbnail', false, 'File must be an image (jpg/png/webp/gif) or video (mp4/webm/ogg).');
                     return false;
                 }
                 setIndicator('course-thumbnail', true);
@@ -1008,12 +1071,12 @@
                 const f = fields.cardThumbnail?.files && fields.cardThumbnail.files[0];
                 if (!fields.cardThumbnail) return true;
                 if (!f) {
-                    setIndicator('card-thumbnail', false, 'Thumbnail card course wajib diupload.');
+                    setIndicator('card-thumbnail', false, 'Thumbnail card course is required.');
                     return false;
                 }
                 const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
                 if (!allowed.includes(f.type)) {
-                    setIndicator('card-thumbnail', false, 'Thumbnail harus gambar (jpg/png/webp/gif).');
+                    setIndicator('card-thumbnail', false, 'Thumbnail must be an image (jpg/png/webp/gif).');
                     return false;
                 }
                 setIndicator('card-thumbnail', true);
@@ -1028,7 +1091,7 @@
                 const val = parseInt(raw || '0', 10);
                 // Backend allows duration >= 0; duration is a hidden field on this page.
                 const ok = !isNaN(val) && val >= 0;
-                setIndicator('course-duration', ok, 'Durasi tidak valid.');
+                setIndicator('course-duration', ok, 'Duration is not valid.');
                 return ok;
             }
 
@@ -1066,6 +1129,14 @@
             const formEl = document.querySelector('form.box_form');
             if (formEl) {
                 formEl.addEventListener('submit', function(ev) {
+                    // Sync category_name from input text if category_id is empty
+                    const catInput = document.getElementById('course-category-input');
+                    const catHidden = document.getElementById('course-category');
+                    const catName = document.getElementById('course-category-name');
+                    if (catInput && catHidden && catName && !catHidden.value.trim() && catInput.value.trim()) {
+                        catName.value = catInput.value.trim();
+                    }
+
                     if (!validateAll()) {
                         ev.preventDefault();
                         const firstInvalid = formEl.querySelector('.is-invalid');
@@ -1286,7 +1357,7 @@
                         trainerSelect.innerHTML = '<option value="" selected disabled>Belum ada trainer</option>';
                         return;
                     }
-                    trainerSelect.innerHTML = '<option value="" selected disabled>Pilih trainer</option>';
+                    trainerSelect.innerHTML = '<option value="" selected disabled>Choose trainer</option>';
                     trainers.forEach((t) => {
                         if (!t || typeof t.id === 'undefined') return;
                         const opt = document.createElement('option');
