@@ -220,6 +220,32 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
+            
+            {{-- /* TESTING AREA */ --}}
+            <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4 p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="fw-bold mb-1" style="color: #856404;"><i class="bi bi-tools me-2"></i>AREA TESTING LAYOUT SERTIFIKAT</h5>
+                    <p class="mb-0 small text-muted">Gunakan tombol di samping untuk mengetes tampilan sertifikat PDF yang sudah diperbaiki.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/debug/setup-test-data" class="btn btn-outline-dark fw-bold px-3 rounded-pill shadow-sm">
+
+                        <i class="bi bi-gear-fill me-1"></i> Siapkan Data Testing
+                    </a>
+                    @if(isset($testEnrollment))
+
+                        <a href="{{ route('course.certificates.download', [$testEnrollment->course_id, $testEnrollment->id]) }}?force=1" class="btn btn-primary fw-bold px-3 rounded-pill shadow-sm">
+                            <i class="bi bi-download me-1"></i> Test Sertif Course
+                        </a>
+                    @endif
+                    @if(isset($testRegistration))
+                        <a href="{{ route('certificates.download', [$testRegistration->event_id, $testRegistration->id]) }}?force=1" class="btn btn-success fw-bold px-3 rounded-pill shadow-sm">
+                            <i class="bi bi-download me-1"></i> Test Sertif Event
+                        </a>
+                    @endif
+                </div>
+            </div>
+
 
 
             <div class="row g-4">
@@ -289,15 +315,26 @@
                                                             ? route('course.learn', $course->id) . '?module=' . $nextModuleId
                                                             : route('course.learn', $course->id);
                                                     @endphp
-                                                    <a href="{{ $continueUrl }}"
-                                                        class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                                        style="width: 36px; height: 36px; background-color: var(--navy);">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                            fill="currentColor" viewBox="0 0 16 16">
-                                                            <path
-                                                                d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                                                        </svg>
-                                                    </a>
+                                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                                            <a href="{{ route('course.certificates.download', [$course->id, $enrollment->id]) }}?force=1" 
+                                                                class="btn btn-sm btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                                style="width: 36px; height: 36px;" title="Download Sertifikat">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                                                </svg>
+                                                            </a>
+
+                                                        <a href="{{ $continueUrl }}"
+                                                            class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                            style="width: 36px; height: 36px; background-color: var(--navy);" title="Lanjutkan Belajar">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                                fill="currentColor" viewBox="0 0 16 16">
+                                                                <path
+                                                                    d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                                            </svg>
+                                                        </a>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @empty
@@ -359,7 +396,7 @@
                                                 @php
                                                     $isSaved = !empty($course->is_saved);
                                                 @endphp
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#ef4444' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
                                                     <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
@@ -461,7 +498,7 @@
                                                 @php
                                                     $isSaved = !empty($event->is_saved);
                                                 @endphp
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#ef4444' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
                                                     <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
@@ -601,8 +638,7 @@
                             @php
                                 $today = \Carbon\Carbon::now();
                                 $daysToShow = 5;
-                                // Prepare unique dates that have events for the user
-                                $eventDates = $userEvents->pluck('event_date')->map(function($date) {
+                                $eventDates = $userRegistrations->pluck('event.event_date')->map(function($date) {
                                     return $date ? (\Carbon\Carbon::parse($date)->format('Y-m-d')) : null;
                                 })->filter()->unique()->toArray();
                             @endphp
@@ -635,8 +671,9 @@
                                 $defaultStyle = ['icon' => 'bi-calendar-event', 'bg' => '#f3f4f6', 'color' => '#6b7280'];
                             @endphp
 
-                            @forelse($userEvents as $userEv)
+                            @forelse($userRegistrations as $registration)
                                 @php
+                                    $userEv = $registration->event;
                                     $style = $eventStyles[strtoupper($userEv->jenis)] ?? $defaultStyle;
                                     $evDate = $userEv->event_date ? $userEv->event_date->format('d M Y') : 'TBA';
                                     $evTime = $userEv->event_time ? (\Carbon\Carbon::parse($userEv->event_time)->format('H:i')) : 'TBA';
@@ -652,9 +689,16 @@
                                             {{ $evDate }} • {{ $evTime }} WIB
                                         </small>
                                     </div>
-                                    <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0;">
-                                        <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
-                                    </a>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('certificates.download', [$userEv->id, $registration->id]) }}?force=1" 
+                                           class="btn btn-sm btn-outline-success rounded-circle d-flex align-items-center justify-content-center" 
+                                           style="width: 32px; height: 32px;" title="Download Sertifikat">
+                                            <i class="bi bi-download" style="font-size: 12px;"></i>
+                                        </a>
+                                        <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             @empty
                                 <div class="text-center py-4">
@@ -910,7 +954,7 @@
                     const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        svg.setAttribute('fill', '#ef4444');
+                        svg.setAttribute('fill', '#dc3545');
                         path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
@@ -956,7 +1000,7 @@
                     const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        svg.setAttribute('fill', '#ef4444');
+                        svg.setAttribute('fill', '#dc3545');
                         path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');

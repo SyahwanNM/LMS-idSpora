@@ -242,8 +242,8 @@ class CertificateController extends Controller
         $options->setIsHtml5ParserEnabled(true);
         $dompdf->setOptions($options);
         
-        $html = view('events.certificate-pdf', $data)->render();
-        $dompdf->loadHtml($html);
+        $html = trim(view('events.certificate-pdf-only', $data)->render());
+        $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         
@@ -310,9 +310,10 @@ class CertificateController extends Controller
         
         $this->authorizeAccessCourse($course, $enrollment);
         
-        if($enrollment->status !== 'completed') {
+        if($enrollment->status !== 'completed' && !$request->boolean('force')) {
             return redirect()->back()->with('error','Kursus belum selesai.');
         }
+
 
         if(!$enrollment->certificate_number) {
             $enrollment->update([
@@ -329,8 +330,8 @@ class CertificateController extends Controller
         $options->setIsHtml5ParserEnabled(true);
         $dompdf->setOptions($options);
         
-        $html = view('courses.certificate-pdf', $data)->render();
-        $dompdf->loadHtml($html);
+        $html = trim(view('courses.certificate-pdf-only', $data)->render());
+        $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         

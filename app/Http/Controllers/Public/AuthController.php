@@ -154,6 +154,8 @@ class AuthController extends Controller
                 'referrer_id' => $referrerId,
             ],
         ]);
+        // Pastikan sesi forgot password dibersihkan agar tidak tumpang tindih
+        session()->forget(['forgot_password_email', 'forgot_password_last_sent_at', 'token']);
 
         // Kirim kode verifikasi menggunakan PasswordResetToken + PasswordResetMail
         try {
@@ -231,7 +233,11 @@ class AuthController extends Controller
             'token' => $token,
             'verification_code' => $verificationCode,
             'expires_at' => $expiresAt,
+            'is_used' => false,
         ]);
+
+        // Bersihkan sesi registrasi agar tidak mengganggu alur forgot password
+        $request->session()->forget(['register_verify_email', 'register_payload']);
 
         // Kirim email
         try {
@@ -323,13 +329,20 @@ class AuthController extends Controller
         }
 
         // Tentukan context: apakah sedang Registrasi atau Forgot Password?
-        $registerEmail = $request->input('register_email') ?: $request->session()->get('register_verify_email');
-        $isRegistration = (bool) $registerEmail;
+        $forgotEmail = $request->session()->get('forgot_password_email');
+        $registerEmailFromInput = $request->input('register_email');
+        $registerEmailFromSession = $request->session()->get('register_verify_email');
+        
+        // Jika ada forgotEmail, kita prioritaskan alur Forgot Password 
+        // kecuali jika ada input register_email secara eksplisit (dari form registrasi)
+        $isRegistration = (bool)$registerEmailFromInput || ($registerEmailFromSession && !$forgotEmail);
+        $registerEmail = $registerEmailFromInput ?: $registerEmailFromSession;
 
         if ($isRegistration) {
             $resetToken = PasswordResetToken::where('email', $registerEmail)
                 ->where('verification_code', $request->verification_code)
                 ->where('is_used', false)
+                ->latest()
                 ->first();
 
             if (!$resetToken || $resetToken->isExpired()) {
@@ -366,9 +379,6 @@ class AuthController extends Controller
         }
 
         // --- Alur Forgot Password ---
-        // Jika tidak ada registerEmail, kita asumsikan ini alur Forgot Password
-        $forgotEmail = $request->session()->get('forgot_password_email');
-        
         $resetToken = PasswordResetToken::where('verification_code', $request->verification_code)
             ->where('is_used', false);
             
@@ -376,15 +386,18 @@ class AuthController extends Controller
             $resetToken->where('email', $forgotEmail);
         }
 
-        $resetToken = $resetToken->first();
+        $resetToken = $resetToken->latest()->first();
 
         if (!$resetToken || $resetToken->isExpired()) {
             return redirect()->back()
                 ->withErrors(['verification_code' => 'Kode verifikasi tidak valid atau sudah kadaluarsa']);
         }
 
-        // Mark token as used
-        $resetToken->update(['is_used' => true]);
+        // Mark token as used dan perpanjang waktu untuk reset password (misal +30 menit)
+        $resetToken->update([
+            'is_used' => true,
+            'expires_at' => now()->addMinutes(30)
+        ]);
 
         // Simpan token ke sesi non-flash agar tidak hilang
         $request->session()->put('token', $resetToken->token);
@@ -396,9 +409,7 @@ class AuthController extends Controller
 
     public function showNewPassword(Request $request)
     {
-        try {
-            $request->session()->keep('token');
-        } catch (\Throwable $e) {}
+        // Token sudah disimpan di session secara persistent di verifyCode
         return view('auth.new-password');
     }
 
@@ -429,6 +440,9 @@ class AuthController extends Controller
 
         $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $token = Str::random(64);
+
+        // Bersihkan sesi registrasi agar tidak mengganggu
+        $request->session()->forget(['register_verify_email', 'register_payload']);
 
         PasswordResetToken::where('email', $email)->delete();
         PasswordResetToken::create([

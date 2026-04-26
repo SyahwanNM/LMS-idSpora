@@ -1196,8 +1196,12 @@
                             <button class="bookseat" disabled>Unavailable</button>
                         @endif
                     @endif
-                    <button type="button" class="save" id="saveEventBtn" data-event-id="{{ $event->id }}"
-                        style="cursor:pointer; position:relative; z-index:10;">{{ $isSaved ? 'Saved' : 'Save' }}</button>
+                    @php $isSaved = !empty($event->is_saved); @endphp
+                    <button type="button" class="save {{ $isSaved ? 'saved' : '' }}" id="saveEventBtn" data-event-id="{{ $event->id }}"
+                        style="cursor:pointer; position:relative; z-index:10; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: {{ $isSaved ? '#dc3545' : '#fff' }}; color: {{ $isSaved ? '#fff' : '#000' }}; font-weight: 600; transition: all 0.3s;">
+                        <i class="bi {{ $isSaved ? 'bi-bookmark-fill' : 'bi-bookmark' }} me-2"></i>
+                        <span id="save-event-text">{{ $isSaved ? 'Saved' : 'Save' }}</span>
+                    </button>
                 </div>
                 <hr>
                 <div class="include-box">
@@ -2687,7 +2691,28 @@
                     })
                     .then(({ success, saved }) => {
                         if (success) {
-                            this.textContent = saved ? 'Saved' : 'Save';
+                            const textSpan = this.querySelector('#save-event-text') || this;
+                            const icon = this.querySelector('i');
+                            
+                            if (saved) {
+                                this.classList.add('saved');
+                                this.style.background = '#dc3545';
+                                this.style.color = '#fff';
+                                textSpan.textContent = 'Saved';
+                                if(icon) {
+                                    icon.classList.remove('bi-bookmark');
+                                    icon.classList.add('bi-bookmark-fill');
+                                }
+                            } else {
+                                this.classList.remove('saved');
+                                this.style.background = '#fff';
+                                this.style.color = '#000';
+                                textSpan.textContent = 'Save';
+                                if(icon) {
+                                    icon.classList.remove('bi-bookmark-fill');
+                                    icon.classList.add('bi-bookmark');
+                                }
+                            }
                             this.dataset.state = saved ? 'saved' : 'unsaved';
                             this.setAttribute('aria-pressed', saved ? 'true' : 'false');
                         } else {

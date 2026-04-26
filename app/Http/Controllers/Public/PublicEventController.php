@@ -221,6 +221,16 @@ class PublicEventController extends Controller
                 ->exists();
 		}
 		$event->is_registered = $isRegistered;
+
+		$isSaved = false;
+		if($request->user()){
+			$isSaved = \Illuminate\Support\Facades\DB::table('user_saved_events')
+				->where('user_id', $request->user()->id)
+				->where('event_id', $event->id)
+				->exists();
+		}
+		$event->is_saved = $isSaved;
+
 		// Load feedbacks for display on the event detail page
 		$feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
 		// Tampilkan halaman detail menggunakan tampilan "detail-event-registered"

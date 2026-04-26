@@ -104,17 +104,16 @@ class DashboardController extends Controller
             ->orderBy('order')
             ->get();
 
-        // Get events registered by the current user (only active registrations and future/ongoing events)
-        $userEvents = EventRegistration::query()
+        // Get events registered by the current user (all active registrations)
+        $userRegistrations = EventRegistration::query()
             ->where('user_id', Auth::id())
             ->where('status', 'active')
             ->with('event')
-            ->whereHas('event', function ($q) {
-                $q->where('event_date', '>=', now()->startOfDay());
-            })
             ->get()
-            ->pluck('event')
-            ->sortBy('event_date');
+            ->sortByDesc(function($reg) {
+                return $reg->event->event_date;
+            });
+
 
         // Get active course enrollments for "Lanjutkan Belajar" section
         $userEnrollments = Enrollment::query()
@@ -208,10 +207,25 @@ class DashboardController extends Controller
             ->limit(4)
             ->get();
 
+        // Global test items (for testing purposes)
+        $testEnrollment = Enrollment::where('status', 'completed')->with(['course', 'user'])->latest()->first();
+        if(!$testEnrollment) {
+            $testEnrollment = Enrollment::with(['course', 'user'])->latest()->first();
+        }
+        
+        $testRegistration = EventRegistration::where('status', 'active')->with(['event', 'user'])->latest()->first();
+        if(!$testRegistration) {
+            $testRegistration = EventRegistration::with(['event', 'user'])->latest()->first();
+        }
+
         return view('user.dashboard', [
+            'testEnrollment' => $testEnrollment,
+            'testRegistration' => $testRegistration,
             'upcomingEvents' => $upcomingEvents,
+
             'featuredCourses' => $featuredCourses,
-            'userEvents' => $userEvents,
+            'userRegistrations' => $userRegistrations,
+
             'userEnrollments' => $userEnrollments,
             'learningChartData' => $learningChartData,
             'popularTopics' => $popularTopics,

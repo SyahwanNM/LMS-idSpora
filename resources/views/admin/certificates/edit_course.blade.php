@@ -168,13 +168,19 @@
                     <div class="row g-4">
                         <!-- Logos -->
                         <div class="col-md-6">
-                            <label class="form-label smaller fw-bold text-muted">Upload Logo Partner</label>
-                            <input type="file" name="certificate_logo[]" class="form-control form-control-sm mb-3" accept="image/*" multiple id="logoInput">
+                            <label class="form-label smaller fw-bold text-muted d-flex justify-content-between">
+                                Upload Logo Partner
+                                <span class="text-primary smaller" style="cursor: pointer;" id="addLogoBtn" onclick="addLogoField()">+ Tambah Baris</span>
+                            </label>
+                            <div id="logoUploadContainer">
+                                <input type="file" name="certificate_logo[]" class="form-control form-control-sm mb-2" accept="image/*" id="logoInput">
+                            </div>
+                            <div class="smaller text-muted mb-3"><i class="bi bi-info-circle me-1"></i>Maksimal 3 logo partner tambahan.</div>
                             
                             <div id="existingLogos" class="d-flex flex-wrap gap-2">
                                 @php $logos = is_array($course->certificate_logo) ? $course->certificate_logo : ($course->certificate_logo ? [$course->certificate_logo] : []); @endphp
                                 @foreach($logos as $logo)
-                                    <div class="position-relative">
+                                    <div class="position-relative logo-item-wrapper">
                                         <img src="{{ Storage::url(str_replace('storage/', '', $logo)) }}" class="asset-preview">
                                         <div class="delete-overlay" onclick="markDelete('logo', '{{ $logo }}', this)"><i class="bi bi-x"></i></div>
                                         <input type="hidden" name="delete_logos[]" value="">
@@ -252,9 +258,44 @@
         if(confirm('Hapus aset ini?')) {
             const input = element.nextElementSibling;
             input.value = path;
-            element.parentElement.style.opacity = '0.3';
-            element.parentElement.style.pointerEvents = 'none';
+            const wrapper = element.closest('.position-relative');
+            wrapper.style.opacity = '0.3';
+            wrapper.style.pointerEvents = 'none';
+            wrapper.classList.add('marked-deleted');
+            checkLogoCount();
         }
     }
+
+    function addLogoField() {
+        const container = document.getElementById('logoUploadContainer');
+        const currentInputs = container.querySelectorAll('input[type="file"]').length;
+        const existingLogos = document.querySelectorAll('.logo-item-wrapper:not(.marked-deleted)').length;
+        
+        if ((currentInputs + existingLogos) < 3) {
+            const div = document.createElement('div');
+            div.className = 'd-flex gap-2 mb-2';
+            div.innerHTML = `
+                <input type="file" name="certificate_logo[]" class="form-control form-control-sm" accept="image/*">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.remove(); checkLogoCount();"><i class="bi bi-trash"></i></button>
+            `;
+            container.appendChild(div);
+            checkLogoCount();
+        }
+    }
+
+    function checkLogoCount() {
+        const currentInputs = document.querySelectorAll('#logoUploadContainer input[type="file"]').length;
+        const existingLogos = document.querySelectorAll('.logo-item-wrapper:not(.marked-deleted)').length;
+        const btn = document.getElementById('addLogoBtn');
+        
+        if ((currentInputs + existingLogos) >= 3) {
+            btn.style.display = 'none';
+        } else {
+            btn.style.display = 'inline';
+        }
+    }
+
+    // Initial check
+    document.addEventListener('DOMContentLoaded', checkLogoCount);
 </script>
 @endsection
