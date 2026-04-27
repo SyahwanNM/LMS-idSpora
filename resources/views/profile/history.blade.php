@@ -96,12 +96,13 @@
         // Add saved events (that are NOT registered)
         foreach($savedEvents as $event) {
             if(in_array($event->id, $registeredEventIds)) continue;
+            $eventSavedAt = $savedEventAtMap[$event->id] ?? null;
             $allActivities->push([
                 'type' => 'EVENT',
                 'id' => $event->id,
                 'title' => $event->title,
                 'image' => $event->image_url ?? asset('aset/poster.png'),
-                'date' => $event->event_date ? $event->event_date : '-',
+                'date' => $eventSavedAt ? \Carbon\Carbon::parse($eventSavedAt)->format('d-m-Y') : '-',
                 'description' => $event->short_description,
                 'status' => 'saved',
                 'is_saved' => true,
@@ -134,12 +135,13 @@
         // Add saved courses (that are NOT enrolled)
         foreach($savedCourses as $course) {
             if(in_array($course->id, $enrolledCourseIds)) continue;
+            $savedAt = $savedAtMap[$course->id] ?? null;
             $allActivities->push([
                 'type' => 'COURSE',
                 'id' => $course->id,
                 'title' => $course->name,
                 'image' => $course->card_thumbnail_url ?? 'https://via.placeholder.com/400x250',
-                'date' => '-',
+                'date' => $savedAt ? \Carbon\Carbon::parse($savedAt)->format('d-m-Y') : '-',
                 'description' => $course->short_description,
                 'status' => 'saved',
                 'is_saved' => true,
@@ -212,7 +214,7 @@
         </div>
 
         <!-- Scrollable List -->
-        <div id="activity-list" class="space-y-6 mb-20">
+        <div id="activity-list" class="space-y-6 mb-20" style="max-height: 70vh; overflow-y: auto; padding-right: 4px;">
             @foreach($allActivities as $item)
                 <div class="activity-item-card p-6" 
                      data-type="{{ $item['type'] }}" 

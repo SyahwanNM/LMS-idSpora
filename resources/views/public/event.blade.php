@@ -217,12 +217,12 @@
 
                     <div class="search-container flex-grow-1">
                         <div class="search-wrap">
-                            <input id="site-search" name="search" value="{{ request('search') }}" class="form-control border-0 rounded-pill ps-4 py-2 search-input-2" type="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;">
+                            <input id="site-search" name="search" value="{{ request('search') }}" class="form-control border-0 rounded-pill ps-4 py-2 search-input-2" type="search" placeholder="Search for events by event name..." aria-label="Search" style="box-shadow: none;">
                             <ul id="search-suggest" class="search-suggest" role="listbox" aria-label="Search suggestions"></ul>
                         </div>
                     </div>
                     <button id="search-submit-trigger" class="btn rounded-pill px-4 fw-bold" type="button" style="background-color: #51376c; color: white;">
-                        Cari
+                        Search
                     </button>
                 </form>
             </div>
@@ -230,14 +230,14 @@
 
         <section class="event">
             <div class="header-card">
-                <h3>Daftar Event</h3>
+                <h3>Event List</h3>
                 <div class="dropdown-box d-flex gap-2 flex-wrap">
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'Any Day')) }}
+                            {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'All day')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {{ !request('day') ? 'active' : '' }}" href="#" data-filter="day" data-value="">Any Day</a></li>
+                            <li><a class="dropdown-item {{ !request('day') ? 'active' : '' }}" href="#" data-filter="day" data-value="">All day</a></li>
                             <li><a class="dropdown-item {{ request('day') === 'weekdays' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
                             <li><a class="dropdown-item {{ request('day') === 'weekend' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
                             <li><a class="dropdown-item {{ request('day') === 'today' ? 'active' : '' }}" href="#" data-filter="day" data-value="today">Today</a></li>
@@ -248,7 +248,7 @@
                             {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'offline' ? 'Offline' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {{ !request('event_type') ? 'active' : '' }}" href="#" data-filter="event_type" data-value="">Any Type</a></li>
+                            <li><a class="dropdown-item {{ !request('event_type') ? 'active' : '' }}" href="#" data-filter="event_type" data-value="">All Types</a></li>
                             <li><a class="dropdown-item {{ request('event_type') === 'online' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="online">Online</a></li>
                             <li><a class="dropdown-item {{ request('event_type') === 'offline' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="offline">Offline</a></li>
                             <li><a class="dropdown-item {{ request('event_type') === 'hybrid' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
@@ -256,10 +256,10 @@
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ request('category') ? ucwords(request('category')) : 'Any Category' }}
+                            {{ request('category') ? ucwords(request('category')) : 'All Category' }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="#" data-filter="category" data-value="">Any Category</a></li>
+                            <li><a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="#" data-filter="category" data-value="">All Category</a></li>
                             <li><a class="dropdown-item {{ request('category') === 'workshop' ? 'active' : '' }}" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
                             <li><a class="dropdown-item {{ request('category') === 'seminar' ? 'active' : '' }}" href="#" data-filter="category" data-value="seminar">Seminar</a></li>
                             <li><a class="dropdown-item {{ request('category') === 'webinar' ? 'active' : '' }}" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
@@ -268,7 +268,7 @@
                     <div class="dropdown">
                         @php
                             $reqStatus = request('status');
-                            $statusLabel = $reqStatus === 'upcoming' ? 'Mendatang' : ($reqStatus === 'ongoing' ? 'Sedang Berlangsung' : ($reqStatus === 'finished' ? 'Telah Selesai' : 'Semua Status'));
+                            $statusLabel = $reqStatus === 'upcoming' ? 'Upcoming' : ($reqStatus === 'ongoing' ? 'On Going' : ($reqStatus === 'finished' ? 'Finished' : 'All Status'));
                         @endphp
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="statusFilterBtn">
                             {{ $statusLabel }}
@@ -277,24 +277,24 @@
                             <li><h6 class="dropdown-header">Tampilkan</h6></li>
                             <li>
                                 <a class="dropdown-item {{ empty($reqStatus) ? 'active' : '' }}" href="#" data-status-filter data-value="all" aria-current="{{ empty($reqStatus) ? 'true' : 'false' }}">
-                                    Semua Status
+                                    All Status
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">Status Event</h6></li>
+                            <li><h6 class="dropdown-header">All Status</h6></li>
                             <li>
                                 <a class="dropdown-item {{ $reqStatus === 'upcoming' ? 'active' : '' }}" href="#" data-status-filter data-value="upcoming" aria-current="{{ $reqStatus === 'upcoming' ? 'true' : 'false' }}">
-                                    Mendatang
+                                    Upcoming
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {{ $reqStatus === 'ongoing' ? 'active' : '' }}" href="#" data-status-filter data-value="ongoing" aria-current="{{ $reqStatus === 'ongoing' ? 'true' : 'false' }}">
-                                    Sedang Berlangsung
+                                    On Going
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {{ $reqStatus === 'finished' ? 'active' : '' }}" href="#" data-status-filter data-value="finished" aria-current="{{ $reqStatus === 'finished' ? 'true' : 'false' }}">
-                                    Telah Selesai
+                                    Finished
                                 </a>
                             </li>
                         </ul>
@@ -354,9 +354,21 @@
                                 <span class="discount-badge">{{ $percentOff }}% off</span>
                             @endif
                             <div class="badge-save-group" style="gap:12px;">
-                                <button class="save-btn" aria-label="Save event" type="button">
+                                @auth
+                                <button class="save-btn {{ !empty($event->is_saved) ? 'active' : '' }}"
+                                    aria-label="Save event"
+                                    type="button"
+                                    data-save-url="{{ route('events.save', $event) }}"
+                                    onclick="event.stopPropagation(); toggleSaveEvent(this)"
+                                    style="{{ !empty($event->is_saved) ? 'color:#ef4444;' : '' }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
                                 </button>
+                                @else
+                                <button class="save-btn" aria-label="Save event" type="button"
+                                    onclick="window.location.href='{{ route('login') }}'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
+                                </button>
+                                @endauth
                             </div>
                         </div>
 
@@ -378,12 +390,14 @@
                                         <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
                                     </svg>
                                     <span>
-                                        @if($event->trainer)
+                                        @if($event->speaker)
+                                            {{ $event->speaker }}
+                                        @elseif($event->trainer)
                                             <a href="{{ route('public.trainer-profile.show', $event->trainer->id) }}" style="color: inherit; text-decoration: none; font-weight: 500;" onclick="event.stopPropagation();">
                                                 {{ $event->trainer->full_name_with_title ?: $event->trainer->name }}
                                             </a>
                                         @else
-                                            {{ $event->speaker ?? 'idSpora Team' }}
+                                            idSpora Team
                                         @endif
                                     </span>
                                 </div>
@@ -405,7 +419,7 @@
 
                             @if($startAt)
                                 <div class="countdown-wrapper" data-countdown-wrapper>
-                                    <span class="countdown-label" data-countdown-label>Mulai dalam:</span>
+                                    <span class="countdown-label" data-countdown-label>Start In:</span>
                                     <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}" @if($endAt) data-end-ts="{{ $endAt->timestamp }}" @endif>--</span>
                                 </div>
                             @endif
@@ -418,7 +432,7 @@
                                     @else
                                         @php $isFree = (int)$event->price === 0; @endphp
                                         @if($isFree)
-                                            <span class="price-now price-free">Gratis</span>
+                                            <span class="price-now price-free">Free</span>
                                         @else
                                             <span class="price-now">{{ 'Rp'.number_format($event->price,0,',','.') }}</span>
                                         @endif
@@ -427,7 +441,7 @@
                                 @php 
                                     $registered = !empty($event->is_registered);
                                     $isFinished = ($status === 'finished');
-                                    $btnLabel = $registered ? 'Anda Terdaftar' : ($isFinished ? 'Telah Selesai' : 'Daftar');
+                                    $btnLabel = $registered ? 'Registered' : ($isFinished ? 'Finished' : 'See Details');
                                     $btnClass = $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary');
                                 @endphp
                                 <button class="btn-register register-btn btn {{ $btnClass }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
@@ -438,8 +452,8 @@
                     </div>
                 @empty
                     <div class="text-center py-5" style="grid-column:1/-1;">
-                        <h5 class="mb-2">Belum ada event</h5>
-                        <p class="text-muted mb-0">Event akan segera tersedia.</p>
+                        <h5 class="mb-2">There are no events yet</h5>
+                        <p class="text-muted mb-0">Event will be available soon.</p>
                     </div>
                 @endforelse
             </div>
@@ -452,11 +466,11 @@
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header bg-success text-white py-2">
-                            <h6 class="modal-title">Pendaftaran Berhasil</h6>
+                            <h6 class="modal-title">Registration Successful</h6>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="mb-0">Anda berhasil terdaftar pada event: <strong id="registeredEventTitle"></strong></p>
+                            <p class="mb-0">You have successfully registered for the event: <strong id="registeredEventTitle"></strong></p>
                         </div>
                         <div class="modal-footer py-2">
                             <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
@@ -608,7 +622,7 @@
                 const statusInput = document.getElementById('filter-status');
                 const links = document.querySelectorAll('[data-status-filter]');
                 function labelOf(val){
-                    if(val==='upcoming') return 'Mendatang'; if(val==='ongoing') return 'Sedang Berlangsung'; if(val==='finished') return 'Telah Selesai'; return 'Semua Status';
+                    if(val==='upcoming') return 'Upcoming'; if(val==='ongoing') return 'On Going'; if(val==='finished') return 'Finished'; return 'All Status';
                 }
                 const cur = (new URLSearchParams(window.location.search).get('status')) || '{{ request('status') }}' || '';
                 if(statusBtn){ statusBtn.textContent = labelOf(cur || 'all'); }
@@ -634,9 +648,9 @@
                 const minutes = Math.floor(sec/60); sec%=60;
                 const seconds = sec;
                 const parts = [];
-                if(days > 0) parts.push(days + ' hari');
-                if(hours > 0 || days > 0) parts.push(hours + ' jam');
-                if(days === 0 && hours === 0){ parts.push(pad(minutes) + ':' + pad(seconds)); } else { parts.push(minutes + ' menit'); }
+                if(days > 0) parts.push(days + ' day');
+                if(hours > 0 || days > 0) parts.push(hours + ' hour');
+                if(days === 0 && hours === 0){ parts.push(pad(minutes) + ':' + pad(seconds)); } else { parts.push(minutes + ' minute'); }
                 return parts.join(' ');
             }
             function update(){
@@ -647,14 +661,14 @@
                     const end = endAttr ? parseInt(endAttr,10) : null;
                     const label = el.closest('[data-countdown-wrapper]')?.querySelector('[data-countdown-label]');
                     if(end && now > end){
-                        el.textContent = 'Telah Selesai'; el.classList.remove('started'); el.classList.add('expired');
+                        el.textContent = 'Finished'; el.classList.remove('started'); el.classList.add('expired');
                         if(label) label.textContent = 'Status:';
                         // Update register button if not registered
                         const card = el.closest('.card-event');
                         if(card){
                             const btn = card.querySelector('.register-btn');
                             if(btn && !btn.classList.contains('btn-success')){
-                                btn.textContent = 'Telah Selesai';
+                                btn.textContent = 'Finished';
                                 btn.classList.remove('btn-primary','btn-warning');
                                 btn.classList.add('btn-secondary');
                                 btn.disabled = true;
@@ -662,12 +676,41 @@
                         }
                         return;
                     }
-                    if(now >= start){ el.textContent = 'Sedang Berlangsung'; el.classList.remove('expired'); el.classList.add('started'); if(label) label.textContent = 'Status:'; return; }
-                    const diff = start - now; el.textContent = formatDiff(diff); el.classList.remove('started','expired'); if(label) label.textContent = 'Mulai dalam:';
+                    if(now >= start){ el.textContent = 'Ongoing'; el.classList.remove('expired'); el.classList.add('started'); if(label) label.textContent = 'Status:'; return; }
+                    const diff = start - now; el.textContent = formatDiff(diff); el.classList.remove('started','expired'); if(label) label.textContent = 'Begin at:';
                 });
             }
             update(); setInterval(update, 1000);
         })();
+    </script>
+
+    <script>
+        function toggleSaveEvent(btn) {
+            const url = btn.getAttribute('data-save-url');
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => { if (r.status === 401) { window.location.href = "{{ route('login') }}"; return null; } return r.json(); })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '';
+                    }
+                }
+            })
+            .finally(() => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; });
+        }
     </script>
 </body>
 </html>

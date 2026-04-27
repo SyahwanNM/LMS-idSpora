@@ -11,7 +11,9 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
+    <style>
+        .sanity-msg { min-height: 20px; font-size: 12px; color: #dc3545; display: block; margin-top: 4px; }
+    </style>
 </head>
 
 <body>
@@ -19,25 +21,35 @@
     <div class="container py-4">
         <div class="row">
             <div class="col-lg-8 mx-auto">
-                <div class="box_luar_add_course">
+                <div class="box_luar_add_course" style="text-align:left;">
                     <div class="box_link d-flex align-items-center gap-2 text-muted small mb-2">
                         <a href="{{ route('admin.courses.index') }}" class="text-decoration-none">Course Builder</a>
                         <span>/</span>
                         <a href="{{ route('admin.add-course') }}" class="text-decoration-none">Add Course</a>
                     </div>
-                    <div class="box_judul mb-3">
-                        <h1 class="h3 mb-1">Tambah Course</h1>
-                        <p class="text-muted mb-0">Atur detail course sebelum dipublikasikan</p>
+                    <div class="mb-3" style="display:flex; align-items:flex-start; gap:12px;">
+                        <a href="{{ route('admin.courses.index') }}"
+                           style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #dee2e6; border-radius:6px; color:#212529; text-decoration:none; flex-shrink:0; margin-top:4px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path fill-rule="evenodd"
+                                    d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
+                            </svg>
+                        </a>
+                        <div style="text-align:left;">
+                            <h1 class="h3 mb-1">Add Course</h1>
+                            <p class="text-muted mb-0">Configure course details before publishing</p>
+                        </div>
                     </div>
 
                     <form class="box_form" action="{{ route('admin.courses.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="status" value="archive">
-                        <h4 class="h5 mb-2">Formulir Pengaturan Course</h4>
+                        <h4 class="h5 mb-2">Course Setup Form</h4>
                         <div class="mb-3">
-                            <label class="form-label text-dark" for="course-title">Judul Course <span class="text-danger">*</span></label>
-                            <input id="course-title" name="name" type="text" class="form-control" placeholder="Masukkan Judul Course" required>
-                            <div class="sanity-msg" data-for="course-title"></div>
+                            <label class="form-label text-dark" for="course-title">Course Title <span class="text-danger">*</span></label>
+                            <input id="course-title" name="name" type="text" class="form-control" placeholder="Enter Course Title" required>
+                            <div class="sanity-msg title" data-for="course-title"></div>
                         </div>
 
                         <div class="row g-3 mb-3">
@@ -51,49 +63,58 @@
                                 </select>
                                 <div class="sanity-msg" data-for="course-level"></div>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>
+                                <select id="course-trainer" name="trainer_id" class="form-select" required data-selected="{{ old('trainer_id') }}">
+                                    <option value="" selected disabled>Choose trainer</option>
+                                </select>
+                                <div class="sanity-msg" data-for="course-trainer"></div>
+                            </div>
+                        </div>
+                        {{-- Module titles: shown dynamically based on selected level --}}
+                        <div id="module-titles-section" class="mb-3" style="display:none;">
+                            <label class="form-label text-dark fw-semibold">Input Title Module <span class="text-danger">*</span></label>
+                            <div id="module-titles-grid" class="row g-3"></div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
                             @if(isset($categories) && $categories->count())
                             <div class="col-md-6">
-                                <label class="form-label text-dark" for="course-category">Kategori <span class="text-danger">*</span></label>
-                                <select id="course-category" name="category_id" class="form-select" required>
-                                    <option value="" selected disabled>Pilih kategori</option>
-                                    @foreach($categories as $cat)
-                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="sanity-msg" data-for="course-category"></div>
+                                <label class="form-label text-dark" for="course-category">Category <span class="text-danger">*</span></label>
+                                <div style="position:relative;">
+                                    <input type="text" id="course-category-input" class="form-control" placeholder="Type to search category..." autocomplete="off">
+                                    <input type="hidden" id="course-category" name="category_id">
+                                    <input type="hidden" id="course-category-name" name="category_name">
+                                    <ul id="category-suggestions" style="display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; z-index:999; list-style:none; margin:0; padding:4px 0; max-height:180px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.1);">
+                                        @foreach($categories as $cat)
+                                        <li data-id="{{ $cat->id }}" data-name="{{ $cat->name }}" style="padding:5px 14px; cursor:pointer; font-size:13px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">{{ $cat->name }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                <div class="sanity-msg" data-for="course-category" style="margin-top: -5px;"></div>
                             </div>
                             @else
                             <input type="hidden" name="category_id" value="1">
                             @endif
+                            <div class="col-md-6">
+                                <label class="form-label text-dark" for="course-price">Price <span class="text-danger">*</span></label>
+                                <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0" required>
+                                <div class="form-text harga-course">Enter 0 for free course</div>
+                                <div class="sanity-msg" data-for="course-price"></div>
+                            </div>
                         </div>
 
-                        <div class="box_select_trainer mb-3">
-                            <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>
-                            <select id="course-trainer" name="trainer_id" class="form-select" required data-selected="{{ old('trainer_id') }}">
-                                <option value="" selected disabled>Pilih trainer</option>
+                        <div class="mb-3">
+                            <label for="free_access_mode" class="form-label text-dark">Access Course</label>
+                            <select name="free_access_mode" id="free_access_mode" class="form-select">
+                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Module 1 Open)</option>
+                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Open All Materials</option>
+                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Close Review (Must Purchase First)</option>
                             </select>
-                            <div class="sanity-msg" data-for="course-trainer"></div>
+                            <div class="form-text text-muted small">Choose how users can access materials before purchasing (for paid courses) or the access status for free courses.</div>
                         </div>
 
                         <input type="hidden" id="course-duration" name="duration" value="0">
-
-                        <div class="box_select_harga mb-3">
-                            <label class="form-label text-dark" for="course-price">Harga <span class="text-danger">*</span></label>
-                            <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0" required>
-                            <div class="form-text">Isi 0 untuk course gratis</div>
-                            <div class="sanity-msg" data-for="course-price"></div>
-                        </div>
-
-                        <!-- Akses Course (Freemium Mode) -->
-                        <div class="mb-3">
-                            <label for="free_access_mode" class="form-label text-dark">Akses Course</label>
-                            <select name="free_access_mode" id="free_access_mode" class="form-select">
-                                <option value="limit_2" {{ old('free_access_mode', 'limit_2') === 'limit_2' ? 'selected' : '' }}>Freemium (Modul 1 Terbuka)</option>
-                                <option value="all" {{ old('free_access_mode') === 'all' ? 'selected' : '' }}>Buka Semua Materi</option>
-                                <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
-                            </select>
-                            <div class="form-text text-muted small">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</div>
-                        </div>
 
                         <div class="mb-3">
                             <label class="form-label text-dark">Reseller Course</label>
@@ -104,15 +125,15 @@
                                 <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
                                     <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0"
                                         {{ $isResellerCourse === 0 ? 'checked' : '' }}>
-                                    <label class="text-dark" for="is_reseller_course_0">Tidak</label>
+                                    <label class="text-dark" for="is_reseller_course_0">No</label>
                                 </div>
                                 <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
                                     <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1"
                                         {{ $isResellerCourse === 1 ? 'checked' : '' }}>
-                                    <label class="text-dark" for="is_reseller_course_1">Ya</label>
+                                    <label class="text-dark" for="is_reseller_course_1">Yes</label>
                                 </div>
                             </div>
-                            <div class="form-text">Jika Ya, course ini ditandai sebagai course reseller.</div>
+                            <div class="form-text">If Yes, this course will be marked as a reseller course.</div>
                             <style>
                                 .reseller-course-radios input[type="radio"]{
                                     appearance: auto !important;
@@ -134,8 +155,8 @@
                         </div>
 
                         <div class="box_select_deskripsi mb-3">
-                            <label class="form-label text-dark" for="course-description">Deskripsi Course</label>
-                            <textarea id="course-description" name="description" class="form-control" placeholder="Deskripsikan course secara lengkap"></textarea>
+                            <label class="form-label text-dark" for="course-description">Description Course</label>
+                            <textarea id="course-description" name="description" class="form-control" placeholder="Describe the course in detail"></textarea>
                             <div class="sanity-msg" data-for="course-description"></div>
                         </div>
 
@@ -147,7 +168,7 @@
                                     <small class="text-muted">Preview</small>
                                 </div>
                             </div>
-                            <div class="form-text">Bisa upload gambar <b>atau</b> video (mp4, webm, ogg)</div>
+                            <div class="form-text">Can upload images <b>or</b> video (mp4, webm, ogg)</div>
                             <div class="sanity-msg" data-for="course-thumbnail"></div>
                         </div>
                         <div class="box_select_deskripsi mb-3">
@@ -158,53 +179,48 @@
                                     <small class="text-muted">Preview</small>
                                 </div>
                             </div>
-                            <div class="form-text">Upload gambar untuk thumbnail card course (jpg/png/webp)</div>
+                            <div class="form-text">Upload an image for the course card thumbnail (jpg/png/webp)</div>
                             <div class="sanity-msg" data-for="card-thumbnail"></div>
                         </div>
                         <div class="box_select_diskon mb-3">
-                            <label class="form-label text-dark" for="discount-percent">Diskon (%)</label>
-                            <input id="discount-percent" name="discount_percent" type="number" class="form-control" min="0" max="100" placeholder="Masukkan diskon (0-100)">
-                            <div class="form-text">Boleh kosong atau 0%</div>
+                            <label class="form-label text-dark" for="discount-percent">Discount (%)</label>
+                            <input id="discount-percent" name="discount_percent" type="number" class="form-control" min="0" max="100" placeholder="Enter discount (0-100)">
+                            <div class="form-text">Can be empty or 0%</div>
                             <div class="sanity-msg" data-for="discount-percent"></div>
                         </div>
                         <div class="box_select_tanggal_diskon row mb-3">
                             <div class="col-md-6">
-                                <label class="form-label text-dark" for="discount-start">Tanggal Mulai Diskon</label>
+                                <label class="form-label text-dark" for="discount-start">Discount Start Date</label>
                                 <input id="discount-start" name="discount_start" type="date" class="form-control" min="{{ now()->toDateString() }}" value="{{ old('discount_start', now()->toDateString()) }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label text-dark" for="discount-end">Tanggal Berakhir Diskon</label>
+                                <label class="form-label text-dark" for="discount-end">Discount End Date</label>
                                 <input id="discount-end" name="discount_end" type="date" class="form-control" min="{{ now()->toDateString() }}" value="{{ old('discount_end', now()->toDateString()) }}">
                             </div>
                         </div>
                         <div class="box_select_diskon mb-3">
-                            <label class="form-label text-dark" for="discount-percent">Pengeluaran</label>
+                            <label class="form-label text-dark" for="discount-percent">Expenses</label>
                             <div class="table-responsive">
                             <table class="table" id="courseExpensesTable">
                                 <thead>
                                     <tr>
-                                        <th scope="col">No</th>
-                                        <th scope="col">Nama kebutuhan</th>
-                                        <th scope="col">kuantitas</th>
-                                        <th scope="col">Harga Satuan</th>
-                                        <th scope="col">Harga Total</th>
-                                        <th scope="col">Aksi</th>
+                                        <th scope="col">Number</th>
+                                        <th scope="col">Need Name</th>
+                                        <th scope="col">Quantity</th>
+                                        <th scope="col">Unit Price</th>
+                                        <th scope="col">Total Price</th>
+                                        <th scope="col">Action</th>
 
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
                             </div>
-                            <button type="button" class="tombol_tambah_pengeluaran" id="addCourseExpenseRow">Tambah Pengeluaran</button>
+                            <button type="button" class="tombol_tambah_pengeluaran" id="addCourseExpenseRow">Add Expense</button>
                             <div class="sanity-msg" data-for="discount-percent"></div>
                         </div>
 
-
-                        <!-- Serialized modules payload for backend (JSON) -->
-                        <input type="hidden" name="modules_payload" id="modules-payload">
-                        <!-- Hidden bucket to hold actual selected module files so they submit with the form -->
-                        <div id="module-file-bucket" style="display:none"></div>
-                </div>
+                      
                 <div class="box_button d-flex justify-content-end gap-2 mt-3">
                     <a href="{{ route('admin.courses.index') }}" class="cancel btn btn-outline-secondary">Cancel</a>
                     <button type="submit" class="save_add btn btn-primary">Save</button>
@@ -216,6 +232,103 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    // Dynamic module title inputs based on level
+    (function () {
+        const levelModules = { beginner: 3, intermediate: 6, advanced: 12 };
+        const levelSelect  = document.getElementById('course-level');
+        const section      = document.getElementById('module-titles-section');
+        const grid         = document.getElementById('module-titles-grid');
+
+        function renderModuleTitles(level) {
+            const count = levelModules[level] || 0;
+            grid.innerHTML = '';
+            if (!count) { section.style.display = 'none'; return; }
+
+            section.style.display = 'block';
+            for (let i = 1; i <= count; i++) {
+                const col = document.createElement('div');
+                col.className = 'col-md-4';
+                col.innerHTML = `
+                    <label class="form-label text-dark small" for="module-title-${i}">Module ${i}</label>
+                    <input id="module-title-${i}" name="unit_titles[${i}]" type="text"
+                           class="form-control form-control-sm"
+                           placeholder="Title module ${i}" required>`;
+                grid.appendChild(col);
+            }
+        }
+
+        if (levelSelect) {
+            levelSelect.addEventListener('change', function () {
+                renderModuleTitles(this.value);
+            });
+            // init if old value exists
+            if (levelSelect.value) renderModuleTitles(levelSelect.value);
+        }
+    })();
+    </script>
+
+    <script>
+        (function(){
+            const inp = document.getElementById('course-category-input');
+            const hidden = document.getElementById('course-category');
+            const hiddenName = document.getElementById('course-category-name');
+            const list = document.getElementById('category-suggestions');
+            
+            if (inp && list) {
+                const allItems = Array.from(list.querySelectorAll('li'));
+
+                function showSuggestions() {
+                    const q = inp.value.toLowerCase();
+                    let any = false;
+                    allItems.forEach(li => {
+                        const match = li.dataset.name.toLowerCase().includes(q);
+                        li.style.display = match ? '' : 'none';
+                        if (match) any = true;
+                    });
+                    list.style.display = any ? 'block' : 'none';
+                }
+
+                inp.addEventListener('input', function() {
+                    hidden.value = '';
+                    hiddenName.value = '';
+                    showSuggestions();
+                });
+
+                inp.addEventListener('focus', showSuggestions);
+                inp.addEventListener('click', showSuggestions);
+
+                inp.addEventListener('blur', function() {
+                    const val = this.value.trim();
+                    if (val && !hidden.value) {
+                        hiddenName.value = val;
+                    }
+                    setTimeout(() => { list.style.display = 'none'; }, 250);
+                });
+
+                list.addEventListener('mousedown', function(e) {
+                    const li = e.target.closest('li');
+                    if (!li) return;
+                    e.preventDefault();
+                    inp.value = li.dataset.name;
+                    hidden.value = li.dataset.id;
+                    hiddenName.value = '';
+                    list.style.display = 'none';
+                    inp.classList.remove('is-invalid');
+                    const m = document.querySelector('.sanity-msg[data-for="course-category"]');
+                    if (m) { m.textContent = ''; m.classList.remove('show'); }
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!inp.contains(e.target) && !list.contains(e.target)) {
+                        list.style.display = 'none';
+                    }
+                });
+            }
+        })();
+    </script>
+
     <script>
         (function() {
             const modules = [];
@@ -316,7 +429,6 @@
                 return wrapper;
             }
 
-            // LocalStorage Key
             const STORAGE_KEY = 'course_draft_modules';
 
             function saveDraft() {
@@ -329,7 +441,6 @@
                 if (saved) {
                     try {
                         const parsed = JSON.parse(saved);
-                        // Ensure structure is arrays
                         if (Array.isArray(parsed)) {
                             modules.splice(0, modules.length, ...parsed);
                             renderList();
@@ -341,6 +452,7 @@
             }
 
             function renderList() {
+                if (!listEl) return;
                 listEl.innerHTML = '';
 
                 const emptyState = document.getElementById('modules-empty-state');
@@ -354,7 +466,6 @@
                 if (emptyState) emptyState.style.display = 'none';
                 listEl.style.display = 'flex';
 
-                // Grouping
                 const pdfs = modules.filter(m => m.type === 'pdf').sort((a, b) => (a.order || 0) - (b.order || 0));
                 const videos = modules.filter(m => m.type === 'video').sort((a, b) => (a.order || 0) - (b.order || 0));
                 const quizzes = modules.filter(m => m.type === 'quiz').sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -377,10 +488,8 @@
                 saveDraft();
             }
 
-            // Initial Load
             loadDraft();
 
-            
             const mainForm = document.querySelector('form[action]');
             
             if (mainForm) {
@@ -394,7 +503,7 @@
                 const titleBase = file.name.replace(/\.[^.]+$/, '') || (type === 'pdf' ? 'PDF Module' : 'Video Module');
                 const nextOrder = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
                 const mod = {
-                    type, // 'pdf' | 'video'
+                    type,
                     title: titleBase,
                     subtitle: type === 'pdf' ? 'Dokumen materi' : 'Video pembelajaran',
                     filename: file.name,
@@ -405,26 +514,26 @@
                 renderList();
             }
 
-            // --- Add PDF Modal logic ---
             function resetPdfModal() {
                 selectedPdfFile = null;
-                pdfModalTitle.value = '';
-                pdfModalDesc.value = '';
-                pdfModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
-                pdfModalFile.value = '';
-                pdfFileName.textContent = '';
+                if(pdfModalTitle) pdfModalTitle.value = '';
+                if(pdfModalDesc) pdfModalDesc.value = '';
+                if(pdfModalOrder) pdfModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
+                if(pdfModalFile) pdfModalFile.value = '';
+                if(pdfFileName) pdfFileName.textContent = '';
             }
 
             function setSelectedPdf(file) {
                 if (!file) return;
                 selectedPdfFile = file;
-                pdfFileName.textContent = file.name;
-                if (!pdfModalTitle.value) {
+                if(pdfFileName) pdfFileName.textContent = file.name;
+                if (pdfModalTitle && !pdfModalTitle.value) {
                     pdfModalTitle.value = file.name.replace(/\.[^.]+$/, '');
                 }
             }
 
             function bindPdfFileInput(el) {
+                if(!el) return;
                 el.addEventListener('change', (e) => {
                     const f = e.target.files && e.target.files[0];
                     setSelectedPdf(f);
@@ -435,7 +544,7 @@
                 openPdfBtn.addEventListener('click', () => {
                     resetPdfModal();
                     if (pdfModalInstance) pdfModalInstance.show();
-                    else pdfModalEl.style.display = 'block';
+                    else if(pdfModalEl) pdfModalEl.style.display = 'block';
                 });
             }
             if (pdfDropZone) {
@@ -449,7 +558,7 @@
                     e.stopPropagation();
                     pdfDropZone.classList.remove('hover');
                 }));
-                pdfDropZone.addEventListener('click', () => pdfModalFile.click());
+                pdfDropZone.addEventListener('click', () => { if(pdfModalFile) pdfModalFile.click(); });
                 pdfDropZone.addEventListener('drop', (e) => {
                     const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
                     if (f) setSelectedPdf(f);
@@ -460,9 +569,9 @@
             }
             if (pdfAddBtn) {
                 pdfAddBtn.addEventListener('click', () => {
-                    const title = (pdfModalTitle.value || '').trim();
-                    const desc = (pdfModalDesc.value || '').trim();
-                    const order = parseInt(pdfModalOrder.value || '1', 10) || 1;
+                    const title = (pdfModalTitle ? pdfModalTitle.value || '' : '').trim();
+                    const desc = (pdfModalDesc ? pdfModalDesc.value || '' : '').trim();
+                    const order = parseInt(pdfModalOrder ? pdfModalOrder.value || '1' : '1', 10) || 1;
                     if (title.length < 3) {
                         alert('Judul minimal 3 karakter.');
                         return;
@@ -472,20 +581,18 @@
                         return;
                     }
                     const uid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-                    // move the actual input with the selected file into the hidden form bucket so it submits
+                    
                     if (pdfModalFile && fileBucket) {
                         pdfModalFile.name = `module_files[${uid}]`;
                         fileBucket.appendChild(pdfModalFile);
-                        // create a fresh input back into modal for next time
+                        
                         const newInput = document.createElement('input');
                         newInput.type = 'file';
                         newInput.id = 'pdf-modal-file';
                         newInput.accept = 'application/pdf';
                         newInput.style.display = 'none';
                         pdfModalFile = newInput;
-                        // insert it after drop-zone
-                        const parent = document.getElementById('addPdfModal').querySelector('.modal-body .mb-3:last-of-type');
-                        // safer: place after drop zone container
+                        
                         const afterEl = document.getElementById('pdf-drop-zone');
                         if (afterEl && afterEl.parentNode) {
                             afterEl.parentNode.insertBefore(newInput, afterEl.nextSibling);
@@ -507,26 +614,26 @@
                 });
             }
 
-            // --- Add Video Modal logic ---
             function resetVideoModal() {
                 selectedVideoFile = null;
-                videoModalTitle.value = '';
-                videoModalDesc.value = '';
-                videoModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
-                videoModalFile.value = '';
-                videoFileName.textContent = '';
+                if(videoModalTitle) videoModalTitle.value = '';
+                if(videoModalDesc) videoModalDesc.value = '';
+                if(videoModalOrder) videoModalOrder.value = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
+                if(videoModalFile) videoModalFile.value = '';
+                if(videoFileName) videoFileName.textContent = '';
             }
 
             function setSelectedVideo(file) {
                 if (!file) return;
                 selectedVideoFile = file;
-                videoFileName.textContent = file.name;
-                if (!videoModalTitle.value) {
+                if(videoFileName) videoFileName.textContent = file.name;
+                if (videoModalTitle && !videoModalTitle.value) {
                     videoModalTitle.value = file.name.replace(/\.[^.]+$/, '');
                 }
             }
 
             function bindVideoFileInput(el) {
+                if(!el) return;
                 el.addEventListener('change', (e) => {
                     const f = e.target.files && e.target.files[0];
                     setSelectedVideo(f);
@@ -537,10 +644,9 @@
                 openVideoBtn.addEventListener('click', () => {
                     resetVideoModal();
                     if (videoModalInstance) videoModalInstance.show();
-                    else videoModalEl.style.display = 'block';
+                    else if(videoModalEl) videoModalEl.style.display = 'block';
                 });
             }
-            // drag & drop handlers
             if (videoDropZone) {
                 ['dragenter', 'dragover'].forEach(evt => videoDropZone.addEventListener(evt, e => {
                     e.preventDefault();
@@ -552,7 +658,7 @@
                     e.stopPropagation();
                     videoDropZone.classList.remove('hover');
                 }));
-                videoDropZone.addEventListener('click', () => videoModalFile.click());
+                videoDropZone.addEventListener('click', () => { if(videoModalFile) videoModalFile.click(); });
                 videoDropZone.addEventListener('drop', (e) => {
                     const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
                     if (f) setSelectedVideo(f);
@@ -563,9 +669,9 @@
             }
             if (videoAddBtn) {
                 videoAddBtn.addEventListener('click', () => {
-                    const title = (videoModalTitle.value || '').trim();
-                    const desc = (videoModalDesc.value || '').trim();
-                    const order = parseInt(videoModalOrder.value || '1', 10) || 1;
+                    const title = (videoModalTitle ? videoModalTitle.value || '' : '').trim();
+                    const desc = (videoModalDesc ? videoModalDesc.value || '' : '').trim();
+                    const order = parseInt(videoModalOrder ? videoModalOrder.value || '1' : '1', 10) || 1;
                     if (title.length < 3) {
                         alert('Judul minimal 3 karakter.');
                         return;
@@ -575,11 +681,11 @@
                         return;
                     }
                     const uid = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-                    // move the actual input with selected file into the bucket
+                    
                     if (videoModalFile && fileBucket) {
                         videoModalFile.name = `module_files[${uid}]`;
                         fileBucket.appendChild(videoModalFile);
-                        // create a fresh input back into modal for next time
+                        
                         const newInput = document.createElement('input');
                         newInput.type = 'file';
                         newInput.id = 'video-modal-file';
@@ -607,14 +713,12 @@
                 });
             }
 
-            // --- Quiz Logic (Multi-step) ---
             let quizDraft = {
                 title: '',
                 description: '',
                 questions: []
             };
 
-            // Elements
             const quizStep1 = document.getElementById('quiz-step-1');
             const quizStep2 = document.getElementById('quiz-step-2');
             const quizStep3 = document.getElementById('quiz-step-3');
@@ -628,7 +732,6 @@
             const quizQuestionsList = document.getElementById('quiz-questions-list');
             const quizQuestionCount = document.getElementById('quiz-question-count');
 
-            // Buttons
             const btnGoToAddQuestion = document.getElementById('btn-goto-add-question');
             const btnGotoReview = document.getElementById('btn-goto-review');
             const btnCancelQuestion = document.getElementById('btn-cancel-question');
@@ -636,36 +739,32 @@
             const btnBackToStep1 = document.getElementById('btn-back-to-step-1');
             const btnFinalSaveQuiz = document.getElementById('btn-final-save-quiz');
 
-            // Step 2 Inputs
             const qTextInput = document.getElementById('q-text-input');
             const qOptionsContainer = document.getElementById('q-options-container');
             const quizQuestionNumberTitle = document.getElementById('quiz-question-number-title');
 
-            // Review Elements
             const reviewQuizTitle = document.getElementById('review-quiz-title');
             const reviewQuizDesc = document.getElementById('review-quiz-desc');
             const reviewTotalQ = document.getElementById('review-total-q');
             const reviewQuestionsList = document.getElementById('review-questions-list');
 
             function switchStep(step) {
-                [quizStep1, quizStep2, quizStep3].forEach(el => el.style.display = 'none');
-                [quizFooter1, quizFooter2, quizFooter3].forEach(el => el.style.setProperty('display', 'none', 'important'));
+                [quizStep1, quizStep2, quizStep3].forEach(el => { if(el) el.style.display = 'none'; });
+                [quizFooter1, quizFooter2, quizFooter3].forEach(el => { if(el) el.style.setProperty('display', 'none', 'important'); });
 
                 if (step === 1) {
-                    quizStep1.style.display = 'block';
-                    quizFooter1.style.display = 'flex';
+                    if(quizStep1) quizStep1.style.display = 'block';
+                    if(quizFooter1) quizFooter1.style.display = 'flex';
                     renderQuestionsMinimal();
                 } else if (step === 2) {
-                    quizStep2.style.display = 'block';
-                    quizFooter2.style.display = 'flex';
-                    // Update Quiz #X title
+                    if(quizStep2) quizStep2.style.display = 'block';
+                    if(quizFooter2) quizFooter2.style.display = 'flex';
                     const nextNum = quizDraft.questions.length + 1;
                     if (quizQuestionNumberTitle) quizQuestionNumberTitle.textContent = `Quiz #${nextNum}`;
-
                     resetQuestionForm();
                 } else if (step === 3) {
-                    quizStep3.style.display = 'block';
-                    quizFooter3.style.display = 'flex';
+                    if(quizStep3) quizStep3.style.display = 'block';
+                    if(quizFooter3) quizFooter3.style.display = 'flex';
                     renderReview();
                 }
             }
@@ -676,12 +775,13 @@
                     description: '',
                     questions: []
                 };
-                quizTitleInput.value = '';
-                quizDescInput.value = '';
+                if(quizTitleInput) quizTitleInput.value = '';
+                if(quizDescInput) quizDescInput.value = '';
                 switchStep(1);
             }
 
             function renderQuestionsMinimal() {
+                if(!quizQuestionsList) return;
                 if (quizDraft.questions.length === 0) {
                     quizQuestionsList.innerHTML = '<div class="alert alert-light border text-center text-muted small py-3">No questions added yet.</div>';
                 } else {
@@ -697,153 +797,152 @@
                             </div>
                         `).join('');
                 }
-                quizQuestionCount.textContent = quizDraft.questions.length;
-
-                // Add listener for remove button (since inline onclick won't verify easily with scoping)
-                // We will use delegation
+                if(quizQuestionCount) quizQuestionCount.textContent = quizDraft.questions.length;
             }
 
-            quizQuestionsList.addEventListener('click', (e) => {
-                const btn = e.target.closest('.btn.text-danger');
-                if (btn) {
-                    // find index
-                    // Simple way: re-render with onclick or data-index
-                    // Re-render approach with valid delegation:
-                    // Let's assume we render data-index
-                }
-            });
+            if(quizQuestionsList) {
+                quizQuestionsList.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.btn.text-danger');
+                });
+            }
 
-            // Global function for remove (attached to window for simplicity in this scope or use delegation)
             window.removeDraftQuestion = function(idx) {
                 quizDraft.questions.splice(idx, 1);
                 renderQuestionsMinimal();
             };
 
             function resetQuestionForm() {
-                qTextInput.value = '';
-                qOptionsContainer.innerHTML = [1, 2, 3, 4].map(i => `
-                        <div class="input-group">
-                            <input type="text" class="form-control question-option-input" placeholder="Option ${i}" data-index="${i}">
-                            <div class="input-group-text bg-white">
-                                <input class="form-check-input mt-0 question-correct-radio" type="radio" name="correctOption" value="${i}" aria-label="Correct answer">
-                                <span class="ms-2 small text-muted">Correct</span>
+                if(qTextInput) qTextInput.value = '';
+                if(qOptionsContainer) {
+                    qOptionsContainer.innerHTML = [1, 2, 3, 4].map(i => `
+                            <div class="input-group">
+                                <input type="text" class="form-control question-option-input" placeholder="Option ${i}" data-index="${i}">
+                                <div class="input-group-text bg-white">
+                                    <input class="form-check-input mt-0 question-correct-radio" type="radio" name="correctOption" value="${i}" aria-label="Correct answer">
+                                    <span class="ms-2 small text-muted">Correct</span>
+                                </div>
                             </div>
-                        </div>
-                    `).join('');
+                        `).join('');
+                }
             }
 
-            // Event Listeners
             if (openQuizBtn) {
-                // Override default
-                openQuizBtn.replaceWith(openQuizBtn.cloneNode(true)); // remove old listeners
+                const newBtn = openQuizBtn.cloneNode(true);
+                openQuizBtn.replaceWith(newBtn); 
                 document.getElementById('open-add-quiz-modal').addEventListener('click', () => {
                     resetQuizDraft();
                     if (quizModalInstance) quizModalInstance.show();
                 });
             }
 
-            btnGoToAddQuestion.addEventListener('click', () => switchStep(2));
-            btnCancelQuestion.addEventListener('click', () => switchStep(1));
+            if(btnGoToAddQuestion) btnGoToAddQuestion.addEventListener('click', () => switchStep(2));
+            if(btnCancelQuestion) btnCancelQuestion.addEventListener('click', () => switchStep(1));
 
-            btnSaveQuestion.addEventListener('click', () => {
-                const text = qTextInput.value.trim();
-                if (!text) {
-                    alert('Please enter question text');
-                    return;
-                }
+            if(btnSaveQuestion) {
+                btnSaveQuestion.addEventListener('click', () => {
+                    const text = qTextInput ? qTextInput.value.trim() : '';
+                    if (!text) {
+                        alert('Please enter question text');
+                        return;
+                    }
 
-                const options = [];
-                let correctIdx = -1;
+                    const options = [];
+                    let correctIdx = -1;
+                    const optInputs = qOptionsContainer ? qOptionsContainer.querySelectorAll('.question-option-input') : [];
+                    const radios = qOptionsContainer ? qOptionsContainer.querySelectorAll('.question-correct-radio') : [];
 
-                const optInputs = qOptionsContainer.querySelectorAll('.question-option-input');
-                const radios = qOptionsContainer.querySelectorAll('.question-correct-radio');
+                    let allFilled = true;
+                    optInputs.forEach((inp, idx) => {
+                        const val = inp.value.trim();
+                        if (!val) allFilled = false;
+                        options.push(val);
+                        if (radios[idx].checked) correctIdx = idx;
+                    });
 
-                let allFilled = true;
-                optInputs.forEach((inp, idx) => {
-                    const val = inp.value.trim();
-                    if (!val) allFilled = false;
-                    options.push(val);
-                    if (radios[idx].checked) correctIdx = idx;
+                    if (!allFilled) {
+                        alert('Please fill all 4 options');
+                        return;
+                    }
+                    if (correctIdx === -1) {
+                        alert('Please select the correct answer');
+                        return;
+                    }
+
+                    quizDraft.questions.push({
+                        text: text,
+                        options: options,
+                        correctIndex: correctIdx
+                    });
+
+                    switchStep(1);
                 });
-
-                if (!allFilled) {
-                    alert('Please fill all 4 options');
-                    return;
-                }
-                if (correctIdx === -1) {
-                    alert('Please select the correct answer');
-                    return;
-                }
-
-                quizDraft.questions.push({
-                    text: text,
-                    options: options,
-                    correctIndex: correctIdx
-                });
-
-                switchStep(1);
-            });
-
-            btnGotoReview.addEventListener('click', () => {
-                // Update Draft info
-                quizDraft.title = quizTitleInput.value.trim();
-                quizDraft.description = quizDescInput.value.trim();
-
-                if (!quizDraft.title) {
-                    alert('Please enter Quiz Title');
-                    return;
-                }
-                if (quizDraft.questions.length === 0) {
-                    alert('Please add at least one question');
-                    return;
-                }
-
-                switchStep(3);
-            });
-
-            btnBackToStep1.addEventListener('click', () => switchStep(1));
-
-            function renderReview() {
-                reviewQuizTitle.textContent = quizDraft.title;
-                reviewQuizDesc.textContent = quizDraft.description || '-';
-                reviewTotalQ.textContent = quizDraft.questions.length;
-
-                reviewQuestionsList.innerHTML = quizDraft.questions.map((q, i) => `
-                        <div class="p-3 border-bottom bg-white">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="badge bg-light text-dark border">Q${i+1}</span>
-                                <span class="fw-semibold">${q.text}</span>
-                            </div>
-                            <div class="ps-4">
-                                ${q.options.map((opt, optI) => `
-                                    <div class="d-flex align-items-center gap-2 mb-1">
-                                        <div style="width:16px;height:16px;border:1px solid #ccc;border-radius:4px;background-color:${optI === q.correctIndex ? '#d1e7dd' : '#fff'};border-color:${optI === q.correctIndex ? '#198754' : '#ccc'};"></div>
-                                        <span class="small ${optI === q.correctIndex ? 'text-success fw-bold' : 'text-muted'}">${opt}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `).join('');
             }
 
-            btnFinalSaveQuiz.addEventListener('click', () => {
-                const nextOrder = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
-                const uid = 'q' + Date.now().toString(36);
+            if(btnGotoReview) {
+                btnGotoReview.addEventListener('click', () => {
+                    quizDraft.title = quizTitleInput ? quizTitleInput.value.trim() : '';
+                    quizDraft.description = quizDescInput ? quizDescInput.value.trim() : '';
 
-                modules.push({
-                    type: 'quiz',
-                    title: quizDraft.title,
-                    subtitle: `${quizDraft.questions.length} questions`,
-                    filename: 'Quiz Module', // Placeholder
-                    mime: 'application/json', // Virtual
-                    order: nextOrder,
-                    uid: uid,
-                    data: JSON.parse(JSON.stringify(quizDraft)) // Deep copy
+                    if (!quizDraft.title) {
+                        alert('Please enter Quiz Title');
+                        return;
+                    }
+                    if (quizDraft.questions.length === 0) {
+                        alert('Please add at least one question');
+                        return;
+                    }
+
+                    switchStep(3);
                 });
+            }
 
-                renderList();
-                if (quizModalInstance) quizModalInstance.hide();
-            });
+            if(btnBackToStep1) btnBackToStep1.addEventListener('click', () => switchStep(1));
+
+            function renderReview() {
+                if(reviewQuizTitle) reviewQuizTitle.textContent = quizDraft.title;
+                if(reviewQuizDesc) reviewQuizDesc.textContent = quizDraft.description || '-';
+                if(reviewTotalQ) reviewTotalQ.textContent = quizDraft.questions.length;
+
+                if(reviewQuestionsList) {
+                    reviewQuestionsList.innerHTML = quizDraft.questions.map((q, i) => `
+                            <div class="p-3 border-bottom bg-white">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="badge bg-light text-dark border">Q${i+1}</span>
+                                    <span class="fw-semibold">${q.text}</span>
+                                </div>
+                                <div class="ps-4">
+                                    ${q.options.map((opt, optI) => `
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <div style="width:16px;height:16px;border:1px solid #ccc;border-radius:4px;background-color:${optI === q.correctIndex ? '#d1e7dd' : '#fff'};border-color:${optI === q.correctIndex ? '#198754' : '#ccc'};"></div>
+                                            <span class="small ${optI === q.correctIndex ? 'text-success fw-bold' : 'text-muted'}">${opt}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('');
+                }
+            }
+
+            if(btnFinalSaveQuiz) {
+                btnFinalSaveQuiz.addEventListener('click', () => {
+                    const nextOrder = Math.max(0, ...modules.map(m => m.order || 0)) + 1;
+                    const uid = 'q' + Date.now().toString(36);
+
+                    modules.push({
+                        type: 'quiz',
+                        title: quizDraft.title,
+                        subtitle: `${quizDraft.questions.length} questions`,
+                        filename: 'Quiz Module',
+                        mime: 'application/json',
+                        order: nextOrder,
+                        uid: uid,
+                        data: JSON.parse(JSON.stringify(quizDraft)) 
+                    });
+
+                    renderList();
+                    if (quizModalInstance) quizModalInstance.hide();
+                });
+            }
         })();
     </script>
     <script>
@@ -866,10 +965,8 @@
 
             function formatThousandsID(digits) {
                 let d = onlyDigits(digits);
-                // keep at least one digit if user typed zeros
                 d = d.replace(/^0+(?=\d)/, '');
                 if (d.length === 0) return '';
-                // group by thousands with '.'
                 return d.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
@@ -903,13 +1000,10 @@
                 if (formatted === raw) return;
 
                 inputEl.value = formatted;
-                // Restore caret so typing feels natural
                 const newCaret = caretPosForDigitIndex(formatted, digitIndex);
                 try {
                     inputEl.setSelectionRange(newCaret, newCaret);
-                } catch (e) {
-                    // ignore (some input types / browsers)
-                }
+                } catch (e) {}
             }
 
             function msgEl(id) {
@@ -937,31 +1031,39 @@
             function validateTitle() {
                 const v = (fields.title.value || '').trim();
                 const ok = v.length > 0;
-                setIndicator('course-title', ok, 'Judul course wajib diisi.');
+                setIndicator('course-title', ok, 'Course title is required.');
                 return ok;
             }
 
             function validateStatus() {
-                // Status is enforced as 'archive' for new courses; field may not exist in markup.
                 if (!fields.status) return true;
                 const v = fields.status.value;
                 const ok = (v === 'active' || v === 'archive');
-                setIndicator('course-status', ok, 'Status wajib dipilih.');
+                setIndicator('course-status', ok, 'Status is required.');
                 return ok;
             }
 
             function validateLevel() {
                 const v = fields.level.value;
                 const ok = (v === 'beginner' || v === 'intermediate' || v === 'advanced');
-                setIndicator('course-level', ok, 'Level course wajib dipilih.');
+                setIndicator('course-level', ok, 'Course level is required.');
                 return ok;
             }
 
             function validateCategory() {
                 if (!fields.category) return true;
-                const v = (fields.category.value || '').trim();
-                const ok = v.length > 0;
-                setIndicator('course-category', ok, 'Kategori wajib dipilih.');
+                const categoryId = (fields.category.value || '').trim();
+                const categoryName = (document.getElementById('course-category-name')?.value || '').trim();
+                const categoryInput = (document.getElementById('course-category-input')?.value || '').trim();
+                const ok = categoryId.length > 0 || categoryName.length > 0 || categoryInput.length > 0;
+                
+                const visibleInput = document.getElementById('course-category-input');
+                if (visibleInput) visibleInput.classList.toggle('is-invalid', !ok);
+                const m = msgEl('course-category');
+                if (m) {
+                    if (!ok) { m.textContent = 'Category is required.'; m.classList.add('show'); }
+                    else { m.textContent = ''; m.classList.remove('show'); }
+                }
                 return ok;
             }
 
@@ -969,7 +1071,7 @@
                 if (!fields.trainer) return true;
                 const v = (fields.trainer.value || '').trim();
                 const ok = v.length > 0;
-                setIndicator('course-trainer', ok, 'Trainer wajib dipilih.');
+                setIndicator('course-trainer', ok, 'Trainer is required.');
                 return ok;
             }
 
@@ -977,19 +1079,19 @@
                 const raw = (fields.price.value || '').trim();
                 const digits = raw.replace(/[^0-9]/g, '');
                 if (digits.length === 0) {
-                    setIndicator('course-price', false, 'Harga wajib diisi.');
+                    setIndicator('course-price', false, 'Price is required.');
                     return false;
                 }
                 const val = parseInt(digits, 10);
                 const ok = !isNaN(val) && val >= 0;
-                setIndicator('course-price', ok, 'Harga harus angka >= 0.');
+                setIndicator('course-price', ok, 'Price must be a number >= 0.');
                 return ok;
             }
 
             function validateThumbnail() {
                 const f = fields.thumbnail.files && fields.thumbnail.files[0];
                 if (!f) {
-                    setIndicator('course-thumbnail', false, 'Intro media wajib dipilih.');
+                    setIndicator('course-thumbnail', false, 'Intro media is required.');
                     return false;
                 }
                 const allowed = [
@@ -997,7 +1099,7 @@
                     'video/mp4', 'video/webm', 'video/ogg'
                 ];
                 if (!allowed.includes(f.type)) {
-                    setIndicator('course-thumbnail', false, 'File harus gambar (jpg/png/webp/gif) atau video (mp4/webm/ogg).');
+                    setIndicator('course-thumbnail', false, 'File must be an image (jpg/png/webp/gif) or video (mp4/webm/ogg).');
                     return false;
                 }
                 setIndicator('course-thumbnail', true);
@@ -1008,12 +1110,12 @@
                 const f = fields.cardThumbnail?.files && fields.cardThumbnail.files[0];
                 if (!fields.cardThumbnail) return true;
                 if (!f) {
-                    setIndicator('card-thumbnail', false, 'Thumbnail card course wajib diupload.');
+                    setIndicator('card-thumbnail', false, 'Thumbnail card course is required.');
                     return false;
                 }
                 const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg'];
                 if (!allowed.includes(f.type)) {
-                    setIndicator('card-thumbnail', false, 'Thumbnail harus gambar (jpg/png/webp/gif).');
+                    setIndicator('card-thumbnail', false, 'Thumbnail must be an image (jpg/png/webp/gif).');
                     return false;
                 }
                 setIndicator('card-thumbnail', true);
@@ -1021,14 +1123,11 @@
             }
 
             function validateDuration() {
-                // Some pages don't have #course-duration (legacy markup uses different fields).
-                // Treat it as optional to avoid runtime errors that block other scripts.
                 if (!fields.duration) return true;
                 const raw = (fields.duration.value || '').trim();
                 const val = parseInt(raw || '0', 10);
-                // Backend allows duration >= 0; duration is a hidden field on this page.
                 const ok = !isNaN(val) && val >= 0;
-                setIndicator('course-duration', ok, 'Durasi tidak valid.');
+                setIndicator('course-duration', ok, 'Duration is not valid.');
                 return ok;
             }
 
@@ -1037,7 +1136,6 @@
                 return checks.every(Boolean);
             }
 
-            // live validation (guard for optional fields)
             fields.title?.addEventListener('input', validateTitle);
             fields.level?.addEventListener('change', validateLevel);
             fields.category?.addEventListener('change', validateCategory);
@@ -1047,7 +1145,6 @@
                 validatePrice();
             });
             fields.price?.addEventListener('blur', function() {
-                // ensure final formatting on blur
                 formatPriceFieldLive(fields.price);
                 validatePrice();
             });
@@ -1055,10 +1152,8 @@
             fields.cardThumbnail?.addEventListener('change', validateCardThumbnail);
             fields.duration?.addEventListener('input', validateDuration);
 
-            // initial state
             validateAll();
 
-            // apply formatting if field has an initial value (e.g. browser autofill)
             if (fields.price && (fields.price.value || '').trim() !== '') {
                 formatPriceFieldLive(fields.price);
             }
@@ -1066,6 +1161,13 @@
             const formEl = document.querySelector('form.box_form');
             if (formEl) {
                 formEl.addEventListener('submit', function(ev) {
+                    const catInput = document.getElementById('course-category-input');
+                    const catHidden = document.getElementById('course-category');
+                    const catName = document.getElementById('course-category-name');
+                    if (catInput && catHidden && catName && !catHidden.value.trim() && catInput.value.trim()) {
+                        catName.value = catInput.value.trim();
+                    }
+
                     if (!validateAll()) {
                         ev.preventDefault();
                         const firstInvalid = formEl.querySelector('.is-invalid');
@@ -1076,23 +1178,22 @@
                         }
                         return;
                     }
-                    // enforce archive on create
+                    
                     const statusInputs = formEl.querySelectorAll('input[name="status"], select[name="status"]');
                     statusInputs.forEach((el) => {
                         if (el) el.value = 'archive';
                     });
-                    // normalize price to digits
+                    
                     const priceInput = document.getElementById('course-price');
                     if (priceInput) {
                         const digits = (priceInput.value || '').replace(/[^0-9]/g, '');
                         priceInput.value = digits;
                     }
 
-                        // Ensure expense totals are recalculated before submit
-                        if (typeof window.__recalcAllCourseExpenseRows === 'function') {
-                            window.__recalcAllCourseExpenseRows();
-                        }
-                    // ensure level value is valid
+                    if (typeof window.__recalcAllCourseExpenseRows === 'function') {
+                        window.__recalcAllCourseExpenseRows();
+                    }
+                    
                     const levelSel = document.getElementById('course-level');
                     if (levelSel && levelSel.value === 'advance') {
                         levelSel.value = 'advanced';
@@ -1120,7 +1221,6 @@
             function syncDiscountDates() {
                 const startVal = (start.value || '').trim();
 
-                // Ensure start >= today
                 if (startVal && startVal < todayStr) {
                     start.value = todayStr;
                 }
@@ -1129,7 +1229,6 @@
                 const minEnd = (effectiveStart && effectiveStart > todayStr) ? effectiveStart : todayStr;
                 end.min = minEnd;
 
-                // Ensure end >= minEnd
                 clampDateInput(end, minEnd);
             }
 
@@ -1167,19 +1266,16 @@
                 end.disabled = !enabled;
 
                 if (!enabled) {
-                    // If discount is not set, do not submit dates.
                     start.value = '';
                     end.value = '';
                     return;
                 }
 
-                // If discount is set but date is empty, default to today
                 if (!start.value) start.value = todayStr;
                 if (!end.value) end.value = start.value;
                 syncDiscountDates();
             }
 
-            // Initial clamp (handles old values)
             clampDateInput(start, todayStr);
             syncDiscountDates();
             syncDiscountEnabledState();
@@ -1259,7 +1355,6 @@
 
             addBtn.addEventListener('click', addRow);
 
-            // Expose for form submit hook
             window.__recalcAllCourseExpenseRows = function() {
                 tableBody.querySelectorAll('tr').forEach((tr) => recalcRow(tr));
             };
@@ -1286,7 +1381,7 @@
                         trainerSelect.innerHTML = '<option value="" selected disabled>Belum ada trainer</option>';
                         return;
                     }
-                    trainerSelect.innerHTML = '<option value="" selected disabled>Pilih trainer</option>';
+                    trainerSelect.innerHTML = '<option value="" selected disabled>Choose trainer</option>';
                     trainers.forEach((t) => {
                         if (!t || typeof t.id === 'undefined') return;
                         const opt = document.createElement('option');
@@ -1299,7 +1394,6 @@
                     });
                 })
                 .catch(() => {
-                    // Keep UI usable even if endpoint not ready
                     trainerSelect.innerHTML = '<option value="" selected disabled>Gagal memuat trainer</option>';
                 });
         })();
@@ -1308,7 +1402,6 @@
             (function(){
                 function setPlaceholder(previewEl){
                     if(!previewEl) return;
-                    // cleanup previous object URL
                     try {
                         const prevUrl = previewEl.dataset.objectUrl;
                         if(prevUrl) URL.revokeObjectURL(prevUrl);
@@ -1325,7 +1418,6 @@
                         return;
                     }
 
-                    // cleanup old
                     try {
                         const prevUrl = previewEl.dataset.objectUrl;
                         if(prevUrl) URL.revokeObjectURL(prevUrl);
@@ -1364,7 +1456,6 @@
                         return;
                     }
 
-                    // fallback
                     const span = document.createElement('small');
                     span.className = 'text-muted';
                     span.textContent = file.name || 'File dipilih';

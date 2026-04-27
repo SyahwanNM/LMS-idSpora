@@ -1,6 +1,4 @@
-@include("partials.navbar-after-login")
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -16,6 +14,7 @@
 </head>
 
 <body>
+    @include("partials.navbar-after-login")
     @php
         $selectedAnswerId = collect($attempt->answers ?? [])->firstWhere('question_id', $currentQuestion->id)['answer_id'] ?? null;
         $total = $questions->count();
@@ -56,7 +55,29 @@
                     return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_'.$fallbackIndex);
                 };
 
-                $formatDisplayTitle = function (string $groupKey, string $kind) {
+                // Extract the human-readable subtitle after "Module X" (e.g. "Module 1 - Testing" → "Testing")
+                $extractModuleSubtitle = function ($title) {
+                    $t = trim((string) $title);
+                    if (preg_match('/^Module\s*\d+\s*-\s*(.+)$/i', $t, $m)) {
+                        $sub = trim($m[1]);
+                        if (!preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $sub)) {
+                            return $sub;
+                        }
+                    }
+                    return null;
+                };
+
+                $groupSubtitles = [];
+
+                // Build unit title map from course_units table
+                $unitTitleMap = [];
+                if (isset($course)) {
+                    foreach (($course->units ?? collect()) as $u) {
+                        $unitTitleMap[(int) $u->unit_no] = (string) ($u->title ?? '');
+                    }
+                }
+
+                $formatDisplayTitle = function (string $groupKey, string $kind) use (&$groupSubtitles) {
                     $isModuleKey = \Illuminate\Support\Str::startsWith($groupKey, 'MODULE');
                     $isUnitKey = \Illuminate\Support\Str::startsWith($groupKey, 'UNIT_');
 
@@ -69,6 +90,11 @@
                     }
 
                     $hasPrefix = $isModuleKey || $isUnitKey;
+
+                    $subtitle = $groupSubtitles[$groupKey] ?? null;
+                    if ($subtitle && $hasPrefix) {
+                        $prefix = $prefix . ' - ' . $subtitle;
+                    }
 
                     if ($kind === 'material') {
                         return $hasPrefix ? ($prefix . ' - Materi') : 'Materi';
@@ -117,6 +143,23 @@
                             'quiz' => null,
                         ];
                         $groupOrder[] = $key;
+                    }
+
+                    if (!isset($groupSubtitles[$key])) {
+                        $unitNum = null;
+                        if (preg_match('/MODULE\s*(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        } elseif (preg_match('/UNIT_(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        }
+                        if ($unitNum && !empty($unitTitleMap[$unitNum])) {
+                            $groupSubtitles[$key] = $unitTitleMap[$unitNum];
+                        } else {
+                            $sub = $extractModuleSubtitle($titleStr);
+                            if ($sub) {
+                                $groupSubtitles[$key] = $sub;
+                            }
+                        }
                     }
 
                     if ($type === 'pdf' && !$grouped[$key]['pdf']) $grouped[$key]['pdf'] = $m;
@@ -323,7 +366,7 @@
 
                     <div class="tombol_kuis">
                         <button type="button" class="previous_question" data-prev-url="{{ $prevUrl }}">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Send' : 'Send' }}</button>
+                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
                     </div>
                 </form>
             </div>
@@ -558,17 +601,23 @@
             });
         });
 
-        // Sidebar open/close
+        // Sidebar open/close with persistence
         const rootEl = document.getElementById('quizTakeRoot');
         const modulesSidebar = document.querySelector('.box_kuis_kiri.quiz-modules');
         const openModulesBtn = document.getElementById('openModulesBtn');
         const closeModulesBtn = document.getElementById('closeModulesBtn');
+        const SIDEBAR_STATE_KEY = 'quiz_sidebar_open_{{ $attempt->id }}';
 
         function setModulesOpen(isOpen) {
             if (!modulesSidebar) return;
             modulesSidebar.classList.toggle('closed', !isOpen);
             if (openModulesBtn) openModulesBtn.classList.toggle('d-none', isOpen);
             if (rootEl) rootEl.classList.toggle('modules-closed', !isOpen);
+            
+            // Save state to sessionStorage
+            try {
+                sessionStorage.setItem(SIDEBAR_STATE_KEY, isOpen ? '1' : '0');
+            } catch (_e) {}
         }
 
         if (closeModulesBtn) {
@@ -578,8 +627,18 @@
             openModulesBtn.addEventListener('click', () => setModulesOpen(true));
         }
 
-        // Default: sidebar tertutup saat halaman dimuat
-        setModulesOpen(false);
+        // Restore sidebar state from sessionStorage
+        try {
+            const savedState = sessionStorage.getItem(SIDEBAR_STATE_KEY);
+            if (savedState === '1') {
+                setModulesOpen(true);
+            } else {
+                setModulesOpen(false);
+            }
+        } catch (_e) {
+            // Default: sidebar tertutup saat halaman dimuat
+            setModulesOpen(false);
+        }
 
         // Timer (module duration in seconds), based on server-provided endsAt
         const endsAtIso = @json($endsAtIso ?? null);
@@ -631,7 +690,8 @@
         }
 
         if (timerEl && endsAtIso) {
-            const endsAt = new Date(endsAtIso).getTime();
+            // Kurangi 7 menit (420 detik) dari waktu asli
+            const endsAt = new Date(endsAtIso).getTime() - (7 * 60 * 1000);
             const tick = () => {
                 const now = Date.now();
                 const remaining = Math.floor((endsAt - now) / 1000);

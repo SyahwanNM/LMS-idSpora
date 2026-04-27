@@ -438,13 +438,58 @@ class AdminController extends Controller
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
 
-            // Detail items for the modal
+            // Detail items for the modal — breakdown normal vs referral
             $registeredCount = (int) $e->registrations()->where('status', 'active')->count();
-            $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
 
-            $incomeRows = [
-                ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
-            ];
+            // Ambil semua manual payments settled untuk event ini
+            $payments = \App\Models\ManualPayment::where('event_id', $e->id)
+                ->whereIn('status', ['paid', 'verified', 'settled'])
+                ->get(['amount', 'referral_code']);
+
+            $normalPayments  = $payments->filter(fn($p) => empty($p->referral_code));
+            $referralPayments = $payments->filter(fn($p) => !empty($p->referral_code));
+
+            $incomeRows = [];
+
+            if ($normalPayments->count() > 0) {
+                $normalTotal = (float) $normalPayments->sum('amount');
+                $normalUnit  = (float) round($normalTotal / $normalPayments->count());
+                $incomeRows[] = [
+                    'label' => 'Tiket Normal',
+                    'qty'   => $normalPayments->count(),
+                    'unit'  => $normalUnit,
+                    'total' => $normalTotal,
+                ];
+            }
+
+            if ($referralPayments->count() > 0) {
+                $referralTotal = (float) $referralPayments->sum('amount');
+                $referralUnit  = (float) round($referralTotal / $referralPayments->count());
+                $incomeRows[] = [
+                    'label' => 'Tiket Referral',
+                    'qty'   => $referralPayments->count(),
+                    'unit'  => $referralUnit,
+                    'total' => $referralTotal,
+                ];
+            }
+
+            // Fallback jika tidak ada data manual payment
+            if (empty($incomeRows)) {
+                $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
+                $incomeRows = [
+                    ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
+                ];
+            }
+
+            // Hitung referral discount sebagai pengeluaran
+            $referralDiscountTotal = 0.0;
+            if ($referralPayments->count() > 0) {
+                // Diskon = selisih harga normal - harga referral per transaksi
+                $normalUnitPrice = (float) ($e->price ?? 0);
+                foreach ($referralPayments as $rp) {
+                    $referralDiscountTotal += max(0, $normalUnitPrice - (float)($rp->amount ?? 0));
+                }
+            }
 
             $expenseModels = $e->expenses()->get(['item', 'quantity', 'unit_price', 'total']);
             $expenseRows = $expenseModels->map(function($row) {
@@ -455,6 +500,16 @@ class AdminController extends Controller
                     'total' => (float)($row->total ?? 0),
                 ];
             })->values()->all();
+
+            // Tambahkan referral discount sebagai pengeluaran jika ada
+            if ($referralDiscountTotal > 0) {
+                $expenseRows[] = [
+                    'label' => 'Diskon Kode Referral (' . $referralPayments->count() . ' peserta)',
+                    'qty'   => $referralPayments->count(),
+                    'unit'  => $referralPayments->count() > 0 ? round($referralDiscountTotal / $referralPayments->count()) : 0,
+                    'total' => $referralDiscountTotal,
+                ];
+            }
 
             // Add trainer salaries from event_speakers
             $speakerSalaries = \App\Models\EventSpeaker::where('event_id', $e->id)
@@ -469,7 +524,7 @@ class AdminController extends Controller
                 ];
             }
             $salaryTotal = $speakerSalaries->sum('salary');
-            $expense = (float) ($e->expenses_total ?? 0.0) + (float) $salaryTotal;
+            $expense = (float) ($e->expenses_total ?? 0.0) + (float) $salaryTotal + $referralDiscountTotal;
             $profit  = $revenue - $expense;
 
             return [

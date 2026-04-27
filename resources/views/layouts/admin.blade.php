@@ -97,18 +97,18 @@
                                 <i class="bi bi-box-arrow-right"></i>
                             </div>
                             <div>
-                                <h5 class="modal-title mb-0" id="confirmLogoutLabel">Konfirmasi Logout</h5>
-                                <small class="text-muted">Pastikan ini memang Anda</small>
+                                <h5 class="modal-title mb-0" id="confirmLogoutLabel">Confirm Logout</h5>
+                                <small class="text-muted">Make sure this is really you</small>
                             </div>
                         </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body pt-0">
-                        <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
+                        <p class="text-secondary mb-3">Are you sure you want to log out of the admin account?</p>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
-                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
@@ -323,12 +323,12 @@
 
     /* New global notification component */
     .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:12050; pointer-events:none; }
-    .notification { min-width: 300px; max-width:420px; pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+    .notification { min-width: 320px; max-width:480px; pointer-events:auto; display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
     .notification.show { transform: translateY(0) scale(1); opacity:1; }
     .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
     .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
-    .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; }
-    .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
+    .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; line-height:1.4; }
+    .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); flex-shrink:0; padding:0; line-height:1; }
     /* Body padding to prevent content from hiding under fixed navbar */
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
     body { padding-top: 64px; }

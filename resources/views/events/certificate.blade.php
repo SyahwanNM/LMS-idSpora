@@ -63,7 +63,7 @@
             <div class="d-flex gap-3">
                 @if($certificateReady)
                     <a href="{{ route('certificates.download', [$event, $registration]) }}" class="btn btn-primary px-4 shadow-sm" target="_blank">
-                        <i class="bi bi-download me-2"></i> Download PDF
+                        <i class="bi bi-download me-2"></i> Download
                     </a>
                 @else
                     <button class="btn btn-secondary px-4 shadow-sm" disabled>

@@ -975,7 +975,7 @@
                             @endif
                         </span>
                         @if($isFreeNow)
-                            <h5 class="price-free">GRATIS!</h5>
+                            <h5 class="price-free">FREE!</h5>
                         @else
                             <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
                         @endif
@@ -1321,7 +1321,6 @@
             </section>
         </div>
 
-        <!-- Registration Modal -->
         <div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -1355,7 +1354,6 @@
             </div>
         </div>
 
-        <!-- Scan QR Modal -->
         <div class="modal fade" id="scanQrModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
                 <div class="modal-content">
@@ -1374,7 +1372,7 @@
                                     <polyline points="22 4 12 14.01 9 11.01" />
                                 </svg>
                             </div>
-                            <p class="mb-1 fw-semibold text-success">Absensi Berhasil Dilakukan</p>
+                            <p class="mb-1 fw-semibold text-success">Attendance Successful Dilakukan</p>
                             <p class="text-muted" style="margin-bottom:16px;">
                                 {{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}</p>
                             <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
@@ -1486,7 +1484,7 @@
                         </svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Modules Materi</h6>
+                        <h6>Modules</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
                         @elseif(!$eventIsFinished)
@@ -1494,7 +1492,7 @@
                         @elseif($approvedModules->isEmpty())
                             <p>Not available</p>
                         @else
-                            <p>{{ $approvedModules->count() }} modul tersedia</p>
+                            <p>{{ $approvedModules->count() }} Modules Available</p>
                         @endif
                     </div>
                     @if($moduleUnlocked)
@@ -1525,12 +1523,12 @@
                                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
                                         <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
                                     </svg>
-                                    Unduh Materi Event
+                                    Download Modules 
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Pilih materi yang ingin diunduh:</p>
+                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
                                 <div class="d-flex flex-column gap-2">
                                     @foreach($approvedModules as $mod)
                                         <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
@@ -1546,7 +1544,7 @@
                                             <div style="overflow:hidden;">
                                                 <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
                                                 @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">oleh {{ $mod->trainer->name }}</div>
+                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
                                                 @endif
                                             </div>
                                         </a>
@@ -1593,9 +1591,9 @@
                     <div class="resource-value">
                         <h6>Attendance QR Event</h6>
                         @if(isset($attendanceSubmitted) && $attendanceSubmitted)
-                            <p class="text-success" style="font-weight:600;">Berhasil Dilakukan</p>
+                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
                         @else
-                            <p>Scan QR Event untuk absensi.</p>
+                            <p>Scan the event QR for attendance.</p>
                         @endif
                     </div>
                     @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
@@ -1603,7 +1601,7 @@
                             title="Berhasil Dilakukan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                 stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                aria-label="Absensi Berhasil">
+                                aria-label="Attendance Successful">
                                 <circle cx="12" cy="12" r="9"></circle>
                                 <polyline points="8 12 11 15 16 10"></polyline>
                             </svg>
@@ -1655,12 +1653,12 @@
                                 </div>
                             </div>
                             @elseif($eventIsFinished)
-                                <p>Tersedia setelah mengisi feedback.</p>
+                                <p>Available after feedback</p>
                             @else
-                                <p>Tersedia setelah mengisi feedback.</p>
+                                <p>Available after send feedback.</p>
                             @endif
                         @else
-                            <p>Tersedia setelah acara selesai.</p>
+                            <p>Available after the event ends.</p>
                         @endif
                     </div>
                 </div>
@@ -1676,7 +1674,7 @@
                     </div>
                     <div class="resource-value">
                         <h6>Link Zoom</h6>
-                        <p>{{ $isRegistered ? 'Tersedia setelah bookseat' : 'Tersedia setelah bookseat' }}</p>
+                        <p>{{ $isRegistered ? 'Available after booking' : 'Available after booking' }}</p>
                     </div>
                     @if($isRegistered && !empty($event->zoom_link))
                         <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
@@ -1719,7 +1717,7 @@
                     </div>
                     <div class="resource-value">
                         <h6>Location Map</h6>
-                        <p>{{ $isRegistered ? 'Tersedia setelah bookseat' : 'Tersedia setelah bookseat' }}</p>
+                        <p>{{ $isRegistered ? 'Available after seat booking' : 'Available after seat booking' }}</p>
                     </div>
                     @if($isRegistered && $mapLink)
                         <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
@@ -1745,9 +1743,9 @@
                     <div class="resource-value">
                         <h6>Feedback and Ratings</h6>
                         @if(isset($hasFeedback) && $hasFeedback)
-                            <p class="text-success" style="font-weight:600;">Berhasil dilakukan</p>
+                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
                         @else
-                            <p style="width: 70%;">Dibuka setelah acara selesai</p>
+                            <p style="width: 70%;">Available after the event ends</p>
                         @endif
                     </div>
 
@@ -1778,7 +1776,6 @@
             </div>
         </section>
 
-        <!-- Feedback & Reviews Section (Hidden by default) -->
         @if($isRegistered && $attendanceSubmitted)
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
@@ -1794,24 +1791,22 @@
                     </div>
                     <div class="row g-0">
                     </div>
-                    <!-- Right Column: Share Your Feedback -->
                     <div class="col-md-6" style="background-color: white; padding: 1rem;">
                         <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
                         @if(isset($hasFeedback) && $hasFeedback)
                             <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
-                                Feedback sudah dikirim dan tidak bisa dikirim ulang.
+                                Feedback already submitted and cannot be sent again.
                             </div>
                         @else
                             <form action="#" method="POST" id="feedback-form">
                                 @csrf
 
                                 <div class="feedback-rating-row" style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 15px;">
-                                    <!-- Event Rating -->
+                            
                                     <div style="flex: 1 1 140px; min-width: 0;">
-                                        <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating
-                                            Event</label>
+                                        <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Event Ratings</label>
                                         <div class="stars-rating-input" data-target="eventRating"
-                                            style="letter-spacing: 2px; cursor: pointer; user-select: none; line-height: 1;">
+                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
                                             <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                             <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                             <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
@@ -1823,9 +1818,9 @@
                                     <!-- Speaker Rating -->
                                     <div style="flex: 1 1 140px; min-width: 0;">
                                         <label class="form-label mb-1"
-                                            style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
+                                            style="font-weight: 500; color: #333; font-size: 0.9rem;">Speaker Ratings</label>
                                         <div class="stars-rating-input" data-target="speakerRating"
-                                            style="letter-spacing: 2px; cursor: pointer; user-select: none; line-height: 1;">
+                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
                                             <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                             <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                             <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
@@ -1835,14 +1830,12 @@
                                     </div>
                                 </div>
 
-                                <!-- Feedback Text -->
                                 <div class="mb-3">
                                     <textarea id="feedback-text" name="feedback" class="form-control"
                                         rows="4" placeholder="Write your thoughts..." required
                                         style="width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
                                 </div>
 
-                                <!-- Submit Button -->
                                 <button type="button" id="submit-feedback-btn" class="btn fw-semibold"
                                     style="width: 100%; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
                                     Submit Feedback
@@ -2418,23 +2411,23 @@
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Konfirmasi Feedback</h5>
+                            <h5 class="modal-title">Feedback Confirmation</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                                                 <div class="modal-body">
                                                     <label class="form-check-label text-dark mb-0">
-                                                        Mohon pastikan feedback Anda sesuai pedoman. Feedback tidak boleh mengandung SARA, pornografi, ancaman, ujaran kebencian, atau konten ilegal lainnya.
+                                                        Please ensure your feedback complies with the guidelines. Feedback must not contain SARA, pornography, threats, hate speech, or other illegal content.
                                                     </label>
                                                     <div class="d-flex align-items-center mb-3" style="justify-content: flex-start;">
                                                         <input class="form-check-input me-2" type="checkbox" value="" id="confirm-eval">
-                                                        <label class="form-check-label text-dark mb-0" for="confirm-eval">Saya yakin ingin mengirim feedback ini</label>
+                                                        <label class="form-check-label text-dark mb-0" for="confirm-eval">I am sure I want to submit this feedback</label>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
-                                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
                                                         <button type="button" class="btn btn-primary px-4" id="confirm-submit-feedback" disabled>
-                                                            <span class="me-1">Kirim Feedback</span>
+                                                            <span class="me-1">Submit Feedback</span>
                                                             <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                                                         </button>
                                                     </div>
@@ -2597,7 +2590,6 @@
         })();
     </script>
     <script>
-        // Save/Unsave event handler (supports ID and fallback by class)
         (function () {
             const nodeList = document.querySelectorAll('#saveEventBtn, .booksave-row .save');
             // Deduplicate elements in case the selector matches the same node twice
