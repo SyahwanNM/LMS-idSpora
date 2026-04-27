@@ -136,6 +136,17 @@
                     ->whereYear('events.event_date',$selectedDate->year)
                     ->whereMonth('events.event_date',$selectedDate->month)
                     ->sum('event_expenses.total');
+                // Tambahkan referral discount ke total expenses
+                $totalReferralDiscount = \App\Models\ManualPayment::where('manual_payments.status','settled')
+                    ->whereNotNull('manual_payments.event_id')
+                    ->whereNotNull('manual_payments.referral_code')
+                    ->where('manual_payments.referral_code', '!=', '')
+                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->selectRaw('SUM(GREATEST(0, events.price - manual_payments.amount)) as total')
+                    ->value('total') ?? 0;
+                $totalExpenseAll += (float) $totalReferralDiscount;
                 $totalMarginAll = $totalRevenueAll - $totalExpenseAll;
                 // Revenue & Expense bulan sebelumnya (berdasarkan event_date)
                 $currentMonthRevenue = $totalRevenueAll;
@@ -187,12 +198,24 @@
                     ->groupBy('day')
                     ->pluck('total','day');
 
-                // Expenses per hari berdasarkan event_date
+                // Expenses per hari berdasarkan event_date (dari event_expenses)
                 $expensePerDay = \App\Models\EventExpense::query()
                     ->join('events', 'events.id', '=', 'event_expenses.event_id')
                     ->whereYear('events.event_date',$selectedDate->year)
                     ->whereMonth('events.event_date',$selectedDate->month)
                     ->selectRaw('DAY(events.event_date) as day, SUM(event_expenses.total) as total')
+                    ->groupBy('day')
+                    ->pluck('total','day');
+
+                // Referral discount per hari: selisih harga normal - harga referral
+                $referralDiscountPerDay = \App\Models\ManualPayment::where('manual_payments.status','settled')
+                    ->whereNotNull('manual_payments.event_id')
+                    ->whereNotNull('manual_payments.referral_code')
+                    ->where('manual_payments.referral_code', '!=', '')
+                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->selectRaw('DAY(events.event_date) as day, SUM(GREATEST(0, events.price - manual_payments.amount)) as total')
                     ->groupBy('day')
                     ->pluck('total','day');
 
@@ -203,7 +226,7 @@
                 for($d=1;$d<=$daysInMonth;$d++){
                     $labels[] = $d;
                     $r = (float) ($revenuePerDay[$d] ?? 0);
-                    $e = (float) ($expensePerDay[$d] ?? 0);
+                    $e = (float) ($expensePerDay[$d] ?? 0) + (float) ($referralDiscountPerDay[$d] ?? 0);
                     $seriesRevenue[] = $r;
                     $seriesExpense[] = $e;
                     $seriesProfit[] = $r - $e;
@@ -222,7 +245,7 @@
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0  0 0 0 16" />
                             <path d="M8 13.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11m0 .5A6 6 0 1 0 8 2a6 6 0 0 0 0 12" />
                         </svg>
-                        <h5>Total Income</h5>
+                        <h5>Total Revenue</h5>
                     </div>
                     <h3>{{ $fmtRp($totalRevenueAll) }}</h3>
                     <div class="recap-increase" style="display:flex; gap:8px; align-items:center; color:{{ $revColor }};">
@@ -287,7 +310,7 @@
             </div>
 
             <div class="pendapatan-box">
-                <h5>Event Income</h5>
+                <h5>Event Revenue</h5>
                 <div class="filter-section" id="filters-pendapatan">
                     <div class="filter-kiri" >
                         <div class="filter-group" style="padding-left:50px;">
@@ -327,7 +350,7 @@
                             <th style="background-color: #E4E4E6;" scope="col">Date</th>
                             <th style="background-color: #E4E4E6;" scope="col">Participants</th>
                             <th style="background-color: #E4E4E6;" scope="col">Price</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Income</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Revenue</th>
                             <th style="background-color: #E4E4E6;" scope="col">Expenses</th>
                             <th style="background-color: #E4E4E6;" scope="col">Profit</th>
                             <th style="background-color: #E4E4E6;" scope="col">Details</th>
@@ -491,7 +514,7 @@
                             data-title="{{ $row['name'] }}">
                             <td>{{ $row['name'] }}</td>
                             <td>{{ $row['date'] ?? '-' }}</td>
-                            <td>{{ $row['participants'] }} Peserta</td>
+                            <td>{{ $row['participants'] }} Participants</td>
                             <td>{{ $row['speaker'] ?? '-' }}</td>
                             <td>
                                 @php $ma = strtolower(trim($row['manage_action'] ?? 'create')); @endphp
@@ -501,7 +524,7 @@
                             </td>
                             <td>
                                 <span class="growth-badge {{ ($row['is_free'] ?? true) ? 'growth-badge-free' : 'growth-badge-paid' }}">
-                                    {{ ($row['is_free'] ?? true) ? 'Free' : 'Berbayar' }}
+                                    {{ ($row['is_free'] ?? true) ? 'Free' : 'Paid' }}
                                 </span>
                             </td>
                             <td>{{ isset($row['event_rating']) && $row['event_rating'] !== null ? $row['event_rating'].'/5' : '-' }}</td>
@@ -549,17 +572,17 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="content-event modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="viewPendapatanLabel">Income Recap</h5>
+                    <h5 class="modal-title" id="viewPendapatanLabel">Revenue Recap</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="box-rekap-pendapatan">
                         <div class="tabel-pemasukan">
-                            <h5>Income</h5>
+                            <h5>Revenue</h5>
                             <table>
                                 <thead>
                                     <tr>
-                                        <th style="background-color: #E4E4E6;" scope="col">Income</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Revenue</th>
                                         <th style="background-color: #E4E4E6;" scope="col">Quantity</th>
                                         <th style="background-color: #E4E4E6;" scope="col">Unit Price</th>
                                         <th style="background-color: #E4E4E6;" scope="col">Total Price</th>
@@ -585,7 +608,7 @@
                     </div>
                     <div class="keuntungan">
                         <h5>Profit</h5>
-                        <p>Profit (Net Profit) = Total Income − Total Expenses</p>
+                        <p>Profit (Net Profit) = Total Revenue − Total Expenses</p>
                         <h6 id="profitFormula"> - </h6>
                         <h6 id="profitTotal"> - </h6>
                     </div>
@@ -612,7 +635,7 @@
                                 <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0  0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Jumlah Peserta</p>
+                                <p class="label-view">Total Participants</p>
                                 <p class="value-view" id="pertumbuhanParticipants">-</p>
                             </div>
                         </div>
@@ -621,7 +644,7 @@
                                 <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Rata-rata Rating Acara</p>
+                                <p class="label-view">Average Event Rating</p>
                                 <p class="value-view" id="pertumbuhanEventRating">-</p>
                             </div>
                         </div>
@@ -630,7 +653,7 @@
                                 <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Rata-rata Rating Pembicara</p>
+                                <p class="label-view">Average Speaker Rating</p>
                                 <p class="value-view" id="pertumbuhanSpeakerRating">-</p>
                             </div>
                         </div>
@@ -665,7 +688,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Peserta Event Free',
+                        label: 'Free Event Participants',
                         data: freeParticipantData,
                         borderColor: '#6f42c1',
                         backgroundColor: 'rgba(111,66,193,0.08)',
@@ -675,7 +698,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         fill: true
                     },
                     {
-                        label: 'Peserta Event Berbayar',
+                        label: 'Paid Event Participants',
                         data: paidParticipantData,
                         borderColor: '#fd7e14',
                         backgroundColor: 'rgba(253,126,20,0.08)',
@@ -710,7 +733,7 @@ document.addEventListener("DOMContentLoaded", function () {
         new Chart(ctxComp, {
             type: 'bar',
             data: {
-                labels: ['Event Free', 'Event Berbayar', 'Event Manage', 'Event Create'],
+                labels: ['Event Free', 'Event Paid', 'Event Manage', 'Event Create'],
                 datasets: [{
                     label: 'Jumlah Event',
                     data: [
@@ -814,7 +837,7 @@ document.addEventListener("DOMContentLoaded", function () {
             labels: @json($labels), 
             datasets: [
                 {
-                    label: 'Income',
+                    label: 'Revenue',
                     data: @json($seriesRevenue),
                     borderWidth: 2,
                     tension: 0.4
@@ -1330,13 +1353,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
     const tabConfig = {
         pendapatan: {
-            title: 'Pendapatan',
+            title: 'Revenue',
             tableId: 'table-pendapatan',
             monthLabelId: 'month-label-pendapatan',
             periodInputId: 'period',
         },
         pertumbuhan: {
-            title: 'Pertumbuhan',
+            title: 'Growth',
             tableId: 'table-pertumbuhan',
             monthLabelId: 'month-label-pertumbuhan',
             periodInputId: 'period_pertumbuhan',
@@ -1449,11 +1472,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
         const table = cloneVisibleTable(tab);
         previewEl.innerHTML = '';
-        titleEl.textContent = 'Laporan ' + cfg.title;
+        titleEl.textContent = cfg.title;
         monthEl.textContent = monthText;
 
         if (!table || !table.tBodies || table.tBodies.length === 0 || table.tBodies[0].rows.length === 0) {
-            previewEl.innerHTML = '<div class="text-muted p-3">Tidak ada data untuk diexport.</div>';
+            previewEl.innerHTML = '<div class="text-muted p-3">There is no data to export.</div>';
             btnPdf.disabled = true;
             btnExcel.disabled = true;
         } else {
@@ -1489,11 +1512,11 @@ document.addEventListener('DOMContentLoaded', function(){
             const headerHtml = `
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #1e3a5f;">
                     <div>
-                        <div style="font-size:18px; font-weight:700; color:#1e3a5f;">Laporan ${cfg.title} Event</div>
-                        <div style="font-size:12px; color:#6b7280; margin-top:2px;">Periode: <strong>${monthText}</strong></div>
+                        <div style="font-size:18px; font-weight:700; color:#1e3a5f;">${cfg.title} Event Report</div>
+                        <div style="font-size:12px; color:#6b7280; margin-top:2px;">Period: <strong>${monthText}</strong></div>
                     </div>
                     <div style="font-size:11px; color:#9ca3af; text-align:right;">
-                        Dicetak: ${new Date().toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'})}<br>
+                        Printed: ${new Date().toLocaleDateString('en-US', {day:'2-digit',month:'long',year:'numeric'})}<br>
                         LMS IdSpora Admin
                     </div>
                 </div>`;
@@ -1567,14 +1590,14 @@ document.addEventListener('DOMContentLoaded', function(){
         </head><body>
         <table class="header-row">
             <tr>
-                <td><div class="title">Laporan ${title} Event</div>
-                    <div class="subtitle">Periode: <strong style="color:#111827;display:inline;">${monthText}</strong></div></td>
-                <td class="meta"><strong>LMS IdSpora</strong>Dicetak: ${printDate}</td>
+                <td><div class="title">${title} Report</div>
+                    <div class="subtitle">Period: <strong style="color:#111827;display:inline;">${monthText}</strong></div></td>
+                <td class="meta"><strong>LMS IdSpora</strong>Printed: ${printDate}</td>
             </tr>
         </table>
         <hr class="divider">
         ${tableHtml}
-        <div class="footer">LMS IdSpora &mdash; Laporan ${title} Event &nbsp;|&nbsp; ${printDate}</div>
+        <div class="footer">LMS IdSpora &mdash; ${title} Report &nbsp;|&nbsp; ${printDate}</div>
         <script>window.onload=function(){ window.print(); window.onafterprint=function(){ window.close(); }; };<\/script>
         </body></html>`;
 
@@ -1599,10 +1622,10 @@ document.addEventListener('DOMContentLoaded', function(){
 
         // Buat sheet dengan header info di baris pertama
         const ws = window.XLSX.utils.aoa_to_sheet([
-            [`Laporan ${currentExport.title || ''} Event`],
-            [`Periode: ${monthText}`],
-            [`Dicetak: ${printDate}`],
-            [], // baris kosong
+            [`${currentExport.title || ''} Report`],
+            [`Period: ${monthText}`],
+            [`Printed: ${printDate}`],
+            [], // empty row
         ]);
 
         // Append data tabel

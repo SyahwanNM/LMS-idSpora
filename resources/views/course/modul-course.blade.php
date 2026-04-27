@@ -117,10 +117,10 @@
                     }
 
                     if ($kind === 'material') {
-                        return $hasPrefix ? ($prefix . ' - Material') : 'Material';
+                        return $hasPrefix ? ($prefix) : 'Material';
                     }
                     if ($kind === 'quiz') {
-                        return $hasPrefix ? ($prefix . ' - Quiz') : 'Quiz';
+                        return $hasPrefix ? ($prefix) : 'Quiz';
                     }
                     return $hasPrefix ? $prefix : $groupKey;
                 };
@@ -192,6 +192,7 @@
                 }
 
                 $displayItems = collect();
+                $quizCounter = 0;
                 foreach ($groupOrder as $key) {
                     $g = $grouped[$key];
 
@@ -209,10 +210,13 @@
                     }
 
                     if ($g['quiz']) {
+                        $quizCounter++;
+                        $subtitle = $groupSubtitles[$key] ?? null;
+                        $quizTitle = 'Quiz ' . $quizCounter . ($subtitle ? ' - ' . $subtitle : '');
                         $displayItems->push([
                             'kind' => 'quiz',
                             'key' => $key,
-                            'title' => $formatDisplayTitle($key, 'quiz'),
+                            'title' => $quizTitle,
                             'rep' => $g['quiz'],
                             'pdf' => $g['pdf'],
                             'video' => $g['video'],
@@ -649,7 +653,7 @@
                                 </button>
                             @elseif($ongoingAttempt)
                                 <a href="{{ $continueUrl }}" class="btn" style="background:#252346; color:#f4c430; border-radius:999px; padding:10px 18px; font-weight:700;">
-                                    Lanjutkan
+                                    Resume
                                     <span style="margin-left:8px;">›</span>
                                 </a>
                             @elseif($inCooldown)

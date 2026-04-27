@@ -132,15 +132,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="options">
-                    <label>Courses Name</label>
-                    <select name="topic" onchange="document.getElementById('filter-form').submit()">
-                        <option value="">All Topics</option>
-                        @foreach($topics as $t)
-                            <option value="{{ $t }}" {{ request('topic') == $t ? 'selected' : '' }}>{{ $t }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                
                 <div class="options">
                     <label>Price</label>
                     <select name="price" onchange="document.getElementById('filter-form').submit()">
@@ -327,7 +319,6 @@
                         <p class="desc">{{ Str::limit(strip_tags($course->description), 80) }}</p>
                         <div class="tags"> 
                             <span class="tag">{{ $course->category->name ?? 'No Category' }}</span> 
-                            <span class="tag">{{ $course->duration }}h</span>
                             <div class="meta" style="margin-left:auto; gap:6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
                                     viewBox="0 0 16 16">

@@ -279,7 +279,7 @@ $validator = Validator::make($request->all(), $rules, $messages);
         if ($last) {
             $diff = now()->diffInSeconds($last);
             if ($diff < 60) {
-                $remaining = 60 - $diff;
+                $remaining = (int) ceil(60 - $diff);
                 return back()->withErrors(['error' => "Wait $remaining seconds to resend the code."]);
             }
         }
@@ -306,7 +306,17 @@ $validator = Validator::make($request->all(), $rules, $messages);
             // Set cooldown start
             $request->session()->put('register_otp_last_resend_at', now());
             $request->session()->put('otp_expires_at', $expiresAt->toIso8601String());
-            return back()->with('success', 'A new verification code has been sent. Please check your Inbox/Spam folder.');
+
+            // Track resend count
+            $resendCount = (int) $request->session()->get('register_otp_resend_count', 0) + 1;
+            $request->session()->put('register_otp_resend_count', $resendCount);
+
+            $msg = 'A new verification code has been sent. Please check your Inbox/Spam folder.';
+            if ($resendCount >= 3) {
+                $msg = 'Verification code resent. If you still don\'t receive it, please check your Spam folder or contact support.';
+            }
+
+            return back()->with('success', $msg)->with('resend_count', $resendCount);
         } catch (\Throwable $e) {
             \Log::error('Resend registration verification failed: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to resend verification code.']);

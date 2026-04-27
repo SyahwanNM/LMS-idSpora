@@ -30,7 +30,7 @@
         : null);
 
         $tanggalText = $tanggalBase
-            ? $tanggalBase->copy()->subMinutes(7)->format('d M Y') . ' pukul ' . $tanggalBase->copy()->subMinutes(7)->format('H:i:s')
+            ? $tanggalBase->copy()->subMinutes(7)->format('d M Y') . ' Time ' . $tanggalBase->copy()->subMinutes(7)->format('H:i:s')
             : '-';
 
         $passed = $attempt->isPassed($passingPercent);
@@ -80,7 +80,7 @@
                     <p class="batas_minimum_nilai">Your score has met the minimum limit specified in this exam: {{ $passingPercent }}.</p>
                 @else
                     <p class="batas_minimum_nilai">Your score has not met the minimum threshold specified for this exam: {{ $passingPercent }}.</p>
-                    <p class="batas_minimum_nilai">Please review the related modules:{{ $module->title ?? $course->name }}.</p>
+                    <p class="batas_minimum_nilai">Please review the related modules</p>
                 @endif
             </div>
 

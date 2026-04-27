@@ -188,7 +188,9 @@
 
                     <small class="text-white opacity-75 d-block mt-3 text-center">
                         A verification code has been sent to your email.
-                        @php($regEmail = session('register_verify_email'))
+                        @php
+                            $regEmail = session('register_verify_email');
+                        @endphp
                         @if($regEmail)
                             <br><strong>({{ preg_replace('/(^.).*(@.*$)/', '$1***$2', $regEmail) }})</strong>
                             <input type="hidden" name="register_email" value="{{ $regEmail }}">
@@ -212,70 +214,80 @@
                     <div id="resend-cooldown" class="smaller text-white opacity-50 mt-2 d-none">
                         Wait <span id="resend-sec">60</span> seconds to resend
                     </div>
+                    @if(session('resend_count') >= 3)
+                        <div class="smaller mt-2 text-warning opacity-75">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Still not received? Check your <strong>Spam/Junk</strong> folder or contact support.
+                        </div>
+                    @endif
                 </form>
             </div>
 
+            @php
+                $otpExpiresAt = session('otp_expires_at') ?? '';
+                $errMsg = $errors->first('error') ?? '';
+                preg_match('/Wait (\d+) seconds/', $errMsg, $cdMatch);
+                $resendCooldownSec = (int)($cdMatch[1] ?? 0);
+            @endphp
+
+            <!-- Data injection for JS -->
+            <div id="otp-data" 
+                 data-expires-at="{{ $otpExpiresAt ?? '' }}" 
+                 data-resend-cooldown="{{ $resendCooldownSec ?? 0 }}"
+                 style="display:none;"></div>
+
             <script>
+                // ── Read server data from DOM ──
+                const dataEl = document.getElementById('otp-data');
                 const OTP_EXPIRY_KEY = 'registerOtpExpiresAt';
-                const expiresAtStr = "{{ session('otp_expires_at') }}";
+                const serverExpiresAt = dataEl?.dataset?.expiresAt || '';
+                const serverResendCooldown = parseInt(dataEl?.dataset?.resendCooldown || '0', 10);
 
+                // ── OTP validity timer ──
+                // Always use server expiry when available — overrides stale localStorage
                 let expiresAt;
-                const stored = parseInt(localStorage.getItem(OTP_EXPIRY_KEY) || '0', 10);
-
-                if (stored > Date.now()) {
-                    // Pakai nilai dari localStorage yang masih valid
-                    expiresAt = stored;
-                } else if (expiresAtStr) {
-                    // Pakai nilai dari server, simpan ke localStorage
-                    const serverExpiry = new Date(expiresAtStr).getTime();
-                    expiresAt = serverExpiry;
-                    localStorage.setItem(OTP_EXPIRY_KEY, serverExpiry);
-                } else {
-                    // Fallback
-                    expiresAt = Date.now() + (10 * 60 * 1000);
+                if (serverExpiresAt) {
+                    // Kurangi 7 menit dari waktu server
+                    expiresAt = new Date(serverExpiresAt).getTime() - (7 * 60 * 1000);
                     localStorage.setItem(OTP_EXPIRY_KEY, expiresAt);
+                } else {
+                    const stored = parseInt(localStorage.getItem(OTP_EXPIRY_KEY) || '0', 10);
+                    expiresAt = stored > Date.now() ? stored : (Date.now() + 3 * 60 * 1000);
                 }
+
                 const timerDisplay = document.getElementById('otp-timer');
                 const timerContainer = document.getElementById('otp-timer-container');
                 const expiredMsg = document.getElementById('otp-expired-msg');
                 const verifyBtn = document.getElementById('verifyBtn');
 
-                const validityInterval = setInterval(() => {
-                    const now = new Date().getTime();
-                    const distance = expiresAt - now;
-
-                    if (distance < 0) {
+                function updateOtpTimer() {
+                    const distance = expiresAt - Date.now();
+                    if (distance <= 0) {
                         clearInterval(validityInterval);
                         timerContainer.classList.add('d-none');
                         expiredMsg.classList.remove('d-none');
-                        verifyBtn.disabled = true;
-                        verifyBtn.style.opacity = '0.5';
+                        if (verifyBtn) { verifyBtn.disabled = true; verifyBtn.style.opacity = '0.5'; }
                         return;
                     }
+                    const minutes = Math.floor(distance / 60000);
+                    const seconds = Math.floor((distance % 60000) / 1000);
+                    timerDisplay.textContent = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+                    timerDisplay.style.color = minutes < 1 ? '#ff4d4d' : '';
+                }
+                updateOtpTimer();
+                const validityInterval = setInterval(updateOtpTimer, 1000);
 
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    timerDisplay.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-                    
-                    if (minutes < 1) timerDisplay.style.color = '#ff4d4d';
-                }, 1000);
-
-                // Run immediately so timer shows correct value on load
-                (function() {
-                    const now = new Date().getTime();
-                    const distance = expiresAt - now;
-                    if (distance > 0) {
-                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                        timerDisplay.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-                    }
-                })();
-
+                // ── Resend cooldown ──
                 (function() {
                     const resendBtn = document.getElementById('resendBtn');
                     const resendCd = document.getElementById('resend-cooldown');
                     const resendSec = document.getElementById('resend-sec');
                     const KEY = 'registerResendUntil';
+
+                    // Sync localStorage with server cooldown (server is authoritative)
+                    if (serverResendCooldown > 0) {
+                        localStorage.setItem(KEY, Date.now() + serverResendCooldown * 1000);
+                    }
 
                     function startResendCountdown(msLeft) {
                         let s = Math.max(0, Math.ceil(msLeft / 1000));
@@ -283,7 +295,6 @@
                         resendBtn.style.opacity = '0.5';
                         resendCd.classList.remove('d-none');
                         resendSec.textContent = s;
-                        
                         const timer = setInterval(() => {
                             s--;
                             resendSec.textContent = s;
@@ -302,9 +313,9 @@
                     if (timeLeft > 0) startResendCountdown(timeLeft);
 
                     document.getElementById('resendForm').addEventListener('submit', function() {
+                        // Set 60s cooldown and clear OTP expiry (will be refreshed from server)
                         localStorage.setItem(KEY, Date.now() + 60000);
-                        // Clear OTP expiry so it resets on next page load after resend
-                        localStorage.removeItem('registerOtpExpiresAt');
+                        localStorage.removeItem(OTP_EXPIRY_KEY);
                     });
                 })();
             </script>

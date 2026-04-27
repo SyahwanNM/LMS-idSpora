@@ -18,16 +18,12 @@
 
 <body>
     @include("partials.navbar-admin-course")
-    <div class="container py-4">
+    <div class="container" style="padding-top: 0.25rem; padding-bottom: 0.5rem;">
         <div class="row">
             <div class="col-lg-8 mx-auto">
-                <div class="box_luar_add_course" style="text-align:left;">
-                    <div class="box_link d-flex align-items-center gap-2 text-muted small mb-2">
-                        <a href="{{ route('admin.courses.index') }}" class="text-decoration-none">Course Builder</a>
-                        <span>/</span>
-                        <a href="{{ route('admin.add-course') }}" class="text-decoration-none">Add Course</a>
-                    </div>
-                    <div class="mb-3" style="display:flex; align-items:flex-start; gap:12px;">
+                <div class="box_luar_add_course" style="text-align:left; margin-top: 0; padding-top: 0;">
+                    
+                    <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom: 0.25rem;">
                         <a href="{{ route('admin.courses.index') }}"
                            style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #dee2e6; border-radius:6px; color:#212529; text-decoration:none; flex-shrink:0; margin-top:4px;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
@@ -1473,6 +1469,19 @@
                 introInput?.addEventListener('change', () => renderPreview(introInput, introPreview, true));
                 cardInput?.addEventListener('change', () => renderPreview(cardInput, cardPreview, false));
             })();
+    </script>
+    <script>
+        // Scroll to form section with navbar offset on page load (after validation error/redirect back)
+        document.addEventListener('DOMContentLoaded', function () {
+            @if(old('name') || old('level') || old('trainer_id') || old('category_id') || old('price'))
+            const formEl = document.querySelector('.box_form, form.box_form, form[action]');
+            if (formEl) {
+                const navbarH = document.querySelector('nav, .navbar')?.offsetHeight || 80;
+                const top = formEl.getBoundingClientRect().top + window.scrollY - navbarH - 16;
+                window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            }
+            @endif
+        });
     </script>
 </body>
 

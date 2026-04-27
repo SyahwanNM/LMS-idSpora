@@ -8,7 +8,7 @@
     <div class="min-h-screen bg-white p-6 md:p-10">
         <!-- Header -->
         <div  class="max-w-4xl mx-auto mb-8">
-            <div style="margin-left:62px;" class="text-xs text-gray-400">Course Builder / Edit Courses</div>
+            
             <div class="flex items-center gap-4 mb-2">
                 <a href="{{ route('admin.courses.index') }}" class="p-2 border rounded-lg hover:bg-gray-50 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
