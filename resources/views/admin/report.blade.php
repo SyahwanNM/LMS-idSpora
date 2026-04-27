@@ -716,7 +716,7 @@
                     const el = document.getElementById(containerId);
                     if (!el) return;
 
-                    const label = String(changes.label || 'dari bulan lalu');
+                    const label = String(changes.label || 'From last month');
                     const percent = Number(changeObj?.percent ?? 0);
                     const direction = (changeObj?.direction === 'down') ? 'down' : 'up';
 

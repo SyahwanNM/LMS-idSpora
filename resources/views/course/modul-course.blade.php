@@ -1,6 +1,4 @@
-﻿@include("partials.navbar-after-login")
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -16,10 +14,36 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         html, body { overflow: hidden; height: 100%; }
+        .wysiwyg-output {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .wysiwyg-output p,
+        .wysiwyg-output div,
+        .wysiwyg-output h1,
+        .wysiwyg-output h2,
+        .wysiwyg-output h3,
+        .wysiwyg-output h4,
+        .wysiwyg-output ul,
+        .wysiwyg-output ol,
+        .wysiwyg-output li,
+        .wysiwyg-output blockquote,
+        .wysiwyg-output pre {
+            max-width: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .box_luar_deskripsi_modul,
+        .trainer-html-content {
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
     </style>
 </head>
 
 <body>
+    @include("partials.navbar-after-login")
     <div class="box_modul_luar">
         <div class="box_modul_kiri">
             @php
@@ -44,7 +68,35 @@
                     return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_'.$fallbackIndex);
                 };
 
-                $formatDisplayTitle = function (string $groupKey, string $kind) {
+                // Extract the human-readable subtitle after "Module X" (e.g. "Module 1 - Testing" → "Testing")
+                $extractModuleSubtitle = function ($title) {
+                    $t = trim((string) $title);
+                    if (preg_match('/^Module\s*\d+\s*-\s*(.+)$/i', $t, $m)) {
+                        $sub = trim($m[1]);
+                        // Ignore generic suffixes
+                        if (!preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $sub)) {
+                            return $sub;
+                        }
+                    }
+                    return null;
+                };
+
+                // Build unit title map from course_units table (unit_no → title), same source as syllabus in detail page
+                $unitTitleMap = [];
+                if (isset($course) && $course->relationLoaded('units')) {
+                    foreach ($course->units as $u) {
+                        $unitTitleMap[(int) $u->unit_no] = (string) ($u->title ?? '');
+                    }
+                } elseif (isset($course)) {
+                    foreach (($course->units ?? collect()) as $u) {
+                        $unitTitleMap[(int) $u->unit_no] = (string) ($u->title ?? '');
+                    }
+                }
+
+                // groupSubtitles: keyed by group key (e.g. "MODULE 1"), value = human title
+                $groupSubtitles = [];
+
+                $formatDisplayTitle = function (string $groupKey, string $kind) use (&$groupSubtitles) {
                     $isModuleKey = \Illuminate\Support\Str::startsWith($groupKey, 'MODULE');
                     $isUnitKey = \Illuminate\Support\Str::startsWith($groupKey, 'UNIT_');
 
@@ -58,8 +110,14 @@
 
                     $hasPrefix = $isModuleKey || $isUnitKey;
 
+                    // Append subtitle if available (e.g. "Module 1 - Testing")
+                    $subtitle = $groupSubtitles[$groupKey] ?? null;
+                    if ($subtitle && $hasPrefix) {
+                        $prefix = $prefix . ' - ' . $subtitle;
+                    }
+
                     if ($kind === 'material') {
-                        return $hasPrefix ? ($prefix . ' - Materi') : 'Materi';
+                        return $hasPrefix ? ($prefix . ' - Material') : 'Material';
                     }
                     if ($kind === 'quiz') {
                         return $hasPrefix ? ($prefix . ' - Quiz') : 'Quiz';
@@ -105,6 +163,27 @@
                             'quiz' => null,
                         ];
                         $groupOrder[] = $key;
+                    }
+
+                    // Store subtitle for this group if not yet set
+                    if (!isset($groupSubtitles[$key])) {
+                        // Priority 1: from course_units table (unit_no matches group index)
+                        // Extract unit number from key: "MODULE 1" → 1, "UNIT_2" → 2
+                        $unitNum = null;
+                        if (preg_match('/MODULE\s*(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        } elseif (preg_match('/UNIT_(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        }
+                        if ($unitNum && !empty($unitTitleMap[$unitNum])) {
+                            $groupSubtitles[$key] = $unitTitleMap[$unitNum];
+                        } else {
+                            // Priority 2: parse from module title (e.g. "Module 1 - Testing")
+                            $sub = $extractModuleSubtitle($titleStr);
+                            if ($sub) {
+                                $groupSubtitles[$key] = $sub;
+                            }
+                        }
                     }
 
                     if ($type === 'pdf' && !$grouped[$key]['pdf']) $grouped[$key]['pdf'] = $m;
@@ -241,7 +320,7 @@
                         $rep = $it['rep'];
                         $isActive = ((int) ($activeDisplayModuleId ?? 0) === (int) ($rep->id ?? 0))
                             && (($activeDisplay['kind'] ?? '') === ($it['kind'] ?? ''));
-                        $typeLabel = ($it['kind'] ?? '') === 'quiz' ? 'QUIZ' : 'MATERI';
+                        $typeLabel = ($it['kind'] ?? '') === 'quiz' ? 'QUIZ' : 'MATERIAL';
                         
                         $isLocked = $hasFailedPrevQuiz;
                         $lockReason = $hasFailedPrevQuiz ? 'quiz' : '';
@@ -300,7 +379,7 @@
                     <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
                         <button class="accordion-header" type="button" data-module-id="{{ $rep->id }}">
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $it['title'] ?? ($rep->title ?? 'Materi') }}</span>
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $it['title'] ?? ($rep->title ?? 'Material') }}</span>
                             </span>
                             <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
                                 <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -430,23 +509,22 @@
 
             @if(!$isQuiz)
                 <div class="box_luar_deskripsi_modul">
-                    <div class="box_deskripsi_modul modul_course" style="padding: 2px;">
+                    <div class="box_deskripsi_modul modul_course" style="padding: 2px; max-height: none; overflow-y: visible; height: auto;">
                         @if($showHtmlContent)
                             {{-- Trainer rich text HTML content --}}
-                            <div class="trainer-html-content" style="padding: 20px; background: #fff; border-radius: 12px; border: none; max-height: 600px; overflow-y: auto;">
-                                <div class="wysiwyg-output">
+                            <div class="trainer-html-content" style="padding: 20px 20px 20px 4px; background: #fff; border-radius: 12px; border: none; width: 100%; box-sizing: border-box; max-height: none; overflow-y: visible; height: auto;">
+                                <div class="wysiwyg-output" style="width:100%; text-align:left;">
                                     {!! $materialDescription !!}
                                 </div>
                             </div>
                         @else
-                            <div style="padding: 24px;">
+                            <div style="padding: 20px 20px 20px 4px; width: 100%; box-sizing: border-box; max-height: none; overflow-y: visible; height: auto;">
                                 @if($hasRichHtml)
-                                    {{-- HTML content exists but PDF file also exists, show as secondary content --}}
-                                    <div class="deskripsi_modul wysiwyg-output" style="font-size: 14px; color: #374151;">
+                                    <div class="deskripsi_modul wysiwyg-output" style="font-size: 14px; color: #374151; width: 100%; text-align:left;">
                                         {!! $materialDescription !!}
                                     </div>
                                 @else
-                                    <p class="deskripsi_modul" style="font-size: 14px; color: #374151;">
+                                    <p class="deskripsi_modul" style="font-size: 14px; color: #374151; width: 100%; margin: 0; text-align:left;">
                                         {{ $materialDescription ?: 'Module description not available.' }}
                                     </p>
                                 @endif
@@ -470,7 +548,7 @@
                         $durationMinutes = $isLastQuiz ? 15 : 10;
                     }
 
-                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' menit') : '10 menit';
+                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' minutes') : '10 menit';
 
                     $beforeQuizTitle = null;
                     if ($activeDisplay && (($activeDisplay['kind'] ?? '') === 'quiz')) {
@@ -555,7 +633,7 @@
                         <p style="margin:0 0 10px 0;">This quiz is designed to measure your understanding of the {{ $beforeQuizTitle }} material.</p>
                         <p style="margin:0 0 10px 0;">Please pay attention to the following conditions before starting:</p>
                         <ol style="padding-left:18px; margin:0 0 14px 0; line-height:1.7;">
-                            <li><strong>Number of Questions:</strong> {{ $questionCount }} pertanyaan pilihan ganda.</li>
+                            <li><strong>Number of Questions:</strong> {{ $questionCount }} multiple choice questions.</li>
                             <li><strong>Duration of Work:</strong> {{ $durationText }}.</li>
                             <li><strong>Passing Grade:</strong> Minimum {{ $passingPercent }}% to be declared passed.</li>
                             <li>If you have not reached the passing grade, you can retake the quiz after 1 minute.</li>
@@ -567,7 +645,7 @@
                             @if($currentQuizPassed)
                                 <button type="button" class="btn" disabled
                                     style="background:#eafff3; color:#16a34a; border-radius:999px; padding:10px 18px; font-weight:800; cursor:not-allowed;">
-                                    Anda telah lulus kuis ini
+                                   You have passed this quiz
                                 </button>
                             @elseif($ongoingAttempt)
                                 <a href="{{ $continueUrl }}" class="btn" style="background:#252346; color:#f4c430; border-radius:999px; padding:10px 18px; font-weight:700;">

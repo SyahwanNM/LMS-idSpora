@@ -49,6 +49,39 @@ class CourseRevenueDetailController extends Controller
             ->selectRaw('SUM(' . $priceExpr . ') as total_revenue')
             ->value('total_revenue') ?: 0);
 
+        // Breakdown normal vs referral dari manual_payments
+        $payments = \App\Models\ManualPayment::where('course_id', $course->id)
+            ->whereIn('status', ['paid', 'verified', 'settled'])
+            ->whereBetween('created_at', [$from, $to])
+            ->get(['amount', 'referral_code']);
+
+        $normalPayments   = $payments->filter(fn($p) => empty($p->referral_code));
+        $referralPayments = $payments->filter(fn($p) => !empty($p->referral_code));
+
+        $incomeRows = [];
+        if ($normalPayments->count() > 0) {
+            $normalTotal = (float) $normalPayments->sum('amount');
+            $normalUnit  = (float) round($normalTotal / $normalPayments->count());
+            $incomeRows[] = ['label' => 'Tiket Normal', 'qty' => $normalPayments->count(), 'unit' => $normalUnit, 'total' => $normalTotal];
+        }
+        if ($referralPayments->count() > 0) {
+            $referralTotal = (float) $referralPayments->sum('amount');
+            $referralUnit  = (float) round($referralTotal / $referralPayments->count());
+            $incomeRows[] = ['label' => 'Tiket Referral', 'qty' => $referralPayments->count(), 'unit' => $referralUnit, 'total' => $referralTotal];
+        }
+        if (empty($incomeRows)) {
+            // Fallback jika tidak ada manual payment (free course / midtrans)
+            $unitPrice = $transactionsCount > 0 ? (float) round($revenueTotal / $transactionsCount) : (float) ($course->price ?? 0);
+            $incomeRows[] = ['label' => 'Tiket Pendaftar', 'qty' => $transactionsCount, 'unit' => $unitPrice, 'total' => $revenueTotal];
+        }
+
+        // Hitung diskon referral (selisih harga normal - harga referral)
+        $normalUnitPrice = (float) ($course->price ?? 0);
+        $referralDiscountTotal = 0.0;
+        foreach ($referralPayments as $rp) {
+            $referralDiscountTotal += max(0, $normalUnitPrice - (float)($rp->amount ?? 0));
+        }
+
         // Use average realized unit price when transactions exist; fallback to configured course price.
         $unitPrice = $transactionsCount > 0
             ? (float) round($revenueTotal / $transactionsCount)
@@ -90,17 +123,23 @@ class CourseRevenueDetailController extends Controller
             return ($b['total'] ?? 0) <=> ($a['total'] ?? 0);
         });
 
+        // Tambahkan diskon referral sebagai pengeluaran
+        if ($referralDiscountTotal > 0) {
+            $expenseRows[] = [
+                'item'  => 'Diskon Kode Referral (' . $referralPayments->count() . ' peserta)',
+                'total' => $referralDiscountTotal,
+            ];
+        }
+
         $expenseTotal = (float) array_sum(array_map(fn ($r) => (float) ($r['total'] ?? 0), $expenseRows));
 
         $profit = (float) ($revenueTotal - $expenseTotal);
         $profitStatus = $profit >= 0 ? 'Menguntungkan' : 'Rugi';
 
-        return view('admin.view-pendapatan', [
+        $viewData = [
             'course' => $course,
-            'period' => [
-                'from' => $from,
-                'to' => $to,
-            ],
+            'period' => ['from' => $from, 'to' => $to],
+            'income_rows' => $incomeRows,
             'stats' => [
                 'created_at' => $course->created_at ? Carbon::parse($course->created_at) : null,
                 'participants' => $participantsCount,
@@ -113,12 +152,26 @@ class CourseRevenueDetailController extends Controller
                 'profit_status' => $profitStatus,
             ],
             'expense_rows' => $expenseRows,
-            'chart' => [
-                'revenue' => $revenueTotal,
-                'expense' => $expenseTotal,
-                'profit' => $profit,
-            ],
-        ]);
+            'chart' => ['revenue' => $revenueTotal, 'expense' => $expenseTotal, 'profit' => $profit],
+        ];
+
+        // Export PDF
+        if ($request->query('export') === 'pdf') {
+            $options = new \Dompdf\Options();
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('isRemoteEnabled', false);
+            $dompdf = new \Dompdf\Dompdf($options);
+            $html = view('admin.view-pendapatan-pdf', $viewData)->render();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+            $filename = 'report-' . \Illuminate\Support\Str::slug($course->name ?? 'course') . '.pdf';
+            return response($dompdf->output(), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        }
+
+        return view('admin.view-pendapatan', $viewData);
     }
 
     private function parseDateRange(Request $request): array

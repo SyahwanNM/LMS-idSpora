@@ -221,7 +221,7 @@ class QuizController extends Controller
             'user_id' => Auth::id(),
             'course_module_id' => $module->id,
             'total_questions' => $questions->count(),
-            'started_at' => Carbon::now('Asia/Jakarta'),
+            'started_at' => Carbon::now(),
         ]);
         return redirect()->route('user.quiz.take', [$course, $module, $attempt]);
     }
@@ -238,7 +238,7 @@ class QuizController extends Controller
 
         // Backfill started_at for legacy attempts so timer works reliably
         if (!$attempt->started_at) {
-            $attempt->forceFill(['started_at' => Carbon::now('Asia/Jakarta')])->save();
+            $attempt->forceFill(['started_at' => Carbon::now()])->save();
             $attempt->refresh();
         }
 
@@ -290,11 +290,11 @@ class QuizController extends Controller
         $durationMinutes = $isLastQuiz ? 15 : 10;
         $durationSeconds = $durationMinutes * 60;
 
-        // HITUNG SISA DETIK DARI SERVER (Mencegah bug beda waktu lokal vs server)
+        // Calculate remaining seconds from server (prevents local time drift issues)
         $remainingSeconds = 0;
         if ($attempt->started_at) {
             $endsAt = $attempt->started_at->copy()->addSeconds($durationSeconds);
-            $remainingSeconds = (int) ceil(now()->diffInSeconds($endsAt, false));
+            $remainingSeconds = (int) ceil(Carbon::now()->diffInSeconds($endsAt, false));
             if ($remainingSeconds < 0) {
                 $remainingSeconds = 0;
             }
@@ -310,7 +310,10 @@ class QuizController extends Controller
             'currentQuestion' => $currentQuestion,
             'currentQuestionIndex' => $currentQuestionIndex,
             'answeredQuestionIds' => $answeredQuestionIds,
-            'remainingSeconds' => $remainingSeconds, // Variabel baru untuk view
+            'remainingSeconds' => $remainingSeconds,
+            'endsAtIso' => $attempt->started_at
+                ? $attempt->started_at->copy()->addSeconds($durationSeconds)->toIso8601String()
+                : null,
         ]);
     }
 

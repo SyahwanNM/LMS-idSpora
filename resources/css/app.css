@@ -5063,12 +5063,13 @@ input[type="time"] {
 /*QUIZ COURSE*/
 .box_luar_kuis {
     display: flex;
+    padding-top: 80px; /* Ruang untuk navbar fixed */
 }
 
 /* Quiz take (v2) – match screenshot layout */
 .box_luar_kuis.quiz-take-v2 {
     gap: 28px;
-    padding: 24px 28px;
+    padding: 80px 28px 24px 28px;
     align-items: flex-start;
 }
 
@@ -5183,17 +5184,17 @@ input[type="time"] {
 
 @media (max-width: 992px) {
     .box_luar_kuis.quiz-take-v2 {
-        padding: 18px;
+        padding: 80px 18px 18px 18px;
         gap: 18px;
     }
 
     .box_luar_kuis.quiz-take-v2 .box_kuis_kiri.quiz-modules {
         position: fixed;
-        top: 56px;
+        top: 70px;
         left: 0;
         bottom: 0;
         max-height: none;
-        z-index: 1050;
+        z-index: 1040;
         width: min(360px, 92vw);
         border-radius: 0 16px 16px 0;
     }
@@ -5891,6 +5892,9 @@ body{
 /*ADD COURSE ADMIN*/
 .box_luar_add_course {
     padding: 40px;
+}
+.box_pinggir_back{
+    display:flex;
 }
 
 .box_luar_add_course label.form-label {
@@ -8370,18 +8374,16 @@ textarea::placeholder {
     border-radius: 18px;
     padding: 24px 20px 18px;
     box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
-    width: 1060px;
-    
+    width: 100%;
+    box-sizing: border-box;
 }
 .box_deskripsi_modul.modul_course {
-    height: 400px;
     max-height: 400px;
-
+    overflow-y: auto;
 }
 .trainer-html-content {
-    height: 400px;
     max-height: 400px;
-
+    overflow-y: auto;
 }
 
 .judul_modul {

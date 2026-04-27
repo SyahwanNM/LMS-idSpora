@@ -380,7 +380,7 @@
             </label>
           </div>
           <div class="lupa-password" style="margin-top:0;">
-            <a href="{{ route('forgot-password') }}">Lupa Password?</a>
+            <a href="{{ route('forgot-password') }}">Forgot Password?</a>
           </div>
         </div>
 

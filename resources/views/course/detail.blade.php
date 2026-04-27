@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -107,6 +107,9 @@
     margin: 0;
     border-radius: 20px;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .video-container video,
@@ -527,6 +530,9 @@
 
   .video-container img {
     width: 100%;
+    max-width: 480px;
+    max-height: 200px;
+    object-fit: cover;
     display: block;
     border-radius: 20px;
   }
@@ -972,6 +978,9 @@
 
   .video-container img {
     width: 100%;
+    max-width: 480px;
+    max-height: 200px;
+    object-fit: cover;
     display: block;
     border-radius: 20px;
   }
@@ -1096,7 +1105,7 @@
 </style> --}}
 
 <body class="course-detail-page">
-
+ @include("partials.navbar-after-login")
   <section class="course-hero">
     <div class="breadcrumb-text" style="color:#fff; font-size:15px; font-weight:500;">
       <div class="hero-inner" style="margin-top: 1px;">
@@ -1397,7 +1406,7 @@
           <button class="tab-btn" data-tab="syllabus">Syllabus</button>
           <button class="tab-btn" data-tab="review">Review</button>
         </div>
-        <div class="tab-content active" id="overview">
+        <div class="tab-content active" id="overview" style="max-height: 320px; overflow-y: auto;">
           <h5>Overview</h5>
           <p>
             {!! $course->description !!}
@@ -1446,7 +1455,7 @@
                       $displayItems = [];
                       if ($materiModules->isNotEmpty()) {
                         $displayItems[] = [
-                          'title' => 'Materi',
+                          'title' => 'Material',
                           'ids' => $materiModules->pluck('id')->all()
                         ];
                       }
@@ -1597,7 +1606,7 @@
                   d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z" />
               </svg>
               <p class="bahasa-judul">Language</p>
-              <p class="bahasa-text">{{ $courseLanguage ?? 'Indonesia' }}</p>
+              <p class="bahasa-text">English</p>
             </div>
             <div class="sertifikat">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black"
@@ -1666,14 +1675,14 @@
           @else
             <a href="{{ route('course.payment', $course->id) }}" class="enroll"
               style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">
-              {{ (isset($paymentFailed) && $paymentFailed) ? 'Bayar Lagi' : 'Daftar Sekarang' }}
+              {{ (isset($paymentFailed) && $paymentFailed) ? 'Pay Again' : 'Register Now!' }}
             </a>
             @if($hasPreview)
               <a href="{{ route('course.learn', $course->id) }}" class="enroll"
                 style="display:block;text-align:center;text-decoration:none;color:#fff;background:#252346;margin-top:10px;font-weight:600;">
-                Coba Sekarang
+                Trial Now!
               </a>
-              <p class="text-center text-muted mt-2" style="font-size:12px;">Akses Modul 1 & Kuis secara gratis</p>
+              <p class="text-center text-muted mt-2" style="font-size:12px;">Access Module 1 & Quiz for free</p>
             @endif
           @endif
           @php
@@ -1865,12 +1874,28 @@
           playerElement = document.createElement('img');
           playerElement.setAttribute('src', media);
           playerElement.setAttribute('alt', 'Course Media');
+          playerElement.style.width = '100%';
+          playerElement.style.maxWidth = '500px';
+          playerElement.style.height = 'auto';
+          playerElement.style.aspectRatio = '4/5';
+          playerElement.style.objectFit = 'cover';
+          playerElement.style.borderRadius = '26px';
+          playerElement.style.display = 'block';
+          playerElement.style.margin = '0 auto';
         }
       } else {
         // Fallback jika tidak ada media
         playerElement = document.createElement('img');
         playerElement.setAttribute('src', '/aset/poster.png');
         playerElement.setAttribute('alt', 'No Video');
+        playerElement.style.width = '100%';
+        playerElement.style.maxWidth = '500px';
+        playerElement.style.height = 'auto';
+        playerElement.style.aspectRatio = '4/5';
+        playerElement.style.objectFit = 'cover';
+        playerElement.style.borderRadius = '26px';
+        playerElement.style.display = 'block';
+        playerElement.style.margin = '0 auto';
       }
 
       if (playerElement) {

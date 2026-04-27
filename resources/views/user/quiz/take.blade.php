@@ -1,6 +1,4 @@
-﻿@include("partials.navbar-after-login")
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -16,6 +14,7 @@
 </head>
 
 <body>
+    @include("partials.navbar-after-login")
     @php
         $selectedAnswerId = collect($attempt->answers ?? [])->firstWhere('question_id', $currentQuestion->id)['answer_id'] ?? null;
         $total = $questions->count();
@@ -56,7 +55,29 @@
                     return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_'.$fallbackIndex);
                 };
 
-                $formatDisplayTitle = function (string $groupKey, string $kind) {
+                // Extract the human-readable subtitle after "Module X" (e.g. "Module 1 - Testing" → "Testing")
+                $extractModuleSubtitle = function ($title) {
+                    $t = trim((string) $title);
+                    if (preg_match('/^Module\s*\d+\s*-\s*(.+)$/i', $t, $m)) {
+                        $sub = trim($m[1]);
+                        if (!preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $sub)) {
+                            return $sub;
+                        }
+                    }
+                    return null;
+                };
+
+                $groupSubtitles = [];
+
+                // Build unit title map from course_units table
+                $unitTitleMap = [];
+                if (isset($course)) {
+                    foreach (($course->units ?? collect()) as $u) {
+                        $unitTitleMap[(int) $u->unit_no] = (string) ($u->title ?? '');
+                    }
+                }
+
+                $formatDisplayTitle = function (string $groupKey, string $kind) use (&$groupSubtitles) {
                     $isModuleKey = \Illuminate\Support\Str::startsWith($groupKey, 'MODULE');
                     $isUnitKey = \Illuminate\Support\Str::startsWith($groupKey, 'UNIT_');
 
@@ -69,6 +90,11 @@
                     }
 
                     $hasPrefix = $isModuleKey || $isUnitKey;
+
+                    $subtitle = $groupSubtitles[$groupKey] ?? null;
+                    if ($subtitle && $hasPrefix) {
+                        $prefix = $prefix . ' - ' . $subtitle;
+                    }
 
                     if ($kind === 'material') {
                         return $hasPrefix ? ($prefix . ' - Materi') : 'Materi';
@@ -117,6 +143,23 @@
                             'quiz' => null,
                         ];
                         $groupOrder[] = $key;
+                    }
+
+                    if (!isset($groupSubtitles[$key])) {
+                        $unitNum = null;
+                        if (preg_match('/MODULE\s*(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        } elseif (preg_match('/UNIT_(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        }
+                        if ($unitNum && !empty($unitTitleMap[$unitNum])) {
+                            $groupSubtitles[$key] = $unitTitleMap[$unitNum];
+                        } else {
+                            $sub = $extractModuleSubtitle($titleStr);
+                            if ($sub) {
+                                $groupSubtitles[$key] = $sub;
+                            }
+                        }
                     }
 
                     if ($type === 'pdf' && !$grouped[$key]['pdf']) $grouped[$key]['pdf'] = $m;
@@ -260,9 +303,9 @@
                         <div class="accordion-content">
                             @if($isLocked)
                                 @if($lockReason === 'free')
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Enroll or purchase this course to unlock this module.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Daftar atau beli course untuk membuka modul ini.</p>
                                 @else
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Pass the quiz first to unlock the next material.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
                                 @endif
                             @else
                                 <p class="text-muted" style="margin:0; font-size:13px;">Klik untuk mereview materi.</p>
@@ -270,7 +313,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="text-muted" style="padding:12px;">No modules available for this course.</div>
+                    <div class="text-muted" style="padding:12px;">Belum ada modul pada course ini.</div>
                 @endforelse
             </div>
         </div>
@@ -323,7 +366,7 @@
 
                     <div class="tombol_kuis">
                         <button type="button" class="previous_question" data-prev-url="{{ $prevUrl }}">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Submit' : 'Send' }}</button>
+                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
                     </div>
                 </form>
             </div>
@@ -395,14 +438,14 @@
                     e.preventDefault();
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Warning!',
-                            text: 'You must answer this question first',
+                            title: 'Peringatan!',
+                            text: 'Anda harus menyelesaikan soal ini terlebih dahulu',
                             icon: 'warning',
-                            confirmButtonText: 'Close',
+                            confirmButtonText: 'Tutup',
                             confirmButtonColor: '#f4c430'
                         });
                     } else {
-                        alert('You must complete all quiz questions first');
+                        alert('Anda harus menyelesaikan semua soal kuis ini terlebih dahulu');
                     }
                     return;
                 }
@@ -413,14 +456,14 @@
                         e.preventDefault();
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
-                                title: 'Warning!',
-                                text: 'You must complete all quiz questions before proceeding',
+                                title: 'Peringatan!',
+                                text: 'Anda harus menyelesaikan semua soal kuis terlebih dahulu sebelum lanjut',
                                 icon: 'warning',
-                                confirmButtonText: 'Close',
+                                confirmButtonText: 'Tutup',
                                 confirmButtonColor: '#f4c430'
                             });
                         } else {
-                            alert('You must complete the quiz before proceeding');
+                            alert('Anda harus menyelesaikan kuis terlebih dahulu sebelum lanjut');
                         }
                         return;
                     }
@@ -436,7 +479,7 @@
         window.addEventListener('beforeunload', function(e) {
             const checked = document.querySelector('input[name="answer_id"]:checked');
             if (_draftDirty && checked) {
-                const msg = 'You have selected an answer that has not been saved. Are you sure you want to leave this page?';
+                const msg = 'Jawaban yang sudah kamu pilih belum disimpan. Yakin ingin meninggalkan halaman ini?';
                 e.preventDefault();
                 e.returnValue = msg;
                 return msg;
@@ -453,12 +496,12 @@
                     e.preventDefault();
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Unsaved Answer',
-                            text: 'You selected an answer but haven't pressed "Send". It will be lost if you navigate away. Continue?',
+                            title: 'Jawaban Belum Disimpan',
+                            text: 'Kamu sudah memilih jawaban tapi belum menekan "Send". Jawaban ini akan hilang jika kamu pindah soal. Lanjutkan?',
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Yes, move on',
-                            cancelButtonText: 'Cancel',
+                            confirmButtonText: 'Ya, pindah soal',
+                            cancelButtonText: 'Batal',
                             confirmButtonColor: '#f4c430',
                         }).then(result => {
                             if (result.isConfirmed) {
@@ -467,7 +510,7 @@
                             }
                         });
                     } else {
-                        if (confirm('Answer not saved. Continue?')) {
+                        if (confirm('Jawaban belum disimpan. Lanjutkan?')) {
                             _draftDirty = false;
                             window.location.href = prevUrl;
                         }
@@ -489,12 +532,12 @@
                     const targetUrl = originalOnclick ? originalOnclick.replace("window.location.href='", '').replace("'", '') : null;
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Unsaved Answer',
-                            text: 'You selected an answer but haven't pressed "Send". It will be lost if you navigate away. Continue?',
+                            title: 'Jawaban Belum Disimpan',
+                            text: 'Kamu sudah memilih jawaban tapi belum menekan "Send". Jawaban ini akan hilang jika kamu pindah soal. Lanjutkan?',
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Yes, move on',
-                            cancelButtonText: 'Cancel',
+                            confirmButtonText: 'Ya, pindah soal',
+                            cancelButtonText: 'Batal',
                             confirmButtonColor: '#f4c430',
                         }).then(result => {
                             if (result.isConfirmed) {
@@ -503,7 +546,7 @@
                             }
                         });
                     } else {
-                        if (confirm('Answer not saved. Continue?')) {
+                        if (confirm('Jawaban belum disimpan. Lanjutkan?')) {
                             _draftDirty = false;
                             if (targetUrl) window.location.href = targetUrl;
                         }
@@ -543,7 +586,7 @@
                     } else {
                         Swal.fire({
                             title: 'Oops!',
-                            text: 'You must complete the quiz firstahulu baru bisa lanjut ke tahap selanjutnya.',
+                            text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
                             icon: 'warning',
                             confirmButtonColor: '#f4c430',
                         });
@@ -558,18 +601,23 @@
             });
         });
 
-        // Sidebar open/close
+        // Sidebar open/close with persistence
         const rootEl = document.getElementById('quizTakeRoot');
         const modulesSidebar = document.querySelector('.box_kuis_kiri.quiz-modules');
         const openModulesBtn = document.getElementById('openModulesBtn');
         const closeModulesBtn = document.getElementById('closeModulesBtn');
+        const SIDEBAR_STATE_KEY = 'quiz_sidebar_open_{{ $attempt->id }}';
 
         function setModulesOpen(isOpen) {
             if (!modulesSidebar) return;
             modulesSidebar.classList.toggle('closed', !isOpen);
             if (openModulesBtn) openModulesBtn.classList.toggle('d-none', isOpen);
             if (rootEl) rootEl.classList.toggle('modules-closed', !isOpen);
-            sessionStorage.setItem('quizSidebarOpen', isOpen ? 'true' : 'false');
+            
+            // Save state to sessionStorage
+            try {
+                sessionStorage.setItem(SIDEBAR_STATE_KEY, isOpen ? '1' : '0');
+            } catch (_e) {}
         }
 
         if (closeModulesBtn) {
@@ -579,12 +627,21 @@
             openModulesBtn.addEventListener('click', () => setModulesOpen(true));
         }
 
-        // Default: sidebar mengingat state terakhir, default awal tutup
-        const isSidebarOpen = sessionStorage.getItem('quizSidebarOpen') === 'true';
-        setModulesOpen(isSidebarOpen);
+        // Restore sidebar state from sessionStorage
+        try {
+            const savedState = sessionStorage.getItem(SIDEBAR_STATE_KEY);
+            if (savedState === '1') {
+                setModulesOpen(true);
+            } else {
+                setModulesOpen(false);
+            }
+        } catch (_e) {
+            // Default: sidebar tertutup saat halaman dimuat
+            setModulesOpen(false);
+        }
 
-        // ── LOGIKA TIMER BARU (Berbasis remainingSeconds dari Server) ─────────────────
-        const remainingSeconds = @json($remainingSeconds ?? 0);
+        // Timer (module duration in seconds), based on server-provided endsAt
+        const endsAtIso = @json($endsAtIso ?? null);
         const timerEl = document.getElementById('quizTimer');
         const finishUrl = @json($finishUrl);
         const resultUrl = @json($resultUrl);
@@ -632,24 +689,20 @@
             window.location.href = resultUrl;
         }
 
-        if (timerEl && remainingSeconds > 0) {
-            let currentRemaining = remainingSeconds;
-            
+        if (timerEl && endsAtIso) {
+            // Kurangi 7 menit (420 detik) dari waktu asli
+            const endsAt = new Date(endsAtIso).getTime() - (7 * 60 * 1000);
             const tick = () => {
-                timerEl.textContent = formatTime(currentRemaining);
-                if (currentRemaining <= 0) {
+                const now = Date.now();
+                const remaining = Math.floor((endsAt - now) / 1000);
+                timerEl.textContent = formatTime(remaining);
+                if (remaining <= 0) {
                     clearInterval(intv);
                     finishAttempt();
                 }
-                currentRemaining--; // Kurangi 1 detik
             };
-            
-            tick(); // Panggil pertama kali agar tidak ada jeda
+            tick();
             const intv = setInterval(tick, 1000);
-        } else if (timerEl && remainingSeconds <= 0) {
-            // Jika waktu dari server memang sudah habis saat halaman dimuat
-            timerEl.textContent = "00:00:00";
-            finishAttempt();
         }
     </script>
 

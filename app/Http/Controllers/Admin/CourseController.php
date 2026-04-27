@@ -1140,6 +1140,19 @@ class CourseController extends Controller
                 ->cloneToCourse($course, $template, replaceExisting: false);
         }
 
+        // Save unit titles from form input
+        $unitTitles = $request->input('unit_titles', []);
+        if (is_array($unitTitles)) {
+            foreach ($unitTitles as $unitNo => $title) {
+                $title = trim((string) $title);
+                if ($title === '') continue;
+                \App\Models\CourseUnit::updateOrCreate(
+                    ['course_id' => $course->id, 'unit_no' => (int) $unitNo],
+                    ['title' => $title]
+                );
+            }
+        }
+
         return redirect()->route('admin.courses.index')->with('success', 'Course created successfully!');
     }
 
@@ -1243,7 +1256,9 @@ class CourseController extends Controller
             'expenses.*.unit_price' => 'nullable|integer|min:0',
             'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
-            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
+            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800',
+            'unit_titles' => 'nullable|array',
+            'unit_titles.*' => 'nullable|string|max:255',
         ]);
 
         // Normalize discount fields: if discount is not set (null/0), ignore dates.

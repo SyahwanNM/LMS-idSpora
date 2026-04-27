@@ -315,7 +315,7 @@ class CourseReportController extends Controller
 
         // Base: only published/completed courses (exclude on progress)
         $courseAgg = Course::query()
-            ->whereIn('courses.status', ['active', 'published', 'completed'])
+            ->whereIn('courses.status', ['active'])
             ->leftJoin('enrollments', function ($join) use ($from, $to) {
                 $join->on('courses.id', '=', 'enrollments.course_id')
                     ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -557,7 +557,7 @@ class CourseReportController extends Controller
             ->keyBy('course_id');
 
         $courses = \App\Models\Course::query()
-            ->whereIn('status', ['active', 'published', 'completed'])
+            ->whereIn('status', ['active'])
             ->select('id', 'name', 'level', 'price', 'expenses_json', 'created_at')
             ->orderByDesc('created_at')
             ->get();
@@ -586,7 +586,6 @@ class CourseReportController extends Controller
                 'transactions_count' => $stat ? (int) $stat->transactions_count : 0,
                 'revenue_total' => $stat ? (float) $stat->revenue_total : 0.0,
                 'expense_total' => $expense,
-                // Tanggal transaksi terakhir di periode ini, bukan tanggal pembuatan course
                 'last_paid_at' => $stat && $stat->last_paid_at
                     ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString()
                     : null,
@@ -595,19 +594,13 @@ class CourseReportController extends Controller
             ];
         });
 
-        // Tampilkan semua course (published) yang dibuat sebelum atau selama periode ini
-        $rows = $rows->filter(function($row) use ($to) {
-            if (empty($row['created_at'])) return true;
-            return \Carbon\Carbon::parse($row['created_at'])->startOfDay()->lessThanOrEqualTo($to);
-        });
-
-        // Show all courses (no period filter) — filter only by search query if provided
+        // Filter hanya berdasarkan search query jika ada
         if (isset($q) && $q !== '') {
             $rows = $rows->filter(function($row) use ($q) {
                 return stripos($row['course_name'], $q) !== false;
             });
         }
-        
+
         $rows = $rows->values();
 
         $revenueByLevel = $baseEnrollments->clone()

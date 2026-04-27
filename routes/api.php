@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\MyCourseController;
 use App\Http\Controllers\Api\CoursePaymentController;
 use App\Http\Controllers\Api\CourseAccessController;
 use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
-use App\Http\Controllers\Api\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Api\Admin\ApiAdminCourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\CourseTemplateController as AdminCourseTemplateController;
 use App\Http\Controllers\Api\Admin\CourseModuleController as AdminCourseModuleController;
 use App\Http\Controllers\Api\Admin\CoursePaymentController as AdminCoursePaymentController;
@@ -30,7 +30,6 @@ Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]
 // Public courses listing throttled to avoid scraping (120 req/min)
 Route::get('/courses', [CourseController::class, 'index'])->middleware('throttle:120,1');
 Route::get('/courses/{course}', [CourseController::class, 'show'])->whereNumber('course')->middleware('throttle:120,1');
-
 // Authenticated user actions with moderate throttle (100 req/min)
 Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
 

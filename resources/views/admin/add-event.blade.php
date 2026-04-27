@@ -567,18 +567,13 @@
                                 </div>
                                 <ul class="list-group list-group-flush mb-3 small">
                                     @if($requiresVbg)
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>
-                                                <i class="bi {{ $hasVbg ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
-                                                Virtual Background
-                                            </span>
-                                            <span>
+                                        <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
+                                            <span style="flex-shrink:0; color:{{ $hasVbg ? '#198754' : '#dc3545' }}; font-weight:500;">Virtual Background</span>
+                                            <span style="margin-left:auto; flex-shrink:0;">
                                                 @if($hasVbg)
                                                     @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
                                                     @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
-                                                            <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                        </a>
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank"><img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;"></a>
                                                     @elseif($vExt === 'pdf')
                                                         <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                     @else
@@ -590,12 +585,9 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-start px-0">
-                                        <span class="d-flex align-items-center gap-1">
-                                            <i class="bi {{ $hasModule ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }}"></i>
-                                            <span style="white-space:nowrap;">Module (Trainer)</span>
-                                        </span>
-                                        <span class="d-flex flex-column align-items-end gap-1">
+                                    <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
+                                        <span style="flex-shrink:0; color:{{ $hasModule ? '#198754' : '#dc3545' }}; font-weight:500;">Module (Trainer)</span>
+                                        <span style="margin-left:auto; flex-shrink:0;" class="d-flex flex-column align-items-end gap-1">
                                             @if($eventTrainerModulesApproved->isNotEmpty())
                                                 @foreach($eventTrainerModulesApproved as $etm)
                                                     <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
@@ -610,28 +602,21 @@
                                             @endif
                                         </span>
                                     </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-start">
-                                        <span class="d-flex align-items-center">
-                                            <i class="bi {{ $hasAbs ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i>
-                                            Absensi
-                                        </span>
-                                        <span>
+                                    <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
+                                        <span style="flex-shrink:0; color:{{ $hasAbs ? '#198754' : '#dc3545' }}; font-weight:500;">Absensi</span>
+                                        <span style="margin-left:auto; flex-shrink:0;">
                                             @if($hasAbs)
                                                 @if($hasAbsFile)
                                                     @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
                                                     @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="d-inline-block">
-                                                            <img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                        </a>
+                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank"><img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;"></a>
                                                     @elseif($aExt === 'pdf')
                                                         <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                     @else
                                                         <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
                                                     @endif
                                                 @elseif($hasAbsQrImg)
-                                                    <a href="{{ $event->attendance_qr_image_url }}" target="_blank" class="d-inline-block">
-                                                        <img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
-                                                    </a>
+                                                    <a href="{{ $event->attendance_qr_image_url }}" target="_blank"><img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;"></a>
                                                 @else
                                                     <span class="badge bg-success">Attendance QR Active</span>
                                                 @endif
@@ -1209,7 +1194,6 @@
         }
         #addEventModal .modal-footer #submitHint { margin-right: auto; }
 
-        /* Force addEventModal dialog to sit centered vertically */
         #addEventModal .modal-dialog {
             margin-top: 55px !important;
             margin-bottom: 30px !important;

@@ -354,9 +354,21 @@
                                 <span class="discount-badge">{{ $percentOff }}% off</span>
                             @endif
                             <div class="badge-save-group" style="gap:12px;">
-                                <button class="save-btn" aria-label="Save event" type="button">
+                                @auth
+                                <button class="save-btn {{ !empty($event->is_saved) ? 'active' : '' }}"
+                                    aria-label="Save event"
+                                    type="button"
+                                    data-save-url="{{ route('events.save', $event) }}"
+                                    onclick="event.stopPropagation(); toggleSaveEvent(this)"
+                                    style="{{ !empty($event->is_saved) ? 'color:#ef4444;' : '' }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
                                 </button>
+                                @else
+                                <button class="save-btn" aria-label="Save event" type="button"
+                                    onclick="window.location.href='{{ route('login') }}'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
+                                </button>
+                                @endauth
                             </div>
                         </div>
 
@@ -670,6 +682,35 @@
             }
             update(); setInterval(update, 1000);
         })();
+    </script>
+
+    <script>
+        function toggleSaveEvent(btn) {
+            const url = btn.getAttribute('data-save-url');
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => { if (r.status === 401) { window.location.href = "{{ route('login') }}"; return null; } return r.json(); })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '';
+                    }
+                }
+            })
+            .finally(() => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; });
+        }
     </script>
 </body>
 </html>

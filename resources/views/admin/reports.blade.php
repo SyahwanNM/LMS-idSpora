@@ -213,56 +213,6 @@
             <div style="margin-bottom:12px;">
             </div>
 
-            {{-- Tabel Income / Expenses / Profit per Tanggal --}}
-            <div style="margin-bottom:20px;">
-                <h5 style="font-weight:700; margin-bottom:10px;">Daily Summary — {{ $selectedDate->translatedFormat('F Y') }}</h5>
-                <div class="table-responsive">
-                    <table class="tabel-pendapatan" id="table-daily-summary" style="width:100%; border-collapse:collapse;">
-                        <thead>
-                            <tr>
-                                <th style="background:#E4E4E6; padding:8px 10px; border:1px solid #e5e7eb;">Date</th>
-                                <th style="background:#E4E4E6; padding:8px 10px; border:1px solid #e5e7eb;">Income</th>
-                                <th style="background:#E4E4E6; padding:8px 10px; border:1px solid #e5e7eb;">Expenses</th>
-                                <th style="background:#E4E4E6; padding:8px 10px; border:1px solid #e5e7eb;">Profit</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php $hasAnyData = false; @endphp
-                            @foreach($labels as $i => $day)
-                                @php
-                                    $r = $seriesRevenue[$i];
-                                    $e = $seriesExpense[$i];
-                                    $p = $seriesProfit[$i];
-                                    if($r == 0 && $e == 0) continue;
-                                    $hasAnyData = true;
-                                    $dateStr = \Carbon\Carbon::create($selectedYear, $selectedMonth, $day)->format('d M Y');
-                                    $profitColor = $p >= 0 ? '#16a34a' : '#ef4444';
-                                @endphp
-                                <tr style="border-bottom:1px solid #f3f4f6;">
-                                    <td style="padding:8px 10px; border:1px solid #e5e7eb;">{{ $dateStr }}</td>
-                                    <td style="padding:8px 10px; border:1px solid #e5e7eb;">Rp {{ number_format($r,0,',','.') }}</td>
-                                    <td style="padding:8px 10px; border:1px solid #e5e7eb;">Rp {{ number_format($e,0,',','.') }}</td>
-                                    <td style="padding:8px 10px; border:1px solid #e5e7eb; color:{{ $profitColor }}; font-weight:600;">Rp {{ number_format($p,0,',','.') }}</td>
-                                </tr>
-                            @endforeach
-                            @if(!$hasAnyData)
-                                <tr>
-                                    <td colspan="4" style="padding:12px 10px; text-align:center; color:#6b7280; border:1px solid #e5e7eb;">No data for this month.</td>
-                                </tr>
-                            @endif
-                        </tbody>
-                        <tfoot>
-                            <tr style="font-weight:700; background:#f9fafb;">
-                                <td style="padding:8px 10px; border:1px solid #e5e7eb;">Total</td>
-                                <td style="padding:8px 10px; border:1px solid #e5e7eb;">{{ $fmtRp($totalRevenueAll) }}</td>
-                                <td style="padding:8px 10px; border:1px solid #e5e7eb;">{{ $fmtRp($totalExpenseAll) }}</td>
-                                <td style="padding:8px 10px; border:1px solid #e5e7eb; color:{{ $totalMarginAll >= 0 ? '#16a34a' : '#ef4444' }};">{{ $fmtRp($totalMarginAll) }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-
             <div class="recap-card-box" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;">
             
                <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:20px; padding-left:20px;padding-right:20px;">
@@ -295,7 +245,7 @@
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0  0 0 0 16" />
                             <path d="M8 13.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11m0 .5A6 6 0 1 0 8 2a6 6 0 0 0 0 12" />
                         </svg>
-                        <h5>Operational Costs</h5>
+                        <h5>Growth Costs</h5>
                     </div>
                     <h3>{{ $fmtRp($totalExpenseAll) }}</h3>
                     <div class="recap-increase" style="display:flex; gap:8px; align-items:center; color:{{ $expColor }};">
@@ -454,22 +404,22 @@
 
             <div class="mt-4 mb-4">
                 <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
-                    <input type="hidden" name="tab" value="operasional">
+                    <input type="hidden" name="tab" value="pertumbuhan">
                     <div>
-                        <label for="period_op" class="form-label mb-1 text-dark">Month Period</label>
-                        <input type="month" name="period" id="period_op" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
+                        <label for="period_pertumbuhan" class="form-label mb-1 text-dark">Month Period</label>
+                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
                     </div>
                     <div class="d-flex gap-2 align-items-end">
                         <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Show</button>
                     </div>
                     <div class="ms-auto d-flex align-items-center gap-2">
-                        <div class="small text-muted">Showing data for month: <strong id="month-label-operasional">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
-                        <button type="button" class="btn-export-report btn btn-sm" data-export-tab="operasional" style="height:38px;">Export</button>
+                        <div class="small text-muted">Showing data for month: <strong id="month-label-pertumbuhan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                        <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pertumbuhan" style="height:38px;">Export</button>
                     </div>
                 </form>
             </div>
 
-            <h5 class="title-laporan-metrik">Operational Metrics</h5>
+            <h5 class="title-laporan-metrik">Growth Metrics</h5>
             <div class="filter-section" id="filters-pertumbuhan" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px; margin-bottom:10px;">
                 <div class="filter-group">
                     <label class="filter-label">Search Event</label>
@@ -1314,7 +1264,7 @@ document.addEventListener('DOMContentLoaded', function(){
             try { expenseRows = JSON.parse(expenseJson) || []; } catch (_e) {}
 
             const titleEl = document.getElementById('viewPendapatanLabel');
-            if (titleEl) titleEl.textContent = 'Rekap Pendaftaran: ' + name;
+            if (titleEl) titleEl.textContent = 'Registration Recap: ' + name;
             const incomeTbody = document.getElementById('incomeTbody');
             const expenseTbody = document.getElementById('expenseTbody');
             const profitFormula = document.getElementById('profitFormula');
@@ -1327,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 // Fallback: if no income rows provided, synthesize 'Tiket Pendaftar'
                 if (!Array.isArray(incomeRows) || incomeRows.length === 0) {
                     const unit = registeredCount > 0 ? (incomeTotal / registeredCount) : 0;
-                    incomeRows = [{ label: 'Tiket Pendaftar', qty: registeredCount, unit: unit, total: incomeTotal }];
+                    incomeRows = [{ label: 'Register Ticket', qty: registeredCount, unit: unit, total: incomeTotal }];
                 }
                 const rowsHtml = incomeRows.map(r => `
                     <tr>
@@ -1574,78 +1524,65 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 
     btnPdf.addEventListener('click', function(){
-        const periodPart = currentExport.period ? sanitizeFilenamePart(currentExport.period) : 'periode';
-        const tabPart = sanitizeFilenamePart(currentExport.title);
-        const filename = `laporan-event-${tabPart}-${periodPart}.pdf`;
-        if (typeof window.html2pdf !== 'function') return;
-
         const table = previewEl.querySelector('table');
         if (!table) return;
-        const tableClone = table.cloneNode(true);
-
-        // Style tabel untuk PDF
-        tableClone.style.borderCollapse = 'collapse';
-        tableClone.style.width = '100%';
-        tableClone.style.fontSize = '11px';
-        tableClone.querySelectorAll('th').forEach(th => {
-            th.style.backgroundColor = '#1e3a5f';
-            th.style.color = '#ffffff';
-            th.style.padding = '7px 9px';
-            th.style.border = '1px solid #1e3a5f';
-            th.style.fontWeight = '600';
-        });
-        tableClone.querySelectorAll('td').forEach(td => {
-            td.style.padding = '6px 9px';
-            td.style.border = '1px solid #d1d5db';
-            td.style.verticalAlign = 'middle';
-        });
-        const rows = tableClone.querySelectorAll('tbody tr');
-        rows.forEach((tr, i) => {
-            tr.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f3f4f6';
-        });
 
         const monthText = currentExport.monthText || (monthEl?.textContent || '-');
         const printDate = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
+        const title = currentExport.title || '';
 
-        const printable = document.createElement('div');
-        printable.style.cssText = 'width:1100px; padding:24px 28px; background:#ffffff; color:#111827; font-family:Arial,sans-serif; box-sizing:border-box;';
-
-        printable.innerHTML = `
-            <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; padding-bottom:12px; border-bottom:3px solid #1e3a5f;">
-                <div>
-                    <div style="font-size:20px; font-weight:700; color:#1e3a5f; letter-spacing:-0.3px;">Laporan ${currentExport.title || ''} Event</div>
-                    <div style="font-size:12px; color:#6b7280; margin-top:4px;">Periode: <strong style="color:#111827;">${monthText}</strong></div>
-                </div>
-                <div style="text-align:right; font-size:11px; color:#9ca3af; line-height:1.6;">
-                    <div style="font-weight:600; color:#374151; font-size:13px;">LMS IdSpora</div>
-                    <div>Dicetak: ${printDate}</div>
-                </div>
-            </div>`;
-
-        printable.appendChild(tableClone);
-
-        const footer = document.createElement('div');
-        footer.style.cssText = 'margin-top:16px; padding-top:10px; border-top:1px solid #e5e7eb; font-size:10px; color:#9ca3af; display:flex; justify-content:space-between;';
-        footer.innerHTML = `<span>LMS IdSpora — Laporan ${currentExport.title || ''} Event</span><span>${printDate}</span>`;
-        printable.appendChild(footer);
-
-        const offscreen = document.createElement('div');
-        offscreen.style.cssText = 'position:fixed; left:-10000px; top:0;';
-        offscreen.appendChild(printable);
-        document.body.appendChild(offscreen);
-
-        const opt = {
-            margin: [8, 6, 8, 6],
-            filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, windowWidth: 1160, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
-        window.html2pdf().set(opt).from(printable).save().then(() => {
-            offscreen.remove();
-        }).catch(() => {
-            offscreen.remove();
+        // Clone and strip interactive elements
+        const tableClone = table.cloneNode(true);
+        tableClone.querySelectorAll('svg').forEach(el => el.remove());
+        tableClone.querySelectorAll('span[class]').forEach(span => {
+            const t = document.createTextNode(span.textContent.trim());
+            span.replaceWith(t);
         });
+        tableClone.querySelectorAll('button, a').forEach(el => {
+            el.replaceWith(document.createTextNode((el.textContent || '').trim()));
+        });
+
+        const tableHtml = tableClone.outerHTML;
+
+        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+        <title>Laporan ${title} Event</title>
+        <style>
+            @page { size: A4 landscape; margin: 10mm 12mm; }
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; color: #111827; background: #fff; margin: 0; padding: 0; }
+            .header-row { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+            .header-row td { border: none; padding: 0; vertical-align: top; }
+            .title { font-size: 16px; font-weight: 700; color: #1e3a5f; }
+            .subtitle { font-size: 11px; color: #6b7280; margin-top: 2px; }
+            .meta { text-align: right; font-size: 11px; color: #9ca3af; }
+            .meta strong { color: #374151; font-size: 12px; display: block; }
+            .divider { border: none; border-top: 2px solid #1e3a5f; margin: 8px 0 12px; }
+            table { border-collapse: collapse; width: 100%; font-size: 10px; }
+            th { background: #1e3a5f; color: #fff; padding: 6px 8px; border: 1px solid #1e3a5f; font-weight: 600; text-align: left; }
+            td { padding: 5px 8px; border: 1px solid #d1d5db; color: #111827; vertical-align: middle; }
+            tbody tr:nth-child(even) { background: #f3f4f6; }
+            tbody tr:nth-child(odd) { background: #ffffff; }
+            .footer { margin-top: 10px; padding-top: 6px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #9ca3af; }
+        </style>
+        </head><body>
+        <table class="header-row">
+            <tr>
+                <td><div class="title">Laporan ${title} Event</div>
+                    <div class="subtitle">Periode: <strong style="color:#111827;display:inline;">${monthText}</strong></div></td>
+                <td class="meta"><strong>LMS IdSpora</strong>Dicetak: ${printDate}</td>
+            </tr>
+        </table>
+        <hr class="divider">
+        ${tableHtml}
+        <div class="footer">LMS IdSpora &mdash; Laporan ${title} Event &nbsp;|&nbsp; ${printDate}</div>
+        <script>window.onload=function(){ window.print(); window.onafterprint=function(){ window.close(); }; };<\/script>
+        </body></html>`;
+
+        const pw = window.open('', '_blank', 'width=1200,height=800');
+        if (pw) {
+            pw.document.write(html);
+            pw.document.close();
+        }
     });
 
     btnExcel.addEventListener('click', function(){

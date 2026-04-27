@@ -97,18 +97,18 @@
                                 <i class="bi bi-box-arrow-right"></i>
                             </div>
                             <div>
-                                <h5 class="modal-title mb-0" id="confirmLogoutLabel">Konfirmasi Logout</h5>
-                                <small class="text-muted">Pastikan ini memang Anda</small>
+                                <h5 class="modal-title mb-0" id="confirmLogoutLabel">Confirm Logout</h5>
+                                <small class="text-muted">Make sure this is really you</small>
                             </div>
                         </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body pt-0">
-                        <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
+                        <p class="text-secondary mb-3">Are you sure you want to log out of the admin account?</p>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
-                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>

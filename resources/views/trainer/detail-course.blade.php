@@ -266,13 +266,21 @@
                 </div>
 
                 @if($moduleChunks->count() > 0)
+                    @php
+                        $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
+                    @endphp
                     @foreach($moduleChunks as $idx => $chunk)
+                        @php
+                            $unitNo = $idx + 1;
+                            $existingUnitTitle = (string) optional($unitTitlesByNo->get($unitNo))->title;
+                            $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . $unitNo);
+                        @endphp
                         <div class="unit-card {{ $idx > 0 ? 'compact' : '' }}">
                             <div class="unit-top">
                                 <div class="unit-index {{ $idx > 0 ? 'muted' : '' }}">{{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}
                                 </div>
                                 <div class="unit-title">
-                                    <h3>Academic Unit: Module {{ $idx + 1 }}</h3>
+                                    <h3>{{ $unitTitle }}</h3>
                                     <div class="unit-meta">
                                         <span><i class="bi bi-folder"></i> {{ $chunk->count() }} OPERATIONAL ASSETS</span>
                                     </div>

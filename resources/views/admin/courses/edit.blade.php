@@ -7,7 +7,8 @@
 
     <div class="min-h-screen bg-white p-6 md:p-10">
         <!-- Header -->
-        <div class="max-w-4xl mx-auto mb-8">
+        <div  class="max-w-4xl mx-auto mb-8">
+            <div style="margin-left:62px;" class="text-xs text-gray-400">Course Builder / Edit Courses</div>
             <div class="flex items-center gap-4 mb-2">
                 <a href="{{ route('admin.courses.index') }}" class="p-2 border rounded-lg hover:bg-gray-50 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -21,7 +22,7 @@
                     <p class="text-gray-500 text-sm">Set course details before publishing</p>
                 </div>
             </div>
-            <div class="text-xs text-gray-400">Course Builder / Edit Courses</div>
+
         </div>
 
         <!-- Main Content -->
@@ -106,6 +107,11 @@
                                     <option value="intermediate" {{ old('level', $course->level) == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
                                     <option value="advanced" {{ old('level', $course->level) == 'advanced' ? 'selected' : '' }}>Advanced</option>
                                 </select>
+                            </div>
+                            {{-- Module titles: shown dynamically based on selected level --}}
+                            <div id="module-titles-section" class="mb-3" style="display:none;">
+                                <label class="form-label text-dark fw-semibold">Input Title Module <span class="text-danger">*</span></label>
+                                <div id="module-titles-grid" class="row g-3"></div>
                             </div>
                         </div>
 
@@ -443,6 +449,44 @@
             </form>
         </main>
     </div>
+
+    <script>
+    // Dynamic module title inputs based on level (edit page)
+    (function () {
+        const levelModules  = { beginner: 3, intermediate: 6, advanced: 12 };
+        const existingTitles = @json($course->units->pluck('title', 'unit_no'));
+        const levelSelect   = document.getElementById('level');
+        const section       = document.getElementById('module-titles-section');
+        const grid          = document.getElementById('module-titles-grid');
+
+        function renderModuleTitles(level) {
+            const count = levelModules[level] || 0;
+            grid.innerHTML = '';
+            if (!count) { section.style.display = 'none'; return; }
+
+            section.style.display = 'block';
+            for (let i = 1; i <= count; i++) {
+                const existing = existingTitles[i] || '';
+                const col = document.createElement('div');
+                col.className = 'col-md-4';
+                col.innerHTML = `
+                    <label class="form-label text-dark small" for="unit-title-${i}">Module ${i}</label>
+                    <input id="unit-title-${i}" name="unit_titles[${i}]" type="text"
+                           class="form-control form-control-sm"
+                           placeholder="Title module ${i}"
+                           value="${existing.replace(/"/g, '&quot;')}">`;
+                grid.appendChild(col);
+            }
+        }
+
+        if (levelSelect) {
+            levelSelect.addEventListener('change', function () {
+                renderModuleTitles(this.value);
+            });
+            if (levelSelect.value) renderModuleTitles(levelSelect.value);
+        }
+    })();
+    </script>
 
     <script>
         (function() {

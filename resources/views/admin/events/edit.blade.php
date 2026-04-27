@@ -49,7 +49,7 @@
                                 <div class="form-text">Use a clear and specific title (example: "Webinar Laravel Dasar").</div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Pembicara <span
+                                <label class="form-label fw-semibold">Speaker Name <span
                                         class="text-danger">*</span></label>
                                 @php
                                     $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values();
@@ -118,7 +118,7 @@
                                          style="display:none; z-index: 1060; max-height: 240px; overflow-y:auto;"></div>
                                 </div>
                                 <div class="form-text">Click the field to see the list. Type to search.</div>
-                                <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">No subject</div>
+                               
                             </div>
 
                             <!-- Kelola Event: Manage / Create -->

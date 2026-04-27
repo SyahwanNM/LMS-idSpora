@@ -134,24 +134,31 @@
 
     <!-- Publish confirmation modal (UI, no browser alert/confirm) -->
     <div class="modal fade" id="publishConfirmModal" tabindex="-1" aria-labelledby="publishConfirmModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header" id="publishModalHeader">
-                    <h5 class="modal-title" id="publishConfirmModalLabel">Course is not complete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mt-2" id="publishModalSubText">Here's what's missing:</div>
-                    <ul id="publishMissingList" class="mt-2 mb-3" style="padding-left: 18px;"></ul>
-                    <div class="text-muted" id="publishModalFooterText" style="font-size: 0.9rem;">Please contact the trainer immediately to complete the modules, videos, and quizzes.</div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="publishConfirmProceedBtn">Yes, Publish Course</button>
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+        <div class="modal-content border-0 shadow">
+            
+            <div class="modal-header border-bottom-0 pb-0" id="publishModalHeader">
+                <h5 class="modal-title" id="publishConfirmModalLabel">Course is not complete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body py-3">
+                <div id="publishModalSubText">Here's what's missing:</div>
+                <ul id="publishMissingList" class="mt-2 mb-3 text-danger" style="padding-left: 20px;">
+                    </ul>
+                <div class="text-muted" id="publishModalFooterText" style="font-size: 0.85rem; line-height: 1.4;">
+                    Please contact the trainer immediately to complete the modules, videos, and quizzes.
                 </div>
             </div>
+            
+            <div class="modal-footer border-top-0 pt-0 d-flex gap-2" style="margin-top: 12px;">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary flex-grow-1" id="publishConfirmProceedBtn">Yes, Publish Course</button>
+            </div>
+            
         </div>
     </div>
+</div>
     <div class="box_luar_course_builder">
         <h1 class="judul_course_builder">Registration</h1>
         <p class="deskripsi_course_builder">Manage course details before publishing</p>
@@ -357,9 +364,6 @@
                     @endforelse
                 </tbody>
             </table>
-            <div class="mt-3">
-                {{ $courses->links() }}
-            </div>
         </div>
     </div>
     <div class="preview">
@@ -774,14 +778,14 @@
                     : [];
 
                 // --- CONTENT DESCRIPTION ---
-                setText('cp-content-description', data.description || 'Tidak ada deskripsi.');
+                setText('cp-content-description', data.description || 'not yet description.');
 
                 // --- SYLLABUS (judul bab modul) ---
                 (function renderSyllabus(){
                     var ol = document.getElementById('cp-syllabus-list');
                     if (!ol) return;
                     if (!Array.isArray(visibleModules) || visibleModules.length === 0) {
-                        ol.innerHTML = '<li class="text-muted">Belum ada materi yang disetujui.</li>';
+                        ol.innerHTML = '<li class="text-muted">No approved materials yet.</li>';
                         return;
                     }
                     ol.innerHTML = visibleModules
@@ -798,7 +802,7 @@
 
                     var url = data.participants_url;
                     if (!url) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Data participant tidak tersedia.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Participant data is not available.</td></tr>';
                         return;
                     }
 
@@ -858,7 +862,7 @@
                     var pdfs = visibleModules.filter(m => m.type === 'pdf');
                     var missingPdfCount = pdfsAll.filter(m => !moduleHasContent(m)).length;
                     if (pdfs.length === 0) {
-                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada modul PDF yang disetujui.</p>';
+                        pdfContainer.innerHTML = '<p class="text-center text-muted my-4">There are no approved modules yet.</p>';
                     } else {
                         pdfContainer.innerHTML = pdfs.map(m => `
                              <div class="list-pdf">

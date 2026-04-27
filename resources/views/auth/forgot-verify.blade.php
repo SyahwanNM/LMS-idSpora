@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi Reset Password</title>
+    <title>Password Reset Verification</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -31,7 +31,7 @@
             <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
         </div>
         <div class="kanan">
-            <h3>Verifikasi</h3>
+            <h3>Verification</h3>
 
             @if ($errors->any())
                 <div class="alert alert-danger">
@@ -45,31 +45,31 @@
             <form action="{{ route('verifikasi.verify') }}" method="post">
                 @csrf
                 <div class="mb-3">
-                    <h6 class="fw-600">Masukkan Kode Verifikasi</h6>
+                    <h6 class="fw-600">Input Verification Code</h6>
                     <input type="text" name="verification_code" class="form-control text-center fs-4 fw-bold"
                            value="{{ old('verification_code') }}" placeholder="000000" maxlength="6" required autofocus>
                     
                     <div class="mt-3 text-center">
                         <div id="otp-timer-container" class="smaller p-2 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10">
-                            <span class="text-white opacity-75">Kode berlaku selama:</span>
+                            <span class="text-white opacity-75">The code is valid for:</span>
                             <span id="otp-timer" class="fw-bold text-warning ms-1">10:00</span>
                         </div>
                         <div id="otp-expired-msg" class="smaller p-2 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-20 text-danger fw-bold d-none">
-                            Kode telah kadaluarsa. Silakan kirim ulang.
+                            The code has expired. Please resend it.
                         </div>
                     </div>
                     
-                    <small class="text-white opacity-75 d-block mt-3 text-center">Kode verifikasi telah dikirim ke email Anda</small>
+                    <small class="text-white opacity-75 d-block mt-3 text-center">The verification code has been sent to your email.</small>
                 </div>
-                <button type="submit" id="verifyBtn" class="btn-register">Verifikasi Password</button>
+                <button type="submit" id="verifyBtn" class="btn-register">Password Verification</button>
             </form>
 
             <div style="margin-top:25px; text-align:center; font-size:14px;">
                 <form id="resendForm" action="{{ route('forgot-password.resend') }}" method="post" style="display:inline;">
                     @csrf
-                    <p class="mb-2 opacity-75">Tidak menerima kode?</p>
+                    <p class="mb-2 opacity-75">Didn’t receive the code?</p>
                     <button id="resendBtn" type="submit" class="btn btn-outline-warning rounded-pill px-4 fw-bold smaller">
-                        Kirim Ulang Kode
+                        Resend Code
                     </button>
                 </form>
                 <div class="cooldown" id="cooldownText" style="margin-top:10px; opacity:0.6;">Tunggu <span id="sec">60</span> detik untuk kirim ulang</div>

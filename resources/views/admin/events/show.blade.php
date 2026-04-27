@@ -318,10 +318,10 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th style="width:48px;">No</th>
-                                                <th style="width:220px;">Nama</th>
+                                                <th style="width:220px;">Name</th>
                                                 <th style="width:240px;">Email</th>
                                                 <th style="width:120px;">Status</th>
-                                                <th style="width:160px;">Terdaftar</th>
+                                                <th style="width:160px;">Registered</th>
                                             </tr>
                                         </thead>
                                         <tbody>

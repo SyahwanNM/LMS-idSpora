@@ -316,7 +316,7 @@ class CourseManualPaymentController extends Controller
             'metadata' => ['source' => 'course', 'type' => 'free']
         ]);
 
-        return redirect()->route('course.learn', $course->id)->with('success', 'Pendaftaran berhasil!');
+        return redirect()->route('course.learn', $course->id)->with('success', 'Enroll Successfully!');
     }
 
     private function assertPaymentBelongsToCourse(Course $course, ManualPayment $manualPayment): void
