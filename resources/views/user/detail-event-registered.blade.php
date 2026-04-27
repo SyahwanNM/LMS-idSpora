@@ -1233,9 +1233,9 @@
                         @endif
                     @else
                         @if(!$isRegistered && $eventFinished)
-                            <button class="bookseat" disabled>Event Telah Selesai</button>
+                            <button class="bookseat" disabled>Event has finished</button>
                         @elseif(!$isRegistered && $eventStarted)
-                            <button class="bookseat" disabled>Event Sudah Dimulai</button>
+                            <button class="bookseat" disabled>Event Has Started</button>
                         @elseif($isRegistered)
                             <button class="bookseat" disabled>Seat Booked</button>
                         @else
@@ -1378,11 +1378,10 @@
                             <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
                         </div>
                         <div class="mt-3">
-                            <div id="qr-status" class="alert alert-info small">Arahkan kamera ke QR event untuk
-                                memindai.</div>
+                            <div id="qr-status" class="alert alert-info small">Point your camera at the QR code to scan it.</div>
                             <div class="d-flex justify-content-center mt-2 gap-2 flex-wrap">
                                 <button id="qr-permission-btn" type="button"
-                                    class="btn btn-sm btn-primary d-none">Izinkan Kamera</button>
+                                    class="btn btn-sm btn-primary d-none">Allow Camera</button>
                                 <button id="qr-test-btn" type="button"
                                     class="btn btn-sm btn-outline-primary d-none">Test Kamera</button>
                                 <label class="btn btn-sm btn-outline-secondary d-none" id="qr-upload-btn">
