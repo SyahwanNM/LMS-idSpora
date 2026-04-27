@@ -129,8 +129,8 @@ class SocialAuthController extends Controller
         }
         // (Maintenance for non-admin is handled above before login session is created.)
         if ($redirect) {
-            return redirect($redirect)->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
+            return redirect($redirect)->with('success', 'Login Successful! Welcome to IdSpora LMS');
         }
-        return redirect()->intended('/dashboard')->with('success', 'Login Berhasil! Selamat datang di LMS IdSpora');
+        return redirect()->intended('/dashboard')->with('success', 'Login Successful! Welcome to IdSpora LMS');
     }
 }

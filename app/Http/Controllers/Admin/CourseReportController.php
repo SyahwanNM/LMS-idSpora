@@ -683,9 +683,9 @@ class CourseReportController extends Controller
         }
 
         return match ($period) {
-            'daily' => [$from->copy()->subDay()->startOfDay(), $from->copy()->subDay()->endOfDay(), 'dari kemarin'],
-            'weekly' => [$from->copy()->subWeek()->startOfDay(), $to->copy()->subWeek()->endOfDay(), 'dari minggu lalu'],
-            default => [$from->copy()->subMonthNoOverflow()->startOfMonth()->startOfDay(), $to->copy()->subMonthNoOverflow()->endOfDay(), 'dari bulan lalu'],
+            'daily' => [$from->copy()->subDay()->startOfDay(), $from->copy()->subDay()->endOfDay(), 'from yesterday'],
+            'weekly' => [$from->copy()->subWeek()->startOfDay(), $to->copy()->subWeek()->endOfDay(), 'from last week'],
+            default => [$from->copy()->subMonthNoOverflow()->startOfMonth()->startOfDay(), $to->copy()->subMonthNoOverflow()->endOfDay(), 'from last month'],
         };
     }
 

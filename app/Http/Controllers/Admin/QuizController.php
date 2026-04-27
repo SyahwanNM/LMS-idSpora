@@ -303,7 +303,7 @@ class QuizController extends Controller
         $currentQuestion = $questions[$currentQuestionIndex];
 
         return view('user.quiz.take', [
-            'course' => $course,
+            'course' => $course->loadMissing('units'),
             'module' => $module,
             'attempt' => $attempt,
             'questions' => $questions,

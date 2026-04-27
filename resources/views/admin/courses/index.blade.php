@@ -391,10 +391,6 @@
                             <h3 id="modal-course-name">Course Name</h3>
                             <p id="modal-course-desc">A brief description of the course will appear here.</p>
                             <div class="info-detail">
-                                <div class="list-info info-purple">
-                                    <h5>Course ID</h5>
-                                    <h4>#1</h4>
-                                </div>
                                 <div class="list-info info-blue">
                                     <h5>LEVEL</h5>
                                     <h4 id="cp-level">Beginner</h4>
@@ -885,7 +881,7 @@
                     var vids = visibleModules.filter(m => m.type === 'video');
                     var missingVideoCount = vidsAll.filter(m => !moduleHasContent(m)).length;
                     if (vids.length === 0) {
-                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada video yang disetujui.</p>';
+                        vidContainer.innerHTML = '<p class="text-center text-muted my-4">No videos have been approved yet.</p>';
                     } else {
                         vidContainer.innerHTML = vids.map(m => `
                             <div class="list-video">
@@ -908,7 +904,7 @@
                     var quizzes = visibleModules.filter(m => m.type === 'quiz');
                     var missingQuizCount = quizzesAll.filter(m => Number(m.question_count || 0) <= 0).length;
                     if (quizzes.length === 0) {
-                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">Belum ada kuis yang disetujui.</p>';
+                        quizContainer.innerHTML = '<p class="text-center text-muted my-4">No Quiz have been approved yet.</p>';
                     } else {
                         quizContainer.innerHTML = quizzes.map(m => `
                              <div class="list-kuis">
@@ -1056,6 +1052,11 @@
 
                 var isComplete = !missing || missing.length === 0;
 
+                // Jika ada missing, jangan simpan form agar tidak bisa di-submit
+                if (!isComplete) {
+                    pendingPublishForm = null;
+                }
+
                 var labelEl = document.getElementById('publishConfirmModalLabel');
                 var mainTextEl = document.getElementById('publishModalMainText');
                 var subTextEl = document.getElementById('publishModalSubText');
@@ -1087,12 +1088,13 @@
                     }
                     if (footerTextEl) footerTextEl.textContent = 'Complete all modules before publishing this course.';
                     if (btnEl) {
-                        btnEl.style.display = 'none'; // Sembunyikan tombol publish
+                        btnEl.style.display = 'none';
+                        btnEl.disabled = true;
                     }
                     if (publishMissingList) {
                         publishMissingList.style.display = 'block';
                         publishMissingList.innerHTML = (missing || []).map(function(x) {
-                            return '<li style="color:#dc2626;">' + escapeHtml(x) + ' belum ada</li>';
+                            return '<li style="color:#dc2626;">' + escapeHtml(x) + ' there isn\'t any yet</li>';
                         }).join('');
                     }
                 }
@@ -1128,6 +1130,9 @@
             if (publishModalEl) {
                 publishModalEl.addEventListener('hidden.bs.modal', function() {
                     pendingPublishForm = null;
+                    // Re-enable button untuk next open
+                    var btnEl = document.getElementById('publishConfirmProceedBtn');
+                    if (btnEl) { btnEl.disabled = false; btnEl.style.display = ''; }
                 });
             }
 

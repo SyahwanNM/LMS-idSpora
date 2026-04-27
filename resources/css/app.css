@@ -7440,7 +7440,7 @@ textarea::placeholder {
 
 .info-detail {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 20px;
     margin-bottom: 32px;
 }
@@ -7488,6 +7488,15 @@ textarea::placeholder {
 
 .info-yellow h4 {
     color: #d97706;
+}
+
+.info-orange {
+    background-color: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.info-orange h4 {
+    color: #ea580c;
 }
 
 .list-info h5 {

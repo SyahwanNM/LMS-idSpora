@@ -224,8 +224,8 @@
                                 <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
                                 <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
                             </svg>
-                            <p class="fw-semibold mb-1 mt-3">Berhasil logout</p>
-                            <small class="text-muted">Mengalihkan...</small>
+                            <p class="fw-semibold mb-1 mt-3">Logout successful</p>
+                            <small class="text-muted">Redirecting...</small>
                         </div>`;
                 }
             }
