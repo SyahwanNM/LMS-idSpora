@@ -222,15 +222,17 @@
             </div>
 
 
+
             <div class="row g-4">
                 <div class="col-lg-8">
 
                     {{-- /* Section Lanjutkan Belajar */ --}}
+                    @if($userEnrollments->count() > 0)
                     <div class="mb-5">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Lanjutkan Belajar</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Keep Learning</h5>
                             <a href="#" class="text-decoration-none fw-semibold"
-                                style="color: var(--primary); font-size: 14px;">Lihat Semua &raquo;</a>
+                                style="color: var(--primary); font-size: 14px;">View All &raquo;</a>
                         </div>
 
                         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -238,13 +240,13 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="bg-light">
                                         <tr style="font-size: 13px; color: #666;">
-                                            <th class="border-0 ps-4 py-3" style="width: 50%;">Nama Kursus</th>
-                                            <th class="border-0 py-3" style="width: 35%;">Progres</th>
-                                            <th class="border-0 py-3 text-center pe-4" style="width: 15%;">Aksi</th>
+                                            <th class="border-0 ps-4 py-3" style="width: 50%;">Courses Name</th>
+                                            <th class="border-0 py-3" style="width: 35%;">Progress</th>
+                                            <th class="border-0 py-3 text-center pe-4" style="width: 15%;">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($userEnrollments as $enrollment)
+                                        @foreach($userEnrollments as $enrollment)
                                             @php
                                                 $progress = $enrollment->getProgressPercentage();
                                                 $course = $enrollment->course;
@@ -275,7 +277,14 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center pe-4 py-3">
-                                                    <a href="{{ route('course.learn', $course->id) }}"
+                                                    @php
+                                                        $nextModuleId = $enrollment->getNextModuleId();
+                                                        $continueUrl = $nextModuleId
+                                                            ? route('course.learn', $course->id) . '?module=' . $nextModuleId
+                                                            : route('course.learn', $course->id);
+                                                    @endphp
+                                                    
+                                                    <a href="{{ $continueUrl }}"
                                                         class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
                                                         style="width: 36px; height: 36px; background-color: var(--navy);">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
@@ -286,30 +295,20 @@
                                                     </a>
                                                 </td>
                                             </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="3" class="text-center py-5">
-                                                    <div class="mb-3 text-muted opacity-50">
-                                                        <i class="bi bi-journal-x" style="font-size: 40px;"></i>
-                                                    </div>
-                                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">Belum Ada Kursus</h6>
-                                                    <p class="text-muted mb-3" style="font-size: 11px;">Ayo mulai tingkatkan keahlianmu hari ini!</p>
-                                                    <a href="{{ route('courses.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Cari Kursus</a>
-                                                </td>
-                                            </tr>
-                                        @endforelse
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     {{-- /* Section Rekomendasi Course */ --}}
                     <div class="mb-5">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Rekomendasi Course</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Recommended Courses</h5>
                             <a href="/courses" class="btn btn-sm btn-outline-warning rounded-pill px-3"
-                                style="color: var(--primary); border-color: var(--secondary);">Lihat Lainnya</a>
+                                style="color: var(--primary); border-color: var(--secondary);">View All</a>
                         </div>
 
                         <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
@@ -375,19 +374,19 @@
                                                         </div>
                                                     @else
                                                         <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
-                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Free' }}
                                                         </div>
                                                     @endif
                                                 </div>
                                                 <a href="{{ Route::currentRouteName() == 'admin.dashboard' ? route('admin.courses.show', $course->id) : route('course.detail', $course->id) }}"
-                                                    class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
+                                                    class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Start' }}</a>
                                             </div>
                                         </div>
                                 </div>
                                 </div>
                             @empty
                                 <div class="text-center py-4 w-100">
-                                    <p class="text-muted">Tidak ada rekomendasi course saat ini.</p>
+                                    <p class="text-muted">There are no course recommendations at this time.</p>
                                 </div>
                             @endforelse
                         </div>
@@ -396,9 +395,9 @@
                     {{-- /* Section Event Terbaru */ --}}
                     <div class="mb-5">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Event Terbaru</h5>
+                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Latest Events</h5>
                             <a href="/events" class="btn btn-sm btn-outline-warning rounded-pill px-3"
-                                style="color: var(--primary); border-color: var(--secondary);">Lihat Lainnya</a>
+                                style="color: var(--primary); border-color: var(--secondary);">View All</a>
                         </div>
 
                         <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
@@ -495,7 +494,7 @@
                                                         <path
                                                             d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
                                                     </svg>
-                                                    <span>{{ $isFull ? 'Kuota Penuh' : 'Kuota Terisi' }}</span>
+                                                    <span>{{ $isFull ? 'Full Slot' : 'Quota Filled' }}</span>
                                                 </div>
                                                 <span
                                                     class="fw-bold {{ $isFull ? 'text-danger' : ($percentage > 80 ? 'text-warning' : 'text-primary') }}">
@@ -512,7 +511,7 @@
 
                                         <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
                                             style="background:#f8f9fa;">
-                                            <span class="small fw-bold text-muted">Mulai dalam:</span>
+                                            <span class="small fw-bold text-muted">Start in:</span>
                                             <span class="font-monospace px-2 py-1 rounded"
                                                 style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">
                                                 {{ $event->event_date ?
@@ -526,7 +525,7 @@
                                             <div class="d-flex flex-column">
                                                 @if($event->price == 0)
                                                 <span
-                                                    style="color: #198754; font-weight:700; font-size:16px;">Gratis</span>
+                                                    style="color: #198754; font-weight:700; font-size:16px;">Free</span>
                                                 @else
                                                 @if($event->original_price && $event->original_price > $event->price)
                                                 <span
@@ -539,7 +538,7 @@
                                             </div>
                                             <a href="{{ route('events.show', $event->id) }}"
                                                 class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold {{ $isFull ? 'disabled' : '' }}">
-                                                {{ $isFull ? 'Penuh' : 'Detail' }}
+                                                {{ $isFull ? 'Full' : 'Detail' }}
                                             </a>
                                         </div>
                                     </div>
@@ -547,7 +546,7 @@
                             </div>
                             @empty
                             <div class="text-center w-100 py-5">
-                                <p class="text-muted">Belum ada event terbaru saat ini.</p>
+                                <p class="text-muted">No latest events available.</p>
                             </div>
                             @endforelse
                         </div>
@@ -559,7 +558,7 @@
                     {{-- /* Sidebar - Kalender Events */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Jadwal Event</h5>
+                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Event Schedule</h5>
                             <button class="btn btn-sm p-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#999"
                                     class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
@@ -633,9 +632,9 @@
                                     <div class="mb-3 text-muted opacity-50">
                                         <i class="bi bi-calendar-x" style="font-size: 40px;"></i>
                                     </div>
-                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">Belum Ada Event</h6>
-                                    <p class="text-muted mb-3" style="font-size: 11px;">Ayo mulai eksplorasi event menarik!</p>
-                                    <a href="{{ route('events.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Cari Event</a>
+                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">There are no events yet</h6>
+                                    <p class="text-muted mb-3" style="font-size: 11px;">Let's start exploring interesting events!</p>
+                                    <a href="{{ route('events.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Search Event</a>
                                 </div>
                             @endforelse
                         </div>
@@ -646,11 +645,11 @@
                     {{-- /* Sidebar - Chart Waktu Belajar */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Waktu Belajar</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Study Time</h5>
                             <select id="learningRange" class="form-select form-select-sm border-0 bg-light rounded-pill"
                                 style="width: auto; font-size: 12px; font-weight: 500;">
-                                <option value="week" selected>Minggu Ini</option>
-                                <option value="month">Bulan Ini</option>
+                                <option value="week" selected>This Week</option>
+                                <option value="month">This Month</option>
                             </select>
                         </div>
 
@@ -662,7 +661,7 @@
                     {{-- /* Sidebar - Topik Populer */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Topik Populer</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Popular Topics</h5>
                             <button class="btn btn-sm p-0 text-muted">
                                 <i class="bi bi-three-dots" style="font-size: 20px;"></i>
                             </button>
@@ -691,7 +690,7 @@
                                     </div>
                                     <div class="flex-grow-1">
                                         <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">{{ $topic->name }}</h6>
-                                        <small class="text-muted" style="font-size: 12px;">{{ $topic->courses_count }} Kursus • {{ $topic->enrollments_count }} Siswa</small>
+                                        <small class="text-muted" style="font-size: 12px;">{{ $topic->courses_count }} Course • {{ $topic->enrollments_count }} Participant</small>
                                     </div>
                                     <div class="text-muted">
                                         <i class="bi bi-chevron-right" style="font-size: 14px;"></i>
@@ -699,7 +698,7 @@
                                 </a>
                             @empty
                                 <div class="text-center py-3">
-                                    <small class="text-muted">Belum ada data topik.</small>
+                                    <small class="text-muted">No topic data available.</small>
                                 </div>
                             @endforelse
                         </div>

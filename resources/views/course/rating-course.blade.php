@@ -38,12 +38,12 @@
         <div class="steps">
             <div class="step active">
                 <span class="circle">1</span>
-                Beri Penilaian Kelas
+                Give a Class Assessment
             </div>
             <div class="line"></div>
             <div class="step">
                 <span class="circle">2</span>
-                Cetak Sertifikat
+                Print Certificate
             </div>
         </div>
 
@@ -53,11 +53,11 @@
             <input type="hidden" name="trainer_rating" id="trainer_rating_input" value="">
 
             <div class="box_dalam_penilaian">
-                <h3 class="mb-1" style="font-weight:700;color:#111827;">Berikan penilaian Anda</h3>
-                <p class="mb-0" style="color:#6b7280;">Bantu kami meningkatkan kualitas kelas dengan memberi rating dan feedback.</p>
+                <h3 class="mb-1" style="font-weight:700;color:#111827;">Give your rating</h3>
+                <p class="mb-0" style="color:#6b7280;">Help us improve the quality of our classes by giving us ratings and feedback.</p>
 
                 <div class="pertanyaan_penilaian">
-                    <h4>Bagaimana kurikulum dan proses belajar di kelas ini?</h4>
+                    <h4>How is the curriculum and learning process in this class?</h4>
                     <div class="stars" id="course_stars" aria-label="Rating kelas">
                         <i class="bi bi-star" data-value="1"></i>
                         <i class="bi bi-star" data-value="2"></i>
@@ -68,7 +68,7 @@
                 </div>
 
                 <div class="pertanyaan_penilaian">
-                    <h4>Bagaimana Trainer mengajar dalam proses belajar di kelas ini?</h4>
+                    <h4>How does the Trainer teach in the learning process in this class?</h4>
                     <div class="stars_trainer" id="trainer_stars" aria-label="Rating trainer">
                         <i class="bi bi-star" data-value="1"></i>
                         <i class="bi bi-star" data-value="2"></i>
@@ -85,15 +85,9 @@
                     <textarea
                         name="comment"
                         rows="4"
-                        placeholder="Ceritakan pengalaman belajar Anda selama mengikuti kelas ini. Ini akan membantu kami meningkatkan kualitas materi yang diajarkan."
+                        required
+                        placeholder="Tell us about your learning experience during this class. This will help us improve the quality of the material we teach."
                     ></textarea>
-                </div>
-
-                <div class="tata_cara_feedback">
-                    <div style="font-weight:700; margin-bottom:4px;">Bingung cara memberikan feedback?</div>
-                    <div style="color:#4b5563; font-size:14px; line-height:1.5;">
-                        Tuliskan feedback secara spesifik. Jika ada pembahasan yang kurang jelas, Anda bisa menuliskannya agar kami dapat memperbaiki kelas ini.
-                    </div>
                 </div>
 
                 <div class="tombol_next_sertifikat" style="display:flex;">
@@ -144,10 +138,18 @@
             document.getElementById('ratingForm')?.addEventListener('submit', function (e) {
                 const courseVal = parseInt(courseInput.value || '0', 10);
                 const trainerVal = parseInt(trainerInput.value || '0', 10);
+                const commentVal = (document.querySelector('textarea[name="comment"]')?.value || '').trim();
 
                 if (courseVal < 1 || trainerVal < 1) {
                     e.preventDefault();
-                    alert('Silakan beri rating untuk kelas dan trainer terlebih dahulu.');
+                    alert('Please rate the class and trainer first.');
+                    return;
+                }
+
+                if (commentVal.length === 0) {
+                    e.preventDefault();
+                    alert('Feedback cannot be empty. Please write about your learning experience.');
+                    document.querySelector('textarea[name="comment"]')?.focus();
                 }
             });
         });

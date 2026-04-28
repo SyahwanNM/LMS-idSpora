@@ -7,6 +7,6 @@ return [
     'sanitize' => filter_var(env('MIDTRANS_SANITIZE', true), FILTER_VALIDATE_BOOLEAN),
     '3ds' => filter_var(env('MIDTRANS_3DS', true), FILTER_VALIDATE_BOOLEAN),
 
-    // Optional default finish redirect
-    'finish_url' => env('MIDTRANS_FINISH_URL'),
+    // Optional default finish redirect — leave empty to auto-use app URL
+    'finish_url' => env('MIDTRANS_FINISH_URL', ''),
 ];

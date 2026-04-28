@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Payment - Digital Marketing</title>
+    <title>Payment Course</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
      @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -301,7 +301,7 @@
         <div class="biodata_payment_course">
             
             <div class="box_kiri_biodata">
-                <h5>Data Peserta</h5>
+                <h5>Participant Data</h5>
                 
 
                 <div class="input_biodata">
@@ -310,32 +310,22 @@
                 </div>
 
                 <div class="input_biodata">
-                    <p>Nama Lengkap</p>
+                    <p>Full Name</p>
                     <div class="info_biodata">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
                             <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
                         </svg>
-                        <span>Nama Akan digunakan pada sertifikat</span>
+                        <span>Name Will be used on certificate</span>
                     </div>
-                    <input class="kolom_input_biodata" type="text" value="{{ Auth::user()->name ?? '' }}" readonly>
+                    <input class="kolom_input_biodata" type="text" id="fullNameInput" name="display_name" value="{{ Auth::user()->name ?? '' }}">
                 </div>
 
                 <div class="input_biodata">
                     <p>No Whatsapp</p>
                     <div class="whatsapp_biodata">
-                        <div class="dropdown">
-                            <button class="btn_nomor dropdown-toggle" type="button" id="kodeDialBtn" data-bs-toggle="dropdown" aria-expanded="false">
-                                +62
-                            </button>
-                        </div>
-                        <ul class="dropdown-menu" id="kodeDialMenu" aria-labelledby="kodeDialBtn" style="position: absolute;">
-                            <li><a class="dropdown-item" href="#" data-code="+62">+62</a></li>
-                            <li><a class="dropdown-item" href="#" data-code="+60">+60</a></li>
-                            <li><a class="dropdown-item" href="#" data-code="+1">+1</a></li>
-                        </ul>
-                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="+62">
-                        <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
+                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="">
+                        <input class="input_nomor" type="text" placeholder="Contoh: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
                     </div>
                 </div>
                 @if((bool) ($course->is_reseller_course ?? false))
@@ -381,7 +371,7 @@
                             @php $isFreeCourseLocal = (int) ($course->price ?? 0) <= 0; @endphp
                             <p class="harga_judul_event">
                                 @if($isFreeCourseLocal)
-                                    GRATIS
+                                    Free Enroll
                                 @elseif($course->hasDiscount())
                                     <span style="text-decoration: line-through; color: #888; font-size: 12px; margin-right: 5px;">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
                                     Rp{{ number_format($course->discounted_price, 0, ',', '.') }}
@@ -399,7 +389,7 @@
                             <p>Total</p>
                             <h4 id="totalAmountText" data-base-amount="{{ (int) round($course->hasDiscount() ? $course->discounted_price : ($course->price ?? 0)) }}">
                                 @if($isFreeCourseLocal)
-                                    GRATIS
+                                    Free Enroll!
                                 @elseif($course->hasDiscount())
                                     <span style="text-decoration: line-through; color: #888; font-size: 14px; margin-right: 8px; font-weight: 400;">Rp {{ number_format($course->price, 0, ',', '.') }}</span>
                                     Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
@@ -422,14 +412,14 @@
                 <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
-                    <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
+                    <input type="hidden" name="name" id="hiddenNameInput" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
                     <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', '') }}">
 
                     @if(!$isFreeCourse)
                         <div style="margin-top:20px;">
-                            <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:#333;">Metode Pembayaran</div>
+                            <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:#333;">Payment Method</div>
                            <div style="display:flex; gap:14px; flex-wrap:wrap;">
                                 @if(!$midtransClientKey)
                                     <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
@@ -449,10 +439,10 @@
                     @endif
 
                     @if($isFreeCourse || !$midtransClientKey)
-                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
+                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Study Now!</button>
                     @endif
                     @if(!$isFreeCourse)
-                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Bayar dengan Midtrans</button>
+                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Pay Now</button>
                     @endif
                 </form>
             </div>
@@ -490,8 +480,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var kodeDialBtn = document.getElementById('kodeDialBtn');
-            var kodeDialMenu = document.getElementById('kodeDialMenu');
+            // Sync editable full name to hidden input
+            var fullNameInput = document.getElementById('fullNameInput');
+            var hiddenNameInput = document.getElementById('hiddenNameInput');
+            if (fullNameInput && hiddenNameInput) {
+                fullNameInput.addEventListener('input', function() {
+                    hiddenNameInput.value = this.value;
+                    updatePayButtonState();
+                });
+            }
+
             var kodeDialInput = document.getElementById('kodeDialInput');
             var formKodeDialInput = document.getElementById('formKodeDialInput');
             var whatsappInput = document.getElementById('whatsappNumberInput') || document.querySelector('.input_nomor');
@@ -573,7 +571,7 @@
                 if (!totalAmountText) return;
                 var n = Math.max(0, parseInt(amount || 0, 10));
                 if (isFreeCourse || n === 0) {
-                    totalAmountText.textContent = 'GRATIS';
+                    totalAmountText.textContent = 'Free Enroll';
                     return;
                 }
                 totalAmountText.textContent = 'Rp ' + formatIdrNumber(n);
@@ -603,8 +601,9 @@
             function updatePayButtonState() {
                 if (!showQrisBtn && !midtransPayBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                // For free course, allow without WhatsApp. For paid, WhatsApp is required.
-                var disable = (!isFreeCourse) && (wa.length === 0);
+                var fullName = (fullNameInput ? fullNameInput.value : '').trim();
+                // WhatsApp wajib diisi untuk semua course (gratis maupun berbayar), minimal 8 digit
+                var disable = wa.length < 8 || fullName.length === 0;
                 if (referralInput) {
                     var code = getReferralCode();
                     if (code !== '' && referralState !== 'valid') {
@@ -613,6 +612,10 @@
                 }
                 if (showQrisBtn) showQrisBtn.disabled = disable;
                 if (midtransPayBtn) midtransPayBtn.disabled = disable;
+            }
+
+            if (whatsappInput) {
+                whatsappInput.addEventListener('input', updatePayButtonState);
             }
 
             function updateReferralUIFromResult(data) {
@@ -693,8 +696,8 @@
 
             function showPaymentValidationAlert() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                if ((!isFreeCourse) && wa.length === 0) {
-                    alert('Silakan isi No Whatsapp terlebih dahulu.');
+                if ((!isFreeCourse) && wa.length < 8) {
+                    alert('Nomor WhatsApp tidak valid. Minimal 8 digit angka.');
                     try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
                     return;
                 }
@@ -703,33 +706,6 @@
                     alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
                     try { referralInput.focus(); } catch (_e) {}
                 }
-            }
-
-            // Show dropdown on button click
-            if (kodeDialBtn) {
-                kodeDialBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    kodeDialMenu.classList.toggle('show');
-                });
-            }
-            // Hide dropdown when clicking outside
-            document.addEventListener('click', function(e) {
-                if (kodeDialBtn && kodeDialMenu && !kodeDialBtn.contains(e.target) && !kodeDialMenu.contains(e.target)) {
-                    kodeDialMenu.classList.remove('show');
-                }
-            });
-            // Select code
-            if (kodeDialMenu) {
-                kodeDialMenu.querySelectorAll('.dropdown-item').forEach(function(item) {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        var code = item.getAttribute('data-code');
-                        kodeDialBtn.textContent = code;
-                        kodeDialInput.value = code;
-                        formKodeDialInput.value = code;
-                        kodeDialMenu.classList.remove('show');
-                    });
-                });
             }
 
             // Enable/disable Bayar button based on required fields
@@ -854,11 +830,7 @@
                                 // Match +62xxxxxxxx etc
                                 var m = raw.match(/^\+(\d{1,3})(.*)$/);
                                 if (m) {
-                                    var dialCode = '+' + m[1];
                                     var rest = String(m[2] || '').replace(/\D/g, '');
-                                    if (kodeDialBtn) kodeDialBtn.textContent = dialCode;
-                                    if (kodeDialInput) kodeDialInput.value = dialCode;
-                                    if (formKodeDialInput) formKodeDialInput.value = dialCode;
                                     whatsappInput.value = rest;
                                 }
                             } else {
@@ -877,6 +849,11 @@
                         }
 
                         togglePayButtons();
+                        updatePayButtonState();
+                    } else if (pending && pending.needs_force_new) {
+                        // Previous order expired/rejected — reset to fresh payment state
+                        cachedPending = null;
+                        midtransPayBtn.textContent = 'Bayar dengan Midtrans';
                         updatePayButtonState();
                     }
                 }
@@ -936,10 +913,17 @@
 
                     try {
                         var data;
-                        try {
-                            data = await getOrCreateSnapToken(false);
-                        } catch(_e) {
+                        var forceNewFromQuery = (new URLSearchParams(window.location.search)).get('force_new') === '1';
+                        var forceNewFromExpired = !!(cachedPending && cachedPending.needs_force_new);
+                        if (forceNewFromQuery || forceNewFromExpired) {
+                            cachedPending = null;
                             data = await getOrCreateSnapToken(true);
+                        } else {
+                            try {
+                                data = await getOrCreateSnapToken(false);
+                            } catch(_e) {
+                                data = await getOrCreateSnapToken(true);
+                            }
                         }
 
                         window.snap.pay(data.snap_token, {
@@ -967,7 +951,37 @@
                             onError: function(){
                                 alert('Pembayaran gagal. Silakan coba lagi.');
                             },
-                            onClose: function(){}
+                            onClose: async function(){
+                                // Always check status when popup closes
+                                midtransPayBtn.disabled = true;
+                                midtransPayBtn.textContent = 'Memeriksa status...';
+                                try {
+                                    var rUrl = refreshUrl.replace('ORDER_ID', encodeURIComponent(data.order_id));
+                                    var res = await fetch(rUrl, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': csrf,
+                                            'X-Requested-With': 'XMLHttpRequest'
+                                        },
+                                        credentials: 'same-origin',
+                                        body: JSON.stringify({})
+                                    });
+                                    var result = await res.json();
+                                    if (result && result.status === 'settled') {
+                                        window.location.href = @json(route('course.learn', $course));
+                                        return;
+                                    }
+                                    if (result && (result.status === 'expired' || result.status === 'rejected')) {
+                                        cachedPending = null;
+                                        window.location.href = window.location.pathname + '?force_new=1';
+                                        return;
+                                    }
+                                } catch(_e) {}
+                                midtransPayBtn.disabled = false;
+                                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                                updatePayButtonState();
+                            }
                         });
                     } catch(err) {
                         alert(String(err && err.message ? err.message : err));
@@ -984,6 +998,12 @@
 
                 // If there is a pending Midtrans payment, show "continue" label
                 ensurePendingCourseLabel();
+
+                // If force_new=1 in URL (redirect from expired), clear cached pending
+                if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
+                    cachedPending = null;
+                    midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                }
             }
 
             // Confirm modal before submitting payment proof

@@ -313,9 +313,9 @@ class CourseReportController extends Controller
                 ->select('id');
         }
 
-        // Base: all courses, with optional enrollments in range.
+        // Base: only published/completed courses (exclude on progress)
         $courseAgg = Course::query()
-            ->whereIn('courses.status', ['active', 'approved', 'published', 'completed'])
+            ->whereIn('courses.status', ['active'])
             ->leftJoin('enrollments', function ($join) use ($from, $to) {
                 $join->on('courses.id', '=', 'enrollments.course_id')
                     ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -374,6 +374,7 @@ class CourseReportController extends Controller
                 'course_id' => $courseId,
                 'course_name' => (string) $r->name,
                 'course_level' => $r->level,
+                'course_created_at' => $r->created_at ? \Carbon\Carbon::parse($r->created_at)->toDateString() : null,
                 'total_views' => $totalViews,
                 'total_views_compact' => $this->formatCompactNumber($totalViews),
                 'participants_count' => $participantsCount,
@@ -385,21 +386,18 @@ class CourseReportController extends Controller
             ];
         });
 
-        if ($q === '') {
-            // Pre-fetch created_at to avoid N+1
-            $courseCreatedMap = \App\Models\Course::whereIn('id', $courseAgg->pluck('id'))
-                ->pluck('created_at', 'id');
+        // Selalu filter berdasarkan created_at course sesuai periode yang dipilih.
+        // Berlaku baik saat ada search query maupun tidak.
+        $courseCreatedMap = \App\Models\Course::whereIn('id', $courseAgg->pluck('id'))
+            ->pluck('created_at', 'id');
 
-            $rows = $rows->filter(function($row) use ($from, $to, $courseCreatedMap) {
-                if ($row['total_views'] > 0 || $row['avg_watch_minutes'] > 0 || $row['comments_count'] > 0) return true;
-                $createdAt = $courseCreatedMap->get($row['course_id']);
-                if ($createdAt) {
-                    $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
-                    return $created->between($from, $to);
-                }
-                return false;
-            });
-        }
+        $rows = $rows->filter(function ($row) use ($from, $to, $courseCreatedMap) {
+            $createdAt = $courseCreatedMap->get($row['course_id']);
+            if (!$createdAt) return false;
+            $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
+            return $created->between($from, $to);
+        });
+
         $rows = $rows->values();
 
         $baseEnrollments = Enrollment::query()
@@ -559,14 +557,16 @@ class CourseReportController extends Controller
             ->keyBy('course_id');
 
         $courses = \App\Models\Course::query()
-            ->whereIn('status', ['active', 'approved', 'published', 'completed'])
+            ->whereIn('status', ['active'])
             ->select('id', 'name', 'level', 'price', 'expenses_json', 'created_at')
             ->orderByDesc('created_at')
             ->get();
 
-        $rows = $courses->map(function ($c) use ($stats) {
+        $rows = $courses->map(function ($c) use ($stats, $from, $to) {
             $stat = $stats->get($c->id);
 
+            // Hanya tampilkan course yang memiliki transaksi di periode yang dipilih
+            // Course tanpa transaksi di periode ini tetap ditampilkan tapi dengan nilai 0
             $expense = 0.0;
             $expensesArr = $c->expenses_json;
             if (is_array($expensesArr)) {
@@ -588,29 +588,19 @@ class CourseReportController extends Controller
                 'expense_total' => $expense,
                 'last_paid_at' => $stat && $stat->last_paid_at
                     ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString()
-                    : $c->created_at?->toDateString(),
+                    : null,
                 'created_at' => $c->created_at,
+                'has_transaction_in_period' => $stat !== null,
             ];
         });
 
-        // Show courses that: have transactions in period OR were created in period
-        if (!isset($q) || $q === '') {
-            $rows = $rows->filter(function($row) use ($from, $to) {
-                if ($row['transactions_count'] > 0) return true;
-                // Also show courses created within the selected period
-                $createdAt = $row['created_at'];
-                if ($createdAt) {
-                    $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
-                    return $created->between($from, $to);
-                }
-                return false;
-            });
-        } elseif (isset($q) && $q !== '') {
+        // Filter hanya berdasarkan search query jika ada
+        if (isset($q) && $q !== '') {
             $rows = $rows->filter(function($row) use ($q) {
                 return stripos($row['course_name'], $q) !== false;
             });
         }
-        
+
         $rows = $rows->values();
 
         $revenueByLevel = $baseEnrollments->clone()
@@ -693,9 +683,9 @@ class CourseReportController extends Controller
         }
 
         return match ($period) {
-            'daily' => [$from->copy()->subDay()->startOfDay(), $from->copy()->subDay()->endOfDay(), 'dari kemarin'],
-            'weekly' => [$from->copy()->subWeek()->startOfDay(), $to->copy()->subWeek()->endOfDay(), 'dari minggu lalu'],
-            default => [$from->copy()->subMonthNoOverflow()->startOfMonth()->startOfDay(), $to->copy()->subMonthNoOverflow()->endOfDay(), 'dari bulan lalu'],
+            'daily' => [$from->copy()->subDay()->startOfDay(), $from->copy()->subDay()->endOfDay(), 'from yesterday'],
+            'weekly' => [$from->copy()->subWeek()->startOfDay(), $to->copy()->subWeek()->endOfDay(), 'from last week'],
+            default => [$from->copy()->subMonthNoOverflow()->startOfMonth()->startOfDay(), $to->copy()->subMonthNoOverflow()->endOfDay(), 'from last month'],
         };
     }
 

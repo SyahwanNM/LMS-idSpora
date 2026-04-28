@@ -31,19 +31,19 @@
                 Pertanyaan, Kendala, atau Masukan?
             </h1>
             <p class="mt-3 muted" style="max-width: 720px; margin: 0 auto;">
-                Sampaikan ke tim pengembang idSPORA. Ceritakan kendala secara jelas agar kami bisa menindaklanjuti lebih cepat.
+                Please report this to the idSpora development team. Describe the issue clearly so we can address it more quickly.
             </p>
         </header>
 
         @if(session('success'))
             <div class="mb-4 p-4 rounded-3" style="background:#ecfdf5; border:1px solid #a7f3d0; color:#047857;">
-                <b>Berhasil:</b> {{ session('success') }}
+                <b>Success:</b> {{ session('success') }}
             </div>
         @endif
 
         @if ($errors->any())
             <div class="mb-4 p-4 rounded-3" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b;">
-                <b>Periksa lagi:</b>
+                <b>Please check again:</b>
                 <ul class="mt-2 mb-0" style="padding-left: 1.25rem;">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -61,15 +61,15 @@
                                 <i class="bi bi-exclamation-triangle-fill"></i>
                             </div>
                             <div>
-                                <div style="font-weight:900; color:#0f172a;">Tips menulis kendala</div>
+                                <div style="font-weight:900; color:#0f172a;">How to Write Problems</div>
                                 <div class="muted" style="font-size:.9rem;">Biar cepat ditangani</div>
                             </div>
                         </div>
                         <ul class="mb-0 muted" style="padding-left: 1.2rem; display:grid; gap:.5rem;">
-                            <li>Sebutkan halaman/fitur yang bermasalah.</li>
-                            <li>Tulis langkah-langkah hingga error muncul.</li>
-                            <li>Jika ada, cantumkan pesan error.</li>
-                            <li>Berikan saran perbaikan (opsional).</li>
+                            <li>Specify the page/feature that is experiencing issues.</li>
+                            <li>Write down the steps leading up to the error.</li>
+                            <li>If applicable, include the error message.</li>
+                            <li>Provide suggestions for improvement (optional).</li>
                         </ul>
                         <div class="mt-4 rounded-4 overflow-hidden" style="border:10px solid #fff; box-shadow:0 18px 40px rgba(15,23,42,.12); background:#f1f5f9;">
                             <img src="{{ asset('aset/ai.jpg') }}" alt="Ilustrasi Bantuan" style="width:100%; height:220px; object-fit:cover; display:block;"
@@ -83,7 +83,7 @@
                         @csrf
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Nama</label>
+                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Name</label>
                                 <input class="neu w-100" name="name" value="{{ old('name', auth()->user()->name ?? '') }}" placeholder="Nama kamu" />
                             </div>
                             <div class="col-md-6">
@@ -91,7 +91,7 @@
                                 <input class="neu w-100" name="email" type="email" value="{{ old('email', auth()->user()->email ?? '') }}" placeholder="email@domain.com" />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Jenis</label>
+                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Type</label>
                                 <select class="neu w-100" name="type">
                                     <option value="kendala" {{ old('type') === 'kendala' ? 'selected' : '' }}>Kendala / Bug</option>
                                     <option value="pertanyaan" {{ old('type') === 'pertanyaan' ? 'selected' : '' }}>Pertanyaan</option>
@@ -100,15 +100,15 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Subjek</label>
-                                <input class="neu w-100" name="subject" value="{{ old('subject') }}" placeholder="Contoh: Error saat submit form" />
+                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Subject</label>
+                                <input class="neu w-100" name="subject" value="{{ old('subject') }}" placeholder="Example: Error when submitting form" />
                             </div>
                             <div class="col-12">
-                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Pesan</label>
-                                <textarea class="neu w-100" rows="6" name="message" placeholder="Ceritakan kendala/pertanyaan kamu...">{{ old('message') }}</textarea>
+                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Message</label>
+                                <textarea class="neu w-100" rows="6" name="message" placeholder="Describe your issue or question...">{{ old('message') }}</textarea>
                             </div>
                             <div class="col-12">
-                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Lampiran Foto (Opsional)</label>
+                                <label class="form-label" style="font-weight:800; letter-spacing:.08em; font-size:.75rem; text-transform:uppercase; color:#94a3b8;">Photo Attachment (Optional)</label>
                                 <input type="file" name="attachment" class="neu w-100" accept="image/*">
                                 <small class="muted mt-1 d-block">Format: JPG, PNG, WEBP. Maks 2MB.</small>
                             </div>
@@ -116,7 +116,7 @@
 
                         <div class="d-flex justify-content-end pt-2">
                             <button class="btnx primary" type="submit">
-                                KIRIM PESAN
+                                SUBMIT
                             </button>
                         </div>
                     </form>

@@ -26,35 +26,56 @@
     .btn-export-report:hover { background:#08339A; color:#fff; }
     .btn-export-report:disabled { opacity:.6; cursor:not-allowed; }
 
-    /* Export modal: keep close controls compact */
     #exportReportModal .btn-close { background-size: .75em .75em; }
     #exportReportModal .btn-export-close { width:auto !important; padding:.375rem .75rem !important; }
 
-    /* Export Preview Modal: drop slightly lower */
     #exportReportModal .modal-dialog {
         margin-top: clamp(24px, 6vh, 72px);
         margin-bottom: 24px;
     }
 
-    /* Rekap Pendaftaran modal: keep size reasonable (avoid global .modal-dialog max-width:950px) */
     #viewPendapatanModal .modal-dialog {
         max-width: min(560px, calc(100% - 2rem));
         margin: 16px auto;
+    }
+
+    /* Tablet */
+    @media (max-width: 1024px) {
+        .filter-section { flex-wrap: wrap !important; }
+        .filter-kanan { flex-wrap: wrap !important; gap: 8px !important; }
+        .filter-input { max-width: 100%; }
+        .growth-charts-wrapper { grid-template-columns: 1fr !important; }
+        .recap-card-box { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+        .filter-section { flex-direction: column !important; align-items: stretch !important; }
+        .filter-kiri, .filter-kanan { width: 100% !important; flex-direction: column !important; }
+        .filter-input { width: 100% !important; box-sizing: border-box; }
+        .btn-apply, .btn-reset { width: 100% !important; }
+        .recap-card-box { grid-template-columns: 1fr !important; }
+        .growth-charts-wrapper { grid-template-columns: 1fr !important; }
+        .growth-chart-canvas-wrap { height: 200px !important; }
+        [style*="grid-template-columns:repeat(3"] { grid-template-columns: 1fr !important; }
+        [style*="grid-template-columns: repeat(3"] { grid-template-columns: 1fr !important; }
+        form.d-flex.flex-wrap { flex-direction: column !important; }
+        form.d-flex.flex-wrap > div { width: 100% !important; max-width: 100% !important; }
+        form.d-flex.flex-wrap input[type="month"] { max-width: 100% !important; width: 100% !important; }
     }
 </style>
 @endsection
 @section('content')
 <div class="py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0"><i class="bi bi-graph-up me-2"></i>Laporan</h4>
+        <h4 class="mb-0"><i class="bi bi-graph-up me-2"></i>Reports</h4>
     </div>
     <div class="box-report">
-        <h5>Ikhtisar Laporan</h5>
-        <p>Berikut laporan dari event IdSpora</p>
+        <h5>Report</h5>
+        <p>Here is the event report from the IdSpora event</p>
         <div class="btn-report-box" style="display:flex; gap:8px;">
-            <button class="btn-report active" data-target="pendapatan">Pendapatan</button>
-            <button class="btn-report" data-target="pertumbuhan">Pertumbuhan</button>
-            <button class="btn-report" data-target="operasional">Operasional</button>
+            <button class="btn-report active" data-target="pendapatan">Revenue</button>
+            <button class="btn-report" data-target="pertumbuhan">Growth</button>
         </div>
 
         <div id="pendapatan" class="rekap-box active">
@@ -81,54 +102,76 @@
                 $isPastPrev = $prevDate->lt($earliestDate); // disable prev jika sebelum earliest
                 $periodFmt = fn(Carbon $d) => $d->format('Y-m');
             @endphp
-            <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+           
+            <div class="card mb-3">
+                <div class="card-body">
+                    <canvas id="laporanChart" height="90"></canvas>
+                </div>
+            </div>
+             <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2 mb-3">
                 <input type="hidden" name="tab" value="pendapatan">
                 <div>
-                    <label for="period" class="form-label mb-1 text-dark">Periode Bulan</label>
+                    <label for="period" class="form-label mb-1 text-dark">Month Period</label>
                     <input type="month" name="period" id="period" value="{{ sprintf('%04d-%02d',$selectedYear,$selectedMonth) }}" class="form-control" style="max-width:180px;">
                 </div>
                 <div class="d-flex gap-2 align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
-                    <a href="{{ $isPastPrev ? '#' : url()->current().'?period='.$periodFmt($prevDate) }}" class="btn btn-outline-secondary btn-sm {{ $isPastPrev ? 'disabled' : '' }}" style="height:38px;">&laquo; {{ $prevDate->translatedFormat('F Y') }}</a>
-                    <a href="{{ $isFutureNext ? '#' : url()->current().'?period='.$periodFmt($nextDate) }}" class="btn btn-outline-secondary btn-sm {{ $isFutureNext ? 'disabled' : '' }}" style="height:38px;">{{ $nextDate->translatedFormat('F Y') }} &raquo;</a>
+                    <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Show</button>
                 </div>
                 <div class="ms-auto d-flex align-items-center gap-2">
-                    <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-pendapatan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                    <div class="small text-muted">Displaying month data: <strong id="month-label-pendapatan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
                     <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pendapatan" style="height:38px;">Export</button>
                 </div>
             </form>
             @php
                 $paidStatuses = ['settlement','capture','success'];
-                // Total bulan terpilih (bukan agregat keseluruhan)
-                $totalRevenueAll = \App\Models\ManualPayment::where('status','settled')
-                    ->whereYear('created_at',$selectedDate->year)
-                    ->whereMonth('created_at',$selectedDate->month)
-                    ->sum('amount');
-                $totalExpenseAll = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)
-                    ->whereMonth('created_at',$selectedDate->month)
-                    ->sum('total');
+                // Total bulan terpilih — berdasarkan event_date (tanggal event), bukan created_at
+                $totalRevenueAll = \App\Models\ManualPayment::where('manual_payments.status','settled')
+                    ->whereNotNull('manual_payments.event_id')
+                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->sum('manual_payments.amount');
+                $totalExpenseAll = \App\Models\EventExpense::query()
+                    ->join('events', 'events.id', '=', 'event_expenses.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->sum('event_expenses.total');
+                // Tambahkan referral discount ke total expenses
+                $totalReferralDiscount = \App\Models\ManualPayment::where('manual_payments.status','settled')
+                    ->whereNotNull('manual_payments.event_id')
+                    ->whereNotNull('manual_payments.referral_code')
+                    ->where('manual_payments.referral_code', '!=', '')
+                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->selectRaw('SUM(GREATEST(0, events.price - manual_payments.amount)) as total')
+                    ->value('total') ?? 0;
+                $totalExpenseAll += (float) $totalReferralDiscount;
                 $totalMarginAll = $totalRevenueAll - $totalExpenseAll;
-                // Revenue & Expense bulan terpilih (berdasarkan created_at transaksi / expense)
+                // Revenue & Expense bulan sebelumnya (berdasarkan event_date)
                 $currentMonthRevenue = $totalRevenueAll;
-                $previousMonthRevenue = \App\Models\ManualPayment::where('status','settled')
-                    ->whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)
-                    ->sum('amount');
+                $previousMonthRevenue = \App\Models\ManualPayment::where('manual_payments.status','settled')
+                    ->whereNotNull('manual_payments.event_id')
+                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
+                    ->whereYear('events.event_date',$prevDate->year)->whereMonth('events.event_date',$prevDate->month)
+                    ->sum('manual_payments.amount');
                 $currentMonthExpense = $totalExpenseAll;
-                $previousMonthExpense = \App\Models\EventExpense::whereYear('created_at',$prevDate->year)->whereMonth('created_at',$prevDate->month)->sum('total');
+                $previousMonthExpense = \App\Models\EventExpense::query()
+                    ->join('events', 'events.id', '=', 'event_expenses.event_id')
+                    ->whereYear('events.event_date',$prevDate->year)->whereMonth('events.event_date',$prevDate->month)
+                    ->sum('event_expenses.total');
                 $currentMonthMargin = $currentMonthRevenue - $currentMonthExpense;
                 $previousMonthMargin = $previousMonthRevenue - $previousMonthExpense;
                 $fmtRp = function($n){ return 'Rp'.number_format((int)$n,0,',','.'); };
                 $growth = function($curr,$prev, Carbon $prevDate, Carbon $earliestDate){
-                    // Jika bulan sebelumnya sebelum earliest -> treat growth baseline 0 tanpa lonjakan 100%
                     if($prevDate->lt($earliestDate)) {
                         return 0;
                     }
                     if($prev == 0){
                         if($curr == 0) return 0;
-                        // prev == 0 dan ada data sekarang => 100% (lonjakan penuh)
                         return 100;
                     }
-                    return (($curr - $prev)/($prev))*100; // bisa negatif
+                    return (($curr - $prev)/($prev))*100;
                 };
                 $revGrowth = $growth($currentMonthRevenue,$previousMonthRevenue,$prevDate,$earliestDate);
                 $expGrowth = $growth($currentMonthExpense,$previousMonthExpense,$prevDate,$earliestDate);
@@ -142,20 +185,37 @@
                 [$expUp,$expColor,$expIcon,$expPctAbs] = $arrowData($expGrowth);
                 [$marUp,$marColor,$marIcon,$marPctAbs] = $arrowData($marGrowth);
             @endphp
-            {{-- Chart: trend per hari di bulan terpilih --}}
+            {{-- Chart: trend per hari di bulan terpilih (berdasarkan event_date) --}}
             @php
-                // Prepare per-day series for the selected month
                 $daysInMonth = $selectedDate->daysInMonth;
-                $revenuePerDay = \App\Models\ManualPayment::where('status','settled')
-                    ->whereYear('created_at',$selectedDate->year)
-                    ->whereMonth('created_at',$selectedDate->month)
-                    ->selectRaw('DAY(created_at) as day, SUM(amount) as total')
+                // Income per hari berdasarkan event_date
+                $revenuePerDay = \App\Models\ManualPayment::where('manual_payments.status','settled')
+                    ->whereNotNull('manual_payments.event_id')
+                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->selectRaw('DAY(events.event_date) as day, SUM(manual_payments.amount) as total')
                     ->groupBy('day')
                     ->pluck('total','day');
 
-                $expensePerDay = \App\Models\EventExpense::whereYear('created_at',$selectedDate->year)
-                    ->whereMonth('created_at',$selectedDate->month)
-                    ->selectRaw('DAY(created_at) as day, SUM(total) as total')
+                // Expenses per hari berdasarkan event_date (dari event_expenses)
+                $expensePerDay = \App\Models\EventExpense::query()
+                    ->join('events', 'events.id', '=', 'event_expenses.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->selectRaw('DAY(events.event_date) as day, SUM(event_expenses.total) as total')
+                    ->groupBy('day')
+                    ->pluck('total','day');
+
+                // Referral discount per hari: selisih harga normal - harga referral
+                $referralDiscountPerDay = \App\Models\ManualPayment::where('manual_payments.status','settled')
+                    ->whereNotNull('manual_payments.event_id')
+                    ->whereNotNull('manual_payments.referral_code')
+                    ->where('manual_payments.referral_code', '!=', '')
+                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
+                    ->whereYear('events.event_date',$selectedDate->year)
+                    ->whereMonth('events.event_date',$selectedDate->month)
+                    ->selectRaw('DAY(events.event_date) as day, SUM(GREATEST(0, events.price - manual_payments.amount)) as total')
                     ->groupBy('day')
                     ->pluck('total','day');
 
@@ -166,31 +226,26 @@
                 for($d=1;$d<=$daysInMonth;$d++){
                     $labels[] = $d;
                     $r = (float) ($revenuePerDay[$d] ?? 0);
-                    $e = (float) ($expensePerDay[$d] ?? 0);
+                    $e = (float) ($expensePerDay[$d] ?? 0) + (float) ($referralDiscountPerDay[$d] ?? 0);
                     $seriesRevenue[] = $r;
                     $seriesExpense[] = $e;
                     $seriesProfit[] = $r - $e;
                 }
             @endphp
-            <div class="card mb-3">
-                <div class="card-body">
-                    <canvas id="laporanChart" height="90"></canvas>
-                </div>
-            </div>
 
             <div style="margin-bottom:12px;">
             </div>
 
             <div class="recap-card-box" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;">
-                <!-- Total Pendapatan -->
-                <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:12px;">
+            
+               <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:20px; padding-left:20px;padding-right:20px;">
                     <div class="recap-title" style="display:flex; gap:8px; align-items:center;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-coin" viewBox="0 0 16 16">
                             <path d="M5.5 9.511c.076.954.83 1.697 2.182 1.785V12h.6v-.709c1.4-.098 2.218-.846 2.218-1.932 0-.987-.626-1.496-1.745-1.76l-.473-.112V5.57c.6.068.982.396 1.074.85h1.052c-.076-.919-.864-1.638-2.126-1.716V4h-.6v.719c-1.195.117-2.01.836-2.01 1.853 0 .9.606 1.472 1.613 1.707l.397.098v2.034c-.615-.093-1.022-.43-1.114-.9zm2.177-2.166c-.59-.137-.91-.416-.91-.836 0-.47.345-.822.915-.925v1.76h-.005zm.692 1.193c.717.166 1.048.435 1.048.91 0 .542-.412.914-1.135.982V8.518z" />
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0  0 0 0 16" />
                             <path d="M8 13.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11m0 .5A6 6 0 1 0 8 2a6 6 0 0 0 0 12" />
                         </svg>
-                        <h5>Total Pendapatan</h5>
+                        <h5>Total Revenue</h5>
                     </div>
                     <h3>{{ $fmtRp($totalRevenueAll) }}</h3>
                     <div class="recap-increase" style="display:flex; gap:8px; align-items:center; color:{{ $revColor }};">
@@ -203,18 +258,17 @@
                             <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1" />
                         </svg>
                         @endif
-                        <p>{{ $revPctAbs }}% dari bulan lalu</p>
+                        <p>{{ $revPctAbs }}% from last month</p>
                     </div>
                 </div>
-                <!-- Biaya Operasional -->
-                <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:12px;">
+               <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:20px; padding-left:20px;padding-right:20px;">
                     <div class="recap-title" style="display:flex; gap:8px; align-items:center;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-coin" viewBox="0 0 16 16">
                             <path d="M5.5 9.511c.076.954.83 1.697 2.182 1.785V12h.6v-.709c1.4-.098 2.218-.846 2.218-1.932 0-.987-.626-1.496-1.745-1.76l-.473-.112V5.57c.6.068.982.396 1.074.85h1.052c-.076-.919-.864-1.638-2.126-1.716V4h-.6v.719c-1.195.117-2.01.836-2.01 1.853 0 .9.606 1.472 1.613 1.707l.397.098v2.034c-.615-.093-1.022-.43-1.114-.9zm2.177-2.166c-.59-.137-.91-.416-.91-.836 0-.47.345-.822.915-.925v1.76h-.005zm.692 1.193c.717.166 1.048.435 1.048.91 0 .542-.412.914-1.135.982V8.518z" />
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0  0 0 0 16" />
                             <path d="M8 13.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11m0 .5A6 6 0 1 0 8 2a6 6 0 0 0 0 12" />
                         </svg>
-                        <h5>Biaya Operasional</h5>
+                        <h5>Growth Costs</h5>
                     </div>
                     <h3>{{ $fmtRp($totalExpenseAll) }}</h3>
                     <div class="recap-increase" style="display:flex; gap:8px; align-items:center; color:{{ $expColor }};">
@@ -227,18 +281,17 @@
                             <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1" />
                         </svg>
                         @endif
-                        <p>{{ $expPctAbs }}% dari bulan lalu</p>
+                        <p>{{ $expPctAbs }}% from last month</p>
                     </div>
                 </div>
-                <!-- Margin Keuntungan -->
-                <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:12px;">
+               <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:20px; padding-left:20px;padding-right:20px;">
                     <div class="recap-title" style="display:flex; gap:8px; align-items:center;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-coin" viewBox="0 0 16 16">
                             <path d="M5.5 9.511c.076.954.83 1.697 2.182 1.785V12h.6v-.709c1.4-.098 2.218-.846 2.218-1.932 0-.987-.626-1.496-1.745-1.76l-.473-.112V5.57c.6.068.982.396 1.074.85h1.052c-.076-.919-.864-1.638-2.126-1.716V4h-.6v.719c-1.195.117-2.01.836-2.01 1.853 0 .9.606 1.472 1.613 1.707l.397.098v2.034c-.615-.093-1.022-.43-1.114-.9zm2.177-2.166c-.59-.137-.91-.416-.91-.836 0-.47.345-.822.915-.925v1.76h-.005zm.692 1.193c.717.166 1.048.435 1.048.91 0 .542-.412.914-1.135.982V8.518z" />
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0  0 0 0 16" />
                             <path d="M8 13.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11m0 .5A6 6 0 1 0 8 2a6 6 0 0 0 0 12" />
                         </svg>
-                        <h5>Margin Keuntungan</h5>
+                        <h5>Profit Margin</h5>
                     </div>
                     <h3>{{ $fmtRp($totalMarginAll) }}</h3>
                     <div class="recap-increase" style="display:flex; gap:8px; align-items:center; color:{{ $marColor }};">
@@ -251,35 +304,35 @@
                             <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1" />
                         </svg>
                         @endif
-                        <p>{{ $marPctAbs }}% dari bulan lalu</p>
+                        <p>{{ $marPctAbs }}% from last month</p>
                     </div>
                 </div>
             </div>
 
             <div class="pendapatan-box">
-                <h5>Pendapatan Per Acara</h5>
+                <h5>Event Revenue</h5>
                 <div class="filter-section" id="filters-pendapatan">
                     <div class="filter-kiri" >
                         <div class="filter-group" style="padding-left:50px;">
-                            <label for="filter-event-pendapatan" class="filter-label" style="margin-left:-20px;">Cari Event</label>
+                            <label for="filter-event-pendapatan" class="filter-label" style="margin-left:-20px;">search Event</label>
                            <div style="display:flex; gap:6px; align-items:center; position:relative;">
                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
                             </svg>
-                            <input type="text" id="filter-event-pendapatan" class="filter-input" placeholder="Cari nama event...">
+                            <input type="text" id="filter-event-pendapatan" class="filter-input" placeholder="Search event name...">
                            </div> 
                             
                         </div>
                     </div>
                     <div class="filter-kanan" style="display:flex; gap:14px; align-items:flex-end;">
                         <div class="filter-group">
-                            <label for="date-from-pendapatan" class="filter-label">Dari Tanggal</label>
+                            <label for="date-from-pendapatan" class="filter-label">From Date</label>
                             <div class="filter-date-group">
                                 <input type="date" id="date-from-pendapatan" class="filter-input">
                             </div>
                         </div>
                         <div class="filter-group">
-                            <label for="date-to-pendapatan" class="filter-label">Sampai Tanggal</label>
+                            <label for="date-to-pendapatan" class="filter-label">To Date</label>
                             <div class="filter-date-group">
                                 <input type="date" id="date-to-pendapatan" class="filter-input">
                             </div>
@@ -289,34 +342,32 @@
                         </div>
                     </div>
                 </div>
+                <div class="table-responsive">
                 <table class="tabel-pendapatan" id="table-pendapatan">
                     <thead>
                         <tr>
-                            <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Tanggal</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Peserta</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Harga</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Pemasukan</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Pengeluaran</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Keuntungan</th>
-                            <th style="background-color: #E4E4E6;" scope="col">Detail</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Event Name</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Date</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Participants</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Price</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Revenue</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Expenses</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Profit</th>
+                            <th style="background-color: #E4E4E6;" scope="col">Details</th>
                         </tr>
+                    </thead>
                     <tbody>
-                        @php
-                            // $eventRows is now provided by the controller and filtered by month/year.
-                        @endphp
                         @forelse($eventRows as $row)
                             <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-participants="{{ $row['participants'] }}">
                                 <td>{{ $row['name'] }}</td>
                                 <td>{{ $row['date'] ?? '-' }}</td>
-                                <td>{{ $row['participants'] }} Peserta</td>
-                                <td>{{ number_format($row['price'],0,',','.') }}</td>
-                                <td>{{ number_format($row['revenue'],0,',','.') }}</td>
-                                <td>{{ number_format($row['expense'],0,',','.') }}</td>
-                                <td>{{ number_format($row['profit'],0,',','.') }}</td>
+                                <td>{{ $row['participants'] }} Participants</td>
+                                <td>Rp {{ number_format($row['price'],0,',','.') }}</td>
+                                <td>Rp {{ number_format($row['revenue'],0,',','.') }}</td>
+                                <td>Rp {{ number_format($row['expense'],0,',','.') }}</td>
+                                <td>Rp {{ number_format($row['profit'],0,',','.') }}</td>
                                 <td>
                                     @php
-                                        // Ensure expense rows are available even if $eventRows came from controller
                                         $expenseRowsLocal = \App\Models\EventExpense::where('event_id', $row['id'] ?? 0)
                                             ->get(['item','quantity','unit_price','total'])
                                             ->map(function($r){
@@ -328,7 +379,7 @@
                                                 ];
                                             })->values()->all();
                                     @endphp
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewPendapatanModal"
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#viewPendapatanModal"
                                          data-event-id="{{ $row['id'] ?? '' }}"
                                          data-event-name="{{ $row['name'] ?? 'Event' }}"
                                          data-registered-count="{{ (int)($row['registered_count'] ?? $row['participants'] ?? 0) }}"
@@ -345,167 +396,112 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center">Belum ada data event</td>
+                                <td colspan="8" class="text-center">There is no event data yet</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
         <div id="pertumbuhan" class="rekap-box">
-            <div class="box-diagram-pertumbuhan">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div style="height: 300px ; position: relative;">
-                            <canvas id="chartEvent"></canvas>
-                        </div>
+
+            <div class="growth-charts-wrapper">
+                <div class="growth-chart-card">
+                    <div class="growth-chart-title">Total Participants per Day</div>
+                    <div class="growth-chart-subtitle">Free Event vs Paid Event</div>
+                    <div class="growth-chart-canvas-wrap">
+                        <canvas id="chartParticipants"></canvas>
                     </div>
-                </div>
-            </div>
-             <div class="mt-4 mb-4">
-                    <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
-                        <input type="hidden" name="tab" value="operasional">
-                        <div>
-                            <label for="period_op" class="form-label mb-1 text-dark">Periode Bulan</label>
-                            <input type="month" name="period" id="period_op" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
-                        </div>
-                        <div class="d-flex gap-2 align-items-end">
-                            <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
-                            @php
-                                $prevOp = (clone $selectedDate)->subMonth();
-                                $nextOp = (clone $selectedDate)->addMonth();
-                                $curr = \Carbon\Carbon::now()->startOfMonth();
-                                $isFut = $nextOp->gt($curr);
-                            @endphp
-                            <a href="{{ url()->current().'?tab=operasional&period='.$prevOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm" style="height:38px;">&laquo; {{ $prevOp->translatedFormat('F Y') }}</a>
-                            <a href="{{ $isFut ? '#' : url()->current().'?tab=operasional&period='.$nextOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm {{ $isFut ? 'disabled' : '' }}" style="height:38px;">{{ $nextOp->translatedFormat('F Y') }} &raquo;</a>
-                        </div>
-                        <div class="ms-auto d-flex align-items-center gap-2">
-                            <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-operasional">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
-                            <button type="button" class="btn-export-report btn btn-sm" data-export-tab="operasional" style="height:38px;">Export</button>
-                        </div>
-                    </form>
                 </div>
 
-            <div class="data-box">
-                <div class="data-pengguna">
-                    <div class="data-pengguna-kiri">
-                        @php
-                            // Pengguna Baru: user yang pertama kali mendaftar event pada bulan terpilih.
-                            // Ambil earliest registration (MIN(created_at)) per user dan filter di DB via HAVING.
-                            $newUsersCurrent = \App\Models\EventRegistration::selectRaw('user_id, MIN(created_at) as first_created')
-                                ->groupBy('user_id')
-                                ->havingRaw('YEAR(MIN(created_at)) = ? AND MONTH(MIN(created_at)) = ?', [$selectedDate->year, $selectedDate->month])
-                                ->get()->count();
-                            $newUsersPrev = \App\Models\EventRegistration::selectRaw('user_id, MIN(created_at) as first_created')
-                                ->groupBy('user_id')
-                                ->havingRaw('YEAR(MIN(created_at)) = ? AND MONTH(MIN(created_at)) = ?', [$prevDate->year, $prevDate->month])
-                                ->get()->count();
-                            // Growth pengguna baru (gunakan logika earliest baseline sama seperti growth lain)
-                            $growthUsers = function($curr,$prev, Carbon $prevDate, Carbon $earliestDate){
-                                if($prevDate->lt($earliestDate)) return 0; // sebelum earliest -> 0%
-                                if($prev == 0){ return $curr == 0 ? 0 : 100; }
-                                return (($curr - $prev)/($prev))*100;
-                            };
-                            $usersGrowth = $growthUsers($newUsersCurrent,$newUsersPrev,$prevDate,$earliestDate);
-                            $usersUp = $usersGrowth >= 0;
-                            $usersPctAbs = round(abs($usersGrowth),1);
-                        @endphp
-                        <h5>Pengguna Baru</h5>
-                        <h4>{{ $newUsersCurrent }}</h4>
-                        <div class="deskripsi-kenaikan" style="display:flex;align-items:center;gap:6px;color:{{ $usersUp ? 'green':'red' }};">
-                            @if($usersUp)
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="green" class="bi bi-arrow-up" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5" />
-                                </svg>
-                            @else
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="red" class="bi bi-arrow-down" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1" />
-                                </svg>
-                            @endif
-                            <p class="mb-0">{{ $usersPctAbs }}% vs bulan lalu</p>
-                        </div>
-                        <small class="text-muted">Hanya hitung user pertama kali mendaftar bulan ini.</small>
-                    </div>
-                    <div class="data-pengguna-kanan">
-                        <div class="pertumbuhan-acara">
-                            <h5>Pertumbuhan Acara</h5>
-                            <div class="pertumbuhan-box">
-                                <div class="pertumbuhan-box-isi">
-                                    <h4>{{ $totalPaidEventsSelected ?? 0 }}</h4>
-                                    <p>Total Event Berbayar</p>
-                                </div>
-                                <div class="pertumbuhan-box-isi">
-                                    <h4>{{ $totalFreeEventsSelected ?? 0 }}</h4>
-                                    <p>Total Event Free</p>
-                                </div>
-                                @php
-                                    // Total Peserta: distinct users who registered in the selected month
-                                    $totalParticipantsUsers = \App\Models\EventRegistration::query()
-                                        ->whereYear('created_at', $selectedDate->year)
-                                        ->whereMonth('created_at', $selectedDate->month)
-                                        ->where('status','active')
-                                        ->distinct('user_id')
-                                        ->count('user_id');
-                                @endphp
-                                <div class="pertumbuhan-box-isi">
-                                    <h4>{{ number_format($totalParticipantsUsers) }}</h4>
-                                    <p>Total Peserta</p>
-                                </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar" viewBox="0 0 16 16">
-                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                                </svg>
-                            </div>
-                        </div>
+                <div class="growth-chart-card">
+                    <div class="growth-chart-title">Event Composition</div>
+                    <div class="growth-chart-subtitle">Free · Paid · Manage · Create</div>
+                    <div class="growth-chart-canvas-wrap">
+                        <canvas id="chartEventComposition"></canvas>
                     </div>
                 </div>
             </div>
-            <h5 class="title-laporan-metrik">Metrik Operasional Rinci</h5>
-            <div class="filter-section" id="filters-pertumbuhan">
-                        <div class="filter-kiri">
-                            <div class="filter-group" style="padding-left:50px;">
-                                <div style="display:flex; gap:6px; align-items:center; position:relative;">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
-                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-                            </svg>
-                            <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event...">
-                           </div> 
-                                
-                            </div>
-                        </div>
-                            <div class="filter-kanan">
-                            <div class="filter-group">
-                                <label for="date-from-pertumbuhan" class="filter-label">Dari Tanggal</label>
-                                <div class="filter-date-group">
-                                    <input type="date" id="date-from-pertumbuhan" class="filter-input">
-                                </div>
-                            </div>
-                            <div class="filter-group">
-                                <label for="date-to-pertumbuhan" class="filter-label">Sampai Tanggal</label>
-                                <div class="filter-date-group">
-                                    <input type="date" id="date-to-pertumbuhan" class="filter-input">
-                                </div>
-                            </div>
-                            <div class="filter-actions"><button type="button" class="btn-apply btn-reset" id="btn-reset-pertumbuhan" style="background:#6c757d;">Reset</button></div>
-                        </div>
+
+            <div class="mt-4 mb-4">
+                <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
+                    <input type="hidden" name="tab" value="pertumbuhan">
+                    <div>
+                        <label for="period_pertumbuhan" class="form-label mb-1 text-dark">Month Period</label>
+                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
                     </div>
+                    <div class="d-flex gap-2 align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Show</button>
+                    </div>
+                    <div class="ms-auto d-flex align-items-center gap-2">
+                        <div class="small text-muted">Showing data for month: <strong id="month-label-pertumbuhan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                        <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pertumbuhan" style="height:38px;">Export</button>
+                    </div>
+                </form>
+            </div>
+
+            <h5 class="title-laporan-metrik">Growth Metrics</h5>
+            <div class="filter-section" id="filters-pertumbuhan" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px; margin-bottom:10px;">
+                <div class="filter-group">
+                    <label class="filter-label">Search Event</label>
+                    <div style="display:flex; gap:6px; align-items:center; position:relative;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                        </svg>
+                        <input type="text" id="filter-event-pertumbuhan" class="filter-input" placeholder="Cari nama event..." style="min-width:160px;">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-kelola-pertumbuhan" class="filter-label">Action Type</label>
+                    <select id="filter-kelola-pertumbuhan" class="filter-input" style="min-width:130px;">
+                        <option value="">All Types</option>
+                        <option value="manage">Manage</option>
+                        <option value="create">Create</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-harga-pertumbuhan" class="filter-label">Price Type</label>
+                    <select id="filter-harga-pertumbuhan" class="filter-input" style="min-width:130px;">
+                        <option value="">All Prices</option>
+                        <option value="paid">Paid</option>
+                        <option value="free">Free</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="date-from-pertumbuhan" class="filter-label">From Date</label>
+                    <div class="filter-date-group">
+                        <input type="date" id="date-from-pertumbuhan" class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="date-to-pertumbuhan" class="filter-label">To Date</label>
+                    <div class="filter-date-group">
+                        <input type="date" id="date-to-pertumbuhan" class="filter-input">
+                    </div>
+                </div>
+                <div class="filter-group" style="justify-content:flex-end;">
+                    <label class="filter-label">&nbsp;</label>
+                    <button type="button" class="btn-apply btn-reset" id="btn-reset-pertumbuhan" style="background:#6c757d; width:auto; padding:6px 16px; align-self:flex-start;">Reset</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
             <table class="tabel-pendapatan" id="table-pertumbuhan">
                 <thead>
                     <tr>
-                        <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
-                        <th style="background-color: #E4E4E6;" scope="col">Tanggal</th>
-                        <th style="background-color: #E4E4E6;" scope="col">Peserta</th>
-                        <th style="background-color: #E4E4E6;" scope="col">Pembicara</th>
-                        <th style="background-color: #E4E4E6;" scope="col">Rating Acara</th>
-                        <th style="background-color: #E4E4E6;" scope="col">Rating Pembicara</th>
-                        <th style="background-color: #E4E4E6;" scope="col">Aksi</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Event Name</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Date</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Participants</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Speakers</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Action Type</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Price Type</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Event Rating</th>
+                        <th style="background-color: #E4E4E6;" scope="col">Speaker Rating</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php
-                        // $growthRows is now provided by the controller and filtered by month/year.
-                    @endphp
                     @forelse($growthRows as $row)
                         <tr
                             data-name="{{ Str::lower($row['name']) }}"
@@ -513,200 +509,38 @@
                             data-participants="{{ $row['participants'] }}"
                             data-event-rating="{{ $row['event_rating'] ?? '' }}"
                             data-speaker-rating="{{ $row['speaker_rating'] ?? '' }}"
+                            data-manage="{{ strtolower(trim($row['manage_action'] ?? 'create')) }}"
+                            data-is-free="{{ ($row['is_free'] ?? true) ? 'free' : 'paid' }}"
                             data-title="{{ $row['name'] }}">
                             <td>{{ $row['name'] }}</td>
                             <td>{{ $row['date'] ?? '-' }}</td>
-                            <td>{{ $row['participants'] }} Peserta</td>
+                            <td>{{ $row['participants'] }} Participants</td>
                             <td>{{ $row['speaker'] ?? '-' }}</td>
                             <td>
-                                @if(isset($row['event_rating']) && $row['event_rating'] !== null)
-                                    {{ $row['event_rating'] }}/5
-                                @else
-                                    -
-                                @endif
+                                @php $ma = strtolower(trim($row['manage_action'] ?? 'create')); @endphp
+                                <span class="growth-badge {{ $ma === 'manage' ? 'growth-badge-manage' : 'growth-badge-create' }}">
+                                    {{ $ma === 'manage' ? 'Manage' : 'Create' }}
+                                </span>
                             </td>
                             <td>
-                                @if(isset($row['speaker_rating']) && $row['speaker_rating'] !== null)
-                                    {{ $row['speaker_rating'] }}/5
-                                @else
-                                    -
-                                @endif
+                                <span class="growth-badge {{ ($row['is_free'] ?? true) ? 'growth-badge-free' : 'growth-badge-paid' }}">
+                                    {{ ($row['is_free'] ?? true) ? 'Free' : 'Paid' }}
+                                </span>
                             </td>
-                            <td>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewPertumbuhanModal">
-                                    <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                    <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                                </svg>
-                            </td>
+                            <td>{{ isset($row['event_rating']) && $row['event_rating'] !== null ? $row['event_rating'].'/5' : '-' }}</td>
+                            <td>{{ isset($row['speaker_rating']) && $row['speaker_rating'] !== null ? $row['speaker_rating'].'/5' : '-' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">Belum ada data event</td>
+                            <td colspan="8" class="text-center">Belum ada data event</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
-        </div>
-
-        <div id="operasional" class="rekap-box">
-            <div>
-                <h5>Aktivitas Acara</h5>
-                <div class="box-diagram-operasional">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h6 class="mb-3">Total Event Create vs Manage</h6>
-                            <div style="height: 300px; position: relative;">
-                                <canvas id="chartEventCreateManage"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4 mb-4">
-                    <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
-                        <input type="hidden" name="tab" value="operasional">
-                        <div>
-                            <label for="period_op" class="form-label mb-1 text-dark">Periode Bulan</label>
-                            <input type="month" name="period" id="period_op" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
-                        </div>
-                        <div class="d-flex gap-2 align-items-end">
-                            <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Tampilkan</button>
-                            @php
-                                $prevOp = (clone $selectedDate)->subMonth();
-                                $nextOp = (clone $selectedDate)->addMonth();
-                                $curr = \Carbon\Carbon::now()->startOfMonth();
-                                $isFut = $nextOp->gt($curr);
-                            @endphp
-                            <a href="{{ url()->current().'?tab=operasional&period='.$prevOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm" style="height:38px;">&laquo; {{ $prevOp->translatedFormat('F Y') }}</a>
-                            <a href="{{ $isFut ? '#' : url()->current().'?tab=operasional&period='.$nextOp->format('Y-m') }}" class="btn btn-outline-secondary btn-sm {{ $isFut ? 'disabled' : '' }}" style="height:38px;">{{ $nextOp->translatedFormat('F Y') }} &raquo;</a>
-                        </div>
-                        <div class="ms-auto d-flex align-items-center gap-2">
-                            <div class="small text-muted">Menampilkan data bulan: <strong id="month-label-operasional">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
-                            <button type="button" class="btn-export-report btn btn-sm" data-export-tab="operasional" style="height:38px;">Export</button>
-                        </div>
-                    </form>
-                </div>
-                
-                <div class="info-operasional-box" style="display:flex; gap:12px;">
-                    <div class="info-operasional" style="border:1px solid #eee; border-radius:10px; padding:12px;">
-                        <h4>{{ $totalCreateEventsSelected ?? 0 }}</h4>
-                        <p>Total Event Create</p>
-                    </div>
-                    <div class="info-operasional" style="border:1px solid #eee; border-radius:10px; padding:12px;">
-                        <h4>{{ $totalManageEventsSelected ?? 0 }}</h4>
-                        <p>Total Event Manage</p>
-                    </div>
-                </div>
-                <div class="proggress-box-operasional">
-                    <div class="proggress-operasional">
-                        <p class="title-prog-operasional">Presentase Event Terlaksana</p>
-                            <div class="line-proggress-abu"><div class="line-proggress" style="width: {{ $percentCompleted ?? 0 }}%; max-width:100%"></div></div>
-                            <p>{{ $percentCompleted ?? 0 }}% Selesai</p>
-                    </div>
-                    <div class="proggress-operasional">
-                        <p class="title-prog-operasional">Presentase Event Belum Terlaksana</p>
-                            <div class="line-proggress-abu"><div class="line-proggress" style="width: {{ $percentNotCompleted ?? 0 }}%; max-width:100%"></div></div>
-                            <p>{{ $percentNotCompleted ?? 0 }}% Belum</p>
-                    </div>
-                </div>
-
-                <div>
-                    <h5>Manajemen Dokumen Per Event</h5>
-                    <div class="filter-section" id="filters-operasional">
-                        <div class="filter-kiri">
-                            <div class="filter-group" style="padding-left:50px;">
-                                <div style="display:flex; gap:6px; align-items:center; position:relative;">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="black" class="bi bi-search" viewBox="0 0 16 16">
-                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-                            </svg>
-                            <input type="text" id="filter-event-operasional" class="filter-input" placeholder="Cari nama event...">
-                           </div> 
-                                
-                            </div>
-                        </div>
-                            <div class="filter-kanan">
-                            <div class="filter-group">
-                                <label for="date-from-operasional" class="filter-label">Dari Tanggal</label>
-                                <div class="filter-date-group">
-                                    <input type="date" id="date-from-operasional" class="filter-input">
-                                </div>
-                            </div>
-                            <div class="filter-group">
-                                <label for="date-to-operasional" class="filter-label">Sampai Tanggal</label>
-                                <div class="filter-date-group">
-                                    <input type="date" id="date-to-operasional" class="filter-input">
-                                </div>
-                            </div>
-                            <div class="filter-actions"><button type="button" class="btn-apply btn-reset" id="btn-reset-operasional" style="background:#6c757d;">Reset</button></div>
-                        </div>
-                    </div>
-                    <table class="tabel-pendapatan" id="table-operasional">
-                        <thead>
-                            <tr>
-                                <th style="background-color: #E4E4E6;" scope="col">Nama Event</th>
-                                <th style="background-color: #E4E4E6;" scope="col">Tanggal</th>
-                                <th style="background-color: #E4E4E6;" scope="col">Jenis Kegiatan</th>
-                                <th style="background-color: #E4E4E6;" scope="col">Progress Dokumen</th>
-                                <th style="background-color: #E4E4E6;" scope="col">Status Kelengkapan Dokumen</th>
-                                <th style="background-color: #E4E4E6;" scope="col">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php
-                                // $operationalRows is now provided by the controller and filtered by month/year.
-                            @endphp
-                            @forelse($operationalRows as $row)
-                                <tr data-name="{{ Str::lower($row['name']) }}" data-date="{{ isset($row['date']) ? \Carbon\Carbon::createFromFormat('d/m/Y',$row['date'])->format('Y-m-d') : '' }}" data-type="{{ Str::lower($row['type']) }}" data-docs="{{ $row['documents_percent'] }}">
-                                    <td>{{ $row['name'] }}</td>
-                                    <td>{{ $row['date'] ?? '-' }}</td>
-                                    <td>{{ $row['type'] }}</td>
-                                    <td>
-                                        <h3 class="add-dokumen" 
-                                            data-bs-id="{{ $row['id'] }}"
-                                            data-vbg="{{ $row['vbg_url'] ?? '' }}"
-                                            data-cert="{{ $row['cert_url'] ?? '' }}"
-                                            data-module="{{ $row['module_url'] ?? '' }}"
-                                            data-abs="{{ $row['abs_url'] ?? '' }}"
-                                            data-qr-img="{{ $row['qr_image_url'] ?? '' }}"
-                                        >
-                                            {{ $row['documents_percent'] }}%
-                                        </h3>
-                                    </td>
-                                    <td>
-                                        @if($row['documents_percent'] == 100)
-                                            <span class="status-lengkap">Lengkap</span>
-                                        @elseif($row['documents_percent'] > 0)
-                                            <span class="status-kurang-lengkap">Kurang Lengkap</span>
-                                        @else
-                                            <span class="status-tidak-lengkap">Tidak Lengkap</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @php
-                                            $ev = isset($row['id']) ? \App\Models\Event::find($row['id']) : null;
-                                            $qrToken = $ev?->attendance_qr_token ?: '';
-                                            $qrUrl = $qrToken ? url('/events/'.$ev->id.'?t='.$qrToken) : '';
-                                            $qrImageUrl = ($ev && $ev->attendance_qr_image) ? ($ev->attendance_qr_image_url ?? '') : '';
-                                        @endphp
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#0A3EB6" class="bi bi-eye-fill" viewBox="0 0 16 16" data-bs-toggle="modal" data-bs-target="#viewOperasionalModal" data-name="{{ $row['name'] }}" data-vbg="{{ $row['vbg_url'] ?? '' }}" data-cert="{{ $row['cert_url'] ?? '' }}" data-module="{{ $row['module_url'] ?? '' }}" data-abs="{{ $row['abs_url'] ?? '' }}" data-qr="{{ $qrUrl }}" data-qr-img="{{ $qrImageUrl }}">
-                                            <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
-                                            <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
-                                        </svg>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center">Belum ada data event</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            </div>{{-- end table-responsive --}}
         </div>
     </div>
 
-    <!-- Export Preview Modal -->
     <div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top: 100px; margin-bottom: 24px;">
             <div class="modal-content" style="border-radius:10px;">
@@ -718,7 +552,7 @@
                     <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                         <div>
                             <div class="fw-semibold" id="exportReportTitle">-</div>
-                            <div class="small text-muted">Menampilkan data bulan: <strong id="exportReportMonth">-</strong></div>
+                            <div class="small text-muted">Displaying month data:<strong id="exportReportMonth">-</strong></div>
                         </div>
                     </div>
                     <div id="exportReportPreviewWrapper" style="background:#fff;">
@@ -734,39 +568,38 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div class="modal-view-pendapatan modal fade" id="viewPendapatanModal" tabindex="-1" aria-labelledby="viewPendapatanLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="content-event modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="viewPendapatanLabel">Rekap Pendaftaran</h5>
+                    <h5 class="modal-title" id="viewPendapatanLabel">Revenue Recap</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="box-rekap-pendapatan">
                         <div class="tabel-pemasukan">
-                            <h5>Pemasukan</h5>
+                            <h5>Revenue</h5>
                             <table>
                                 <thead>
                                     <tr>
-                                        <th style="background-color: #E4E4E6;" scope="col">Pemasukan</th>
-                                        <th style="background-color: #E4E4E6;" scope="col">Kuantitas</th>
-                                        <th style="background-color: #E4E4E6;" scope="col">Harga Satuan</th>
-                                        <th style="background-color: #E4E4E6;" scope="col">Total Harga</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Revenue</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Quantity</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Unit Price</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Total Price</th>
                                     </tr>
                                 </thead>
                                 <tbody id="incomeTbody"></tbody>
                             </table>
                         </div>
                         <div class="tabel-pengeluaran">
-                            <h5>Pengeluaran</h5>
+                            <h5>Expenses</h5>
                             <table>
                                 <thead>
                                     <tr>
-                                        <th style="background-color: #E4E4E6;" scope="col">Kebutuhan (Barang)</th>
-                                        <th style="background-color: #E4E4E6;" scope="col">Kuantitas</th>
-                                        <th style="background-color: #E4E4E6;" scope="col">Harga Satuan (Rp)</th>
-                                        <th style="background-color: #E4E4E6;" scope="col">Harga Total (Rp)</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Item Name</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Quantity</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Unit Price (Rp)</th>
+                                        <th style="background-color: #E4E4E6;" scope="col">Total Price (Rp)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="expenseTbody"></tbody>
@@ -774,8 +607,8 @@
                         </div>
                     </div>
                     <div class="keuntungan">
-                        <h5>Keuntungan</h5>
-                        <p>Keuntungan (Laba Bersih) = Total Pemasukan − Total Pengeluaran</p>
+                        <h5>Profit</h5>
+                        <p>Profit (Net Profit) = Total Revenue − Total Expenses</p>
                         <h6 id="profitFormula"> - </h6>
                         <h6 id="profitTotal"> - </h6>
                     </div>
@@ -802,7 +635,7 @@
                                 <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0  0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Jumlah Peserta</p>
+                                <p class="label-view">Total Participants</p>
                                 <p class="value-view" id="pertumbuhanParticipants">-</p>
                             </div>
                         </div>
@@ -811,7 +644,7 @@
                                 <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Rata-rata Rating Acara</p>
+                                <p class="label-view">Average Event Rating</p>
                                 <p class="value-view" id="pertumbuhanEventRating">-</p>
                             </div>
                         </div>
@@ -820,7 +653,7 @@
                                 <path d="M2.866 14.85c-.078.444.36.791.746.593l4.39-2.256 4.389 2.256c.386.198.824-.149.746-.592l-.83-4.73 3.522-3.356c.33-.314.16-.888-.282-.95l-4.898-.696L8.465.792a.513.513 0 0 0-.927 0L5.354 5.12l-4.898.696c-.441.062-.612.636-.283.95l3.523 3.356-.83 4.73zm4.905-2.767-3.686 1.894.694-3.957a.56.56 0 0 0-.163-.505L1.71 6.745l4.052-.576a.53.53 0 0 0 .393-.288L8 2.223l1.847 3.658a.53.53 0 0 0 .393.288l4.052.575-2.906 2.77a.56.56 0 0 0-.163.506l.694 3.957-3.686-1.894a.5.5 0 0 0-.461 0z" />
                             </svg>
                             <div class="view-pertumbuhan">
-                                <p class="label-view">Rata-rata Rating Pembicara</p>
+                                <p class="label-view">Average Speaker Rating</p>
                                 <p class="value-view" id="pertumbuhanSpeakerRating">-</p>
                             </div>
                         </div>
@@ -829,20 +662,7 @@
             </div>
         </div>
     </div>
-    <div class="modal-view-operasional modal fade" id="viewOperasionalModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="content-operasional-view modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewOperasionalTitle">Status Dokumen Detail</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-2">Tinjau status semua dokumen terkait acara dan administrasi.</p>
-                    <div id="operasionalStatusContainer" class="d-flex flex-column gap-2"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
    
 </div>
 @endsection
@@ -852,15 +672,15 @@
 
 <script>
 
-    //diagram report pertumbuhan event (Free vs Paid Trend)
+    //diagram report pertumbuhan event — Peserta Free vs Berbayar per hari
 document.addEventListener("DOMContentLoaded", function () {
 
-    const ctx = document.getElementById('chartEvent');
+    // Chart kiri: line chart peserta per hari
+    const ctx = document.getElementById('chartParticipants');
     if(ctx){
-        // Data from controller
         const labels = @json($chartLabels ?? []);
-        const freeData = @json($chartFreeData ?? []);
-        const paidData = @json($chartPaidData ?? []);
+        const freeParticipantData = @json($chartFreeParticipantData ?? []);
+        const paidParticipantData = @json($chartPaidParticipantData ?? []);
 
         new Chart(ctx, {
             type: 'line',
@@ -868,22 +688,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Total Event Free',
-                        data: freeData,
-                        borderColor: '#6f42c1', // Purple
-                        backgroundColor: 'transparent',
+                        label: 'Free Event Participants',
+                        data: freeParticipantData,
+                        borderColor: '#6f42c1',
+                        backgroundColor: 'rgba(111,66,193,0.08)',
                         borderWidth: 2,
                         tension: 0.4,
-                        pointRadius: 3
+                        pointRadius: 3,
+                        fill: true
                     },
                     {
-                        label: 'Total Event Berbayar',
-                        data: paidData,
-                        borderColor: '#fd7e14', // Orange
-                        backgroundColor: 'transparent',
+                        label: 'Paid Event Participants',
+                        data: paidParticipantData,
+                        borderColor: '#fd7e14',
+                        backgroundColor: 'rgba(253,126,20,0.08)',
                         borderWidth: 2,
                         tension: 0.4,
-                        pointRadius: 3
+                        pointRadius: 3,
+                        fill: true
                     }
                 ]
             },
@@ -891,15 +713,70 @@ document.addEventListener("DOMContentLoaded", function () {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { usePointStyle: true }
+                    legend: { position: 'top', labels: { usePointStyle: true } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' peserta'
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+
+    // Chart kanan: bar chart komposisi event (free/berbayar/manage/create)
+    const ctxComp = document.getElementById('chartEventComposition');
+    if(ctxComp){
+        new Chart(ctxComp, {
+            type: 'bar',
+            data: {
+                labels: ['Event Free', 'Event Paid', 'Event Manage', 'Event Create'],
+                datasets: [{
+                    label: 'Jumlah Event',
+                    data: [
+                        {{ $totalFreeEventsSelected ?? 0 }},
+                        {{ $totalPaidEventsSelected ?? 0 }},
+                        {{ $totalManageEvents ?? 0 }},
+                        {{ $totalCreateEvents ?? 0 }}
+                    ],
+                    backgroundColor: [
+                        'rgba(111,66,193,0.75)',
+                        'rgba(253,126,20,0.75)',
+                        'rgba(29,78,216,0.75)',
+                        'rgba(21,128,61,0.75)'
+                    ],
+                    borderColor: [
+                        '#6f42c1',
+                        '#fd7e14',
+                        '#1d4ed8',
+                        '#15803d'
+                    ],
+                    borderWidth: 1.5,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ctx.parsed.y + ' event'
+                        }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { stepSize: 1 }
+                        ticks: { stepSize: 1 },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
                     }
                 }
             }
@@ -960,19 +837,19 @@ document.addEventListener("DOMContentLoaded", function () {
             labels: @json($labels), 
             datasets: [
                 {
-                    label: 'Pendapatan',
+                    label: 'Revenue',
                     data: @json($seriesRevenue),
                     borderWidth: 2,
                     tension: 0.4
                 },
                 {
-                    label: 'Pengeluaran',
+                    label: 'Expenses',
                     data: @json($seriesExpense),
                     borderWidth: 2,
                     tension: 0.4
                 },
                 {
-                    label: 'Keuntungan',
+                    label: 'Profit',
                     data: @json($seriesProfit),
                     borderWidth: 2,
                     tension: 0.4
@@ -1002,12 +879,9 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
-// QRCode library (client-side render)
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<!-- Export helpers -->
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
@@ -1015,7 +889,6 @@ document.addEventListener('DOMContentLoaded', function(){
     const buttons = document.querySelectorAll('.btn-report');
     const sections = document.querySelectorAll('.rekap-box');
     
-    // Function to activate tab (useful for initial load)
     function activateTab(targetId) {
         sections.forEach(section => section.classList.remove('active'));
         const targetSection = document.getElementById(targetId);
@@ -1027,9 +900,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 btn.classList.add('active');
             }
         });
-        
-        // Ensure hidden inputs for "tab" in other forms (if any) are updated? 
-        // Not strictly needed if each form routes to its tab via hidden input or standard behaviour
     }
 
     buttons.forEach(button => {
@@ -1106,12 +976,11 @@ document.addEventListener('DOMContentLoaded', function(){
         const {
             searchInput, dateFromInput, dateToInput, applyBtn, searchBtn, resetBtn, tableSelector
         } = config;
+        const extraFilters = config.extraFilters || [];
         const table = document.querySelector(tableSelector);
         if(!table) return;
         const rows = Array.from(table.querySelectorAll('tbody tr'));
         function matches(row){
-            // Prefer explicit data-name (already lowercased server-side),
-            // but fall back to first cell text when attribute is missing.
             const nameAttr = row.getAttribute('data-name') || '';
             const name = (nameAttr ? nameAttr : (row.querySelector('td')?.textContent || '')).toLowerCase();
             const rawDateAttr = row.getAttribute('data-date') || '';
@@ -1121,8 +990,16 @@ document.addEventListener('DOMContentLoaded', function(){
             const fromVal = dateFromInput?.value || '';
             const toVal = dateToInput?.value || '';
 
-            // Name filter
             if(searchVal && !name.includes(searchVal)) return false;
+
+            // Extra dropdown filters
+            for(const f of extraFilters){
+                const val = (f.el?.value || '').trim();
+                if(val){
+                    const rowVal = (row.getAttribute(f.attr) || '').toLowerCase();
+                    if(rowVal !== val) return false;
+                }
+            }
 
             // Generic parser: supports YYYY-MM-DD, YYYY/MM/DD and DD/MM/YYYY
             function parseToTimestamp(s){
@@ -1206,11 +1083,13 @@ document.addEventListener('DOMContentLoaded', function(){
         if(resetBtn) resetBtn.addEventListener('click', () => {
             if(dateFromInput) dateFromInput.value='';
             if(dateToInput) dateToInput.value='';
+            extraFilters.forEach(f => { if(f.el) f.el.value=''; });
             apply();
         });
         if(searchBtn) searchBtn.addEventListener('click', apply);
         if(searchInput) searchInput.addEventListener('keyup', debounce(apply,300));
         [dateFromInput,dateToInput].forEach(inp => inp && inp.addEventListener('change', apply));
+        extraFilters.forEach(f => f.el && f.el.addEventListener('change', apply));
     }
 
     function debounce(fn, delay){
@@ -1234,7 +1113,11 @@ document.addEventListener('DOMContentLoaded', function(){
             applyBtn: document.getElementById('btn-apply-pertumbuhan'),
             searchBtn: document.getElementById('btn-cari-pertumbuhan'),
             resetBtn: document.getElementById('btn-reset-pertumbuhan'),
-            tableSelector: '#pertumbuhan table.tabel-pendapatan'
+            tableSelector: '#pertumbuhan table.tabel-pendapatan',
+            extraFilters: [
+                { el: document.getElementById('filter-kelola-pertumbuhan'), attr: 'data-manage' },
+                { el: document.getElementById('filter-harga-pertumbuhan'), attr: 'data-is-free' },
+            ]
         },
         {
             searchInput: document.getElementById('filter-event-operasional'),
@@ -1404,7 +1287,7 @@ document.addEventListener('DOMContentLoaded', function(){
             try { expenseRows = JSON.parse(expenseJson) || []; } catch (_e) {}
 
             const titleEl = document.getElementById('viewPendapatanLabel');
-            if (titleEl) titleEl.textContent = 'Rekap Pendaftaran: ' + name;
+            if (titleEl) titleEl.textContent = 'Registration Recap: ' + name;
             const incomeTbody = document.getElementById('incomeTbody');
             const expenseTbody = document.getElementById('expenseTbody');
             const profitFormula = document.getElementById('profitFormula');
@@ -1417,7 +1300,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 // Fallback: if no income rows provided, synthesize 'Tiket Pendaftar'
                 if (!Array.isArray(incomeRows) || incomeRows.length === 0) {
                     const unit = registeredCount > 0 ? (incomeTotal / registeredCount) : 0;
-                    incomeRows = [{ label: 'Tiket Pendaftar', qty: registeredCount, unit: unit, total: incomeTotal }];
+                    incomeRows = [{ label: 'Register Ticket', qty: registeredCount, unit: unit, total: incomeTotal }];
                 }
                 const rowsHtml = incomeRows.map(r => `
                     <tr>
@@ -1470,13 +1353,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
     const tabConfig = {
         pendapatan: {
-            title: 'Pendapatan',
+            title: 'Revenue',
             tableId: 'table-pendapatan',
             monthLabelId: 'month-label-pendapatan',
             periodInputId: 'period',
         },
         pertumbuhan: {
-            title: 'Pertumbuhan',
+            title: 'Growth',
             tableId: 'table-pertumbuhan',
             monthLabelId: 'month-label-pertumbuhan',
             periodInputId: 'period_pertumbuhan',
@@ -1589,41 +1472,68 @@ document.addEventListener('DOMContentLoaded', function(){
 
         const table = cloneVisibleTable(tab);
         previewEl.innerHTML = '';
-        titleEl.textContent = 'Laporan ' + cfg.title;
+        titleEl.textContent = cfg.title;
         monthEl.textContent = monthText;
 
-        const header = document.createElement('div');
-        header.style.marginBottom = '10px';
-        header.innerHTML = `
-            <div style="font-weight:700; font-size:16px;">${titleEl.textContent}</div>
-            <div class="small text-muted">Menampilkan data bulan: <strong>${monthText}</strong></div>
-        `;
-
         if (!table || !table.tBodies || table.tBodies.length === 0 || table.tBodies[0].rows.length === 0) {
-            previewEl.innerHTML = '<div class="text-muted">Tidak ada data untuk diexport.</div>';
+            previewEl.innerHTML = '<div class="text-muted p-3">There is no data to export.</div>';
             btnPdf.disabled = true;
             btnExcel.disabled = true;
         } else {
-            // ensure borders for preview readability
-            table.querySelectorAll('th, td').forEach(cell => {
-                cell.style.border = '1px solid #e5e7eb';
-            });
+            // Style tabel untuk preview
+            table.classList.add('table', 'table-sm');
             table.style.borderCollapse = 'collapse';
             table.style.width = '100%';
+            table.style.fontSize = '13px';
+            table.querySelectorAll('th').forEach(th => {
+                th.style.backgroundColor = '#1e3a5f';
+                th.style.color = '#ffffff';
+                th.style.padding = '8px 10px';
+                th.style.border = '1px solid #1e3a5f';
+                th.style.fontWeight = '600';
+                th.style.whiteSpace = 'nowrap';
+            });
+            table.querySelectorAll('td').forEach((td, i) => {
+                td.style.padding = '7px 10px';
+                td.style.border = '1px solid #e5e7eb';
+                td.style.verticalAlign = 'middle';
+            });
+            // Zebra stripe
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach((tr, i) => {
+                tr.style.backgroundColor = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
+            });
 
-            previewEl.appendChild(header);
-            previewEl.appendChild(table);
+            const wrapper = document.createElement('div');
+            wrapper.style.padding = '16px';
+            wrapper.style.background = '#fff';
+
+            // Header preview
+            const headerHtml = `
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #1e3a5f;">
+                    <div>
+                        <div style="font-size:18px; font-weight:700; color:#1e3a5f;">${cfg.title} Event Report</div>
+                        <div style="font-size:12px; color:#6b7280; margin-top:2px;">Period: <strong>${monthText}</strong></div>
+                    </div>
+                    <div style="font-size:11px; color:#9ca3af; text-align:right;">
+                        Printed: ${new Date().toLocaleDateString('en-US', {day:'2-digit',month:'long',year:'numeric'})}<br>
+                        LMS IdSpora Admin
+                    </div>
+                </div>`;
+
+            wrapper.innerHTML = headerHtml;
+            wrapper.appendChild(table);
+            previewEl.appendChild(wrapper);
             btnPdf.disabled = false;
             btnExcel.disabled = false;
         }
 
-        currentExport = { tab, title: cfg.title, period };
+        currentExport = { tab, title: cfg.title, period, monthText };
 
         const bsModal = window.bootstrap?.Modal ? new window.bootstrap.Modal(modalEl) : null;
         if (bsModal) {
             bsModal.show();
         } else {
-            // Fallback (shouldn't happen in admin)
             modalEl.classList.add('show');
             modalEl.style.display = 'block';
         }
@@ -1637,67 +1547,65 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 
     btnPdf.addEventListener('click', function(){
-        const periodPart = currentExport.period ? sanitizeFilenamePart(currentExport.period) : 'periode';
-        const tabPart = sanitizeFilenamePart(currentExport.title);
-        const filename = `report-${tabPart}-${periodPart}.pdf`;
-        if (typeof window.html2pdf !== 'function') return;
-
-        // Build a clean, full-width printable layout off-screen to avoid cramped modal sizing
-        const printable = document.createElement('div');
-        printable.style.width = '1120px';
-        printable.style.padding = '16px';
-        printable.style.background = '#ffffff';
-        printable.style.color = '#111827';
-        printable.style.fontSize = '12px';
-        printable.style.boxSizing = 'border-box';
-
-        const title = document.createElement('div');
-        title.style.fontWeight = '700';
-        title.style.fontSize = '16px';
-        title.style.marginBottom = '4px';
-        title.textContent = 'Laporan ' + (currentExport.title || '');
-
-        const subtitle = document.createElement('div');
-        subtitle.style.color = '#6B7280';
-        subtitle.style.marginBottom = '12px';
-        subtitle.innerHTML = 'Menampilkan data bulan: <strong>' + (monthEl?.textContent || '-') + '</strong>';
-
         const table = previewEl.querySelector('table');
         if (!table) return;
+
+        const monthText = currentExport.monthText || (monthEl?.textContent || '-');
+        const printDate = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
+        const title = currentExport.title || '';
+
+        // Clone and strip interactive elements
         const tableClone = table.cloneNode(true);
-        tableClone.querySelectorAll('th, td').forEach(cell => {
-            cell.style.border = '1px solid #e5e7eb';
-            cell.style.padding = '6px 8px';
+        tableClone.querySelectorAll('svg').forEach(el => el.remove());
+        tableClone.querySelectorAll('span[class]').forEach(span => {
+            const t = document.createTextNode(span.textContent.trim());
+            span.replaceWith(t);
         });
-        tableClone.style.borderCollapse = 'collapse';
-        tableClone.style.width = '100%';
-        tableClone.querySelectorAll('th').forEach(th => {
-            th.style.backgroundColor = '#E4E4E6';
+        tableClone.querySelectorAll('button, a').forEach(el => {
+            el.replaceWith(document.createTextNode((el.textContent || '').trim()));
         });
 
-        printable.appendChild(title);
-        printable.appendChild(subtitle);
-        printable.appendChild(tableClone);
+        const tableHtml = tableClone.outerHTML;
 
-        const offscreen = document.createElement('div');
-        offscreen.style.position = 'fixed';
-        offscreen.style.left = '-10000px';
-        offscreen.style.top = '0';
-        offscreen.appendChild(printable);
-        document.body.appendChild(offscreen);
+        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+        <title>Laporan ${title} Event</title>
+        <style>
+            @page { size: A4 landscape; margin: 10mm 12mm; }
+            * { box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; color: #111827; background: #fff; margin: 0; padding: 0; }
+            .header-row { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+            .header-row td { border: none; padding: 0; vertical-align: top; }
+            .title { font-size: 16px; font-weight: 700; color: #1e3a5f; }
+            .subtitle { font-size: 11px; color: #6b7280; margin-top: 2px; }
+            .meta { text-align: right; font-size: 11px; color: #9ca3af; }
+            .meta strong { color: #374151; font-size: 12px; display: block; }
+            .divider { border: none; border-top: 2px solid #1e3a5f; margin: 8px 0 12px; }
+            table { border-collapse: collapse; width: 100%; font-size: 10px; }
+            th { background: #1e3a5f; color: #fff; padding: 6px 8px; border: 1px solid #1e3a5f; font-weight: 600; text-align: left; }
+            td { padding: 5px 8px; border: 1px solid #d1d5db; color: #111827; vertical-align: middle; }
+            tbody tr:nth-child(even) { background: #f3f4f6; }
+            tbody tr:nth-child(odd) { background: #ffffff; }
+            .footer { margin-top: 10px; padding-top: 6px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #9ca3af; }
+        </style>
+        </head><body>
+        <table class="header-row">
+            <tr>
+                <td><div class="title">${title} Report</div>
+                    <div class="subtitle">Period: <strong style="color:#111827;display:inline;">${monthText}</strong></div></td>
+                <td class="meta"><strong>LMS IdSpora</strong>Printed: ${printDate}</td>
+            </tr>
+        </table>
+        <hr class="divider">
+        ${tableHtml}
+        <div class="footer">LMS IdSpora &mdash; ${title} Report &nbsp;|&nbsp; ${printDate}</div>
+        <script>window.onload=function(){ window.print(); window.onafterprint=function(){ window.close(); }; };<\/script>
+        </body></html>`;
 
-        const opt = {
-            margin: 8,
-            filename,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, windowWidth: 1120 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
-        window.html2pdf().set(opt).from(printable).save().then(() => {
-            offscreen.remove();
-        }).catch(() => {
-            offscreen.remove();
-        });
+        const pw = window.open('', '_blank', 'width=1200,height=800');
+        if (pw) {
+            pw.document.write(html);
+            pw.document.close();
+        }
     });
 
     btnExcel.addEventListener('click', function(){
@@ -1706,9 +1614,34 @@ document.addEventListener('DOMContentLoaded', function(){
         if (!table) return;
         const periodPart = currentExport.period ? sanitizeFilenamePart(currentExport.period) : 'periode';
         const tabPart = sanitizeFilenamePart(currentExport.title);
-        const filename = `report-${tabPart}-${periodPart}.xlsx`;
+        const filename = `laporan-event-${tabPart}-${periodPart}.xlsx`;
+        const monthText = currentExport.monthText || '-';
+        const printDate = new Date().toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
+
         const wb = window.XLSX.utils.book_new();
-        const ws = window.XLSX.utils.table_to_sheet(table);
+
+        // Buat sheet dengan header info di baris pertama
+        const ws = window.XLSX.utils.aoa_to_sheet([
+            [`${currentExport.title || ''} Report`],
+            [`Period: ${monthText}`],
+            [`Printed: ${printDate}`],
+            [], // empty row
+        ]);
+
+        // Append data tabel
+        const tableSheet = window.XLSX.utils.table_to_sheet(table);
+        const tableData = window.XLSX.utils.sheet_to_json(tableSheet, { header: 1 });
+        tableData.forEach((row, i) => {
+            window.XLSX.utils.sheet_add_aoa(ws, [row], { origin: { r: 4 + i, c: 0 } });
+        });
+
+        // Style header baris info (merge + bold)
+        if (!ws['!merges']) ws['!merges'] = [];
+        ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 6 } });
+
+        // Set column widths
+        ws['!cols'] = Array(10).fill({ wch: 20 });
+
         window.XLSX.utils.book_append_sheet(wb, ws, currentExport.title || 'Report');
         window.XLSX.writeFile(wb, filename);
     });

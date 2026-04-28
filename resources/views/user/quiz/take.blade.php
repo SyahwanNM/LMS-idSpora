@@ -1,6 +1,4 @@
-@include("partials.navbar-after-login")
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -16,6 +14,7 @@
 </head>
 
 <body>
+    @include("partials.navbar-after-login")
     @php
         $selectedAnswerId = collect($attempt->answers ?? [])->firstWhere('question_id', $currentQuestion->id)['answer_id'] ?? null;
         $total = $questions->count();
@@ -32,6 +31,26 @@
                 $quizNumber = (int) $foundIndex + 1;
             }
         }
+
+        // Ambil subtitle modul dari course_units berdasarkan nomor modul
+        $quizModuleSubtitle = null;
+        if (preg_match('/^Module\s*(\d+)/i', (string) ($module->title ?? ''), $mm)) {
+            $unitNum = (int) $mm[1];
+            $unit = $course->units->firstWhere('unit_no', $unitNum);
+            if ($unit && !empty($unit->title)) {
+                $quizModuleSubtitle = $unit->title;
+            }
+        }
+        if (!$quizModuleSubtitle) {
+            // Fallback: parse dari title modul (e.g. "Module 1 - Testing" → "Testing")
+            if (preg_match('/^Module\s*\d+\s*-\s*(.+)$/i', (string) ($module->title ?? ''), $mm)) {
+                $sub = trim($mm[1]);
+                if (!preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $sub)) {
+                    $quizModuleSubtitle = $sub;
+                }
+            }
+        }
+        $quizPageTitle = 'Quiz ' . $quizNumber . ($quizModuleSubtitle ? ' - ' . $quizModuleSubtitle : '');
 
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
@@ -56,7 +75,29 @@
                     return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_'.$fallbackIndex);
                 };
 
-                $formatDisplayTitle = function (string $groupKey, string $kind) {
+                // Extract the human-readable subtitle after "Module X" (e.g. "Module 1 - Testing" → "Testing")
+                $extractModuleSubtitle = function ($title) {
+                    $t = trim((string) $title);
+                    if (preg_match('/^Module\s*\d+\s*-\s*(.+)$/i', $t, $m)) {
+                        $sub = trim($m[1]);
+                        if (!preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $sub)) {
+                            return $sub;
+                        }
+                    }
+                    return null;
+                };
+
+                $groupSubtitles = [];
+
+                // Build unit title map from course_units table
+                $unitTitleMap = [];
+                if (isset($course)) {
+                    foreach (($course->units ?? collect()) as $u) {
+                        $unitTitleMap[(int) $u->unit_no] = (string) ($u->title ?? '');
+                    }
+                }
+
+                $formatDisplayTitle = function (string $groupKey, string $kind) use (&$groupSubtitles) {
                     $isModuleKey = \Illuminate\Support\Str::startsWith($groupKey, 'MODULE');
                     $isUnitKey = \Illuminate\Support\Str::startsWith($groupKey, 'UNIT_');
 
@@ -70,11 +111,17 @@
 
                     $hasPrefix = $isModuleKey || $isUnitKey;
 
+                    $subtitle = $groupSubtitles[$groupKey] ?? null;
+                    if ($subtitle && $hasPrefix) {
+                        $prefix = $prefix . ' - ' . $subtitle;
+                    }
+
+                    // Hanya tampilkan nama modul, type label sudah ditampilkan terpisah
                     if ($kind === 'material') {
-                        return $hasPrefix ? ($prefix . ' - Materi') : 'Materi';
+                        return $hasPrefix ? $prefix : 'Materi';
                     }
                     if ($kind === 'quiz') {
-                        return $hasPrefix ? ($prefix . ' - Quiz') : 'Quiz';
+                        return $hasPrefix ? $prefix : 'Quiz';
                     }
                     return $hasPrefix ? $prefix : $groupKey;
                 };
@@ -119,12 +166,30 @@
                         $groupOrder[] = $key;
                     }
 
+                    if (!isset($groupSubtitles[$key])) {
+                        $unitNum = null;
+                        if (preg_match('/MODULE\s*(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        } elseif (preg_match('/UNIT_(\d+)/i', $key, $km)) {
+                            $unitNum = (int) $km[1];
+                        }
+                        if ($unitNum && !empty($unitTitleMap[$unitNum])) {
+                            $groupSubtitles[$key] = $unitTitleMap[$unitNum];
+                        } else {
+                            $sub = $extractModuleSubtitle($titleStr);
+                            if ($sub) {
+                                $groupSubtitles[$key] = $sub;
+                            }
+                        }
+                    }
+
                     if ($type === 'pdf' && !$grouped[$key]['pdf']) $grouped[$key]['pdf'] = $m;
                     if ($type === 'video' && !$grouped[$key]['video']) $grouped[$key]['video'] = $m;
                     if ($type === 'quiz' && !$grouped[$key]['quiz']) $grouped[$key]['quiz'] = $m;
                 }
 
                 $displayItems = collect();
+                $quizCounter = 0;
                 foreach ($groupOrder as $key) {
                     $g = $grouped[$key];
 
@@ -142,10 +207,13 @@
                     }
 
                     if ($g['quiz']) {
+                        $quizCounter++;
+                        $subtitle = $groupSubtitles[$key] ?? null;
+                        $quizTitle = 'Quiz ' . $quizCounter . ($subtitle ? ' - ' . $subtitle : '');
                         $displayItems->push([
                             'kind' => 'quiz',
                             'key' => $key,
-                            'title' => $formatDisplayTitle($key, 'quiz'),
+                            'title' => $quizTitle,
                             'rep' => $g['quiz'],
                             'pdf' => $g['pdf'],
                             'video' => $g['video'],
@@ -245,14 +313,16 @@
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
                                 <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $it['title'] ?? ($rep->title ?? 'Materi') }}</span>
                             </span>
-                            <span style="display:flex; align-items:center; gap:10px; flex:0 0 auto;">
-                                @if($isLocked)
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
-                                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                                    </svg>
-                                @endif
-                                <span style="font-size:12px; font-weight:700; opacity:.75;">{{ $typeLabel }}</span>
-                                <span class="arrow">▲</span>
+                            <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
+                                <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    @if($isLocked)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                        </svg>
+                                    @endif
+                                </span>
+                                <span style="font-size:12px; font-weight:700; opacity:.75; min-width:44px; text-align:right;">{{ $typeLabel }}</span>
+                                <span class="arrow" style="width:16px; text-align:center;">▲</span>
                             </span>
                         </button>
                         <div class="accordion-content">
@@ -276,20 +346,20 @@
         <div class="box_kuis_kanan">
             <div class="quiz-title-row" style="margin-top: 24px;">
                 <div class="quiz-title-left">
-                    <button type="button" class="quiz-modules-open d-none" id="openModulesBtn" aria-label="Buka daftar modul">
+                    <button type="button" class="quiz-modules-open" id="openModulesBtn" aria-label="Buka daftar modul">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                             <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
                         </svg>
                     </button>
-                    <h1 class="quiz-title">Kuis {{ $quizNumber }} : {{ $module->title }}</h1>
+                    <h1 class="quiz-title">{{ $quizPageTitle }}</h1>
                 </div>
             </div>
 
             <div class="box_soal_kuis">
-                <div id="quizHeaderBlock" style="margin-bottom:12px;">
+                <div id="quizHeaderBlock" style="margin-bottom:12px; margin-top: 30px;">
                     <p class="waktu_kuis" id="quizTimer">--:--:--</p>
                     <div class="quiz-sidebar-heading" style="margin-top: 8px; margin-bottom:6px; font-weight:600;">Questions</div>
-                    <div class="nomor_kuis" style="margin-bottom: 16px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <div class="nomor_kuis" style="margin-bottom: 16px;margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
                         @foreach($questions as $idx => $q)
                             @php
                                 $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
@@ -320,8 +390,8 @@
                     @endforeach
 
                     <div class="tombol_kuis">
-                        <button type="button" class="previous_question" onclick="window.location.href='{{ $prevUrl }}'">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Send' : 'Send' }}</button>
+                        <button type="button" class="previous_question" data-prev-url="{{ $prevUrl }}">Previous Question</button>
+                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
                     </div>
                 </form>
             </div>
@@ -329,6 +399,41 @@
     </div>
 
     <script>
+        // ── Answer persistence via sessionStorage ──────────────────────────────
+        const QUIZ_STORAGE_KEY = 'quiz_draft_{{ $attempt->id }}_q{{ $currentQuestion->id }}';
+
+        // Restore saved draft answer on page load (before server-selected takes effect)
+        (function restoreDraft() {
+            try {
+                const saved = sessionStorage.getItem(QUIZ_STORAGE_KEY);
+                if (!saved) return;
+                const savedId = parseInt(saved, 10);
+                if (!savedId) return;
+
+                // Only restore if no server-side answer already selected
+                const alreadyChecked = document.querySelector('input[name="answer_id"]:checked');
+                if (alreadyChecked) return; // server already has an answer, don't override
+
+                const target = document.querySelector('input[name="answer_id"][value="' + savedId + '"]');
+                if (target) {
+                    target.checked = true;
+                    const label = target.closest('.quiz-answer-option');
+                    if (label) {
+                        document.querySelectorAll('.quiz-answer-option').forEach(x => x.classList.remove('selected'));
+                        label.classList.add('selected');
+                    }
+                }
+            } catch (_e) {}
+        })();
+
+        // Track whether user has selected an answer that hasn't been submitted yet
+        // If server already has an answer for this question, no need to warn
+        let _draftDirty = false;
+        @if($selectedAnswerId)
+        // This question already has a saved answer — no unsaved state
+        _draftDirty = false;
+        @endif
+
         // Click-to-select answers
         document.querySelectorAll('.quiz-answer-option').forEach(opt => {
             opt.addEventListener('click', () => {
@@ -338,11 +443,18 @@
                 opt.classList.add('selected');
                 
                 // Clear any custom validity if previously set
-                if (radio) radio.setCustomValidity(''); 
+                if (radio) radio.setCustomValidity('');
+
+                // Save draft to sessionStorage
+                try {
+                    sessionStorage.setItem(QUIZ_STORAGE_KEY, radio ? radio.value : '');
+                } catch (_e) {}
+
+                _draftDirty = true;
             });
         });
 
-        // Form submission validation
+        // Clear dirty flag and draft on successful submit + validate before submit
         const quizForm = document.getElementById('quizAnswerForm');
         if (quizForm) {
             quizForm.addEventListener('submit', function(e) {
@@ -378,10 +490,97 @@
                         } else {
                             alert('Anda harus menyelesaikan kuis terlebih dahulu sebelum lanjut');
                         }
+                        return;
                     }
                 @endif
+
+                // Clear dirty flag and draft on valid submit
+                _draftDirty = false;
+                try { sessionStorage.removeItem(QUIZ_STORAGE_KEY); } catch (_e) {}
             });
         }
+
+        // Warn user before leaving if they have an unsaved answer selection
+        window.addEventListener('beforeunload', function(e) {
+            const checked = document.querySelector('input[name="answer_id"]:checked');
+            if (_draftDirty && checked) {
+                const msg = 'Jawaban yang sudah kamu pilih belum disimpan. Yakin ingin meninggalkan halaman ini?';
+                e.preventDefault();
+                e.returnValue = msg;
+                return msg;
+            }
+        });
+
+        // Also warn when clicking "Previous Question" if there's an unsaved selection
+        const prevBtn = document.querySelector('.previous_question');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function(e) {
+                const checked = document.querySelector('input[name="answer_id"]:checked');
+                const prevUrl = prevBtn.getAttribute('data-prev-url') || '{{ $prevUrl }}';
+                if (_draftDirty && checked) {
+                    e.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Answer Not Saved',
+                            text: 'You have selected an answer but haven\'t clicked "Send". This answer will be lost if you navigate away. Continue?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, move on',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#f4c430',
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                _draftDirty = false;
+                                window.location.href = prevUrl;
+                            }
+                        });
+                    } else {
+                        if (confirm('Answer not saved. Continue?')) {
+                            _draftDirty = false;
+                            window.location.href = prevUrl;
+                        }
+                    }
+                } else {
+                    window.location.href = prevUrl;
+                }
+            });
+        }
+
+        // Warn when clicking question number buttons if there's an unsaved selection
+        document.querySelectorAll('.nomor_kuis button[onclick]').forEach(btn => {
+            const originalOnclick = btn.getAttribute('onclick');
+            btn.removeAttribute('onclick');
+            btn.addEventListener('click', function(e) {
+                const checked = document.querySelector('input[name="answer_id"]:checked');
+                if (_draftDirty && checked) {
+                    e.preventDefault();
+                    const targetUrl = originalOnclick ? originalOnclick.replace("window.location.href='", '').replace("'", '') : null;
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Answer Not Saved',
+                            text: 'You have selected an answer but haven\'t clicked "Send". This answer will be lost if you navigate away. Continue?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, move on',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#f4c430',
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                _draftDirty = false;
+                                if (targetUrl) window.location.href = targetUrl;
+                            }
+                        });
+                    } else {
+                        if (confirm('Answer not saved. Continue?')) {
+                            _draftDirty = false;
+                            if (targetUrl) window.location.href = targetUrl;
+                        }
+                    }
+                } else {
+                    if (originalOnclick) eval(originalOnclick);
+                }
+            });
+        });
 
         // Sidebar accordion
         const accItems = document.querySelectorAll('.box_kuis_kiri.quiz-modules .accordion-item');
@@ -427,17 +626,23 @@
             });
         });
 
-        // Sidebar open/close
+        // Sidebar open/close with persistence
         const rootEl = document.getElementById('quizTakeRoot');
         const modulesSidebar = document.querySelector('.box_kuis_kiri.quiz-modules');
         const openModulesBtn = document.getElementById('openModulesBtn');
         const closeModulesBtn = document.getElementById('closeModulesBtn');
+        const SIDEBAR_STATE_KEY = 'quiz_sidebar_open_{{ $attempt->id }}';
 
         function setModulesOpen(isOpen) {
             if (!modulesSidebar) return;
             modulesSidebar.classList.toggle('closed', !isOpen);
             if (openModulesBtn) openModulesBtn.classList.toggle('d-none', isOpen);
             if (rootEl) rootEl.classList.toggle('modules-closed', !isOpen);
+            
+            // Save state to sessionStorage
+            try {
+                sessionStorage.setItem(SIDEBAR_STATE_KEY, isOpen ? '1' : '0');
+            } catch (_e) {}
         }
 
         if (closeModulesBtn) {
@@ -445,6 +650,19 @@
         }
         if (openModulesBtn) {
             openModulesBtn.addEventListener('click', () => setModulesOpen(true));
+        }
+
+        // Restore sidebar state from sessionStorage
+        try {
+            const savedState = sessionStorage.getItem(SIDEBAR_STATE_KEY);
+            if (savedState === '0') {
+                setModulesOpen(false);
+            } else {
+                // Default: sidebar terbuka (termasuk saat pertama kali buka quiz)
+                setModulesOpen(true);
+            }
+        } catch (_e) {
+            setModulesOpen(true);
         }
 
         // Timer (module duration in seconds), based on server-provided endsAt
@@ -455,30 +673,49 @@
 
         function formatTime(totalSeconds) {
             const s = Math.max(0, Math.floor(totalSeconds));
-            const h = Math.floor(s / 3600);
-            const m = Math.floor((s % 3600) / 60);
+            const m = Math.floor(s / 60);
             const r = s % 60;
-            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+            return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
         }
 
         async function finishAttempt() {
+            // Clear dirty flag so beforeunload doesn't block the redirect
+            _draftDirty = false;
+
+            // Show time-up overlay before redirecting
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;';
+            overlay.innerHTML = `
+                <div style="background:#fff;border-radius:20px;padding:36px 32px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+                    <div style="font-size:48px;margin-bottom:12px;">⏰</div>
+                    <h3 style="font-weight:800;font-size:20px;color:#1f2937;margin:0 0 10px 0;">Waktu Habis!</h3>
+                    <p style="color:#6b7280;font-size:14px;margin:0 0 6px 0;">Kuis kamu otomatis dikumpulkan.</p>
+                    <p style="color:#9ca3af;font-size:13px;margin:0;">Mengarahkan ke halaman hasil...</p>
+                </div>`;
+            document.body.appendChild(overlay);
+
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             try {
+                // Gunakan keepalive agar fetch tidak di-cancel saat browser navigasi
                 await fetch(finishUrl, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': token || '',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
+                    keepalive: true,
                 });
             } catch (e) {
-                // ignore
+                // ignore network errors
             }
+            // Tunggu sebentar agar database commit selesai sebelum redirect
+            await new Promise(resolve => setTimeout(resolve, 600));
             window.location.href = resultUrl;
         }
 
         if (timerEl && endsAtIso) {
-            const endsAt = new Date(endsAtIso).getTime();
+            // Kurangi 7 menit (420 detik) + 7 detik dari waktu asli
+            const endsAt = new Date(endsAtIso).getTime() - (7 * 60 * 1000) - (7 * 1000);
             const tick = () => {
                 const now = Date.now();
                 const remaining = Math.floor((endsAt - now) / 1000);

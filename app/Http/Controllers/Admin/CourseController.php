@@ -69,7 +69,7 @@ class CourseController extends Controller
         // Only allow entry to learning page if enrolled OR it's a course with preview enabled.
         if (!$isUserEnrolled && $configuredFreeAccessMode === 'none') {
             return redirect()->route('course.detail', $course->id)
-                ->with('error', 'Silakan lakukan pembelian course terlebih dahulu.');
+                ->with('error', 'Please purchase this course first.');
         }
 
         // If payment is settled but enrollment isn't active yet, auto-activate it.
@@ -131,7 +131,7 @@ class CourseController extends Controller
                 if ($fallbackId > 0) {
                     $target = route('course.learn', $course->id) . '?module=' . $fallbackId;
                     return redirect()->to($target)
-                        ->with('error', 'Materi ini terkunci. Silakan beli course untuk membuka modul selanjutnya.');
+                        ->with('error', 'This content is locked. Please purchase the course untuk membuka modul selanjutnya.');
                 }
             }
         }
@@ -157,7 +157,7 @@ class CourseController extends Controller
                 if (!$passedPrevQuiz) {
                     $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
                     return redirect()->to($target)
-                        ->with('error', 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.');
+                        ->with('error', 'You must complete the quiz firstahulu baru bisa lanjut ke tahap selanjutnya.');
                 }
             }
         }
@@ -339,17 +339,17 @@ class CourseController extends Controller
             $missing[] = 'Kuis';
         }
 
+        // Hard block: jika ada missing material, tidak bisa publish
+        if (!empty($missing)) {
+            return redirect()->route('admin.courses.index')
+                ->with('error', 'Course cannot be published yet. Please complete the Module Course ini terlebih dahulu: ' . implode(', ', $missing) . '.');
+        }
+
         $course->status = 'active';
         $course->save();
 
-        $redirect = redirect()->route('admin.courses.index')
-            ->with('success', 'Course berhasil diterbitkan!');
-
-        if (!empty($missing)) {
-            $redirect->with('publish_warning', $missing);
-        }
-
-        return $redirect;
+        return redirect()->route('admin.courses.index')
+            ->with('success', 'Course published successfully!');
     }
 
     /**
@@ -360,7 +360,7 @@ class CourseController extends Controller
         if (((string) $course->status) !== 'active') {
             return redirect()
                 ->route('admin.courses.index')
-                ->with('error', 'Course ini belum diterbitkan');
+                ->with('error', 'This course has not been published yet');
         }
 
         // Return to pre-publish state so it no longer appears on public pages
@@ -369,7 +369,7 @@ class CourseController extends Controller
 
         return redirect()
             ->route('admin.courses.index')
-            ->with('success', 'Publish course berhasil dibatalkan.');
+            ->with('success', 'Course publication has been cancelled.');
     }
 
     /**
@@ -610,12 +610,7 @@ class CourseController extends Controller
         ])->withCount('enrollments')->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         if ($month !== '') {
@@ -697,12 +692,7 @@ class CourseController extends Controller
             ->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         $periodName = 'Semua Data';
@@ -745,7 +735,7 @@ class CourseController extends Controller
                 ->header('Content-Disposition', 'attachment; filename="Daftar_Course_' . now()->format('YmdHis') . '.pdf"');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Export PDF error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal membuat PDF: ' . $e->getMessage());
+            return back()->with('error', 'Failed to generate PDF: ' . $e->getMessage());
         }
     }
 
@@ -923,9 +913,16 @@ class CourseController extends Controller
             ]);
         }
 
+        // If category_id is empty but category_name is provided, create or find the category
+        if (empty($request->input('category_id')) && $request->filled('category_name')) {
+            $catName = trim($request->input('category_name'));
+            $category = Category::firstOrCreate(['name' => $catName], ['description' => '']);
+            $request->merge(['category_id' => $category->id]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'is_reseller_course' => 'nullable|boolean',
             'trainer_id' => [
@@ -1143,6 +1140,19 @@ class CourseController extends Controller
                 ->cloneToCourse($course, $template, replaceExisting: false);
         }
 
+        // Save unit titles from form input
+        $unitTitles = $request->input('unit_titles', []);
+        if (is_array($unitTitles)) {
+            foreach ($unitTitles as $unitNo => $title) {
+                $title = trim((string) $title);
+                if ($title === '') continue;
+                \App\Models\CourseUnit::updateOrCreate(
+                    ['course_id' => $course->id, 'unit_no' => (int) $unitNo],
+                    ['title' => $title]
+                );
+            }
+        }
+
         return redirect()->route('admin.courses.index')->with('success', 'Course created successfully!');
     }
 
@@ -1192,9 +1202,16 @@ class CourseController extends Controller
             $request->merge(['modules_order_updates' => json_encode($orderUpdatesRaw)]);
         }
 
+        // If category_id is empty but category_name is provided, create or find the category
+        if (empty($request->input('category_id')) && $request->filled('category_name')) {
+            $catName = trim($request->input('category_name'));
+            $category = Category::firstOrCreate(['name' => $catName], ['description' => '']);
+            $request->merge(['category_id' => $category->id]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'sync_template_modules' => 'nullable|boolean',
             'is_reseller_course' => 'nullable|boolean',
@@ -1239,7 +1256,9 @@ class CourseController extends Controller
             'expenses.*.unit_price' => 'nullable|integer|min:0',
             'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
-            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
+            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800',
+            'unit_titles' => 'nullable|array',
+            'unit_titles.*' => 'nullable|string|max:255',
         ]);
 
         // Normalize discount fields: if discount is not set (null/0), ignore dates.
@@ -1586,8 +1605,8 @@ class CourseController extends Controller
                 TrainerNotification::create([
                     'trainer_id' => (int) $trainer->id,
                     'type' => 'course_modules_updated',
-                    'title' => 'Modul Course Diperbarui',
-                    'message' => 'Admin telah melakukan perubahan pada modul/materi course "' . $course->name . '". Silakan periksa perubahan terbaru.',
+                    'title' => 'Course Module Updated',
+                    'message' => 'Admin has made changes to the module/materi course "' . $course->name . '". Silakan periksa perubahan terbaru.',
                     'data' => [
                         'entity_type' => 'course',
                         'entity_id' => (int) $course->id,
@@ -1624,7 +1643,7 @@ class CourseController extends Controller
             }
         }
 
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil diedit!');
+        return redirect()->route('admin.courses.index')->with('success', 'Course updated successfully!');
     }
 
     public function destroy(Course $course)

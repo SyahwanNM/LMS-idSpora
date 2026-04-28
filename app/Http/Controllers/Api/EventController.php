@@ -9,8 +9,12 @@ use App\Http\Resources\EventRegistrationResource;
 use App\Models\ManualPayment;
 use App\Models\EventRegistration;
 use App\Models\User;
+use App\Models\Referral;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EventController extends Controller
 {
@@ -91,13 +95,13 @@ class EventController extends Controller
         $eventType = strtolower(trim((string) $request->query('event_type', '')));
         if ($eventType === 'online') {
             $query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
-                ->where(fn($q) => $q->whereNull('location')->orWhere('location', ''));
+                ->where(fn($q) => $q->whereNull('location')->orWhere('location', '')->orWhereRaw('LOWER(location) = ?', ['online']));
         } elseif ($eventType === 'offline') {
             $query->where(fn($q) => $q->whereNull('zoom_link')->orWhere('zoom_link', ''))
-                ->whereNotNull('location')->where('location', '!=', '');
+                ->whereNotNull('location')->where('location', '!=', '')->whereRaw('LOWER(location) != ?', ['online']);
         } elseif ($eventType === 'hybrid') {
             $query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
-                ->whereNotNull('location')->where('location', '!=', '');
+                ->whereNotNull('location')->where('location', '!=', '')->whereRaw('LOWER(location) != ?', ['online']);
         }
 
         // day: today | weekdays | weekend
@@ -656,5 +660,450 @@ class EventController extends Controller
             ]);
 
         return $this->jsonSuccess('Materi event', $modules);
+    }
+
+    // =========================================================================
+    // MIDTRANS PAYMENT ENDPOINTS
+    // =========================================================================
+
+    /**
+     * Ambil Midtrans Snap Token untuk event berbayar.
+     * Membuat atau menggunakan kembali pending order yang ada.
+     *
+     * GET /api/events/{id}/midtrans/snap-token
+     */
+    public function midtransSnapToken(Request $request, $id): JsonResponse
+    {
+        $user  = $request->user();
+        $event = Event::find($id);
+
+        if (!$event) {
+            return $this->jsonError('Event tidak ditemukan', 404);
+        }
+
+        $isAdmin = $user && strtolower(trim((string) ($user->role ?? ''))) === 'admin';
+        if (!$isAdmin && !(bool) $event->is_published) {
+            return $this->jsonError('Event tidak ditemukan', 404);
+        }
+
+        if (method_exists($event, 'isFinished') && $event->isFinished()) {
+            return $this->jsonError('Event sudah selesai, pembayaran tidak tersedia.', 422);
+        }
+
+        $this->configureMidtrans();
+
+        $baseAmount = $this->resolveFinalEventPrice($event);
+        if ($baseAmount <= 0) {
+            return $this->jsonError('Event ini gratis, tidak perlu Midtrans.', 400);
+        }
+
+        $forceNew       = $request->boolean('force_new', false);
+        $rawReferral    = trim((string) $request->input('referral_code', ''));
+        $referrer       = (bool) ($event->is_reseller_event ?? false)
+            ? $this->resolveValidReferrer($user, $rawReferral)
+            : null;
+        $referralCode   = $referrer ? $rawReferral : null;
+        $finalAmount    = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
+
+        $dial  = trim((string) $request->input('dial_code', ''));
+        $wa    = trim((string) $request->input('whatsapp', ''));
+        $phone = trim($dial . $wa) ?: (string) ($user->phone ?? '');
+
+        DB::beginTransaction();
+        try {
+            $registration = EventRegistration::query()
+                ->where('user_id', $user->id)
+                ->where('event_id', $event->id)
+                ->first();
+
+            if ($registration && $registration->status === 'active') {
+                DB::rollBack();
+                return $this->jsonError('Anda sudah terdaftar di event ini.', 409);
+            }
+
+            if (!$registration) {
+                $registration = EventRegistration::create([
+                    'user_id'           => $user->id,
+                    'event_id'          => $event->id,
+                    'status'            => 'pending',
+                    'registration_code' => 'EVT-' . strtoupper(uniqid()),
+                    'total_price'       => $finalAmount,
+                ]);
+            } else {
+                $registration->status      = 'pending';
+                $registration->total_price = $finalAmount;
+                $registration->save();
+            }
+
+            // Reuse existing pending Midtrans order jika ada dan tidak force_new
+            $payment = ManualPayment::query()
+                ->where('event_registration_id', $registration->id)
+                ->where('user_id', $user->id)
+                ->where('method', 'midtrans')
+                ->where('status', 'pending')
+                ->latest('id')
+                ->first();
+
+            if ($payment && !$forceNew) {
+                $existingToken = data_get($payment->metadata, 'snap_token');
+                if (is_string($existingToken) && trim($existingToken) !== '') {
+                    $registration->total_price = (float) $payment->amount;
+                    $registration->save();
+                    DB::commit();
+
+                    return $this->jsonSuccess('Lanjutkan pembayaran yang tertunda.', [
+                        'snap_token'    => $existingToken,
+                        'order_id'      => $payment->order_id,
+                        'amount'        => (int) round((float) $payment->amount),
+                        'client_key'    => (string) config('midtrans.client_key'),
+                        'is_production' => (bool) config('midtrans.is_production', false),
+                        'is_continue'   => true,
+                    ]);
+                }
+            }
+
+            if ($payment && $forceNew) {
+                $payment->status           = 'rejected';
+                $payment->rejection_reason = 'Diganti karena membuat transaksi Midtrans baru.';
+                $payment->save();
+                $payment = null;
+            }
+
+            $orderId = 'MT-EVT-' . strtoupper(uniqid());
+            $payment = ManualPayment::create([
+                'event_id'              => $event->id,
+                'event_registration_id' => $registration->id,
+                'user_id'               => $user->id,
+                'order_id'              => $orderId,
+                'amount'                => $finalAmount,
+                'currency'              => 'IDR',
+                'method'                => 'midtrans',
+                'status'                => 'pending',
+                'whatsapp_number'       => $phone ?: null,
+                'referral_code'         => $referralCode,
+                'metadata'              => [
+                    'source'        => 'event',
+                    'base_amount'   => $baseAmount,
+                    'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
+                    'event_id'      => $event->id,
+                    'event_title'   => $event->title,
+                ],
+            ]);
+
+            $grossAmount = (int) round($finalAmount);
+            $snapParams  = [
+                'transaction_details' => [
+                    'order_id'     => $orderId,
+                    'gross_amount' => $grossAmount,
+                ],
+                'item_details' => [[
+                    'id'       => 'event-' . $event->id,
+                    'price'    => $grossAmount,
+                    'quantity' => 1,
+                    'name'     => (string) ($event->title ?? 'Event'),
+                ]],
+                'customer_details' => [
+                    'first_name' => (string) ($user->name ?? 'User'),
+                    'email'      => (string) ($user->email ?? ''),
+                    'phone'      => $phone,
+                ],
+                'callbacks' => [
+                    'finish' => route('payment.finish'),
+                ],
+            ];
+
+            $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
+
+            $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
+                'snap_token'            => $snapToken,
+                'snap_token_created_at' => now()->toIso8601String(),
+            ]);
+            $payment->save();
+
+            DB::commit();
+
+            return $this->jsonSuccess('Snap token berhasil dibuat.', [
+                'snap_token'    => $snapToken,
+                'order_id'      => $orderId,
+                'amount'        => $grossAmount,
+                'client_key'    => (string) config('midtrans.client_key'),
+                'is_production' => (bool) config('midtrans.is_production', false),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('API midtransSnapToken failed', ['event_id' => $id, 'error' => $e->getMessage()]);
+            return $this->jsonError('Gagal membuat pembayaran Midtrans: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Finalisasi status pembayaran Midtrans setelah user selesai di Snap popup.
+     * Cek status ke Midtrans dan aktifkan registrasi jika settled.
+     *
+     * POST /api/events/{id}/midtrans/finalize
+     */
+    public function midtransFinalize(Request $request, $id): JsonResponse
+    {
+        $user  = $request->user();
+        $event = Event::find($id);
+
+        if (!$event) {
+            return $this->jsonError('Event tidak ditemukan', 404);
+        }
+
+        $validated = $request->validate([
+            'order_id' => 'required|string|max:100',
+        ]);
+        $orderId = (string) $validated['order_id'];
+
+        $payment = ManualPayment::query()
+            ->where('order_id', $orderId)
+            ->where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->first();
+
+        if (!$payment) {
+            return $this->jsonError('Order tidak ditemukan.', 404);
+        }
+
+        try {
+            $this->configureMidtrans();
+            $midtransStatus = (array) \Midtrans\Transaction::status($orderId);
+
+            $ts             = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
+            $fs             = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
+            $internalStatus = $this->mapMidtransStatus($ts, $fs);
+
+            DB::beginTransaction();
+
+            $wasSettled    = $payment->status === 'settled';
+            $payment->status   = $internalStatus;
+            $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
+                'midtrans_status' => $midtransStatus,
+                'finalized_at'    => now()->toIso8601String(),
+            ]);
+            $payment->save();
+
+            if (!$wasSettled && $internalStatus === 'settled') {
+                $registration = $payment->event_registration_id
+                    ? EventRegistration::find($payment->event_registration_id)
+                    : null;
+
+                if ($registration && $registration->status !== 'active') {
+                    $registration->status               = 'active';
+                    $registration->payment_verified_at  = now();
+                    $registration->payment_verified_by  = null;
+                    $registration->save();
+                }
+
+                // Komisi referral
+                $this->processEventReferralCommission($event, $payment);
+
+                // Notifikasi user
+                $this->notifyEventMidtransSuccess($event, $payment);
+            }
+
+            if (in_array($internalStatus, ['expired', 'rejected'], true) && $payment->event_registration_id) {
+                $registration = EventRegistration::find($payment->event_registration_id);
+                if ($registration && !in_array($registration->status, ['active', 'canceled'], true)) {
+                    $registration->status = $internalStatus;
+                    $registration->save();
+                }
+            }
+
+            DB::commit();
+
+            return $this->jsonSuccess('Status pembayaran diperbarui.', [
+                'order_id' => $orderId,
+                'status'   => $internalStatus,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('API midtransFinalize failed', ['order_id' => $orderId, 'error' => $e->getMessage()]);
+            return $this->jsonError('Gagal memeriksa status pembayaran.', 500);
+        }
+    }
+
+    /**
+     * Cek pending order Midtrans untuk event ini.
+     * Digunakan saat user kembali ke halaman pembayaran.
+     *
+     * GET /api/events/{id}/midtrans/pending-order
+     */
+    public function midtransPendingOrder(Request $request, $id): JsonResponse
+    {
+        $user  = $request->user();
+        $event = Event::find($id);
+
+        if (!$event) {
+            return $this->jsonError('Event tidak ditemukan', 404);
+        }
+
+        $payment = ManualPayment::query()
+            ->where('event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->where('method', 'midtrans')
+            ->where('status', 'pending')
+            ->latest('id')
+            ->first();
+
+        // Sync status real-time dari Midtrans jika ada pending order
+        if ($payment && $payment->order_id) {
+            try {
+                $this->configureMidtrans();
+                $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
+                $ts             = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
+                $fs             = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
+                $actualStatus   = $this->mapMidtransStatus($ts, $fs);
+
+                if ($actualStatus !== 'pending') {
+                    $payment->status = $actualStatus;
+                    $payment->save();
+
+                    if (in_array($actualStatus, ['expired', 'rejected'], true)) {
+                        $reg = EventRegistration::find($payment->event_registration_id);
+                        if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                            $reg->status = $actualStatus;
+                            $reg->save();
+                        }
+                    }
+
+                    $payment = null; // tidak ada pending order aktif
+                }
+            } catch (\Throwable $e) {
+                // 404 dari Midtrans = belum pernah dicharge = expired
+                if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
+                    $payment->status = 'expired';
+                    $payment->save();
+                    $reg = EventRegistration::find($payment->event_registration_id);
+                    if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                        $reg->status = 'expired';
+                        $reg->save();
+                    }
+                    $payment = null;
+                }
+                // Error lain: biarkan tetap pending, jangan blokir user
+            }
+        }
+
+        // Cek apakah registrasi expired/rejected → perlu force_new
+        $registration = EventRegistration::query()
+            ->where('user_id', $user->id)
+            ->where('event_id', $event->id)
+            ->latest('id')
+            ->first();
+
+        $registrationExpired = $registration && in_array($registration->status, ['expired', 'rejected'], true);
+        if ($registrationExpired && $payment) {
+            $payment->status = 'expired';
+            $payment->save();
+            $payment = null;
+        }
+
+        $snapToken = null;
+        if ($payment) {
+            $t = data_get($payment->metadata, 'snap_token');
+            $snapToken = (is_string($t) && trim($t) !== '') ? $t : null;
+        }
+
+        return $this->jsonSuccess('Status pending order.', [
+            'pending'          => (bool) $payment,
+            'order_id'         => $payment?->order_id,
+            'amount'           => $payment ? (int) round((float) $payment->amount) : null,
+            'snap_token'       => $snapToken,
+            'whatsapp_number'  => $payment?->whatsapp_number,
+            'referral_code'    => $payment?->referral_code,
+            'needs_force_new'  => $registrationExpired && !$payment,
+        ]);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers untuk Midtrans
+    // -------------------------------------------------------------------------
+
+    private function configureMidtrans(): void
+    {
+        $serverKey = (string) config('midtrans.server_key');
+        if (trim($serverKey) === '') {
+            throw new \RuntimeException('Midtrans server key belum dikonfigurasi.');
+        }
+        \Midtrans\Config::$serverKey    = $serverKey;
+        \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
+        \Midtrans\Config::$isSanitized  = (bool) config('midtrans.sanitize', true);
+        \Midtrans\Config::$is3ds        = (bool) config('midtrans.3ds', true);
+    }
+
+    private function mapMidtransStatus(string $ts, string $fs): string
+    {
+        if ($ts === 'capture') {
+            return $fs === 'challenge' ? 'pending' : 'settled';
+        }
+        if ($ts === 'settlement') return 'settled';
+        if ($ts === 'pending')    return 'pending';
+        if ($ts === 'expire')     return 'expired';
+        return 'rejected';
+    }
+
+    private function processEventReferralCommission(Event $event, ManualPayment $payment): void
+    {
+        if (!(bool) ($event->is_reseller_event ?? false) || empty($payment->referral_code)) {
+            return;
+        }
+
+        $referrer = User::query()->where('referral_code', $payment->referral_code)->first();
+        if (!$referrer || (int) $referrer->id === (int) $payment->user_id) {
+            return;
+        }
+
+        $commission = ((float) $payment->amount) * self::REFERRAL_DISCOUNT_RATE;
+        if ($commission <= 0) return;
+
+        $exists = Referral::query()
+            ->where('user_id', $referrer->id)
+            ->where('referred_user_id', $payment->user_id)
+            ->where('description', 'Komisi Event: ' . $event->title)
+            ->exists();
+
+        if ($exists) return;
+
+        Referral::create([
+            'user_id'          => $referrer->id,
+            'referred_user_id' => $payment->user_id,
+            'amount'           => $commission,
+            'status'           => 'paid',
+            'description'      => 'Komisi Event: ' . $event->title,
+        ]);
+
+        $referrer->increment('wallet_balance', $commission);
+    }
+
+    private function notifyEventMidtransSuccess(Event $event, ManualPayment $payment): void
+    {
+        try {
+            $exists = UserNotification::query()
+                ->where('user_id', $payment->user_id)
+                ->where('type', 'event_registration_midtrans_success')
+                ->where('data->order_id', $payment->order_id)
+                ->exists();
+
+            if ($exists) return;
+
+            UserNotification::create([
+                'user_id'    => $payment->user_id,
+                'type'       => 'event_registration_midtrans_success',
+                'title'      => 'Pendaftaran Dikonfirmasi',
+                'message'    => 'Anda berhasil terdaftar di event "' . ($event->title ?? 'Event') . '".',
+                'data'       => [
+                    'event_id' => $event->id,
+                    'order_id' => $payment->order_id,
+                ],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('Failed to create midtrans event success notification', [
+                'order_id' => $payment->order_id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
     }
 }

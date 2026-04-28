@@ -1,10 +1,10 @@
-<!DOCTYPE html>
-<html lang="id">
+﻿<!DOCTYPE html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Masuk - idSPORA</title>
+  <title>Sign In - idSPORA</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -319,10 +319,10 @@
     </div>
 
     <div class="kanan">
-      <h3>Selamat Datang</h3>
-      <p class="subtitle">Silakan masuk ke akun Anda</p>
+      <h3>Welcome Back</h3>
+      <p class="subtitle">Please sign in to your account</p>
 
-      <form action="{{ route('login') }}" method="POST">
+      <form action="{{ route('login') }}" method="POST" novalidate id="signinForm">
         @csrf
         @php
           $redirectTarget = old('redirect', request('redirect'));
@@ -354,10 +354,10 @@
         </div>
 
         <div class="input-group-custom">
-          <label>Kata Sandi</label>
+          <label>Password</label>
           <div class="input-group">
             <input id="signin-password" type="password" name="password" autocomplete="current-password" class="form-control" placeholder="••••••••" required>
-            <button type="button" class="btn btn-outline-light" id="toggle-password" aria-label="Tampilkan/Sembunyikan kata sandi">
+            <button type="button" class="btn btn-outline-light" id="toggle-password" aria-label="Tampilkan/Sembunyikan Password">
               <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                 <circle cx="12" cy="12" r="3"/>
@@ -376,18 +376,18 @@
           <div class="form-check">
             <input type="checkbox" name="remember" class="form-check-input" id="remember">
             <label class="form-check-label" for="remember" style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">
-              Ingat saya
+              Remember me
             </label>
           </div>
           <div class="lupa-password" style="margin-top:0;">
-            <a href="{{ route('forgot-password') }}">Lupa Kata Sandi?</a>
+            <a href="{{ route('forgot-password') }}">Forgot Password?</a>
           </div>
         </div>
 
-        <button type="submit" class="btn-register">Masuk</button>
+        <button type="submit" class="btn-register">Sign In</button>
       </form>
 
-      <div class="garis">Atau masuk dengan</div>
+      <div class="garis">Or sign in with</div>
 
       <a href="{{ route('auth.google', array_filter(['redirect' => $redirectTarget ?? null])) }}" class="btn-google">
         <img src="{{ asset('aset/logo-google.png') }}" alt="Google" width="20">
@@ -395,7 +395,7 @@
       </a>
 
       <div class="text-login">
-        Belum punya akun? <a href="{{ route('register') }}">Daftar Sekarang</a>
+        Don't have an account? <a href="{{ route('register') }}">Register Now</a>
       </div>
     </div>
   </div>
@@ -438,6 +438,29 @@
       } catch(e){}
     })();
   </script>
-</body>
+  <script>
+    // Validate all required fields at once
+    document.getElementById('signinForm')?.addEventListener('submit', function(e) {
+        const fields = this.querySelectorAll('[required]');
+        let hasError = false;
+        fields.forEach(function(field) {
+            field.style.borderColor = '';
+            const wrapper = field.closest('.input-group-custom') || field.parentNode;
+            const prev = wrapper.querySelector('.field-error');
+            if (prev) prev.remove();
 
+            if (!field.value.trim()) {
+                hasError = true;
+                field.style.borderColor = '#dc3545';
+                const err = document.createElement('small');
+                err.className = 'field-error';
+                err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;';
+                err.textContent = 'This field is required.';
+                wrapper.appendChild(err);
+            }
+        });
+        if (hasError) e.preventDefault();
+    });
+  </script>
+</body>
 </html>

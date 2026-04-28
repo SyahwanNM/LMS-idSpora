@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+﻿@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
@@ -42,7 +42,6 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
 
-        /* Grid Layout */
         .grid-layout {
             display: grid;
             grid-template-columns: 1.4fr 0.8fr;
@@ -50,10 +49,9 @@
             align-items: start;
         }
 
-        /* Inputs yang lebih ramping */
         .form-label-custom { 
             font-weight: 600; 
-            font-size: 13px; /* Font label diperkecil */
+            font-size: 13px; 
             margin-bottom: 4px; 
             color: #111827; 
         }
@@ -76,8 +74,8 @@
         .warning-text { color: #EF4444; font-size: 11px; font-style: italic; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
 
         /* Whatsapp */
-        .wa-group { display: flex; gap: 8px; }
-        .wa-group select { width: 100px; }
+        .wa-group { display: flex; gap: 8px; align-items: center; }
+        .wa-group input[type="text"] { flex: 1; min-width: 0; }
 
         /* Order Detail Items */
         .order-detail-content { display: flex; gap: 12px; align-items: flex-start; }
@@ -151,7 +149,7 @@
                 
                 <div class="left-col">
                     <div class="card-custom">
-                        <h3>Data Peserta</h3>
+                        <h3>Participant Data</h3>
                         
                         <div class="mb-custom">
                             <label class="form-label-custom">Email</label>
@@ -159,8 +157,8 @@
                         </div>
 
                         <div class="mb-custom">
-                            <label class="form-label-custom" style="margin-bottom:0">Nama Lengkap</label>
-                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3">
+                            <label class="form-label-custom" style="margin-bottom:0">Full Name</label>
+                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3" readonly>
                             <div class="warning-text" style="margin-top:4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
@@ -170,23 +168,18 @@
                             </div>
                         </div>
 
-                        <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">No Whatsapp</label>
+                        <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">Whatsapp Number</label>
                             <div class="wa-group">
-                                <select class="form-select-custom" name="dial_code" required>
-                                    <option value="">Kode</option>
-                                    <option value="+62" selected>+62</option>
-                                    <option value="+60">+60</option>
-                                    <option value="+65">+65</option>
-                                </select>
-                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="No Whatsapp" inputmode="numeric" required>
+                                <input type="hidden" name="dial_code" value="">
+                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="Contoh: 6281234567890" inputmode="numeric" required style="flex:1;min-width:0;">
                             </div>
                         </div>
                         @if(isset($event) && (bool) ($event->is_reseller_event ?? false))
                         <div class="mb-custom">
                             <label class="form-label-custom">Kode Referral (opsional)</label>
-                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Masukkan kode referral jika ada" value="{{ request()->query('ref', '') }}">
+                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Have a referral code? Enter it here" value="{{ request()->query('ref', '') }}">
                             <div id="referralMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
-                            <div class="form-text small">Masukkan kode referral reseller untuk mendapatkan diskon/komisi.</div>
+                            <div class="form-text small">Enter the reseller referral code to get a discount/commission.</div>
                         </div>
                         @endif
                          
@@ -222,7 +215,7 @@
 
                             @if(!$isFree)
                                 <div class="mt-3">
-                                    <div class="form-label-custom" style="margin-bottom:6px;">Metode Pembayaran</div>
+                                    <div class="form-label-custom" style="margin-bottom:6px;">Payment Gateway</div>
                                    <div style="display:flex; gap:14px; flex-wrap:wrap;">
                                         @if(!$midtransClientKey)
                                             <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
@@ -245,12 +238,12 @@
 
                     @if(isset($event) && $isFree)
                         <div class="mt-3" id="manualPaySection">
-                            <button type="submit" class="btn-pay" id="freeRegBtn">Daftar Gratis</button>
+                            <button type="submit" class="btn-pay" id="freeRegBtn">Register Now!</button>
                         </div>
                     @else
                         @if(!$midtransClientKey)
                             <div class="mt-3" id="manualPaySection">
-                                <button type="button" id="showQrisBtn" class="btn-pay" disabled>Bayar</button>
+                                <button type="button" id="showQrisBtn" class="btn-pay" disabled>Pay Now!</button>
                             </div>
                         @else
                             <div class="mt-3" id="manualPaySection" style="display:none;"></div>
@@ -259,8 +252,8 @@
 
                     @if(!$isFree)
                         <div id="midtransSection" style="display:none;">
-                            <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Bayar dengan Midtrans</button>
-                            <div class="small text-muted mt-2">Pembayaran akan terverifikasi otomatis setelah sukses.</div>
+                            <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay with Midtrans</button>
+                            <div class="small text-muted mt-2">Payment will be verified automatically after success.</div>
                         </div>
                     @endif
                 </div>
@@ -305,7 +298,7 @@
                             <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03a.75.75 0 0 0 1.07 0l3.992-3.992a.75.75 0 0 0-1.06-1.06L7.5 9.44 5.53 7.47a.75.75 0 0 0-1.06 1.06z"/>
                         </svg>
                     </div>
-                    <h5 class="mb-2" style="font-weight: 700;">Berhasil!</h5>
+                    <h5 class="mb-2" style="font-weight: 700;">Success!</h5>
                     <div id="midtransSuccessModalText" class="text-muted" style="font-size: 14px;"></div>
                     <div class="mt-3">
                         <button type="button" class="btn btn-success" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px 18px; font-weight: 600;">OK</button>
@@ -321,10 +314,10 @@
             <div class="modal-content" style="border-radius: 18px; overflow: hidden;">
                 <div class="modal-body p-4 text-center">
                     <div id="appNotifyIcon" class="mb-3"></div>
-                    <h5 id="appNotifyTitle" class="mb-2" style="font-weight: 700;">Informasi</h5>
+                    <h5 id="appNotifyTitle" class="mb-2" style="font-weight: 700;">Information</h5>
                     <div id="appNotifyMessage" class="text-muted" style="font-size: 14px;"></div>
                     <div class="mt-4">
-                        <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px; font-weight: 600;">Mengerti</button>
+                        <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal" style="border-radius: 10px; padding: 10px; font-weight: 600;">Got it</button>
                     </div>
                 </div>
             </div>
@@ -343,7 +336,7 @@
             if (!modalEl || !messageEl) return;
             messageEl.textContent = message;
             let iconHtml = '';
-            let titleText = 'Informasi';
+            let titleText = 'Information';
             let btnClass = 'btn-primary';
             if (type === 'error') {
                 iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#EF4444" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/></svg></div>';
@@ -351,7 +344,7 @@
                 btnClass = 'btn-danger';
             } else if (type === 'success') {
                 iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(22, 163, 74, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#16A34A" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03a.75.75 0 0 0 1.07 0l3.992-3.992a.75.75 0 0 0-1.06-1.06L7.5 9.44 5.53 7.47a.75.75 0 0 0-1.06 1.06z"/></svg></div>';
-                titleText = 'Berhasil';
+                titleText = 'Success';
                 btnClass = 'btn-success';
             } else {
                 iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(59, 130, 246, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#3B82F6" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>';
@@ -366,7 +359,6 @@
         const form = document.getElementById('paymentForm');
         if(!form) return;
         const fullName = form.querySelector('input[name="full_name"]');
-        const dial = form.querySelector('select[name="dial_code"]');
         const wa = form.querySelector('input[name="whatsapp"]');
         const showQrisBtn = document.getElementById('showQrisBtn');
         const paymentProofInput = document.getElementById('paymentProofInput');
@@ -403,7 +395,7 @@
 
             // self-referral block
             if(code !== '' && currentUserReferral && code.toUpperCase() === String(currentUserReferral).toUpperCase()){
-                if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Kode referral tidak boleh milik Anda sendiri.'; }
+                if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'You cannot use your own referral code.'; }
                 if(showQrisBtn) showQrisBtn.disabled = true;
                 if(midtransPayBtn) midtransPayBtn.disabled = true;
                 if(payNowBtn) payNowBtn.disabled = true;
@@ -423,7 +415,7 @@
             _referralTimer = setTimeout(async function(){
                 const data = await validateReferralServer(code);
                 if(!data){
-                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Gagal memeriksa kode. Coba lagi.'; }
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Failed to verify code. Please try again.'; }
                     if(showQrisBtn) showQrisBtn.disabled = true;
                     if(midtransPayBtn) midtransPayBtn.disabled = true;
                     if(payNowBtn) payNowBtn.disabled = true;
@@ -433,10 +425,10 @@
 
                 if(data.valid){
                     if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(data.final_amount) + ' (' + Math.round((data.discount_rate||REFERRAL_RATE)*100) + '% off)';
-                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-danger'); referralMessageEl.classList.add('text-muted'); referralMessageEl.textContent = data.message || 'Kode referral valid.'; }
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-danger'); referralMessageEl.classList.add('text-muted'); referralMessageEl.textContent = data.message || 'Referral code is valid.'; }
                     validate();
                 } else {
-                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = data.message || 'Kode referral tidak valid.'; }
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = data.message || 'Invalid referral code.'; }
                     if(showQrisBtn) showQrisBtn.disabled = true;
                     if(midtransPayBtn) midtransPayBtn.disabled = true;
                     if(payNowBtn) payNowBtn.disabled = true;
@@ -466,11 +458,11 @@
             if(midtransSection) midtransSection.style.display = isManual ? 'none' : '';
         }
 
-        function isValidPhone(val){ return /^[0-9]{6,15}$/.test(String(val || '').trim()); }
+        function isValidPhone(val){ return /^[0-9]{8,15}$/.test(String(val || '').trim()); }
 
         function validate(){
             const nameOk = fullName && fullName.value.trim().length >= 3;
-            const dialOk = dial && dial.value.trim() !== '';
+            const dialOk = true; // dial code fixed to +62
             const waOk = wa && isValidPhone(wa.value);
             const allOk = nameOk && dialOk && waOk;
 
@@ -505,7 +497,6 @@
 
         ['input','change','keyup','blur'].forEach(evt => {
             if(fullName) fullName.addEventListener(evt, validate);
-            if(dial) dial.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
             if(paymentProofInput) paymentProofInput.addEventListener(evt, validate);
             if(referralInput) referralInput.addEventListener(evt, updateReferralUI);
@@ -526,7 +517,7 @@
                 const freeBtn = document.getElementById('freeRegBtn');
                 if(freeBtn) {
                     freeBtn.disabled = true;
-                    freeBtn.textContent = 'Memproses...';
+                    freeBtn.textContent = 'Processing...';
                 }
 
                 const formData = new FormData(form);
@@ -543,19 +534,19 @@
                             window.location.href = data.redirect || @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
                         }, 1600);
                     } else {
-                        showAppNotify(data.message || 'Gagal mendaftar.', 'error');
+                        showAppNotify(data.message || 'Registration failed.', 'error');
                         if(freeBtn) {
                             freeBtn.disabled = false;
-                            freeBtn.textContent = 'Daftar Gratis';
+                            freeBtn.textContent = 'Register Free';
                         }
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    showAppNotify('Terjadi kesalahan sistem.', 'error');
+                    showAppNotify('A system error occurred.', 'error');
                     if(freeBtn) {
                         freeBtn.disabled = false;
-                        freeBtn.textContent = 'Daftar Gratis';
+                        freeBtn.textContent = 'Register Free';
                     }
                 });
                 return;
@@ -569,7 +560,7 @@
                 const proofOk = paymentProofInput && paymentProofInput.files && paymentProofInput.files.length > 0;
                 if(!proofOk){
                     e.preventDefault();
-                    showAppNotify('Silakan upload bukti pembayaran terlebih dahulu.', 'error');
+                    showAppNotify('Please upload your payment proof first.', 'error');
                     return;
                 }
 
@@ -592,7 +583,7 @@
 
             if(!validate()){
                 e.preventDefault();
-                showAppNotify('Lengkapi data peserta sebelum membayar.', 'error');
+                showAppNotify('Please complete your details before paying.', 'error');
             }
         });
 
@@ -607,7 +598,7 @@
                 e.preventDefault();
                 validate();
                 if(showQrisBtn.disabled){
-                    showAppNotify('Lengkapi data peserta terlebih dahulu.', 'error');
+                    showAppNotify('Please complete your details first.', 'error');
                     return;
                 }
 
@@ -643,7 +634,7 @@
                     return;
                 }
                 if(file.size > 5 * 1024 * 1024){
-                    showAppNotify('Ukuran file terlalu besar. Maksimal 5MB.', 'error');
+                    showAppNotify('File too large. Maximum 5MB.', 'error');
                     paymentProofInput.value = '';
                     if(proofPreviewEl) proofPreviewEl.style.display = 'none';
                     validate();
@@ -687,7 +678,7 @@
         function showMidtransSuccessModal(customMsg = null){
             const text = document.getElementById('midtransSuccessModalText');
             if (text) {
-                text.textContent = customMsg || ('Anda berhasil terdaftar di event "' + eventTitle + '".');
+                text.textContent = customMsg || ('You have successfully registered for the event "' + eventTitle + '".');
             }
 
             const modalEl = document.getElementById('midtransSuccessModal');
@@ -726,16 +717,10 @@
                 if (pending.whatsapp_number && wa && (!wa.value || wa.value.trim() === '')) {
                     const raw = String(pending.whatsapp_number).trim();
                     // Expect formats like +62xxxxxxxx or 62xxxxxxxx or 0xxxxxxxx
-                    const dialEl = dial;
                     if (raw.startsWith('+')) {
                         const m = raw.match(/^\+(\d{1,3})(.*)$/);
                         if (m) {
-                            const dialCode = '+' + m[1];
                             const rest = String(m[2] || '').replace(/\D/g, '');
-                            if (dialEl) {
-                                const opt = Array.from(dialEl.options || []).find(o => o.value === dialCode);
-                                if (opt) dialEl.value = dialCode;
-                            }
                             wa.value = rest;
                         }
                     } else {
@@ -756,6 +741,11 @@
                 if (showQrisBtn) showQrisBtn.disabled = true;
 
                 toggleMethodUI();
+                validate();
+            } else if (pending && pending.needs_force_new) {
+                // Previous order expired/rejected — reset to fresh payment state
+                cachedPending = null;
+                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
                 validate();
             }
         }
@@ -782,15 +772,16 @@
             }
 
             const forceNewFromQuery = (new URLSearchParams(window.location.search)).get('force_new') === '1';
+            const forceNewFromExpired = !!(cachedPending && cachedPending.needs_force_new);
 
             // ensure validation up-to-date
             validate();
             if(midtransPayBtn && midtransPayBtn.disabled){
-                showAppNotify('Lengkapi data peserta sebelum membayar.', 'error');
+                showAppNotify('Please complete your details before paying.', 'error');
                 return;
             }
 
-            const dialVal = (dial ? dial.value : '').trim();
+            const dialVal = '+62';
             const waVal = (wa ? wa.value : '').trim();
 
             async function getOrCreateSnapToken(forceNew){
@@ -814,18 +805,18 @@
                 });
                 const data = await res.json();
                 if(!res.ok || !data || !data.snap_token){
-                    throw new Error(data && data.message ? data.message : 'Gagal membuat token Midtrans');
+                    throw new Error(data && data.message ? data.message : 'Failed membuat token Midtrans');
                 }
                 return data;
             }
 
             midtransPayBtn.disabled = true;
             const originalText = midtransPayBtn.textContent;
-            midtransPayBtn.textContent = 'Memproses...';
+            midtransPayBtn.textContent = 'Processing...';
 
             try{
                 let data;
-                if (forceNewFromQuery) {
+                if (forceNewFromQuery || forceNewFromExpired) {
                     // Explicit user intent: always create a new Midtrans transaction.
                     cachedPending = null;
                     data = await getOrCreateSnapToken(true);
@@ -857,16 +848,37 @@
                     onPending: async function(){
                         // keep as pending; user can retry later
                         try { await postFinalize(data.order_id); } catch(_e) {}
-                        showAppNotify('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.', 'info');
+                        showAppNotify('Payment pending. Please complete the paybayaran di Midtrans.', 'info');
                         // Update label for next attempt
                         cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
                         if(midtransPayBtn) midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
                     },
                     onError: function(){
-                        showAppNotify('Pembayaran gagal. Silakan coba lagi.', 'error');
+                        showAppNotify('Payment failed. Please try again.', 'error');
                     },
-                    onClose: function(){
-                        // user closed popup
+                    onClose: async function(){
+                        // Always check status when popup closes (handles timer expiry, close button, etc.)
+                        midtransPayBtn.disabled = true;
+                        midtransPayBtn.textContent = 'Memeriksa status...';
+                        try {
+                            const result = await postFinalize(data.order_id);
+                            if (result && result.status === 'settled') {
+                                showMidtransSuccessModal();
+                                setTimeout(function(){
+                                    window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                                }, 1400);
+                                return;
+                            }
+                            if (result && (result.status === 'expired' || result.status === 'rejected')) {
+                                cachedPending = null;
+                                window.location.href = window.location.pathname + '?force_new=1';
+                                return;
+                            }
+                        } catch(_e) {}
+                        // Still pending or unknown — re-enable button
+                        midtransPayBtn.disabled = false;
+                        midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                        validate();
                     }
                 });
             } catch(e){
@@ -891,7 +903,16 @@
 
         // If there is a pending Midtrans payment, show "continue" label
         ensurePendingLabel();
+
+        // If force_new=1 in URL, clear cached pending and reset button label
+        if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
+            cachedPending = null;
+            if (midtransPayBtn) {
+                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+            }
+        }
     });
     </script>
 </body>
 </html>
+

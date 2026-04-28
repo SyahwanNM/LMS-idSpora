@@ -855,7 +855,8 @@ class TrainerController extends Controller
                 $query->orderBy('order_no', 'asc')->with('quizQuestions');
             },
             'enrollments.user',
-            'reviews'
+            'reviews',
+            'units',
         ])
             ->where('id', $id)
             ->where('trainer_id', $trainerId)
