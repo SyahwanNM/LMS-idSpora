@@ -26,8 +26,8 @@
                                 $isQuiz = strtolower($module->type ?? '') === 'quiz';
                                 $quizHasQuestions = $isQuiz && ($item['quizzes'] ?? collect())->count() > 0;
                                 $quizEmpty = $isQuiz && !$quizHasQuestions;
-                                // Quiz with questions is auto-considered approved
-                                $effectiveStatus = $quizHasQuestions ? 'approved' : ($module->review_status ?? 'pending_review');
+                                // Quiz with questions still needs admin approval
+                                $effectiveStatus = $module->review_status ?? 'pending_review';
                             @endphp
                             <tr>
                                 <td>{{ $course->name }}</td>
@@ -56,7 +56,7 @@
                                         </button>
                                     </form>
                                     @endif
-                                    @if(!$quizEmpty && $effectiveStatus !== 'rejected' && !$isQuiz)
+                                    @if(!$quizEmpty && $effectiveStatus !== 'rejected')
                                     <form action="#" method="POST" style="display:inline-block; margin-left:4px;">
                                         @csrf
                                         <button type="button" class="btn btn-danger btn-sm" title="Tolak" onclick="showRejectModal({{ $module->id }}, '{{ route('admin.trainer.modules.reject', [$trainer->id, $module->id]) }}')">

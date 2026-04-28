@@ -2295,7 +2295,7 @@
                         @endphp
 
                         @if($termsText === '')
-                            <p class="text-muted" style="margin:0;">Terms and Condition akan segera diumumkan</p>
+                            <p class="text-muted" style="margin:0;">Terms and Conditions will be announced soon</p>
                         @else
                             {!! $termsHtml !!}
                         @endif
@@ -2910,13 +2910,13 @@
                             fallbackCopy(pageUrl);
                         }
                         if (copyText) {
-                            copyText.textContent = 'Tersalin!';
+                            copyText.textContent = 'Copied!';
                             setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
                         }
                     } catch (_e) {
                         fallbackCopy(pageUrl);
                         if (copyText) {
-                            copyText.textContent = 'Tersalin!';
+                            copyText.textContent = 'Copied!';
                             setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
                         }
                     }

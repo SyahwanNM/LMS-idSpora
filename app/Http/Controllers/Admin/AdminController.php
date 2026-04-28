@@ -562,38 +562,32 @@ class AdminController extends Controller
             ];
         });
 
-        // Summary stats untuk recap cards pertumbuhan
-        $totalFreeParticipants  = $events->filter(fn($e) => (float)($e->price ?? 0) <= 0)->sum('registrations_count');
-        $totalPaidParticipants  = $events->filter(fn($e) => (float)($e->price ?? 0) > 0)->sum('registrations_count');
-        $totalManageEvents      = $events->filter(fn($e) => strtolower(trim((string)($e->manage_action ?? ''))) === 'manage')->count();
-        $totalCreateEvents      = $events->filter(fn($e) => strtolower(trim((string)($e->manage_action ?? ''))) !== 'manage')->count();
+        // Summary stats dari $growthRows (sama dengan tabel)
+        $totalFreeParticipants  = collect($growthRows)->where('is_free', true)->sum('participants');
+        $totalPaidParticipants  = collect($growthRows)->where('is_free', false)->sum('participants');
+        $totalManageEvents      = collect($growthRows)->where('manage_action', 'manage')->count();
+        $totalCreateEvents      = collect($growthRows)->where('manage_action', '!=', 'manage')->count();
 
-        // Peserta per hari untuk chart (free vs paid participants)
-        $freeParticipantMap = \App\Models\EventRegistration::query()
-            ->join('events', 'events.id', '=', 'event_registrations.event_id')
-            ->whereYear('events.event_date', $selectedDate->year)
-            ->whereMonth('events.event_date', $selectedDate->month)
-            ->whereRaw('COALESCE(events.price, 0) <= 0')
-            ->where('event_registrations.status', 'active')
-            ->selectRaw('DAY(events.event_date) as d, COUNT(event_registrations.id) as c')
-            ->groupBy('d')
-            ->pluck('c', 'd');
-
-        $paidParticipantMap = \App\Models\EventRegistration::query()
-            ->join('events', 'events.id', '=', 'event_registrations.event_id')
-            ->whereYear('events.event_date', $selectedDate->year)
-            ->whereMonth('events.event_date', $selectedDate->month)
-            ->whereRaw('COALESCE(events.price, 0) > 0')
-            ->where('event_registrations.status', 'active')
-            ->selectRaw('DAY(events.event_date) as d, COUNT(event_registrations.id) as c')
-            ->groupBy('d')
-            ->pluck('c', 'd');
+        // Peserta per hari untuk chart — derived from $growthRows (same events as the table)
+        $freeParticipantByDay = [];
+        $paidParticipantByDay = [];
+        foreach ($growthRows as $row) {
+            if (empty($row['date'])) continue;
+            try {
+                $day = (int) \Carbon\Carbon::createFromFormat('d/m/Y', $row['date'])->day;
+            } catch (\Throwable $e) { continue; }
+            if ($row['is_free']) {
+                $freeParticipantByDay[$day] = ($freeParticipantByDay[$day] ?? 0) + $row['participants'];
+            } else {
+                $paidParticipantByDay[$day] = ($paidParticipantByDay[$day] ?? 0) + $row['participants'];
+            }
+        }
 
         $chartFreeParticipantData = [];
         $chartPaidParticipantData = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
-            $chartFreeParticipantData[] = (int) ($freeParticipantMap[$d] ?? 0);
-            $chartPaidParticipantData[] = (int) ($paidParticipantMap[$d] ?? 0);
+            $chartFreeParticipantData[] = (int) ($freeParticipantByDay[$d] ?? 0);
+            $chartPaidParticipantData[] = (int) ($paidParticipantByDay[$d] ?? 0);
         }
 
         // Build rows for Operasional table (document completeness per event)
