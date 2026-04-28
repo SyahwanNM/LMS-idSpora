@@ -20,18 +20,7 @@ use App\Http\Controllers\Public\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Models\Enrollment;
 
-// Debug route for testing certificate view
-Route::middleware(['auth'])->get('/debug/latest-certificate', function() {
-    $enrollment = Enrollment::where('user_id', auth()->id())
-        ->where('status', 'completed')
-        ->latest()
-        ->first();
-    if (!$enrollment) {
-        $enrollment = Enrollment::where('user_id', auth()->id())->first();
-    }
-    if (!$enrollment) return "No enrollment found for current user. Please enroll in a course first.";
-    return redirect()->route('course.rating.success', $enrollment->course_id);
-})->name('debug.latest-certificate');
+
 
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\ModuleController;
@@ -613,38 +602,6 @@ Route::middleware(['auth'])->group(function () {
                 'destroy' => 'admin.events.destroy',
             ]
         ]);
-        Route::prefix('admin/crm')->name('admin.crm.')->group(function () {
-            Route::get('/dashboard', [\App\Http\Controllers\CRM\CRMController::class, 'dashboard'])->name('dashboard');
-
-            // Certificate management (moved to CRM)
-            Route::get('/certificates', [\App\Http\Controllers\CRM\CertificateController::class, 'index'])->name('certificates.index');
-            Route::get('/certificates/{event}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'edit'])->name('certificates.edit');
-            Route::put('/certificates/{event}', [\App\Http\Controllers\CRM\CertificateController::class, 'update'])->name('certificates.update');
-            Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
-            
-            // New routes for course certificates
-            Route::get('/courses/{course}/certificates/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'editCourse'])->name('certificates.edit-course');
-            Route::put('/courses/{course}/certificates', [\App\Http\Controllers\CRM\CertificateController::class, 'updateCourse'])->name('certificates.update-course');
-            Route::get('/courses/{course}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassalCourse'])->name('certificates.generate-massal-course');
-
-            // Customer management
-            Route::get('/customers', [\App\Http\Controllers\CRM\CRMController::class, 'customers'])->name('customers.index');
-            Route::get('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'showCustomer'])->name('customers.show');
-            Route::get('/customers/{customer}/edit', [\App\Http\Controllers\CRM\CRMController::class, 'editCustomer'])->name('customers.edit');
-            Route::put('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'updateCustomer'])->name('customers.update');
-
-            // Feedback Analysis
-            Route::get('/feedback', [\App\Http\Controllers\CRM\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');
-
-            // Support Messages
-            Route::get('/support', [\App\Http\Controllers\CRM\CRMController::class, 'supportMessages'])->name('support.index');
-            Route::post('/support/{message}/status', [\App\Http\Controllers\CRM\CRMController::class, 'updateSupportStatus'])->name('support.updateStatus');
-
-            // Broadcast/Blast
-            Route::get('/broadcast', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastIndex'])->name('broadcast.index');
-            Route::get('/broadcast/create', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastCreate'])->name('broadcast.create');
-            Route::post('/broadcast/send', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastSend'])->name('broadcast.send');
-        });
 
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)
         Route::get('/admin/certificates', function () {
@@ -663,61 +620,7 @@ Route::middleware(['auth'])->group(function () {
 });
 // Include additional manual-payment routes (manual QRIS proof upload)
 require __DIR__ . '/web_manual_payment.php';
-// Temporary Debug Route for Testing Certificates
-Route::get('/debug/setup-test-data', function() {
-    if (!Auth::check()) return redirect()->route('login');
-    $user = Auth::user();
 
-    // 1. Create Dummy Course
-    $course = \App\Models\Course::updateOrCreate(
-        ['name' => 'KURSUS DUMMY UNTUK TESTING'],
-        [
-            'description' => 'Kursus ini dibuat otomatis untuk testing sertifikat.',
-            'price' => 0,
-            'status' => 'approved',
-            'level' => 'Beginner',
-            'instructor_id' => \App\Models\User::where('role', 'trainer')->first()->id ?? 1,
-            'category_id' => \App\Models\Category::first()->id ?? 1,
-            'certificate_template' => 'template_1'
-        ]
-    );
-
-
-    // Enroll user if not already enrolled
-    $enrollment = \App\Models\Enrollment::updateOrCreate(
-        ['user_id' => $user->id, 'course_id' => $course->id],
-        ['status' => 'completed', 'enrolled_at' => now(), 'completed_at' => now()]
-    );
-
-    // 2. Create Dummy Event
-    $event = \App\Models\Event::updateOrCreate(
-        ['title' => 'EVENT DUMMY UNTUK TESTING'],
-        [
-            'description' => 'Event ini dibuat otomatis untuk testing sertifikat.',
-            'event_date' => now()->subDays(1),
-            'event_time' => '09:00',
-            'location' => 'Online',
-            'speaker' => 'Speaker Dummy',
-            'jenis' => 'WEBINAR',
-            'materi' => 'Materi Dummy',
-            'target_peserta' => 'Semua Kalangan',
-            'benefit' => 'E-Certificate',
-            'price' => 0,
-            'is_published' => 1,
-            'certificate_template' => 'template_1'
-        ]
-    );
-
-
-
-    // Register user if not already registered
-    $registration = \App\Models\EventRegistration::updateOrCreate(
-        ['user_id' => $user->id, 'event_id' => $event->id],
-        ['status' => 'active', 'registered_at' => now()]
-    );
-
-    return redirect()->route('dashboard')->with('success', 'Data testing berhasil disiapkan! Silakan coba download sertifikat sekarang.');
-})->middleware('auth');
 
 Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->group(function () {
     Route::get('/dashboard', [TrainerController::class, 'dashboard'])->name('dashboard');
@@ -803,59 +706,3 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/event/{event}/material/approve', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'approve'])->name('admin.event-material.approve');
     Route::post('/admin/event/{event}/material/reject', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'reject'])->name('admin.event-material.reject');
 });
-
-// Temporary Debug Route for Testing Certificates
-Route::get('/debug/setup-test-data', function() {
-    if (!Auth::check()) return redirect()->route('login');
-    $user = Auth::user();
-
-    // 1. Create Dummy Course
-    $course = \App\Models\Course::updateOrCreate(
-        ['name' => 'KURSUS DUMMY UNTUK TESTING'],
-        [
-            'description' => 'Kursus ini dibuat otomatis untuk testing sertifikat.',
-            'price' => 0,
-            'status' => 'approved',
-            'level' => 'Beginner',
-            'instructor_id' => \App\Models\User::where('role', 'trainer')->first()->id ?? 1,
-            'category_id' => \App\Models\Category::first()->id ?? 1,
-            'certificate_template' => 'template_1'
-        ]
-    );
-
-
-    // Enroll user if not already enrolled
-    $enrollment = \App\Models\Enrollment::updateOrCreate(
-        ['user_id' => $user->id, 'course_id' => $course->id],
-        ['status' => 'completed', 'enrolled_at' => now(), 'completed_at' => now()]
-    );
-
-    // 2. Create Dummy Event
-    $event = \App\Models\Event::updateOrCreate(
-        ['title' => 'EVENT DUMMY UNTUK TESTING'],
-        [
-            'description' => 'Event ini dibuat otomatis untuk testing sertifikat.',
-            'event_date' => now()->subDays(1),
-            'event_time' => '09:00',
-            'location' => 'Online',
-            'speaker' => 'Speaker Dummy',
-            'jenis' => 'WEBINAR',
-            'materi' => 'Materi Dummy',
-            'target_peserta' => 'Semua Kalangan',
-            'benefit' => 'E-Certificate',
-            'price' => 0,
-            'is_published' => 1,
-            'certificate_template' => 'template_1'
-        ]
-    );
-
-
-
-    // Register user if not already registered
-    $registration = \App\Models\EventRegistration::updateOrCreate(
-        ['user_id' => $user->id, 'event_id' => $event->id],
-        ['status' => 'active', 'registered_at' => now()]
-    );
-
-    return redirect()->route('dashboard')->with('success', 'Data testing berhasil disiapkan! Silakan coba download sertifikat sekarang.');
-})->middleware('auth');

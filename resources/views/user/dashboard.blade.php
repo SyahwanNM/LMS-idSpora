@@ -221,30 +221,7 @@
                 </button>
             </div>
             
-            {{-- /* TESTING AREA */ --}}
-            <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4 p-4 d-flex align-items-center justify-content-between">
-                <div>
-                    <h5 class="fw-bold mb-1" style="color: #856404;"><i class="bi bi-tools me-2"></i>AREA TESTING LAYOUT SERTIFIKAT</h5>
-                    <p class="mb-0 small text-muted">Gunakan tombol di samping untuk mengetes tampilan sertifikat PDF yang sudah diperbaiki.</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="/debug/setup-test-data" class="btn btn-outline-dark fw-bold px-3 rounded-pill shadow-sm">
 
-                        <i class="bi bi-gear-fill me-1"></i> Siapkan Data Testing
-                    </a>
-                    @if(isset($testEnrollment))
-
-                        <a href="{{ route('course.certificates.download', [$testEnrollment->course_id, $testEnrollment->id]) }}?force=1" class="btn btn-primary fw-bold px-3 rounded-pill shadow-sm">
-                            <i class="bi bi-download me-1"></i> Test Sertif Course
-                        </a>
-                    @endif
-                    @if(isset($testRegistration))
-                        <a href="{{ route('certificates.download', [$testRegistration->event_id, $testRegistration->id]) }}?force=1" class="btn btn-success fw-bold px-3 rounded-pill shadow-sm">
-                            <i class="bi bi-download me-1"></i> Test Sertif Event
-                        </a>
-                    @endif
-                </div>
-            </div>
 
 
 
@@ -792,14 +769,7 @@
         {{-- </div> --}}
     </main>
 
-    @if(config('app.debug') || (auth()->check() && auth()->user()->role === 'admin'))
-    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
-        <a href="{{ route('debug.latest-certificate') }}" class="btn btn-dark shadow-lg d-flex align-items-center gap-2" style="background: #1e293b; border-radius: 50px; padding: 10px 20px; border: 1px solid rgba(255,255,255,0.1);">
-            <i class="bi bi-bug-fill text-warning"></i>
-            <span class="fw-bold small">Preview Certificate (Test)</span>
-        </a>
-    </div>
-    @endif
+
 
     @include('partials.footer-after-login')
 

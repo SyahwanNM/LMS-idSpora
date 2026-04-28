@@ -210,25 +210,10 @@ class DashboardController extends Controller
             ->limit(4)
             ->get();
 
-        // Global test items (for testing purposes)
-        $testEnrollment = Enrollment::where('status', 'completed')->with(['course', 'user'])->latest()->first();
-        if(!$testEnrollment) {
-            $testEnrollment = Enrollment::with(['course', 'user'])->latest()->first();
-        }
-        
-        $testRegistration = EventRegistration::where('status', 'active')->with(['event', 'user'])->latest()->first();
-        if(!$testRegistration) {
-            $testRegistration = EventRegistration::with(['event', 'user'])->latest()->first();
-        }
-
         return view('user.dashboard', [
-            'testEnrollment' => $testEnrollment,
-            'testRegistration' => $testRegistration,
             'upcomingEvents' => $upcomingEvents,
-
             'featuredCourses' => $featuredCourses,
             'userRegistrations' => $userRegistrations,
-
             'userEnrollments' => $userEnrollments,
             'learningChartData' => $learningChartData,
             'popularTopics' => $popularTopics,

@@ -246,37 +246,6 @@
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="info-card h-100" style="border-left: 4px solid var(--crm-primary);">
-            <h6 class="fw-bold text-navy mb-3">Ketentuan Penerbitan</h6>
-            <ul class="smaller text-muted ps-3 mb-0">
-                <li class="mb-2">Sertifikat hanya dapat diterbitkan <b>3 hari setelah</b> tanggal pelaksanaan event berakhir untuk memastikan sinkronisasi absensi.</li>
-                <li class="mb-2">Pastikan <b>Logo Partner</b> dan <b>Tanda Tangan Authorized</b> telah diupload pada menu pengaturan masing-masing event.</li>
-                <li>Gunakan fitur "Generate" untuk memproses sertifikat secara massal dalam format arsip terkompresi.</li>
-            </ul>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="info-card h-100" style="border-left: 4px solid var(--crm-secondary);">
-            <h6 class="fw-bold text-navy mb-3">Bantuan Cepat</h6>
-            <div class="d-flex align-items-center mb-3">
-                <div class="p-2 bg-white rounded border me-3"><i class="bi bi-file-earmark-pdf text-danger fs-4"></i></div>
-                <div>
-                    <div class="small fw-bold">Manual Book Sertifikat</div>
-                    <a href="#" class="smaller text-primary text-decoration-none">Unduh Panduan (PDF)</a>
-                </div>
-            </div>
-            <div class="d-flex align-items-center">
-                <div class="p-2 bg-white rounded border me-3"><i class="bi bi-envelope text-info fs-4"></i></div>
-                <div>
-                    <div class="small fw-bold">Hubungi Support IT</div>
-                    <a href="mailto:support@idspora.com" class="smaller text-primary text-decoration-none">Kirim Email Bantuan</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @section('scripts')

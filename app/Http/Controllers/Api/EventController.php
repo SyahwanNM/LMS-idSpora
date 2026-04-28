@@ -109,8 +109,6 @@ class EventController extends Controller
 
         $events = $query->paginate($perPage)->appends($request->query());
 
-    private function jsonSuccess(string $message, $data = null, $pagination = null, int $statusCode = 200)
-    {
         return response()->json([
             'status' => 'success',
             'message' => 'List event',
@@ -122,6 +120,27 @@ class EventController extends Controller
                 'last_page' => $events->lastPage(),
             ],
         ]);
+    }
+
+    private function jsonSuccess(string $message, $data = null, $pagination = null, int $statusCode = 200)
+    {
+        $response = ['status' => 'success', 'message' => $message];
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+        if ($pagination !== null) {
+            $response['pagination'] = $pagination;
+        }
+        return response()->json($response, $statusCode);
+    }
+
+    private function jsonError(string $message, int $statusCode = 400, $data = null)
+    {
+        $response = ['status' => 'error', 'message' => $message];
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+        return response()->json($response, $statusCode);
     }
 
     public function show(Request $request, int $id)
