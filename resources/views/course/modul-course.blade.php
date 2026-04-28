@@ -290,6 +290,37 @@
                     }
                 }
 
+                // Completed material module IDs (pdf/video) from Progress table
+                $completedMaterialModuleIds = [];
+                if (auth()->check() && isset($course)) {
+                    $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+                        ->where('course_id', $course->id)
+                        ->whereIn('status', ['active', 'completed', 'expired'])
+                        ->first();
+                    if ($enrollment) {
+                        // For video modules: require BOTH completed=1 AND video_watched=1
+                        // This prevents old stale records (completed=1, video_watched=0) from showing checkmarks
+                        $videoModuleIds = $modulesList
+                            ->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) === 'video')
+                            ->pluck('id')->map(fn($id) => (int)$id)->all();
+
+                        $completedMaterialModuleIds = \App\Models\Progress::where('enrollment_id', $enrollment->id)
+                            ->where('completed', true)
+                            ->get(['course_module_id', 'video_watched'])
+                            ->filter(function ($p) use ($videoModuleIds) {
+                                $mid = (int) $p->course_module_id;
+                                if (in_array($mid, $videoModuleIds, true)) {
+                                    return (bool) $p->video_watched; // video: need video_watched=1 too
+                                }
+                                return true; // pdf/other: completed=1 is enough
+                            })
+                            ->pluck('course_module_id')
+                            ->map(fn($id) => (int) $id)
+                            ->values()
+                            ->all();
+                    }
+                }
+
                 $currentQuizPassed = true;
                 if ($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') {
                     $currentQuizPassed = in_array((int) $activeModule->id, $passedQuizModuleIds, true);
@@ -329,6 +360,22 @@
                         $isLocked = $hasFailedPrevQuiz;
                         $lockReason = $hasFailedPrevQuiz ? 'quiz' : '';
 
+                        // Check if this item is completed
+                        $isDone = false;
+                        if (($it['kind'] ?? '') === 'quiz') {
+                            $isDone = in_array((int) ($it['quiz']?->id ?? 0), $passedQuizModuleIds, true);
+                        } else {
+                            // If group has a video, only video completion counts (must be watched to end)
+                            // If group has only PDF (no video), PDF completion counts
+                            $videoId = (int) ($it['video']?->id ?? 0);
+                            $pdfId   = (int) ($it['pdf']?->id ?? 0);
+                            if ($videoId > 0) {
+                                $isDone = in_array($videoId, $completedMaterialModuleIds, true);
+                            } elseif ($pdfId > 0) {
+                                $isDone = in_array($pdfId, $completedMaterialModuleIds, true);
+                            }
+                        }
+
                         if ($isFreeLimited && !$isLocked) {
                             $candidateIds = [];
                             if (($it['kind'] ?? '') === 'quiz') {
@@ -352,7 +399,7 @@
 
                         // Cascading quiz check: if this is a quiz and not passed, ALL subsequent items will be locked.
                         if (($it['kind'] ?? '') === 'quiz') {
-                            $quizId = (int) ($rep->id ?? 0);
+                            $quizId = (int) ($it['quiz']?->id ?? $rep->id ?? 0);
                             if (auth()->check() && !in_array($quizId, $passedQuizModuleIds, true)) {
                                 $hasFailedPrevQuiz = true;
                             }
@@ -387,7 +434,11 @@
                             </span>
                             <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
                                 <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                    @if($isLocked)
+                                    @if($isDone)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#16a34a" class="bi bi-check-circle-fill" viewBox="0 0 16 16" aria-label="Completed">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                        </svg>
+                                    @elseif($isLocked)
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
                                             <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                                         </svg>
@@ -912,6 +963,57 @@
         document.querySelectorAll('video.video_course').forEach((v) => {
             try { v.load(); } catch (e) {}
         });
+
+        // Mark video module complete when video finishes playing
+        (function () {
+            const completeUrlBase = "{{ isset($course) ? url('/courses/' . $course->id . '/modules') : '' }}";
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            // Use the actual video module ID (not the representative display ID)
+            const videoModuleId = {{ !empty($videoModule?->id) ? (int)$videoModule->id : ($activeDisplayModuleId ?? 'null') }};
+
+            if (!completeUrlBase || !csrfToken || !videoModuleId) return;
+            console.log('[video-complete] ready, moduleId=', videoModuleId, 'url=', completeUrlBase + '/' + videoModuleId + '/complete');
+
+            document.querySelectorAll('video.video_course').forEach((v) => {
+                // Mark video_watched=true when user clicks play
+                v.addEventListener('play', async function onFirstPlay() {
+                    v.removeEventListener('play', onFirstPlay); // only once
+                    try {
+                        await fetch(`${completeUrlBase}/${videoModuleId}/watching`, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                        });
+                    } catch (e) { console.error('[video-watching] error:', e); }
+                });
+
+                // Mark completed=true when video ends
+                v.addEventListener('ended', async function () {
+                    try {
+                        const resp = await fetch(`${completeUrlBase}/${videoModuleId}/complete`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                            },
+                        });
+                        if (!resp.ok) {
+                            console.error('[video-complete] HTTP', resp.status, await resp.text());
+                            return;
+                        }
+                        // Update the accordion checkmark without reload
+                        const btn = document.querySelector(`.accordion-header[data-module-id="${videoModuleId}"]`);
+                        if (btn) {
+                            const iconSlot = btn.querySelector('span[style*="width:20px"]');
+                            if (iconSlot && !iconSlot.querySelector('.bi-check-circle-fill')) {
+                                iconSlot.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#16a34a" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>`;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[video-complete] fetch error:', e);
+                    }
+                });
+            });
+        })();
     </script>
 
     <script>

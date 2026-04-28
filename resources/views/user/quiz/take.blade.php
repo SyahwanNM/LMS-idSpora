@@ -258,10 +258,39 @@
                             ->all();
                     }
                 }
+
+                // Completed material module IDs from Progress table
+                $completedMaterialModuleIds = [];
+                if (auth()->check()) {
+                    $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+                        ->where('course_id', $course->id)
+                        ->whereIn('status', ['active', 'completed', 'expired'])
+                        ->first();
+                    if ($enrollment) {
+                        $videoModuleIds = $modulesList
+                            ->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) === 'video')
+                            ->pluck('id')->map(fn($id) => (int)$id)->all();
+
+                        $completedMaterialModuleIds = \App\Models\Progress::where('enrollment_id', $enrollment->id)
+                            ->where('completed', true)
+                            ->get(['course_module_id', 'video_watched'])
+                            ->filter(function ($p) use ($videoModuleIds) {
+                                $mid = (int) $p->course_module_id;
+                                if (in_array($mid, $videoModuleIds, true)) {
+                                    return (bool) $p->video_watched;
+                                }
+                                return true;
+                            })
+                            ->pluck('course_module_id')
+                            ->map(fn($id) => (int) $id)
+                            ->values()
+                            ->all();
+                    }
+                }
             @endphp
 
             <div class="quiz-modules-head">
-                <div class="quiz-modules-title">Daftar Modul</div>
+                <div class="quiz-modules-title">List Module</div>
                 <button type="button" class="quiz-modules-close" id="closeModulesBtn" aria-label="Tutup daftar modul">&times;</button>
             </div>
 
@@ -300,9 +329,23 @@
 
                         // Cascading quiz check: if this is a quiz and not passed, ALL subsequent items will be locked.
                         if (($it['kind'] ?? '') === 'quiz') {
-                            $quizId = (int) ($rep->id ?? 0);
+                            $quizId = (int) ($it['quiz']?->id ?? $rep->id ?? 0);
                             if (auth()->check() && !in_array($quizId, $passedQuizModuleIds, true)) {
                                 $hasFailedPrevQuiz = true;
+                            }
+                        }
+
+                        // Check completion
+                        $isDone = false;
+                        if (($it['kind'] ?? '') === 'quiz') {
+                            $isDone = in_array((int) ($it['quiz']?->id ?? 0), $passedQuizModuleIds, true);
+                        } else {
+                            $videoId = (int) ($it['video']?->id ?? 0);
+                            $pdfId   = (int) ($it['pdf']?->id ?? 0);
+                            if ($videoId > 0) {
+                                $isDone = in_array($videoId, $completedMaterialModuleIds, true);
+                            } elseif ($pdfId > 0) {
+                                $isDone = in_array($pdfId, $completedMaterialModuleIds, true);
                             }
                         }
 
@@ -315,7 +358,11 @@
                             </span>
                             <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
                                 <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                    @if($isLocked)
+                                    @if($isDone)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#16a34a" class="bi bi-check-circle-fill" viewBox="0 0 16 16" aria-label="Completed">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                        </svg>
+                                    @elseif($isLocked)
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
                                             <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
                                         </svg>
@@ -328,12 +375,12 @@
                         <div class="accordion-content">
                             @if($isLocked)
                                 @if($lockReason === 'free')
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Daftar atau beli course untuk membuka modul ini.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Register or purchase a course to unlock this module.</p>
                                 @else
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Pass the quiz first to unlock the next material.</p>
                                 @endif
                             @else
-                                <p class="text-muted" style="margin:0; font-size:13px;">Klik untuk mereview materi.</p>
+                                <p class="text-muted" style="margin:0; font-size:13px;">Click to review the material.</p>
                             @endif
                         </div>
                     </div>

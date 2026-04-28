@@ -1388,7 +1388,7 @@
 
                                                     {{-- Tombol Setujui/Tolak — tampil untuk SEMUA tipe modul (termasuk quiz) jika
                                                     belum approved --}}
-                                                    @if($material->status === 'pending_review' && $hasAnyContent && $reviewStatus !== 'approved')
+                                                    @if($hasAnyContent && $reviewStatus !== 'approved' && $reviewStatus !== 'rejected')
                                                         <div class="module-decision-stack">
                                                             <form method="POST"
                                                                 action="{{ route('admin.material.module.approve', [$material, $module]) }}"

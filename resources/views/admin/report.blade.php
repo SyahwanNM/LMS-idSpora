@@ -44,6 +44,50 @@
         #pendapatan .tabel_pendapatan { width: 100% !important; }
         .box_luar_report { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
         #pendapatan { width: 100% !important; }
+
+        /* ===== CUSTOM MONTH PICKER ===== */
+        .mp-wrapper { position: relative; display: inline-block; }
+        .mp-input {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px;
+            background: #f9fafb; cursor: pointer; font-size: 14px; color: #374151;
+            min-width: 160px; user-select: none;
+        }
+        .mp-input:hover { border-color: #9ca3af; }
+        .mp-label { flex: 1; }
+        .mp-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 16px;
+            min-width: 240px; z-index: 999;
+        }
+        .mp-dropdown.open { display: block; }
+        .mp-nav {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .mp-nav-btn {
+            background: none; border: none; font-size: 22px; color: #3b82f6;
+            cursor: pointer; padding: 0 6px; line-height: 1;
+        }
+        .mp-nav-btn:hover { color: #1d4ed8; }
+        .mp-year { font-weight: 700; font-size: 16px; color: #111827; }
+        .mp-months {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+        }
+        .mp-month-btn {
+            background: none; border: none; border-radius: 8px;
+            padding: 8px 4px; font-size: 14px; color: #374151;
+            cursor: pointer; text-align: center; transition: background .15s;
+        }
+        .mp-month-btn:hover { background: #eff6ff; color: #3b82f6; }
+        .mp-month-btn.selected { background: #3b82f6; color: #fff; font-weight: 600; }
+        .mp-clear-row { margin-top: 12px; text-align: center; }
+        .mp-clear-btn {
+            background: none; border: 1px solid #e5e7eb; border-radius: 6px;
+            padding: 4px 14px; font-size: 13px; color: #6b7280; cursor: pointer;
+        }
+        .mp-clear-btn:hover { background: #f3f4f6; }
     </style>
 </head>
 
@@ -169,7 +213,27 @@
                     </div>
                     <div class="box_filter">
                         <p class="mulai_course">Month</p>
-                        <input class="tanggal_course" id="revenueMonth" type="month">
+                        <!-- Custom Month Picker -->
+                        <div class="mp-wrapper" id="revenueMonthWrapper">
+                            <div class="mp-input" id="revenueMonthInput" tabindex="0">
+                                <span class="mp-label" id="revenueMonthLabel">Select a month</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#6b7280" viewBox="0 0 16 16">
+                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                                </svg>
+                            </div>
+                            <input type="hidden" id="revenueMonth" value="">
+                            <div class="mp-dropdown" id="revenueMonthDropdown">
+                                <div class="mp-nav">
+                                    <button type="button" class="mp-nav-btn" id="revenueMonthPrev">&#8249;</button>
+                                    <span class="mp-year" id="revenueMonthYear">2026</span>
+                                    <button type="button" class="mp-nav-btn" id="revenueMonthNext">&#8250;</button>
+                                </div>
+                                <div class="mp-months" id="revenueMonthGrid"></div>
+                                <div class="mp-clear-row">
+                                    <button type="button" class="mp-clear-btn" id="revenueMonthClear">All Months</button>
+                                </div>
+                            </div>
+                        </div>
                         <button class="btn_terapkan" id="applyRevenueFilter">Apply</button>
                     </div>
 
@@ -193,7 +257,10 @@
                         <tr>
                             <td>{{ $row['course_name'] }}</td>
                             <td>
-                                {{ $row['last_paid_at'] ? \Carbon\Carbon::parse($row['last_paid_at'])->format('d/m/Y') : '-' }}
+                                @php
+                                    $dateVal = $row['last_paid_at'] ?? $row['created_at'] ?? null;
+                                @endphp
+                                {{ $dateVal ? \Carbon\Carbon::parse($dateVal)->format('d/m/Y') : '-' }}
                             </td>
                             <td>{{ (int)($row['participants_count'] ?? 0) }}</td>
                             <td>{{ number_format((float)($row['course_price'] ?? 0), 0, ',', '.') }}</td>
@@ -638,6 +705,89 @@
     </script>
 
     <script>
+        // ===== CUSTOM MONTH PICKER =====
+        (function() {
+            const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const wrapper = document.getElementById('revenueMonthWrapper');
+            const inputEl = document.getElementById('revenueMonthInput');
+            const dropdown = document.getElementById('revenueMonthDropdown');
+            const hiddenInput = document.getElementById('revenueMonth');
+            const labelEl = document.getElementById('revenueMonthLabel');
+            const yearEl = document.getElementById('revenueMonthYear');
+            const grid = document.getElementById('revenueMonthGrid');
+            const prevBtn = document.getElementById('revenueMonthPrev');
+            const nextBtn = document.getElementById('revenueMonthNext');
+            const clearBtn = document.getElementById('revenueMonthClear');
+
+            if (!wrapper) return;
+
+            let currentYear = new Date().getFullYear();
+            let selectedYear = null;
+            let selectedMonth = null; // 0-indexed
+
+            function renderGrid() {
+                yearEl.textContent = currentYear;
+                grid.innerHTML = '';
+                MONTHS.forEach((m, i) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'mp-month-btn';
+                    btn.textContent = m;
+                    if (selectedYear === currentYear && selectedMonth === i) {
+                        btn.classList.add('selected');
+                    }
+                    btn.addEventListener('click', function() {
+                        selectedYear = currentYear;
+                        selectedMonth = i;
+                        const val = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
+                        hiddenInput.value = val;
+                        labelEl.textContent = `${m} ${currentYear}`;
+                        dropdown.classList.remove('open');
+                        renderGrid();
+                    });
+                    grid.appendChild(btn);
+                });
+            }
+
+            inputEl.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+                renderGrid();
+            });
+
+            prevBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                currentYear--;
+                renderGrid();
+            });
+
+            nextBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                currentYear++;
+                renderGrid();
+            });
+
+            clearBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectedYear = null;
+                selectedMonth = null;
+                hiddenInput.value = '';
+                labelEl.textContent = 'Select a month';
+                dropdown.classList.remove('open');
+                renderGrid();
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!wrapper.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                }
+            });
+
+            renderGrid();
+        })();
+    </script>
+
+    <script>
         (function() {
             const apiUrl = @json(route('admin.report.revenue'));
             const formatIDR = (n) => {
@@ -748,7 +898,7 @@
                 if (!tbody) return;
 
                 if (!rows.length) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Belum ada transaksi course pada rentang tanggal ini.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">There are no course transactions in this date range.</td></tr>';
                     return;
                 }
 
@@ -784,21 +934,29 @@
                 const month = monthInput?.value || '';
                 const q = searchInput?.value || '';
                 const url = new URL(apiUrl, window.location.origin);
-                if (month) url.searchParams.set('month', month);
+                if (month) {
+                    url.searchParams.set('month', month);
+                } else {
+                    url.searchParams.set('month', 'all');
+                }
                 if (q) url.searchParams.set('q', q);
                 url.searchParams.set('period', currentPeriod);
 
+                // Show loading state
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>';
+
                 try {
                     const res = await fetch(url.toString(), {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
+                        headers: { 'Accept': 'application/json' }
                     });
-                    if (!res.ok) return;
+                    if (!res.ok) {
+                        if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Gagal memuat data.</td></tr>';
+                        return;
+                    }
                     const data = await res.json();
                     render(data);
                 } catch (e) {
-                    // ignore fetch errors
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Terjadi kesalahan.</td></tr>';
                 }
             }
 

@@ -123,45 +123,33 @@
                 </div>
             </form>
             @php
-                $paidStatuses = ['settlement','capture','success'];
-                // Total bulan terpilih — berdasarkan event_date (tanggal event), bukan created_at
-                $totalRevenueAll = \App\Models\ManualPayment::where('manual_payments.status','settled')
-                    ->whereNotNull('manual_payments.event_id')
-                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
-                    ->whereYear('events.event_date',$selectedDate->year)
-                    ->whereMonth('events.event_date',$selectedDate->month)
-                    ->sum('manual_payments.amount');
-                $totalExpenseAll = \App\Models\EventExpense::query()
-                    ->join('events', 'events.id', '=', 'event_expenses.event_id')
-                    ->whereYear('events.event_date',$selectedDate->year)
-                    ->whereMonth('events.event_date',$selectedDate->month)
-                    ->sum('event_expenses.total');
-                // Tambahkan referral discount ke total expenses
-                $totalReferralDiscount = \App\Models\ManualPayment::where('manual_payments.status','settled')
-                    ->whereNotNull('manual_payments.event_id')
-                    ->whereNotNull('manual_payments.referral_code')
-                    ->where('manual_payments.referral_code', '!=', '')
-                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
-                    ->whereYear('events.event_date',$selectedDate->year)
-                    ->whereMonth('events.event_date',$selectedDate->month)
+                // Totals derived directly from $eventRows (same data as the table)
+                $totalRevenueAll  = collect($eventRows)->sum('revenue');
+                $totalExpenseAll  = collect($eventRows)->sum('expense');
+                $totalMarginAll   = collect($eventRows)->sum('profit');
+                // Previous month — same logic, events in prevDate month
+                $currentMonthRevenue  = $totalRevenueAll;
+                $currentMonthExpense  = $totalExpenseAll;
+                $currentMonthMargin   = $totalMarginAll;
+                $prevEventIds = \App\Models\Event::query()
+                    ->whereYear('event_date', $prevDate->year)
+                    ->whereMonth('event_date', $prevDate->month)
+                    ->pluck('id');
+                $revenueMapPrev = \App\Models\ManualPayment::where('status','settled')
+                    ->whereIn('event_id', $prevEventIds)
+                    ->sum('amount');
+                $expenseMapPrev = \App\Models\EventExpense::whereIn('event_id', $prevEventIds)->sum('total');
+                $salaryMapPrev  = \App\Models\EventSpeaker::whereIn('event_id', $prevEventIds)->where('salary','>',0)->sum('salary');
+                $referralMapPrev = (float) \App\Models\ManualPayment::where('status','settled')
+                    ->whereIn('event_id', $prevEventIds)
+                    ->whereNotNull('referral_code')->where('referral_code','!=','')
+                    ->join('events','events.id','=','manual_payments.event_id')
                     ->selectRaw('SUM(GREATEST(0, events.price - manual_payments.amount)) as total')
                     ->value('total') ?? 0;
-                $totalExpenseAll += (float) $totalReferralDiscount;
-                $totalMarginAll = $totalRevenueAll - $totalExpenseAll;
-                // Revenue & Expense bulan sebelumnya (berdasarkan event_date)
-                $currentMonthRevenue = $totalRevenueAll;
-                $previousMonthRevenue = \App\Models\ManualPayment::where('manual_payments.status','settled')
-                    ->whereNotNull('manual_payments.event_id')
-                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
-                    ->whereYear('events.event_date',$prevDate->year)->whereMonth('events.event_date',$prevDate->month)
-                    ->sum('manual_payments.amount');
-                $currentMonthExpense = $totalExpenseAll;
-                $previousMonthExpense = \App\Models\EventExpense::query()
-                    ->join('events', 'events.id', '=', 'event_expenses.event_id')
-                    ->whereYear('events.event_date',$prevDate->year)->whereMonth('events.event_date',$prevDate->month)
-                    ->sum('event_expenses.total');
-                $currentMonthMargin = $currentMonthRevenue - $currentMonthExpense;
-                $previousMonthMargin = $previousMonthRevenue - $previousMonthExpense;
+                $previousMonthRevenue = (float) $revenueMapPrev;
+                $previousMonthExpense = (float) $expenseMapPrev + (float) $salaryMapPrev + $referralMapPrev;
+                $previousMonthMargin  = $previousMonthRevenue - $previousMonthExpense;
+                $currentMonthMargin   = $currentMonthRevenue - $currentMonthExpense;
                 $fmtRp = function($n){ return 'Rp'.number_format((int)$n,0,',','.'); };
                 $growth = function($curr,$prev, Carbon $prevDate, Carbon $earliestDate){
                     if($prevDate->lt($earliestDate)) {
@@ -185,51 +173,33 @@
                 [$expUp,$expColor,$expIcon,$expPctAbs] = $arrowData($expGrowth);
                 [$marUp,$marColor,$marIcon,$marPctAbs] = $arrowData($marGrowth);
             @endphp
-            {{-- Chart: trend per hari di bulan terpilih (berdasarkan event_date) --}}
+            {{-- Chart: trend per hari di bulan terpilih — derived from $eventRows (same as table) --}}
             @php
                 $daysInMonth = $selectedDate->daysInMonth;
-                // Income per hari berdasarkan event_date
-                $revenuePerDay = \App\Models\ManualPayment::where('manual_payments.status','settled')
-                    ->whereNotNull('manual_payments.event_id')
-                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
-                    ->whereYear('events.event_date',$selectedDate->year)
-                    ->whereMonth('events.event_date',$selectedDate->month)
-                    ->selectRaw('DAY(events.event_date) as day, SUM(manual_payments.amount) as total')
-                    ->groupBy('day')
-                    ->pluck('total','day');
 
-                // Expenses per hari berdasarkan event_date (dari event_expenses)
-                $expensePerDay = \App\Models\EventExpense::query()
-                    ->join('events', 'events.id', '=', 'event_expenses.event_id')
-                    ->whereYear('events.event_date',$selectedDate->year)
-                    ->whereMonth('events.event_date',$selectedDate->month)
-                    ->selectRaw('DAY(events.event_date) as day, SUM(event_expenses.total) as total')
-                    ->groupBy('day')
-                    ->pluck('total','day');
-
-                // Referral discount per hari: selisih harga normal - harga referral
-                $referralDiscountPerDay = \App\Models\ManualPayment::where('manual_payments.status','settled')
-                    ->whereNotNull('manual_payments.event_id')
-                    ->whereNotNull('manual_payments.referral_code')
-                    ->where('manual_payments.referral_code', '!=', '')
-                    ->join('events', 'events.id', '=', 'manual_payments.event_id')
-                    ->whereYear('events.event_date',$selectedDate->year)
-                    ->whereMonth('events.event_date',$selectedDate->month)
-                    ->selectRaw('DAY(events.event_date) as day, SUM(GREATEST(0, events.price - manual_payments.amount)) as total')
-                    ->groupBy('day')
-                    ->pluck('total','day');
+                // Build per-day maps from $eventRows
+                $revenueByDay  = [];
+                $expenseByDay  = [];
+                foreach (collect($eventRows) as $row) {
+                    if (empty($row['date'])) continue;
+                    try {
+                        $day = (int) \Carbon\Carbon::createFromFormat('d/m/Y', $row['date'])->day;
+                    } catch (\Throwable $e) { continue; }
+                    $revenueByDay[$day] = ($revenueByDay[$day] ?? 0) + (float)($row['revenue'] ?? 0);
+                    $expenseByDay[$day] = ($expenseByDay[$day] ?? 0) + (float)($row['expense'] ?? 0);
+                }
 
                 $labels = [];
                 $seriesRevenue = [];
                 $seriesExpense = [];
-                $seriesProfit = [];
-                for($d=1;$d<=$daysInMonth;$d++){
-                    $labels[] = $d;
-                    $r = (float) ($revenuePerDay[$d] ?? 0);
-                    $e = (float) ($expensePerDay[$d] ?? 0) + (float) ($referralDiscountPerDay[$d] ?? 0);
+                $seriesProfit  = [];
+                for ($d = 1; $d <= $daysInMonth; $d++) {
+                    $labels[]        = $d;
+                    $r               = (float) ($revenueByDay[$d] ?? 0);
+                    $e               = (float) ($expenseByDay[$d] ?? 0);
                     $seriesRevenue[] = $r;
                     $seriesExpense[] = $e;
-                    $seriesProfit[] = $r - $e;
+                    $seriesProfit[]  = $r - $e;
                 }
             @endphp
 

@@ -201,9 +201,12 @@ class DashboardController extends Controller
             $learningChartData = array_values($dailyLearning);
         }
 
-        // Get popular topics (categories with most enrollments)
+        // Get popular topics (categories with most active enrollments)
         $popularTopics = \App\Models\Category::query()
-            ->withCount('enrollments')
+            ->withCount('courses')
+            ->withCount(['enrollments as enrollments_count' => function ($q) {
+                $q->whereIn('enrollments.status', ['active', 'completed', 'expired']);
+            }])
             ->orderByDesc('enrollments_count')
             ->limit(4)
             ->get();

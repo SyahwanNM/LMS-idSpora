@@ -5,6 +5,12 @@ Route::middleware(['auth'])->get('/courses/{course}/payment', [App\Http\Controll
 // Learn course modules (requires purchase/enrollment)
 Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\Admin\CourseController::class, 'learn'])->name('course.learn');
 
+// Mark a video/pdf module as completed (called from JS when video ends)
+Route::middleware(['auth'])->post('/courses/{course}/modules/{module}/complete', [App\Http\Controllers\Admin\CourseController::class, 'markModuleComplete'])->name('course.module.complete');
+
+// Mark a video module as watching (called from JS when user clicks play)
+Route::middleware(['auth'])->post('/courses/{course}/modules/{module}/watching', [App\Http\Controllers\Admin\CourseController::class, 'markModuleWatching'])->name('course.module.watching');
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\User\DashboardController;

@@ -668,18 +668,32 @@
                         </div>
 
                         <div class="d-flex flex-column gap-3">
-                            @php
-                                $topicStyles = [
-                                    ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'],
-                                    ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'],
-                                    ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-graph-up-arrow'],
-                                    ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'],
-                                ];
-                            @endphp
-
                             @forelse($popularTopics as $index => $topic)
                                 @php
-                                    $style = $topicStyles[$index % count($topicStyles)];
+                                    $name = strtolower($topic->name ?? '');
+                                    if (str_contains($name, 'design') || str_contains($name, 'ui') || str_contains($name, 'ux') || str_contains($name, 'art')) {
+                                        $style = ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'];
+                                    } elseif (str_contains($name, 'code') || str_contains($name, 'program') || str_contains($name, 'web') || str_contains($name, 'software') || str_contains($name, 'developer')) {
+                                        $style = ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'];
+                                    } elseif (str_contains($name, 'data') || str_contains($name, 'machine') || str_contains($name, 'ai') || str_contains($name, 'artificial') || str_contains($name, 'analytic')) {
+                                        $style = ['bg' => '#ede9fe', 'color' => '#7c3aed', 'icon' => 'bi-cpu-fill'];
+                                    } elseif (str_contains($name, 'market') || str_contains($name, 'digital') || str_contains($name, 'brand') || str_contains($name, 'social')) {
+                                        $style = ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'];
+                                    } elseif (str_contains($name, 'business') || str_contains($name, 'finance') || str_contains($name, 'manage') || str_contains($name, 'bisnis')) {
+                                        $style = ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-briefcase-fill'];
+                                    } elseif (str_contains($name, 'photo') || str_contains($name, 'video') || str_contains($name, 'film') || str_contains($name, 'media')) {
+                                        $style = ['bg' => '#fee2e2', 'color' => '#dc2626', 'icon' => 'bi-camera-video-fill'];
+                                    } elseif (str_contains($name, 'music') || str_contains($name, 'audio') || str_contains($name, 'sound')) {
+                                        $style = ['bg' => '#fce7f3', 'color' => '#9d174d', 'icon' => 'bi-music-note-beamed'];
+                                    } else {
+                                        $topicStyles = [
+                                            ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'],
+                                            ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'],
+                                            ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-graph-up-arrow'],
+                                            ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'],
+                                        ];
+                                        $style = $topicStyles[$index % count($topicStyles)];
+                                    }
                                 @endphp
                                 <a href="{{ route('courses.index', ['category' => $topic->name]) }}"
                                     class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
