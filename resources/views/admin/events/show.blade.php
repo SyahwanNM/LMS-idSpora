@@ -11,7 +11,7 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-3">
                             <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i> Kembali
+                                <i class="bi bi-arrow-left me-1"></i> Back
                             </a>
                             <h4 class="mb-0 text-dark d-flex align-items-center">
                                 <i class="bi bi-calendar-event me-2"></i>
@@ -30,7 +30,7 @@
                                 <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="d-inline" id="publishEventFormShow">
                                     @csrf
                                     <button type="button" class="btn btn-success" id="publishBtnShow">
-                                        <i class="bi bi-megaphone me-1"></i> Terbitkan
+                                        <i class="bi bi-megaphone me-1"></i> Publish
                                     </button>
                                 </form>
                             @endif
@@ -38,7 +38,7 @@
                                 <i class="bi bi-pencil me-1"></i> Edit
                             </a>
                             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteEventModal">
-                                <i class="bi bi-trash me-1"></i> Hapus
+                                <i class="bi bi-trash me-1"></i> Delete
                             </button>
                         </div>
                     </div>
@@ -87,7 +87,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-person-fill text-primary me-2"></i>
                                             <div>
-                                                <small class="text-muted d-block">Pembicara</small>
+                                                <small class="text-muted d-block">Speaker</small>
                                                 <strong>{{ $event->speaker }}</strong>
                                             </div>
                                         </div>
@@ -96,7 +96,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-journal-text text-secondary me-2"></i>
                                             <div>
-                                                <small class="text-muted d-block">Materi</small>
+                                                <small class="text-muted d-block">Material</small>
                                                 <strong>{{ $event->materi ?? '-' }}</strong>
                                             </div>
                                         </div>
@@ -105,7 +105,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-geo-alt-fill text-success me-2"></i>
                                             <div>
-                                                <small class="text-muted d-block">Lokasi</small>
+                                                <small class="text-muted d-block">Location</small>
                                                 <strong>{{ $event->location }}</strong>
                                             </div>
                                         </div>
@@ -114,7 +114,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-diagram-3 text-dark me-2"></i>
                                             <div>
-                                                <small class="text-muted d-block">Jenis</small>
+                                                <small class="text-muted d-block">Category</small>
                                                 <strong>{{ $event->jenis ?? '-' }}</strong>
                                             </div>
                                         </div>
@@ -123,7 +123,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-calendar-date text-info me-2"></i>
                                             <div>
-                                                <small class="text-muted d-block">Tanggal</small>
+                                                <small class="text-muted d-block">Date</small>
                                                 <strong>{{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}</strong>
                                             </div>
                                         </div>
@@ -132,7 +132,7 @@
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-clock text-warning me-2"></i>
                                             <div>
-                                                <small class="text-muted d-block">Waktu</small>
+                                                <small class="text-muted d-block">Time</small>
                                                 <strong>
                                                     {{ \Carbon\Carbon::parse($event->event_time)->format('H:i') }}
                                                     @if(!empty($event->event_time_end)) - {{ \Carbon\Carbon::parse($event->event_time_end)->format('H:i') }} @endif WIB
@@ -151,11 +151,11 @@
                     <div class="row mt-3 g-3">
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-3"><i class="bi bi-tag me-2"></i>Harga</h6>
+                                <h6 class="text-dark mb-3"><i class="bi bi-tag me-2"></i>Price</h6>
                                 <div class="mb-3">
                                     @php $isFree = (int)$event->price === 0; @endphp
                                     @if($isFree)
-                                        <h3 class="text-success mb-0 fw-bold">Gratis</h3>
+                                        <h3 class="text-success mb-0 fw-bold">Free</h3>
                                     @elseif($event->hasDiscount())
                                         <div class="d-flex flex-column">
                                             <div class="d-flex align-items-center gap-2">
@@ -172,10 +172,10 @@
                                 <ul class="list-unstyled mb-0">
                                     {{-- Level removed per request --}}
                                     @if(!empty($event->discount_until))
-                                    <li class="mb-2 d-flex align-items-center"><i class="bi bi-calendar-check text-success me-2"></i> <span><strong>Diskon s/d:</strong> {{ \Carbon\Carbon::parse($event->discount_until)->format('d F Y') }}</span></li>
+                                    <li class="mb-2 d-flex align-items-center"><i class="bi bi-calendar-check text-success me-2"></i> <span><strong>Discount until:</strong> {{ \Carbon\Carbon::parse($event->discount_until)->format('d F Y') }}</span></li>
                                     @endif
                                     @if(!empty($event->zoom_link))
-                                    <li class="mb-2 d-flex align-items-center"><i class="bi bi-camera-video text-primary me-2"></i> <a href="{{ $event->zoom_link }}" target="_blank" class="link-primary">Buka Link Zoom</a></li>
+                                    <li class="mb-2 d-flex align-items-center"><i class="bi bi-camera-video text-primary me-2"></i> <a href="{{ $event->zoom_link }}" target="_blank" class="link-primary">Open Zoom Link</a></li>
                                     @endif
                                     
                                 </ul>
@@ -183,7 +183,7 @@
                         </div>
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-3"><i class="bi bi-folder2-open me-2"></i>Dokumen Operasional</h6>
+                                <h6 class="text-dark mb-3"><i class="bi bi-folder2-open me-2"></i>Documents</h6>
                                 <ul class="list-group list-group-flush small">
                                     @if(!empty($event->zoom_link) || empty($event->maps_url))
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -198,9 +198,9 @@
                                                     @elseif($vExt === 'pdf')
                                                         <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
                                                     @else
-                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">Lihat</a>
+                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">View</a>
                                                     @endif
-                                                @else <span class="text-muted">Belum ada</span> @endif
+                                                @else <span class="text-muted">Empty</span> @endif
                                             </span>
                                         </li>
                                     @endif
@@ -262,15 +262,15 @@
                                         </li>
                                     @endif
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Absensi</span>
+                                        <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Attendance</span>
                                         <span class="d-flex align-items-center gap-2">
                                             @if(!empty($event->attendance_qr_image))
                                                 @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = $event->attendance_qr_image_url; @endphp
                                                 <a href="{{ $qrUrl }}" target="_blank" class="d-inline-block">
                                                     <img src="{{ $qrUrl }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-outline-success" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrPng"><i class="bi bi-filetype-png me-1"></i>Unduh PNG</button>
-                                                <button type="button" class="btn btn-sm btn-outline-info" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrJpg"><i class="bi bi-filetype-jpg me-1"></i>Unduh JPG</button>
+                                                <button type="button" class="btn btn-sm btn-outline-success" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrPng"><i class="bi bi-filetype-png me-1"></i>Download PNG</button>
+                                                <button type="button" class="btn btn-sm btn-outline-info" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrJpg"><i class="bi bi-filetype-jpg me-1"></i>Download JPG</button>
                                                 <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
@@ -304,12 +304,12 @@
                             <div class="border rounded p-4 {{ $registrations->count() ? 'bg-light' : 'bg-warning-subtle' }}">
                                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                         <div class="d-flex align-items-center gap-2">
-                                        <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Peserta Terdaftar</h6>
+                                        <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Registered Participants</h6>
                                         <span id="participantsCountBadge" class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
                                     </div>
                                     <div class="input-group input-group-sm" style="max-width: 320px;">
                                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                                        <input type="text" id="participantSearch" class="form-control" placeholder="Cari peserta (nama/email)">
+                                        <input type="text" id="participantSearch" class="form-control" placeholder="Search participants (name/email)">
                                     </div>
                                 </div>
                                 @if($registrations->count())
@@ -318,10 +318,10 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th style="width:48px;">No</th>
-                                                <th style="width:220px;">Nama</th>
+                                                <th style="width:220px;">Name</th>
                                                 <th style="width:240px;">Email</th>
                                                 <th style="width:120px;">Status</th>
-                                                <th style="width:160px;">Terdaftar</th>
+                                                <th style="width:160px;">Registered</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -364,7 +364,7 @@
                                 <h6 class="text-dark mb-3"><i class="bi bi-geo-alt me-2"></i>Lokasi Peta</h6>
                                 <div id="eventMap" style="height:260px; border-radius:12px; overflow:hidden;"></div>
                                 @if(!empty($event->maps_url))
-                                    <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-box-arrow-up-right me-1"></i>Buka di Google Maps</a>
+                                    <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-box-arrow-up-right me-1"></i>Open Google Maps</a>
                                 @endif
                             </div>
                         </div>
@@ -372,7 +372,7 @@
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
                                 <h6 class="text-dark mb-2"><i class="bi bi-geo-alt me-2"></i>Lokasi</h6>
-                                <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-box-arrow-up-right me-1"></i>Buka di Google Maps</a>
+                                <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-box-arrow-up-right me-1"></i>Open Google Maps</a>
                             </div>
                         </div>
                         @endif
@@ -404,7 +404,7 @@
                         <div class="col-12">
                             <div class="border-top pt-4">
                                 <h5 class="text-dark mb-3">
-                                    <i class="bi bi-file-text me-2"></i>Deskripsi Event
+                                    <i class="bi bi-file-text me-2"></i>Description
                                 </h5>
                                 <div class="bg-light rounded p-4">
                                     <div class="event-description">
@@ -425,16 +425,16 @@
                                 @endphp
                                 @if($scheduleRows->count())
                                 <div class="mt-4">
-                                    <h5 class="text-dark mb-3"><i class="bi bi-clock-history me-2"></i>Jadwal Kegiatan</h5>
+                                    <h5 class="text-dark mb-3"><i class="bi bi-clock-history me-2"></i>Schedule</h5>
                                     <div class="table-responsive">
                                         <table class="table table-sm table-striped align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th style="width:110px;">Mulai</th>
-                                                    <th style="width:110px;">Selesai</th>
-                                                    <th style="width:110px;">Durasi</th>
-                                                    <th style="width:240px;">Kegiatan</th>
-                                                    <th>Deskripsi</th>
+                                                    <th style="width:110px;">Start</th>
+                                                    <th style="width:110px;">End</th>
+                                                    <th style="width:110px;">Duration</th>
+                                                    <th style="width:240px;">Event</th>
+                                                    <th>Description</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -482,8 +482,8 @@
                                 </div>
                                 @else
                                 <div class="mt-4">
-                                    <h5 class="text-dark mb-2"><i class="bi bi-clock-history me-2"></i>Jadwal Kegiatan</h5>
-                                    <div class="alert alert-light border small mb-0">Belum ada jadwal ditambahkan.</div>
+                                    <h5 class="text-dark mb-2"><i class="bi bi-clock-history me-2"></i>Schedule</h5>
+                                    <div class="alert alert-light border small mb-0">No schedule added yet.</div>
                                 </div>
                                 @endif
                                 <!-- Link Zoom -->
@@ -496,7 +496,7 @@
                                 <!-- Pengeluaran (Expenses) -->
                                 @if(isset($event->expenses) && count($event->expenses))
                                 <div class="mt-4">
-                                    <h5 class="text-dark mb-3"><i class="bi bi-cash-stack me-2"></i>Pengeluaran</h5>
+                                    <h5 class="text-dark mb-3"><i class="bi bi-cash-stack me-2"></i>Expenses</h5>
                                     <div class="table-responsive">
                                         <table class="table table-bordered align-middle">
                                             <thead class="table-light">
@@ -537,7 +537,7 @@
                         <div class="col-12">
                             <div class="border-top pt-4">
                                 <h5 class="text-dark mb-3">
-                                    <i class="bi bi-shield-check me-2"></i>Syarat & Ketentuan
+                                    <i class="bi bi-shield-check me-2"></i>Terms & Conditions
                                 </h5>
                                 <div class="bg-light rounded p-4">
                                     <div class="event-description">
@@ -557,10 +557,10 @@
                         <div class="col-12">
                             <div class="d-flex justify-content-end gap-2">
                                 <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary btn-lg px-4">
-                                    <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar
+                                    <i class="bi bi-arrow-left me-1"></i> Back to List
                                 </a>
                                 <button type="button" class="btn btn-outline-danger btn-lg px-4" data-bs-toggle="modal" data-bs-target="#deleteEventModal">
-                                    <i class="bi bi-trash me-1"></i> Hapus
+                                    <i class="bi bi-trash me-1"></i> Delete
                                 </button>
                                 <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-primary btn-lg px-4">
                                     <i class="bi bi-pencil me-1"></i> Edit Event
@@ -820,10 +820,10 @@ document.addEventListener('DOMContentLoaded', function(){
         var qEl = document.getElementById('participantsEmptyQuery');
         if(msgEl && qEl){
             if(raw){
-                msgEl.textContent = 'Oopss, nama/email yang kamu cari tidak ada.';
+                msgEl.textContent = 'Oopss, data peserta tidak ditemukan.';
                 qEl.textContent = '"' + raw + '"';
             } else {
-                msgEl.textContent = 'Oopss, data peserta tidak ada.';
+                msgEl.textContent = 'Oopss, data peserta tidak ditemukan.';
                 qEl.textContent = '';
             }
         }
@@ -931,8 +931,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 if(rejectModal) rejectModal.show();
             } else {
                 // Open standard confirmation modal
-                var title = btn.getAttribute('data-title') || 'Konfirmasi';
-                var message = btn.getAttribute('data-message') || 'Lanjutkan tindakan ini?';
+                var title = btn.getAttribute('data-title') || 'Confirmation';
+                var message = btn.getAttribute('data-message') || 'Are you sure you want to continue?';
                 
                 if(actionForm) {
                     actionForm.setAttribute('action', action);
@@ -969,10 +969,10 @@ document.addEventListener('DOMContentLoaded', function(){
     var pubBtnShow = document.getElementById('publishBtnShow');
     if(pubBtnShow){
         pubBtnShow.addEventListener('click', function(){
-            if(pubModTitle) pubModTitle.textContent = 'Konfirmasi Terbitkan Event';
-            if(pubModMsg) pubModMsg.textContent = 'Apakah anda yakin ingin publish event ini? Event akan segera tampil untuk publik.';
+            if(pubModTitle) pubModTitle.textContent = 'Publish Event';
+            if(pubModMsg) pubModMsg.textContent = 'Are you sure you want to publish this event? The event will be visible to the public.';
             if(pubModBtn) {
-                pubModBtn.textContent = 'Terbitkan';
+                pubModBtn.textContent = 'Publish';
                 pubModBtn.className = 'btn btn-primary btn-sm';
             }
             activeForm = document.getElementById('publishEventFormShow');
@@ -986,7 +986,7 @@ document.addEventListener('DOMContentLoaded', function(){
             if(pubModTitle) pubModTitle.textContent = 'Konfirmasi Batal Terbitkan';
             if(pubModMsg) pubModMsg.textContent = 'Apakah Anda yakin ingin membatalkan publikasi event ini? Event tidak akan terlihat lagi oleh publik.';
             if(pubModBtn) {
-                pubModBtn.textContent = 'Batal Terbitkan';
+                pubModBtn.textContent = 'Unpublish';
                 pubModBtn.className = 'btn btn-danger btn-sm';
             }
             activeForm = document.getElementById('unpublishEventFormShow');
@@ -1039,18 +1039,18 @@ document.addEventListener('DOMContentLoaded', function(){
                 <div class="d-flex align-items-center gap-3">
                     <div class="icon-pill"><i class="bi bi-trash-fill fs-4"></i></div>
                     <div>
-                        <h5 class="modal-title mb-0" id="deleteEventLabel">Hapus Event</h5>
-                        <small class="text-muted">Tindakan ini tidak dapat dibatalkan</small>
+                        <h5 class="modal-title mb-0" id="deleteEventLabel">Delete Event</h5>
+                        <small class="text-muted">This action cannot be undone.</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Anda akan menghapus event:</p>
+                <p class="mb-2">You are about to delete the event:</p>
                 <div class="p-2 rounded border bg-light"><i class="bi bi-calendar-event me-1"></i> <strong>{{ $event->title }}</strong></div>
                 <div class="alert alert-warning small mt-3 mb-0">
                     <i class="bi bi-exclamation-triangle me-1"></i>
-                    Event akan dihapus permanen.
+                    This action cannot be undone.
                 </div>
             </div>
             <div class="modal-footer border-0">

@@ -5,6 +5,12 @@ Route::middleware(['auth'])->get('/courses/{course}/payment', [App\Http\Controll
 // Learn course modules (requires purchase/enrollment)
 Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\Admin\CourseController::class, 'learn'])->name('course.learn');
 
+// Mark a video/pdf module as completed (called from JS when video ends)
+Route::middleware(['auth'])->post('/courses/{course}/modules/{module}/complete', [App\Http\Controllers\Admin\CourseController::class, 'markModuleComplete'])->name('course.module.complete');
+
+// Mark a video module as watching (called from JS when user clicks play)
+Route::middleware(['auth'])->post('/courses/{course}/modules/{module}/watching', [App\Http\Controllers\Admin\CourseController::class, 'markModuleWatching'])->name('course.module.watching');
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\User\DashboardController;
@@ -657,7 +663,61 @@ Route::middleware(['auth'])->group(function () {
 });
 // Include additional manual-payment routes (manual QRIS proof upload)
 require __DIR__ . '/web_manual_payment.php';
+// Temporary Debug Route for Testing Certificates
+Route::get('/debug/setup-test-data', function() {
+    if (!Auth::check()) return redirect()->route('login');
+    $user = Auth::user();
 
+    // 1. Create Dummy Course
+    $course = \App\Models\Course::updateOrCreate(
+        ['name' => 'KURSUS DUMMY UNTUK TESTING'],
+        [
+            'description' => 'Kursus ini dibuat otomatis untuk testing sertifikat.',
+            'price' => 0,
+            'status' => 'approved',
+            'level' => 'Beginner',
+            'instructor_id' => \App\Models\User::where('role', 'trainer')->first()->id ?? 1,
+            'category_id' => \App\Models\Category::first()->id ?? 1,
+            'certificate_template' => 'template_1'
+        ]
+    );
+
+
+    // Enroll user if not already enrolled
+    $enrollment = \App\Models\Enrollment::updateOrCreate(
+        ['user_id' => $user->id, 'course_id' => $course->id],
+        ['status' => 'completed', 'enrolled_at' => now(), 'completed_at' => now()]
+    );
+
+    // 2. Create Dummy Event
+    $event = \App\Models\Event::updateOrCreate(
+        ['title' => 'EVENT DUMMY UNTUK TESTING'],
+        [
+            'description' => 'Event ini dibuat otomatis untuk testing sertifikat.',
+            'event_date' => now()->subDays(1),
+            'event_time' => '09:00',
+            'location' => 'Online',
+            'speaker' => 'Speaker Dummy',
+            'jenis' => 'WEBINAR',
+            'materi' => 'Materi Dummy',
+            'target_peserta' => 'Semua Kalangan',
+            'benefit' => 'E-Certificate',
+            'price' => 0,
+            'is_published' => 1,
+            'certificate_template' => 'template_1'
+        ]
+    );
+
+
+
+    // Register user if not already registered
+    $registration = \App\Models\EventRegistration::updateOrCreate(
+        ['user_id' => $user->id, 'event_id' => $event->id],
+        ['status' => 'active', 'registered_at' => now()]
+    );
+
+    return redirect()->route('dashboard')->with('success', 'Data testing berhasil disiapkan! Silakan coba download sertifikat sekarang.');
+})->middleware('auth');
 
 Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->group(function () {
     Route::get('/dashboard', [TrainerController::class, 'dashboard'])->name('dashboard');

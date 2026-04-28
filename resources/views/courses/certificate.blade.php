@@ -14,6 +14,12 @@
             background-color: #f8fafc;
             padding-top: 120px;
             margin: 0;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+
+        html {
+            overflow-y: auto;
         }
 
         .main-container {
@@ -88,14 +94,14 @@
             max-width: 900px;
             margin: 0 auto 3rem;
             position: relative;
-            overflow: hidden;
             border-radius: 4px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             background: white;
+            overflow: hidden;
         }
         .cert-aspect {
             width: 100%;
-            padding-top: 70.75%; /* 21/29.7 * 100 = A4 landscape ratio */
+            padding-top: 62.96%; /* 170/270 * 100 = certificate height/width ratio */
             position: relative;
             overflow: hidden;
         }
@@ -103,8 +109,9 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 29.7cm;
-            height: 21cm;
+            /* width matches .certificate-page: 270mm @ 96dpi ≈ 1020px */
+            width: 1020px;
+            height: 642px; /* 170mm @ 96dpi ≈ 642px */
             transform-origin: top left;
         }
 
@@ -167,21 +174,20 @@
         <div class="step-container">
             <div class="step-item">
                 <span class="step-circle">1</span>
-                Beri Penilaian Kelas
+                Give Rating Class
             </div>
             <div class="step-line"></div>
             <div class="step-item active">
                 <span class="step-circle">2</span>
-                Cetak Sertifikat
+                Print Certificate
             </div>
         </div>
 
         <div class="success-card">
-            <h1 class="congrats-title">Selamat Anda telah menyelesaikan semua Modul!</h1>
+            <h1 class="congrats-title">Congratulations on completing all Modules!</h1>
             <p class="congrats-text">
-                Kami sangat bangga atas dedikasi dan kerja keras Anda dalam menyelesaikan semua modul kursus.
-                Ini adalah pencapaian yang luar biasa dan merupakan bukti komitmen Anda terhadap pembelajaran
-                dan pengembangan diri. Teruslah berkarya dan raih sukses!
+                We are very proud of your dedication and hard work in completing all the course modules.
+                This is a remarkable achievement and a testament to your commitment to learning and self-development. Keep up the good work and achieve success!
             </p>
 
             {{-- Certificate Preview --}}
@@ -199,7 +205,7 @@
             {{-- Actions --}}
             <div class="action-area">
                 <a href="{{ route('dashboard') }}" class="btn-back">
-                    <i class="bi bi-arrow-left me-2"></i>Kembali ke Dashboard
+                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
                 </a>
                 @if($certificateReady)
                     <a href="{{ route('course.certificates.download', [$course->id, $enrollment->id]) }}"
@@ -224,9 +230,9 @@
             const container = scaler.closest('.cert-aspect');
             if (!container) return;
             const containerW = container.offsetWidth;
-            // 29.7cm at 96dpi ≈ 1122px
-            const certW = 29.7 * 96 / 2.54;
-            const scale = containerW / certW;
+            // cert-scaler natural width = 270mm @ 96dpi = 1020px
+            const certNaturalW = 1020;
+            const scale = containerW / certNaturalW;
             scaler.style.transform = 'scale(' + scale + ')';
         }
         document.addEventListener('DOMContentLoaded', scaleCert);

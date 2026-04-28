@@ -256,9 +256,9 @@
             style="position: relative; z-index: 2;">
             <div>
                 <h3 class="mb-2 fw-bold">
-                    <i class="bi bi-speedometer2 me-2"></i>Selamat Datang, {{ auth()->user()->name ?? 'Admin' }}!
+                    <i class="bi bi-speedometer2 me-2"></i>Welcome to, {{ auth()->user()->name ?? 'Admin' }}!
                 </h3>
-                <p class="mb-0 opacity-95">Kelola dan pantau aktivitas sistem dari dashboard ini</p>
+                <p class="mb-0 opacity-95">Manage and monitor system activities from this dashboard</p>
             </div>
             <button id="exportDataBtn" class="btn btn-light btn-lg shadow-lg mt-2 mt-md-0 fw-semibold" type="button"
                 data-export-url="{{ route('admin.export') }}" style="background: rgba(255,255,255,0.95); border: none;">
@@ -414,7 +414,7 @@
                     </h5>
                     <span class="badge bg-warning bg-opacity-20 text-dark border border-warning px-3 py-2 fw-semibold"
                         style="border-width: 2px !important;">
-                        <i class="bi bi-star-fill me-1"></i>Akses Cepat
+                        <i class="bi bi-star-fill me-1"></i>Quick Actions
                     </span>
                 </div>
                 <div class="card-body p-4">
@@ -483,7 +483,7 @@
             <div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #22c55e !important;">
             <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
                 <h5 class="card-title mb-0 fw-bold">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>Materi Disetujui Terbaru
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>Latest Approved Materials
                 </h5>
             </div>
             <div class="card-body p-4">
@@ -507,11 +507,11 @@
                 @else
                     <div class="text-center py-4 text-muted">
                         <i class="bi bi-inbox fs-2 d-block mb-2 text-success"></i>
-                        <small>Belum ada materi yang disetujui.</small>
+                        <small>No material has been approved yet.</small>
                     </div>
                 @endif
                 <a href="{{ route('admin.material.approved') }}" class="btn btn-outline-success w-100 fw-semibold mt-2">
-                    Lihat Semua Materi Disetujui
+                    View All Approved Materials
                 </a>
             </div>
         </div>

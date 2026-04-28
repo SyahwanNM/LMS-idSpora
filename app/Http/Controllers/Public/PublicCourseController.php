@@ -25,6 +25,7 @@ class PublicCourseController extends Controller
                         ->whereIn('status', ['active', 'completed']);
                 },
             ])
+            ->withAvg('reviews as rating_avg', 'rating')
             ->where('status','active');
 
         if($search = $request->get('search')){
@@ -55,7 +56,16 @@ class PublicCourseController extends Controller
 
         if ($sort = $request->get('price')) {
             if (in_array($sort, ['asc', 'desc'])) {
-                $query->orderBy('price', $sort);
+                // Sort by effective price (after discount if active)
+                $query->orderByRaw("
+                    CASE
+                        WHEN discount_percent > 0
+                             AND (discount_start IS NULL OR discount_start <= NOW())
+                             AND (discount_end IS NULL OR discount_end >= NOW())
+                        THEN price * (1 - discount_percent / 100)
+                        ELSE price
+                    END " . strtoupper($sort)
+                );
             }
         } else {
             $query->latest();

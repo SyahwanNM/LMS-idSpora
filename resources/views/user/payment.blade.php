@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+﻿@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
@@ -35,7 +35,6 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
 
-        /* Grid Layout */
         .grid-layout {
             display: grid;
             grid-template-columns: 1.4fr 0.8fr;
@@ -43,10 +42,9 @@
             align-items: start;
         }
 
-        /* Inputs yang lebih ramping */
         .form-label-custom { 
             font-weight: 600; 
-            font-size: 13px; /* Font label diperkecil */
+            font-size: 13px; 
             margin-bottom: 4px; 
             color: #111827; 
         }
@@ -151,7 +149,7 @@
                 
                 <div class="left-col">
                     <div class="card-custom">
-                        <h3>Data Peserta</h3>
+                        <h3>Participant Data</h3>
                         
                         <div class="mb-custom">
                             <label class="form-label-custom">Email</label>
@@ -159,7 +157,7 @@
                         </div>
 
                         <div class="mb-custom">
-                            <label class="form-label-custom" style="margin-bottom:0">Nama Lengkap</label>
+                            <label class="form-label-custom" style="margin-bottom:0">Full Name</label>
                             <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3" readonly>
                             <div class="warning-text" style="margin-top:4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
@@ -170,19 +168,18 @@
                             </div>
                         </div>
 
-                        <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">No Whatsapp</label>
+                        <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">Whatsapp Number</label>
                             <div class="wa-group">
-                                <span style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;background:#f1f5f9;border:1px solid #FCD34D;border-radius:6px;padding:0 14px;width:64px;flex-shrink:0;height:36px;color:#374151;font-size:13px;">+62</span>
-                                <input type="hidden" name="dial_code" value="+62">
-                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="Contoh: 81234567890" inputmode="numeric" required style="flex:1;min-width:0;">
+                                <input type="hidden" name="dial_code" value="">
+                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="Contoh: 6281234567890" inputmode="numeric" required style="flex:1;min-width:0;">
                             </div>
                         </div>
                         @if(isset($event) && (bool) ($event->is_reseller_event ?? false))
                         <div class="mb-custom">
                             <label class="form-label-custom">Kode Referral (opsional)</label>
-                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Masukkan kode referral jika ada" value="{{ request()->query('ref', '') }}">
+                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Have a referral code? Enter it here" value="{{ request()->query('ref', '') }}">
                             <div id="referralMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
-                            <div class="form-text small">Masukkan kode referral reseller untuk mendapatkan diskon/komisi.</div>
+                            <div class="form-text small">Enter the reseller referral code to get a discount/commission.</div>
                         </div>
                         @endif
                          
@@ -260,7 +257,7 @@
             if (!modalEl || !messageEl) return;
             messageEl.textContent = message;
             let iconHtml = '';
-            let titleText = 'Informasi';
+            let titleText = 'Information';
             let btnClass = 'btn-primary';
             if (type === 'error') {
                 iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#EF4444" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/></svg></div>';
@@ -268,7 +265,7 @@
                 btnClass = 'btn-danger';
             } else if (type === 'success') {
                 iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(22, 163, 74, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#16A34A" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.97 11.03a.75.75 0 0 0 1.07 0l3.992-3.992a.75.75 0 0 0-1.06-1.06L7.5 9.44 5.53 7.47a.75.75 0 0 0-1.06 1.06z"/></svg></div>';
-                titleText = 'Berhasil';
+                titleText = 'Success';
                 btnClass = 'btn-success';
             } else {
                 iconHtml = '<div class="d-inline-flex align-items-center justify-content-center" style="width: 64px; height: 64px; background: rgba(59, 130, 246, 0.1); border-radius: 50%;"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="#3B82F6" viewBox="0 0 16 16"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg></div>';
@@ -321,3 +318,4 @@
     </script>
 </body>
 </html>
+

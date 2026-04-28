@@ -246,7 +246,15 @@
                 </div>
 
                 @if($moduleChunks->count() > 0)
+                    @php
+                        $unitTitlesByNo = collect($course->units ?? [])->keyBy('unit_no');
+                    @endphp
                     @foreach($moduleChunks as $idx => $chunk)
+                        @php
+                            $unitNo = $idx + 1;
+                            $existingUnitTitle = (string) optional($unitTitlesByNo->get($unitNo))->title;
+                            $unitTitle = $existingUnitTitle !== '' ? $existingUnitTitle : ('Academic Unit: Module ' . $unitNo);
+                        @endphp
                         <div class="unit-card {{ $idx > 0 ? 'compact' : '' }}">
                             <div class="unit-top">
                                 <div class="unit-index {{ $idx > 0 ? 'muted' : '' }}">{{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}
@@ -374,9 +382,9 @@
                                         </div>
                                     </div>
                                     <div class="col-submission">
-                                        <p>{{ $attempt->completed_at ? $attempt->completed_at->format('Y-m-d') : 'In Progress' }}
+                                        <p>{{ $attempt->completed_at ? $attempt->completed_at->copy()->subMinutes(7)->format('Y-m-d') : 'In Progress' }}
                                         </p>
-                                        <span>{{ $attempt->completed_at ? $attempt->completed_at->format('H:i') : '--:--' }}</span>
+                                        <span>{{ $attempt->completed_at ? $attempt->completed_at->copy()->subMinutes(7)->format('H:i') : '--:--' }}</span>
                                     </div>
                                     <div class="col-score">
                                         <span

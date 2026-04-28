@@ -293,7 +293,7 @@
         <div class="biodata_payment_course">
             
             <div class="box_kiri_biodata">
-                <h5>Data Peserta</h5>
+                <h5>Participant Data</h5>
                 
 
                 <div class="input_biodata">
@@ -302,39 +302,38 @@
                 </div>
 
                 <div class="input_biodata">
-                    <p>Nama Lengkap</p>
+                    <p>Full Name</p>
                     <div class="info_biodata">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
                             <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
                         </svg>
-                        <span>Nama Akan digunakan pada sertifikat</span>
+                        <span>Name Will be used on certificate</span>
                     </div>
-                    <input class="kolom_input_biodata" type="text" value="{{ Auth::user()->name ?? '' }}" readonly>
+                    <input class="kolom_input_biodata" type="text" id="fullNameInput" name="display_name" value="{{ Auth::user()->name ?? '' }}">
                 </div>
 
                 <div class="input_biodata">
                     <p>No Whatsapp</p>
                     <div class="whatsapp_biodata">
-                        <span class="btn_nomor" style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;cursor:default;">+62</span>
-                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="+62">
-                        <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
+                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="">
+                        <input class="input_nomor" type="text" placeholder="Example: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
                     </div>
                 </div>
                 @if((bool) ($course->is_reseller_course ?? false))
                     <div class="input_biodata">
-                        <p>Kode Referral</p>
+                        <p>Referral Code</p>
                         <input
                             class="kolom_input_biodata"
                             type="text"
                             id="referralCodeInput"
-                            placeholder="Masukkan kode referral reseller jika ada"
+                            placeholder="Enter the reseller referral code if any"
                             value="{{ request()->query('ref', '') }}"
                             autocomplete="off"
                         >
                         <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
                         <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-                            Kode valid akan memberi potongan 10%.
+                            Valid code will give 10% discount.
                         </div>
                     </div>
                 @endif
@@ -391,7 +390,7 @@
                 <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
-                    <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
+                    <input type="hidden" name="name" id="hiddenNameInput" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
                     <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
@@ -476,6 +475,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Sync editable full name to hidden input
+            var fullNameInput = document.getElementById('fullNameInput');
+            var hiddenNameInput = document.getElementById('hiddenNameInput');
+            if (fullNameInput && hiddenNameInput) {
+                fullNameInput.addEventListener('input', function() {
+                    hiddenNameInput.value = this.value;
+                    updatePayButtonState();
+                });
+            }
+
             var kodeDialInput = document.getElementById('kodeDialInput');
             var formKodeDialInput = document.getElementById('formKodeDialInput');
             var whatsappInput = document.getElementById('whatsappNumberInput') || document.querySelector('.input_nomor');
@@ -530,6 +539,10 @@
                 showQrisBtn.disabled = (!isFreeCourse) && (wa.length === 0);
             }
 
+            if (whatsappInput) {
+                whatsappInput.addEventListener('input', updatePayButtonState);
+            }
+
             function updateReferralUIFromResult(data) {
                 var baseAmount = getBaseAmount();
                 if (!referralInput) {
@@ -551,7 +564,7 @@
 
                 if (currentUserReferral && code.toUpperCase() === String(currentUserReferral).trim().toUpperCase()) {
                     referralState = 'invalid';
-                    setReferralMessage('Kode referral tidak boleh menggunakan kode milik sendiri.', 'error');
+                    setReferralMessage('Referral code may not use your own code.', 'error');
                     setTotalAmount(baseAmount);
                     updatePayButtonState();
                     return;
@@ -559,7 +572,7 @@
 
                 if (!data) {
                     referralState = 'invalid';
-                    setReferralMessage('Gagal memeriksa kode referral. Coba lagi.', 'error');
+                    setReferralMessage('Failed to check referral code. Please try again.', 'error');
                     setTotalAmount(baseAmount);
                     updatePayButtonState();
                     return;
@@ -567,11 +580,11 @@
 
                 if (data.valid) {
                     referralState = 'valid';
-                    setReferralMessage(data.message || 'Kode referral valid. Diskon 10% diterapkan.', 'success');
+                    setReferralMessage(data.message || 'Referral code valid. 10% discount applied.', 'success');
                     setTotalAmount(data.final_amount || baseAmount);
                 } else {
                     referralState = 'invalid';
-                    setReferralMessage(data.message || 'Kode referral tidak valid.', 'error');
+                    setReferralMessage(data.message || 'Invalid referral code.', 'error');
                     setTotalAmount(baseAmount);
                 }
 
@@ -593,7 +606,7 @@
                 }
 
                 referralState = 'checking';
-                setReferralMessage('Memeriksa kode referral...', 'info');
+                setReferralMessage('Checking the referral code...', 'info');
                 setTotalAmount(getBaseAmount());
                 updatePayButtonState();
 
@@ -609,13 +622,13 @@
             function showPaymentValidationAlert() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 if ((!isFreeCourse) && wa.length < 8) {
-                    alert('Nomor WhatsApp tidak valid. Minimal 8 digit angka.');
+                    alert('Invalid WhatsApp number. Minimum 8 digits.');
                     try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
                     return;
                 }
 
                 if (referralInput && getReferralCode() !== '' && referralState !== 'valid') {
-                    alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
+                    alert('The referral code is invalid. Please check your referral code again.');
                     try { referralInput.focus(); } catch (_e) {}
                 }
             }

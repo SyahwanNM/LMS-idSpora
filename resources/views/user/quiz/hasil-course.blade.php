@@ -23,10 +23,15 @@
             $totalSoal = isset($questions) ? (int) $questions->count() : 0;
         }
 
-        $completedAt = $attempt->completed_at
-            ? \Carbon\Carbon::parse($attempt->completed_at)
-            : ($attempt->started_at ? \Carbon\Carbon::parse($attempt->started_at) : now());
-        $tanggalText = $completedAt->format('d M Y') . ' pukul ' . $completedAt->format('H:i:s');
+       $tanggalBase = $attempt->completed_at
+    ? \Carbon\Carbon::parse($attempt->completed_at)->timezone('Asia/Jakarta')
+    : ($attempt->started_at
+        ? \Carbon\Carbon::parse($attempt->started_at)->timezone('Asia/Jakarta')
+        : null);
+
+        $tanggalText = $tanggalBase
+            ? $tanggalBase->copy()->subMinutes(7)->format('d M Y') . ' Time ' . $tanggalBase->copy()->subMinutes(7)->format('H:i:s')
+            : '-';
 
         $passed = $attempt->isPassed($passingPercent);
         $scoreValue = (int) round((float) ($attempt->percentage ?? 0));
@@ -45,16 +50,16 @@
     <main class="quiz-result-page">
         <div class="box_luar_hasil">
             <div class="box_kiri_hasil">
-                <h5>Tanggal Ujian : {{ $tanggalText }}</h5>
+                <h5 id="tanggal-ujian-text">Exam Date : {{ $tanggalText }}</h5>
 
                 @if($isTimeExpired)
                     <div style="background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:flex-start; gap:10px;">
                         <span style="font-size:22px; flex-shrink:0;">⏰</span>
                         <div>
-                            <p style="font-weight:700; color:#c2410c; margin:0 0 4px 0; font-size:14px;">Waktu Habis</p>
+                            <p style="font-weight:700; color:#c2410c; margin:0 0 4px 0; font-size:14px;">Time Out!</p>
                             <p style="color:#9a3412; margin:0; font-size:13px; line-height:1.5;">
-                                Kuis dikumpulkan otomatis karena waktu pengerjaan habis.
-                                Kamu hanya menjawab <strong>{{ $answeredCount }} dari {{ $totalSoal }}</strong> soal.
+                                Quizzes are automatically collected because the time to complete them is up.
+                                You just answer <strong>{{ $answeredCount }} from {{ $totalSoal }}</strong> questions.
                             </p>
                         </div>
                     </div>
@@ -62,7 +67,7 @@
 
                 <div class="informasi_hasil">
                     <div class="score_hasil">
-                        <p>Total Soal</p>
+                        <p>All Question</p>
                         <h3 class="deactive">{{ $totalSoal }}</h3>
                     </div>
                     <div class="score_hasil">
@@ -72,10 +77,10 @@
                 </div>
 
                 @if ($passed)
-                    <p class="batas_minimum_nilai">Score anda sudah memenuhi batas minimum yang ditentukan pada ujian ini: {{ $passingPercent }}.</p>
+                    <p class="batas_minimum_nilai">Your score has met the minimum limit specified in this exam: {{ $passingPercent }}.</p>
                 @else
-                    <p class="batas_minimum_nilai">Score anda belum memenuhi batas minimum yang ditentukan pada ujian ini: {{ $passingPercent }}.</p>
-                    <p class="batas_minimum_nilai">Mohon untuk mempelajari kembali modul-modul terkait: {{ $module->title ?? $course->name }}.</p>
+                    <p class="batas_minimum_nilai">Your score has not met the minimum threshold specified for this exam: {{ $passingPercent }}.</p>
+                    <p class="batas_minimum_nilai">Please review the related modules</p>
                 @endif
             </div>
 

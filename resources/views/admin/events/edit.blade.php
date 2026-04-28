@@ -1,6 +1,14 @@
 @extends('layouts.admin')
 @section('title', 'Edit Event')
 @section('content')
+    <style>
+        #editEventModal label.form-label {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            white-space: nowrap !important;
+        }
+    </style>
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
         </div>
@@ -17,9 +25,9 @@
                     <div class="row g-3">
                         <div class="col-lg-8">
                             <div class="mb-3">
-                                <label for="gambar" class="form-label fw-semibold">Gambar Event</label>
+                                <label for="gambar" class="form-label fw-semibold">Image Event</label>
                                 <input type="file" name="image" id="gambar" class="form-control" accept="image/*">
-                                <div class="form-text">Kosongkan jika tidak ingin mengganti gambar. Maks 5MB. <span
+                                <div class="form-text">Leave empty if you don't want to replace the image. Max 5MB. <span
                                         id="imageSizeInfo" class="fw-semibold"></span></div>
                                 @if($event->image)
                                     <div class="mt-2 border rounded p-2 bg-light text-center">
@@ -34,14 +42,14 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="nama" class="form-label fw-semibold">Nama Event <span
+                                <label for="nama" class="form-label fw-semibold">Title Event <span
                                         class="text-danger">*</span></label>
                                 <input type="text" name="title" id="nama" class="form-control" required
                                     value="{{ old('title', $event->title) }}" placeholder="Masukkan Nama Event">
-                                <div class="form-text">Gunakan judul yang jelas dan spesifik (contoh: "Webinar Laravel Dasar").</div>
+                                <div class="form-text">Use a clear and specific title (example: "Webinar Laravel Dasar").</div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Nama Pembicara <span
+                                <label class="form-label fw-semibold">Speaker Name <span
                                         class="text-danger">*</span></label>
                                 @php
                                     $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values();
@@ -55,10 +63,10 @@
                                                 <div class="d-flex gap-2 align-items-center">
                                                     <select name="speakers[]" class="form-select speaker-select"
                                                         data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                        <option value="" disabled>Memuat pembicara...</option>
+                                                        <option value="" disabled>Loading speaker...</option>
                                                         <option value="{{ $sp }}" selected>{{ $sp }}</option>
                                                     </select>
-                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                    <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
                                                 </div>
                                                 <div class="mt-2">
                                                     <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
@@ -73,45 +81,32 @@
                                         <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
                                             <div class="d-flex gap-2 align-items-center">
                                                 <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
-                                                    <option value="" selected disabled>Pilih narasumber</option>
+                                                    <option value="" selected disabled>Choice Speaker</option>
                                                 </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
                                             </div>
                                             <div class="mt-2">
                                                 <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
-                                                    placeholder="Gaji Pembicara/Trainer (Rp)" min="0" step="1000">
+                                                    placeholder="Salary Speaker(Rp)" min="0" step="1000">
                                             </div>
                                         </div>
                                     @endif
                                 </div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i
-                                        class="bi bi-plus-circle me-1"></i>Tambah Nama Pembicara</button>
+                                        class="bi bi-plus-circle me-1"></i>Add Speaker</button>
                                 <input type="hidden" name="speaker" id="speakerCombined"
                                     value="{{ old('speaker', $event->speaker) }}">
-                                <div class="form-text">Minimal 1 pembicara (wajib). Tambahan pembicara opsional.</div>
+                                <div class="form-text">Min. 1 speaker (required). Add speaker is optional.</div>
                             </div>
                             <!-- Materi (kategori konten) -->
                             <div class="mb-3">
-                                <label for="materi" class="form-label fw-semibold">Materi <span class="text-danger">*</span></label>
+                                <label for="materi" class="form-label fw-semibold">Subject/Materi <span class="text-danger">*</span></label>
                                 @php
                                     $materiDefaults = [
-                                        'Web Programming','Mobile Programming','Fullstack Development','Backend Development','UI / UX','Product Management',
-                                        'Frontend Development',
-                                        'Quality Assurance','Digital Marketing','Cyber Security','Career Development','Tech Entrepreneur','Freelancer',
-                                        'Content Creator','Academic Mentoring','Data','Dev Ops','Game Development','AI','Product Design','N8N','BPMN'
+                                        'Artificial Intelligence','Machine Learning','Literatur Review','Digital Marketing','UI/UX Design','IT Management','Programming','Graphic Design'
                                     ];
-                                    $materiFromDb = isset($materiOptions) ? collect($materiOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
-                                    $materiMerged = collect(array_merge($materiDefaults, $materiFromDb))
-                                        ->map(fn($v) => trim((string)$v))
-                                        ->filter()
-                                        ->unique(fn($v) => mb_strtolower($v))
-                                        ->values()
-                                        ->all();
+                                    $materiMerged = $materiDefaults;
                                     $currentMateri = old('materi', $event->materi);
-                                    $materiMerged = collect($materiMerged)
-                                        ->sortBy(fn($v) => mb_strtolower((string) $v))
-                                        ->values()
-                                        ->all();
                                 @endphp
                                 <div class="position-relative">
                                     <input type="text" name="materi" id="materi" class="form-control" required
@@ -125,7 +120,7 @@
 
                             <!-- Jenis Acara (autocomplete after 2 chars) -->
                             <div class="mb-3">
-                                <label for="jenis" class="form-label fw-semibold">Jenis Acara <span class="text-danger">*</span></label>
+                                <label for="jenis" class="form-label fw-semibold">Event Type <span class="text-danger">*</span></label>
                                 <div class="position-relative">
                                     @php
                                         $jenisDefaults = ['Webinar','Seminar','Workshop'];
@@ -146,7 +141,7 @@
                             </div>
                             <!-- Penjelasan Singkat (maks 40 kata) -->
                             <div class="mb-3">
-                                <label for="short_desc" class="form-label fw-semibold">Penjelasan Singkat <span
+                                <label for="short_desc" class="form-label fw-semibold">Short Description <span
                                         class="text-danger">*</span></label>
                                 <textarea name="short_description" id="short_desc" class="form-control" rows="3" required
                                     placeholder="Ringkas tujuan atau inti acara (maks 40 kata)">{{ old('short_description', $event->short_description ?? '') }}</textarea>
@@ -190,7 +185,7 @@
                                 <div class="form-text">Pilih tanggal pelaksanaan event.</div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Waktu Mulai & Selesai <span
+                                <label class="form-label fw-semibold">Event Start & End Time <span
                                         class="text-danger">*</span></label>
                                 <div class="d-flex align-items-center gap-2">
                                     <input type="time" name="event_time" id="masuk1" class="form-control" required
@@ -231,29 +226,27 @@
                                 <div class="form-text">Tulis nama tempat/kota. Jika online murni, bisa isi "Online" atau nama platform.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span
+                                <label for="hargaDisplay" class="form-label fw-semibold">Price (Rp) <span
                                         class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="text" id="hargaDisplay" class="form-control" required placeholder="0"
                                         value="{{ number_format(old('price', $event->price), 0, ',', '.') }}">
                                     <input type="hidden" name="price" id="harga" value="{{ old('price', $event->price) }}">
                                 </div>
-                                <small class="form-text">Masukkan angka saja; otomatis diformat dengan titik ribuan. Isi 0
-                                    untuk gratis.</small>
+                                <small class="form-text">Enter numbers only; automatically formatted with thousands separators. Enter 0 for free.</small>
                             </div>
                             <div class="mb-3">
-                                <label for="diskon" class="form-label fw-semibold">Diskon (%)</label>
+                                <label for="diskon" class="form-label fw-semibold">Discount (%)</label>
                                 <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0"
                                     max="100" step="1" value="{{ old('discount_percentage', $event->discount_percentage) }}"
                                     placeholder="0">
-                                <div class="form-text">Isi 0 jika tidak ada diskon.</div>
+                                <div class="form-text">Enter 0 if there is no discount.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="discount_until" class="form-label fw-semibold">Jangka Waktu Diskon</label>
+                                <label for="discount_until" class="form-label fw-semibold">Discount End Date</label>
                                 <input type="date" name="discount_until" id="discount_until" class="form-control"
                                     value="{{ old('discount_until', $event->discount_until) }}" {{ old('discount_percentage', $event->discount_percentage) > 0 ? '' : 'disabled' }}>
-                                <small class="form-text">Tanggal terakhir diskon (maksimal sehari sebelum hari
-                                    acara).</small>
+                                <small class="form-text">Discount end date (maximum one day before event date).</small>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Benefit <span
@@ -270,39 +263,39 @@
                                 <div class="input-group">
                                     <input type="text" name="maps_url" id="maps" class="form-control"
                                         value="{{ old('maps_url', $event->maps_url) }}"
-                                        placeholder="Tempel link Google Maps (bisa short link maps.app.goo.gl)">
+                                        placeholder="Paste Google Maps link (short links maps.app.goo.gl are also accepted)">
                                     <button class="btn btn-outline-secondary" type="button"
                                         id="btnResolveMaps">Deteksi</button>
                                 </div>
                                 <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude', $event->latitude) }}">
                                 <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude', $event->longitude) }}">
                                 <div id="mapsPreview" class="mt-2 rounded border" style="display:none;height:260px;"></div>
-                                <div class="form-text">Klik "Deteksi" untuk membaca koordinat dari short link Google Maps.
+                                <div class="form-text">Click "Deteksi" to read coordinates from Google Maps short links.
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
                                 <input type="text" name="zoom_link" id="zoom" class="form-control"
-                                    value="{{ old('zoom_link', $event->zoom_link) }}" placeholder="Masukkan Link Zoom">
-                                <div class="form-text">Isi link meeting jika online/hybrid. Pastikan link bisa diakses.</div>
+                                    value="{{ old('zoom_link', $event->zoom_link) }}" placeholder="Enter Zoom link">
+                                <div class="form-text">Enter meeting link if online/hybrid. Ensure the link is accessible.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                 <textarea name="terms_and_conditions" id="terms" class="form-control"
                                     rows="6">{{ strip_tags(old('terms_and_conditions', $event->terms_and_conditions ?? '')) }}</textarea>
-                                <div class="form-text">Opsional. Tulis aturan/persyaratan peserta (refund, ketentuan sertifikat, dll).</div>
+                                <div class="form-text">Optional. Write rules/requirements for participants (refunds, certificate terms, etc.).</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Schedule <span
-                                        class="text-muted small">(Opsional)</span></label>
+                                        class="text-muted small">(Optional)</span></label>
                                 <table class="table table-sm align-middle" id="scheduleTable">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width:180px">Waktu Mulai</th>
-                                            <th style="width:180px">Waktu Selesai</th>
-                                            <th>Kegiatan</th>
-                                            <th>Deskripsi</th>
-                                            <th style="width:80px" class="text-center">Aksi</th>
+                                            <th style="width:180px">Start Time</th>
+                                            <th style="width:180px">End Time</th>
+                                            <th>Activity</th>
+                                            <th>Description</th>
+                                            <th style="width:80px" class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -322,28 +315,28 @@
                                                             value="{{ $row['description'] ?? '' }}"></td>
                                                     <td class="text-center"><button type="button"
                                                             class="btn btn-outline-danger btn-sm" data-action="remove"
-                                                            title="Hapus"><i class="bi bi-x"></i></button></td>
+                                                            title="Delete"><i class="bi bi-x"></i></button></td>
                                                 </tr>
                                             @endforeach
                                         @endif
                                     </tbody>
                                 </table>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i
-                                        class="bi bi-plus-circle me-1"></i>Tambah Baris</button>
-                                <div class="form-text">Opsional. Tambahkan rundown/acara per sesi jika diperlukan.</div>
+                                        class="bi bi-plus-circle me-1"></i>Add Row</button>
+                                <div class="form-text">Optional. Add rundown/events per session if needed.</div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Pengeluaran <span
-                                        class="text-muted small">(Opsional)</span></label>
+                                <label class="form-label fw-semibold">Expenses <span
+                                        class="text-muted small">(Optional)</span></label>
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle" id="expensesTable">
                                         <thead class="table-light">
                                             <tr>
-                                                <th>Barang</th>
-                                                <th style="width:120px">Kuantitas</th>
-                                                <th style="width:160px">Harga Satuan (Rp)</th>
-                                                <th style="width:180px">Harga Total (Rp)</th>
-                                                <th style="width:80px" class="text-center">Aksi</th>
+                                                <th>Item</th>
+                                                <th style="width:120px">Quantity</th>
+                                                <th style="width:160px">Unit Price (Rp)</th>
+                                                <th style="width:180px">Total Price (Rp)</th>
+                                                <th style="width:80px" class="text-center">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -365,7 +358,7 @@
                                                                 value="{{ $row['total'] ?? 0 }}"></td>
                                                         <td class="text-center"><button type="button"
                                                                 class="btn btn-outline-danger btn-sm" data-action="remove-expense"
-                                                                title="Hapus"><i class="bi bi-trash3"></i></button></td>
+                                                                title="Delete"><i class="bi bi-trash3"></i></button></td>
                                                     </tr>
                                                 @endforeach
                                             @endif
@@ -373,20 +366,19 @@
                                     </table>
                                 </div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="addExpenseRow"><i
-                                        class="bi bi-plus-circle me-1"></i>Tambah Pengeluaran</button>
+                                        class="bi bi-plus-circle me-1"></i>Add Expense</button>
                                 <div class="d-flex justify-content-end mt-2"><span class="me-2 fw-semibold">Total
-                                        Pengeluaran:</span><span id="expensesGrandTotal" class="fw-bold">Rp0</span></div>
-                                <div class="form-text">Opsional. Catat biaya untuk kebutuhan laporan/operasional.</div>
+                                        Expenses:</span><span id="expensesGrandTotal" class="fw-bold">Rp0</span></div>
+                                <div class="form-text">Optional. Record costs for reporting/operational needs.</div>
                             </div>
                         </div>
                         <div class="col-lg-4">
-                            <div class="alert alert-info small"><strong>Tips:</strong> Pastikan data event sudah benar
-                                sebelum disimpan.</div>
+                            <div class="alert alert-info small"><strong>Tips:</strong> Ensure event data is correct before saving.</div>
                             <ul class="list-group mb-3 small">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">Status Harga
-                                    <span class="badge bg-secondary" id="statusHarga">Berbayar</span></li>
-                                <li class="list-group-item">Diskon aktif jika persentase > 0.</li>
-                                <li class="list-group-item">Jika event hybrid, isi Maps dan Zoom sekaligus.</li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">Price Status
+                                    <span class="badge bg-secondary" id="statusHarga">Paid</span></li>
+                                <li class="list-group-item">Discount is active if percentage > 0.</li>
+                                <li class="list-group-item">If hybrid event, fill in Maps and Zoom simultaneously.</li>
                             </ul>
                         </div>
                     </div>
@@ -395,14 +387,14 @@
                             <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan publikasi event ini?')">
                                 @csrf
                                 <button type="submit" class="btn btn-outline-danger">
-                                    <i class="bi bi-megaphone me-1"></i> Batal Terbitkan
+                                    <i class="bi bi-megaphone me-1"></i> Cancel Publication
                                 </button>
                             </form>
                         @endif
-                        <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Batal</a>
+                        <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Cancel</a>
                         <button type="submit" class="btn btn-primary" form="editEventForm" id="editSubmitBtn"><i class="bi bi-check-circle me-1"></i> Update Event</button>
                     </div>
-                    <div class="small text-muted mt-2" id="editSubmitHint" style="display:none;">Lengkapi semua field wajib untuk mengaktifkan tombol Update.</div>
+                    <div class="small text-muted mt-2" id="editSubmitHint" style="display:none;">Complete all required fields to enable the Update button.</div>
                     </form>
                 </div>
                 

@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
-<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Courses</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
+<head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="csrf-token" content="{{ csrf_token() }}"> <title>Courses</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
 
     /* FIX SCROLL/TOP SPACING (Agar tidak tertutup navbar) */
     .hero-carousel {
@@ -12,6 +12,14 @@
     .carousel-control-prev,
     .carousel-control-next {
         display: none !important;
+    }
+    .save-btn.active {
+        color: #ef4444 !important;
+        background: rgba(239, 68, 68, 0.15);
+    }
+    .save-btn.active svg,
+    .save-btn.active svg path {
+        fill: #ef4444 !important;
     }
     .carousel-indicators [data-bs-target] {
         width: 12px;
@@ -66,7 +74,7 @@
                             <div class="carousel-caption text-start" style="bottom: 40px; left: 60px;">
                                 <h2 class="fw-bold">{{ $carousel->title }}</h2>
                                 @if($carousel->link_url)
-                                    <button class="btn btn-warning fw-bold mt-2">Lihat Detail</button>
+                                    <button class="btn btn-warning fw-bold mt-2">See Detail</button>
                                 @endif
                             </div>
                             @endif
@@ -109,30 +117,22 @@
                 <div class="options">
                     <label>Level</label>
                     <select name="level" onchange="document.getElementById('filter-form').submit()">
-                        <option value="">Semua Level</option>
+                        <option value="">All Levels</option>
                         <option value="beginner" {{ request('level') == 'beginner' ? 'selected' : '' }}>Beginner</option>
                         <option value="intermediate" {{ request('level') == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
                         <option value="advanced" {{ request('level') == 'advanced' ? 'selected' : '' }}>Advanced</option>
                     </select>
                 </div>
                 <div class="options">
-                    <label>Topic</label>
+                    <label>categories</label>
                     <select name="category" onchange="document.getElementById('filter-form').submit()">
-                        <option value="">Semua Kategori</option>
+                        <option value="">All Categories</option>
                         @foreach($categories as $cat)
                             <option value="{{ $cat->id }}" {{ request('category') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div class="options">
-                    <label>Nama Kursus</label>
-                    <select name="topic" onchange="document.getElementById('filter-form').submit()">
-                        <option value="">Semua Topik</option>
-                        @foreach($topics as $t)
-                            <option value="{{ $t }}" {{ request('topic') == $t ? 'selected' : '' }}>{{ $t }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                
                 <div class="options">
                     <label>Price</label>
                     <select name="price" onchange="document.getElementById('filter-form').submit()">
@@ -157,13 +157,14 @@
         </form>
     </div>
 
+    @if(isset($continueEnrollments) && $continueEnrollments->count() > 0)
     <section class="kursus-pelatihan">
         <div class="header-card">
-            <h3>Lanjutkan Belajar</h3>
+            <h3>Keep Learning</h3>
         </div>
 
         <ul class="course-list">
-            @forelse(($continueEnrollments ?? collect()) as $enrollment)
+            @foreach(($continueEnrollments ?? collect()) as $enrollment)
                 @php
                     $course = $enrollment->course;
                     if(!$course) continue;
@@ -202,6 +203,7 @@
                                             <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                         </svg>
                                     </button>
+                                    @endauth
                                 </div>
                             </div>
 
@@ -210,7 +212,6 @@
                                 <p class="desc">{{ Str::limit(strip_tags($course->description), 80) }}</p>
                                 <div class="tags">
                                     <span class="tag">{{ $course->category->name ?? 'No Category' }}</span>
-                                    <span class="tag">{{ $course->duration }}h</span>
                                     <div class="meta" style="margin-left:auto; gap:6px;">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
@@ -219,7 +220,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
                                         </svg>
-                                        <span>4.8</span>
+                                        <span>{{ $course->rating_avg ? number_format($course->rating_avg, 1) : "0.0" }}</span>
                                     </div>
                                 </div>
                                 <div class="author">
@@ -245,27 +246,21 @@
                                     <div class="progress">
                                         <div class="progress-bar" style="width: {{ $pct }}%;"></div>
                                     </div>
-                                    <p>{{ $pct }}% selesai</p>
+                                    <p>{{ $pct }}% Complete</p>
                                 </div>
-                                <a href="{{ $continueHref }}" class="btn-lanjut" style="text-decoration:none; display:block; text-align:center;" onclick="event.stopPropagation();">Lanjutkan</a>
+                                <a href="{{ $continueHref }}" class="btn-lanjut" style="text-decoration:none; display:block; text-align:center;" onclick="event.stopPropagation();">Continue</a>
                             </div>
                         </article>
                     </a>
                 </li>
-            @empty
-                <li>
-                    <div class="text-center py-5" style="grid-column:1/-1;">
-                        <h5 class="mb-2">Belum ada kursus untuk dilanjutkan</h5>
-                        <p class="text-muted mb-0">Mulai belajar dari kursus pilihan di bawah.</p>
-                    </div>
-                </li>
-            @endforelse
+            @endforeach
         </ul>
     </section>
+    @endif
     
     <section class="kursus-pelatihan">
         <div class="section-title">
-            <h3>Kursus Pilihan</h3>
+            <h3>LIST COURSE</h3>
         </div>
         <ul class="course-list">
             @forelse($courses as $course)
@@ -302,6 +297,7 @@
                                     <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                 </svg>
                             </button>
+                            @endauth
                         </div>
                     </div>
 
@@ -310,7 +306,6 @@
                         <p class="desc">{{ Str::limit(strip_tags($course->description), 80) }}</p>
                         <div class="tags"> 
                             <span class="tag">{{ $course->category->name ?? 'No Category' }}</span> 
-                            <span class="tag">{{ $course->duration }}h</span>
                             <div class="meta" style="margin-left:auto; gap:6px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
                                     viewBox="0 0 16 16">
@@ -323,7 +318,7 @@
                                     <path
                                         d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.32-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.63.283.95l-3.523 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
                                 </svg>
-                                <span>4.8</span>
+                                <span>{{ $course->rating_avg ? number_format($course->rating_avg, 1) : "0.0" }}</span>
                             </div>
                         </div>
                         <div class="author"> 
@@ -350,13 +345,13 @@
                                             <span style="font-size: 16px;">Rp{{ number_format($course->discounted_price, 0, ',', '.') }}</span>
                                         </div>
                                     @elseif((int) ($course->price ?? 0) <= 0)
-                                        GRATIS
+                                        FREE
                                     @else
                                         Rp{{ number_format($course->price, 0, ',', '.') }}
                                     @endif
                                 </span>
                             </div>
-                            <a href="{{ $courseHref }}" class="btn-enroll" style="text-decoration:none;">Lihat Detail</a>
+                            <a href="{{ $courseHref }}" class="btn-enroll" style="text-decoration:none;">See Details</a>
                         </div>
                     </div>
                 </article>
@@ -365,14 +360,14 @@
             @empty
             <li>
                 <div class="text-center py-5">
-                    <h5 class="mb-3">Belum ada kursus tersedia</h5>
-                    <p class="text-muted">Kursus akan segera hadir!</p>
+                    <h5 class="mb-3">There are no courses available yet</h5>
+                    <p class="text-muted">Courses are coming soon!</p>
                     </div>
             </li>
             @endforelse
         </ul>
         <div class="align-items-center" style="padding: 20px; text-align: center !important;">
-            <a href="{{ route('courses.index') }}" class="btn btn-primary me-2" style="display:inline-block;">Lihat Semua Kursus</a>
+            <a href="{{ route('courses.index') }}" class="btn btn-primary me-2" style="display:inline-block;">See All Courses</a>
         </div>
     </section>
 </main>

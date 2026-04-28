@@ -357,7 +357,7 @@ class EventController extends Controller
                     'trainer_id' => (int) $trainerId,
                     'type' => 'event_zoom_link_shared',
                     'title' => 'Link Zoom Event Dibagikan',
-                    'message' => 'Link Zoom untuk event "' . $event->title . '" telah disiapkan dan dibagikan kepada Anda.',
+                    'message' => 'The Zoom link for event "' . $event->title . '" telah disiapkan dan dibagikan kepada Anda.',
                     'data' => [
                         'entity_type' => 'event',
                         'entity_id' => (int) $event->id,
@@ -442,7 +442,7 @@ class EventController extends Controller
 
         return redirect()
             ->route('admin.add-event')
-            ->with('success', 'Event berhasil ditambahkan!')
+            ->with('success', 'Event created successfully!')
             ->with('statusFilter', $statusFilter);
     }
 
@@ -688,8 +688,8 @@ class EventController extends Controller
                 TrainerNotification::create([
                     'trainer_id' => (int) $trainerId,
                     'type' => 'event_zoom_link_updated',
-                    'title' => 'Link Zoom Event Diperbarui',
-                    'message' => 'Link Zoom untuk event "' . $event->title . '" telah diperbarui.',
+                    'title' => 'Zoom Link Updated',
+                    'message' => 'The Zoom link for event "' . $event->title . '" has been updated.',
                     'data' => [
                         'entity_type' => 'event',
                         'entity_id' => (int) $event->id,
@@ -721,7 +721,7 @@ class EventController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.add-event')->with('success', 'Event berhasil diupdate!');
+        return redirect()->route('admin.add-event')->with('success', 'Event updated successfully!');
     }
 
     public function destroy(Event $event)
@@ -731,7 +731,7 @@ class EventController extends Controller
         $prev = url()->previous();
         $toHistory = is_string($prev) && str_contains($prev, '/admin/events/history');
         $route = $toHistory ? route('admin.events.history') : route('admin.add-event');
-        return redirect($route)->with('success', 'Event berhasil dihapus!');
+        return redirect($route)->with('success', 'Event deleted successfully!');
     }
 
     /**
@@ -740,7 +740,7 @@ class EventController extends Controller
     public function publish(Request $request, Event $event)
     {
         if ((bool) $event->is_published) {
-            return back()->with('success', 'Event sudah diterbitkan.');
+            return back()->with('success', 'Event is already published.');
         }
 
         // Prevent publishing if operational documents are incomplete
@@ -776,7 +776,7 @@ class EventController extends Controller
             'published_at' => now(),
         ])->save();
 
-        return back()->with('success', 'Event berhasil diterbitkan!');
+        return back()->with('success', 'Event published successfully!');
     }
 
     /**
@@ -785,7 +785,7 @@ class EventController extends Controller
     public function unpublish(Request $request, Event $event)
     {
         if (!(bool) $event->is_published) {
-            return back()->with('success', 'Event memang belum diterbitkan.');
+            return back()->with('success', 'Event has not been published yet.');
         }
 
         $event->forceFill([
@@ -793,7 +793,7 @@ class EventController extends Controller
             'published_at' => null,
         ])->save();
 
-        return back()->with('success', 'Publikasi event berhasil dibatalkan!');
+        return back()->with('success', 'Event publication has been cancelled!');
     }
 
     // Public registration (AJAX)
@@ -805,7 +805,7 @@ class EventController extends Controller
         if (!(bool) $event->is_published) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Event belum diterbitkan.',
+                'message' => 'Event is not published.',
             ], 404);
         }
 
@@ -903,7 +903,7 @@ class EventController extends Controller
         }
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil daftar event (Gratis)',
+            'message' => 'Successfully registered for event (Free)',
             'event_title' => $event->title,
             'button_text' => 'Anda Terdaftar',
             'redirect' => route('events.registered.detail', $event)
@@ -953,7 +953,7 @@ class EventController extends Controller
             }
         }
 
-        return back()->with('success', 'Dokumen berhasil diperbarui.');
+        return back()->with('success', 'Document updated successfully.');
     }
 
     /**
@@ -1049,8 +1049,8 @@ class EventController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Module trainer berhasil diverifikasi.')
-            ->with('module_success', 'Module trainer berhasil diverifikasi.');
+        return back()->with('success', 'Trainer module verified successfully.')
+            ->with('module_success', 'Trainer module verified successfully.');
     }
 
     /**
@@ -1212,7 +1212,7 @@ class EventController extends Controller
             $event->attendance_qr_image = $filename;
             $event->attendance_qr_generated_at = now();
             $event->save();
-            return back()->with('success', 'QR Absensi berhasil digenerate.');
+            return back()->with('success', 'Attendance QR generated successfully.');
         } catch (\Throwable $e) {
             return back()->with('error', 'Gagal generate QR Absensi.');
         }
@@ -1331,14 +1331,14 @@ class EventController extends Controller
                 'user_id' => $registration->user_id,
                 'type' => 'event_registration_verified',
                 'title' => 'Pembayaran Diterima',
-                'message' => 'Pembayaran Anda untuk event "' . $event->title . '" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
+                'message' => 'Your payment for event "' . $event->title . '" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
                 'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
                 'expires_at' => now()->addDays(14),
             ]);
         } catch (\Throwable $e) { /* ignore notification errors */
         }
 
-        return back()->with('success', 'Pendaftaran berhasil diverifikasi dan diaktifkan.');
+        return back()->with('success', 'Registration verified and actktifkan.');
     }
 
     /**
@@ -1447,10 +1447,12 @@ class EventController extends Controller
 
             $registration->delete();
 
-            return redirect()->back()->with('success', 'Data pendaftaran berhasil dihapus.');
+            return redirect()->back()->with('success', 'Registration data updated successfully dihapus.');
         } catch (\Throwable $e) {
             \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
         }
     }
 }
+
+

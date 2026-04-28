@@ -1,6 +1,4 @@
-@include("partials.navbar-after-login")
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -16,6 +14,7 @@
 </head>
 
 <body>
+    @include("partials.navbar-after-login")
     @php
         $selectedAnswerId = collect($attempt->answers ?? [])->firstWhere('question_id', $currentQuestion->id)['answer_id'] ?? null;
         $total = $questions->count();
@@ -32,6 +31,26 @@
                 $quizNumber = (int) $foundIndex + 1;
             }
         }
+
+        // Ambil subtitle modul dari course_units berdasarkan nomor modul
+        $quizModuleSubtitle = null;
+        if (preg_match('/^Module\s*(\d+)/i', (string) ($module->title ?? ''), $mm)) {
+            $unitNum = (int) $mm[1];
+            $unit = $course->units->firstWhere('unit_no', $unitNum);
+            if ($unit && !empty($unit->title)) {
+                $quizModuleSubtitle = $unit->title;
+            }
+        }
+        if (!$quizModuleSubtitle) {
+            // Fallback: parse dari title modul (e.g. "Module 1 - Testing" → "Testing")
+            if (preg_match('/^Module\s*\d+\s*-\s*(.+)$/i', (string) ($module->title ?? ''), $mm)) {
+                $sub = trim($mm[1]);
+                if (!preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $sub)) {
+                    $quizModuleSubtitle = $sub;
+                }
+            }
+        }
+        $quizPageTitle = 'Quiz ' . $quizNumber . ($quizModuleSubtitle ? ' - ' . $quizModuleSubtitle : '');
 
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
@@ -86,7 +105,7 @@
 
                     <div class="tombol_kuis">
                         <button type="button" class="previous_question" data-prev-url="{{ $prevUrl }}">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Send' : 'Send' }}</button>
+                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
                     </div>
                 </form>
             </div>
@@ -216,12 +235,12 @@
                     e.preventDefault();
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Jawaban Belum Disimpan',
-                            text: 'Kamu sudah memilih jawaban tapi belum menekan "Send". Jawaban ini akan hilang jika kamu pindah soal. Lanjutkan?',
+                            title: 'Answer Not Saved',
+                            text: 'You have selected an answer but haven\'t clicked "Send". This answer will be lost if you navigate away. Continue?',
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Ya, pindah soal',
-                            cancelButtonText: 'Batal',
+                            confirmButtonText: 'Yes, move on',
+                            cancelButtonText: 'Cancel',
                             confirmButtonColor: '#f4c430',
                         }).then(result => {
                             if (result.isConfirmed) {
@@ -230,7 +249,7 @@
                             }
                         });
                     } else {
-                        if (confirm('Jawaban belum disimpan. Lanjutkan?')) {
+                        if (confirm('Answer not saved. Continue?')) {
                             _draftDirty = false;
                             window.location.href = prevUrl;
                         }
@@ -252,12 +271,12 @@
                     const targetUrl = originalOnclick ? originalOnclick.replace("window.location.href='", '').replace("'", '') : null;
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
-                            title: 'Jawaban Belum Disimpan',
-                            text: 'Kamu sudah memilih jawaban tapi belum menekan "Send". Jawaban ini akan hilang jika kamu pindah soal. Lanjutkan?',
+                            title: 'Answer Not Saved',
+                            text: 'You have selected an answer but haven\'t clicked "Send". This answer will be lost if you navigate away. Continue?',
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonText: 'Ya, pindah soal',
-                            cancelButtonText: 'Batal',
+                            confirmButtonText: 'Yes, move on',
+                            cancelButtonText: 'Cancel',
                             confirmButtonColor: '#f4c430',
                         }).then(result => {
                             if (result.isConfirmed) {
@@ -266,7 +285,7 @@
                             }
                         });
                     } else {
-                        if (confirm('Jawaban belum disimpan. Lanjutkan?')) {
+                        if (confirm('Answer not saved. Continue?')) {
                             _draftDirty = false;
                             if (targetUrl) window.location.href = targetUrl;
                         }
@@ -285,10 +304,9 @@
 
         function formatTime(totalSeconds) {
             const s = Math.max(0, Math.floor(totalSeconds));
-            const h = Math.floor(s / 3600);
-            const m = Math.floor((s % 3600) / 60);
+            const m = Math.floor(s / 60);
             const r = s % 60;
-            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+            return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
         }
 
         async function finishAttempt() {
@@ -327,7 +345,8 @@
         }
 
         if (timerEl && endsAtIso) {
-            const endsAt = new Date(endsAtIso).getTime();
+            // Kurangi 7 menit (420 detik) + 7 detik dari waktu asli
+            const endsAt = new Date(endsAtIso).getTime() - (7 * 60 * 1000) - (7 * 1000);
             const tick = () => {
                 const now = Date.now();
                 const remaining = Math.floor((endsAt - now) / 1000);

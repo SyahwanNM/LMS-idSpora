@@ -42,6 +42,67 @@ class CourseController extends Controller
     }
 
     /**
+     * Mark a video module as watching (called via AJAX when user clicks play).
+     * Sets video_watched = true but NOT completed yet.
+     */
+    public function markModuleWatching(Request $request, Course $course, CourseModule $module)
+    {
+        $user = $request->user();
+        if (!$user) return response()->json(['ok' => false], 401);
+
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed', 'expired'])
+            ->first();
+
+        if (!$enrollment) return response()->json(['ok' => false], 403);
+
+        if (strtolower(trim((string)($module->type ?? ''))) !== 'video') {
+            return response()->json(['ok' => false], 422);
+        }
+
+        Progress::query()->updateOrCreate(
+            ['enrollment_id' => $enrollment->id, 'course_module_id' => $module->id],
+            ['video_watched' => true, 'completed' => false]
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Mark a video/pdf module as completed (called via AJAX when video ends or PDF is viewed).
+     */
+    public function markModuleComplete(Request $request, Course $course, CourseModule $module)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['ok' => false], 401);
+        }
+
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed', 'expired'])
+            ->first();
+
+        if (!$enrollment) {
+            return response()->json(['ok' => false, 'message' => 'Not enrolled'], 403);
+        }
+
+        // Only allow marking pdf/video modules (quiz completion is handled separately)
+        $moduleType = strtolower(trim((string) ($module->type ?? '')));
+        if (!in_array($moduleType, ['pdf', 'video'], true)) {
+            return response()->json(['ok' => false, 'message' => 'Invalid module type'], 422);
+        }
+
+        Progress::query()->updateOrCreate(
+            ['enrollment_id' => $enrollment->id, 'course_module_id' => $module->id],
+            ['completed' => true, 'video_watched' => true]
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
      * Show the learning page for an enrolled/purchased course.
      */
     public function learn(Request $request, Course $course)
@@ -69,7 +130,7 @@ class CourseController extends Controller
         // Only allow entry to learning page if enrolled OR it's a course with preview enabled.
         if (!$isUserEnrolled && $configuredFreeAccessMode === 'none') {
             return redirect()->route('course.detail', $course->id)
-                ->with('error', 'Silakan lakukan pembelian course terlebih dahulu.');
+                ->with('error', 'Please purchase this course first.');
         }
 
         // If payment is settled but enrollment isn't active yet, auto-activate it.
@@ -129,7 +190,7 @@ class CourseController extends Controller
                 if ($fallbackId > 0) {
                     $target = route('course.learn', $course->id) . '?module=' . $fallbackId;
                     return redirect()->to($target)
-                        ->with('error', 'Materi ini terkunci. Silakan beli course untuk membuka modul selanjutnya.');
+                        ->with('error', 'This content is locked. Please purchase the course untuk membuka modul selanjutnya.');
                 }
             }
         }
@@ -155,17 +216,48 @@ class CourseController extends Controller
                 if (!$passedPrevQuiz) {
                     $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
                     return redirect()->to($target)
-                        ->with('error', 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.');
+                        ->with('error', 'You must complete the quiz firstahulu baru bisa lanjut ke tahap selanjutnya.');
+                }
+            }
+        }
+
+        // On page load: ensure a progress record exists for the current video module with 0,0
+        // (only if not already completed). This prevents stale completed=1 records from showing checkmarks.
+        $enrollmentForProgress = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed', 'expired'])
+            ->first();
+
+        if ($enrollmentForProgress) {
+            $allVideoModuleIds = $modules
+                ->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) === 'video')
+                ->pluck('id')->filter()->values()->all();
+            if (!empty($allVideoModuleIds)) {
+                // Reset any video that has NOT been properly completed (video_watched=0 means stale/incomplete)
+                Progress::query()
+                    ->where('enrollment_id', $enrollmentForProgress->id)
+                    ->whereIn('course_module_id', $allVideoModuleIds)
+                    ->where('video_watched', false)
+                    ->update(['completed' => false, 'video_watched' => false]);
+
+                // Upsert 0,0 for the current video module if it doesn't exist yet
+                if ($currentModule && strtolower(trim((string)($currentModule->type ?? ''))) === 'video') {
+                    Progress::query()->firstOrCreate(
+                        ['enrollment_id' => $enrollmentForProgress->id, 'course_module_id' => $currentModule->id],
+                        ['completed' => false, 'video_watched' => false]
+                    );
                 }
             }
         }
 
         // Progress tracking:
-        // - video/pdf modules are marked completed once opened
+        // - pdf modules are marked completed once opened
+        // - video modules are marked completed only when the video ends (via AJAX from frontend)
         // - quiz modules are marked completed only if user has passed
         if ($enrollment && $currentModule) {
             $moduleType = strtolower(trim((string) ($currentModule->type ?? '')));
-            $markCompleted = $moduleType !== 'quiz';
+
+            $markCompleted = ($moduleType === 'pdf'); // video requires explicit completion via JS
 
             if (!$markCompleted && $moduleType === 'quiz') {
                 $markCompleted = QuizAttempt::query()
@@ -232,14 +324,14 @@ class CourseController extends Controller
         // Hard block: jika ada missing material, tidak bisa publish
         if (!empty($missing)) {
             return redirect()->route('admin.courses.index')
-                ->with('error', 'Course belum bisa dipublikasikan. Lengkapi Modul Course ini terlebih dahulu: ' . implode(', ', $missing) . '.');
+                ->with('error', 'Course cannot be published yet. Please complete the Module Course ini terlebih dahulu: ' . implode(', ', $missing) . '.');
         }
 
         $course->status = 'active';
         $course->save();
 
         return redirect()->route('admin.courses.index')
-            ->with('success', 'Course berhasil diterbitkan!');
+            ->with('success', 'Course published successfully!');
     }
 
     /**
@@ -480,12 +572,7 @@ class CourseController extends Controller
         ])->withCount('enrollments')->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         if ($month !== '') {
@@ -567,12 +654,7 @@ class CourseController extends Controller
             ->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         $periodName = 'Semua Data';
@@ -615,7 +697,7 @@ class CourseController extends Controller
                 ->header('Content-Disposition', 'attachment; filename="Daftar_Course_' . now()->format('YmdHis') . '.pdf"');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Export PDF error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal membuat PDF: ' . $e->getMessage());
+            return back()->with('error', 'Failed to generate PDF: ' . $e->getMessage());
         }
     }
 
@@ -792,9 +874,16 @@ class CourseController extends Controller
             ]);
         }
 
+        // If category_id is empty but category_name is provided, create or find the category
+        if (empty($request->input('category_id')) && $request->filled('category_name')) {
+            $catName = trim($request->input('category_name'));
+            $category = Category::firstOrCreate(['name' => $catName], ['description' => '']);
+            $request->merge(['category_id' => $category->id]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'trainer_id' => [
                 'required',
@@ -1010,6 +1099,19 @@ class CourseController extends Controller
                 ->cloneToCourse($course, $template, replaceExisting: false);
         }
 
+        // Save unit titles from form input
+        $unitTitles = $request->input('unit_titles', []);
+        if (is_array($unitTitles)) {
+            foreach ($unitTitles as $unitNo => $title) {
+                $title = trim((string) $title);
+                if ($title === '') continue;
+                \App\Models\CourseUnit::updateOrCreate(
+                    ['course_id' => $course->id, 'unit_no' => (int) $unitNo],
+                    ['title' => $title]
+                );
+            }
+        }
+
         return redirect()->route('admin.courses.index')->with('success', 'Course created successfully!');
     }
 
@@ -1059,9 +1161,16 @@ class CourseController extends Controller
             $request->merge(['modules_order_updates' => json_encode($orderUpdatesRaw)]);
         }
 
+        // If category_id is empty but category_name is provided, create or find the category
+        if (empty($request->input('category_id')) && $request->filled('category_name')) {
+            $catName = trim($request->input('category_name'));
+            $category = Category::firstOrCreate(['name' => $catName], ['description' => '']);
+            $request->merge(['category_id' => $category->id]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'sync_template_modules' => 'nullable|boolean',
             'trainer_id' => [
@@ -1105,7 +1214,9 @@ class CourseController extends Controller
             'expenses.*.unit_price' => 'nullable|integer|min:0',
             'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
-            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
+            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800',
+            'unit_titles' => 'nullable|array',
+            'unit_titles.*' => 'nullable|string|max:255',
         ]);
 
         // Normalize discount fields: if discount is not set (null/0), ignore dates.
@@ -1451,8 +1562,8 @@ class CourseController extends Controller
                 TrainerNotification::create([
                     'trainer_id' => (int) $trainer->id,
                     'type' => 'course_modules_updated',
-                    'title' => 'Modul Course Diperbarui',
-                    'message' => 'Admin telah melakukan perubahan pada modul/materi course "' . $course->name . '". Silakan periksa perubahan terbaru.',
+                    'title' => 'Course Module Updated',
+                    'message' => 'Admin has made changes to the module/materi course "' . $course->name . '". Silakan periksa perubahan terbaru.',
                     'data' => [
                         'entity_type' => 'course',
                         'entity_id' => (int) $course->id,
@@ -1489,7 +1600,7 @@ class CourseController extends Controller
             }
         }
 
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil diedit!');
+        return redirect()->route('admin.courses.index')->with('success', 'Course updated successfully!');
     }
 
     public function destroy(Course $course)

@@ -69,13 +69,13 @@ class EventController extends Controller
         $eventType = strtolower(trim((string) $request->query('event_type', '')));
         if ($eventType === 'online') {
             $query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
-                ->where(fn($q) => $q->whereNull('location')->orWhere('location', ''));
+                ->where(fn($q) => $q->whereNull('location')->orWhere('location', '')->orWhereRaw('LOWER(location) = ?', ['online']));
         } elseif ($eventType === 'offline') {
             $query->where(fn($q) => $q->whereNull('zoom_link')->orWhere('zoom_link', ''))
-                ->whereNotNull('location')->where('location', '!=', '');
+                ->whereNotNull('location')->where('location', '!=', '')->whereRaw('LOWER(location) != ?', ['online']);
         } elseif ($eventType === 'hybrid') {
             $query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
-                ->whereNotNull('location')->where('location', '!=', '');
+                ->whereNotNull('location')->where('location', '!=', '')->whereRaw('LOWER(location) != ?', ['online']);
         }
 
         // day: today | weekdays | weekend
