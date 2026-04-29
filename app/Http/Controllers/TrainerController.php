@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
+use App\Models\TrainerAssignment;
 use App\Services\CourseTemplateCloneService;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
@@ -20,13 +21,6 @@ use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
-<<<<<<< HEAD
-    private const AUTO_TEMPLATE_UNITS_BY_LEVEL = [
-        'beginner' => 3,
-        'intermediate' => 6,
-        'advanced' => 12,
-    ];
-=======
     private function latestEventInvitation(int $eventId, int $trainerId): ?TrainerNotification
     {
         if ($eventId <= 0 || $trainerId <= 0) {
@@ -188,7 +182,6 @@ class TrainerController extends Controller
         return $invitation->effectiveInvitationStatus() !== 'accepted';
     }
 
->>>>>>> d942641e74992609cba5d1bdc33752318a3e8cb1
     private function ensureTrainerCertificatesSynced($trainer): void
     {
         $trainerId = (int) ($trainer->id ?? 0);
@@ -778,8 +771,6 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-<<<<<<< HEAD
-=======
         $activeAssignments = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
@@ -888,7 +879,6 @@ class TrainerController extends Controller
             ->limit(5)
             ->get();
 
->>>>>>> d942641e74992609cba5d1bdc33752318a3e8cb1
         $totalCertificates = (clone TrainerCertificate::query())
             ->where('trainer_id', $user->id)
             ->where('status', 'sent')
@@ -1080,9 +1070,6 @@ class TrainerController extends Controller
             $query->where('title', 'LIKE', "%{$search}%");
         }
 
-<<<<<<< HEAD
-        $events = $query->orderBy('event_date', 'asc')->get();
-=======
         $events = $query
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
@@ -1097,7 +1084,6 @@ class TrainerController extends Controller
                 return in_array(mb_strtolower($trainerName), $names, true);
             })
             ->values();
->>>>>>> d942641e74992609cba5d1bdc33752318a3e8cb1
 
         $assignmentMap = TrainerAssignment::query()
             ->where('trainer_id', (int) $user->id)
@@ -1184,7 +1170,12 @@ class TrainerController extends Controller
         $trainerName = mb_strtolower(trim((string) (\Illuminate\Support\Facades\Auth::user()?->name ?? '')));
 
         $event = \App\Models\Event::where('id', $id)
-            ->where('trainer_id', $trainerId)
+            ->where(function ($q) use ($trainerId, $trainerName) {
+                $q->where('trainer_id', $trainerId);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
             ->with([
                 'scheduleItems' => function ($q) {
                     $q->orderBy('start', 'asc');
@@ -1193,7 +1184,7 @@ class TrainerController extends Controller
             ->firstOrFail();
 
         // Extra check: if matched via speaker LIKE, verify exact name match
-        if (!$canOpenFromInvitation && (int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
+        if ((int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
             $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
             if (!in_array($trainerName, $speakerNames, true)) {
                 abort(403);
@@ -1482,9 +1473,6 @@ class TrainerController extends Controller
             ->latest('month')
             ->get();
 
-<<<<<<< HEAD
-        return view('trainer.finance', compact('totalEarned', 'payments', 'payouts'));
-=======
         // Events: use resolveEventCompensation to compute fee_trainer & estimated_fee
         $events = \App\Models\Event::query()
             ->where('trainer_id', $trainerId)
@@ -1525,7 +1513,6 @@ class TrainerController extends Controller
         $estimatedTotal = $events->sum('estimated_fee') + collect($courses)->sum('estimated_revenue');
 
         return view('trainer.finance', compact('totalEarned', 'payments', 'events', 'courses', 'estimatedTotal'));
->>>>>>> d942641e74992609cba5d1bdc33752318a3e8cb1
     }
 
     public function show()

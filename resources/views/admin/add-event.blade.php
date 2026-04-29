@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
@@ -3309,8 +3309,10 @@ function initEditEventSpeakers(modalEl){
     async function fetchTrainers(){
         if (trainersCache !== null) return trainersCache;
         try {
+            console.log('Fetching trainers from:', trainersUrl);
             const res = await fetch(trainersUrl, { headers: { 'Accept': 'application/json' } });
             const json = await res.json();
+            console.log('Trainers API response:', json);
             const list = (json && Array.isArray(json.data)) ? json.data : [];
             trainersCache = list.map(t => ({ id: t.id, name: String(t.name || '').trim() })).filter(t => t.name !== '');
         } catch (e) { trainersCache = []; }
@@ -3478,6 +3480,17 @@ document.addEventListener('click', async function(e){
     } catch(err){
         console.error('Edit modal load failed', err);
         window.location.href = url;
+    }
+});
+
+// Initialize Add Event modal components on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const addEventModal = document.getElementById('addEventModal');
+    if (addEventModal) {
+        if (typeof initEditEventLocationAndBenefits === 'function') initEditEventLocationAndBenefits(addEventModal);
+        if (typeof initEditEventDynamicTables === 'function') initEditEventDynamicTables(addEventModal);
+        if (typeof initEditEventSpeakers === 'function') initEditEventSpeakers(addEventModal);
+        if (typeof initEditEventAutocomplete === 'function') initEditEventAutocomplete(addEventModal);
     }
 });
 </script>

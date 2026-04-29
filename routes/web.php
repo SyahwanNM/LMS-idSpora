@@ -38,7 +38,7 @@ use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
-use App\Http\Controllers\ResellerController;
+use App\Http\Controllers\User\ResellerController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\TrainerNotificationsController;
 use App\Http\Controllers\Api\PaymentController;

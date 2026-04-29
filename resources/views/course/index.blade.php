@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="csrf-token" content="{{ csrf_token() }}"> <title>Courses</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
@@ -203,7 +203,6 @@
                                             <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                         </svg>
                                     </button>
-                                    @endauth
                                 </div>
                             </div>
 
@@ -297,7 +296,6 @@
                                     <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                 </svg>
                             </button>
-                            @endauth
                         </div>
                     </div>
 
