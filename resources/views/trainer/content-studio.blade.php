@@ -6,7 +6,9 @@
     $pageTitle = 'Content Studio';
     $breadcrumbs = [
         ['label' => 'Home', 'url' => route('trainer.dashboard')],
-        ['label' => 'Content Studio']
+        ['label' => 'Courses', 'url' => route('trainer.courses')],
+        ['label' => 'Detail', 'url' => route ('trainer.detail-course',  $course->id)],
+        ['label' => 'Course Studio']
     ];
 @endphp
 
@@ -733,7 +735,7 @@
     <main class="content-studio-main">
         <header class="studio-header">
             <div class="studio-title-wrap">
-                <a class="back-btn" href="{{ route('trainer.courses') }}">
+                <a class="back-btn" href="{{ route('trainer.detail-course', $course->id) }}">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div>

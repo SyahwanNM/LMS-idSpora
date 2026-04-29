@@ -110,31 +110,53 @@
           Fokus tindakan admin: konfirmasi penugasan dan lengkapi materi event yang masih menunggu.
         </p>
 
-        <div class="todo-board">
-          <div class="todo-column">
-            <div class="todo-column-head">
-              <h4>Menunggu Konfirmasi</h4>
-              <span>{{ $todoConfirmations->count() }}</span>
-            </div>
-            @forelse($todoConfirmations as $notification)
-              <div class="todo-row">
-                <div class="todo-row-content">
-                  <h5>{{ Str::limit($notification->title, 42) }}</h5>
-                  <p>{{ Str::limit($notification->message, 62) }}</p>
+        <div class="assignment-list">
+          @forelse($activeAssignmentItems->take(3) as $assignmentRow)
+            @php
+              $assignment = $assignmentRow['assignment'];
+              $event = $assignment->event;
+              $eventTitle = (string) ($assignmentRow['event_title'] ?: 'Event Tanpa Judul');
+              $eventDate = (string) ($assignmentRow['event_date'] ?: 'Jadwal menyusul');
+              $studioUrl = $event ? route('trainer.events.studio', $event->id) : route('trainer.events');
+              $deadline = $assignment->sla_upload_deadline;
+              $deadlineIso = $deadline ? $deadline->toIso8601String() : null;
+              $materialStatus = strtolower((string) ($assignment->material_status ?? 'pending'));
+              $approvalLabel = match ($materialStatus) {
+                'approved' => 'Disetujui',
+                'rejected' => 'Revisi',
+                'pending_review' => 'Menunggu Review Admin',
+                default => 'Belum Upload',
+              };
+              $approvalClass = match ($materialStatus) {
+                'approved' => 'is-green',
+                'rejected' => 'is-red',
+                default => 'is-yellow',
+              };
+              $schemePercent = (int) ($assignmentRow['scheme_percent'] ?? 0);
+              $activeParticipantsCount = (int) ($assignmentRow['active_participants_count'] ?? 0);
+              
+              $estimatedFee = (float) ($assignmentRow['estimated_fee'] ?? 0);
+              $assignmentIcon = match ($schemePercent) {
+                35 => 'bi-journal-text',
+                25 => 'bi-camera-video',
+                default => 'bi-play-circle',
+              };
+            @endphp
+            <div class="assignment-item">
+              <div class="assignment-main">
+                <div class="assignment-mark">
+                  <i class="bi {{ $assignmentIcon }}"></i>
                 </div>
-                <div class="todo-actions-inline">
-                  <form method="POST" action="{{ route('trainer.notifications.respond', $notification->id) }}"
-                    class="js-invitation-response-form">
-                    @csrf
-                    <input type="hidden" name="decision" value="accept">
-                    <button type="submit" class="todo-btn accept">Terima</button>
-                  </form>
-                  <form method="POST" action="{{ route('trainer.notifications.respond', $notification->id) }}"
-                    class="js-invitation-response-form" data-confirm="Yakin ingin menolak undangan ini?">
-                    @csrf
-                    <input type="hidden" name="decision" value="reject">
-                    <button type="submit" class="todo-btn reject">Tolak</button>
-                  </form>
+                <div class="assignment-copy">
+                  <h4 class="assignment-title">{{ $eventTitle }}</h4>
+                  <p class="assignment-meta">
+                    {{ $eventDate }} • {{ $assignmentRow['scheme_label'] }}
+                  </p>
+                  <p class="assignment-meta">
+                    
+                    • Peserta Aktif {{ number_format($activeParticipantsCount) }}
+                    • Estimasi Rp {{ number_format($estimatedFee, 0, ',', '.') }}
+                  </p>
                 </div>
               </div>
             @empty

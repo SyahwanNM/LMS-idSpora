@@ -125,32 +125,18 @@
                         </svg>
                         <p>{{ $event->participants_count ?? 0 }} Learners</p>
                       </div>
-                      <div class="total-path">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-stack"
-                          viewBox="0 0 16 16">
-                          <path
-                            d="m14.12 10.163 1.715.858c.22.11.22.424 0 .534L8.267 15.34a.6.6 0 0 1-.534 0L.165 11.555a.299.299 0 0 1 0-.534l1.716-.858 5.317 2.659c.505.252 1.1.252 1.604 0l5.317-2.66zM7.733.063a.6.6 0 0 1 .534 0l7.568 3.784a.3.3 0 0 1 0 .535L8.267 8.165a.6.6 0 0 1-.534 0L.165 4.382a.299.299 0 0 1 0-.535z" />
-                          <path
-                            d="m14.12 6.576 1.715.858c.22.11.22.424 0 .534l-7.568 3.784a.6.6 0 0 1-.534 0L.165 7.968a.299.299 0 0 1 0-.534l1.716-.858 5.317 2.659c.505.252 1.1.252 1.604 0z" />
+                      <div class="total-fee">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="none"
+                          stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
+                          class="icon-outline">
+                          <rect x="0.75" y="3" width="13.5" height="9" rx="2"></rect>
+                          <path d="M0.75 6.5h13.5"></path>
+                          <rect x="11" y="7.5" width="2" height="1.5" rx="0.5"></rect>
                         </svg>
-                        <p>1 UNIT</p>
-                      </div>
-                      <div class="total-path">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cash-coin"
-                          viewBox="0 0 16 16">
-                          <path fill-rule="evenodd"
-                            d="M11 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8m0 1A5 5 0 1 0 11 6a5 5 0 0 0 0 10" />
-                          <path
-                            d="M12.5 10.5a.5.5 0 0 1-.5.5h-1v1a.5.5 0 0 1-1 0v-1H9a.5.5 0 0 1 0-1h1V9H9a.5.5 0 0 1 0-1h1V7a.5.5 0 0 1 1 0v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 .5.5" />
-                          <path d="M4 0a2 2 0 0 0-2 2v1h1V2a1 1 0 0 1 1-1h1V0z" />
-                          <path d="M2 6h4V5H2z" />
-                          <path d="M5 8H2v1h3z" />
-                        </svg>
-                        @if((float) ($event->fee_per_participant ?? 0) > 0)
+                        @if((float) ($event->fee_trainer ?? 0) > 0)
                           <p>
-                            Rp {{ number_format((float) $event->fee_per_participant, 0, ',', '.') }}/peserta
+                            Rp {{ number_format((float) $event->fee_trainer, 0, ',', '.') }}
                             @if((bool) ($event->is_fallback_to_event_price ?? false))
-                              (harga event)
                             @endif
                           </p>
                         @else

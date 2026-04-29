@@ -106,13 +106,10 @@
               </div>
               <div class="info-card-content">
                 <span class="info-card-label">FEE TRAINER</span>
-                @if((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
+                @if((float) ($eventCompensation['fee_trainer'] ?? 0) > 0)
                   <span class="info-card-value">
-                    Rp {{ number_format((float) ($eventCompensation['fee_per_participant'] ?? 0), 0, ',', '.') }}/peserta
+                    Rp {{ number_format((float) ($eventCompensation['fee_trainer'] ?? 0), 0, ',', '.') }}/peserta
                   </span>
-                  @if((bool) ($eventCompensation['is_fallback_to_event_price'] ?? false))
-                    <span class="info-card-label">Sumber: harga event (skema belum dipilih)</span>
-                  @endif
                 @else
                   <span class="info-card-value">Belum diatur admin</span>
                 @endif
@@ -145,39 +142,95 @@
                 d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
             </svg>
           </div>
-          <div class="vsa-meta">
-            <p class="vsa-label">MEETING PORTAL</p>
-            <h3>Session Conference</h3>
-            <p class="vsa-link">{{ $event->zoom_link ?? 'Link belum tersedia' }}</p>
-          </div>
-          <a href="{{ $event->zoom_link ?? '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($event->zoom_link) ? 'disabled' : '' }}>
-            JOIN SESSION
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd"
-                d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-              <path fill-rule="evenodd"
-                d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-            </svg>
-          </a>
-        </article>
+        </div>
 
-        <article class="vsa-card">
-          <div class="vsa-icon vsa-icon-amber">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
-              <path
-                d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
-            </svg>
-          </div>
-          <div class="vsa-meta">
-            <p class="vsa-label">BRANDING KIT</p>
-            <h3>Virtual Background</h3>
-            <p class="vsa-desc">High-Res PNG • Pre-branded</p>
-          </div>
-          @if(!empty($event->vbg_path) && !empty($event->vbg_file_url))
-            <a href="{{ $event->vbg_file_url }}" class="vsa-btn vsa-btn-amber" download>
-              DOWNLOAD VBG
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <section class="rundown-list">
+          <h2>Rundown Acara</h2>
+          @php
+            $items = collect();
+
+            if (isset($event)) {
+              try {
+                $items = $event->relationLoaded('scheduleItems')
+                  ? ($event->scheduleItems ?? collect())
+                  : $event->scheduleItems()->get();
+              } catch (\Throwable $e) {
+                $items = collect();
+              }
+
+              if ($items->isEmpty()) {
+                $rawSchedule = $event->schedule_json ?? null;
+
+                $scheduleArr = null;
+                if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                  $decoded = json_decode($rawSchedule, true);
+                  $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                } elseif (is_array($rawSchedule)) {
+                  $scheduleArr = $rawSchedule;
+                } elseif (is_object($rawSchedule)) {
+                  $scheduleArr = json_decode(json_encode($rawSchedule), true);
+                }
+
+                if (is_array($scheduleArr)) {
+                  $items = collect($scheduleArr)->map(function ($row) {
+                    $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
+                    return (object) [
+                      'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                      'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                      'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                      'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                    ];
+                  })->filter(function ($it) {
+                    return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                  })->values();
+                }
+              }
+            }
+
+            $formatTime = function ($t) {
+              if (empty($t)) {
+                return null;
+              }
+              try {
+                return \Carbon\Carbon::parse($t)->format('H:i');
+              } catch (\Throwable $e) {
+                return is_string($t) ? $t : null;
+              }
+            };
+          @endphp
+          <ul>
+            @forelse($items as $it)
+              @php
+                $start = $formatTime($it->start ?? null);
+                $end = $formatTime($it->end ?? null);
+                $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                $activity = trim((string) ($it->title ?? ''));
+                if ($activity === '') {
+                  $activity = trim((string) ($it->description ?? ''));
+                }
+              @endphp
+              <li>
+                <span class="time-rundown">{{ $timeStr !== '' ? $timeStr : '-' }}</span>
+                <span class="activity-rundown">{{ $activity !== '' ? $activity : '-' }}</span>
+              </li>
+            @empty
+              <li>
+                <span class="time-rundown">—</span>
+                <span class="activity-rundown">Schedule will be announced.</span>
+              </li>
+            @endforelse
+          </ul>
+        </section>
+      </section>
+
+      <div class="hub-actions-column">
+        <p class="hub-title">Materi</p>
+        <div class="hub-section">
+          <div class="hub-item" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
+            <div class="hub-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
                 <path
                   d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
                 <path
