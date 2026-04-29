@@ -84,7 +84,7 @@ class EnsureDefaultCourseTemplates extends Command
         for ($unit = $startUnit; $unit <= $targetUnits; $unit++) {
             $rows[] = [
                 'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - PDF Material',
+                'title' => 'Module ' . $unit . ' - Material',
                 'description' => null,
                 'type' => 'pdf',
                 'is_required' => true,

@@ -768,9 +768,8 @@
                 // --- NORMALIZE MODULE TITLES ---
                 modules.forEach(function(m) {
                     if (m && m.title) {
-                        if (['PDF Material', 'Video Lesson', 'Quiz', 'Modul PDF', 'Video Pembelajaran', 'Kuis'].includes(m.title)) {
-                            m.title = 'Module 1 - ' + m.title;
-                        }
+                        // Strip " - PDF" prefix anywhere in the title (e.g. "Module 1 - PDF Material" → "Module 1 - Material")
+                        m.title = m.title.replace(/ - PDF Material/gi, ' - Material');
                     }
                 });
 

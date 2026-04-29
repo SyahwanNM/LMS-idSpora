@@ -601,7 +601,7 @@ class CourseController extends Controller
         for ($unit = $startUnit; $unit <= $minUnits; $unit++) {
             $rows[] = [
                 'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - PDF Material',
+                'title' => 'Module ' . $unit . ' - Material',
                 'description' => null,
                 'type' => 'pdf',
                 'is_required' => true,

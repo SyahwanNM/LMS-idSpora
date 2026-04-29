@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EventCertificateController;
+use App\Http\Controllers\Api\EventAttendanceController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\MyCourseController;
 use App\Http\Controllers\Api\CoursePaymentController;
@@ -84,6 +86,20 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     // Course reviews
     Route::get('/courses/{course}/reviews', [CourseController::class, 'reviews'])->whereNumber('course');
     Route::post('/courses/{course}/reviews', [CourseController::class, 'submitReview'])->whereNumber('course');
+
+    // Event certificates
+    Route::get('/me/event-certificates', [EventCertificateController::class, 'index']);
+    Route::get('/events/{event}/certificate', [EventCertificateController::class, 'show'])->whereNumber('event');
+    Route::get('/events/{event}/certificate/download', [EventCertificateController::class, 'download'])
+        ->whereNumber('event')
+        ->name('api.events.certificate.download');
+
+    // Event attendance (QR scan)
+    Route::get('/events/{event}/attendance/status', [EventAttendanceController::class, 'status'])->whereNumber('event');
+    Route::get('/events/{event}/attendance/qr-info', [EventAttendanceController::class, 'qrInfo'])->whereNumber('event');
+    Route::post('/events/{event}/attendance/scan', [EventAttendanceController::class, 'scan'])
+        ->whereNumber('event')
+        ->name('api.events.attendance.scan');
 
     // Trainer APIs (RESTful)
     Route::middleware(['trainer', 'throttle:100,1'])->prefix('trainer')->group(function () {
