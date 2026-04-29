@@ -112,11 +112,42 @@
 
                         <input type="hidden" id="course-duration" name="duration" value="0">
 
-                        <div class="box_select_harga mb-3">
-                            <label class="form-label text-dark" for="course-price">Harga <span class="text-danger">*</span></label>
-                            <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0" required>
-                            <div class="form-text">Isi 0 untuk course gratis</div>
-                            <div class="sanity-msg" data-for="course-price"></div>
+                        <div class="mb-3">
+                            <label class="form-label text-dark">Reseller Course</label>
+                            @php
+                                $isResellerCourse = (int) old('is_reseller_course', 0);
+                            @endphp
+                            <div class="reseller-course-radios d-flex flex-wrap align-items-center" style="column-gap: 2rem; row-gap: .5rem;" role="radiogroup" aria-label="Reseller Course">
+                                <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
+                                    <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0"
+                                        {{ $isResellerCourse === 0 ? 'checked' : '' }}>
+                                    <label class="text-dark" for="is_reseller_course_0">No</label>
+                                </div>
+                                <div class="reseller-course-option d-inline-flex align-items-center" style="white-space:nowrap; flex: 0 0 auto;">
+                                    <input class="form-check-input m-0" type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1"
+                                        {{ $isResellerCourse === 1 ? 'checked' : '' }}>
+                                    <label class="text-dark" for="is_reseller_course_1">Yes</label>
+                                </div>
+                            </div>
+                            <div class="form-text">If Yes, this course will be marked as a reseller course.</div>
+                            <style>
+                                .reseller-course-radios input[type="radio"]{
+                                    appearance: auto !important;
+                                    -webkit-appearance: radio !important;
+                                    -moz-appearance: auto !important;
+                                    vertical-align: middle !important;
+                                }
+                                .reseller-course-radios label{
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    margin: 0 0 0 .5rem !important;
+                                    cursor: pointer;
+                                    user-select: none;
+                                }
+                                .reseller-course-radios .reseller-course-option:first-child label{
+                                    margin-left: .05rem !important;
+                                }
+                            </style>
                         </div>
 
                         <div class="box_select_deskripsi mb-3">

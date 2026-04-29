@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
 use App\Models\TrainerAssignment;
+use App\Models\Feedback;
 use App\Services\CourseTemplateCloneService;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
@@ -771,7 +772,7 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $activeAssignments = TrainerAssignment::query()
+        $activeAssignmentItems = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
             ->with([
@@ -899,7 +900,8 @@ class TrainerController extends Controller
             'totalCertificates',
             'teachingHistory',
             'dashboardInvitations',
-            'unreadInvitationCount'
+            'unreadInvitationCount',
+            'activeAssignmentItems'
         ));
     }
 

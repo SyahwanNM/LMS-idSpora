@@ -158,7 +158,7 @@
             
         </div>
     </div>
-
+</div>
     <div class="box_luar_course_builder">
         <h1 class="judul_course_builder">Registration</h1>
         <p class="deskripsi_course_builder">Manage course details before publishing</p>
@@ -254,11 +254,18 @@
                         })->count() > 0;
                     }
 
+                    // If it's a trainer course, ensure all modules have been approved
+                    $hasUnapprovedModules = false;
+                    if (!empty($course->trainer_id)) {
+                        $hasUnapprovedModules = $modulesCol->where('review_status', '!=', 'approved')->count() > 0;
+                    }
+
                     $missingForPublish = [];
                     if ($totalModules <= 0) { $missingForPublish[] = 'Modul'; }
                     if ($hasMissingPdf) { $missingForPublish[] = 'Modul (PDF)'; }
                     if ($hasMissingVideo) { $missingForPublish[] = 'Video'; }
                     if ($hasMissingQuiz) { $missingForPublish[] = 'Kuis'; }
+                    if ($hasUnapprovedModules) { $missingForPublish[] = 'Approval Trainer'; }
 
                     $hasMissingMaterial = !empty($missingForPublish);
                     @endphp
@@ -274,111 +281,6 @@
                             <div class="status_kelengkapan_miss">Missing Material</div>
                             @else
                             <div class="status_kelengkapan_inprogress">On Progress</div>
-                            @endif
-                        </td>
-                        <td>
-                            @php
-                            $coursePayments = $course->manualPayments ?? collect();
-                            $countPending = $coursePayments->where('status', 'pending')->count();
-                            $countApproved = $coursePayments->where('status', 'settled')->count();
-                            $countRejected = $coursePayments->where('status', 'rejected')->count();
-                            @endphp
-
-                            <div class="d-flex flex-wrap gap-1 align-items-center">
-                                <span class="badge text-bg-warning">Pending: {{ $countPending }}</span>
-                                <span class="badge text-bg-success">Approved: {{ $countApproved }}</span>
-                                <span class="badge text-bg-danger">Rejected: {{ $countRejected }}</span>
-                            </div>
-
-                            @if($coursePayments->count() > 0)
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#coursePaymentsModal-{{ $course->id }}">
-                                Lihat user
-                            </button>
-
-                            <div class="modal fade" id="coursePaymentsModal-{{ $course->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Pembayaran Manual - {{ $course->name }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="table-responsive">
-                                                <table class="table table-sm align-middle">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>User</th>
-                                                            <th>WhatsApp</th>
-                                                            <th>Referral</th>
-                                                            <th>Status</th>
-                                                            <th>Bukti</th>
-                                                            <th>Aksi</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($coursePayments->sortByDesc('created_at') as $payment)
-                                                        @php
-                                                        $proof = $payment->proofs->sortByDesc('created_at')->first();
-                                                        $status = $payment->status;
-                                                        $statusLabel = $status === 'settled' ? 'Approved' : ucfirst($status);
-                                                        $statusClass = $status === 'settled' ? 'text-bg-success' : ($status === 'rejected' ? 'text-bg-danger' : 'text-bg-warning');
-                                                        @endphp
-                                                        <tr>
-                                                            <td>
-                                                                <div class="fw-semibold">{{ $payment->user->name ?? 'User' }}</div>
-                                                                <div class="text-muted" style="font-size:12px">{{ $payment->user->email ?? '' }}</div>
-                                                            </td>
-                                                            <td>{{ $payment->whatsapp_number ?? '-' }}</td>
-                                                            <td>{{ $payment->referral_code ?: '-' }}</td>
-                                                            <td><span class="badge {{ $statusClass }}">{{ $statusLabel }}</span></td>
-                                                            <td>
-                                                                @if($proof)
-                                                                @php
-                                                                $proofPath = ltrim((string) ($proof->file_path ?? ''), '/');
-                                                                if (\Illuminate\Support\Str::startsWith($proofPath, 'uploads/')) {
-                                                                $proofPath = substr($proofPath, strlen('uploads/'));
-                                                                }
-                                                                $proofUrl = $proofPath !== '' ? asset('uploads/' . $proofPath) : '#';
-                                                                @endphp
-                                                                <a class="btn btn-sm btn-outline-secondary" target="_blank" href="{{ $proofUrl }}">Lihat</a>
-                                                                @else
-                                                                <span class="text-muted">-</span>
-                                                                @endif
-                                                            </td>
-                                                            <td>
-                                                                @if($status === 'pending')
-                                                                    <form method="POST" class="d-flex flex-wrap gap-1 m-0">
-                                                                        @csrf
-                                                                        <button type="submit" class="btn btn-sm btn-success"
-                                                                            formaction="{{ route('admin.courses.manual-payments.approve', [$course, $payment]) }}"
-                                                                            onclick="return confirm('Approve pembayaran ini?')">
-                                                                            Approve
-                                                                        </button>
-                                                                        <button type="button" class="btn btn-sm btn-danger js-reject-course-payment"
-                                                                            data-action="{{ route('admin.courses.manual-payments.reject', [$course, $payment]) }}"
-                                                                            data-user="{{ $payment->user->name ?? 'User' }}"
-                                                                            data-course="{{ $course->name }}">
-                                                                            Reject
-                                                                        </button>
-                                                                    </form>
-                                                                @else
-                                                                    <span class="text-muted">-</span>
-                                                                @endif
-                                                            </td>
-                                                        </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @else
-                            <div class="text-muted mt-2" style="font-size:12px">Belum ada pembayaran.</div>
                             @endif
                         </td>
                         <td>
@@ -398,18 +300,21 @@
                                 'enroll_count' => (int)($course->enrollments_count ?? 0),
                                 'edit_url' => route('admin.courses.edit', $course),
                                 'has_trainer' => !empty($course->trainer_id),
-                                'modules' => $course->modules->map(function($m) {
+                                'modules' => $course->modules->filter(function($m) use ($course) {
+                                    if (empty($course->trainer_id)) return true;
+                                    return $m->review_status === 'approved';
+                                })->map(function($m) {
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
                                 'title' => $m->title,
-                                'subtitle' => $m->description ?? '',
+                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Dokumen Materi',
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
                                 // Content completeness marker for preview
                                 'has_content' => $m->type === 'quiz'
                                     ? (($m->quizQuestions->count() ?? 0) > 0)
-                                    : !empty($m->content_url),
+                                    : (!empty($m->content_url) || !empty($m->description)),
                                 ];
                                 })->values()->toArray(),
                                 'published' => $isPublished ? '1' : '0',
@@ -435,15 +340,24 @@
                                         </svg>
                                     </button>
                                 </form>
-                                <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
-                                    @csrf
-                                    <button type="submit"
-                                        class="btn btn-sm {{ $isPublished ? 'btn-success' : 'btn-outline-success' }} btn_publish_course js-publish-course"
-                                        data-published="{{ $isPublished ? '1' : '0' }}"
-                                        data-missing='@json($missingForPublish)'>
-                                        {{ $isPublished ? 'Published' : 'Publish' }}
-                                    </button>
-                                </form>
+                                @if($isPublished)
+                                    <form method="POST" action="{{ route('admin.courses.unpublish', $course) }}" class="m-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn_unpublish_course">
+                                            Unpublish
+                                        </button>
+                                    </form>
+                                @else
+                                    <form method="POST" action="{{ route('admin.courses.publish', $course) }}" class="m-0 publish-course-form">
+                                        @csrf
+                                        <button type="submit"
+                                            class="btn btn-sm btn-outline-success btn_publish_course js-publish-course"
+                                            data-published="0"
+                                            data-missing='@json($missingForPublish)'>
+                                            Publish
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -792,7 +706,7 @@
                 if (!m) return false;
                 if (typeof m.has_content !== 'undefined') return !!m.has_content;
                 if (String(m.type || '') === 'quiz') return Number(m.question_count || 0) > 0;
-                return !!(m.content_url || '');
+                return !!(m.content_url || m.subtitle || ''); // subtitle maps to description in previewData
             }
 
             // --- 4. Event Delegation for Preview Click ---

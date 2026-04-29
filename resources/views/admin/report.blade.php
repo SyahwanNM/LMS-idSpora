@@ -627,60 +627,74 @@
             const seriesWatch = Array.isArray(dbSeries.watch_minutes) ? dbSeries.watch_minutes : [];
             const seriesRating = Array.isArray(dbSeries.rating) ? dbSeries.rating : [];
 
+            // Initial selected month from server (1-indexed, 0 = no filter)
+            const initialMonth = @json(isset($growthMonth) && $growthMonth ? (int) explode('-', $growthMonth)[1] : 0);
+
+            const DATASET_COLORS = [
+                { border: '#4e73df', bg: 'rgba(78,115,223,0.1)',   dimBorder: 'rgba(78,115,223,0.15)',   dimBg: 'rgba(78,115,223,0.03)' },
+                { border: '#1cc88a', bg: 'rgba(28,200,138,0.1)',   dimBorder: 'rgba(28,200,138,0.15)',   dimBg: 'rgba(28,200,138,0.03)' },
+                { border: '#f6c23e', bg: 'rgba(246,194,62,0.1)',   dimBorder: 'rgba(246,194,62,0.15)',   dimBg: 'rgba(246,194,62,0.03)' },
+                { border: '#e74a3b', bg: 'rgba(231,74,59,0.1)',    dimBorder: 'rgba(231,74,59,0.15)',    dimBg: 'rgba(231,74,59,0.03)' },
+            ];
+
+            /**
+             * Build per-point colors for a dataset.
+             * highlightIdx: 0-based month index to highlight, or -1 for no highlight (all normal).
+             */
+            function buildPointColors(colorSet, highlightIdx) {
+                if (highlightIdx < 0) {
+                    // No filter — all points use normal color
+                    return { point: Array(12).fill(colorSet.border), pointBorder: Array(12).fill(colorSet.border) };
+                }
+                return {
+                    point: Array.from({ length: 12 }, (_, i) => i === highlightIdx ? colorSet.border : colorSet.dimBorder),
+                    pointBorder: Array.from({ length: 12 }, (_, i) => i === highlightIdx ? colorSet.border : colorSet.dimBorder),
+                };
+            }
+
+            function buildPointRadius(highlightIdx) {
+                if (highlightIdx < 0) return 3;
+                return Array.from({ length: 12 }, (_, i) => i === highlightIdx ? 7 : 2);
+            }
+
+            function makeDataset(label, data, colorSet, highlightIdx) {
+                const pc = buildPointColors(colorSet, highlightIdx);
+                return {
+                    label,
+                    data,
+                    borderColor: highlightIdx < 0 ? colorSet.border : colorSet.dimBorder,
+                    backgroundColor: highlightIdx < 0 ? colorSet.bg : colorSet.dimBg,
+                    pointBackgroundColor: pc.point,
+                    pointBorderColor: pc.pointBorder,
+                    pointRadius: buildPointRadius(highlightIdx),
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                };
+            }
+
+            const hlIdx = initialMonth > 0 ? initialMonth - 1 : -1;
+
             const growthChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [
-                        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-                        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-                    ],
-                    datasets: [{
-                            label: 'Total View',
-                            data: (seriesViews.length === 12 ? seriesViews : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#4e73df',
-                            backgroundColor: 'rgba(78,115,223,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Peserta',
-                            data: (seriesParticipants.length === 12 ? seriesParticipants : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#1cc88a',
-                            backgroundColor: 'rgba(28,200,138,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Waktu Tonton (Menit)',
-                            data: (seriesWatch.length === 12 ? seriesWatch : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#f6c23e',
-                            backgroundColor: 'rgba(246,194,62,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Rating Course',
-                            data: (seriesRating.length === 12 ? seriesRating : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#e74a3b',
-                            backgroundColor: 'rgba(231,74,59,0.1)',
-                            tension: 0.4
-                        }
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                    datasets: [
+                        makeDataset('Total View',           seriesViews.length === 12 ? seriesViews : Array(12).fill(0),        DATASET_COLORS[0], hlIdx),
+                        makeDataset('Peserta',              seriesParticipants.length === 12 ? seriesParticipants : Array(12).fill(0), DATASET_COLORS[1], hlIdx),
+                        makeDataset('Waktu Tonton (Menit)', seriesWatch.length === 12 ? seriesWatch : Array(12).fill(0),         DATASET_COLORS[2], hlIdx),
+                        makeDataset('Rating Course',        seriesRating.length === 12 ? seriesRating : Array(12).fill(0),       DATASET_COLORS[3], hlIdx),
                     ]
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
 
-            // Expose for the filter script (keeps style/config identical; only data changes).
+            // Expose helpers for the filter script.
             window.__growthChart = growthChart;
+            window.__growthChartHelpers = { makeDataset, buildPointColors, buildPointRadius, DATASET_COLORS };
 
         });
     </script>
@@ -1075,10 +1089,29 @@
                 const watch = Array.isArray(s.watch_minutes) ? s.watch_minutes : [];
                 const rating = Array.isArray(s.rating) ? s.rating : [];
 
-                if (views.length === 12) ch.data.datasets[0].data = views;
-                if (participants.length === 12) ch.data.datasets[1].data = participants;
-                if (watch.length === 12) ch.data.datasets[2].data = watch;
-                if (rating.length === 12) ch.data.datasets[3].data = rating;
+                // Determine which month to highlight based on the current filter input
+                const monthVal = (monthInput?.value || '').trim(); // YYYY-MM
+                let hlIdx = -1;
+                if (monthVal && /^\d{4}-\d{2}$/.test(monthVal)) {
+                    hlIdx = parseInt(monthVal.split('-')[1], 10) - 1; // 0-based
+                }
+
+                const helpers = window.__growthChartHelpers;
+                if (helpers) {
+                    const { makeDataset, DATASET_COLORS } = helpers;
+                    const newDatasets = [
+                        makeDataset('Total View',           views.length === 12 ? views : Array(12).fill(0),        DATASET_COLORS[0], hlIdx),
+                        makeDataset('Peserta',              participants.length === 12 ? participants : Array(12).fill(0), DATASET_COLORS[1], hlIdx),
+                        makeDataset('Waktu Tonton (Menit)', watch.length === 12 ? watch : Array(12).fill(0),         DATASET_COLORS[2], hlIdx),
+                        makeDataset('Rating Course',        rating.length === 12 ? rating : Array(12).fill(0),       DATASET_COLORS[3], hlIdx),
+                    ];
+                    ch.data.datasets = newDatasets;
+                } else {
+                    if (views.length === 12) ch.data.datasets[0].data = views;
+                    if (participants.length === 12) ch.data.datasets[1].data = participants;
+                    if (watch.length === 12) ch.data.datasets[2].data = watch;
+                    if (rating.length === 12) ch.data.datasets[3].data = rating;
+                }
                 ch.update();
             };
 

@@ -396,37 +396,6 @@ class AdminController extends Controller
             ->orderBy('event_date', 'asc')
             ->get();
 
-        // Categorize events: upcoming, active, completed
-        $now = Carbon::now();
-        $activeCount = 0;
-        $completedCount = 0;
-        $upcomingCount = 0;
-        $totalEventsAll = $events->count();
-        foreach ($events as $e) {
-            if (empty($e->event_date)) {
-                continue;
-            }
-            $start = $e->start_at; // accessor from model combines date + time safely
-            $end = $e->end_at;     // accessor from model handles fallback to endOfDay
-            if ($start && $end) {
-                if ($now->lt($start)) {
-                    $upcomingCount++;
-                } else if ($now->gt($end)) {
-                    $completedCount++;
-                } else {
-                    $activeCount++;
-                }
-            } else if ($start) {
-                if ($now->lt($start)) {
-                    $upcomingCount++;
-                } else {
-                    $activeCount++;
-                }
-            }
-        }
-        $percentCompleted = $totalEventsAll > 0 ? round(($completedCount / $totalEventsAll) * 100) : 0;
-        $percentNotCompleted = $totalEventsAll > 0 ? round((($totalEventsAll - $completedCount) / $totalEventsAll) * 100) : 0;
-
         // Map into simple rows for the Pendapatan table
         $eventRows = $events->map(function ($e) use ($revenueMap) {
             $price = $e->discounted_price ?? $e->price;
@@ -546,14 +515,16 @@ class AdminController extends Controller
                 'speaker' => $e->speaker,
                 'event_rating' => null, // placeholder until rating source available
                 'speaker_rating' => null, // placeholder
+                'is_free' => (float) ($e->price ?? 0) <= 0,
+                'manage_action' => $e->manage_action,
             ];
         });
 
         // Summary stats dari $growthRows (sama dengan tabel)
-        $totalFreeParticipants  = collect($growthRows)->where('is_free', true)->sum('participants');
-        $totalPaidParticipants  = collect($growthRows)->where('is_free', false)->sum('participants');
-        $totalManageEvents      = collect($growthRows)->where('manage_action', 'manage')->count();
-        $totalCreateEvents      = collect($growthRows)->where('manage_action', '!=', 'manage')->count();
+        $totalFreeParticipants  = $growthRows->where('is_free', true)->sum('participants');
+        $totalPaidParticipants  = $growthRows->where('is_free', false)->sum('participants');
+        $totalManageEvents      = $growthRows->where('manage_action', 'manage')->count();
+        $totalCreateEvents      = $growthRows->where('manage_action', '!=', 'manage')->count();
 
         // Peserta per hari untuk chart — derived from $growthRows (same events as the table)
         $freeParticipantByDay = [];
@@ -577,38 +548,10 @@ class AdminController extends Controller
             $chartPaidParticipantData[] = (int) ($paidParticipantByDay[$d] ?? 0);
         }
 
-        // Build rows for Operasional table (document completeness per event)
-        $operationalRows = $events->map(function ($e) {
-            return [
-                'id' => $e->id,
-                'name' => $e->title,
-                'date' => optional($e->event_date)->format('d/m/Y'),
-                'type' => $e->jenis ?? 'N/A',
-                'documents_percent' => $e->documents_completion_percent, // accessor from model
-                'has_vbg' => !empty($e->vbg_path),
-                'has_cert' => !empty($e->certificate_path),
-                'has_abs' => !empty($e->attendance_path),
-                // URLs expected by the reports view
-                'vbg_url' => !empty($e->vbg_path) ? ($e->vbg_file_url ?? '') : '',
-                'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
-                'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
-                // attendance QR data
-                'qr_token' => $e->attendance_qr_token,
-                'qr_url' => $e->attendance_qr_token ? url('/events/'.$e->id.'?t='.$e->attendance_qr_token) : null,
-                'qr_image_url' => $e->attendance_qr_image_url,
-            ];
-        });
-
         return view('admin.reports', compact(
             'activeTab',
             'eventRows',
             'growthRows',
-            'operationalRows',
-            'activeCount',
-            'completedCount',
-            'upcomingCount',
-            'percentCompleted',
-            'percentNotCompleted',
             'chartLabels',
             'chartFreeData',
             'chartPaidData',

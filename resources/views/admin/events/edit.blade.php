@@ -110,12 +110,43 @@
                                 @endphp
                                 <div class="position-relative">
                                     <input type="text" name="materi" id="materi" class="form-control" required
-                                        value="{{ $currentMateri }}"
-                                        placeholder="Ketik minimal 2 huruf (contoh: Backend)" autocomplete="off">
-                                    <div id="materiSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                           value="{{ $currentMateri }}"
+                                           placeholder="Klik untuk lihat daftar, lalu ketik untuk mencari"
+                                           autocomplete="off" data-options="@json($materiMerged ?? [])">
+                                    <div id="materiSuggestions"
+                                         class="list-group position-absolute w-100 shadow-sm"
+                                         style="display:none; z-index: 1060; max-height: 240px; overflow-y:auto;"></div>
                                 </div>
-                                <div class="form-text">Pilih kategori materi utama event.</div>
-                                <div id="materiInvalidText" class="text-danger small mt-1" style="display:none;">Tidak ada materi</div>
+                                <div class="form-text">Click the field to see the list. Type to search.</div>
+                               
+                            </div>
+
+                            <!-- Kelola Event: Manage / Create -->
+                            <div class="mb-3">
+                                <label for="manage_action" class="form-label fw-semibold">Kelola Event <span class="text-danger">*</span></label>
+                                @php $currentManage = old('manage_action', $event->manage_action); @endphp
+                                <select name="manage_action" id="manage_action" class="form-select" required>
+                                    <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Choice Event</option>
+                                    <option value="manage" {{ $currentManage === 'manage' ? 'selected' : '' }}>Manage</option>
+                                    <option value="create" {{ $currentManage === 'create' ? 'selected' : '' }}>Create</option>
+                                </select>
+                                <div class="form-text">Manage: operational/ongoing event. Create: new event from scratch.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Reseller Event</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-yes" value="1" {{ old('is_reseller_event', $event->is_reseller_event) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="reseller-event-yes">Ya</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="is_reseller_event" id="reseller-event-no" value="0" {{ old('is_reseller_event', $event->is_reseller_event) ? '' : 'checked' }}>
+                                        <label class="form-check-label" for="reseller-event-no">Tidak</label>
+                                    </div>
+                                </div>
+                                <div class="form-text">If Yes, this event will appear in the Reseller Commission Product.</div>
+                            </div>
+
                             </div>
 
                             <!-- Jenis Acara (autocomplete after 2 chars) -->
@@ -131,13 +162,18 @@
                                             ->unique(fn($v) => mb_strtolower($v))
                                             ->values()
                                             ->all();
+
+                                        $currentJenis = trim((string) old('jenis', $event->jenis));
                                     @endphp
-                                    <input type="text" name="jenis" id="jenis" class="form-control" required
-                                        value="{{ old('jenis', $event->jenis) }}"
-                                        placeholder="Ketik minimal 2 huruf (contoh: Webinar)" autocomplete="off">
-                                    <div id="jenisSuggestions" class="list-group position-absolute w-100" style="z-index:1100;display:none;max-height:220px;overflow:auto;"></div>
+                                    <select name="jenis" id="jenis" class="form-select" required>
+                                        <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Choice event type</option>
+                                        @foreach($jenisMerged as $opt)
+                                            @php $optStr = (string) $opt; @endphp
+                                            <option value="{{ $optStr }}" {{ $currentJenis === $optStr ? 'selected' : '' }}>{{ $optStr }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
-                                <div class="form-text">Ketik minimal 2 huruf untuk melihat saran. Bisa juga isi manual.</div>
+                                <div class="form-text">Choice event type for this event.</div>
                             </div>
                             <!-- Penjelasan Singkat (maks 40 kata) -->
                             <div class="mb-3">
@@ -148,41 +184,18 @@
                                 <small class="d-block mt-1" id="shortDescHint"><span id="shortDescCount">0</span>/40
                                     kata</small>
                             </div>
+
                             <div class="mb-3">
-                                <label for="deskripsi" class="form-label fw-semibold">Deskripsi Event <span
-                                        class="text-danger">*</span></label>
-                                <textarea name="description" id="deskripsi" class="form-control" rows="6"
-                                    required>{{ old('description', $event->description) }}</textarea>
-                                <div class="form-text">Jelaskan detail event: topik, target peserta, agenda singkat, dan benefit.</div>
+                                <label for="deskripsi" class="form-label fw-semibold">Event Description <span class="text-danger">*</span></label>
+                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ strip_tags(old('description', $event->description ?? '')) }}</textarea>
+                                <div class="form-text">Explain the event details: topic, target participants, brief agenda, and benefits.</div>
                             </div>
-                            <!-- Kelola Event: Manage / Create -->
+
                             <div class="mb-3">
-                                <label for="manage_action" class="form-label fw-semibold">
-                                    Kelola Event
-                                    <i class="bi bi-info-circle-fill ms-1" role="button" tabindex="0"
-                                        aria-label="Info kelola event"
-                                        style="color: var(--bs-warning);"
-                                        data-bs-toggle="tooltip"
-                                        data-bs-placement="top"
-                                        data-bs-custom-class="tooltip-hint-yellow"
-                                        title="Manage: pilih jika event ini masuk kategori dikelola (operasional/lanjutan). Create: pilih jika event ini dibuat sebagai event baru dari awal."></i>
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <select name="manage_action" id="manage_action" class="form-select" required>
-                                    @php $currentManage = old('manage_action', $event->manage_action ?? null); @endphp
-                                    <option value="" disabled {{ $currentManage ? '' : 'selected' }}>Pilih aksi</option>
-                                    <option value="manage" {{ $currentManage === 'manage' ? 'selected' : '' }}>Manage</option>
-                                    <option value="create" {{ $currentManage === 'create' ? 'selected' : '' }}>Create</option>
-                                </select>
-                                <small class="text-muted">Pilih apakah event ini dikelola (Manage) atau dibuat baru
-                                    (Create).</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="tanggal" class="form-label fw-semibold">Tanggal <span
-                                        class="text-danger">*</span></label>
-                                <input type="date" name="event_date" id="tanggal" class="form-control" required
-                                    value="{{ old('event_date', $event->event_date) }}">
-                                <div class="form-text">Pilih tanggal pelaksanaan event.</div>
+                                <label for="tanggal" class="form-label fw-semibold">Event Date <span class="text-danger">*</span></label>
+                                <input type="text" name="event_date" id="tanggal" class="form-control" required autocomplete="off"
+                                    value="{{ old('event_date', $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') : '') }}">
+                                <div class="form-text">Format tampilan: Day, DD Month YYYY</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Event Start & End Time <span
@@ -197,33 +210,36 @@
                                 <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="material_deadline" class="form-label fw-semibold">Tenggat Pengumpulan
-                                    Materi</label>
+                                <label for="lokasi" class="form-label fw-semibold">Event Location <span
+                                        class="text-danger">*</span></label>
                                 @php
-                                    $eventDateValue = old('event_date', $event->event_date);
-                                    $deadlineMin = now()->format('Y-m-d\T00:00');
-                                    $deadlineMax = null;
-                                    try {
-                                        if (!empty($eventDateValue)) {
-                                            $deadlineMax = \Carbon\Carbon::parse($eventDateValue)->startOfDay()->subMinute()->format('Y-m-d\TH:i');
-                                        }
-                                    } catch (\Throwable $e) {
-                                        $deadlineMax = null;
+                                    $oldMode = old('location_mode');
+                                    $oldMaps = trim((string) old('maps_url', $event->maps_url));
+                                    $oldZoom = trim((string) old('zoom_link', $event->zoom_link));
+                                    $defaultMode = 'offline';
+                                    if ($oldMode) {
+                                        $defaultMode = $oldMode;
+                                    } elseif ($oldMaps !== '' && $oldZoom !== '') {
+                                        $defaultMode = 'hybrid';
+                                    } elseif ($oldZoom !== '') {
+                                        $defaultMode = 'online';
+                                    } elseif ($oldMaps !== '') {
+                                        $defaultMode = 'offline';
+                                    }
+
+                                    $defaultPlaceName = '';
+                                    if ($defaultMode === 'offline' || $defaultMode === 'hybrid') {
+                                        $defaultPlaceName = old('place_name', $event->location);
+                                    } else {
+                                        $defaultPlaceName = old('place_name', '');
                                     }
                                 @endphp
-                                <input type="datetime-local" name="material_deadline" id="material_deadline"
-                                    class="form-control"
-                                    min="{{ $deadlineMin }}"
-                                    @if($deadlineMax) max="{{ $deadlineMax }}" @endif
-                                    value="{{ old('material_deadline', $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d\\TH:i') : '') }}">
-                                <small class="form-text">Opsional. Harus sebelum hari-H event.</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="lokasi" class="form-label fw-semibold">Lokasi <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" name="location" id="lokasi" class="form-control" required
-                                    value="{{ old('location', $event->location) }}" placeholder="Masukkan Lokasi">
-                                <div class="form-text">Tulis nama tempat/kota. Jika online murni, bisa isi "Online" atau nama platform.</div>
+                                <select name="location_mode" id="lokasi" class="form-select" required>
+                                    <option value="offline" {{ $defaultMode === 'offline' ? 'selected' : '' }}>Offline</option>
+                                    <option value="online" {{ $defaultMode === 'online' ? 'selected' : '' }}>Online</option>
+                                    <option value="hybrid" {{ $defaultMode === 'hybrid' ? 'selected' : '' }}>Hybrid</option>
+                                </select>
+                                <div class="form-text">Select event location type. Maps/Zoom fields will adjust accordingly.</div>
                             </div>
                             <div class="mb-3">
                                 <label for="hargaDisplay" class="form-label fw-semibold">Price (Rp) <span
@@ -258,8 +274,14 @@
                                     value="{{ old('benefit', $event->benefit) }}">
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
-                            <div class="mb-3">
-                                <label for="maps" class="form-label fw-semibold">Maps Lokasi (Offline/Hybrid)</label>
+                            <div class="mb-3 {{ trim($defaultPlaceName) !== '' ? '' : 'd-none' }}" id="placeNameGroup">
+                                <label for="place_name" class="form-label fw-semibold">Place Name <span class="text-danger" id="placeNameRequiredStar" style="display:none">*</span></label>
+                                <input type="text" name="place_name" id="place_name" class="form-control"
+                                    value="{{ $defaultPlaceName }}" placeholder="Contoh: Hotel ABC / Aula Kampus / Gedung Serbaguna">
+                                <div class="form-text">Appears after clicking "Deteksi" for offline/hybrid.</div>
+                            </div>
+                            <div class="mb-3" id="mapsGroup">
+                                <label for="maps" class="form-label fw-semibold">Maps Location (Offline/Hybrid) <span class="text-danger" id="mapsRequiredStar" style="display:none">*</span></label>
                                 <div class="input-group">
                                     <input type="text" name="maps_url" id="maps" class="form-control"
                                         value="{{ old('maps_url', $event->maps_url) }}"
@@ -273,8 +295,8 @@
                                 <div class="form-text">Click "Deteksi" to read coordinates from Google Maps short links.
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="zoom" class="form-label fw-semibold">Link Zoom (Online/Hybrid)</label>
+                            <div class="mb-3" id="zoomGroup">
+                                <label for="zoom" class="form-label fw-semibold">Zoom Link (Online/Hybrid) <span class="text-danger" id="zoomRequiredStar" style="display:none">*</span></label>
                                 <input type="text" name="zoom_link" id="zoom" class="form-control"
                                     value="{{ old('zoom_link', $event->zoom_link) }}" placeholder="Enter Zoom link">
                                 <div class="form-text">Enter meeting link if online/hybrid. Ensure the link is accessible.</div>
@@ -517,6 +539,37 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
+        // Robust live word counter for Penjelasan Singkat (max 40 words)
+        (function() {
+            function countWords(text) {
+                return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+            }
+
+            function updateCounter(textarea) {
+                if (!textarea) return;
+                const block = textarea.closest('.mb-3') || textarea.parentElement;
+                const countEl = block ? block.querySelector('#shortDescCount') : document.getElementById('shortDescCount');
+                if (!countEl) return;
+                const n = countWords(textarea.value);
+                countEl.textContent = String(n);
+                countEl.classList.toggle('text-danger', n > 40);
+            }
+
+            document.addEventListener('input', function(e) {
+                const t = e.target;
+                if (!(t instanceof HTMLTextAreaElement)) return;
+                if (t.id === 'short_desc' || t.name === 'short_description') {
+                    updateCounter(t);
+                }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
+                if (ta) updateCounter(ta);
+            });
+        })();
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Bootstrap tooltips
             try {
@@ -585,7 +638,7 @@
                 });
             })();
 
-            // Materi autocomplete (show after 2 chars)
+            // Materi autocomplete (show after 2 chars) + validation
             (function setupMateriAutocomplete(){
                 const materiInput = document.getElementById('materi');
                 const box = document.getElementById('materiSuggestions');
@@ -595,23 +648,7 @@
                 const options = @json($materiMerged ?? []);
                 const norm = (s) => String(s || '').trim();
                 const lower = (s) => norm(s).toLowerCase();
-
-                function isValidSelection(value){
-                    const v = lower(value);
-                    if(!v) return true;
-                    return options.some(opt => lower(opt) === v);
-                }
-                function applyValidity(){
-                    const v = materiInput.value;
-                    const ok = isValidSelection(v);
-                    if(ok){
-                        materiInput.setCustomValidity('');
-                        if(invalidText) invalidText.style.display = 'none';
-                    }else{
-                        materiInput.setCustomValidity('Tidak ada materi');
-                        if(invalidText) invalidText.style.display = 'block';
-                    }
-                }
+                const optionSet = new Set(options.map(v => lower(v)).filter(Boolean));
 
                 function hide(){ box.style.display = 'none'; box.innerHTML = ''; }
                 function show(items){
@@ -621,24 +658,27 @@
                 }
                 function filter(q){
                     const query = lower(q);
-                    if(query.length < 2) return [];
-                    return options
-                        .map(norm)
-                        .filter(Boolean)
+                    const base = options.map(norm).filter(Boolean);
+                    if(!query) return base.slice(0, 30);
+                    return base
                         .filter(v => lower(v).includes(query))
-                        .slice(0, 10);
+                        .slice(0, 30);
+                }
+                function applyValidity(){
+                    const raw = norm(materiInput.value);
+                    if(!raw){
+                        materiInput.setCustomValidity('');
+                        if(invalidText) invalidText.style.display = 'none';
+                        return;
+                    }
+                    const ok = optionSet.size ? optionSet.has(lower(raw)) : true;
+                    materiInput.setCustomValidity(ok ? '' : 'Tidak ada materi');
+                    if(invalidText) invalidText.style.display = ok ? 'none' : 'block';
                 }
 
-                materiInput.addEventListener('input', () => {
-                    const items = filter(materiInput.value);
-                    show(items);
-                    applyValidity();
-                });
-                materiInput.addEventListener('focus', () => {
-                    const items = filter(materiInput.value);
-                    show(items);
-                });
-                materiInput.addEventListener('blur', () => { applyValidity(); setTimeout(hide, 150); });
+                materiInput.addEventListener('input', () => { show(filter(materiInput.value)); applyValidity(); });
+                materiInput.addEventListener('focus', () => { show(filter(materiInput.value)); });
+                materiInput.addEventListener('blur', () => setTimeout(() => { hide(); applyValidity(); }, 150));
 
                 box.addEventListener('mousedown', (e) => {
                     const btn = e.target?.closest('[data-value]');
@@ -653,8 +693,6 @@
                     if (box.contains(e.target)) return;
                     hide();
                 });
-
-                // Initial validity (old/current value)
                 applyValidity();
             })();
 
@@ -668,8 +706,23 @@
             imgInp?.addEventListener('change', ev => { const f = ev.target.files[0]; const wrap = document.getElementById('imagePreview'); const sizeInfo = document.getElementById('imageSizeInfo'); if (!f) { wrap.style.display = 'none'; if (sizeInfo) sizeInfo.textContent = ''; return; } const sizeMB = f.size / (1024 * 1024); if (sizeInfo) sizeInfo.textContent = 'Ukuran: ' + sizeMB.toFixed(2) + 'MB'; if (sizeMB > 5) { alert('Ukuran gambar melebihi 5MB. Pilih file lain.'); imgInp.value = ''; wrap.style.display = 'none'; if (sizeInfo) sizeInfo.textContent = ''; return; } const r = new FileReader(); r.onload = e => { document.getElementById('previewImg').src = e.target.result; wrap.style.display = 'block'; }; r.readAsDataURL(f); });
 
 
-            // Maps logic
-            let leafletMap = null, leafletMarker = null; const mapsInput = document.getElementById('maps'); const mapsPreview = document.getElementById('mapsPreview'); const btnResolveMaps = document.getElementById('btnResolveMaps'); const zoomInput = document.getElementById('zoom'); const csrfToken = '{{ csrf_token() }}'; const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
+            // Maps + location mode logic
+            const locationModeEl = document.getElementById('lokasi');
+            const placeNameGroup = document.getElementById('placeNameGroup');
+            const placeNameInput = document.getElementById('place_name');
+            const mapsGroup = document.getElementById('mapsGroup');
+            const zoomGroup = document.getElementById('zoomGroup');
+
+            let leafletMap = null, leafletMarker = null;
+            const mapsInput = document.getElementById('maps');
+            const mapsPreview = document.getElementById('mapsPreview');
+            const btnResolveMaps = document.getElementById('btnResolveMaps');
+            const zoomInput = document.getElementById('zoom');
+            const mapsRequiredStar = document.getElementById('mapsRequiredStar');
+            const zoomRequiredStar = document.getElementById('zoomRequiredStar');
+            const placeNameRequiredStar = document.getElementById('placeNameRequiredStar');
+            const csrfToken = '{{ csrf_token() }}';
+            const resolveMapsUrl = '{{ route('admin.maps.resolve') }}';
             function parseLatLngFromUrl(url) {
                 if (!url) return null;
                 try {
@@ -722,13 +775,98 @@
                 if (!hasMaps && mapsPreview) mapsPreview.style.display = 'none';
             }
 
+            function setResolveMapsLoading(isLoading){
+                if(!btnResolveMaps) return;
+                if(isLoading){
+                    if(!btnResolveMaps.dataset.originalHtml){
+                        btnResolveMaps.dataset.originalHtml = btnResolveMaps.innerHTML;
+                    }
+                    btnResolveMaps.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Memuat...';
+                    btnResolveMaps.setAttribute('aria-busy', 'true');
+                }else{
+                    btnResolveMaps.innerHTML = btnResolveMaps.dataset.originalHtml || 'Deteksi';
+                    btnResolveMaps.removeAttribute('aria-busy');
+                }
+            }
+
+            function showPlaceNameIfNeeded(forceShow = false){
+                if(!placeNameGroup || !placeNameInput) return;
+                const mode = String(locationModeEl?.value || '').toLowerCase();
+                const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
+                const hasValue = String(placeNameInput.value || '').trim() !== '';
+                const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+                placeNameGroup.classList.toggle('d-none', !shouldShow);
+                placeNameInput.required = shouldShow;
+                if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
+            }
+
+            function syncLocationModeUI(){
+                const mode = String(locationModeEl?.value || '').toLowerCase();
+                const isOffline = mode === 'offline';
+                const isOnline = mode === 'online';
+                const isHybrid = mode === 'hybrid';
+
+                if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
+                if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
+
+                if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+                if(zoomInput) zoomInput.required = (isOnline || isHybrid);
+                if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+                if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
+
+                showPlaceNameIfNeeded(false);
+
+                if(isOnline){
+                    if(mapsInput) mapsInput.value = '';
+                    const latInp = document.getElementById('latitude');
+                    const lngInp = document.getElementById('longitude');
+                    if(latInp) latInp.value = '';
+                    if(lngInp) lngInp.value = '';
+                    if(mapsPreview) mapsPreview.style.display = 'none';
+                    if(btnResolveMaps) btnResolveMaps.disabled = true;
+                }
+                if(isOffline){
+                    if(zoomInput) zoomInput.value = '';
+                }
+                syncMapsUI();
+                if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+            }
+
             mapsInput?.addEventListener('input', () => { tryRenderMap(); syncMapsUI(); });
             mapsInput?.addEventListener('change', () => { tryRenderMap(); syncMapsUI(); });
             mapsInput?.addEventListener('blur', () => { tryRenderMap(); syncMapsUI(); });
 
             tryRenderMap();
             syncMapsUI();
-            btnResolveMaps?.addEventListener('click', async () => { const url = mapsInput?.value || ''; if (!url) { alert('Masukkan link terlebih dahulu'); return; } try { btnResolveMaps.disabled = true; const resp = await fetch(resolveMapsUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken }, body: JSON.stringify({ url }) }); const data = await resp.json(); if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); } else alert(data.message || 'Koordinat tidak ditemukan.'); } catch (e) { alert('Gagal mendeteksi koordinat.'); } finally { btnResolveMaps.disabled = false; } });
+            btnResolveMaps?.addEventListener('click', async () => {
+                showPlaceNameIfNeeded(true);
+                if(placeNameInput && !placeNameGroup?.classList.contains('d-none')){
+                    placeNameInput.focus();
+                }
+                const url = mapsInput?.value || '';
+                if (!url) { alert('Masukkan link terlebih dahulu'); return; }
+                try {
+                    setResolveMapsLoading(true);
+                    btnResolveMaps.disabled = true;
+                    const resp = await fetch(resolveMapsUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ url })
+                    });
+                    const data = await resp.json();
+                    if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); }
+                    else alert(data.message || 'Koordinat tidak ditemukan.');
+                } catch (e) {
+                    alert('Gagal mendeteksi koordinat.');
+                } finally {
+                    setResolveMapsLoading(false);
+                    btnResolveMaps.disabled = false;
+                    syncMapsUI();
+                }
+            });
+
+            locationModeEl?.addEventListener('change', syncLocationModeUI);
+            syncLocationModeUI();
 
             // Speakers (from Trainer API)
             const speakersContainer = document.getElementById('speakersContainer');
@@ -857,54 +995,15 @@
                     locale: 'id',
                     dateFormat: 'Y-m-d',
                     altInput: true,
-                    altFormat: 'l, j F Y',
+                    altFormat: 'l, d F Y',
                     disableMobile: true,
                     allowInput: true,
                     defaultDate: eventDateInput?.value || null,
                     onChange: function () {
                         if (typeof updateDiscountUntilBounds === 'function') updateDiscountUntilBounds();
-                        if (typeof updateMaterialDeadlineBounds === 'function') updateMaterialDeadlineBounds();
                     }
                 });
-                discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, j F Y', disableMobile: true, clickOpens: true });
-            }
-
-            const materialDeadlineEl = document.getElementById('material_deadline');
-            function pad2(n) { return String(n).padStart(2, '0'); }
-            function toLocalDateTimeValue(d) {
-                const yyyy = d.getFullYear();
-                const mm = pad2(d.getMonth() + 1);
-                const dd = pad2(d.getDate());
-                const hh = pad2(d.getHours());
-                const mi = pad2(d.getMinutes());
-                return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-            }
-            function updateMaterialDeadlineBounds() {
-                if (!eventDateEl || !materialDeadlineEl) return;
-                const dateStr = String(eventDateEl.value || '').trim();
-                if (!dateStr) {
-                    materialDeadlineEl.removeAttribute('max');
-                    materialDeadlineEl.setCustomValidity('');
-                    return;
-                }
-
-                const eventStart = new Date(dateStr + 'T00:00:00');
-                if (isNaN(eventStart.getTime())) {
-                    materialDeadlineEl.removeAttribute('max');
-                    materialDeadlineEl.setCustomValidity('');
-                    return;
-                }
-
-                const maxDate = new Date(eventStart.getTime() - 60 * 1000); // 1 minute before event day
-                const maxVal = toLocalDateTimeValue(maxDate);
-                materialDeadlineEl.max = maxVal;
-
-                const cur = String(materialDeadlineEl.value || '').trim();
-                if (cur && cur >= maxVal) {
-                    materialDeadlineEl.setCustomValidity('Tenggat harus sebelum hari-H event.');
-                } else {
-                    materialDeadlineEl.setCustomValidity('');
-                }
+                discountUntilFp = flatpickr('#discount_until', { locale: 'id', dateFormat: 'Y-m-d', altInput: true, altFormat: 'l, d F Y', disableMobile: true, clickOpens: true });
             }
             function updateDiscountUntilBounds() {
                 if (!discountUntilFp) return;
@@ -927,12 +1026,10 @@
                 if (current) { const curDate = new Date(current + 'T00:00:00'); if (curDate >= eventDate) { discountUntilFp.clear(); discountUntilInput.value = ''; } }
             }
             const eventDateEl = document.getElementById('tanggal');
-            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, () => { updateDiscountUntilBounds(); updateMaterialDeadlineBounds(); }));
-            materialDeadlineEl && ['change', 'input'].forEach(ev => materialDeadlineEl.addEventListener(ev, updateMaterialDeadlineBounds));
+            eventDateEl && ['change', 'input'].forEach(ev => eventDateEl.addEventListener(ev, () => { updateDiscountUntilBounds(); }));
             // Initial states
             toggleDiscountUntil();
             updateDiscountUntilBounds();
-            updateMaterialDeadlineBounds();
 
             // Schedule dynamic
             const scheduleTableBody = document.querySelector('#scheduleTable tbody');
@@ -1000,10 +1097,56 @@
             })();
 
             // Validation & submit state
-            const form = document.getElementById('eventForm'); if (form) {
-                const submitBtn = document.getElementById('submitBtn'); const submitHint = document.getElementById('submitHint'); const requiredFields = Array.from(form.querySelectorAll('[required]'));
-                function fieldFriendlyName(el) { if (!el) return 'Field'; const id = el.id || ''; const name = el.name || ''; if (id === 'image' || name === 'image') return 'Gambar Event'; if (id === 'nama' || name === 'title') return 'Nama Event'; if (name === 'speakers[]') return 'Nama Pembicara'; if (id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat'; if (id === 'deskripsi' || name === 'description') return 'Deskripsi'; if (id === 'tanggal' || name === 'event_date') return 'Tanggal'; if (id === 'masuk1' || name === 'event_time') return 'Waktu Mulai'; if (id === 'lokasi' || name === 'location') return 'Lokasi'; if (id === 'harga' || name === 'price') return 'Harga'; return id || name || 'Field'; }
-                function missingRequired() { return requiredFields.filter(f => !(f.value || '').trim()); }
+            const form = document.getElementById('editEventForm'); if (form) {
+                const submitBtn = document.getElementById('editSubmitBtn');
+                const submitHint = document.getElementById('editSubmitHint');
+                const getRequiredFields = () => {
+                    const fields = [
+                        document.getElementById('nama'),
+                        form.querySelector('select[name="speakers[]"]'),
+                        document.getElementById('materi'),
+                        document.getElementById('manage_action'),
+                        document.getElementById('jenis'),
+                        document.getElementById('short_desc'),
+                        document.getElementById('deskripsi'),
+                        document.getElementById('tanggal'),
+                        document.getElementById('masuk1'),
+                        document.getElementById('lokasi'),
+                        document.getElementById('hargaDisplay'),
+                    ];
+
+                    const mode = String(document.getElementById('lokasi')?.value || '').toLowerCase();
+                    if (mode === 'offline' || mode === 'hybrid') {
+                        fields.push(document.getElementById('maps'));
+                    }
+                    if (mode === 'online' || mode === 'hybrid') {
+                        fields.push(document.getElementById('zoom'));
+                    }
+                    if ((mode === 'offline' || mode === 'hybrid') && !document.getElementById('placeNameGroup')?.classList.contains('d-none')) {
+                        fields.push(document.getElementById('place_name'));
+                    }
+
+                    return fields.filter(el => el && !el.disabled);
+                };
+
+                function fieldFriendlyName(el) {
+                    if (!el) return 'Field';
+                    const id = el.id || '';
+                    const name = el.name || '';
+                    if (id === 'image' || name === 'image') return 'Gambar Event';
+                    if (id === 'nama' || name === 'title') return 'Nama Event';
+                    if (name === 'speakers[]') return 'Nama Pembicara';
+                    if (id === 'short_desc' || name === 'short_description') return 'Penjelasan Singkat';
+                    if (id === 'deskripsi' || name === 'description') return 'Deskripsi';
+                    if (id === 'tanggal' || name === 'event_date') return 'Tanggal';
+                    if (id === 'masuk1' || name === 'event_time') return 'Waktu Mulai';
+                    if (id === 'lokasi' || name === 'location_mode') return 'Lokasi';
+                    if (id === 'place_name' || name === 'place_name') return 'Nama Tempat';
+                    if (id === 'hargaDisplay' || id === 'harga' || name === 'price') return 'Harga';
+                    return id || name || 'Field';
+                }
+
+                function missingRequired() { return getRequiredFields().filter(f => !(f.value || '').trim()); }
                 window.updateSubmitState = function () {
                     const missing = missingRequired();
                     const sdEl = document.getElementById('short_desc');
@@ -1021,7 +1164,7 @@
                         }
                     }
                 };
-                requiredFields.forEach(f => ['input', 'change', 'blur'].forEach(ev => f.addEventListener(ev, window.updateSubmitState)));
+                ['input', 'change', 'blur'].forEach(ev => form.addEventListener(ev, window.updateSubmitState));
                 window.updateSubmitState();
                 form.addEventListener('submit', ev => {
                     if (window.editorDeskripsi) document.getElementById('deskripsi').value = window.editorDeskripsi.getData(); if (window.editorTerms) document.getElementById('terms').value = window.editorTerms.getData(); updateSpeakerCombined(); // sync hidden harga
@@ -1044,7 +1187,18 @@
                             shortDescEl.classList.remove('border-danger');
                         }
                     }
-                    let ok = true; requiredFields.forEach(f => { if (!f.value.trim()) { f.classList.add('border-danger'); ok = false; } else f.classList.remove('border-danger'); }); if (!ok) { ev.preventDefault(); alert('Lengkapi semua field wajib.\nYang belum: ' + missingRequired().map(fieldFriendlyName).join(', ')); return; } expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
+                    const reqNow = getRequiredFields();
+                    let ok = true;
+                    reqNow.forEach(f => {
+                        if (!String(f.value || '').trim()) { f.classList.add('border-danger'); ok = false; }
+                        else f.classList.remove('border-danger');
+                    });
+                    if (!ok) {
+                        ev.preventDefault();
+                        alert('Lengkapi semua field wajib.\nYang belum: ' + missingRequired().map(fieldFriendlyName).join(', '));
+                        return;
+                    }
+                    expensesTableBody?.querySelectorAll('tr').forEach(tr => recalcExpenseRow(tr));
                 });
 
                 // Live word count update for short description
@@ -1056,7 +1210,16 @@
                     shortDescCountEl.textContent = words.length;
                     if (words.length > 40) { shortDescCountEl.classList.add('text-danger'); } else { shortDescCountEl.classList.remove('text-danger'); }
                 }
+                // Direct listeners (keep) + delegated fallback for robustness.
                 ['input', 'change', 'blur'].forEach(ev => shortDescEl2?.addEventListener(ev, () => { updateShortDescCount(); window.updateSubmitState(); }));
+                document.addEventListener('input', function(e){
+                    const t = e.target;
+                    if(!(t instanceof HTMLElement)) return;
+                    if(t.id === 'short_desc' || (t.tagName === 'TEXTAREA' && t.getAttribute('name') === 'short_description')){
+                        updateShortDescCount();
+                        if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                    }
+                }, true);
                 updateShortDescCount();
             }
             // Event listener for add benefit button

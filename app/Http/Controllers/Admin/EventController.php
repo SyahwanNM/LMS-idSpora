@@ -181,6 +181,19 @@ class EventController extends Controller
             $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
         }
 
+        // Derive location from place_name or location_mode if location is missing or empty
+        if (!$request->has('location') || empty($request->input('location'))) {
+            $locMode = $request->input('location_mode');
+            $pName = $request->input('place_name');
+            if ($locMode === 'online') {
+                $request->merge(['location' => 'Online']);
+            } elseif (!empty($pName)) {
+                $request->merge(['location' => $pName]);
+            } else {
+                $request->merge(['location' => $locMode ?: 'Online']);
+            }
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'trainer_id' => [
@@ -197,7 +210,7 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
             'maps_url' => 'nullable|string|max:512',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -499,6 +512,17 @@ class EventController extends Controller
             'zoom_link' => $normalizedZoomLink,
         ]);
 
+        // Derive location for update as well
+        if (!$request->has('location') || empty($request->input('location'))) {
+            if ($normalizedLocationMode === 'online') {
+                $request->merge(['location' => 'Online']);
+            } elseif (!empty($normalizedPlaceName)) {
+                $request->merge(['location' => $normalizedPlaceName]);
+            } else {
+                $request->merge(['location' => $normalizedLocationMode ?: 'Online']);
+            }
+        }
+
         // Normalize price input in case client sent a formatted string (e.g. "1.000.000").
         $rawPrice = $request->input('price', null);
         if (!is_null($rawPrice)) {
@@ -521,7 +545,7 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
             'maps_url' => 'nullable|string|max:512',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',

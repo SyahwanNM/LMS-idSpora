@@ -1280,12 +1280,13 @@
         }
       @endphp
 
-      @if($isPending)
-        <div class="alert alert-info" role="alert" style="margin-bottom:16px;">
-          <div style="font-weight:600;">Materi sedang diproses.</div>
-          <div style="margin-top:6px;">Trainer sudah submit materi. Menunggu approval admin trainer.</div>
-        </div>
-      @elseif($isRejected)
+      {{-- @if($isPending)
+      <div class="alert alert-info" role="alert" style="margin-bottom:16px;">
+        <div style="font-weight:600;">Materi sedang diproses.</div>
+        <div style="margin-top:6px;">Trainer sudah submit materi. Menunggu approval admin trainer.</div>
+      </div>
+      @elseif($isRejected) --}}
+      @if($isRejected)
         <div class="alert alert-danger" role="alert" style="margin-bottom:16px;">
           <div style="font-weight:600;">Materi course ditolak.</div>
           <div style="margin-top:6px;">Trainer perlu melakukan revisi sebelum materi tampil di preview.</div>

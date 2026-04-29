@@ -1055,7 +1055,7 @@ document.addEventListener('DOMContentLoaded', function(){
             </div>
             <div class="modal-footer border-0">
                 <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-danger confirm-danger-btn" id="deleteConfirmBtnShow" form="deleteEventFormShow" disabled>
+                <button type="submit" class="btn btn-danger confirm-danger-btn" id="deleteConfirmBtnShow" form="deleteEventFormShow">
                     <i class="bi bi-trash me-1"></i> Hapus Permanen
                 </button>
             </div>

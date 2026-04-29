@@ -550,9 +550,12 @@
                 width: 100% !important;
                 border-radius: 12px !important;
             }
-            
-            #participant-ratings-list::-webkit-scrollbar {
-                width: 6px;
+
+            .detail-box-right {
+                width: 100% !important;
+                margin-right: 0 !important;
+                max-width: 100% !important;
+                flex: none !important;
             }
 
             .progress-box {
@@ -1141,41 +1144,84 @@
                     }
                 @endphp
                 <div class="booksave-row">
-                        @php
-                            // Registration rules
-                            // - FREE events: allow booking until event finished (ignore started state)
-                            // - PAID events: allow booking only before start time when available; else until end-of-day
-                            $hasStartTime = isset($event) && !empty($event->event_time);
-                            $registrationStatus = $registration ? strtolower((string) $registration->status) : null;
-                            $paymentUnderReview = $registration && $registrationStatus === 'pending';
-                                                        $canRegister = (!$isRegistered) && (
-                                                                $eventDate
-                                                                        ? (
-                                                                                // For FREE events: block booking once started or finished
-                                                                                ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
-                                                                            )
-                                                                        : true
-                                                        );
-                            // Pre-compute saved state for current user to render initial label
-                            $isSaved = false;
-                            if(isset($event) && auth()->check()){
-                                try {
-                                    $isSaved = auth()->user()->savedEvents()->where('event_id', $event->id)->exists();
-                                } catch (\Throwable $e) { $isSaved = false; }
+                    @php
+                        // Registration rules
+                        // - FREE events: allow booking until event finished (ignore started state)
+                        // - PAID events: allow booking only before start time when available; else until end-of-day
+                        $hasStartTime = isset($event) && !empty($event->event_time);
+                        $registrationStatus = $registration ? strtolower((string) $registration->status) : null;
+                        $latestPayment = null;
+                        $latestPaymentMethod = null;
+                        $latestPaymentStatus = null;
+                        if ($registration && $authUser) {
+                            try {
+                                $latestPayment = \App\Models\ManualPayment::query()
+                                    ->where('event_registration_id', $registration->id)
+                                    ->where('user_id', $authUser->id)
+                                    ->latest('id')
+                                    ->first();
+                            } catch (\Throwable $e) {
+                                $latestPayment = null;
                             }
-                        @endphp
-                        @if($paymentUnderReview)
-                            <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
-                        @elseif($canRegister)
-                            @if(!auth()->check())
-                                <a class="bookseat text-white text-center" href="{{ route('login', ['redirect' => request()->fullUrl()]) }}" style="text-decoration:none;">Book Seat</a>
-                            @else
-                                @if($isFree)
-                                    <button type="button" id="bookFreeBtn" class="bookseat">Book Seat</button>
-                                @else
-                                    <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}" style="text-decoration:none;">Book Seat</a>
-                                @endif
-                            @endif
+                        }
+                        if ($latestPayment) {
+                            $latestPaymentMethod = strtolower(trim((string) ($latestPayment->method ?? '')));
+                            $latestPaymentStatus = strtolower(trim((string) ($latestPayment->status ?? '')));
+                        }
+
+                        $latestMidtransTransactionStatus = null;
+                        if ($latestPayment) {
+                            $latestMidtransTransactionStatus = strtolower(trim((string) (
+                                data_get($latestPayment->metadata, 'transaction_status')
+                                ?: data_get($latestPayment->metadata, 'midtrans.transaction_status')
+                            )));
+                            if ($latestMidtransTransactionStatus === '') {
+                                $latestMidtransTransactionStatus = null;
+                            }
+                        }
+
+                        $isMidtransFlow = $latestPaymentMethod === 'midtrans';
+                        $midtransPending = $registration && $registrationStatus === 'pending' && $isMidtransFlow && in_array($latestPaymentStatus, ['pending'], true);
+                        $midtransExpired = $registration && in_array($registrationStatus, ['pending', 'expired', 'rejected'], true) && $isMidtransFlow
+                            && (
+                                in_array($latestPaymentStatus, ['rejected', 'expired'], true)
+                                || in_array($latestMidtransTransactionStatus, ['expire', 'cancel', 'deny', 'failure'], true)
+                            );
+                        // "Ditinjau" hanya untuk pembayaran manual yang sudah upload bukti bayar
+                        $paymentUnderReview = $registration && $registrationStatus === 'pending' && !$isMidtransFlow && !empty($registration->payment_proof);
+
+                        $canRegister = (!$isRegistered) && (
+                            $eventDate
+                            ? (
+                                    // For FREE events: block booking once started or finished
+                                ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
+                            )
+                            : true
+                        );
+                        // Pre-compute saved state for current user to render initial label
+                        $isSaved = false;
+                        if (isset($event) && auth()->check()) {
+                            try {
+                                $isSaved = auth()->user()->savedEvents()->where('event_id', $event->id)->exists();
+                            } catch (\Throwable $e) {
+                                $isSaved = false;
+                            }
+                        }
+                    @endphp
+                    @if($midtransPending)
+                        <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
+                            style="text-decoration:none;">Lanjutkan pembayaran Midtrans</a>
+                    @elseif($midtransExpired)
+                        <a class="bookseat text-white text-center"
+                            href="{{ route('payment', ['event' => $event->id, 'force_new' => 1]) }}"
+                            style="text-decoration:none;">Bayar lagi</a>
+                    @elseif($paymentUnderReview)
+                        <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
+                    @elseif($canRegister)
+                        @if(!auth()->check())
+                            <a class="bookseat text-white text-center"
+                                href="{{ route('login', ['redirect' => request()->fullUrl()]) }}"
+                                style="text-decoration:none;">Book Seat</a>
                         @else
                             @if($isFree)
                                 <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
@@ -1196,12 +1242,8 @@
                             <button class="bookseat" disabled>Unavailable</button>
                         @endif
                     @endif
-                    @php $isSaved = !empty($event->is_saved); @endphp
-                    <button type="button" class="save {{ $isSaved ? 'saved' : '' }}" id="saveEventBtn" data-event-id="{{ $event->id }}"
-                        style="cursor:pointer; position:relative; z-index:10; width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: {{ $isSaved ? '#dc3545' : '#fff' }}; color: {{ $isSaved ? '#fff' : '#000' }}; font-weight: 600; transition: all 0.3s;">
-                        <i class="bi {{ $isSaved ? 'bi-bookmark-fill' : 'bi-bookmark' }} me-2"></i>
-                        <span id="save-event-text">{{ $isSaved ? 'Saved' : 'Save' }}</span>
-                    </button>
+                    <button type="button" class="save" id="saveEventBtn" data-event-id="{{ $event->id }}"
+                        style="cursor:pointer; position:relative; z-index:10;">{{ $isSaved ? 'Saved' : 'Save' }}</button>
                 </div>
                 <hr>
                 <div class="include-box">
@@ -1687,37 +1729,6 @@
                         <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                     @endif
                 </div>
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}" style="position:relative;">
-                <div class="img-resource">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-star-fill" viewBox="0 0 16 16">
-                        <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
-                    </svg>
-                </div>
-                <div class="resource-value">
-                    <h6>Feedback and Ratings</h6>
-                    @if(isset($hasFeedback) && $hasFeedback)
-                        <p class="text-success" style="font-weight:600;">Feedback and Ratings berhasil dilakukan</p>
-                    @else
-                        <p>Please fill out your feedback for this event</p>
-                    @endif
-                </div>
-
-                @if($isRegistered && $attendanceSubmitted)
-                    <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open" style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer;">
-                        @if(isset($hasFeedback) && $hasFeedback)
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Feedback berhasil">
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <polyline points="8 12 11 15 16 10"></polyline>
-                            </svg>
-                        @else
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        @endif
-                    </button>
-                @else
-                    <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
                 @endif
             <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}"
                     style="position:relative;">
@@ -1831,48 +1842,6 @@
                             </form>
                         @endif
                     </div>
-                </div>
-
-                <!-- Right Column: Share Your Feedback -->
-                <div class="col-md-6" style="background-color: white; padding: 1rem;">
-                    <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
-                    <form action="#" method="POST" id="feedback-form">
-                        @csrf
-                        
-                        <!-- Event Rating -->
-                        <div class="mb-2">
-                            <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Event</label>
-                            <div class="stars-rating-input" data-target="eventRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
-                            </div>
-                        </div>
-
-                        <!-- Speaker Rating -->
-                        <div class="mb-3">
-                            <label class="form-label mb-1" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
-                            <div class="stars-rating-input" data-target="speakerRating" style="font-size: 1.5rem; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                <span data-rating="1" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="2" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="3" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="4" style="color: #ccc; transition: color 0.2s;">☆</span>
-                                <span data-rating="5" style="color: #ccc; transition: color 0.2s;">☆</span>
-                            </div>
-                        </div>
-
-                        <!-- Feedback Text -->
-                        <div class="mb-3">
-                            <textarea id="feedback-text" name="feedback" class="form-control" rows="4" placeholder="Write your thoughts..." required style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <button type="button" id="submit-feedback-btn" class="btn w-100 fw-semibold" style="background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
-                            Submit Feedback
-                        </button>
-                    </form>
                 </div>
             </div>
         @endif
@@ -2417,10 +2386,6 @@
                 // feedback form not rendered (already submitted)
             } else {
 
-                // --- Feedback dynamic submit ---
-                const submitBtn = document.getElementById('submit-feedback-btn');
-                const feedbackText = document.getElementById('feedback-text');
-                
                 // Helpers to read selected ratings from the UI
                 function getRatingByTarget(targetName) {
                     const cont = document.querySelector(`.stars-rating-input[data-target="${targetName}"]`);
@@ -2458,8 +2423,13 @@
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                    <button type="button" class="btn btn-primary" id="confirm-submit-feedback" disabled>Kirim Feedback</button>
+                                                    <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
+                                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="button" class="btn btn-primary px-4" id="confirm-submit-feedback" disabled>
+                                                            <span class="me-1">Submit Feedback</span>
+                                                            <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                         </div>
                     </div>
@@ -2598,32 +2568,32 @@
                             showFeedbackNotif('Gagal menyimpan feedback. Coba lagi.', 'error');
                         });
                 }
-            });
-            // NOTE: Removed duplicate generic rating handlers.
-            // The specific handlers for `#event-rating` and `#speaker-rating`
-            // (defined inside DOMContentLoaded) are used to manage hover/click
-            // and maintain separate `eventRating` and `speakerRating` state.
-        </script>
-        <!-- Ensure Bootstrap JS is available for modals (lazy-load if missing) -->
-        <script>
-            (function(){
-                try {
-                    if (!window.bootstrap || typeof window.bootstrap.Modal !== 'function') {
-                        var s = document.createElement('script');
-                        s.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
-                        s.defer = true; s.crossOrigin = 'anonymous';
-                        document.body.appendChild(s);
-                    }
-                } catch (_e) {}
-            })();
-        </script>
-        <script>
-            // Save/Unsave event handler (supports ID and fallback by class)
-            (function(){
-                const nodeList = document.querySelectorAll('#saveEventBtn, .booksave-row .save');
-                // Deduplicate elements in case the selector matches the same node twice
-                const buttons = Array.from(new Set(Array.from(nodeList)));
-                if(!buttons.length) return;
+            }
+        });
+        // NOTE: Removed duplicate generic rating handlers.
+        // The specific handlers for `#event-rating` and `#speaker-rating`
+        // (defined inside DOMContentLoaded) are used to manage hover/click
+        // and maintain separate `eventRating` and `speakerRating` state.
+    </script>
+    <!-- Ensure Bootstrap JS is available for modals (lazy-load if missing) -->
+    <script>
+        (function () {
+            try {
+                if (!window.bootstrap || typeof window.bootstrap.Modal !== 'function') {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
+                    s.defer = true; s.crossOrigin = 'anonymous';
+                    document.body.appendChild(s);
+                }
+            } catch (_e) { }
+        })();
+    </script>
+    <script>
+        (function () {
+            const nodeList = document.querySelectorAll('#saveEventBtn, .booksave-row .save');
+            // Deduplicate elements in case the selector matches the same node twice
+            const buttons = Array.from(new Set(Array.from(nodeList)));
+            if (!buttons.length) return;
 
             function getCsrfToken() {
                 const meta = document.querySelector('meta[name="csrf-token"]');
@@ -2683,28 +2653,7 @@
                     })
                     .then(({ success, saved }) => {
                         if (success) {
-                            const textSpan = this.querySelector('#save-event-text') || this;
-                            const icon = this.querySelector('i');
-                            
-                            if (saved) {
-                                this.classList.add('saved');
-                                this.style.background = '#dc3545';
-                                this.style.color = '#fff';
-                                textSpan.textContent = 'Saved';
-                                if(icon) {
-                                    icon.classList.remove('bi-bookmark');
-                                    icon.classList.add('bi-bookmark-fill');
-                                }
-                            } else {
-                                this.classList.remove('saved');
-                                this.style.background = '#fff';
-                                this.style.color = '#000';
-                                textSpan.textContent = 'Save';
-                                if(icon) {
-                                    icon.classList.remove('bi-bookmark-fill');
-                                    icon.classList.add('bi-bookmark');
-                                }
-                            }
+                            this.textContent = saved ? 'Saved' : 'Save';
                             this.dataset.state = saved ? 'saved' : 'unsaved';
                             this.setAttribute('aria-pressed', saved ? 'true' : 'false');
                         } else {

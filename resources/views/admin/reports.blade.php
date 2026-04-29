@@ -509,10 +509,12 @@
             </table>
             </div>{{-- end table-responsive --}}
         </div>
+
+    </div>
     </div>
 
     <div class="modal fade" id="exportReportModal" tabindex="-1" aria-labelledby="exportReportModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top: clamp(48px, 10vh, 120px) !important; margin-bottom: 24px;">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" style="margin-top: 100px; margin-bottom: 24px;">
             <div class="modal-content" style="border-radius:10px;">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exportReportModalLabel">Export Preview</h5>
@@ -530,7 +532,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm btn-export-close" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm btn-export-close" data-bs-dismiss="modal" >Close</button>
                     <button type="button" class="btn-export-report" id="btnExportPdf">Save PDF</button>
                     <button type="button" class="btn-export-report" id="btnExportExcel">Save Excel</button>
                 </div>
@@ -1088,15 +1090,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 { el: document.getElementById('filter-kelola-pertumbuhan'), attr: 'data-manage' },
                 { el: document.getElementById('filter-harga-pertumbuhan'), attr: 'data-is-free' },
             ]
-        },
-        {
-            searchInput: document.getElementById('filter-event-operasional'),
-            dateFromInput: document.getElementById('date-from-operasional'),
-            dateToInput: document.getElementById('date-to-operasional'),
-            applyBtn: document.getElementById('btn-apply-operasional'),
-            searchBtn: document.getElementById('btn-cari-operasional'),
-            resetBtn: document.getElementById('btn-reset-operasional'),
-            tableSelector: '#operasional table.tabel-pendapatan'
         }
     ];
     filterConfigs.forEach(setupFilter);
@@ -1107,138 +1100,6 @@ document.addEventListener('DOMContentLoaded', function(){
     window.applyAllFilters = applyAllFilters;
     // Initial apply to normalize state
     applyAllFilters();
-
-    // Handle Upload Operasional Modal
-    const uploadModal = document.getElementById('uploadOperasionalModal');
-    if (uploadModal) {
-        uploadModal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const eventId = button.getAttribute('data-bs-id');
-            const vbgUrl = button.getAttribute('data-vbg');
-            const certUrl = button.getAttribute('data-cert');
-            const moduleUrl = button.getAttribute('data-module');
-            const absUrl = button.getAttribute('data-abs');
-            const qrImgUrl = button.getAttribute('data-qr-img');
-
-            const form = document.getElementById('formUploadOperasional');
-            // Update form action with correct event ID
-            form.action = '/admin/events/' + eventId + '/documents';
-            
-            // Helper to set preview
-            const setPreview = (id, url, label, fallbackQr = null) => {
-                const container = document.getElementById(id);
-                if(!container) return;
-                if(url) {
-                    // Check if likely an image by extension
-                    const isImg = url.match(/\.(jpeg|jpg|png|webp)$/i);
-                    if(isImg) {
-                        container.innerHTML = `<a href="${url}" target="_blank"><img src="${url}" style="height:60px; border-radius:4px; border:1px solid #dee2e6;"></a> <small class="text-muted d-block mt-1">Klik gambar untuk melihat</small>`;
-                    } else {
-                        container.innerHTML = `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark"></i> Lihat File Sekarang</a>`;
-                    }
-                } else if(fallbackQr) {
-                    container.innerHTML = `<div class="d-flex align-items-center gap-2">
-                        <img src="${fallbackQr}" style="height:60px; border-radius:4px; border:1px solid #dee2e6;">
-                        <div>
-                            <span class="badge bg-success mb-1">QR Code Aktif</span>
-                            <small class="text-muted d-block">Absensi menggunakan QR Code</small>
-                        </div>
-                    </div>`;
-                } else {
-                    container.innerHTML = `<span class="badge bg-light text-dark border">Belum ada file</span>`;
-                }
-            };
-
-            setPreview('preview-vbg', vbgUrl, 'Virtual Background');
-            setPreview('preview-sertif', certUrl, 'Sertifikat');
-            setPreview('preview-module', moduleUrl, 'Module');
-            setPreview('preview-absensi', absUrl, 'Absensi', qrImgUrl);
-        });
-    }
-
-    // Populate Status Dokumen modal dynamically
-    const viewOperasionalModal = document.getElementById('viewOperasionalModal');
-    if (viewOperasionalModal) {
-        viewOperasionalModal.addEventListener('show.bs.modal', function (ev) {
-            const trigger = ev.relatedTarget;
-            const name = trigger?.getAttribute('data-name') || 'Event';
-            // Urls
-            const vbgUrl = trigger?.getAttribute('data-vbg') || '';
-            const certUrl = trigger?.getAttribute('data-cert') || '';
-            const moduleUrl = trigger?.getAttribute('data-module') || '';
-            const absUrl = trigger?.getAttribute('data-abs') || '';
-            
-            const qrText = trigger?.getAttribute('data-qr') || '';
-            const qrImage = trigger?.getAttribute('data-qr-img') || '';
-
-            const titleEl = document.getElementById('viewOperasionalTitle');
-            if (titleEl) titleEl.textContent = 'Status Dokumen: ' + name;
-
-            const container = document.getElementById('operasionalStatusContainer');
-            if (!container) return;
-
-            const row = (label, url) => {
-                const cls = url ? 'btn-selesai text-decoration-none' : 'btn-pending';
-                const content = url ? 'Lihat' : 'Pending';
-                
-                if(url) {
-                    return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0">${label}</h6>
-                        <a href="${url}" target="_blank" class="${cls}" style="display:inline-block; text-align:center;">${content}</a>
-                    </div>`;
-                }
-
-                return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0">${label}</h6>
-                        <button class="${cls}">${content}</button>
-                    </div>`;
-            };
-
-            // QR Row Generator
-            const qrRow = () => {
-                if (qrImage) {
-                    return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0">QR Absensi</h6>
-                        <div class="qr-box"><img id="attendanceQrImg" src="${qrImage}" alt="QR Absensi"> 
-                            <div class="small text-muted">Scan untuk absensi</div></div>
-                    </div>`;
-                }
-                return `<div class="box-kelengkapan d-flex align-items-center justify-content-between">
-                    <h6 class="mb-0">QR Absensi</h6>
-                    <div class="qr-box"><canvas id="attendanceQrCanvas" aria-label="QR Absensi"></canvas>
-                </div>`;
-            };
-
-            container.innerHTML = [
-                row('Virtual Background', vbgUrl),
-                row('Sertifikat', certUrl),
-                row('Module (Trainer)', moduleUrl),
-                row('Dokumen Absensi', absUrl),
-                qrRow()
-            ].join('');
-
-            // Render QR on canvas if no stored image provided
-            try {
-                const canvas = document.getElementById('attendanceQrCanvas');
-                if (canvas) {
-                    if (qrText && window.QRCode) {
-                        QRCode.toCanvas(canvas, qrText, { width: 140, margin: 1 }, function (error) {
-                            if (error) console.error('QR render error:', error);
-                        });
-                    } else {
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            ctx.fillStyle = '#f8f9fa';
-                            ctx.fillRect(0,0,140,140);
-                            ctx.fillStyle = '#6c757d';
-                            ctx.font = '12px system-ui, -apple-system, Segoe UI, Roboto';
-                            ctx.fillText('QR tidak tersedia', 14, 74);
-                        }
-                    }
-                }
-            } catch (_e) { /* silent */ }
-        });
-    }
 
     // Populate Rekap Pendaftaran (Pendapatan) modal dynamically from data attributes
     const pendapatanModal = document.getElementById('viewPendapatanModal');
@@ -1335,12 +1196,6 @@ document.addEventListener('DOMContentLoaded', function(){
             tableId: 'table-pertumbuhan',
             monthLabelId: 'month-label-pertumbuhan',
             periodInputId: 'period_pertumbuhan',
-        },
-        operasional: {
-            title: 'Operasional',
-            tableId: 'table-operasional',
-            monthLabelId: 'month-label-operasional',
-            periodInputId: 'period_op',
         },
     };
 
@@ -1627,7 +1482,6 @@ document.addEventListener('DOMContentLoaded', function(){
         const periodInputs = [
             document.getElementById('period'),
             document.getElementById('period_pertumbuhan'),
-            document.getElementById('period_op'),
         ].filter(Boolean);
 
         function formatMonthLabel(ym){
@@ -1649,10 +1503,8 @@ document.addEventListener('DOMContentLoaded', function(){
             const label = formatMonthLabel(value);
             const labPend = document.getElementById('month-label-pendapatan');
             const labPert = document.getElementById('month-label-pertumbuhan');
-            const labOp = document.getElementById('month-label-operasional');
             if(labPend) labPend.textContent = label;
             if(labPert) labPert.textContent = label;
-            if(labOp) labOp.textContent = label;
 
             // Also set per-tab date-from / date-to inputs so client-side table filters reflect the whole month
             const parts = (value || '').split('-');
@@ -1667,7 +1519,6 @@ document.addEventListener('DOMContentLoaded', function(){
                 const mapping = [
                     ['date-from-pendapatan','date-to-pendapatan'],
                     ['date-from-pertumbuhan','date-to-pertumbuhan'],
-                    ['date-from-operasional','date-to-operasional'],
                 ];
                 mapping.forEach(([fromId,toId]) => {
                     const fromEl = document.getElementById(fromId);
