@@ -54,9 +54,9 @@
         .main-wrapper.full-width {
             margin-left: 0 !important;
             padding: 20px;
-            max-width: 1200px;
-            margin-right: auto;
-            margin-left: auto;
+            max-width: 100%;
+            margin-right: 0;
+            margin-left: 0;
         }
     </style>
     @stack('styles')

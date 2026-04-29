@@ -624,6 +624,7 @@ require __DIR__ . '/web_manual_payment.php';
 
 Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->group(function () {
     Route::get('/dashboard', [TrainerController::class, 'dashboard'])->name('dashboard');
+    Route::post('/availability/toggle', [TrainerController::class, 'toggleAvailability'])->name('availability.toggle');
     Route::get('/courses', [TrainerController::class, 'courses'])->name('courses');
     Route::get('/courses/{id}', [TrainerController::class, 'courseDetail'])->name('detail-course');
     Route::get('/finance', [TrainerController::class, 'finance'])->name('finance');
@@ -632,6 +633,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::put('/profile', [TrainerController::class, 'updateProfile'])->name('profile.update');
 
     Route::get('/events', [TrainerController::class, 'events'])->name('events');
+    Route::get('/events/{event}/vbg/download', [TrainerController::class, 'downloadVbg'])->name('events.vbg.download');
     // Upload module khusus event (pending verifikasi admin)
     Route::get('/events/modules', [TrainerEventModuleController::class, 'index'])->name('events.modules');
     Route::get('/api/event-modules', [TrainerEventModuleController::class, 'apiIndex'])->name('api.event-modules');

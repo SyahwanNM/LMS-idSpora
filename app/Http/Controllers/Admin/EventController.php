@@ -137,16 +137,7 @@ class EventController extends Controller
 
     public function index()
     {
-        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
-        $events = Event::query()
-            ->where(function ($q) use ($threshold) {
-                $q->whereNull('event_date')
-                    ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
-            })
-            ->latest()
-            ->paginate(10);
-        $events = Event::query()->latest()->paginate(10);
-        return view('admin.events.index', compact('events'));
+        return $this->create();
     }
 
     public function create()

@@ -332,6 +332,17 @@ main.detail-course .unit-card.expanded .unit-toggle i {
     font-size: var(--font-size-base);
 }
 
+.tab-pill:hover {
+    background: var(--main-navy-clr);
+    color: var(--white-clr);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tab-pill:hover i {
+    color: var(--yellow-clr);
+}
+
 .tab-pill.active {
     background: var(--white-clr);
     border: 1px solid var(--line-clr);
@@ -341,13 +352,6 @@ main.detail-course .unit-card.expanded .unit-toggle i {
 
 .tab-pill.active i {
     color: var(--yellow-clr);
-}
-
-.course-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 22px;
-    align-items: start;
 }
 
 .unit-header {
@@ -1221,11 +1225,11 @@ main.detail-course .unit-card.expanded .unit-toggle i {
 }
 
 main.detail-course {
-    padding: var(--spacing-4xl);
+    padding: 0;
     background-color: var(--base-clr);
     overflow-y: auto;
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     width: 100%;
 }
 
@@ -1477,13 +1481,6 @@ main.detail-course {
 
 .tab-pill.active i {
     color: var(--yellow-clr);
-}
-
-.course-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 22px;
-    align-items: start;
 }
 
 .unit-header {

@@ -22,6 +22,14 @@ use Illuminate\Support\Str;
 
 class TrainerController extends Controller
 {
+    public const AUTO_TEMPLATE_UNITS_BY_LEVEL = [
+        'beginner'     => 4,
+        'intermediate' => 6,
+        'advanced'     => 8,
+        'standard'     => 3,
+        'full'         => 12,
+    ];
+
     private function latestEventInvitation(int $eventId, int $trainerId): ?TrainerNotification
     {
         if ($eventId <= 0 || $trainerId <= 0) {
@@ -669,6 +677,7 @@ class TrainerController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
+        $trainerActivity = $user->trainer_activity_summary;
         $this->ensureTrainerCertificatesSynced($user);
 
         $coursesQuery = $user->coursesAsTrainer();
@@ -886,6 +895,54 @@ class TrainerController extends Controller
             ->whereNotNull('file_path')
             ->count();
 
+        $completedCourseItems = (clone $coursesQuery)
+            ->whereIn('status', ['published', 'approved', 'active'])
+            ->withCount(['enrollments as active_students_count' => function ($q) {
+                $q->where('status', 'active');
+            }])
+            ->withAvg('reviews', 'rating')
+            ->limit(4)
+            ->get();
+
+        $feedbackItems = Feedback::query()
+            ->whereHas('event', function ($q) use ($user) {
+                $q->where('trainer_id', $user->id);
+            })
+            ->with(['user', 'event', 'replies'])
+            ->latest()
+            ->limit(3)
+            ->get();
+
+        $pendingInvitationItems = TrainerNotification::query()
+            ->where('trainer_id', $user->id)
+            ->whereIn('type', ['course_invitation', 'event_invitation'])
+            ->get()
+            ->filter(function ($notification) {
+                $status = (string) data_get($notification->data, 'invitation_status', 'pending');
+                return $status === 'pending';
+            })
+            ->values();
+
+        $walletBalance = $user->wallet_balance ?? 0;
+
+        $revenueCourseItems = (clone $coursesQuery)
+            ->whereIn('status', ['published', 'approved', 'active'])
+            ->withCount(['enrollments as active_students_count' => function ($q) {
+                $q->where('status', 'active');
+            }])
+            ->withAvg('reviews', 'rating')
+            ->get()
+            ->map(function ($course) {
+                return [
+                    'course_name' => $course->name,
+                    'active_students_count' => $course->active_students_count,
+                    'price' => $course->price,
+                    'scheme_percent' => 35, // Default scheme
+                    'estimated_revenue' => $course->active_students_count * $course->price * 0.35,
+                    'rating' => $course->reviews_avg_rating
+                ];
+            });
+
         return view('trainer.dashboard', compact(
             'priorityCourses',
             'priorityEvents',
@@ -901,8 +958,31 @@ class TrainerController extends Controller
             'teachingHistory',
             'dashboardInvitations',
             'unreadInvitationCount',
-            'activeAssignmentItems'
+            'activeAssignmentItems',
+            'trainerActivity',
+            'completedCourseItems',
+            'feedbackItems',
+            'pendingInvitationItems',
+            'walletBalance',
+            'revenueCourseItems'
         ));
+    }
+
+    public function toggleAvailability(Request $request)
+    {
+        $user = Auth::user();
+
+        // Admin only can reactivate suspended accounts, so we check if status is suspended
+        if ($user->user_status === 'suspended') {
+            return back()->with('error', 'Akun Anda sedang dibekukan. Silakan hubungi admin untuk aktivasi kembali.');
+        }
+
+        $currentStatus = (string) ($user->user_status ?? 'active');
+        $newStatus = $currentStatus === 'active' ? 'inactive' : 'active';
+
+        $user->update(['user_status' => $newStatus]);
+
+        return back()->with('success', 'Status ketersediaan Anda telah diperbarui menjadi ' . ($newStatus === 'active' ? 'Siap Mengajar' : 'Sedang Cuti') . '.');
     }
 
     public function courses()
@@ -914,7 +994,7 @@ class TrainerController extends Controller
                 'enrollments' => function ($query) {
                     $query->where('status', 'active');
                 },
-                'modules', // Tambahkan ini untuk menghitung jumlah modul
+                'modules',
                 'modules as processing_assigned_count' => function ($query) {
                     $query->where('processing_status', 'assigned_to_admin_course');
                 },
@@ -1417,11 +1497,12 @@ class TrainerController extends Controller
             'passingGrade' => 'required|integer|min:0|max:100',
         ]);
 
-        $trainerId = Auth::id();
+        $trainer = Auth::user();
+        $event = \App\Models\Event::findOrFail($id);
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where('trainer_id', $trainerId)
-            ->firstOrFail();
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            return back()->with('error', 'Anda tidak memiliki akses untuk mengelola kuis event ini.');
+        }
 
 
         $questionsData = json_decode($request->questions, true);
@@ -2026,12 +2107,24 @@ class TrainerController extends Controller
     public function uploadEventMaterials(Request $request, $id)
     {
         $request->validate([
-            'files' => 'required|array|min:1|max:1',
+            'files' => 'required|array|min:1|max:10',
             'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000'
         ]);
 
-        $trainerId = Auth::id();
+        $trainer = Auth::user();
+        $trainerId = (int) ($trainer->id ?? 0);
         $trainerName = mb_strtolower(trim((string) (Auth::user()?->name ?? '')));
+        $event = \App\Models\Event::findOrFail($id);
+
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Anda tidak memiliki akses ke materi event ini.',
+            ], 403);
+        }
+
+        $assignment = $this->latestEventAssignment((int) $event->id, (int) $trainerId);
+        $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === $trainerId;
 
         if (!empty($event->material_deadline) && now()->gt($event->material_deadline)) {
             return response()->json([
@@ -2657,5 +2750,27 @@ class TrainerController extends Controller
             'message' => 'Reply saved successfully',
             'data' => $reply
         ]);
+    }
+
+    /**
+     * Download Virtual Background for an event.
+     */
+    public function downloadVbg(Event $event)
+    {
+        $path = $event->vbg_path;
+        if (empty($path)) {
+            return back()->with('error', 'Virtual Background belum tersedia untuk event ini.');
+        }
+
+        $disk = Storage::disk('public');
+        if (!$disk->exists($path)) {
+            $cleanPath = ltrim(str_replace('storage/', '', $path), '/');
+            if ($disk->exists($cleanPath)) {
+                return $disk->download($cleanPath);
+            }
+            return back()->with('error', 'File Virtual Background tidak ditemukan di server.');
+        }
+
+        return $disk->download($path);
     }
 }

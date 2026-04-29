@@ -151,6 +151,14 @@
                                             <p>{{ Str::limit($course->description ?? 'Deskripsi belum tersedia.', 80) }}</p>
                                         </div>
 
+                                        @php
+                                            $processingAssigned = (int) ($course->processing_assigned_count ?? 0);
+                                            $processingUploaded = (int) ($course->processing_uploaded_count ?? 0);
+                                            $processingRevision = (int) ($course->processing_revision_count ?? 0);
+                                            $processingReady = (int) ($course->processing_ready_count ?? 0);
+                                            $hasProcessing = ($processingAssigned + $processingUploaded + $processingRevision + $processingReady) > 0;
+                                        @endphp
+
                                         @if($hasProcessing)
                                             <div class="processing-mini-row" aria-label="Status proses materi">
                                                 @if($processingAssigned > 0)

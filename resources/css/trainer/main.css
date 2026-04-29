@@ -130,14 +130,16 @@
 .trainer-page .main-content {
     padding: var(--spacing-4xl);
     overflow-y: auto;
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     width: 100%;
 }
 
 .trainer-page .dashboard-content {
     padding: var(--spacing-4xl);
     overflow-y: auto;
+    width: 100%;
+    margin: 0;
 }
 
 /* Typography Defaults */
