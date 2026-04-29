@@ -211,7 +211,7 @@
                         <th>Name Course </th>
                         <th>Created Date</th>
                         <th>Level</th>
-                        <th>Price</th>
+                        <th>Price (Rp)</th>
                         <th>Completeness Status</th>
                         <th>Actions</th>
                     </tr>
@@ -400,7 +400,7 @@
                                     <h4 id="cp-level">Beginner</h4>
                                 </div>
                                 <div class="list-info info-green">
-                                    <h5>PRICE</h5>
+                                    <h5>PRICE (Rp)</h5>
                                     <h4 id="cp-price">Rp250.000</h4>
                                 </div>
                                 <div class="list-info info-yellow">

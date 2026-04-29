@@ -1,4 +1,4 @@
-﻿@include("partials.navbar-after-login")
+@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 

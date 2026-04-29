@@ -93,7 +93,7 @@
                             <input type="hidden" name="category_id" value="1">
                             @endif
                             <div class="col-md-6">
-                                <label class="form-label text-dark" for="course-price">Price <span class="text-danger">*</span></label>
+                                <label class="form-label text-dark" for="course-price">Price (Rp) <span class="text-danger">*</span></label>
                                 <input id="course-price" name="price" type="text" class="form-control" inputmode="numeric" placeholder="0" required>
                                 <div class="form-text harga-course">Enter 0 for free course</div>
                                 <div class="sanity-msg" data-for="course-price"></div>

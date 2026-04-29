@@ -1624,7 +1624,7 @@
                 </div>
 
                 <div
-                    class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
+                    class="resource-card {{ (isset($isRegistered) && $isRegistered && (isset($hasFeedback) && $hasFeedback || isset($attendanceSubmitted) && $attendanceSubmitted)) ? '' : 'locked' }}">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-award" viewBox="0 0 16 16">
@@ -1651,13 +1651,15 @@
                                     </a>
                                 </div>
                             </div>
+                            @elseif(isset($attendanceSubmitted) && $attendanceSubmitted)
+                                <p>Available after feedback.</p>
                             @elseif($eventIsFinished)
-                                <p>Available after feedback</p>
+                                <p>Available after feedback.</p>
                             @else
-                                <p>Available after send feedback.</p>
+                                <p>Available after attendance & feedback.</p>
                             @endif
                         @else
-                            <p>Available after the event ends.</p>
+                            <p>Available for participants.</p>
                         @endif
                     </div>
                 </div>

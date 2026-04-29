@@ -293,6 +293,11 @@ Route::post('/payment/refresh-course/{orderId}', [PaymentController::class, 'ref
 // Query current pending order for this user+event (auth required)
 Route::middleware('auth')->get('/payment/{event}/pending-order', [PaymentController::class, 'pendingOrder'])->name('payment.pending-order');
 
+// Course-specific Midtrans & Enrollment routes
+Route::middleware('auth')->get('/courses/{course}/payment/snap-token', [PaymentController::class, 'courseSnapToken'])->name('courses.payment.snap-token');
+Route::middleware('auth')->get('/courses/{course}/payment/pending-order', [PaymentController::class, 'coursePendingOrder'])->name('courses.payment.pending-order');
+Route::middleware('auth')->post('/courses/{course}/free-enroll', [CourseManualPaymentController::class, 'freeEnroll'])->name('courses.free-enroll');
+
 // Finalize registration after successful payment (auth required)
 Route::middleware('auth')->post('/payment/{event}/finalize', [PaymentController::class, 'finalize'])->name('payment.finalize');
 
@@ -353,7 +358,7 @@ Route::middleware('auth')->group(function () {
     // Notifications
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [NotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
-    // Certificate (event) - show & download (H+4 logic inside controller)
+    // Certificate (event) - show & download
     Route::get('/events/{event}/certificate/{registration}', [\App\Http\Controllers\CRM\CertificateController::class, 'show'])->name('certificates.show');
     Route::get('/events/{event}/certificate/{registration}/download', [\App\Http\Controllers\CRM\CertificateController::class, 'download'])->name('certificates.download');
     Route::get('/courses/{course}/certificate/{enrollment}/download', [\App\Http\Controllers\CRM\CertificateController::class, 'downloadCourse'])->name('course.certificates.download');
@@ -520,6 +525,7 @@ Route::middleware(['auth'])->group(function () {
         // Course management routes
         // Publish course (set status active)
         Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
+        Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');
@@ -645,12 +651,14 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::post('/notifications/mark-all-read', [TrainerNotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
     Route::get('/notifications/{notification}/open', [TrainerNotificationsController::class, 'open'])->name('notifications.open');
     Route::post('/notifications/{notification}/respond', [TrainerNotificationsController::class, 'respond'])->name('notifications.respond');
+    Route::post('/notifications/{notification}/accept-with-scheme', [TrainerNotificationsController::class, 'acceptWithScheme'])->name('notifications.accept-with-scheme');
 
     // --- STUDIO UNTUK COURSE ---
     Route::get('/courses/{id}/studio', [TrainerController::class, 'courseStudio'])->name('courses.studio');
     Route::get('/courses/{courseId}/materials/{moduleId}/view', [TrainerController::class, 'viewCourseMaterial'])->name('courses.studio.material.view');
     Route::post('/courses/{id}/studio/upload', [TrainerController::class, 'uploadCourseMaterials'])->name('courses.studio.upload');
     Route::post('/courses/{id}/studio/quiz', [TrainerController::class, 'saveCourseQuiz'])->name('courses.studio.quiz');
+    Route::post('/courses/{id}/studio/editor-image', [TrainerController::class, 'uploadEditorImage'])->name('courses.studio.editor-image');
 
     // --- STUDIO UNTUK EVENT ---
     Route::get('/events/{id}/studio', [TrainerController::class, 'eventStudio'])->name('events.studio');
@@ -692,6 +700,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/rejected', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejected'])->name('admin.material.rejected');
     Route::get('/admin/material/{material}/modules/{module}/stream', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'streamModule'])->name('admin.material.module.stream');
     Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
+    Route::post('/admin/material/{material}/unit/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveUnit'])->name('admin.material.unit.approve');
     Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
     Route::post('/admin/material/{material}/modules/{module}/assign-course', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'assignCourse'])->name('admin.material.module.assign-course');
     Route::post('/admin/material/{material}/modules/{module}/upload-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'uploadProcessed'])->name('admin.material.module.upload-processed');

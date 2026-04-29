@@ -99,6 +99,21 @@
     </div>
 @endif
 
+@if($errors->any())
+    <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show mb-4" role="alert">
+        <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span class="fw-bold">Gagal memperbarui konfigurasi:</span>
+        </div>
+        <ul class="mb-0 smaller">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
 <form action="{{ route('admin.crm.certificates.update', $event) }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -265,23 +280,29 @@
         <!-- Sidebar Info -->
         <div class="col-lg-4">
             <div class="card-minimal h-100 p-4">
-                <h6 class="fw-bold text-navy mb-3">Panduan Desain</h6>
+                <h6 class="fw-bold text-navy mb-3">Panduan & Syarat Aset</h6>
                 <div class="d-flex align-items-start mb-3">
                     <div class="me-3 text-primary"><i class="bi bi-info-circle fs-4"></i></div>
                     <div class="smaller text-muted">
-                        <b>Logo Default:</b> Logo IdSPora akan selalu muncul sebagai identitas penyelenggara utama.
+                        <b>Format File:</b> Mendukung JPG, JPEG, PNG, WEBP, dan SVG.
+                    </div>
+                </div>
+                <div class="d-flex align-items-start mb-3">
+                    <div class="me-3 text-danger"><i class="bi bi-hdd fs-4"></i></div>
+                    <div class="smaller text-muted">
+                        <b>Ukuran Maksimal:</b> 2MB (2048 KB) per file. File yang lebih besar akan otomatis ditolak.
                     </div>
                 </div>
                 <div class="d-flex align-items-start mb-3">
                     <div class="me-3 text-warning"><i class="bi bi-layers fs-4"></i></div>
                     <div class="smaller text-muted">
-                        <b>Partner Logo:</b> Digunakan jika event bekerja sama dengan instansi lain. Max 3 logo tambahan.
+                        <b>Jumlah Maksimal:</b> Maksimal 3 Logo Partner dan 3 Tanda Tangan.
                     </div>
                 </div>
                 <div class="d-flex align-items-start mb-4">
                     <div class="me-3 text-success"><i class="bi bi-pen fs-4"></i></div>
                     <div class="smaller text-muted">
-                        <b>Tanda Tangan:</b> Pastikan menggunakan latar belakang transparan (PNG) untuk estetika maksimal.
+                        <b>Rekomendasi TTD:</b> Gunakan background transparan (PNG/SVG) agar terlihat menyatu dengan sertifikat.
                     </div>
                 </div>
 

@@ -65,13 +65,13 @@ class CertificateController extends Controller
         $request->validate([
             'certificate_template'        => 'required|string|in:template_1,template_2,template_3',
             'certificate_logo'            => 'nullable|array',
-            'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
             'delete_logos'                => 'nullable|array',
             'delete_logos.*'              => 'nullable|string',
             'delete_signatures'           => 'nullable|array',
             'delete_signatures.*'         => 'nullable|string',
             'certificate_signature_file'  => 'nullable|array',
-            'certificate_signature_file.*'=> 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'certificate_signature_file.*'=> 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
             'existing_signature_image'    => 'nullable|array',
             'signature_name'              => 'nullable|array',
             'signature_position'          => 'nullable|array',
@@ -127,13 +127,13 @@ class CertificateController extends Controller
         $request->validate([
             'certificate_template'        => 'required|string|in:template_1,template_2,template_3',
             'certificate_logo'            => 'nullable|array',
-            'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
             'delete_logos'                => 'nullable|array',
             'delete_logos.*'              => 'nullable|string',
             'delete_signatures'           => 'nullable|array',
             'delete_signatures.*'         => 'nullable|string',
             'certificate_signature_file'  => 'nullable|array',
-            'certificate_signature_file.*'=> 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'certificate_signature_file.*'=> 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
             'existing_signature_image'    => 'nullable|array',
             'signature_name'              => 'nullable|array',
             'signature_position'          => 'nullable|array',
@@ -214,6 +214,11 @@ class CertificateController extends Controller
             $name         = trim($sigNames[$idx] ?? '');
             $position     = trim($sigPositions[$idx] ?? '');
 
+            // Skip if this signature was marked for deletion
+            if ($existingPath && in_array($existingPath, $toDelete)) {
+                continue;
+            }
+
             if ($newFile && $newFile->isValid()) {
                 // Hapus file lama jika ada
                 if ($existingPath) {
@@ -270,6 +275,7 @@ class CertificateController extends Controller
         
         $this->authorizeAccess($event, $registration);
         $certificateReady = $this->isCertificateReady($event, $registration);
+        
         $force = $request->boolean('force');
         
         if(!$certificateReady && !$force) {
@@ -544,6 +550,16 @@ class CertificateController extends Controller
 
     public function isCertificateReady(Event $event, EventRegistration $registration = null) {
         if ($registration && $registration->certificate_issued_at) return true;
+        
+        // Jika user sudah absen hadir, sertifikat boleh diakses tanpa menunggu event selesai
+        if ($registration) {
+            $status = strtolower((string) ($registration->attendance_status ?? ''));
+            $isAttended = in_array($status, ['present', 'attended', 'checked-in', 'yes'], true) 
+                || !empty($registration->attended_at);
+            
+            if ($isAttended) return true;
+        }
+
         return $event->isFinished();
     }
 

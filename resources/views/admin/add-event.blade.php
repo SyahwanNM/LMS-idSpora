@@ -1033,17 +1033,19 @@
 
                     if (pct >= 100) {
                         if (body) body.innerHTML = '<p>Are you sure you want to publish this event? All documents are complete and the event will be displayed to the public shortly.</p>';
+                        if (confirmBtn) confirmBtn.style.display = '';
                     } else {
                         if (body) {
-                            var html = '<p>The document completeness for this event is not yet complete:</p><ul>';
+                            var html = '<div class="alert alert-warning"><p class="mb-2 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Document completion is not yet 100%:</p><ul class="mb-2">';
                             if (Array.isArray(missing) && missing.length) {
                                 missing.forEach(function(it){ html += '<li>' + it + '</li>'; });
                             } else {
-                                html += '<li>Some documents are not yet complete</li>';
+                                html += '<li>Some documents are still missing</li>';
                             }
-                            html += '</ul><p>Are you sure you want to publish this event?</p>';
+                            html += '</ul><p class="mb-0 small">Please complete all documents before publishing.</p></div>';
                             body.innerHTML = html;
                         }
+                        if (confirmBtn) confirmBtn.style.display = 'none';
                     }
                     pendingPublishForm = form;
                     if (publishModal) publishModal.show();
@@ -1063,6 +1065,7 @@
                         confirmBtn.classList.add('btn-danger');
                     }
                     if (body) body.innerHTML = '<p>Are you sure you want to unpublish this event? The event will no longer be visible to the public.</p>';
+                    if (confirmBtn) confirmBtn.style.display = '';
                     
                     pendingPublishForm = form;
                     if (publishModal) publishModal.show();

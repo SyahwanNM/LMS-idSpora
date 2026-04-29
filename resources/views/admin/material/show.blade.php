@@ -584,7 +584,7 @@
                                 </div>
                             @endif
                         </div>
-                        @if($material->status === 'pending_review')
+                        @if($material->status !== 'rejected')
                             <div class="review-state">
                                 <div class="review-state-title" id="topReviewTitle">Preview awal materi course</div>
                                 <div class="review-state-meta" id="topReviewMeta">Klik "Review di sini" pada daftar modul untuk
@@ -607,111 +607,115 @@
                     <div class="card-custom">
                         <h5 class="card-title">Isi Modul ({{ $material->modules->count() }})</h5>
                         <div class="module-list">
-                            @forelse($material->modules as $module)
-                                @php
-                                    $rawContent = trim((string) ($module->content_url ?? ''));
-                                    $isHttp = str_starts_with($rawContent, 'http://') || str_starts_with($rawContent, 'https://');
-                                    $normalizedContent = ltrim((string) preg_replace('#^/?storage/#', '', $rawContent), '/');
-                                    $contentUrl = null;
-                                    $ext = strtolower(pathinfo($normalizedContent !== '' ? $normalizedContent : $rawContent, PATHINFO_EXTENSION));
-                                    $mime = strtolower((string) ($module->mime_type ?? ''));
-
-                                    $previewKind = 'file';
-                                    if ($module->isQuiz()) {
-                                        $previewKind = 'quiz';
-                                    } elseif ($module->isVideo() || str_starts_with($mime, 'video/') || in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'webm'], true)) {
-                                        $previewKind = 'video';
-                                    } elseif ($module->isPdf() || str_contains($mime, 'pdf') || $ext === 'pdf') {
-                                        $previewKind = 'pdf';
-                                    }
-
-                                    if ($isHttp) {
-                                        $contentUrl = $rawContent;
-                                    } elseif ($normalizedContent !== '' && $rawContent !== 'quiz_submitted') {
-                                        $contentUrl = route('admin.material.module.stream', [$material, $module]);
-                                    }
-
-                                    $canOpenFile = !$module->isQuiz() && !empty($contentUrl);
-                                    $canReviewInline = $canOpenFile || $module->isQuiz();
-                                @endphp
-                                <div class="module-item">
-                                    <div class="module-icon">
-                                        @if($module->type == 'video') <i class="bi bi-play-fill"></i>
-                                        @elseif($module->type == 'pdf') <i class="bi bi-file-pdf-fill"></i>
-                                        @elseif($module->type == 'quiz') <i class="bi bi-question-circle-fill"></i>
-                                        @else <i class="bi bi-file-earmark-arrow-down-fill"></i> @endif
-                                    </div>
-                                    <div class="module-desc">
-                                        <h6>{{ $module->order_no }}. {{ $module->title }}</h6>
-                                        <p>Tipe: {{ strtoupper($module->type) }} @if($module->duration) •
-                                        {{ $module->duration }} Menit @endif
-                                        </p>
-                                        @if(!empty($module->file_name) || !empty($module->mime_type))
-                                            <div class="module-meta">
-                                                {{ $module->file_name ?: basename((string) $module->content_url) }}
-                                                @if(!empty($module->mime_type))
-                                                    • {{ $module->mime_type }}
-                                                @endif
-                                            </div>
+                            @php $unitCounter = 1; @endphp
+                            @forelse($material->modules->chunk(3) as $unitModules)
+                                <div class="unit-group mb-5 p-4 border rounded-4 bg-white shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                                        <div>
+                                            <h4 class="fw-bold text-navy m-0">Bab {{ $unitCounter }}</h4>
+                                            <p class="text-muted small m-0">Grup: 1 Modul + 1 Video + 1 Kuis</p>
+                                        </div>
+                                        @if($material->status !== 'rejected')
+                                            @php
+                                                $allInUnitApproved = $unitModules->every(fn($m) => $m->review_status === 'approved');
+                                            @endphp
+                                            <form action="{{ route('admin.material.unit.approve', $material) }}" method="POST">
+                                                @csrf
+                                                <input type="hidden" name="unit_no" value="{{ $unitCounter }}">
+                                                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4" {{ $allInUnitApproved ? 'disabled' : '' }}>
+                                                    <i class="bi bi-check-all me-1"></i> {{ $allInUnitApproved ? 'Sudah Disetujui' : 'Setujui Bab ' . $unitCounter }}
+                                                </button>
+                                            </form>
                                         @endif
+                                    </div>
 
-                                        @if($material->status === 'pending_review')
-                                            @if($canReviewInline)
-                                                <div class="module-actions">
-                                                    <button type="button" class="module-review-trigger"
-                                                        data-review-module-id="{{ $module->id }}"
-                                                        data-review-title="{{ e($module->title) }}" data-review-url="{{ $contentUrl }}"
-                                                        data-review-kind="{{ $previewKind }}"
-                                                        data-review-file="{{ e($module->file_name ?: basename((string) $module->content_url)) }}">
-                                                        <i class="bi bi-eye"></i> Review di sini
-                                                    </button>
-                                                    @if($canOpenFile)
-                                                        <a href="{{ route('admin.material.module.stream', [$material, $module]) }}?download=1"
-                                                            class="module-btn module-btn-download">
-                                                            <i class="bi bi-download"></i> Unduh
-                                                        </a>
+                                    @foreach($unitModules as $module)
+                                        @php
+                                            $rawContent = trim((string) ($module->content_url ?? ''));
+                                            $isHttp = str_starts_with($rawContent, 'http://') || str_starts_with($rawContent, 'https://');
+                                            $normalizedContent = ltrim((string) preg_replace('#^/?storage/#', '', $rawContent), '/');
+                                            $contentUrl = null;
+                                            $ext = strtolower(pathinfo($normalizedContent !== '' ? $normalizedContent : $rawContent, PATHINFO_EXTENSION));
+                                            $mime = strtolower((string) ($module->mime_type ?? ''));
+
+                                            $previewKind = 'file';
+                                            if ($module->isQuiz()) {
+                                                $previewKind = 'quiz';
+                                            } elseif ($module->isVideo() || str_starts_with($mime, 'video/') || in_array($ext, ['mp4', 'mov', 'avi', 'mkv', 'webm'], true)) {
+                                                $previewKind = 'video';
+                                            } elseif ($module->isPdf() || str_contains($mime, 'pdf') || $ext === 'pdf') {
+                                                $previewKind = 'pdf';
+                                            }
+
+                                            if ($isHttp) {
+                                                $contentUrl = $rawContent;
+                                            } elseif ($normalizedContent !== '' && $rawContent !== 'quiz_submitted') {
+                                                $contentUrl = route('admin.material.module.stream', [$material, $module]);
+                                            }
+
+                                            $canOpenFile = !$module->isQuiz() && !empty($contentUrl);
+                                            $canReviewInline = $canOpenFile || $module->isQuiz();
+                                        @endphp
+                                        <div class="module-item mb-3 {{ $module->review_status === 'approved' ? 'border-success' : '' }}" style="{{ $module->review_status === 'approved' ? 'border-left: 4px solid #14b8a6; background: #f0fdfa;' : '' }}">
+                                            <div class="module-icon" style="{{ $module->review_status === 'approved' ? 'background: #ccfbf1; color: #0d9488;' : '' }}">
+                                                @if($module->type == 'video') <i class="bi bi-play-fill"></i>
+                                                @elseif($module->type == 'pdf') <i class="bi bi-file-pdf-fill"></i>
+                                                @elseif($module->type == 'quiz') <i class="bi bi-question-circle-fill"></i>
+                                                @else <i class="bi bi-file-earmark-arrow-down-fill"></i> @endif
+                                            </div>
+                                            <div class="module-desc">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <h6 class="m-0 fw-bold">{{ $module->order_no }}. {{ $module->title }}</h6>
+                                                    @if($module->review_status === 'approved')
+                                                        <span class="badge bg-success rounded-pill" style="font-size: 10px;"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>
                                                     @endif
                                                 </div>
-                                                <span
-                                                    class="module-tag module-tag-ready">{{ $module->isQuiz() ? 'Kuis tersedia' : 'File tersedia' }}</span>
-                                            @elseif($module->isQuiz())
-                                                <span class="module-tag module-tag-ready">Kuis tersedia</span>
-                                            @else
-                                                <span class="module-tag module-tag-missing">File belum tersedia</span>
-                                            @endif
-                                        @elseif($material->status === 'approved')
-                                            @if($canOpenFile)
-                                                <div class="module-actions">
-                                                    <a href="{{ route('admin.material.module.stream', [$material, $module]) }}?download=1"
-                                                        class="module-btn module-btn-download">
-                                                        <i class="bi bi-download"></i> Unduh
-                                                    </a>
-                                                </div>
-                                                <span
-                                                    class="module-tag module-tag-ready">{{ $module->isQuiz() ? 'Kuis tersedia' : 'File tersedia' }}</span>
-                                            @elseif($module->isQuiz())
-                                                <span class="module-tag module-tag-ready">Kuis tersedia</span>
-                                            @else
-                                                <span class="module-tag module-tag-missing">File belum tersedia</span>
-                                            @endif
-                                        @elseif($material->status === 'rejected')
-                                            @if($canOpenFile)
-                                                <div class="module-actions">
-                                                    <a href="{{ route('admin.material.module.stream', [$material, $module]) }}?download=1"
-                                                        class="module-btn module-btn-download">
-                                                        <i class="bi bi-download"></i> Unduh
-                                                    </a>
-                                                </div>
-                                                <span
-                                                    class="module-tag module-tag-ready">{{ $module->isQuiz() ? 'Kuis tersedia' : 'File tersedia' }}</span>
-                                            @elseif($module->isQuiz())
-                                                <span class="module-tag module-tag-ready">Kuis tersedia</span>
-                                            @else
-                                                <span class="module-tag module-tag-missing">File belum tersedia</span>
-                                            @endif
-                                        @endif
-                                    </div>
+                                                <p class="m-0 small text-muted">Tipe: {{ strtoupper($module->type) }} @if($module->duration) •
+                                                {{ $module->duration }} Menit @endif
+                                                </p>
+                                                @if(!empty($module->file_name) || !empty($module->mime_type))
+                                                    <div class="module-meta">
+                                                        {{ $module->file_name ?: basename((string) $module->content_url) }}
+                                                        @if(!empty($module->mime_type))
+                                                            • {{ $module->mime_type }}
+                                                        @endif
+                                                    </div>
+                                                @endif
+
+                                                @if($material->status === 'pending_review' || $material->status === 'approved')
+                                                    <div class="module-actions mt-2">
+                                                        @if($canReviewInline)
+                                                            <button type="button" class="module-review-trigger"
+                                                                data-review-module-id="{{ $module->id }}"
+                                                                data-review-title="{{ e($module->title) }}" data-review-url="{{ $contentUrl }}"
+                                                                data-review-kind="{{ $previewKind }}"
+                                                                data-review-file="{{ e($module->file_name ?: basename((string) $module->content_url)) }}">
+                                                                <i class="bi bi-eye"></i> Review
+                                                            </button>
+                                                        @endif
+                                                        
+                                                        @if($canOpenFile)
+                                                            <a href="{{ route('admin.material.module.stream', [$material, $module]) }}?download=1"
+                                                                class="module-btn module-btn-download">
+                                                                <i class="bi bi-download"></i> Unduh
+                                                            </a>
+                                                        @endif
+
+                                                        @if($material->status === 'pending_review' && $module->review_status !== 'approved')
+                                                            <form action="{{ route('admin.material.module.approve', [$material, $module]) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="module-btn bg-success text-white border-0">
+                                                                    <i class="bi bi-check-circle"></i> Approve
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
+                                @php $unitCounter++; @endphp
                             @empty
                                 <div class="text-center py-4 text-muted">Belum ada modul yang diupload.</div>
                             @endforelse
@@ -760,7 +764,7 @@
                                 </div>
                             </div>
                         </div>
-                        @if($material->status === 'pending_review')
+                        @if($material->status !== 'rejected')
                             <div class="card-custom side-card">
                                 <h6 class="side-card-title">
                                     Keputusan Admin:</h6>
@@ -782,7 +786,7 @@
         </main>
     </div>
 
-    @if($material->status === 'pending_review')
+    @if($material->status !== 'rejected')
         <div class="modal fade" id="rejectModal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content" style="border-radius: 16px; overflow:hidden;">

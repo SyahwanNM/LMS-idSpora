@@ -121,13 +121,13 @@
                             <p id="trainer_id_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
-                        <!-- Harga -->
+                        <!-- Price -->
                         <div>
-                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Harga <span class="text-red-600">*</span></label>
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp) <span class="text-red-600">*</span></label>
                             <input type="text" name="price" id="price" required inputmode="numeric"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="{{ old('price', 0) }}" placeholder="0">
-                            <p class="mt-1 text-xs text-gray-500">Masukkan 0 untuk course gratis</p>
+                            <p class="mt-1 text-xs text-gray-500">Enter 0 for free course</p>
                             <p id="price_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
@@ -289,12 +289,12 @@
                 const rawPrice = (price?.value || '').trim();
                 const digits = normalizeDigits(rawPrice);
                 if (digits.length === 0) {
-                    setError('price', 'Harga wajib diisi.');
+                    setError('price', 'Price is required.');
                     firstInvalid ||= price;
                 } else {
                     const val = parseInt(digits, 10);
                     if (Number.isNaN(val) || val < 0) {
-                        setError('price', 'Harga harus angka >= 0.');
+                        setError('price', 'Price must be a number >= 0.');
                         firstInvalid ||= price;
                     } else {
                         setError('price', '');

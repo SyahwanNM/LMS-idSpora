@@ -335,6 +335,18 @@ class CourseController extends Controller
     }
 
     /**
+     * Unpublish course: set status back to 'archive'
+     */
+    public function unpublish(Request $request, Course $course)
+    {
+        $course->status = 'archive';
+        $course->save();
+
+        return redirect()->route('admin.courses.index')
+            ->with('success', 'Course unpublished successfully!');
+    }
+
+    /**
      * Strip HTML tags and normalize whitespace from description input.
      */
     private function sanitizeDescription(?string $html): string

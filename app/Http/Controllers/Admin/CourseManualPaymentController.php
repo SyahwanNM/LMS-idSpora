@@ -203,6 +203,33 @@ class CourseManualPaymentController extends Controller
         return redirect()->route('course.learn', $course->id)->with('success', 'Enroll Successfully!');
     }
 
+    public function checkReferral(Request $request, Course $course)
+    {
+        $code = trim((string) $request->get('code'));
+        if ($code === '') {
+            return response()->json(['valid' => false, 'message' => '']);
+        }
+
+        $referrer = \App\Models\User::where('referral_code', $code)->first();
+        if (!$referrer) {
+            return response()->json(['valid' => false, 'message' => 'Kode referral tidak ditemukan.']);
+        }
+
+        if (Auth::check() && $referrer->id === Auth::id()) {
+            return response()->json(['valid' => false, 'message' => 'Tidak bisa menggunakan kode sendiri.']);
+        }
+
+        $baseAmount = (float) ($course->hasDiscount() ? $course->discounted_price : ($course->price ?? 0));
+        $discountedAmount = $baseAmount * 0.9; // 10% discount
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Kode referral valid! Anda mendapatkan diskon 10%.',
+            'base_amount' => $baseAmount,
+            'final_amount' => (int) round($discountedAmount),
+        ]);
+    }
+
     private function assertPaymentBelongsToCourse(Course $course, ManualPayment $manualPayment): void
     {
         if ((int) $manualPayment->course_id !== (int) $course->id) {

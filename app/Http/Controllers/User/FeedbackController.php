@@ -25,9 +25,12 @@ class FeedbackController extends Controller
         $userId = Auth::id();
         $event = Event::find($request->event_id);
 
-        // Only allow feedback after event has finished
-        if (!$event || !$event->isFinished()) {
-            return response()->json(['success' => false, 'message' => 'Feedback hanya dibuka setelah event selesai.'], 400);
+        // Allow feedback if event is finished OR user has attended
+        $registration = EventRegistration::where('event_id', $event->id)->where('user_id', $userId)->first();
+        $isAttended = $registration && (!empty($registration->attended_at) || in_array(strtolower((string)$registration->attendance_status), ['yes','present','attended']));
+
+        if (!$isAttended && (!$event || !$event->isFinished())) {
+            return response()->json(['success' => false, 'message' => 'Feedback dapat dikirim setelah Anda melakukan absensi atau setelah event selesai.'], 400);
         }
 
         // Check registration

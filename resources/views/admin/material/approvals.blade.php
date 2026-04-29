@@ -714,7 +714,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($pendingEventModules as $event)
+                                @foreach($pendingEventModules as $eventModule)
                                     <tr>
                                         <td>
                                             <div class="course-info" style="gap:12px;">
@@ -736,8 +736,8 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <div style="font-weight: 600; color: #334155;">{{ $event->module_submitted_at?->format('d M Y') ?? ($event->created_at?->format('d M Y') ?? '-') }}</div>
-                                            <div style="font-size: 0.75rem; color:#64748b;">{{ $event->module_submitted_at?->diffForHumans() ?? '' }}</div>
+                                            <div style="font-weight: 600; color: #334155;">{{ $eventModule->module_submitted_at?->format('d M Y') ?? ($eventModule->created_at?->format('d M Y') ?? '-') }}</div>
+                                            <div style="font-size: 0.75rem; color:#64748b;">{{ $eventModule->module_submitted_at?->diffForHumans() ?? '' }}</div>
                                         </td>
                                         <td>
                                             <span class="badge-status badge-pending">Review Pending</span>
@@ -747,7 +747,7 @@
                                                 <a href="{{ route('admin.event-material.stream', $eventModule->event_id) }}?assignment_id={{ $eventModule->id }}" target="_blank" class="btn-action btn-icon-action" title="Lihat modul" aria-label="Lihat modul">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
-                                                <form action="{{ route('admin.events.module.approve', $event) }}" method="POST">
+                                                <form action="{{ route('admin.event-material.approve', $eventModule->event_id) }}" method="POST">
                                                     @csrf
                                                     <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
                                                     <button type="submit" class="btn-action btn-icon-action" style="color:#166634;border-color:#bbf7d0;background:#f0fdf4;" title="Approve" aria-label="Approve">
@@ -758,8 +758,8 @@
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>
                                             </div>
-                                            <div class="collapse mt-2" id="rejectEventModule-{{ $event->id }}">
-                                                <form action="{{ route('admin.events.module.reject', $event) }}" method="POST" class="d-flex flex-column gap-2">
+                                            <div class="collapse mt-2" id="rejectEventModule-{{ $eventModule->id }}">
+                                                <form action="{{ route('admin.event-material.reject', $eventModule->event_id) }}" method="POST" class="d-flex flex-column gap-2">
                                                     @csrf
                                                     <textarea name="reason" rows="2" class="form-control" placeholder="Alasan penolakan (wajib)" required></textarea>
                                                     <div class="d-flex justify-content-end">

@@ -1438,4 +1438,5 @@
     </script>
   @endpush
 
+@include('trainer.partials.scheme-selection-modal')
 @endsection

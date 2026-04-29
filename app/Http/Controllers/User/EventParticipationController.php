@@ -117,8 +117,11 @@ class EventParticipationController extends Controller
         };
         $endTime = $parseEventTime($eventDate, $event->event_time_end);
         if(!$endTime && $eventDate){ $endTime = $eventDate->copy()->endOfDay(); }
-        if(!$endTime || Carbon::now()->lte($endTime)){
-            return redirect()->back()->with('error','Event belum selesai, feedback belum dapat dikirim.');
+        
+        $isAttended = !empty($registration->attended_at) || in_array(strtolower((string)$registration->attendance_status), ['yes','present','attended']);
+        
+        if(!$isAttended && (!$endTime || Carbon::now()->lte($endTime))){
+            return redirect()->back()->with('error','Feedback dapat dikirim setelah Anda melakukan absensi atau setelah event selesai.');
         }
         $data = $request->validate([
             'feedback_text' => 'required|string|min:5',

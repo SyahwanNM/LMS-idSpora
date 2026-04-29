@@ -2773,4 +2773,48 @@ class TrainerController extends Controller
 
         return $disk->download($path);
     }
+
+    /**
+     * Upload image for course module WYSIWYG editor
+     */
+    public function uploadEditorImage(\Illuminate\Http\Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?? 'Validasi gagal.',
+            ], 422);
+        }
+
+        $course = \App\Models\Course::findOrFail($id);
+        if ($course->trainer_id !== \Illuminate\Support\Facades\Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name = time() . '_' . $image->getClientOriginalName();
+            $destinationPath = public_path('/uploads/courses/' . $id . '/editor');
+
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0777, true);
+            }
+
+            $image->move($destinationPath, $name);
+
+            return response()->json([
+                'success' => true,
+                'url' => asset('/uploads/courses/' . $id . '/editor/' . $name)
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Tidak ada gambar yang diunggah.'
+        ], 400);
+    }
 }

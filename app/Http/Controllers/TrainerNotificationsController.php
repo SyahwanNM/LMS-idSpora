@@ -212,4 +212,53 @@ class TrainerNotificationsController extends Controller
 
         return back()->with('success', $message);
     }
+
+    public function acceptWithScheme(Request $request, TrainerNotification $notification)
+    {
+        $uid = Auth::id();
+        if (!$uid || (int) $notification->trainer_id !== (int) $uid) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'scheme_type' => 'required|integer|in:1,2,3',
+            'legal_agreement_1' => 'required|in:1',
+            'legal_agreement_2' => 'required|in:1',
+        ]);
+
+        $data = is_array($notification->data) ? $notification->data : [];
+        $entityType = (string) data_get($data, 'entity_type', '');
+        $entityId = (int) data_get($data, 'entity_id', 0);
+
+        if ($entityType === 'event' && $entityId > 0) {
+            $event = Event::find($entityId);
+            if ($event) {
+                // Multi-speaker support: ensure assignment exists and update it
+                $assignment = \App\Models\TrainerAssignment::updateOrCreate(
+                    ['trainer_id' => $uid, 'event_id' => $entityId],
+                    [
+                        'scheme_type' => $validated['scheme_type'],
+                        'status' => 'accepted',
+                        'invitation_notification_id' => $notification->id,
+                        'sla_upload_deadline' => $event->material_deadline ?: now()->addDays(3),
+                    ]
+                );
+
+                if (empty($event->trainer_id)) {
+                    $event->trainer_id = $uid;
+                    $event->save();
+                }
+            }
+        }
+
+        // Update notification status
+        $data['invitation_status'] = 'accepted';
+        $data['scheme_type'] = $validated['scheme_type'];
+        $data['responded_at'] = now()->toIso8601String();
+        $notification->data = $data;
+        $notification->read_at = now();
+        $notification->save();
+
+        return back()->with('success', 'Undangan berhasil diterima dengan skema yang dipilih.');
+    }
 }

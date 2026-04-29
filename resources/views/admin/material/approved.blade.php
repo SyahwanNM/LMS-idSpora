@@ -627,32 +627,32 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($approvedEventModules as $event)
+                                @foreach($approvedEventModules as $eventModule)
                                     <tr>
                                         <td>
                                             <div>
-                                                <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
+                                                <h6 class="course-title">{{ Str::limit($eventModule->event?->title ?? '-', 48) }}</h6>
                                                 <div class="text-muted" style="font-size:0.75rem;">
-                                                    {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
+                                                    {{ $eventModule->event?->jenis ?? '-' }}{{ $eventModule->event?->event_date ? ' • ' . $eventModule->event->event_date->format('d M Y') : '' }}
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="trainer-info">
-                                                <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                                <img src="{{ $eventModule->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
                                                     class="trainer-avatar">
                                                 <div>
-                                                    <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
-                                                    <div style="font-size: 0.75rem; color:#64748b;">{{ $event->trainer?->email }}</div>
+                                                    <div class="trainer-name">{{ $eventModule->trainer?->name ?? 'Anonim' }}</div>
+                                                    <div style="font-size: 0.75rem; color:#64748b;">{{ $eventModule->trainer?->email }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div style="font-weight: 600; color: #334155;">
-                                                {{ $event->module_verified_at?->format('d M Y') ?? '-' }}
+                                                {{ $eventModule->reviewed_at?->format('d M Y') ?? '-' }}
                                             </div>
                                             <div style="font-size: 0.75rem; color:#64748b;">
-                                                {{ $event->module_verified_at?->diffForHumans() ?? '' }}
+                                                {{ $eventModule->reviewed_at?->diffForHumans() ?? '' }}
                                             </div>
                                         </td>
                                         <td>
@@ -660,11 +660,11 @@
                                         </td>
                                         <td class="text-end">
                                             <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                                <a href="{{ $event->module_file_url }}" target="_blank" class="btn-action"
+                                                <a href="{{ route('admin.event-material.stream', $eventModule->event_id) }}?assignment_id={{ $eventModule->id }}" target="_blank" class="btn-action"
                                                     style="color:#166534; border-color:#bbf7d0; background:#f0fdf4;">
                                                     Lihat <i class="bi bi-eye"></i>
                                                 </a>
-                                                <a href="{{ route('admin.events.show', $event) }}" class="btn-action">
+                                                <a href="{{ route('admin.events.show', $eventModule->event_id) }}" class="btn-action">
                                                     Detail <i class="bi bi-arrow-right"></i>
                                                 </a>
                                             </div>

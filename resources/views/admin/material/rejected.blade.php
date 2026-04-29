@@ -680,7 +680,7 @@
                                                 <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
                                                     Lihat <i class="bi bi-eye"></i>
                                                 </a>
-                                                <form action="{{ route('admin.events.module.approve', $event) }}" method="POST" class="d-inline">
+                                                <form action="{{ route('admin.event-material.approve', $event) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     <button type="submit" class="btn-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
                                                         Approve <i class="bi bi-check2-circle"></i>
