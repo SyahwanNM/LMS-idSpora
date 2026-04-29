@@ -64,18 +64,34 @@ class TrainerController extends Controller
             $assignment = $this->latestEventAssignment((int) $event->id, $trainerId);
         }
 
+        // Check admin-set fixed salary in event_speakers for this trainer
+        $fixedSpeaker = null;
+        if ($trainerId > 0) {
+            $fixedSpeaker = \App\Models\EventSpeaker::query()
+                ->where('event_id', (int) $event->id)
+                ->where('trainer_id', (int) $trainerId)
+                ->latest('id')
+                ->first();
+        }
+
+        if ($fixedSpeaker && (float) $fixedSpeaker->salary > 0) {
+            $salary = round((float) $fixedSpeaker->salary, 2);
+            return [
+                'scheme_percent' => $assignment?->getSchemePercentage() ?? 0,
+                'event_price' => (float) ($event->price ?? 0),
+                'active_participants_count' => $activeParticipants,
+                'fee_trainer' => $salary,   // show fixed salary for UI consistency
+                'estimated_fee' => $salary,         // fixed payout (not multiplied by participants)
+                'is_fallback_to_event_price' => false,
+            ];
+        }
+
+        // Fallback: existing per-participant / scheme logic
         $schemePercent = (int) ($assignment?->getSchemePercentage() ?? 0);
         $isFallbackToEventPrice = false;
 
         if ($schemePercent <= 0 && $trainerId > 0) {
-            $acceptedNotification = TrainerNotification::query()
-                ->where('trainer_id', $trainerId)
-                ->where('type', 'event_invitation')
-                ->where(function ($query) use ($event) {
-                    $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
-                })
-                ->orderByDesc('id')
-                ->first();
+            $acceptedNotification = $this->latestEventInvitation((int) $event->id, $trainerId);
 
             $notificationScheme = (int) data_get($acceptedNotification?->data ?? [], 'scheme_type', 0);
             $notificationStatus = (string) data_get($acceptedNotification?->data ?? [], 'invitation_status', (string) ($acceptedNotification?->invitation_status ?? ''));
@@ -88,13 +104,13 @@ class TrainerController extends Controller
         $eventPrice = (float) ($event->price ?? 0);
 
         if ($schemePercent <= 0 && $eventPrice > 0) {
-            // Fallback for legacy/main-trainer events that do not have assignment scheme yet.
             $isFallbackToEventPrice = true;
         }
 
         $feePerParticipant = ($eventPrice > 0 && $schemePercent > 0)
             ? round(($eventPrice * $schemePercent) / 100, 2)
             : ($isFallbackToEventPrice ? round($eventPrice, 2) : 0);
+
         $estimatedFee = ($activeParticipants > 0 && $feePerParticipant > 0)
             ? round($activeParticipants * $feePerParticipant, 2)
             : 0;
@@ -103,7 +119,7 @@ class TrainerController extends Controller
             'scheme_percent' => $schemePercent,
             'event_price' => $eventPrice,
             'active_participants_count' => $activeParticipants,
-            'fee_per_participant' => $feePerParticipant,
+            'fee_trainer' => $feePerParticipant,
             'estimated_fee' => $estimatedFee,
             'is_fallback_to_event_price' => $isFallbackToEventPrice,
         ];
@@ -630,7 +646,7 @@ class TrainerController extends Controller
                     'scheme_percent' => $schemePercent,
                     'event_price' => $eventPrice,
                     'active_participants_count' => $activeParticipants,
-                    'fee_per_participant' => $feePerParticipant,
+                    'fee_trainer' => $feePerParticipant,
                     'estimated_fee' => $estimatedFee,
                     'deadline' => $assignment->sla_upload_deadline,
                     'remaining_hours' => $assignment->getRemainingHours(),
@@ -922,11 +938,11 @@ class TrainerController extends Controller
 
         // Include events where trainer is assigned via trainer_id OR speaker name match
         $query = \App\Models\Event::where(function ($q) use ($user, $trainerName) {
-                $q->where('trainer_id', $user->id);
-                if ($trainerName !== '') {
-                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
-                }
-            })
+            $q->where('trainer_id', $user->id);
+            if ($trainerName !== '') {
+                $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+            }
+        })
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
@@ -945,8 +961,10 @@ class TrainerController extends Controller
             ->get()
             ->filter(function ($event) use ($user, $trainerName) {
                 // Exact name match for speaker field to avoid partial false positives
-                if ((int) ($event->trainer_id ?? 0) === (int) $user->id) return true;
-                if ($trainerName === '') return false;
+                if ((int) ($event->trainer_id ?? 0) === (int) $user->id)
+                    return true;
+                if ($trainerName === '')
+                    return false;
                 $names = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
                 return in_array(mb_strtolower($trainerName), $names, true);
             })
@@ -1096,6 +1114,24 @@ class TrainerController extends Controller
                 $myMaterialStatus = 'pending_review';
             } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
                 $myMaterialStatus = 'rejected';
+            }
+        }
+
+        if ($myMaterialStatus === 'not_uploaded') {
+            if (!empty($event->module_path) || ($event->material_status ?? '') === 'pending_review') {
+                $myMaterialStatus = 'pending_review';
+            }
+
+            //Jika material co-trainer ada
+            $assignment = $this->latestEventAssignment((int) $event->id, (int) $trainerId);
+            if ($myMaterialStatus === 'not_uploaded' && $assignment) {
+                if (($assignment->material_status ?? '') === 'approved') {
+                    $myMaterialStatus = 'approved';
+                } elseif (($assignment->material_status ?? '') === 'pending_review') {
+                    $myMaterialStatus = 'pending_review';
+                } elseif (($assignment->material_status ?? '') === 'rejected') {
+                    $myMaterialStatus = 'rejected';
+                }
             }
         }
 
@@ -1525,7 +1561,7 @@ class TrainerController extends Controller
         $trainerId = Auth::id();
 
         $baseQuery = \App\Models\ManualPayment::query()
-            ->with(['user:id,name', 'event:id,title,trainer_id', 'course:id,name,trainer_id'])
+            ->with(['user:id,name', 'event:id,title,trainer_id,price', 'course:id,name,trainer_id,price'])
             ->where('status', 'settled')
             ->where(function ($query) use ($trainerId) {
                 $query->whereHas('course', function ($courseQuery) use ($trainerId) {
@@ -1540,7 +1576,46 @@ class TrainerController extends Controller
             ->latest('created_at')
             ->paginate(10);
 
-        return view('trainer.finance', compact('totalEarned', 'payments'));
+        // Events: use resolveEventCompensation to compute fee_trainer & estimated_fee
+        $events = \App\Models\Event::query()
+            ->where('trainer_id', $trainerId)
+            ->withCount([
+                'registrations as active_participants_count' => function ($q) {
+                    $q->where('status', 'active');
+                }
+            ])
+            ->get()
+            ->map(function ($e) use ($trainerId) {
+                $comp = $this->resolveEventCompensation($e, $trainerId);
+                return array_merge(['event' => $e], $comp);
+            });
+
+        // Courses: calculate estimated revenue based on trainer_revenue_percent and active enrollments
+        $courses = \App\Models\Course::query()
+            ->where('trainer_id', $trainerId)
+            ->withCount([
+                'enrollments as active_students_count' => function ($q) {
+                    $q->where('status', 'active');
+                }
+            ])
+            ->get()
+            ->map(function ($c) {
+                $active = (int) ($c->active_students_count ?? 0);
+                $percent = (int) ($c->trainer_revenue_percent ?? 0);
+                $estimated = ($active > 0 && $c->price > 0 && $percent > 0)
+                    ? round(($active * $c->price * $percent) / 100, 2)
+                    : 0;
+                return [
+                    'course' => $c,
+                    'scheme_percent' => $percent,
+                    'active_students' => $active,
+                    'estimated_revenue' => $estimated,
+                ];
+            });
+
+        $estimatedTotal = $events->sum('estimated_fee') + collect($courses)->sum('estimated_revenue');
+
+        return view('trainer.finance', compact('totalEarned', 'payments', 'events', 'courses', 'estimatedTotal'));
     }
 
     public function show()

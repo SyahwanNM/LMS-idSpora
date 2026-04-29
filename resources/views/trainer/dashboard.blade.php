@@ -949,7 +949,7 @@
               };
               $schemePercent = (int) ($assignmentRow['scheme_percent'] ?? 0);
               $activeParticipantsCount = (int) ($assignmentRow['active_participants_count'] ?? 0);
-              $feePerParticipant = (float) ($assignmentRow['fee_per_participant'] ?? 0);
+              
               $estimatedFee = (float) ($assignmentRow['estimated_fee'] ?? 0);
               $assignmentIcon = match ($schemePercent) {
                 35 => 'bi-journal-text',
@@ -968,7 +968,7 @@
                     {{ $eventDate }} • {{ $assignmentRow['scheme_label'] }}
                   </p>
                   <p class="assignment-meta">
-                    Fee/Peserta Rp {{ number_format($feePerParticipant, 0, ',', '.') }}
+                    
                     • Peserta Aktif {{ number_format($activeParticipantsCount) }}
                     • Estimasi Rp {{ number_format($estimatedFee, 0, ',', '.') }}
                   </p>

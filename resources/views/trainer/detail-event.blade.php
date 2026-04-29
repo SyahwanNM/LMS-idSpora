@@ -128,13 +128,10 @@
               </div>
               <div class="info-card-content">
                 <span class="info-card-label">FEE TRAINER</span>
-                @if((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
+                @if((float) ($eventCompensation['fee_trainer'] ?? 0) > 0)
                   <span class="info-card-value">
-                    Rp {{ number_format((float) ($eventCompensation['fee_per_participant'] ?? 0), 0, ',', '.') }}/peserta
+                    Rp {{ number_format((float) ($eventCompensation['fee_trainer'] ?? 0), 0, ',', '.') }}/peserta
                   </span>
-                  @if((bool) ($eventCompensation['is_fallback_to_event_price'] ?? false))
-                    <span class="info-card-label">Sumber: harga event (skema belum dipilih)</span>
-                  @endif
                 @else
                   <span class="info-card-value">Belum diatur admin</span>
                 @endif
@@ -252,20 +249,6 @@
             @endphp
             <div class="vsa-context-body">
               {!! $eventDescription !== '' ? $eventDescription : '<p>Deskripsi event belum tersedia.</p>' !!}
-            </div>
-          </div>
-        </div>
-
-        <p class="vsa-title" id="e-agreement">E-Agreement Penugasan</p>
-        <div class="detail-box detail-box-context">
-          <div class="vsa-context">
-            @php
-              $agreementHtml = trim((string) ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')));
-            @endphp
-            <div class="vsa-context-body">
-              {!! $agreementHtml !== ''
-    ? $agreementHtml
-    : '<p>Dokumen E-Agreement belum tersedia. Silakan hubungi admin untuk melengkapi terms event ini.</p>' !!}
             </div>
           </div>
         </div>
