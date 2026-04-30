@@ -280,16 +280,10 @@ class MaterialApprovalController extends Controller
                   ->orWhereHas('modules', fn($mq) => $mq->where('review_status', 'pending_review')->whereNotNull('content_url')->where('content_url', '!=', ''));
             })->count()
             + \App\Models\EventTrainerModule::where('status', 'pending_review')->count();
-        $totalApproved = Course::where('status', 'approved')->count()
-            + TrainerAssignment::query()
-                ->whereNotNull('material_path')
-                ->where('material_status', 'approved')
-                ->count();
+        $totalApproved = Course::whereIn('status', ['approved', 'active'])->count()
+            + \App\Models\EventTrainerModule::where('status', 'approved')->count();
         $totalRejected = Course::where('status', 'rejected')->count()
-            + TrainerAssignment::query()
-                ->whereNotNull('material_path')
-                ->where('material_status', 'rejected')
-                ->count();
+            + \App\Models\EventTrainerModule::where('status', 'rejected')->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 
@@ -315,12 +309,59 @@ class MaterialApprovalController extends Controller
             'category',
             'modules.quizQuestions',
             'modules.quizQuestions.answers',
-            'reviews'
+            'reviews',
+            'units'
         ]);
 
         $structureCompleteness = $this->assessStructureCompleteness($material);
 
-        return view('admin.material.show', compact('material', 'structureCompleteness'));
+        $allModules = $material->modules->sortBy('order_no');
+        $unitTitles = $material->units->pluck('title', 'unit_no');
+
+        // Grouping logic (consistent with studio: chunk by 3)
+        $chunks = $allModules->chunk(3)->values();
+        $unitSummaries = [];
+
+        foreach ($chunks as $index => $unitModules) {
+            $unitNo = $index + 1;
+            
+            // A module is considered "uploaded/active" if it has a file, description, or is a quiz with questions.
+            $uploadedInUnit = $unitModules->filter(fn($m) => 
+                !empty($m->content_url) || 
+                !empty($m->description) || 
+                ($m->isQuiz() && $m->quizQuestions->count() > 0)
+            );
+
+            $anyPending = $uploadedInUnit->contains('review_status', 'pending_review');
+            $anyRejected = $uploadedInUnit->contains('review_status', 'rejected');
+            $allApproved = $uploadedInUnit->isNotEmpty() && $uploadedInUnit->every('review_status', 'approved');
+
+            $unitSummaries[] = [
+                'unit_no' => $unitNo,
+                'unit_label' => "Bab $unitNo" . (isset($unitTitles[$unitNo]) ? ": " . $unitTitles[$unitNo] : ""),
+                'total' => $unitModules->count(),
+                'uploaded' => $uploadedInUnit->count(),
+                'any_pending' => $anyPending,
+                'any_rejected' => $anyRejected,
+                'all_approved' => $allApproved,
+                'modules' => $unitModules
+            ];
+        }
+
+        $uploadedModules = $allModules->filter(fn($m) => 
+            !empty($m->content_url) || 
+            !empty($m->description) || 
+            ($m->isQuiz() && $m->quizQuestions->count() > 0)
+        );
+        $uploadedModulesCount = $uploadedModules->count();
+
+        return view('admin.material.show', compact(
+            'material', 
+            'structureCompleteness', 
+            'unitSummaries', 
+            'uploadedModulesCount', 
+            'uploadedModules'
+        ));
     }
 
     /**
@@ -351,9 +392,12 @@ class MaterialApprovalController extends Controller
             ->where('review_status', '!=', 'approved')
             ->doesntExist();
 
-        $completeness = $this->assessStructureCompleteness($material);
+        // Auto-approve course if all present modules are approved
+        $hasAnyApproved = CourseModule::where('course_id', $material->id)
+            ->where('review_status', 'approved')
+            ->exists();
 
-        if ($allModulesApproved && $completeness['is_complete'] && $material->status === 'pending_review') {
+        if ($allModulesApproved && $hasAnyApproved && $material->status === 'pending_review') {
             $material->update([
                 'status' => 'approved',
                 'approved_at' => now(),
@@ -442,9 +486,12 @@ class MaterialApprovalController extends Controller
             ->where('review_status', '!=', 'approved')
             ->doesntExist();
 
-        $completeness = $this->assessStructureCompleteness($material);
+        // Auto-approve course if all present modules are approved
+        $hasAnyApproved = CourseModule::where('course_id', $material->id)
+            ->where('review_status', 'approved')
+            ->exists();
 
-        if ($allModulesApproved && $completeness['is_complete'] && $material->status === 'pending_review') {
+        if ($allModulesApproved && $hasAnyApproved && $material->status === 'pending_review') {
             $material->update([
                 'status' => 'approved',
                 'approved_at' => now(),
@@ -736,7 +783,7 @@ class MaterialApprovalController extends Controller
     public function approved(Request $request)
     {
         $query = Course::with(['trainer', 'category'])
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'active'])
             ->withCount('modules');
 
         $approvedEventModulesQuery = \App\Models\EventTrainerModule::query()
@@ -792,11 +839,10 @@ class MaterialApprovalController extends Controller
             }
         }
 
-        $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
+        $approvedMaterials = $query->orderByRaw('CASE WHEN approved_at IS NULL THEN created_at ELSE approved_at END DESC')->paginate(15);
 
         $approvedEventModules = $approvedEventModulesQuery
-            ->orderByDesc('reviewed_at')
-            ->orderByDesc('created_at')
+            ->orderByRaw('CASE WHEN reviewed_at IS NULL THEN created_at ELSE reviewed_at END DESC')
             ->get();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
@@ -813,10 +859,11 @@ class MaterialApprovalController extends Controller
             ->where('status', 'rejected')
             ->withCount('modules');
 
-        $rejectedEventModulesQuery = Event::query()
-            ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_path')
-            ->where('material_status', 'rejected');
+        $rejectedEventModulesQuery = \App\Models\EventTrainerModule::query()
+            ->with(['trainer:id,name,email,avatar', 'event'])
+            ->whereHas('event')
+            ->whereHas('trainer')
+            ->where('status', 'rejected');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -828,7 +875,10 @@ class MaterialApprovalController extends Controller
             });
 
             $rejectedEventModulesQuery->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
+                $q->where('original_name', 'like', "%{$search}%")
+                    ->orWhereHas('event', function ($q) use ($search) {
+                        $q->where('title', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('trainer', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     });

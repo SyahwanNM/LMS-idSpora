@@ -7,17 +7,20 @@
     <div class="cert-inner">
         <div class="inner-border"></div>
         <div class="header">
-            <div class="logo-row">
-                <div class="logo-container">
-                    @php $mainLogoPath = public_path('aset/logo-idspora.png'); @endphp
-                    @if(file_exists($mainLogoPath))
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
-                    @endif
-                    @foreach(array_slice($logosBase64, 0, 3) as $logo)
-                        <img src="{{ $logo }}" class="logo-item">
-                    @endforeach
-                </div>
-            </div>
+                    <div class="logo-row">
+                        <div class="logo-container">
+                            @php 
+                                $logoFileName = ($template == 'template_3') ? 'logo-idspora.png' : 'logo idspora_dark.png';
+                                $mainLogoPath = public_path('aset/' . $logoFileName); 
+                            @endphp
+                            @if(file_exists($mainLogoPath))
+                                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
+                            @endif
+                            @foreach(array_slice($logosBase64, 0, 3) as $logo)
+                                <img src="{{ $logo }}" class="logo-item">
+                            @endforeach
+                        </div>
+                    </div>
             <h1>Certificate</h1>
             <p style="color:#fbbf24;font-weight:bold;letter-spacing:4px;font-size:12pt;margin:3px 0;text-transform:uppercase;">of Achievement</p>
             <div style="width:140px;height:2px;background:#fbbf24;margin:10px auto;"></div>
@@ -62,7 +65,10 @@
         <div class="content-wrap">
             <div class="logo-row" style="text-align:left;margin-bottom:10px;">
                 <div class="logo-container">
-                    @php $mainLogoPath = public_path('aset/logo-idspora.png'); @endphp
+                    @php 
+                        $logoFileName = ($template == 'template_3') ? 'logo-idspora.png' : 'logo idspora_dark.png';
+                        $mainLogoPath = public_path('aset/' . $logoFileName); 
+                    @endphp
                     @if(file_exists($mainLogoPath))
                         <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
                     @endif
@@ -108,7 +114,10 @@
     @else{{-- template_3 --}}
         <div class="header-bg">
             <div style="float:right;">
-                @php $mainLogoPath = public_path('aset/logo-idspora.png'); @endphp
+                @php 
+                    $logoFileName = ($template == 'template_3') ? 'logo-idspora.png' : 'logo idspora_dark.png';
+                    $mainLogoPath = public_path('aset/' . $logoFileName); 
+                @endphp
                 @if(file_exists($mainLogoPath))
                     <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item" style="filter:brightness(0) invert(1);">
                 @endif

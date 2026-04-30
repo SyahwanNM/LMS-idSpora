@@ -23,7 +23,7 @@ use Illuminate\Support\Str;
 class TrainerController extends Controller
 {
     public const AUTO_TEMPLATE_UNITS_BY_LEVEL = [
-        'beginner'     => 4,
+        'beginner'     => 3,
         'intermediate' => 6,
         'advanced'     => 8,
         'standard'     => 3,
@@ -1804,26 +1804,20 @@ class TrainerController extends Controller
 
     public function uploadCourseMaterials(Request $request, $id)
     {
-        $request->validate([
-            'target_modules' => 'required|string', // Kumpulan ID modul di Bab ini
-            'replace_module_id' => 'nullable|integer',
-            'description' => 'nullable|string|max:2000',
-            'descriptions' => 'nullable|array',
-            'descriptions.*' => 'nullable|string|max:2000',
-            'files' => 'required|array',
-            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
-        ]);
-
         try {
             $request->validate([
                 'target_modules' => 'required|string',
                 'replace_module_id' => 'nullable|integer',
                 'module_content_html' => 'nullable|string|max:300000',
+                'description' => 'nullable|string|max:2000',
+                'descriptions' => 'nullable|array',
+                'descriptions.*' => 'nullable|string|max:2000',
                 'files' => 'required_without:module_content_html|array',
                 'files.*' => [
-                    'required',
+                    'nullable',
                     function ($attribute, $value, $fail) {
-                        if (!$value || !($value instanceof \Illuminate\Http\UploadedFile)) {
+                        if (!$value) return;
+                        if (!($value instanceof \Illuminate\Http\UploadedFile)) {
                             $fail('File tidak valid.');
                             return;
                         }
@@ -1843,9 +1837,9 @@ class TrainerController extends Controller
                         }
                         // Validate by extension only (avoid mimes which requires fileinfo)
                         $ext = strtolower($value->getClientOriginalExtension());
-                        $allowed = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc', 'jpg', 'png', 'jpeg'];
+                        $allowed = ['mp4'];
                         if (!in_array($ext, $allowed)) {
-                            $fail("Format .$ext tidak diizinkan. Format yang diizinkan: " . implode(', ', $allowed));
+                            $fail("Format .$ext tidak didukung untuk upload langsung. Gunakan 'Editor Materi' di tab MODUL untuk menyusun materi teks, atau upload Video (MP4) di tab VIDEO.");
                             return;
                         }
                         // 512MB size limit
@@ -1888,7 +1882,24 @@ class TrainerController extends Controller
         $adaptedSlotCount = 0;
         $rejectedFiles = [];
         $updatedModules = [];
+        $availableTypes = [];
 
+        // Pre-fetch modules for slot availability check
+        $modulesByType = \App\Models\CourseModule::where('course_id', $id)
+            ->whereIn('id', $targetIds)
+            ->get()
+            ->groupBy('type')
+            ->map(fn($group) => $group->values());
+
+        foreach ($modulesByType as $slotType => $slotModules) {
+            if (in_array($slotType, ['pdf', 'video'])) {
+                $count = $slotModules->count();
+                $filled = $slotModules->filter(fn($m) => !empty($m->content_url))->count();
+                $availableTypes[$slotType] = ['count' => $count, 'filled' => $filled];
+            }
+        }
+
+        // --- PHASE 1: Handle Files ---
         if ($request->hasFile('files')) {
             $replaceModuleId = $request->input('replace_module_id');
             $descriptions = $request->input('descriptions', []);
@@ -1944,22 +1955,6 @@ class TrainerController extends Controller
                 ]);
             }
 
-            $modulesByType = \App\Models\CourseModule::where('course_id', $id)
-                ->whereIn('id', $targetIds)
-                ->get()
-                ->groupBy('type')
-                ->map(fn($group) => $group->values());
-
-            // Track available types untuk pesan error yang lebih informatif
-            $availableTypes = [];
-            foreach ($modulesByType as $slotType => $slotModules) {
-                if (in_array($slotType, ['pdf', 'video'])) {
-                    $availableTypes[$slotType] = [
-                        'count' => $slotModules->count(),
-                        'filled' => $slotModules->filter(fn($m) => !empty($m->content_url))->count(),
-                    ];
-                }
-            }
 
             $slotStateByType = [];
             foreach ($modulesByType as $slotType => $slotModules) {
@@ -2055,12 +2050,57 @@ class TrainerController extends Controller
                     $rejectedFiles[] = $file->getClientOriginalName() . $suffix;
                 }
             }
+        }
 
-            if ($uploadedCount > 0) {
-                $course->update(['status' => 'pending_review']);
+        // --- PHASE 2: Handle Editor Content ---
+        if ($request->filled('module_content_html')) {
+            $contentHtml = (string) $request->input('module_content_html');
+            $replaceModuleId = $request->input('replace_module_id');
+
+            // Find target module
+            $module = null;
+            if (!empty($replaceModuleId)) {
+                $module = \App\Models\CourseModule::where('course_id', $id)
+                    ->where('id', (int) $replaceModuleId)
+                    ->first();
+            } else {
+                // Pick first available PDF slot in targetIds
+                $module = \App\Models\CourseModule::where('course_id', $id)
+                    ->whereIn('id', $targetIds)
+                    ->where('type', 'pdf')
+                    ->where(fn($q) => $q->whereNull('content_url')->orWhere('content_url', ''))
+                    ->orderBy('order_no')
+                    ->first();
+
+                // If no empty slots, pick the first PDF slot in targetIds
+                if (!$module) {
+                    $module = \App\Models\CourseModule::where('course_id', $id)
+                        ->whereIn('id', $targetIds)
+                        ->where('type', 'pdf')
+                        ->orderBy('order_no')
+                        ->first();
+                }
             }
 
-            // Build helpful error message
+            if ($module) {
+                $module->update([
+                    'description' => $contentHtml,
+                    'review_status' => 'pending_review'
+                ]);
+                $module->refresh();
+                $updatedModules[] = $this->mapStudioMaterialModule((int) $id, $module);
+                $uploadedCount++;
+                $msg = "Materi berhasil disubmit melalui editor.";
+            }
+        }
+
+        // --- PHASE 3: Response ---
+        if ($uploadedCount > 0) {
+            $course->update(['status' => 'pending_review']);
+        }
+
+        // Build helpful message
+        if (!isset($msg)) {
             $msg = "$uploadedCount file berhasil diunggah.";
             if ($autoReplacedCount > 0) {
                 $msg .= " {$autoReplacedCount} file otomatis mengganti file lama pada slot yang sama.";
@@ -2068,40 +2108,36 @@ class TrainerController extends Controller
             if ($adaptedSlotCount > 0) {
                 $msg .= " {$adaptedSlotCount} file ditempatkan ke slot materi kompatibel untuk menyesuaikan struktur course lama.";
             }
-            if (count($rejectedFiles) > 0) {
-                $msg .= " File (" . implode(", ", $rejectedFiles) . ") ditolak.";
-
-                // Add info about available types
-                if (!empty($availableTypes)) {
-                    $typeInfo = [];
-                    foreach ($availableTypes as $type => $info) {
-                        $typeInfo[] = strtoupper($type) . " ({$info['filled']}/{$info['count']} terisi)";
-                    }
-                    $msg .= " Slot tersedia di bab ini: " . implode(", ", $typeInfo) . ".";
-                } else {
-                    $msg .= " Tidak ada slot File/Video di bab ini - periksa modul yang tersedia.";
-                }
-            }
-
-            if ($uploadedCount === 0) {
-                return response()->json([
-                    'success' => false,
-                    'error' => $msg,
-                    'updated_modules' => [],
-                    'available_types' => $availableTypes,
-                    'rejected_files' => $rejectedFiles,
-                ], 422);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => $msg,
-                'updated_modules' => $updatedModules,
-                'rejected_files' => $rejectedFiles,
-                'available_types' => $availableTypes,
-            ]);
         }
-        return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
+
+        if (count($rejectedFiles) > 0) {
+            $msg .= " File (" . implode(", ", $rejectedFiles) . ") ditolak.";
+            if (!empty($availableTypes)) {
+                $typeInfo = [];
+                foreach ($availableTypes as $type => $info) {
+                    $typeInfo[] = strtoupper($type) . " ({$info['filled']}/{$info['count']} terisi)";
+                }
+                $msg .= " Slot tersedia di bab ini: " . implode(", ", $typeInfo) . ".";
+            }
+        }
+
+        if ($uploadedCount === 0) {
+            return response()->json([
+                'success' => false,
+                'error' => $msg ?? 'Tidak ada file atau konten editor yang disubmit.',
+                'updated_modules' => [],
+                'available_types' => $availableTypes,
+                'rejected_files' => $rejectedFiles,
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $msg,
+            'updated_modules' => $updatedModules,
+            'rejected_files' => $rejectedFiles,
+            'available_types' => $availableTypes,
+        ]);
     }
 
     public function uploadEventMaterials(Request $request, $id)

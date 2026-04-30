@@ -1259,18 +1259,6 @@
                                 <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk menyisipkan gambar
                                     di dalam teks, atau tombol <strong>Code Block</strong> untuk potongan kode.</p>
 
-                                <div class="mt-4 pt-3 border-top">
-                                    <p class="text-editor-label mb-2">ATAU Lampirkan File Modul (PDF/PPT)</p>
-                                    <div class="dropzone py-3" id="pdfDropzone" 
-                                        onclick="document.getElementById('pdfFileInput').click()"
-                                        style="min-height: 120px; border: 2px dashed #cdd8e8; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; {{ $courseMaterialLocked ? 'pointer-events:none; opacity:.72;' : '' }}">
-                                        <input type="file" id="pdfFileInput" accept=".pdf,.ppt,.pptx,.doc,.docx" name="files[]" style="display: none" {{ $courseMaterialLocked ? 'disabled' : '' }} />
-                                        <i class="bi bi-file-earmark-pdf text-muted" style="font-size: 2rem;"></i>
-                                        <p class="mb-0 mt-2" style="font-size: 14px; font-weight: 600; color: #64748b;">Klik untuk pilih file dokumen</p>
-                                        <p style="font-size: 11px; color: #94a3b8;">Format: PDF, PPT, DOC</p>
-                                    </div>
-                                    <div id="pdfFileNameDisplay" class="mt-2 text-primary fw-bold small" style="display:none; padding: 8px 12px; background: #eff6ff; border-radius: 8px;"></div>
-                                </div>
                             </div>
                         </div>
 
@@ -1625,7 +1613,7 @@
                             Baru</p>
                         <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">atau drag & drop</p>
                         <input type="file" id="replacementFileInput" style="display: none;"
-                            accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" />
+                            accept=".mp4" />
                     </div>
                 </div>
 
@@ -2315,21 +2303,7 @@
                     return;
                 }
 
-                // PDF File Upload handling
-                const pdfFileInput = document.getElementById('pdfFileInput');
-                const pdfFileNameDisplay = document.getElementById('pdfFileNameDisplay');
 
-                if (pdfFileInput) {
-                    pdfFileInput.addEventListener('change', function() {
-                        if (this.files && this.files.length > 0) {
-                            const file = this.files[0];
-                            pdfFileNameDisplay.textContent = 'File terpilih: ' + file.name;
-                            pdfFileNameDisplay.style.display = 'block';
-                        } else {
-                            pdfFileNameDisplay.style.display = 'none';
-                        }
-                    });
-                }
 
                 const previewBtn = event.target.closest('.preview-material-btn');
                 if (previewBtn) {
@@ -2715,7 +2689,13 @@
                 }
 
                 syncEditorContentToInput();
-                const hasEditorContent = !!(moduleContentInput && moduleContentInput.value.trim() !== '');
+                const editorContent = moduleContentInput ? moduleContentInput.value.trim() : '';
+                const isDefaultContent = editorContent === '<p>Tulis pengantar materi di sini...</p>' || editorContent === '';
+                const hasEditorContent = !isDefaultContent;
+
+                const pdfFiles = document.getElementById('pdfFileInput')?.files;
+                const hasPdfFile = pdfFiles && pdfFiles.length > 0;
+
                 if (!hasEditorContent) {
                     return showNotificationModal('Perhatian', 'Silakan isi materi di editor terlebih dahulu.', 'error');
                 }

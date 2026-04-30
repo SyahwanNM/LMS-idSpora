@@ -17,151 +17,199 @@
         }
 
         .main-container {
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
-            padding: 2rem 1.5rem;
+            padding: 2.5rem 1.25rem;
         }
 
-        /* Step Indicator Styles */
-        .step-container {
+        /* Card Base */
+        .feedback-card {
             background: white;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1.25rem 2rem;
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+
+        /* Step Indicator */
+        .step-wrapper {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 1.5rem;
-            margin-bottom: 3rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .step-item {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 1.1rem;
             color: #1e293b;
         }
 
-        .step-circle {
-            width: 32px;
-            height: 32px;
+        .step-item.inactive {
+            color: #94a3b8;
+        }
+
+        .step-num {
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f1f5f9;
+            background: #e2e8f0;
             color: #64748b;
-            font-size: 0.875rem;
-            transition: all 0.3s ease;
+            font-size: 1.15rem;
+            font-weight: 800;
         }
 
-        .step-item.active .step-circle {
+        .step-item.active .step-num {
             background: #fbbf24;
             color: #000;
         }
 
         .step-line {
             width: 80px;
-            height: 1px;
+            height: 2px;
             background: #e2e8f0;
         }
 
-        /* Rating Card Styles */
-        .rating-card {
-            background: white;
-            border-radius: 24px;
-            padding: 3rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            border: 1px solid #f1f5f9;
+        /* Rating Row */
+        .rating-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid #f1f5f9;
         }
 
-        .star-box {
+        .rating-row:last-child {
+            border-bottom: none;
+        }
+
+        .rating-question {
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #1e293b;
+            flex: 1;
+        }
+
+        .stars-container {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .star-group {
             display: flex;
             gap: 0.75rem;
-            font-size: 2.75rem;
-            color: #e2e8f0;
-            justify-content: center;
+            font-size: 2rem;
+            color: #cbd5e1;
         }
 
-        .star-box i {
+        .star-group i {
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
 
-        .star-box i:hover {
-            transform: scale(1.15);
+        .star-group i:hover {
+            transform: scale(1.1);
         }
 
-        .star-box i.active {
+        .star-group i.active {
             color: #fbbf24;
         }
 
-        .textarea-box {
-            background: #fcfcfc;
-            border: 1.5px solid #eef2f6;
-            border-radius: 16px;
-            padding: 1.25rem;
+        .check-status {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .check-status.active {
+            color: #000;
+            opacity: 1;
+        }
+
+        /* Textarea */
+        .feedback-textarea {
             width: 100%;
-            min-height: 140px;
-            font-family: inherit;
+            min-height: 180px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+            font-size: 1rem;
+            color: #1e293b;
             resize: none;
             outline: none;
             transition: all 0.2s;
-            font-size: 1rem;
+            margin-top: 1rem;
+            background-color: #ffffff;
         }
 
-        .textarea-box:focus {
+        .feedback-textarea:focus {
             border-color: #fbbf24;
-            background: white;
             box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.1);
+            background-color: #fff;
+        }
+
+        .feedback-textarea::placeholder {
+            color: #94a3b8;
+            font-weight: 500;
         }
 
         .submit-btn {
-            background: #fbbf24;
-            color: #000;
-            padding: 1.25rem 2.5rem;
+            background: #1e293b;
+            color: white;
+            padding: 1.25rem 4rem;
             border-radius: 50px;
             font-weight: 800;
-            border: none;
+            font-size: 1.1rem;
             transition: all 0.3s;
-            width: 100%;
-            font-size: 1.125rem;
-            box-shadow: 0 10px 15px -3px rgba(251, 191, 36, 0.2);
-            margin-top: 1rem;
+            margin-top: 2rem;
+            box-shadow: 0 10px 20px rgba(30, 41, 59, 0.15);
+            border: none;
         }
 
-        .submit-btn:hover {
-            background: #f59e0b;
+        .submit-btn:hover:not(:disabled) {
+            background: #0f172a;
             transform: translateY(-2px);
-            box-shadow: 0 12px 20px -3px rgba(251, 191, 36, 0.3);
+            box-shadow: 0 15px 25px rgba(30, 41, 59, 0.2);
         }
 
         .submit-btn:disabled {
-            background: #f1f5f9;
-            color: #94a3b8;
-            box-shadow: none;
-            transform: none;
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        .rating-section {
-            background: #fafafa;
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            border: 1px solid #f1f5f9;
-        }
-
-        .section-label {
-            display: block;
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #1a1b1e;
-            margin-bottom: 1.5rem;
-            text-align: center;
+        @media (max-width: 768px) {
+            .rating-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .stars-container {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .step-wrapper {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .step-line {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -169,76 +217,83 @@
     @include("partials.navbar-after-login")
 
     <div class="main-container">
-        <!-- Step Indicator -->
-        <div class="step-container">
-            <div class="step-item active">
-                <span class="step-circle">1</span>
-                Beri Penilaian Kelas
-            </div>
-            <div class="step-line"></div>
-            <div class="step-item">
-                <span class="step-circle">2</span>
-                Cetak Sertifikat
+        <!-- Step Indicator Card -->
+        <div class="feedback-card">
+            <div class="step-wrapper">
+                <div class="step-item active">
+                    <span class="step-num">1</span>
+                    <span>Beri Penilaian Kelas</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-item inactive">
+                    <span class="step-num">2</span>
+                    <span>Cetak Sertifikat</span>
+                </div>
             </div>
         </div>
 
-        <div class="rating-card">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-black text-slate-900 mb-3">Bagaimana pengalaman belajar Anda?</h2>
-                <p class="text-slate-500 font-medium">Penilaian Anda membantu kami terus berkembang.</p>
+        <form action="{{ route('course.rating.store', $course->id) }}" method="POST" id="ratingForm">
+            @csrf
+            <input type="hidden" name="rating" id="course_rating_input" required>
+            <input type="hidden" name="trainer_rating" id="trainer_rating_input" required>
+
+            <!-- Rating Card -->
+            <div class="feedback-card">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-extrabold text-slate-900">Berikan penilaian Anda</h2>
+                    <p class="text-base text-slate-500 font-semibold mt-1">Sebelum cetak sertifikat, berikan penilaian terlebih dahulu</p>
+                </div>
+
+                <div class="space-y-2">
+                    <!-- Course Rating -->
+                    <div class="rating-row">
+                        <div class="rating-question">Bagaimana kurikulum dan proses belajar di kelas ini?</div>
+                        <div class="stars-container">
+                            <div id="course_stars" class="star-group">
+                                <i class="bi bi-star" data-value="1"></i>
+                                <i class="bi bi-star" data-value="2"></i>
+                                <i class="bi bi-star" data-value="3"></i>
+                                <i class="bi bi-star" data-value="4"></i>
+                                <i class="bi bi-star" data-value="5"></i>
+                            </div>
+                            <div id="course_check" class="check-status">
+                                <i class="bi bi-check-lg" style="font-size: 2rem; -webkit-text-stroke: 1.5px;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trainer Rating -->
+                    <div class="rating-row">
+                        <div class="rating-question">Bagaimana Trainer Mengajar dalam proses belajar di kelas ini?</div>
+                        <div class="stars-container">
+                            <div id="trainer_stars" class="star-group">
+                                <i class="bi bi-star" data-value="1"></i>
+                                <i class="bi bi-star" data-value="2"></i>
+                                <i class="bi bi-star" data-value="3"></i>
+                                <i class="bi bi-star" data-value="4"></i>
+                                <i class="bi bi-star" data-value="5"></i>
+                            </div>
+                            <div id="trainer_check" class="check-status">
+                                <i class="bi bi-check-lg" style="font-size: 2rem; -webkit-text-stroke: 1.5px;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <form action="{{ route('course.rating.store', $course->id) }}" method="POST" id="ratingForm">
-                @csrf
-                <input type="hidden" name="rating" id="course_rating_input" required>
-                <input type="hidden" name="trainer_rating" id="trainer_rating_input" required>
+            <!-- Feedback Card -->
+            <div class="feedback-card">
+                <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Feedback</h2>
+                <textarea name="comment" class="feedback-textarea" 
+                    placeholder="Ceritakan pengalaman mengesankan Anda selama mempelajari kelas ini. Beri tahu siswa lain mengenai kualitas materi yang diajarkan"></textarea>
+            </div>
 
-                <!-- Course Rating -->
-                <div class="rating-section">
-                    <label class="section-label">
-                        Kualitas Materi & Kurikulum
-                    </label>
-                    <div id="course_stars" class="star-box">
-                        <i class="bi bi-star" data-value="1"></i>
-                        <i class="bi bi-star" data-value="2"></i>
-                        <i class="bi bi-star" data-value="3"></i>
-                        <i class="bi bi-star" data-value="4"></i>
-                        <i class="bi bi-star" data-value="5"></i>
-                    </div>
-                    <p id="course_rating_text" class="text-center text-sm font-bold text-slate-400 mt-4 h-5">Pilih rating</p>
-                </div>
-
-                <!-- Trainer Rating -->
-                <div class="rating-section">
-                    <label class="section-label">
-                        Kualitas Penyampaian Trainer
-                    </label>
-                    <div id="trainer_stars" class="star-box">
-                        <i class="bi bi-star" data-value="1"></i>
-                        <i class="bi bi-star" data-value="2"></i>
-                        <i class="bi bi-star" data-value="3"></i>
-                        <i class="bi bi-star" data-value="4"></i>
-                        <i class="bi bi-star" data-value="5"></i>
-                    </div>
-                    <p id="trainer_rating_text" class="text-center text-sm font-bold text-slate-400 mt-4 h-5">Pilih rating</p>
-                </div>
-
-                <!-- Feedback -->
-                <div class="mb-10">
-                    <label class="block text-lg font-bold text-slate-800 mb-4 ml-1">
-                        Saran & Kesan (opsional)
-                    </label>
-                    <textarea name="comment" class="textarea-box" 
-                        placeholder="Apa yang paling Anda sukai atau apa yang perlu diperbaiki?"></textarea>
-                </div>
-
-                <div class="flex justify-center">
-                    <button type="submit" id="submitBtn" class="submit-btn" disabled>
-                        Simpan Penilaian
-                    </button>
-                </div>
-            </form>
-        </div>
+            <div class="flex justify-center mb-12">
+                <button type="submit" id="submitBtn" class="submit-btn" disabled>
+                    Simpan Penilaian
+                </button>
+            </div>
+        </form>
     </div>
 
     <script>
@@ -247,17 +302,9 @@
             const trainerStars = document.querySelectorAll('#trainer_stars i');
             const courseInput = document.getElementById('course_rating_input');
             const trainerInput = document.getElementById('trainer_rating_input');
-            const courseText = document.getElementById('course_rating_text');
-            const trainerText = document.getElementById('trainer_rating_text');
+            const courseCheck = document.getElementById('course_check');
+            const trainerCheck = document.getElementById('trainer_check');
             const submitBtn = document.getElementById('submitBtn');
-
-            const ratingLabels = {
-                1: 'Sangat Buruk',
-                2: 'Buruk',
-                3: 'Cukup',
-                4: 'Bagus',
-                5: 'Sangat Luar Biasa!'
-            };
 
             function checkSubmit() {
                 if (courseInput.value && trainerInput.value) {
@@ -265,10 +312,9 @@
                 }
             }
 
-            function updateStars(container, stars, value, textEl, input) {
+            function updateStars(stars, value, input, checkEl) {
                 input.value = value;
-                textEl.innerText = ratingLabels[value];
-                textEl.className = 'text-center text-sm font-black text-amber-500 mt-4 h-5';
+                checkEl.classList.add('active');
                 
                 stars.forEach(star => {
                     const starVal = star.getAttribute('data-value');
@@ -285,13 +331,13 @@
 
             courseStars.forEach(star => {
                 star.addEventListener('click', () => {
-                    updateStars('course', courseStars, star.getAttribute('data-value'), courseText, courseInput);
+                    updateStars(courseStars, star.getAttribute('data-value'), courseInput, courseCheck);
                 });
             });
 
             trainerStars.forEach(star => {
                 star.addEventListener('click', () => {
-                    updateStars('trainer', trainerStars, star.getAttribute('data-value'), trainerText, trainerInput);
+                    updateStars(trainerStars, star.getAttribute('data-value'), trainerInput, trainerCheck);
                 });
             });
         });

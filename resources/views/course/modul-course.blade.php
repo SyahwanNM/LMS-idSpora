@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -137,7 +137,7 @@
             {{-- UI tetap seperti sebelumnya, tapi konten dinamis dari backend --}}
             @if(!empty($missingMaterials))
                 <div class="alert alert-warning" role="alert" style="margin: 0 0 12px 0;">
-                    <div style="font-weight:600;">Oops, course modules are incompletep.</div>
+                    <div style="font-weight:600;">Oops, course modules are incomplete.</div>
                     <div style="margin-top:6px;">{{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.</div>
                 </div>
             @endif
@@ -158,6 +158,18 @@
                             $isLocked = true;
                             $lockReason = 'free';
                         }
+
+                        $mId = (int) $m->id;
+                        $isDone = false;
+                        if (auth()->check()) {
+                            $mType = strtolower(trim((string)($m->type ?? '')));
+                            if ($mType === 'quiz') {
+                                $isDone = in_array($mId, $passedQuizModuleIds, true);
+                            } else {
+                                $isDone = in_array($mId, $completedMaterialModuleIds, true);
+                            }
+                        }
+
                         if (auth()->check() && $prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
                             if (!$isLocked) {
                                 $isLocked = !in_array((int) $prevModule->id, $passedQuizModuleIds, true);
@@ -248,31 +260,51 @@
 
             {{-- Hapus area media kosong untuk modul kuis --}}
             @if(!($isQuiz ?? false))
-                <div class="modul_media_card">
-                    {{-- Tampilan tetap: iframe/video area di atas --}}
-                    @if($isVideo)
-                        @if($isHttp)
-                            <iframe class="video_course" width="560" height="315" src="{{ $content }}" title="YouTube video player" frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                @php
+                    $hasContentUrl = !empty($content) && $content !== '';
+                    $hasDescription = !empty($cm->description) && trim(strip_tags((string)$cm->description)) !== '';
+                @endphp
+
+                @if($hasContentUrl)
+                    <div class="modul_media_card">
+                        {{-- Tampilan tetap: iframe/video area di atas --}}
+                        @if($isVideo)
+                            @if($isHttp)
+                                <iframe class="video_course" width="560" height="315" src="{{ $content }}" title="YouTube video player" frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                            @else
+                                <video class="video_course" width="560" height="315" controls preload="auto" playsinline>
+                                    <source src="{{ $videoUrl }}" type="{{ $cm->mime_type ?: 'video/mp4' }}">
+                                </video>
+                            @endif
+                        @elseif($isPdf)
+                            <iframe class="video_course" width="560" height="315" src="{{ $isHttp ? $content : ($streamUrl ?: $storageUrl) }}" title="PDF" frameborder="0"></iframe>
                         @else
-                            <video class="video_course" width="560" height="315" controls preload="auto" playsinline>
-                                <source src="{{ $videoUrl }}" type="{{ $cm->mime_type ?: 'video/mp4' }}">
-                            </video>
+                            <iframe class="video_course" width="560" height="315" src="" title="Content" frameborder="0"></iframe>
                         @endif
-                    @elseif($isPdf)
-                        <iframe class="video_course" width="560" height="315" src="{{ $isHttp ? $content : ($streamUrl ?: $storageUrl) }}" title="PDF" frameborder="0"></iframe>
-                    @else
-                        <iframe class="video_course" width="560" height="315" src="" title="Content" frameborder="0"></iframe>
-                    @endif
-                </div>
+                    </div>
+                @elseif(!$hasDescription)
+                    <div class="modul_media_card">
+                        <div class="text-center py-5 w-100" style="background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="#94a3b8" class="bi bi-cloud-upload" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383z"/>
+                                <path fill-rule="evenodd" d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                            </svg>
+                            <p class="mt-3 fw-medium text-secondary">Materi belum diunggah oleh Trainer.</p>
+                            <small class="text-muted">Silakan hubungi admin atau tunggu pembaruan materi.</small>
+                        </div>
+                    </div>
+                @endif
             @endif
             <h2 class="judul_modul">{{ $cm->title ?? 'Gambaran Umum' }}</h2>
 
             @if(!($isQuiz ?? false))
                 <div class="box_luar_deskripsi_modul">
                     <div class="box_deskripsi_modul">
-                        <p class="deskripsi_modul">{{ $cm->description ?? 'Deskripsi modul belum tersedia.' }}</p>
+                        <div class="deskripsi_modul wysiwyg-output">
+                            {!! $cm->description ?? '<p class="text-muted">Deskripsi materi belum tersedia.</p>' !!}
+                        </div>
                     </div>
                 </div>
             @else
@@ -590,7 +622,7 @@
                     
                     Swal.fire({
                         title: 'Oops!',
-                        text: `Free access for \ has ended. Tap the button to purchase and enjoy full access.`,
+                        text: `Free access for ${courseName} has ended. Tap the button to purchase and enjoy full access.`,
                         icon: 'info',
                         showCancelButton: true,
                         confirmButtonText: 'Buy Now',

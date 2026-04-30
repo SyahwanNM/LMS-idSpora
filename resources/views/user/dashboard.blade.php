@@ -647,11 +647,7 @@
                                     $evDate = $userEv->event_date ? $userEv->event_date->format('d M Y') : 'TBA';
                                     $evTime = $userEv->event_time ? (\Carbon\Carbon::parse($userEv->event_time)->format('H:i')) : 'TBA';
                                 @endphp
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                        style="width: 45px; height: 45px; background-color: {{ $style['bg'] }}; color: {{ $style['color'] }};">
-                                        <i class="bi {{ $style['icon'] }}" style="font-size: 20px;"></i>
-                                    </div>
+                                <div class="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
                                     <div class="flex-grow-1 min-w-0">
                                         <h6 class="fw-bold mb-0 text-truncate" style="font-size: 14px;">{{ $userEv->title }}</h6>
                                         <small class="text-muted d-block text-truncate" style="font-size: 11px;">
@@ -659,11 +655,6 @@
                                         </small>
                                     </div>
                                     <div class="d-flex gap-1">
-                                        <a href="{{ route('certificates.download', [$userEv->id, $registration->id]) }}?force=1" 
-                                           class="btn btn-sm btn-outline-success rounded-circle d-flex align-items-center justify-content-center" 
-                                           style="width: 32px; height: 32px;" title="Download Sertifikat">
-                                            <i class="bi bi-download" style="font-size: 12px;"></i>
-                                        </a>
                                         <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
                                             <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
                                         </a>
@@ -700,6 +691,7 @@
                         </div>
                     </div>
 
+                    @if($popularTopics->count() > 0)
                     {{-- /* Sidebar - Topik Populer */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -710,7 +702,7 @@
                         </div>
 
                         <div class="d-flex flex-column gap-3">
-                            @forelse($popularTopics as $index => $topic)
+                            @foreach($popularTopics as $index => $topic)
                                 @php
                                     $name = strtolower($topic->name ?? '');
                                     if (str_contains($name, 'design') || str_contains($name, 'ui') || str_contains($name, 'ux') || str_contains($name, 'art')) {
@@ -752,13 +744,10 @@
                                         <i class="bi bi-chevron-right" style="font-size: 14px;"></i>
                                     </div>
                                 </a>
-                            @empty
-                                <div class="text-center py-3">
-                                    <small class="text-muted">No topic data available.</small>
-                                </div>
-                            @endforelse
+                            @endforeach
                         </div>
                     </div>
+                    @endif
 
                         </div>
                     </div>
@@ -802,7 +791,7 @@
                 data: {
                     labels: initialLabels,
                     datasets: [{
-                        label: 'Jam Belajar',
+                        label: 'Waktu Belajar',
                         data: initialDataValues,
                         backgroundColor: toBackgroundColors(initialDataValues),
                         borderRadius: 8, // Membuat sudut bar membulat
@@ -824,7 +813,7 @@
                             displayColors: false,
                             callbacks: {
                                 label: function (context) {
-                                    return context.raw + ' Jam';
+                                    return context.raw + ' Menit';
                                 }
                             }
                         }
@@ -840,7 +829,9 @@
                             },
                             ticks: {
                                 font: { family: 'Poppins', size: 10 },
-                                color: '#94a3b8'
+                                color: '#94a3b8',
+                                precision: 0, // Memastikan angka bulat untuk menit
+                                stepSize: 1 // Minimal lompatan 1 menit
                             }
                         },
                         x: {

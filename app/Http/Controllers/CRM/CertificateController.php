@@ -356,8 +356,14 @@ class CertificateController extends Controller
         
         $this->authorizeAccessCourse($course, $enrollment);
         
-        if($enrollment->status !== 'completed' && !$request->boolean('force')) {
+        $certificateReady = $this->isCertificateReadyCourse($course, $enrollment);
+        
+        if(!$certificateReady && !$request->boolean('force')) {
             return redirect()->back()->with('error','Kursus belum selesai.');
+        }
+
+        if($certificateReady && $enrollment->status !== 'completed'){
+            $enrollment->update(['status' => 'completed']);
         }
 
 
@@ -391,6 +397,16 @@ class CertificateController extends Controller
         
         $this->authorizeAccessCourse($course, $enrollment);
         
+        $certificateReady = $this->isCertificateReadyCourse($course, $enrollment);
+        if(!$certificateReady) {
+            // Jika belum siap, arahkan ke halaman belajar
+            return redirect()->route('course.learn', $course->id)->with('error','Selesaikan semua modul untuk melihat sertifikat.');
+        }
+
+        if($enrollment->status !== 'completed'){
+            $enrollment->update(['status' => 'completed']);
+        }
+
         if(!$enrollment->certificate_number) {
             $enrollment->update([
                 'certificate_number' => self::generateCertificateNumberCourse($course, $enrollment),
@@ -546,6 +562,13 @@ class CertificateController extends Controller
             'signaturesBase64' => $signaturesBase64,
             'signaturesData'   => $signaturesData,
         ];
+    }
+
+    public function isCertificateReadyCourse(Course $course, Enrollment $enrollment) {
+        if ($enrollment->status === 'completed' || $enrollment->certificate_issued_at) return true;
+        
+        // Cek jika progress sudah 100%
+        return $enrollment->isFullyCompleted();
     }
 
     public function isCertificateReady(Event $event, EventRegistration $registration = null) {

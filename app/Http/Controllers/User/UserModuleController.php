@@ -164,8 +164,8 @@ class UserModuleController extends Controller
         $this->assertCanAccessModule($course, $module);
 
         $contentPath = $this->normalizePublicPath($module->content_url);
-        if (!Storage::disk('public')->exists($contentPath)) {
-            abort(404, 'File tidak ditemukan');
+        if (empty($contentPath) || !Storage::disk('public')->exists($contentPath) || is_dir(Storage::disk('public')->path($contentPath))) {
+            abort(404, 'File tidak ditemukan atau format tidak valid');
         }
 
         $filePath = Storage::disk('public')->path($contentPath);

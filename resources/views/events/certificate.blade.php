@@ -9,40 +9,62 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body { 
-            background: #f1f5f9; 
-            font-family: 'Inter', sans-serif; 
-            padding-top: 120px; /* Increased spacer for fixed premium navbar */
+            background: #f8fafc; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            padding-top: 100px;
             margin: 0;
         }
-        .preview-wrapper { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .preview-wrapper { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.25rem; }
         
         .paper-container {
             width: 100%;
             aspect-ratio: 1.414 / 1;
             background: white;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
             margin: 0 auto;
-            border-radius: 4px;
+            border-radius: 12px;
             overflow: hidden;
             position: relative;
-            /* Scale logic */
-            --base-width: 1122; /* 29.7cm at 96dpi approx */
+            border: 1px solid #e2e8f0;
         }
 
         .cert-scaler {
             transform-origin: top left;
             width: 29.7cm;
             height: 21cm;
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
-        /* Responsive scaling */
-        @media (min-width: 1200px) { .cert-scaler { transform: scale(1.01); } }
-        @media (max-width: 1199px) { .cert-scaler { transform: scale(0.85); } }
-        @media (max-width: 991px) { .cert-scaler { transform: scale(0.6); } }
-        @media (max-width: 767px) { .cert-scaler { transform: scale(0.4); } }
-        @media (max-width: 480px) { .cert-scaler { transform: scale(0.28); } }
+        /* Responsive scaling for the 29.7cm x 21cm virtual paper */
+        @media (min-width: 1100px) { .cert-scaler { transform: scale(0.96); } }
+        @media (max-width: 1099px) { .cert-scaler { transform: scale(0.85); } }
+        @media (max-width: 991px) { .cert-scaler { transform: scale(0.72); } }
+        @media (max-width: 767px) { .cert-scaler { transform: scale(0.5); } }
+        @media (max-width: 576px) { .cert-scaler { transform: scale(0.35); } }
+        @media (max-width: 400px) { .cert-scaler { transform: scale(0.28); } }
         
         .text-navy { color: #1e1b4b; }
+        .breadcrumb-item a { color: #64748b; font-weight: 500; }
+        .breadcrumb-item.active { color: #1e1b4b; font-weight: 700; }
+        
+        .btn-download {
+            background: #fbbf24;
+            color: #000;
+            border: none;
+            font-weight: 800;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            box-shadow: 0 10px 15px rgba(251, 191, 36, 0.2);
+            transition: all 0.3s;
+        }
+        .btn-download:hover {
+            background: #f59e0b;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px rgba(251, 191, 36, 0.3);
+            color: #000;
+        }
     </style>
 </head>
 <body>
@@ -62,7 +84,7 @@
             </div>
             <div class="d-flex gap-3">
                 @if($certificateReady)
-                    <a href="{{ route('certificates.download', [$event, $registration]) }}" class="btn btn-primary px-4 shadow-sm" target="_blank">
+                    <a href="{{ route('certificates.download', [$event, $registration]) }}" class="btn-download px-4" target="_blank">
                         <i class="bi bi-download me-2"></i> Download
                     </a>
                 @else
