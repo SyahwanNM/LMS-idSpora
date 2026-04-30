@@ -141,6 +141,22 @@
         .save-btn {
             transition: all 0.2s ease;
         }
+
+        /* Hilangkan kotak kuning pada hover carousel control */
+        .carousel-control-prev,
+        .carousel-control-next {
+            background: transparent !important;
+            border: none !important;
+            width: 10% !important;
+            transition: opacity 0.3s ease !important;
+        }
+
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            background: transparent !important;
+            transform: none !important;
+            opacity: 0.8 !important;
+        }
     </style>
 </head>
 

@@ -187,7 +187,15 @@
                             }
                         }
                         $descLines = array_slice($descLines, 0, 3);
+
+                        // Unified UI: Skip all PDF modules in sidebar as they are now integrated into video lessons
+                        $skipInSidebar = false;
+                        if (strtolower(trim((string)($m->type ?? ''))) === 'pdf') {
+                            $skipInSidebar = true;
+                        }
                     @endphp
+
+                    @if(!$skipInSidebar)
 
                     <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
                         <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
@@ -231,6 +239,7 @@
                             @endif --}}
                         </div>
                     </div>
+                    @endif
                 @empty
                     <div class="text-muted" style="padding:12px;">No modules available for this course.</div>
                 @endforelse
@@ -256,7 +265,68 @@
                 $isVideo = $cm && ($moduleType === 'video');
                 $isPdf = $cm && ($moduleType === 'pdf');
                 $isQuiz = $cm && ($moduleType === 'quiz');
+
+                // logic to find related material (text description from same unit)
+                $relatedModule = null;
+                $relatedDescription = null;
+                if ($isVideo) {
+                    $currentTitle = $cm->title ?? '';
+                    // Extract prefix like "Module 1", "Bab 1", "Unit 1", "Materi 1"
+                    preg_match('/^(Module\s+\d+|Bab\s+\d+|Unit\s+\d+|Materi\s+\d+|Session\s+\d+)/i', $currentTitle, $matches);
+                    $prefix = $matches[1] ?? null;
+
+                    if ($prefix) {
+                        $relatedModule = $modulesList->first(function($m) use ($prefix, $cm) {
+                            return (int)$m->id !== (int)$cm->id &&
+                                   strtolower(trim((string)($m->type ?? ''))) === 'pdf' &&
+                                   str_starts_with(strtolower(trim((string)($m->title ?? ''))), strtolower($prefix));
+                        });
+                        if ($relatedModule) {
+                            $relatedDescription = $relatedModule->description;
+                        }
+                    }
+
+                    if (!$relatedDescription) {
+                        // Fallback: just take the previous module if it's a PDF
+                        $idx = $modulesList->search(fn($m) => (int)$m->id === (int)$cm->id);
+                        if ($idx !== false && $idx > 0) {
+                            $prev = $modulesList->get($idx - 1);
+                            if ($prev && strtolower(trim((string)($prev->type ?? ''))) === 'pdf') {
+                                $relatedModule = $prev;
+                                $relatedDescription = $prev->description;
+                            }
+                        }
+                    }
+                }
             @endphp
+
+            @if($relatedModule && auth()->check())
+                @php
+                    $relatedIsDone = in_array((int)$relatedModule->id, $completedMaterialModuleIds ?? [], true);
+                @endphp
+                @if(!$relatedIsDone)
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const courseId = {{ $course->id }};
+                            const moduleId = {{ $relatedModule->id }};
+                            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                            
+                            if (csrfToken) {
+                                fetch(`/courses/${courseId}/modules/${moduleId}/complete`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': csrfToken,
+                                        'Accept': 'application/json'
+                                    }
+                                }).then(res => {
+                                    console.log('Related material marked as complete');
+                                }).catch(err => console.error('Failed to mark related material as complete', err));
+                            }
+                        });
+                    </script>
+                @endif
+            @endif
 
             {{-- Hapus area media kosong untuk modul kuis --}}
             @if(!($isQuiz ?? false))
@@ -270,11 +340,25 @@
                         {{-- Tampilan tetap: iframe/video area di atas --}}
                         @if($isVideo)
                             @if($isHttp)
-                                <iframe class="video_course" width="560" height="315" src="{{ $content }}" title="YouTube video player" frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                                @php
+                                    $youtubeId = null;
+                                    if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $content, $match)) {
+                                        $youtubeId = $match[1];
+                                    }
+                                @endphp
+                                @if($youtubeId)
+                                    <iframe id="youtube-player" class="video_course" width="560" height="315" 
+                                        src="https://www.youtube.com/embed/{{ $youtubeId }}?enablejsapi=1&origin={{ urlencode(url('/')) }}" 
+                                        title="YouTube video player" frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                                @else
+                                    <iframe class="video_course" width="560" height="315" src="{{ $content }}" title="YouTube video player" frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                                @endif
                             @else
-                                <video class="video_course" width="560" height="315" controls preload="auto" playsinline>
+                                <video id="video-player" class="video_course" width="560" height="315" controls preload="auto" playsinline>
                                     <source src="{{ $videoUrl }}" type="{{ $cm->mime_type ?: 'video/mp4' }}">
                                 </video>
                             @endif
@@ -303,7 +387,13 @@
                 <div class="box_luar_deskripsi_modul">
                     <div class="box_deskripsi_modul">
                         <div class="deskripsi_modul wysiwyg-output">
-                            {!! $cm->description ?? '<p class="text-muted">Deskripsi materi belum tersedia.</p>' !!}
+                            @if(!empty(trim(strip_tags((string)($cm->description ?? '')))))
+                                {!! $cm->description !!}
+                            @elseif(!empty(trim(strip_tags((string)($relatedDescription ?? '')))))
+                                {!! $relatedDescription !!}
+                            @else
+                                <p class="text-muted">Deskripsi materi belum tersedia.</p>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -507,27 +597,36 @@
                     $lockNextByFree = !in_array((int) $nextModule->id, (array) $freeAccessibleModuleIds, true);
                 }
                 $lockNext = $lockNext || $lockNextByFree;
+
+                $currentModuleIsDone = auth()->check() && in_array((int)$cm->id, $completedMaterialModuleIds ?? [], true);
+                $lockNextByVideo = ($isVideo && !$currentModuleIsDone);
+                $lockNext = $lockNext || $lockNextByVideo;
             @endphp
 
             {{-- Tombol Next tetap seperti sebelumnya (button), tapi arahnya dinamis --}}
             <button class="next_kanan_modul" type="button"
-                @if(isset($course) && $nextModule && !$lockNext)
+                @if(isset($course) && $nextModule)
                     data-next-url="{{ route('course.learn', ['course' => $course->id, 'module' => $nextModule->id]) }}"
-                @elseif(isset($course) && !$nextModule && !$lockNext)
+                @elseif(isset($course) && !$nextModule)
                     data-next-url="{{ route('course.rating', ['course' => $course->id]) }}"
-                @elseif($lockNext && $lockNextByFree)
+                @endif
+
+                @if($lockNextByFree)
                     data-is-locked-free="1"
                     data-buy-url="{{ route('course.payment', $course->id) }}"
                     data-course-name="{{ $course->name }}"
+                @elseif($lockNextByVideo)
+                    data-is-locked-video="1"
+                    disabled style="opacity:.6; cursor:not-allowed;"
                 @elseif($lockNext)
                     data-is-locked-quiz="1"
-                @else
-                    disabled style="opacity:.6; cursor:not-allowed;"
                 @endif
             >
                 <p>
-                    @if($lockNext && $lockNextByFree)
+                    @if($lockNextByFree)
                         Buy Course
+                    @elseif($lockNextByVideo)
+                        Terkunci
                     @elseif($lockNext)
                         Terkunci
                     @elseif(!$nextModule)
@@ -637,6 +736,17 @@
                     return;
                 }
 
+                const isLockedVideo = nextBtn.getAttribute('data-is-locked-video') === '1';
+                if (isLockedVideo) {
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Silakan selesaikan video lesson ini sampai akhir untuk melanjutkan.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f4c430',
+                    });
+                    return;
+                }
+
                 const isLockedQuiz = nextBtn.getAttribute('data-is-locked-quiz') === '1';
                 if (isLockedQuiz) {
                     Swal.fire({
@@ -654,9 +764,99 @@
             });
         }
 
-        const videoEl = document.querySelector('.video_course');
+        const videoEl = document.getElementById('video-player');
         if (videoEl && videoEl.tagName === 'VIDEO') {
             videoEl.load();
+            videoEl.addEventListener('ended', function() {
+                markAsComplete();
+            });
+        }
+
+        // YouTube IFrame API Integration
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        window.onYouTubeIframeAPIReady = function() {
+            player = new YT.Player('youtube-player', {
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        };
+
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                markAsComplete();
+            }
+        }
+
+        function markAsComplete() {
+            const courseId = {{ isset($course) ? (int) $course->id : 'null' }};
+            const moduleId = {{ isset($cm) ? (int) $cm->id : 'null' }};
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            if (!courseId || !moduleId || !csrfToken) return;
+
+            fetch(`/courses/${courseId}/modules/${moduleId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                }
+            }).then(res => res.json())
+              .then(data => {
+                  if (data.ok) {
+                      // 1. Show checkmark in sidebar
+                      const sidebarHeader = document.querySelector(`.accordion-header[data-module-id="${moduleId}"]`);
+                      if (sidebarHeader) {
+                          const iconContainer = sidebarHeader.querySelector('span[style*="width:20px"]');
+                          if (iconContainer) {
+                              iconContainer.innerHTML = `
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#16a34a" class="bi bi-check-circle-fill" viewBox="0 0 16 16" aria-label="Completed">
+                                      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                  </svg>
+                              `;
+                          }
+                      }
+                      
+                      // 2. Enable Next button
+                      if (nextBtn) {
+                          nextBtn.disabled = false;
+                          nextBtn.style.opacity = '1';
+                          nextBtn.style.cursor = 'pointer';
+                          nextBtn.removeAttribute('data-is-locked-video');
+                          
+                          const nextText = nextBtn.querySelector('p');
+                          if (nextText) {
+                              @if(!$nextModule)
+                                  nextText.textContent = 'Selesai & Beri Ulasan';
+                              @else
+                                  nextText.textContent = 'Next';
+                              @endif
+                          }
+                          
+                          const lockIcon = nextBtn.querySelector('.bi-lock-fill');
+                          if (lockIcon) {
+                              lockIcon.outerHTML = `
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="white" class="bi-right bi-caret-right-fill" viewBox="0 0 16 16">
+                                      <path d="m12.14 8.753-5.482 4.796c-.646.566-1.658.106-1.658-.753V3.204a1 1 0 0 1 1.659-.753l5.48 4.796a1 1 0 0 1 0 1.506z" />
+                                  </svg>
+                              `;
+                          }
+                      }
+
+                      Swal.fire({
+                          title: 'Berhasil!',
+                          text: 'Video telah selesai, silakan lanjut ke modul berikutnya.',
+                          icon: 'success',
+                          confirmButtonColor: '#16a34a',
+                      });
+                  }
+              }).catch(err => console.error('Failed to mark video as complete', err));
         }
     </script>
 

@@ -482,13 +482,15 @@ class CertificateController extends Controller
 
     private function getCertificateData(Event $event, EventRegistration $registration)
     {
-        $logos = [];
+        $logosBase64 = [];
+        $logosUrl = [];
         foreach(is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
             $path = str_replace('storage/', '', $l);
             if(Storage::disk('public')->exists($path)) {
                 $mime = Storage::disk('public')->mimeType($path);
                 $content = base64_encode(Storage::disk('public')->get($path));
-                $logos[] = "data:$mime;base64,$content";
+                $logosBase64[] = "data:$mime;base64,$content";
+                $logosUrl[] = request()->schemeAndHttpHost() . '/uploads/' . $path;
             }
         }
 
@@ -496,7 +498,6 @@ class CertificateController extends Controller
         $signaturesData = [];
         $signaturesBase64 = []; // backward compat
         foreach ($sigsRaw as $s) {
-            // Support both old format (string) and new format (array {image, name, position})
             $isObj    = is_array($s);
             $imgPath  = $isObj ? ($s['image'] ?? '') : $s;
             $sigName  = $isObj ? ($s['name'] ?? '') : '';
@@ -506,8 +507,14 @@ class CertificateController extends Controller
             if ($path && Storage::disk('public')->exists($path)) {
                 $mime    = Storage::disk('public')->mimeType($path);
                 $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
+                $url     = request()->schemeAndHttpHost() . '/uploads/' . $path;
                 $signaturesBase64[] = $b64;
-                $signaturesData[]   = ['base64' => $b64, 'name' => $sigName, 'position' => $sigPos];
+                $signaturesData[]   = [
+                    'base64' => $b64, 
+                    'url'    => $url,
+                    'name'   => $sigName, 
+                    'position' => $sigPos
+                ];
             }
         }
 
@@ -516,7 +523,8 @@ class CertificateController extends Controller
             'user'             => $registration->user,
             'issuedAt'         => $registration->certificate_issued_at ?? now(),
             'certificateNumber'=> $registration->certificate_number,
-            'logosBase64'      => $logos,
+            'logosBase64'      => $logosBase64,
+            'logosUrl'         => $logosUrl,
             'signaturesBase64' => $signaturesBase64,
             'signaturesData'   => $signaturesData,
         ];
@@ -524,13 +532,15 @@ class CertificateController extends Controller
 
     private function getCertificateDataCourse(Course $course, Enrollment $enrollment)
     {
-        $logos = [];
+        $logosBase64 = [];
+        $logosUrl = [];
         foreach(is_array($course->certificate_logo) ? $course->certificate_logo : [] as $l) {
             $path = str_replace('storage/', '', $l);
             if(Storage::disk('public')->exists($path)) {
                 $mime = Storage::disk('public')->mimeType($path);
                 $content = base64_encode(Storage::disk('public')->get($path));
-                $logos[] = "data:$mime;base64,$content";
+                $logosBase64[] = "data:$mime;base64,$content";
+                $logosUrl[] = request()->schemeAndHttpHost() . '/uploads/' . $path;
             }
         }
 
@@ -538,7 +548,6 @@ class CertificateController extends Controller
         $signaturesData = [];
         $signaturesBase64 = []; // backward compat
         foreach ($sigsRaw as $s) {
-            // Support both old format (string) and new format (array {image, name, position})
             $isObj    = is_array($s);
             $imgPath  = $isObj ? ($s['image'] ?? '') : $s;
             $sigName  = $isObj ? ($s['name'] ?? '') : '';
@@ -548,8 +557,14 @@ class CertificateController extends Controller
             if ($path && Storage::disk('public')->exists($path)) {
                 $mime    = Storage::disk('public')->mimeType($path);
                 $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
+                $url     = request()->schemeAndHttpHost() . '/uploads/' . $path;
                 $signaturesBase64[] = $b64;
-                $signaturesData[]   = ['base64' => $b64, 'name' => $sigName, 'position' => $sigPos];
+                $signaturesData[]   = [
+                    'base64' => $b64, 
+                    'url'    => $url,
+                    'name'   => $sigName, 
+                    'position' => $sigPos
+                ];
             }
         }
 
@@ -558,7 +573,8 @@ class CertificateController extends Controller
             'user'             => $enrollment->user,
             'issuedAt'         => $enrollment->certificate_issued_at ?? now(),
             'certificateNumber'=> $enrollment->certificate_number,
-            'logosBase64'      => $logos,
+            'logosBase64'      => $logosBase64,
+            'logosUrl'         => $logosUrl,
             'signaturesBase64' => $signaturesBase64,
             'signaturesData'   => $signaturesData,
         ];

@@ -17,112 +17,7 @@
 @push('styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
-    <style>
-        .processing-summary {
-            margin-top: 18px;
-            padding: 14px 16px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(8px);
-        }
 
-        .processing-summary-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-
-        .processing-summary-title {
-            margin: 0;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.78);
-            font-weight: 700;
-        }
-
-        .processing-summary-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 8px;
-        }
-
-        .processing-chip {
-            border-radius: 12px;
-            padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            color: #fff;
-            min-height: 64px;
-        }
-
-        .processing-chip .value {
-            display: block;
-            font-size: 1.1rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 4px;
-        }
-
-        .processing-chip .label {
-            display: block;
-            font-size: 0.72rem;
-            color: rgba(255, 255, 255, 0.78);
-            line-height: 1.3;
-        }
-
-        .module-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 8px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 700;
-        }
-
-        .module-status-pill.pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .module-status-pill.assigned {
-            background: #eff6ff;
-            color: #1d4ed8;
-        }
-
-        .module-status-pill.uploaded {
-            background: #ecfeff;
-            color: #0f766e;
-        }
-
-        .module-status-pill.revision {
-            background: #fff7ed;
-            color: #9a3412;
-        }
-
-        .module-status-pill.ready {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        @media (max-width: 992px) {
-            .processing-summary-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 640px) {
-            .processing-summary-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 @endpush
 
 @section('content')
@@ -173,36 +68,7 @@
                         </div>
                     </div>
 
-                    @if(($processingSummary['total'] ?? 0) > 0)
-                        <div class="processing-summary">
-                            <div class="processing-summary-head">
-                                <p class="processing-summary-title">Processing Snapshot</p>
-                                <span class="hero-pill-outline">{{ $processingSummary['total'] }} module handoff aktif</span>
-                            </div>
-                            <div class="processing-summary-grid">
-                                <div class="processing-chip">
-                                    <span class="value">{{ $processingSummary['assigned'] ?? 0 }}</span>
-                                    <span class="label">Diserahkan ke admin course</span>
-                                </div>
-                                <div class="processing-chip">
-                                    <span class="value">{{ $processingSummary['uploaded'] ?? 0 }}</span>
-                                    <span class="label">Hasil edit diunggah</span>
-                                </div>
-                                <div class="processing-chip">
-                                    <span class="value">{{ $processingSummary['revision'] ?? 0 }}</span>
-                                    <span class="label">Revisi diminta</span>
-                                </div>
-                                <div class="processing-chip">
-                                    <span class="value">{{ $processingSummary['ready'] ?? 0 }}</span>
-                                    <span class="label">Siap dipublikasikan</span>
-                                </div>
-                                <div class="processing-chip">
-                                    <span class="value">{{ $processingSummary['total'] ?? 0 }}</span>
-                                    <span class="label">Total modul terlibat</span>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+
                 </div>
                 <div class="hero-media">
                     <div class="hero-image-wrap">
@@ -286,21 +152,7 @@
                                         $icon = $module->type === 'video' ? 'bi-film' : ($module->type === 'quiz' ? 'bi-check-circle' : 'bi-file-earmark-pdf');
                                         $label = $module->type === 'video' ? 'Video Asset' : ($module->type === 'quiz' ? 'Quiz Engine' : 'PDF Material');
                                         $assetTab = $module->type === 'quiz' ? 'quiz' : ($module->type === 'video' ? 'video' : 'module');
-                                        $processingStatus = (string) ($module->processing_status ?? '');
-                                        $processingLabel = match ($processingStatus) {
-                                            'assigned_to_admin_course' => 'Diserahkan',
-                                            'processed_uploaded' => 'Hasil Edit Diunggah',
-                                            'revision_requested' => 'Revisi Diminta',
-                                            'ready_for_publish' => 'Siap Publikasi',
-                                            default => '',
-                                        };
-                                        $processingClass = match ($processingStatus) {
-                                            'assigned_to_admin_course' => 'assigned',
-                                            'processed_uploaded' => 'uploaded',
-                                            'revision_requested' => 'revision',
-                                            'ready_for_publish' => 'ready',
-                                            default => 'pending',
-                                        };
+
                                       @endphp
                                     <div class="asset-mini"
                                         data-redirect="{{ route('trainer.courses.studio', $course->id) }}?unit={{ $idx }}&tab={{ $assetTab }}">
@@ -308,11 +160,7 @@
                                         <div>
                                             <h4>{{ Str::limit($module->title, 25) }}</h4>
                                             <p>{{ $label }}</p>
-                                            @if($module->isVideo() && $processingStatus !== '')
-                                                <span class="module-status-pill {{ $processingClass }}">
-                                                    <i class="bi bi-activity"></i>{{ $processingLabel }}
-                                                </span>
-                                            @endif
+
                                         </div>
                                     </div>
                                 @endforeach

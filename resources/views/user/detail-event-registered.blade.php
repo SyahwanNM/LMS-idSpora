@@ -215,21 +215,30 @@
 
         /* Participant Resources: make cards more compact */
         .resource-box {
-            padding: 16px;
+            padding: 20px;
+            width: calc(100% - 40px) !important;
+            margin: 24px 0 0 40px !important;
+            max-width: none !important;
+            box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
+            background-color: white;
         }
 
         .resource-box>h5 {
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            font-weight: 600;
         }
 
         .resource-box .participant-resources {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
             gap: 12px;
             align-items: start;
         }
 
         .resource-box .participant-resources .resource-card {
-            padding: 12px 14px !important;
-            min-height: 92px !important;
+            padding: 14px 16px !important;
+            min-height: 105px !important;
             height: auto !important;
         }
         .resource-box .participant-resources .resource-card .img-resource {
@@ -930,6 +939,430 @@
                         @endforeach
                     </div>
                 </section>
+
+                <section class="resource-box">
+                    <h5>Participant Resources</h5>
+                    <div class="participant-resources">
+
+                        @php
+                            $hasMapsLink = !empty($event->maps_url);
+                            $hasZoomLink = !empty($event->zoom_link);
+                            $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                        @endphp
+
+                        {{-- Virtual Background Resource --}}
+                        @if(!$isOfflineOnly)
+                            <div class="resource-card {{ (!empty($event->vbg_path) && $isRegistered) ? '' : 'locked' }}">
+                                <div class="img-resource">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-image" viewBox="0 0 16 16">
+                                        <path
+                                            d="M14.002 3H2c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm0 1v.217l-3.106 3.106a.5.5 0 0 1-.707 0L7.5 5.207l-4.5 4.5V4h11zm-12 8V9.707l3.646-3.647a.5.5 0 0 1 .708 0l2.647 2.646 3.646-3.646a.5.5 0 0 1 .708 0L15 8.293V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
+                                    </svg>
+                                </div>
+                                <div class="resource-value">
+                                    <h6>Virtual Background</h6>
+                                    <p>@if(!empty($event->vbg_path) && $isRegistered) Download your event background @else Not
+                                    available @endif</p>
+                                </div>
+                                @if(!empty($event->vbg_path) && $isRegistered)
+                                    <a class="link-share" href="{{ $event->vbg_file_url }}" download>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                            class="share-bi bi-download" viewBox="0 0 16 16">
+                                            <path
+                                                d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z" />
+                                            <path
+                                                d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z" />
+                                        </svg>
+                                    </a>
+                                @else
+                                    <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                                @endif
+                            </div>
+                        @endif
+
+                        @php
+                            $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
+                            $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
+                            // Unlock saat event selesai, user terdaftar, DAN feedback sudah diisi
+                            $moduleUnlocked = $isRegistered && $eventIsFinished && $hasFeedback;
+                        @endphp
+                        @if($isRegistered || $approvedModules->isNotEmpty())
+                        <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
+                            <div class="img-resource">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                    class="bi bi-file-earmark-text" viewBox="0 0 16 16">
+                                    <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
+                                    <path d="M5.5 9a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
+                                    <path d="M5.5 11a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3z" />
+                                    <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z" />
+                                    <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14" />
+                                </svg>
+                            </div>
+                            <div class="resource-value">
+                                <h6>Modules</h6>
+                                @if(!$isRegistered)
+                                    <p>Available upon registration</p>
+                                @elseif(!$eventIsFinished)
+                                    <p>Available after event completion</p>
+                                @elseif($approvedModules->isEmpty())
+                                    <p>Not available</p>
+                                @else
+                                    <p>{{ $approvedModules->count() }} Modules Available</p>
+                                @endif
+                            </div>
+                            @if($moduleUnlocked)
+                                <button type="button" class="link-share d-flex align-items-center"
+                                    data-bs-toggle="modal" data-bs-target="#modulesDownloadModal"
+                                    title="Unduh Materi"
+                                    style="background:none; border:none; padding:0; cursor:pointer; margin-left:auto;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
+                                        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                        <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                    </svg>
+                                </button>
+                            @else
+                                <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                            @endif
+                        </div>
+                        @endif
+
+                        {{-- Modal unduh modul --}}
+                        @if($moduleUnlocked)
+                        <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content" style="border-radius:16px;">
+                                    <div class="modal-header border-0 pb-0">
+                                        <h5 class="modal-title fw-bold" id="modulesDownloadModalLabel">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                                                <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                                                <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                                                <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                                            </svg>
+                                            Download Modules 
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body pt-2">
+                                        <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($approvedModules as $mod)
+                                                <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                   class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
+                                                   style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                   onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
+                                                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                                            <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                                        </svg>
+                                                    </div>
+                                                    <div style="overflow:hidden;">
+                                                        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
+                                                        @if($mod->trainer)
+                                                            <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                        @endif
+                                                    </div>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer border-0 pt-0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventIsFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
+                            <div class="img-resource">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    class="bi bi-qr-code-scan" viewBox="0 0 16 16">
+                                    <path d="M2 2h2v2H2V2Z" />
+                                    <path d="M6 0H0v6h6V0ZM2 4V2h2v2H2Z" />
+                                    <path d="M12 2h2v2h-2V2Z" />
+                                    <path d="M16 0h-6v6h6V0Zm-4 4V2h2v2h-2Z" />
+                                    <path d="M2 12h2v2H2v-2Z" />
+                                    <path d="M6 10H0v6h6v-6Zm-4 4v-2h2v2H2Z" />
+                                    <path d="M7 2h1v1H7V2Z" />
+                                    <path d="M8 4h1v1H8V4Z" />
+                                    <path d="M2 7h1v1H2V7Z" />
+                                    <path d="M4 8h1v1H4V8Z" />
+                                    <path d="M12 7h1v1h-1V7Z" />
+                                    <path d="M7 12h1v1H7v-1Z" />
+                                    <path d="M8 13h1v1H8v-1Z" />
+                                    <path d="M9 7h1v1H9V7Z" />
+                                    <path d="M10 2h1v1h-1V2Z" />
+                                    <path d="M10 11h1v1h-1v-1Z" />
+                                    <path d="M11 10h1v1h-1v-1Z" />
+                                    <path d="M12 9h1v1h-1V9Z" />
+                                    <path d="M13 8h1v1h-1V8Z" />
+                                    <path d="M14 7h1v1h-1V7Z" />
+                                    <path d="M15 6h1v1h-1V6Z" />
+                                    <path d="M12 12h1v1h-1v-1Z" />
+                                    <path d="M13 13h1v1h-1v-1Z" />
+                                    <path d="M14 12h1v1h-1v-1Z" />
+                                </svg>
+                            </div>
+                            <div class="resource-value">
+                                <h6>Attendance QR Event</h6>
+                                @if(isset($attendanceSubmitted) && $attendanceSubmitted)
+                                    <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                                @else
+                                    <p>Scan the event QR for attendance.</p>
+                                @endif
+                            </div>
+                            @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
+                                <span class="d-inline-flex align-items-center""
+                                    title="Berhasil Dilakukan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                        stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        aria-label="Attendance Successful">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <polyline points="8 12 11 15 16 10"></polyline>
+                                    </svg>
+                                </span>
+                            @elseif(isset($isRegistered) && $isRegistered && isset($eventStarted) && $eventStarted)
+                                <a class="link-share" href="{{ route('events.scan', $event) }}" title="Buka Halaman Scan"
+                                    style="position:absolute; top:24px; right:10px; text-decoration:none;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        aria-label="Buka Halaman Scan">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                        <polyline points="15 3 21 3 21 9" />
+                                        <line x1="10" y1="14" x2="21" y2="3" />
+                                    </svg>
+                                </a>
+                            @else
+                                <span class="link-share d-inline-flex align-items-center"
+                                    style="position:absolute; top:24px; right:10px; opacity:.4; cursor:not-allowed;"
+                                    title="Scan tersedia saat acara dimulai"></span>
+                            @endif
+                        </div>
+
+                        <div
+                            class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
+                            <div class="img-resource">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    class="bi bi-award" viewBox="0 0 16 16">
+                                    <path
+                                        d="M9.669.864 8 0 6.331.864l-1.858.282-.842 1.68-1.337 1.32L2.6 6l-.306 1.854 1.337 1.32.842 1.68 1.858.282L8 12l1.669-.864 1.858-.282.842-1.68 1.337-1.32L13.4 6l.306-1.854-1.337-1.32-.842-1.68zm1.196 1.193.684 1.365 1.086 1.072L12.387 6l.248 1.506-1.086 1.072-.684 1.365-1.51.229L8 10.874l-1.355-.702-1.51-.229-.684-1.365-1.086-1.072L3.614 6l-.25-1.506 1.087-1.072.684-1.365 1.51-.229L8 1.126l1.356.702z" />
+                                    <path d="M4 11.794V16l4-1 4 1v-4.206l-2.018.306L8 13.126 6.018 12.1z" />
+                                </svg>
+                            </div>
+
+                            <div class="resource-value">
+                                <h6>Certificate</h6>
+                                @if(isset($isRegistered) && $isRegistered)
+                                    @if(isset($hasFeedback) && $hasFeedback)
+                                    <div class="box-resources-sertif">
+                                      <p>Silakan preview / unduh.</p>
+                                        <div class="box-sertif-after-event">
+                                          
+                                            <a class="view-sertif-event" href="{{ route('certificates.show', [$event->id, $registration->id]) }}" target="_blank"
+                                               style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; color:#111;">
+                                                <svg  xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    @elseif(isset($attendanceSubmitted) && $attendanceSubmitted)
+                                        <p>Available after feedback.</p>
+                                    @elseif($eventIsFinished)
+                                        <p>Available after feedback.</p>
+                                    @else
+                                        <p>Available after attendance & feedback.</p>
+                                    @endif
+                                @else
+                                    <p>Available for participants.</p>
+                                @endif
+                            </div>
+                        </div>
+                    @if(!empty($event->zoom_link))
+                    <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+                            @php
+                                $isHybrid = !empty($event->zoom_link) && (!empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude)));
+                            @endphp
+                            <div class="img-resource">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z"/>
+                                </svg>
+                            </div>
+                            <div class="resource-value">
+                                <h6>Link Zoom</h6>
+                                <p>{{ $isRegistered ? 'Available after booking' : 'Available after booking' }}</p>
+                            </div>
+                            @if($isRegistered && !empty($event->zoom_link))
+                                <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                        class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                        <path fill-rule="evenodd"
+                                            d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                    </svg>
+                                </a>
+                            @else
+                                <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                            @endif
+                        </div>
+                    @endif
+
+                        @php
+                            $mapLink = '';
+                            if (!empty($event->maps_url)) {
+                                $maps = trim($event->maps_url);
+                                if (\Illuminate\Support\Str::startsWith($maps, ['http://','https://','//'])) {
+                                    $mapLink = $maps;
+                                } else {
+                                    try { $mapLink = Storage::url($maps); } catch (\Throwable $e) { $mapLink = $maps; }
+                                }
+                            } elseif (!empty($event->latitude) && !empty($event->longitude)) {
+                                $mapLink = 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude;
+                            }
+                            $showMapsCard = !empty($mapLink) || (!empty($event->location) && empty($event->zoom_link));
+                        @endphp
+
+                        @if($showMapsCard)
+                        <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+                            <div class="img-resource">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
+                                    <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
+                                    <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+                                </svg>
+                            </div>
+                            <div class="resource-value">
+                                <h6>Location Map</h6>
+                                <p>{{ $isRegistered ? 'Available after seat booking' : 'Available after seat booking' }}</p>
+                            </div>
+                            @if($isRegistered && $mapLink)
+                                <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                    </svg>
+                                </a>
+                            @else
+                                <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                            @endif
+                        </div>
+                        @endif
+                    <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventIsFinished) ? '' : 'locked' }}"
+                            style="position:relative;">
+                            <div class="img-resource">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    class="bi bi-star-fill" viewBox="0 0 16 16">
+                                    <path
+                                        d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                                </svg>
+                            </div>
+                            <div class="resource-value">
+                                <h6>Feedback and Ratings</h6>
+                                @if(isset($hasFeedback) && $hasFeedback)
+                                    <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                                @else
+                                    <p style="width: 70%;">Available after the event ends</p>
+                                @endif
+                            </div>
+
+                            @if($isRegistered && $attendanceSubmitted && $eventIsFinished)
+                                <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
+                                    style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
+                                    @if(isset($hasFeedback) && $hasFeedback)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                            stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                            aria-label="Feedback berhasil">
+                                            <circle cx="12" cy="12" r="9"></circle>
+                                            <polyline points="8 12 11 15 16 10"></polyline>
+                                        </svg>
+                                    @else
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                            class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd"
+                                                d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                            <path fill-rule="evenodd"
+                                                d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                        </svg>
+                                    @endif
+                                </button>
+                            @else
+                                <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
+                            @endif
+                        </div>
+                    </div>
+                </section>
+
+                @if($isRegistered && $attendanceSubmitted)
+                <div id="feedbackSection"
+                    style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 20px; margin-left: 40px; border-radius: 20px; width: calc(100% - 40px); overflow: hidden;">
+                    <div class="d-flex justify-content-between align-items-center"
+                        style="margin-top: 20px; margin-left: 25px; margin-bottom: 10px;">
+                        <h5 class="mb-0 fw-bold" style="font-size: 1.1rem; color: #333;">Feedback & Reviews</h5>
+                        <button type="button" onclick="toggleFeedbackSection()" aria-label="Close"
+                            style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s; margin-right: 25px;"
+                            onmouseover="this.style.backgroundColor='#e9ecef'"
+                            onmouseout="this.style.backgroundColor='transparent'">
+                            <span style="line-height: 1;">&times;</span>
+                        </button>
+                    </div>
+                    <div class="row g-0">
+                    </div>
+                    <div class="col-md-12" style="background-color: white; padding: 1rem;">
+                        <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
+                        @if(isset($hasFeedback) && $hasFeedback)
+                            <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
+                                Feedback already submitted and cannot be sent again.
+                            </div>
+                        @else
+                            <form action="#" method="POST" id="feedback-form">
+                                @csrf
+
+                                <div class="feedback-rating-row" style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 15px;">
+                            
+                                    <div style="flex: 1 1 140px; min-width: 0;">
+                                        <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Event Ratings</label>
+                                        <div class="stars-rating-input" data-target="eventRating"
+                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
+                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Speaker Rating -->
+                                    <div style="flex: 1 1 140px; min-width: 0;">
+                                        <label class="form-label mb-1"
+                                            style="font-weight: 500; color: #333; font-size: 0.9rem;">Speaker Ratings</label>
+                                        <div class="stars-rating-input" data-target="speakerRating"
+                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
+                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <textarea id="feedback-text" name="feedback" class="form-control"
+                                        rows="4" placeholder="Write your thoughts..." required
+                                        style="width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
+                                </div>
+
+                                <button type="button" id="submit-feedback-btn" class="btn fw-semibold"
+                                    style="width: 100%; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
+                                    Submit Feedback
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+                @endif
             </div>
             <section class="detail-box-right">
                 @php
@@ -1422,431 +1855,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <section class="resource-box">
-            <h5>Participant Resources</h5>
-            <div class="participant-resources">
-
-                @php
-                    $hasMapsLink = !empty($event->maps_url);
-                    $hasZoomLink = !empty($event->zoom_link);
-                    $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-                @endphp
-
-                {{-- Virtual Background Resource --}}
-                @if(!$isOfflineOnly)
-                    <div class="resource-card {{ (!empty($event->vbg_path) && $isRegistered) ? '' : 'locked' }}">
-                        <div class="img-resource">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                class="bi bi-image" viewBox="0 0 16 16">
-                                <path
-                                    d="M14.002 3H2c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1h12c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm0 1v.217l-3.106 3.106a.5.5 0 0 1-.707 0L7.5 5.207l-4.5 4.5V4h11zm-12 8V9.707l3.646-3.647a.5.5 0 0 1 .708 0l2.647 2.646 3.646-3.646a.5.5 0 0 1 .708 0L15 8.293V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" />
-                            </svg>
-                        </div>
-                        <div class="resource-value">
-                            <h6>Virtual Background</h6>
-                            <p>@if(!empty($event->vbg_path) && $isRegistered) Download your event background @else Not
-                            available @endif</p>
-                        </div>
-                        @if(!empty($event->vbg_path) && $isRegistered)
-                            <a class="link-share" href="{{ $event->vbg_file_url }}" download>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    class="share-bi bi-download" viewBox="0 0 16 16">
-                                    <path
-                                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z" />
-                                    <path
-                                        d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z" />
-                                </svg>
-                            </a>
-                        @else
-                            <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
-                        @endif
-                    </div>
-                @endif
-
-                @php
-                    $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
-                    $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    // Unlock saat event selesai dan user terdaftar (meski belum ada modul)
-                    $moduleUnlocked = $isRegistered && $eventIsFinished;
-                @endphp
-                @if($isRegistered || $approvedModules->isNotEmpty())
-                <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                            class="bi bi-file-earmark-text" viewBox="0 0 16 16">
-                            <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
-                            <path d="M5.5 9a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
-                            <path d="M5.5 11a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3z" />
-                            <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z" />
-                            <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Modules</h6>
-                        @if(!$isRegistered)
-                            <p>Available upon registration</p>
-                        @elseif(!$eventIsFinished)
-                            <p>Available after event completion</p>
-                        @elseif($approvedModules->isEmpty())
-                            <p>Not available</p>
-                        @else
-                            <p>{{ $approvedModules->count() }} Modules Available</p>
-                        @endif
-                    </div>
-                    @if($moduleUnlocked)
-                        <button type="button" class="link-share d-flex align-items-center"
-                            data-bs-toggle="modal" data-bs-target="#modulesDownloadModal"
-                            title="Unduh Materi"
-                            style="background:none; border:none; padding:0; cursor:pointer; margin-left:auto;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                            </svg>
-                        </button>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
-                    @endif
-                </div>
-                @endif
-
-                {{-- Modal unduh modul --}}
-                @if($moduleUnlocked)
-                <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" style="border-radius:16px;">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title fw-bold" id="modulesDownloadModalLabel">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-                                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
-                                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
-                                        <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
-                                    </svg>
-                                    Download Modules 
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
-                                <div class="d-flex flex-column gap-2">
-                                    @foreach($approvedModules as $mod)
-                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
-                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
-                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
-                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
-                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                                                </svg>
-                                            </div>
-                                            <div style="overflow:hidden;">
-                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
-                                                @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
-                                                @endif
-                                            </div>
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0 pt-0">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventIsFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            class="bi bi-qr-code-scan" viewBox="0 0 16 16">
-                            <path d="M2 2h2v2H2V2Z" />
-                            <path d="M6 0H0v6h6V0ZM2 4V2h2v2H2Z" />
-                            <path d="M12 2h2v2h-2V2Z" />
-                            <path d="M16 0h-6v6h6V0Zm-4 4V2h2v2h-2Z" />
-                            <path d="M2 12h2v2H2v-2Z" />
-                            <path d="M6 10H0v6h6v-6Zm-4 4v-2h2v2H2Z" />
-                            <path d="M7 2h1v1H7V2Z" />
-                            <path d="M8 4h1v1H8V4Z" />
-                            <path d="M2 7h1v1H2V7Z" />
-                            <path d="M4 8h1v1H4V8Z" />
-                            <path d="M12 7h1v1h-1V7Z" />
-                            <path d="M7 12h1v1H7v-1Z" />
-                            <path d="M8 13h1v1H8v-1Z" />
-                            <path d="M9 7h1v1H9V7Z" />
-                            <path d="M10 2h1v1h-1V2Z" />
-                            <path d="M10 11h1v1h-1v-1Z" />
-                            <path d="M11 10h1v1h-1v-1Z" />
-                            <path d="M12 9h1v1h-1V9Z" />
-                            <path d="M13 8h1v1h-1V8Z" />
-                            <path d="M14 7h1v1h-1V7Z" />
-                            <path d="M15 6h1v1h-1V6Z" />
-                            <path d="M12 12h1v1h-1v-1Z" />
-                            <path d="M13 13h1v1h-1v-1Z" />
-                            <path d="M14 12h1v1h-1v-1Z" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Attendance QR Event</h6>
-                        @if(isset($attendanceSubmitted) && $attendanceSubmitted)
-                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
-                        @else
-                            <p>Scan the event QR for attendance.</p>
-                        @endif
-                    </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
-                        <span class="d-inline-flex align-items-center""
-                            title="Berhasil Dilakukan">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                                stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                aria-label="Attendance Successful">
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <polyline points="8 12 11 15 16 10"></polyline>
-                            </svg>
-                        </span>
-                    @elseif(isset($isRegistered) && $isRegistered && isset($eventStarted) && $eventStarted)
-                        <a class="link-share" href="{{ route('events.scan', $event) }}" title="Buka Halaman Scan"
-                            style="position:absolute; top:24px; right:10px; text-decoration:none;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                aria-label="Buka Halaman Scan">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                <polyline points="15 3 21 3 21 9" />
-                                <line x1="10" y1="14" x2="21" y2="3" />
-                            </svg>
-                        </a>
-                    @else
-                        <span class="link-share d-inline-flex align-items-center"
-                            style="position:absolute; top:24px; right:10px; opacity:.4; cursor:not-allowed;"
-                            title="Scan tersedia saat acara dimulai"></span>
-                    @endif
-                </div>
-
-                <div
-                    class="resource-card {{ (isset($isRegistered) && $isRegistered && (isset($hasFeedback) && $hasFeedback || isset($attendanceSubmitted) && $attendanceSubmitted)) ? '' : 'locked' }}">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            class="bi bi-award" viewBox="0 0 16 16">
-                            <path
-                                d="M9.669.864 8 0 6.331.864l-1.858.282-.842 1.68-1.337 1.32L2.6 6l-.306 1.854 1.337 1.32.842 1.68 1.858.282L8 12l1.669-.864 1.858-.282.842-1.68 1.337-1.32L13.4 6l.306-1.854-1.337-1.32-.842-1.68zm1.196 1.193.684 1.365 1.086 1.072L12.387 6l.248 1.506-1.086 1.072-.684 1.365-1.51.229L8 10.874l-1.355-.702-1.51-.229-.684-1.365-1.086-1.072L3.614 6l-.25-1.506 1.087-1.072.684-1.365 1.51-.229L8 1.126l1.356.702z" />
-                            <path d="M4 11.794V16l4-1 4 1v-4.206l-2.018.306L8 13.126 6.018 12.1z" />
-                        </svg>
-                    </div>
-
-                    <div class="resource-value">
-                        <h6>Certificate</h6>
-                        @if(isset($isRegistered) && $isRegistered)
-                            @if(isset($hasFeedback) && $hasFeedback)
-                            <div class="box-resources-sertif">
-                              <p>Silakan preview / unduh.</p>
-                                <div class="box-sertif-after-event">
-                                  
-                                    <a class="view-sertif-event" href="{{ route('certificates.show', [$event->id, $registration->id]) }}" target="_blank"
-                                       style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; color:#111;">
-                                        <svg  xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                            @elseif(isset($attendanceSubmitted) && $attendanceSubmitted)
-                                <p>Available after feedback.</p>
-                            @elseif($eventIsFinished)
-                                <p>Available after feedback.</p>
-                            @else
-                                <p>Available after attendance & feedback.</p>
-                            @endif
-                        @else
-                            <p>Available for participants.</p>
-                        @endif
-                    </div>
-                </div>
-            @if(!empty($event->zoom_link))
-            <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
-                    @php
-                        $isHybrid = !empty($event->zoom_link) && (!empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude)));
-                    @endphp
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z"/>
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Link Zoom</h6>
-                        <p>{{ $isRegistered ? 'Available after booking' : 'Available after booking' }}</p>
-                    </div>
-                    @if($isRegistered && !empty($event->zoom_link))
-                        <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd"
-                                    d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd"
-                                    d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        </a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
-                    @endif
-                </div>
-            @endif
-
-                @php
-                    $mapLink = '';
-                    if (!empty($event->maps_url)) {
-                        $maps = trim($event->maps_url);
-                        if (\Illuminate\Support\Str::startsWith($maps, ['http://','https://','//'])) {
-                            $mapLink = $maps;
-                        } else {
-                            try { $mapLink = Storage::url($maps); } catch (\Throwable $e) { $mapLink = $maps; }
-                        }
-                    } elseif (!empty($event->latitude) && !empty($event->longitude)) {
-                        $mapLink = 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude;
-                    }
-                    $showMapsCard = !empty($mapLink) || (!empty($event->location) && empty($event->zoom_link));
-                @endphp
-
-                @if($showMapsCard)
-                <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
-                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
-                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Location Map</h6>
-                        <p>{{ $isRegistered ? 'Available after seat booking' : 'Available after seat booking' }}</p>
-                    </div>
-                    @if($isRegistered && $mapLink)
-                        <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        </a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
-                    @endif
-                </div>
-                @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}"
-                    style="position:relative;">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            class="bi bi-star-fill" viewBox="0 0 16 16">
-                            <path
-                                d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Feedback and Ratings</h6>
-                        @if(isset($hasFeedback) && $hasFeedback)
-                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
-                        @else
-                            <p style="width: 70%;">Available after the event ends</p>
-                        @endif
-                    </div>
-
-                    @if($isRegistered && $attendanceSubmitted)
-                        <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
-                            style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
-                            @if(isset($hasFeedback) && $hasFeedback)
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                                    stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    aria-label="Feedback berhasil">
-                                    <circle cx="12" cy="12" r="9"></circle>
-                                    <polyline points="8 12 11 15 16 10"></polyline>
-                                </svg>
-                            @else
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd"
-                                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                    <path fill-rule="evenodd"
-                                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                                </svg>
-                            @endif
-                        </button>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                    @endif
-                </div>
             </div>
-        </section>
-
-        @if($isRegistered && $attendanceSubmitted)
-                <div id="feedbackSection"
-                    style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
-                    <div class="d-flex justify-content-between align-items-center"
-                        style="margin-top: 20px; margin-left: 25px; margin-bottom: 10px;">
-                        <h5 class="mb-0 fw-bold" style="font-size: 1.1rem; color: #333;">Feedback & Reviews</h5>
-                        <button type="button" onclick="toggleFeedbackSection()" aria-label="Close"
-                            style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s; margin-right: 25px;"
-                            onmouseover="this.style.backgroundColor='#e9ecef'"
-                            onmouseout="this.style.backgroundColor='transparent'">
-                            <span style="line-height: 1;">&times;</span>
-                        </button>
-                    </div>
-                    <div class="row g-0">
-                    </div>
-                    <div class="col-md-6" style="background-color: white; padding: 1rem;">
-                        <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
-                        @if(isset($hasFeedback) && $hasFeedback)
-                            <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
-                                Feedback already submitted and cannot be sent again.
-                            </div>
-                        @else
-                            <form action="#" method="POST" id="feedback-form">
-                                @csrf
-
-                                <div class="feedback-rating-row" style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 15px;">
-                            
-                                    <div style="flex: 1 1 140px; min-width: 0;">
-                                        <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Event Ratings</label>
-                                        <div class="stars-rating-input" data-target="eventRating"
-                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
-                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Speaker Rating -->
-                                    <div style="flex: 1 1 140px; min-width: 0;">
-                                        <label class="form-label mb-1"
-                                            style="font-weight: 500; color: #333; font-size: 0.9rem;">Speaker Ratings</label>
-                                        <div class="stars-rating-input" data-target="speakerRating"
-                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
-                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <textarea id="feedback-text" name="feedback" class="form-control"
-                                        rows="4" placeholder="Write your thoughts..." required
-                                        style="width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
-                                </div>
-
-                                <button type="button" id="submit-feedback-btn" class="btn fw-semibold"
-                                    style="width: 100%; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
-                                    Submit Feedback
-                                </button>
-                            </form>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        @endif
 
         <div class="desc-box">
         <nav>
@@ -2305,6 +2314,7 @@
                 </div>
             </div>
             
+        </div>
 </main>
  <div class="footer-section-wrapper">
         @include('partials.footer-after-login')

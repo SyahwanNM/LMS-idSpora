@@ -215,10 +215,13 @@
             <div class="sidebar"></div>
             <div class="gold-accent"></div>
             @php 
-                $logoFileName = ($template == 'template_3') ? 'logo-idspora.png' : 'logo idspora_dark.png';
+                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
                 $mainLogoPath = public_path('aset/' . $logoFileName); 
+                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
             @endphp
-            @if(file_exists($mainLogoPath))
+            @if(isset($is_preview) && $is_preview)
+                <img src="{{ $mainLogoUrl }}" class="watermark">
+            @elseif(file_exists($mainLogoPath))
                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="watermark">
             @endif
         @endif
@@ -226,8 +229,20 @@
         @if($template == 'template_3')
             <div class="header-bg">
                 <div style="float: right;">
-                    @foreach($logosBase64 as $logo)
-                        <img src="{{ $logo }}" class="logo-item" style="filter: brightness(0) invert(1);">
+                    @php 
+                        $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
+                        $mainLogoPath = public_path('aset/' . $logoFileName); 
+                        $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
+                    @endphp
+                    @if(isset($is_preview) && $is_preview)
+                        <img src="{{ $mainLogoUrl }}" class="logo-item">
+                    @elseif(file_exists($mainLogoPath))
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
+                    @endif
+
+                    @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                    @foreach($logosToRender as $logo)
+                        <img src="{{ $logo }}" class="logo-item">
                     @endforeach
                 </div>
                 <h1>Certificate</h1>
@@ -247,13 +262,18 @@
                     <div class="logo-row">
                         <div class="logo-container">
                             @php 
-                                $logoFileName = ($template == 'template_3') ? 'logo-idspora.png' : 'logo idspora_dark.png';
+                                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
                                 $mainLogoPath = public_path('aset/' . $logoFileName); 
+                                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
                             @endphp
-                            @if(file_exists($mainLogoPath))
+                            @if(isset($is_preview) && $is_preview)
+                                <img src="{{ $mainLogoUrl }}" class="logo-item">
+                            @elseif(file_exists($mainLogoPath))
                                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
                             @endif
-                            @foreach(array_slice($logosBase64, 0, 3) as $logo)
+
+                            @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                            @foreach(array_slice($logosToRender, 0, 3) as $logo)
                                 <img src="{{ $logo }}" class="logo-item">
                             @endforeach
                         </div>
@@ -266,13 +286,18 @@
                     <div class="logo-row">
                         <div class="logo-container">
                             @php 
-                                $logoFileName = ($template == 'template_3') ? 'logo-idspora.png' : 'logo idspora_dark.png';
+                                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
                                 $mainLogoPath = public_path('aset/' . $logoFileName); 
+                                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
                             @endphp
-                            @if(file_exists($mainLogoPath))
+                            @if(isset($is_preview) && $is_preview)
+                                <img src="{{ $mainLogoUrl }}" class="logo-item" style="height: 50px;">
+                            @elseif(file_exists($mainLogoPath))
                                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item" style="height: 50px;">
                             @endif
-                            @foreach(array_slice($logosBase64, 0, 3) as $logo)
+
+                            @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                            @foreach(array_slice($logosToRender, 0, 3) as $logo)
                                 <img src="{{ $logo }}" class="logo-item">
                             @endforeach
                         </div>
@@ -298,7 +323,8 @@
                 @endphp
                 @forelse($sigsToRender as $sig)
                     <div class="sig-box">
-                        <img src="{{ $sig['base64'] }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
+                        @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
+                        <img src="{{ $sigSrc }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
                         <div class="sig-line"></div>
                         @if(!empty($sig['name']))
                             <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $sig['name'] }}</p>

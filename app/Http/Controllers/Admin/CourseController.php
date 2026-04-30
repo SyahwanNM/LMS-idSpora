@@ -182,6 +182,25 @@ class CourseController extends Controller
             $currentModule = $modules->first();
         }
 
+        // Unified UI Redirect: If requested module is PDF, redirect to its paired Video lesson
+        if ($currentModule && strtolower(trim((string)($currentModule->type ?? ''))) === 'pdf') {
+            $nextVideo = $modules
+                ->filter(fn($m) => (int)($m->order_no ?? 0) > (int)($currentModule->order_no ?? 0))
+                ->sortBy('order_no')
+                ->first();
+            
+            if ($nextVideo && strtolower(trim((string)($nextVideo->type ?? ''))) === 'video') {
+                $mTitle = $currentModule->title ?? '';
+                $nTitle = $nextVideo->title ?? '';
+                preg_match('/^(Module\s+\d+|Bab\s+\d+|Unit\s+\d+|Materi\s+\d+|Session\s+\d+)/i', $mTitle, $mMatches);
+                preg_match('/^(Module\s+\d+|Bab\s+\d+|Unit\s+\d+|Materi\s+\d+|Session\s+\d+)/i', $nTitle, $nMatches);
+                
+                if (!empty($mMatches[1]) && !empty($nMatches[1]) && strtolower($mMatches[1]) === strtolower($nMatches[1])) {
+                    return redirect()->route('course.learn', ['course' => $course->id, 'module' => $nextVideo->id]);
+                }
+            }
+        }
+
         // Preview access policy: optionally limit to first 2 modules
         if ($freeAccessMode === 'limit_2' && $currentModule) {
             $allowed = in_array((int) $currentModule->id, $freeAccessibleModuleIds, true);
@@ -217,6 +236,20 @@ class CourseController extends Controller
                     $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
                     return redirect()->to($target)
                         ->with('error', 'You must complete the quiz firstahulu baru bisa lanjut ke tahap selanjutnya.');
+                }
+            }
+
+            if ($prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'video') {
+                $enrollmentId = $enrollment->id ?? 0;
+                $videoProgress = Progress::where('enrollment_id', $enrollmentId)
+                    ->where('course_module_id', $prevModule->id)
+                    ->where('completed', true)
+                    ->exists();
+
+                if (!$videoProgress) {
+                    $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
+                    return redirect()->to($target)
+                        ->with('error', 'Silakan selesaikan video lesson sebelumnya sampai akhir untuk melanjutkan.');
                 }
             }
         }

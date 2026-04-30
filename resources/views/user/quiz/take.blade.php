@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -55,62 +55,105 @@
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
     <div class="box_luar_kuis quiz-take-v2">
+        <!-- Sidebar for Quiz Navigation -->
+        <div class="box_kuis_kiri quiz-modules" id="quizSidebar">
+            <div class="quiz-modules-head">
+                <span class="quiz-modules-title">Questions Navigation</span>
+                <button type="button" class="quiz-modules-close" id="closeSidebarBtn">&times;</button>
+            </div>
+            
+            <div class="quiz-sidebar-content" style="padding: 10px 0;">
+                <div class="timer-section-sidebar" style="margin-bottom: 24px; text-align: center;">
+                    <p style="font-size: 13px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">Time Remaining</p>
+                    <p class="waktu_kuis" id="quizTimer" style="margin: 0 auto;">--:--</p>
+                </div>
+
+                <div class="quiz-sidebar-heading" style="margin-bottom:12px; font-weight:700; color: #111827; font-size: 15px;">Question List</div>
+                <div class="nomor_kuis" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px;">
+                    @foreach($questions as $idx => $q)
+                        @php
+                            $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
+                            $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
+                            $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
+                        @endphp
+                        <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
         <div class="box_kuis_kanan">
-            <div class="quiz-title-row" style="margin-top: 24px;">
-                <div class="quiz-title-left">
-                    <span class="quiz-title-icon" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M2 2.5a.5.5 0 0 1 .5-.5H14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H2.5a.5.5 0 0 1-.5-.5z" opacity=".15"/>
-                            <path d="M2.5 2A1.5 1.5 0 0 0 1 3.5v9A1.5 1.5 0 0 0 2.5 14H14a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM2 3.5A.5.5 0 0 1 2.5 3H14v10H2.5a.5.5 0 0 1-.5-.5z"/>
-                            <path d="M4 5.25a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 5.25m0 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 7.75m0 2.5a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4A.75.75 0 0 1 4 10.25"/>
+            <div class="quiz-title-row" style="margin-top: 24px; display: flex; align-items: center; gap: 15px; justify-content: space-between;">
+                <div class="quiz-title-left" style="display: flex; align-items: center; gap: 12px;">
+                    <button type="button" class="quiz-modules-open" id="openSidebarBtn" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#374151" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
                         </svg>
-                    </span>
-                    <h1 class="quiz-title">Kuis {{ $quizNumber }} : {{ $module->title }}</h1>
+                    </button>
+                    <h1 class="quiz-title" style="margin: 0; font-size: 20px;">Kuis {{ $quizNumber }} : {{ $module->title }}</h1>
                 </div>
             </div>
 
-            <div class="box_soal_kuis">
-                <div id="quizHeaderBlock" style="margin-bottom:12px; margin-top: 30px;">
-                    <p class="waktu_kuis" id="quizTimer">--:--:--</p>
-                    <div class="quiz-sidebar-heading" style="margin-top: 8px; margin-bottom:6px; font-weight:600;">Questions</div>
-                    <div class="nomor_kuis" style="margin-bottom: 16px;margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
-                        @foreach($questions as $idx => $q)
-                            @php
-                                $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
-                                $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
-                                $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
-                            @endphp
-                            <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
-                        @endforeach
-                    </div>
-                </div>
-                <h2 class="pertanyaan_kuis">{{ $currentQuestionIndex + 1 }}. {{ $currentQuestion->question }}</h2>
+            <div class="box_soal_kuis" style="margin: 30px auto 0; max-width: 800px; float: none;">
+                <h2 class="pertanyaan_kuis" style="margin-bottom: 24px;">{{ $currentQuestionIndex + 1 }}. {{ $currentQuestion->question }}</h2>
 
                 <form id="quizAnswerForm" action="{{ route('user.quiz.answer', [$course, $module, $attempt]) }}" method="POST" novalidate>
                     @csrf
                     <input type="hidden" name="question_id" value="{{ $currentQuestion->id }}">
 
-                    @foreach($currentQuestion->answers as $answer)
-                        @php
-                            $letter = chr(65 + $loop->index);
-                            $checked = $selectedAnswerId && (int)$selectedAnswerId === (int)$answer->id;
-                        @endphp
+                    <div class="options-container" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 30px;">
+                        @foreach($currentQuestion->answers as $answer)
+                            @php
+                                $letter = chr(65 + $loop->index);
+                                $checked = $selectedAnswerId && (int)$selectedAnswerId === (int)$answer->id;
+                            @endphp
 
-                        <label class="pilihan_jawaban_kuis quiz-answer-option {{ $checked ? 'selected' : '' }}" data-answer-id="{{ $answer->id }}">
-                            <input class="d-none" type="radio" name="answer_id" value="{{ $answer->id }}" {{ $checked ? 'checked' : '' }} required>
-                            <span class="quiz-option-letter" aria-hidden="true">{{ $letter }}.</span>
-                            <p class="mb-0">{{ $answer->answer_text }}</p>
-                        </label>
-                    @endforeach
+                            <label class="pilihan_jawaban_kuis quiz-answer-option {{ $checked ? 'selected' : '' }}" data-answer-id="{{ $answer->id }}" style="margin: 0; width: 100%;">
+                                <input class="d-none" type="radio" name="answer_id" value="{{ $answer->id }}" {{ $checked ? 'checked' : '' }} required>
+                                <span class="quiz-option-letter" aria-hidden="true">{{ $letter }}.</span>
+                                <p class="mb-0">{{ $answer->answer_text }}</p>
+                            </label>
+                        @endforeach
+                    </div>
 
-                    <div class="tombol_kuis">
-                        <button type="button" class="previous_question" data-prev-url="{{ $prevUrl }}">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
+                    <div class="tombol_kuis" style="display: flex; justify-content: space-between; gap: 15px; margin-top: 40px;">
+                        <button type="button" class="previous_question" data-prev-url="{{ $prevUrl }}" style="flex: 1; max-width: 200px;">Previous</button>
+                        <button type="submit" class="next_question" style="flex: 1; max-width: 200px;">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <script>
+        // Sidebar Toggling Logic
+        const sidebar = document.getElementById('quizSidebar');
+        const openBtn = document.getElementById('openSidebarBtn');
+        const closeBtn = document.getElementById('closeSidebarBtn');
+        const mainContainer = document.querySelector('.box_luar_kuis');
+
+        function toggleSidebar(isClosed) {
+            if (isClosed) {
+                sidebar.classList.add('closed');
+                mainContainer.classList.add('modules-closed');
+                openBtn.style.display = 'flex';
+            } else {
+                sidebar.classList.remove('closed');
+                mainContainer.classList.remove('modules-closed');
+                openBtn.style.display = 'none';
+            }
+            // Save state
+            localStorage.setItem('quiz_sidebar_closed', isClosed ? '1' : '0');
+        }
+
+        openBtn?.addEventListener('click', () => toggleSidebar(false));
+        closeBtn?.addEventListener('click', () => toggleSidebar(true));
+
+        // Restore sidebar state
+        if (localStorage.getItem('quiz_sidebar_closed') === '1') {
+            toggleSidebar(true);
+        }
+    </script>
 
     <script>
         // ── Answer persistence via sessionStorage ──────────────────────────────

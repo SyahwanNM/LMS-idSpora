@@ -5,16 +5,21 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EventCertificateController;
+use App\Http\Controllers\Api\EventAttendanceController;
+use App\Http\Controllers\Admin\CourseReportController as AdminCourseReportController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\MyCourseController;
 use App\Http\Controllers\Api\CoursePaymentController;
 use App\Http\Controllers\Api\CourseAccessController;
+use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\Admin\EventController as AdminEventController;
 use App\Http\Controllers\Api\Admin\ApiAdminCourseController as AdminCourseController;
 use App\Http\Controllers\Api\Admin\CourseTemplateController as AdminCourseTemplateController;
 use App\Http\Controllers\Api\Admin\CourseModuleController as AdminCourseModuleController;
 use App\Http\Controllers\Api\Admin\CoursePaymentController as AdminCoursePaymentController;
 use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\Admin\EventGrowthReportController as AdminEventGrowthReportController;
 use App\Http\Controllers\Api\Trainer\EventController as TrainerEventController;
 use App\Http\Controllers\Api\Trainer\EventModuleSubmissionController as TrainerEventModuleSubmissionController;
 
@@ -23,6 +28,10 @@ use App\Http\Controllers\Api\Trainer\EventModuleSubmissionController as TrainerE
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 // Register new account (5 req/min per IP to prevent spam)
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
+// Verify OTP after register (10 req/min per IP)
+Route::post('/register/verify-otp', [AuthController::class, 'verifyRegisterOtp'])->middleware('throttle:10,1');
+// Resend OTP for registration (3 req/min per IP)
+Route::post('/register/resend-otp', [AuthController::class, 'resendRegisterOtp'])->middleware('throttle:3,1');
 // Public events listing throttled to avoid scraping (120 req/min)
 Route::get('/events', [EventController::class, 'index'])->middleware('throttle:120,1');
 Route::get('/events/{id}', [EventController::class, 'show'])->where('id', '[0-9]+')->middleware('throttle:120,1');
@@ -81,9 +90,30 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
     Route::post('/courses/{course}/modules/{module}/complete', [CourseAccessController::class, 'complete'])->whereNumber('course')->whereNumber('module');
     Route::get('/courses/{course}/progress', [CourseAccessController::class, 'progress'])->whereNumber('course');
 
+    // Quiz
+    Route::get('/courses/{course}/modules/{module}/quiz', [QuizController::class, 'show'])->whereNumber('course')->whereNumber('module');
+    Route::post('/courses/{course}/modules/{module}/quiz/start', [QuizController::class, 'start'])->whereNumber('course')->whereNumber('module');
+    Route::post('/courses/{course}/modules/{module}/quiz/attempts/{attempt}/answer', [QuizController::class, 'submitAnswer'])->whereNumber('course')->whereNumber('module')->whereNumber('attempt');
+    Route::post('/courses/{course}/modules/{module}/quiz/attempts/{attempt}/finish', [QuizController::class, 'finish'])->whereNumber('course')->whereNumber('module')->whereNumber('attempt');
+    Route::get('/courses/{course}/modules/{module}/quiz/result', [QuizController::class, 'result'])->whereNumber('course')->whereNumber('module');
+
     // Course reviews
     Route::get('/courses/{course}/reviews', [CourseController::class, 'reviews'])->whereNumber('course');
     Route::post('/courses/{course}/reviews', [CourseController::class, 'submitReview'])->whereNumber('course');
+
+    // Event certificates
+    Route::get('/me/event-certificates', [EventCertificateController::class, 'index']);
+    Route::get('/events/{event}/certificate', [EventCertificateController::class, 'show'])->whereNumber('event');
+    Route::get('/events/{event}/certificate/download', [EventCertificateController::class, 'download'])
+        ->whereNumber('event')
+        ->name('api.events.certificate.download');
+
+    // Event attendance (QR scan)
+    Route::get('/events/{event}/attendance/status', [EventAttendanceController::class, 'status'])->whereNumber('event');
+    Route::get('/events/{event}/attendance/qr-info', [EventAttendanceController::class, 'qrInfo'])->whereNumber('event');
+    Route::post('/events/{event}/attendance/scan', [EventAttendanceController::class, 'scan'])
+        ->whereNumber('event')
+        ->name('api.events.attendance.scan');
 
     // Trainer APIs (RESTful)
     Route::middleware(['trainer', 'throttle:100,1'])->prefix('trainer')->group(function () {
@@ -127,4 +157,14 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->
     Route::put('courses/{course}/modules/{module}', [AdminCourseModuleController::class, 'update']);
     Route::delete('courses/{course}/modules/{module}', [AdminCourseModuleController::class, 'destroy']);
     Route::post('courses/{course}/modules/reorder', [AdminCourseModuleController::class, 'reorder']);
+
+    // Report Revenue & Growth
+    Route::get('reports/revenue', [AdminCourseReportController::class, 'revenue'])->name('api.admin.reports.revenue');
+    Route::get('reports/growth', [AdminCourseReportController::class, 'growth'])->name('api.admin.reports.growth');
+    Route::get('reports/event-revenue', function (\Illuminate\Http\Request $request) {
+        return app(\App\Http\Controllers\Admin\AdminController::class)->eventRevenueApi($request);
+    })->name('api.admin.reports.event-revenue');
+
+    // Reports
+    Route::get('reports/events/growth', AdminEventGrowthReportController::class);
 });

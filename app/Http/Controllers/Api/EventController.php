@@ -7,13 +7,40 @@ use App\Models\Event;
 use App\Http\Resources\EventResource;
 use App\Http\Resources\EventRegistrationResource;
 use App\Models\ManualPayment;
+use App\Models\EventRegistration;
+use App\Models\User;
+use App\Models\Referral;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class EventController extends Controller
 {
+    private const REFERRAL_DISCOUNT_RATE = 0.10;
+
+    private function jsonSuccess(string $message, $data = null, $pagination = null, int $statusCode = 200)
+    {
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'data' => $data,
+            'pagination' => $pagination,
+        ], $statusCode);
+    }
+
+    private function jsonError(string $message, int $statusCode = 400, $data = null)
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => $message,
+            'data' => $data,
+            'pagination' => null,
+        ], $statusCode);
+    }
+
     public function index(Request $request)
     {
         $perPage = max(1, min((int) $request->query('per_page', 10), 100));
@@ -109,38 +136,12 @@ class EventController extends Controller
 
         $events = $query->paginate($perPage)->appends($request->query());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'List event',
-            'data' => EventResource::collection($events),
-            'pagination' => [
-                'current_page' => $events->currentPage(),
-                'per_page' => $events->perPage(),
-                'total' => $events->total(),
-                'last_page' => $events->lastPage(),
-            ],
+        return $this->jsonSuccess('List event', EventResource::collection($events), [
+            'current_page' => $events->currentPage(),
+            'per_page' => $events->perPage(),
+            'total' => $events->total(),
+            'last_page' => $events->lastPage(),
         ]);
-    }
-
-    private function jsonSuccess(string $message, $data = null, $pagination = null, int $statusCode = 200)
-    {
-        $response = ['status' => 'success', 'message' => $message];
-        if ($data !== null) {
-            $response['data'] = $data;
-        }
-        if ($pagination !== null) {
-            $response['pagination'] = $pagination;
-        }
-        return response()->json($response, $statusCode);
-    }
-
-    private function jsonError(string $message, int $statusCode = 400, $data = null)
-    {
-        $response = ['status' => 'error', 'message' => $message];
-        if ($data !== null) {
-            $response['data'] = $data;
-        }
-        return response()->json($response, $statusCode);
     }
 
     public function show(Request $request, int $id)
@@ -155,14 +156,10 @@ class EventController extends Controller
 
         $isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
         if (!$isAdmin && !(bool) $event->is_published) {
-            return response()->json(['status' => 'error', 'message' => 'Event tidak ditemukan'], 404);
+            return $this->jsonError('Event tidak ditemukan', 404);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Detail Event',
-            'data' => new EventResource($event),
-        ]);
+        return $this->jsonSuccess('Detail Event', new EventResource($event));
     }
     
    public function register(Request $request, $id)
@@ -184,26 +181,30 @@ class EventController extends Controller
             return $this->jsonError('Event tidak ditemukan', 404);
         }
 
-        $isAdmin = $user && strtolower(trim((string) ($user->role ?? ''))) === 'admin';
-        if (!$isAdmin && !(bool) $event->is_published) {
-            return response()->json(['status' => 'error', 'message' => 'Event belum diterbitkan'], 404);
-        }
-
         // 1b. Cek apakah event sudah selesai
         if (method_exists($event, 'isFinished') && $event->isFinished()) {
             return $this->jsonError('Event sudah selesai, pendaftaran ditutup.', 422);
         }
 
-        // 2. Hitung Harga
-        $isFree = (float) ($event->discounted_price ?? 0) <= 0;
-        $amount = $isFree ? 0 : (float) $event->discounted_price;
+        // 2. Hitung Harga (jangan treat discounted_price null sebagai gratis)
+        $basePrice = $this->resolveFinalEventPrice($event);
+        $isFree = (float) $basePrice <= 0;
+
+        // Referral/discount: only for reseller-enabled events and paid events.
+        $rawReferralCode = trim((string) ($validated['referral_code'] ?? ''));
+        $referrer = (!$isFree && (bool) ($event->is_reseller_event ?? false))
+            ? $this->resolveValidReferrer($user, $rawReferralCode)
+            : null;
+        $referralCode = $referrer ? $rawReferralCode : null;
+
+        $amount = $isFree ? 0 : $this->applyReferralDiscountAmount((float) $basePrice, $referrer !== null);
 
         // Buat Nomor Order Unik (Must be unique for each registration attempt)
         // Format: REG-{UserID}-{EventID}-{Timestamp}
         $orderId = 'REG-' . $user->id . '-' . $event->id . '-' . time();
 
         // 3. Cek Apakah User Sudah Terdaftar
-        $existing = \App\Models\EventRegistration::where('user_id', $user->id)
+        $existing = EventRegistration::query()->where('user_id', $user->id)
             ->where('event_id', $event->id)
             ->first();
 
@@ -229,6 +230,7 @@ class EventController extends Controller
                     $existing->rejection_reason = null;
                     $existing->payment_verified_at = null;
                     $existing->payment_verified_by = null;
+                    $existing->referral_code = $referralCode;
                     $existing->save();
 
                     $manualPayment = ManualPayment::query()
@@ -251,10 +253,13 @@ class EventController extends Controller
                     $manualPayment->method = $isFree ? 'free' : 'manual_transfer';
                     $manualPayment->status = $isFree ? 'settled' : 'pending';
                     $manualPayment->note = null;
+                    $manualPayment->referral_code = $referralCode;
                     $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
                         'source' => 'event',
                         'type' => $isFree ? 'free' : 'paid',
                         'retry_after_reject' => true,
+                        'base_amount' => (float) $basePrice,
+                        'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
                     ]);
                     $manualPayment->save();
 
@@ -264,24 +269,21 @@ class EventController extends Controller
                         'status' => 'success',
                         'message' => $isFree ? 'Pendaftaran Berhasil!' : 'Pendaftaran berhasil. Silakan lakukan pembayaran manual dan upload bukti bayar.',
                         'data' => [
-                            'registration' => $existing,
+                            'registration' => new EventRegistrationResource($existing->fresh()->load('event')),
                             'payment_url' => null
                         ]
                     ], 201);
                 } catch (\Throwable $e) {
                     DB::rollBack();
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Gagal memproses pendaftaran ulang: ' . $e->getMessage(),
-                    ], 500);
+                    return $this->jsonError('Gagal memproses pendaftaran ulang: ' . $e->getMessage(), 500);
                 }
             }
 
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Kamu sudah terdaftar di event ini!',
-                'data' => $existing
-            ], 409);
+            return $this->jsonError(
+                'Kamu sudah terdaftar di event ini!',
+                409,
+                new EventRegistrationResource($existing->load('event'))
+            );
         }
 
         try {
@@ -948,6 +950,15 @@ class EventController extends Controller
 
         // Sync status real-time dari Midtrans jika ada pending order
         if ($payment && $payment->order_id) {
+            // Cek umur snap token — Midtrans return 404 jika user belum membuka popup
+            // sama sekali (transaksi belum diinisiasi di sisi Midtrans). Ini normal
+            // selama token masih dalam masa berlaku (< 24 jam).
+            $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+            $tokenAgeHours  = $tokenCreatedAt
+                ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                : 0;
+            $tokenStillValid = $tokenAgeHours < 24;
+
             try {
                 $this->configureMidtrans();
                 $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
@@ -970,8 +981,18 @@ class EventController extends Controller
                     $payment = null; // tidak ada pending order aktif
                 }
             } catch (\Throwable $e) {
-                // 404 dari Midtrans = belum pernah dicharge = expired
-                if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
+                $is404 = str_contains($e->getMessage(), '404')
+                    || str_contains(strtolower($e->getMessage()), 'not found');
+
+                if ($is404 && $tokenStillValid) {
+                    // Token masih valid dan user belum membuka popup Midtrans sama sekali.
+                    // Midtrans belum mengenal order ini → biarkan tetap pending, jangan expired.
+                    Log::info('midtransPendingOrder: 404 dari Midtrans tapi token masih valid, biarkan pending.', [
+                        'order_id'        => $payment->order_id,
+                        'token_age_hours' => $tokenAgeHours,
+                    ]);
+                } elseif ($is404 && !$tokenStillValid) {
+                    // Token sudah > 24 jam dan Midtrans tidak mengenal order → benar-benar expired.
                     $payment->status = 'expired';
                     $payment->save();
                     $reg = EventRegistration::find($payment->event_registration_id);
@@ -981,7 +1002,7 @@ class EventController extends Controller
                     }
                     $payment = null;
                 }
-                // Error lain: biarkan tetap pending, jangan blokir user
+                // Error lain (network, server error): biarkan tetap pending, jangan blokir user.
             }
         }
 
