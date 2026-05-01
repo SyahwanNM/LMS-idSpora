@@ -284,7 +284,9 @@ class QuizController extends Controller
         $currentQuestion = $questions[$currentQuestionIndex];
 
         return view('user.quiz.take', [
-            'course' => $course->loadMissing('units'),
+            'course' => $course->loadMissing(['units', 'modules' => function($q) {
+                $q->orderBy('order_no');
+            }]),
             'module' => $module,
             'attempt' => $attempt,
             'questions' => $questions,

@@ -179,25 +179,19 @@ class CourseController extends Controller
             $currentModule = $modules->firstWhere('id', (int) $selectedId);
         }
         if (!$currentModule) {
-            $currentModule = $modules->first();
+            $currentModule = $modules->firstWhere('type', 'video') ?: $modules->first();
         }
 
-        // Unified UI Redirect: If requested module is PDF, redirect to its paired Video lesson
+        // Simplified Redirect: If current module is a PDF, skip to the next module automatically.
+        // PDF content is already displayed as a description within the Video lessons.
         if ($currentModule && strtolower(trim((string)($currentModule->type ?? ''))) === 'pdf') {
-            $nextVideo = $modules
+            $nextModule = $modules
                 ->filter(fn($m) => (int)($m->order_no ?? 0) > (int)($currentModule->order_no ?? 0))
                 ->sortBy('order_no')
                 ->first();
             
-            if ($nextVideo && strtolower(trim((string)($nextVideo->type ?? ''))) === 'video') {
-                $mTitle = $currentModule->title ?? '';
-                $nTitle = $nextVideo->title ?? '';
-                preg_match('/^(Module\s+\d+|Bab\s+\d+|Unit\s+\d+|Materi\s+\d+|Session\s+\d+)/i', $mTitle, $mMatches);
-                preg_match('/^(Module\s+\d+|Bab\s+\d+|Unit\s+\d+|Materi\s+\d+|Session\s+\d+)/i', $nTitle, $nMatches);
-                
-                if (!empty($mMatches[1]) && !empty($nMatches[1]) && strtolower($mMatches[1]) === strtolower($nMatches[1])) {
-                    return redirect()->route('course.learn', ['course' => $course->id, 'module' => $nextVideo->id]);
-                }
+            if ($nextModule) {
+                return redirect()->route('course.learn', ['course' => $course->id, 'module' => $nextModule->id]);
             }
         }
 

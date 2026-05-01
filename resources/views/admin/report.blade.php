@@ -318,7 +318,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Overall Rating</h6>
+                                <h6>Rating Course</h6>
                                 <h3 id="courseRating">{{ number_format((float)(data_get($growthReport, 'summary.rating_avg', 0)), 1) }} ⭐</h3>
                             </div>
                         </div>

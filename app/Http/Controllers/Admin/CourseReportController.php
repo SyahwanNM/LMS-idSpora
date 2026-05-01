@@ -302,6 +302,7 @@ class CourseReportController extends Controller
             ->groupBy('m')
             ->pluck('total_seconds', 'm');
 
+        // Course-specific rating only (exclude trainer_rating)
         $ratingByMonth = Review::query()
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('MONTH(created_at) as m')
@@ -486,7 +487,7 @@ class CourseReportController extends Controller
             $reviewRow = $reviewsByCourse->get($courseId);
             $commentsCount = (int) ($reviewRow->comments_count ?? 0);
             
-            // Return cumulative rating for the course instead of just the filtered period rating
+            // Strictly Course Rating only - lifetime average for the course
             $course = Course::find($courseId);
             $ratingAvg = $course ? (float) $course->reviews()->avg('rating') : 0.0;
 
@@ -543,7 +544,7 @@ class CourseReportController extends Controller
         // Waktu tonton rata-rata dijumlah aja sesuai request user
         $avgAllMinutes = (int) $rows->sum('avg_watch_minutes');
 
-        // Platform-wide rating (average of all reviews, respecting search filter AND date range)
+        // Platform-wide Course rating (average of all course reviews, strictly excluding trainer rating)
         $ratingAllQuery = Review::query()
             ->whereBetween('created_at', [$from, $to]);
         if ($courseIdFilter) {

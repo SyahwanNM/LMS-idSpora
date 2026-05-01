@@ -124,6 +124,7 @@
                 }
 
                 $totalModules = $modulesList->count();
+                $filteredModules = $modulesList->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) !== 'pdf')->values();
                 $pdfCount = $modulesList->where('type', 'pdf')->count();
                 $videoCount = $modulesList->where('type', 'video')->count();
                 $quizCount = $modulesList->where('type', 'quiz')->count();
@@ -151,18 +152,10 @@
                         $isActive = $activeModule && ((int)$activeModule->id === (int)$m->id);
                         $typeLabel = $m->type ? strtoupper($m->type) : 'MATERI';
                         $prevModule = $modulesList->get($loop->index - 1);
-                        $isLocked = false;
-                        $lockReason = '';
-
-                        if ($isFreeLimited && !in_array((int) $m->id, $freeAccessibleModuleIds, true)) {
-                            $isLocked = true;
-                            $lockReason = 'free';
-                        }
-
                         $mId = (int) $m->id;
                         $isDone = false;
+                        $mType = strtolower(trim((string)($m->type ?? '')));
                         if (auth()->check()) {
-                            $mType = strtolower(trim((string)($m->type ?? '')));
                             if ($mType === 'quiz') {
                                 $isDone = in_array($mId, $passedQuizModuleIds, true);
                             } else {
@@ -170,14 +163,42 @@
                             }
                         }
 
-                        if (auth()->check() && $prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
-                            if (!$isLocked) {
-                                $isLocked = !in_array((int) $prevModule->id, $passedQuizModuleIds, true);
-                                if ($isLocked) {
-                                    $lockReason = 'quiz';
+                        // SEQUENTIAL GATING LOGIC:
+                        // A module is locked if ANY preceding QUIZ has not been passed.
+                        // We use $filteredModules (which skips PDFs) to determine the sequence.
+                        $isLocked = false;
+                        $lockReason = '';
+
+                        // Get all modules that appear BEFORE the current one in the sidebar
+                        $currentIdxInFiltered = $filteredModules->search(fn($fm) => (int)$fm->id === $mId);
+                        if ($currentIdxInFiltered !== false) {
+                            $precedingModules = $filteredModules->take($currentIdxInFiltered);
+                            foreach ($precedingModules as $pm) {
+                                if (strtolower(trim((string)($pm->type ?? ''))) === 'quiz') {
+                                    if (!in_array((int)$pm->id, $passedQuizModuleIds, true)) {
+                                        $isLocked = true;
+                                        $lockReason = 'quiz';
+                                        break;
+                                    }
                                 }
+                                // Optional: also lock if previous video is not completed
+                                /*
+                                if (strtolower(trim((string)($pm->type ?? ''))) === 'video') {
+                                    if (!in_array((int)$pm->id, $completedMaterialModuleIds, true)) {
+                                        $isLocked = true;
+                                        $lockReason = 'video';
+                                        break;
+                                    }
+                                }
+                                */
                             }
                         }
+
+                        if ($isFreeLimited && !in_array((int) $m->id, $freeAccessibleModuleIds, true)) {
+                            $isLocked = true;
+                            $lockReason = 'free';
+                        }
+
                         $descLines = [];
                         if (!empty($m->description)) {
                             $cleanDesc = trim(strip_tags((string) $m->description));

@@ -697,7 +697,14 @@ class PaymentController extends Controller
                 ]
             );
 
+            Log::info('Midtrans snapParams(event)', ['params' => $snapParams]);
+
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
+            
+            Log::info('Midtrans snapToken(event) created', [
+                'order_id' => $payment->order_id,
+                'snap_token' => $snapToken
+            ]);
 
             // Persist token so user can continue when still pending
             $this->storeSnapTokenToPayment($payment, $snapToken);
@@ -803,8 +810,13 @@ class PaymentController extends Controller
                 }
             }
 
-            Log::error('Midtrans snapToken(event) failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans.'], 500);
+            Log::error('Midtrans snapToken(event) failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'event_id' => $event->id
+            ]);
+            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans: ' . $e->getMessage()], 500);
         }
     }
 
@@ -939,8 +951,15 @@ class PaymentController extends Controller
                 ]
             );
 
+            Log::info('Midtrans snapParams(course)', ['params' => $snapParams]);
+            
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
 
+            Log::info('Midtrans courseSnapToken created', [
+                'order_id' => $payment->order_id,
+                'snap_token' => $snapToken
+            ]);
+            
             $this->storeSnapTokenToPayment($payment, $snapToken);
             DB::commit();
 
@@ -1037,8 +1056,13 @@ class PaymentController extends Controller
                 }
             }
 
-            Log::error('Midtrans courseSnapToken failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans.'], 500);
+            Log::error('Midtrans courseSnapToken failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'course_id' => $course->id
+            ]);
+            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans: ' . $e->getMessage()], 500);
         }
     }
 
