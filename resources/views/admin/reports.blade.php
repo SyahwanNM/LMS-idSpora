@@ -77,7 +77,6 @@
             <button class="btn-report active" data-target="pendapatan">Revenue</button>
             <button class="btn-report" data-target="pertumbuhan">Growth</button>
         </div>
-
         <div id="pendapatan" class="rekap-box active">
             @php
                 use Carbon\Carbon;
@@ -103,11 +102,6 @@
                 $periodFmt = fn(Carbon $d) => $d->format('Y-m');
             @endphp
            
-            <div class="card mb-3">
-                <div class="card-body">
-                    <canvas id="laporanChart" height="90"></canvas>
-                </div>
-            </div>
              <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2 mb-3">
                 <input type="hidden" name="tab" value="pendapatan">
                 <div>
@@ -203,9 +197,6 @@
                 }
             @endphp
 
-            <div style="margin-bottom:12px;">
-            </div>
-
             <div class="recap-card-box" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0;">
             
                <div class="recap-card" style="border:1px solid #eee; border-radius:10px; padding:20px; padding-left:20px;padding-right:20px;">
@@ -276,6 +267,12 @@
                         @endif
                         <p>{{ $marPctAbs }}% from last month</p>
                     </div>
+                </div>
+            </div>
+           
+            <div class="card mb-3">
+                <div class="card-body">
+                    <canvas id="laporanChart" height="90"></canvas>
                 </div>
             </div>
 
@@ -376,6 +373,22 @@
         </div>
 
         <div id="pertumbuhan" class="rekap-box">
+            <div class="mt-2 mb-4">
+                <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
+                    <input type="hidden" name="tab" value="pertumbuhan">
+                    <div>
+                        <label for="period_pertumbuhan" class="form-label mb-1 text-dark">Month Period</label>
+                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
+                    </div>
+                    <div class="d-flex gap-2 align-items-end">
+                        <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Show</button>
+                    </div>
+                    <div class="ms-auto d-flex align-items-center gap-2">
+                        <div class="small text-muted">Showing data for month: <strong id="month-label-pertumbuhan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
+                        <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pertumbuhan" style="height:38px;">Export</button>
+                    </div>
+                </form>
+            </div>
 
             <div class="growth-charts-wrapper">
                 <div class="growth-chart-card">
@@ -395,22 +408,6 @@
                 </div>
             </div>
 
-            <div class="mt-4 mb-4">
-                <form method="GET" action="{{ url()->current() }}" class="d-flex flex-wrap align-items-end gap-2">
-                    <input type="hidden" name="tab" value="pertumbuhan">
-                    <div>
-                        <label for="period_pertumbuhan" class="form-label mb-1 text-dark">Month Period</label>
-                        <input type="month" name="period" id="period_pertumbuhan" value="{{ $periodOpValue ?? $selectedDate->format('Y-m') }}" class="form-control" style="max-width:180px;">
-                    </div>
-                    <div class="d-flex gap-2 align-items-end">
-                        <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">Show</button>
-                    </div>
-                    <div class="ms-auto d-flex align-items-center gap-2">
-                        <div class="small text-muted">Showing data for month: <strong id="month-label-pertumbuhan">{{ $selectedDate->translatedFormat('F Y') }}</strong></div>
-                        <button type="button" class="btn-export-report btn btn-sm" data-export-tab="pertumbuhan" style="height:38px;">Export</button>
-                    </div>
-                </form>
-            </div>
 
             <h5 class="title-laporan-metrik">Growth Metrics</h5>
             <div class="filter-section" id="filters-pertumbuhan" style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px; margin-bottom:10px;">

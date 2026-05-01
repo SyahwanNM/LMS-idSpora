@@ -388,11 +388,13 @@ class AdminController extends Controller
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 
-        // Get events with participants count
+        // Get events with participants count and ratings
         $events = \App\Models\Event::query()
             ->whereYear('event_date', $selectedDate->year)
             ->whereMonth('event_date', $selectedDate->month)
             ->withCount('registrations')
+            ->withAvg('feedbacks', 'rating')
+            ->withAvg('feedbacks', 'speaker_rating')
             ->orderBy('event_date', 'asc')
             ->get();
 
@@ -513,8 +515,8 @@ class AdminController extends Controller
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
                 'speaker' => $e->speaker,
-                'event_rating' => null, // placeholder until rating source available
-                'speaker_rating' => null, // placeholder
+                'event_rating' => $e->feedbacks_avg_rating ? round($e->feedbacks_avg_rating, 1) : null,
+                'speaker_rating' => $e->feedbacks_avg_speaker_rating ? round($e->feedbacks_avg_speaker_rating, 1) : null,
                 'is_free' => (float) ($e->price ?? 0) <= 0,
                 'manage_action' => $e->manage_action,
             ];

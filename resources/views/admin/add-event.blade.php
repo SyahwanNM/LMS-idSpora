@@ -818,7 +818,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="deskripsi" class="form-label fw-semibold">Description Event <span class="text-danger">*</span></label>
-                                    <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description') }}</textarea>
+                                    <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{!! old('description') !!}</textarea>
                                     <div class="form-text">Describe the event details: topic, target participants, brief agenda, and benefits.</div>
                                 </div>
                                 <div class="mb-3">
@@ -830,9 +830,9 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Start & End Time <span class="text-danger">*</span></label>
                                     <div class="d-flex align-items-center gap-2">
-                                        <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time') }}">
+                                        <input type="text" name="event_time" id="masuk1" class="form-control js-timepicker" required value="{{ old('event_time') }}" placeholder="00:00">
                                         <span>s/d</span>
-                                        <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}">
+                                        <input type="text" name="event_time_end" id="masuk2" class="form-control js-timepicker" value="{{ old('event_time_end') }}" placeholder="00:00">
                                     </div>
                                     <div class="form-text">Fill in the start time (required). End time is optional.</div>
                                 </div>
@@ -917,7 +917,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
-                                    <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{{ old('terms_and_conditions') }}</textarea>
+                                    <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{!! old('terms_and_conditions') !!}</textarea>
                                     <div class="form-text">Optional. Write rules/requirements for participants (refund, certificate terms, etc.).</div>
                                 </div>
                                 <div class="mb-3">
@@ -1299,6 +1299,20 @@
             const tTriggers = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tTriggers.forEach(el => { try { new bootstrap.Tooltip(el); } catch(_){} });
         }
+
+        // Initialize Timepicker (Flatpickr 24h)
+        window.initTimePicker = function(selector) {
+            if (!window.flatpickr) return;
+            flatpickr(selector, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                allowInput: true,
+                disableMobile: true
+            });
+        }
+        initTimePicker('.js-timepicker');
 
         // Materi autocomplete (show after 2 chars) + validation
         function setupGenericAutocomplete(inputEl, boxEl, options, invalidEl) {
@@ -1998,8 +2012,8 @@
         function createScheduleRow(idx) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" /></td>
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" /></td>
+                <td><input type="text" class="form-control form-control-sm js-timepicker" name="schedule[${idx}][start]" placeholder="00:00" /></td>
+                <td><input type="text" class="form-control form-control-sm js-timepicker" name="schedule[${idx}][end]" placeholder="00:00" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">
@@ -2012,6 +2026,10 @@
         function addScheduleRow() {
             const row = createScheduleRow(scheduleIndex++);
             scheduleTableBody.appendChild(row);
+            // Initialize timepicker for new row
+            if (typeof initTimePicker === 'function') {
+                initTimePicker(row.querySelectorAll('.js-timepicker'));
+            }
         }
         if (addScheduleBtn && scheduleTableBody) {
             addScheduleBtn.addEventListener('click', addScheduleRow);

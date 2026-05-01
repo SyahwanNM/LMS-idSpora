@@ -331,8 +331,32 @@
                                                 <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
                                                 <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
                                                 <td>
-                                                    @php $st = strtolower((string)$reg->status); @endphp
-                                                <span class="badge {{ $st === 'active' ? 'bg-success' : ($st === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">{{ strtoupper($reg->status ?? '-') }}</span>
+                                                    @php
+                                                        $st = strtolower((string)$reg->status);
+                                                        $now = \Carbon\Carbon::now()->startOfDay();
+                                                        $eventDate = \Carbon\Carbon::parse($event->event_date)->startOfDay();
+                                                        $hasAttended = !empty($reg->attended_at) || in_array(strtolower((string)($reg->attendance_status ?? '')), ['yes', 'present', 'attended']);
+                                                        
+                                                        $displayStatus = strtoupper($reg->status ?? '-');
+                                                        $badgeClass = 'bg-secondary';
+                                                        
+                                                        if ($st === 'active') {
+                                                            if ($hasAttended) {
+                                                                $displayStatus = 'ATTEND';
+                                                                $badgeClass = 'bg-success';
+                                                            } elseif ($now->greaterThanOrEqualTo($eventDate)) {
+                                                                $displayStatus = 'ALPA';
+                                                                $badgeClass = 'bg-danger';
+                                                            } else {
+                                                                $displayStatus = 'REGISTERED';
+                                                                $badgeClass = 'bg-primary';
+                                                            }
+                                                        } elseif ($st === 'rejected') {
+                                                            $displayStatus = 'REJECTED';
+                                                            $badgeClass = 'bg-danger';
+                                                        }
+                                                    @endphp
+                                                    <span class="badge {{ $badgeClass }}">{{ $displayStatus }}</span>
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                             </tr>
