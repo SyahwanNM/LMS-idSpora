@@ -1250,8 +1250,13 @@
                     <div class="include-title">
                         <h6 style="color:#000; margin: 0 0 8px 2px;">Benefit Event</h6>
                         <ul class="event-benefit-list" style="margin-bottom:0;">
-                            @if(!empty($event->benefit))
-                                @foreach(explode('|', $event->benefit) as $benefit)
+                            @php
+                                $benefitItems = is_array($event->benefit)
+                                    ? $event->benefit
+                                    : array_values(array_filter(array_map('trim', preg_split('/\|\s*|\r\n|\n/', (string)($event->benefit ?? ''))), fn($s) => $s !== ''));
+                            @endphp
+                            @if(!empty($benefitItems))
+                                @foreach($benefitItems as $benefit)
                                     <li>{{ trim($benefit) }}</li>
                                 @endforeach
                             @else
@@ -2295,7 +2300,7 @@
                         @endphp
 
                         @if($termsText === '')
-                            <p class="text-muted" style="margin:0;">Terms and Condition akan segera diumumkan</p>
+                            <p class="text-muted" style="margin:0;">Terms and Conditions will be announced soon</p>
                         @else
                             {!! $termsHtml !!}
                         @endif
@@ -2910,13 +2915,13 @@
                             fallbackCopy(pageUrl);
                         }
                         if (copyText) {
-                            copyText.textContent = 'Tersalin!';
+                            copyText.textContent = 'Copied!';
                             setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
                         }
                     } catch (_e) {
                         fallbackCopy(pageUrl);
                         if (copyText) {
-                            copyText.textContent = 'Tersalin!';
+                            copyText.textContent = 'Copied!';
                             setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
                         }
                     }

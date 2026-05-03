@@ -115,26 +115,6 @@
         .header-card .dropdown-menu .dropdown-divider { margin: .35rem 0; }
         .header-card .dropdown-menu .dropdown-item.active { font-weight: 700; }
     </style>
-    <style>
-        .carousel-control-prev,
-        .carousel-control-next {
-            display: none !important;
-        }
-        .carousel-indicators [data-bs-target] {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #f4c430;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-            border: none;
-            margin: 0 4px;
-        }
-        .carousel-indicators .active {
-            opacity: 1;
-            background-color: #51376c;
-        }
-    </style>
 </head>
 
 <body>
@@ -353,22 +333,18 @@
                             @if($showDiscountBadge && $percentOff > 0)
                                 <span class="discount-badge">{{ $percentOff }}% off</span>
                             @endif
+                            @php
+                                $isSaved = !empty($event->is_saved);
+                            @endphp
                             <div class="badge-save-group" style="gap:12px;">
-                                @auth
-                                <button class="save-btn {{ !empty($event->is_saved) ? 'active' : '' }}"
-                                    aria-label="Save event"
-                                    type="button"
-                                    data-save-url="{{ route('events.save', $event) }}"
-                                    onclick="event.stopPropagation(); toggleSaveEvent(this)"
-                                    style="{{ !empty($event->is_saved) ? 'color:#ef4444;' : '' }}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
+                                <button class="save-btn {{ $isSaved ? 'active' : '' }}" 
+                                        aria-label="Save event" type="button"
+                                        data-event-id="{{ $event->id }}"
+                                        data-save-url="{{ route('events.save', $event) }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                        <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
+                                    </svg>
                                 </button>
-                                @else
-                                <button class="save-btn" aria-label="Save event" type="button"
-                                    onclick="window.location.href='{{ route('login') }}'">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
-                                </button>
-                                @endauth
                             </div>
                         </div>
 
@@ -482,7 +458,7 @@
         </section>
         
     </main> <div class="footer-section-wrapper">
-        @include('partials.footer-after-login')
+        @include('partials.footer-before-login')
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function(){
@@ -635,6 +611,54 @@
                     });
                 });
             })();
+
+            // --- Logika Save Event ---
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const eventId = this.getAttribute('data-event-id');
+                    const url = this.getAttribute('data-save-url');
+                    const svg = this.querySelector('svg');
+                    const path = svg.querySelector('path');
+                    
+                    this.disabled = true;
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (response.status === 401) {
+                            window.location.href = "{{ route('login') }}";
+                            return;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.success) {
+                            if (data.saved) {
+                                this.classList.add('active');
+                                svg.setAttribute('fill', '#dc3545');
+                                path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
+                            } else {
+                                this.classList.remove('active');
+                                svg.setAttribute('fill', 'currentColor');
+                                path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error:', error))
+                    .finally(() => {
+                        this.disabled = false;
+                    });
+                });
+            });
         });
 
         // --- Countdown Script ---

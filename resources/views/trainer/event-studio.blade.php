@@ -42,11 +42,10 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
     <style>
         main.content-studio-main {
-            max-width: 1180px;
-            margin: 0 auto;
+            width: 100%;
+            margin: 0;
             padding: 0;
             flex: 1;
-            width: 100%;
             overflow-x: hidden;
         }
 
@@ -1037,7 +1036,7 @@
 
                                 <div class="dropzone" id="dropzone">
                                     <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
-                                        style="display: none" {{ $deadlinePassed ? 'disabled' : '' }} />
+                                        style="display: none" />
                                     <i class="bi bi-cloud-arrow-up"></i>
                                     <h2>Drop Event Assets Here</h2>
                                     <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
@@ -1052,7 +1051,7 @@
                                 </div>
 
                                 <div class="panel-footer">
-                                    <button type="submit" class="primary-btn" id="submitBtn" {{ $deadlinePassed ? 'disabled' : '' }}>
+                                    <button type="submit" class="primary-btn" id="submitBtn">
                                         SUBMIT FOR AUDIT <i class="bi bi-send"></i>
                                     </button>
                                 </div>

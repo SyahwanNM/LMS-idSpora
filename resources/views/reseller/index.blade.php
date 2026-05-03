@@ -564,7 +564,74 @@
                             </div>
                             @endif
                         </div>
-                    </div>
+
+                        {{-- FOTO PROFIL --}}
+                        @if(!empty($reseller->profile_photo_path))
+                            {{-- Jika punya foto di database --}}
+                            <img src="{{ Storage::url($reseller->profile_photo_path) }}" 
+                                 alt="{{ $reseller->name }}"
+                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                        @else
+                            {{-- Fallback: Pakai UI Avatars jika tidak punya foto --}}
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($reseller->name) }}&background={{ $index < 3 ? 'ffc107' : 'e9ecef' }}&color={{ $index < 3 ? 'ffffff' : '6c757d' }}&size=40"
+                                 alt="{{ $reseller->name }}"
+                                 class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                        @endif
+
+                        {{-- Nama & Jumlah Referral --}}
+                        <div class="flex-grow-1 lh-sm">
+                            <div class="fw-bold text-dark small">{{ Str::limit($reseller->name, 15) }}</div>
+                            <small class="text-muted" style="font-size: 11px;">{{ $reseller->referrals_count }} referrals</small>
+                        </div>
+
+                        {{-- Total Cuan (Badge) --}}
+                        <span class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
+                            Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
+                        </span>
+                    </li>
+                @empty
+                    {{-- Empty State (Tetap sama seperti sebelumnya) --}}
+                    <li class="list-group-item border-0 text-center py-5">
+                        <div class="mb-3">
+                            <i class="bi bi-trophy text-secondary opacity-25" style="font-size: 3rem;"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-2">Papan Peringkat Masih Kosong!</h6>
+                        <p class="text-muted small mb-3 lh-sm">
+                            Belum ada yang masuk daftar ini. <br>
+                            Ayo bagikan linkmu dan jadilah <strong>Juara #1</strong>!
+                        </p>
+                        <button class="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-4"
+                            onclick="copyToClipboard(this, 'referralLink')">
+                            <i class="bi bi-share-fill me-1"></i> Bagikan Sekarang
+                        </button>
+                    </li>
+                @endforelse
+            </ul>
+            
+            {{-- Sticky Rank User --}}
+            @if($topResellers->isNotEmpty())
+            <hr>
+            <div class="p-2 rounded-3 border border-warning bg-warning bg-opacity-10 d-flex align-items-center">
+                <div class="text-dark fst-italic me-2" style="min-width: 30px;">#{{ $userRank }}</div>
+                
+                {{-- FOTO PROFIL USER SENDIRI --}}
+                @if(!empty($user->profile_photo_path))
+                    <img src="{{ Storage::url($user->profile_photo_path) }}" 
+                         alt="{{ $user->name }}"
+                         class="rounded-circle border border-warning me-3"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                @else
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=ffc107&color=ffffff&size=40"
+                         alt="{{ $user->name }}"
+                         class="rounded-circle border border-warning me-3"
+                         style="width: 40px; height: 40px; object-fit: cover;">
+                @endif
+
+                <div class="flex-grow-1 lh-sm">
+                    <div class="fw-bold text-dark small mb-0">{{ Str::limit($user->name, 15) }}</div>
+                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $totalReferrals }} referrals</small>
                 </div>
 
                 {{-- Riwayat (History) Section --}}

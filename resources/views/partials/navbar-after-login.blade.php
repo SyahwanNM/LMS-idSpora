@@ -202,19 +202,16 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     color: #fff !important; /* Force global text color to white */
 }
 
-/* Fix Tailwind Conflict for Bootstrap Collapse */
+/* Fix Tailwind/Global Conflict for Bootstrap Collapse */
 .premium-nav .collapse.navbar-collapse {
-    display: none; /* Default Bootstrap behavior */
     visibility: visible !important;
 }
 
-.premium-nav .collapse.navbar-collapse.show {
-    display: block !important;
-}
-
+/* Ensure Desktop Layout */
 @media (min-width: 992px) {
     .premium-nav .collapse.navbar-collapse {
         display: flex !important;
+        flex-basis: auto;
     }
 }
 
@@ -400,27 +397,6 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     width: 380px;
     padding: 0 !important;
     overflow: hidden;
-}
-
-/* Notification item expand/collapse */
-/* Prevent Bootstrap active/focus from turning items white */
-.notification-dropdown-premium .dropdown-item,
-.notification-dropdown-premium .dropdown-item:hover,
-.notification-dropdown-premium .dropdown-item:focus,
-.notification-dropdown-premium .dropdown-item:focus-visible,
-.notification-dropdown-premium .dropdown-item:active,
-.notification-dropdown-premium .dropdown-item.active {
-    background: transparent !important;
-    color: inherit !important;
-}
-
-.notification-dropdown-premium .dropdown-item:focus {
-    outline: none;
-    box-shadow: none !important;
-}
-
-.js-notif-item .notif-message-full {
-    white-space: pre-line;
 }
 
 .dropdown-header-premium {

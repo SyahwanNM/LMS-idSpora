@@ -325,23 +325,23 @@
                     <p>No Whatsapp</p>
                     <div class="whatsapp_biodata">
                         <input type="hidden" name="kode_dial" id="kodeDialInput" value="">
-                        <input class="input_nomor" type="text" placeholder="Contoh: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
+                        <input class="input_nomor" type="text" placeholder="Example: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
                     </div>
                 </div>
                 @if((bool) ($course->is_reseller_course ?? false))
                     <div class="input_biodata">
-                        <p>Kode Referral</p>
+                        <p>Referral Code</p>
                         <input
                             class="kolom_input_biodata"
                             type="text"
                             id="referralCodeInput"
-                            placeholder="Masukkan kode referral reseller jika ada"
+                            placeholder="Enter the reseller referral code if any"
                             value="{{ request()->query('ref', '') }}"
                             autocomplete="off"
                         >
                         <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
                         <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-                            Kode valid akan memberi potongan 10%.
+                            Valid code will give 10% discount.
                         </div>
                     </div>
                 @endif
@@ -813,7 +813,7 @@
                     var pending = await fetchPendingCourseOrder();
                     cachedPending = pending;
                     if (pending && pending.pending && pending.order_id) {
-                        midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                        midtransPayBtn.textContent = 'Continue Payment';
                         if (pending.amount) {
                             setTotalAmount(pending.amount);
                         }
@@ -853,7 +853,7 @@
                     } else if (pending && pending.needs_force_new) {
                         // Previous order expired/rejected — reset to fresh payment state
                         cachedPending = null;
-                        midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                        midtransPayBtn.textContent = 'Pay Now!';
                         updatePayButtonState();
                     }
                 }
@@ -909,7 +909,7 @@
 
                     midtransPayBtn.disabled = true;
                     var originalText = midtransPayBtn.textContent;
-                    midtransPayBtn.textContent = 'Memproses...';
+                    midtransPayBtn.textContent = 'Processing...';
 
                     try {
                         var data;
@@ -946,7 +946,7 @@
                             onPending: function(){
                                 alert('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.');
                                 cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
-                                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                                midtransPayBtn.textContent = 'Continue Payment';
                             },
                             onError: function(){
                                 alert('Pembayaran gagal. Silakan coba lagi.');
@@ -979,7 +979,7 @@
                                     }
                                 } catch(_e) {}
                                 midtransPayBtn.disabled = false;
-                                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                                midtransPayBtn.textContent = 'Continue Payment';
                                 updatePayButtonState();
                             }
                         });
@@ -988,7 +988,7 @@
                     } finally {
                         midtransPayBtn.disabled = false;
                         if (cachedPending && cachedPending.pending && cachedPending.order_id) {
-                            midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                            midtransPayBtn.textContent = 'Continue Payment';
                         } else {
                             midtransPayBtn.textContent = originalText;
                         }
@@ -1002,7 +1002,7 @@
                 // If force_new=1 in URL (redirect from expired), clear cached pending
                 if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
                     cachedPending = null;
-                    midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                    midtransPayBtn.textContent = 'Continue Payment';
                 }
             }
 

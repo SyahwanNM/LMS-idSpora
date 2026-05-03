@@ -3,8 +3,8 @@
         .certificate-page { 
             width: 270mm; 
             height: 170mm; 
-            position: relative;
-            top: 0; left: 0;
+            position: absolute; 
+            top: 20mm; left: 13.5mm;
             overflow: hidden; 
             background: white;
             color: #1e293b;
@@ -12,6 +12,12 @@
             page-break-after: avoid;
             page-break-inside: avoid;
             display: block;
+            @if(isset($is_preview) && $is_preview)
+                position: relative; 
+                top: 0; left: 0; 
+                transform: scale(var(--cert-scale, 1));
+                transform-origin: top left;
+            @endif
         }
 
         /* Template 1: Premium Royal (Elegant) */
@@ -192,17 +198,35 @@
         @elseif($template == 'template_2')
             <div class="sidebar"></div>
             <div class="gold-accent"></div>
-            @php $mainLogoPath = public_path('aset/logo-idspora.png'); @endphp
-            @if(file_exists($mainLogoPath))
+            @php 
+                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
+                $mainLogoPath = public_path('aset/' . $logoFileName); 
+                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
+            @endphp
+            @if(isset($is_preview) && $is_preview)
+                <img src="{{ $mainLogoUrl }}" class="watermark">
+            @elseif(file_exists($mainLogoPath))
                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="watermark">
             @endif
         @endif
 
         @if($template == 'template_3')
             <div class="header-bg">
-                <div style="float: right;">
-                    @foreach($logosBase64 as $logo)
-                        <img src="{{ $logo }}" class="logo-item" style="filter: brightness(0) invert(1);">
+            <div style="float: right;">
+                    @php 
+                        $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
+                        $mainLogoPath = public_path('aset/' . $logoFileName); 
+                        $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
+                    @endphp
+                    @if(isset($is_preview) && $is_preview)
+                        <img src="{{ $mainLogoUrl }}" class="logo-item">
+                    @elseif(file_exists($mainLogoPath))
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
+                    @endif
+
+                    @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                    @foreach($logosToRender as $logo)
+                        <img src="{{ $logo }}" class="logo-item">
                     @endforeach
                 </div>
                 <h1>Course Certificate</h1>
@@ -221,11 +245,19 @@
                 @if($template == 'template_1')
                     <div class="logo-row">
                         <div class="logo-container">
-                            @php $mainLogoPath = public_path('aset/logo-idspora.png'); @endphp
-                            @if(file_exists($mainLogoPath))
+                            @php 
+                                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
+                                $mainLogoPath = public_path('aset/' . $logoFileName); 
+                                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
+                            @endphp
+                            @if(isset($is_preview) && $is_preview)
+                                <img src="{{ $mainLogoUrl }}" class="logo-item">
+                            @elseif(file_exists($mainLogoPath))
                                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
                             @endif
-                            @foreach(array_slice($logosBase64, 0, 3) as $logo)
+
+                            @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                            @foreach(array_slice($logosToRender, 0, 3) as $logo)
                                 <img src="{{ $logo }}" class="logo-item">
                             @endforeach
                         </div>
@@ -235,11 +267,19 @@
                     <div style="width: 200px; height: 2px; background: #fbbf24; margin: 15px auto;"></div>
                 @elseif($template == 'template_2')
                     <div class="logo-row">
-                        @php $mainLogoPath = public_path('aset/logo-idspora.png'); @endphp
-                        @if(file_exists($mainLogoPath))
+                        @php 
+                            $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
+                            $mainLogoPath = public_path('aset/' . $logoFileName); 
+                            $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
+                        @endphp
+                        @if(isset($is_preview) && $is_preview)
+                            <img src="{{ $mainLogoUrl }}" class="logo-item" style="height: 50px; width: auto;">
+                        @elseif(file_exists($mainLogoPath))
                             <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item" style="height: 50px; width: auto;">
                         @endif
-                        @foreach($logosBase64 as $logo)
+
+                        @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                        @foreach($logosToRender as $logo)
                             <img src="{{ $logo }}" class="logo-item" style="height: 50px; width: auto;">
                         @endforeach
                     </div>
@@ -259,12 +299,22 @@
 
         <div class="cert-footer">
             <div style="float: right;">
-                @forelse($signaturesBase64 as $sig)
+                @php 
+                    $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64' => $b, 'name' => '', 'position' => ''], $signaturesBase64);
+                @endphp
+                @forelse($sigsToRender as $sig)
                     <div class="sig-box">
-                        <img src="{{ $sig }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
+                        @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
+                        <img src="{{ $sigSrc }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
                         <div class="sig-line"></div>
-                        <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
-                        <p style="font-size: 9pt; color: #64748b; margin: 0;">Academy Director</p>
+                        @if(!empty($sig['name']))
+                            <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $sig['name'] }}</p>
+                            @if(!empty($sig['position']))
+                                <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $sig['position'] }}</p>
+                            @endif
+                        @else
+                            <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
+                        @endif
                     </div>
                 @empty
                     <div class="sig-box">
@@ -282,7 +332,20 @@
 
     @if(isset($is_preview) && $is_preview)
     <script>
-        // Scaling is handled by the parent certificate.blade.php scaleCert()
+        function adjustScale() {
+            const cert = document.querySelector('.certificate-page');
+            if (!cert) return;
+            // 29.7cm at 96dpi is ~1123px
+            const baseWidth = 1123;
+            const currentWidth = window.innerWidth;
+            const scale = currentWidth / baseWidth;
+            cert.style.setProperty('--cert-scale', scale);
+            // Also adjust body height to prevent scrolling if possible
+            document.body.style.overflow = 'hidden';
+        }
+        window.addEventListener('resize', adjustScale);
+        window.addEventListener('load', adjustScale);
+        setTimeout(adjustScale, 100);
     </script>
     @endif
 </body>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\CourseUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -123,7 +124,10 @@ class ApiAdminCourseController extends Controller
             'card_thumbnail'             => $cardThumbPath,
         ]);
 
-        return $this->jsonSuccess('Course berhasil dibuat', $course->fresh()->load('category', 'trainer:id,name,email'), null, 201);
+        // Save unit titles (module section headers)
+        $this->saveUnitTitles($course, $request->input('unit_titles', []));
+
+        return $this->jsonSuccess('Course berhasil dibuat', $course->fresh()->load('category', 'trainer:id,name,email', 'units'), null, 201);
     }
 
     // -------------------------------------------------------------------------
@@ -167,7 +171,76 @@ class ApiAdminCourseController extends Controller
 
         $course->update($data);
 
-        return $this->jsonSuccess('Course berhasil diupdate', $course->fresh()->load('category', 'trainer:id,name,email'));
+        // Save unit titles (module section headers)
+        if ($request->has('unit_titles')) {
+            $this->saveUnitTitles($course, $request->input('unit_titles', []));
+        }
+
+        return $this->jsonSuccess('Course berhasil diupdate', $course->fresh()->load('category', 'trainer:id,name,email', 'units'));
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/admin/courses/{course}/publish
+    // -------------------------------------------------------------------------
+
+    public function publish(Course $course)
+    {
+        if (((string) $course->status) === 'active') {
+            return $this->jsonError('Course sudah dipublish sebelumnya.', 422);
+        }
+
+        // Validasi kelengkapan materi sebelum publish
+        $totalModules = (int) $course->modules()->count();
+        $pdfCount     = (int) $course->modules()->where('type', 'pdf')->count();
+        $videoCount   = (int) $course->modules()->where('type', 'video')->count();
+        $quizCount    = (int) $course->modules()->where('type', 'quiz')->count();
+
+        $missing = [];
+        if ($totalModules <= 0) {
+            $missing[] = 'Modul';
+        }
+        if ($pdfCount <= 0) {
+            $missing[] = 'Modul (PDF)';
+        }
+        if ($videoCount <= 0) {
+            $missing[] = 'Video';
+        }
+        if ($quizCount <= 0) {
+            $missing[] = 'Kuis';
+        }
+
+        if (!empty($missing)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Course tidak dapat dipublish. Lengkapi terlebih dahulu: ' . implode(', ', $missing) . '.',
+                'data'    => [
+                    'missing'       => $missing,
+                    'total_modules' => $totalModules,
+                    'pdf_count'     => $pdfCount,
+                    'video_count'   => $videoCount,
+                    'quiz_count'    => $quizCount,
+                ],
+            ], 422);
+        }
+
+        $course->update(['status' => 'active']);
+
+        return $this->jsonSuccess('Course berhasil dipublish', $course->fresh()->load('category', 'trainer:id,name,email'));
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/admin/courses/{course}/unpublish
+    // -------------------------------------------------------------------------
+
+    public function unpublish(Course $course)
+    {
+        if (((string) $course->status) !== 'active') {
+            return $this->jsonError('Course belum dipublish.', 422);
+        }
+
+        $course->update(['status' => 'approved']);
+
+        return $this->jsonSuccess('Course berhasil di-unpublish', $course->fresh()->load('category', 'trainer:id,name,email'));
     }
 
     // -------------------------------------------------------------------------
@@ -228,6 +301,8 @@ class ApiAdminCourseController extends Controller
             'media'              => $mediaRule,
             'image'              => $mediaRule,
             'card_thumbnail'     => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
+            'unit_titles'        => 'nullable|array',
+            'unit_titles.*'      => 'nullable|string|max:255',
         ]);
     }
 
@@ -284,5 +359,31 @@ class ApiAdminCourseController extends Controller
         }
 
         return !empty($rows) ? $rows : null;
+    }
+
+    /**
+     * Persist unit titles (module section headers) for a course.
+     * Accepts both indexed array [1 => 'Title 1', 2 => 'Title 2']
+     * and sequential array ['Title 1', 'Title 2'].
+     */
+    private function saveUnitTitles(Course $course, mixed $input): void
+    {
+        if (!is_array($input) || empty($input)) {
+            return;
+        }
+
+        // Re-index sequential arrays starting from 1
+        $isSequential = array_keys($input) === range(0, count($input) - 1);
+        foreach ($input as $key => $title) {
+            $title = trim((string) $title);
+            if ($title === '') {
+                continue;
+            }
+            $unitNo = $isSequential ? ((int) $key + 1) : (int) $key;
+            CourseUnit::updateOrCreate(
+                ['course_id' => $course->id, 'unit_no' => $unitNo],
+                ['title' => $title]
+            );
+        }
     }
 }

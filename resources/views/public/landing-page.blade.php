@@ -522,8 +522,6 @@
         @include('partials.navbar-before-login')
     @endif
 
-    @include('partials.flash')
-
     @if(session('maintenance_notice'))
         <div class="container" style="position: fixed; top: 92px; left: 0; right: 0; z-index: 1100;">
             <div class="d-flex align-items-start gap-2 px-3 py-2 rounded" style="background: rgba(245, 158, 11, 0.16); border: 1px solid rgba(245, 158, 11, 0.38); color: #ffffff;">
@@ -877,14 +875,17 @@
                                 @endif
                             </div>
                             
-                            <button class="save-btn" 
+                            @php
+                                $isSaved = auth()->check() && auth()->user()->savedEvents()->where('event_id', $event->id)->exists();
+                            @endphp
+                            <button class="save-btn {{ $isSaved ? 'active' : '' }}" 
                                     aria-label="Save event" type="button" 
                                     data-event-id="{{ $event->id }}"
                                     data-save-url="{{ route('events.save', $event) }}"
                                     onclick="event.stopPropagation(); toggleSaveEvent(this)"
-                                    style="position: absolute; top: 15px; left: 15px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
+                                    style="position: absolute; top: 15px; left: 15px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 34px; height: 34px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: {{ $isSaved ? '#ef4444' : '#64748b' }}; transition: all 0.2s;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                 </svg>
                             </button>
                         </div>
@@ -940,7 +941,20 @@
                             @else
                                 <img src="https://via.placeholder.com/300x200/4f46e5/ffffff?text=Course" class="card-img-top" alt="{{ $course->name }}" style="height: 180px; object-fit: cover;">
                             @endif
-                            <div class="position-absolute top-0 end-0 m-3">
+                            <div class="position-absolute top-0 end-0 m-3 d-flex gap-2 align-items-center">
+                                @php
+                                    $isSavedCourse = auth()->check() && auth()->user()->savedCourses()->where('course_id', $course->id)->exists();
+                                @endphp
+                                <button class="save-btn course-save-btn {{ $isSavedCourse ? 'active' : '' }}" 
+                                        aria-label="Save course" type="button" 
+                                        data-course-id="{{ $course->id }}"
+                                        data-save-url="{{ route('courses.save', $course) }}"
+                                        onclick="event.stopPropagation(); toggleSaveCourse(this)"
+                                        style="background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); color: {{ $isSavedCourse ? '#ef4444' : '#64748b' }}; transition: all 0.2s;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="{{ $isSavedCourse ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
+                                    </svg>
+                                </button>
                                 <span class="badge bg-white text-dark shadow-sm">{{ ucfirst($course->level) }}</span>
                             </div>
                         </div>
@@ -1340,18 +1354,64 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
                         btn.style.color = '#ef4444';
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
                         btn.style.color = '#64748b';
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
                     }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
             })
+            .finally(() => {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            });
+        }
+
+        function toggleSaveCourse(btn) {
+            const url = btn.getAttribute('data-save-url');
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    window.location.href = "{{ route('login') }}";
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '#64748b';
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error))
             .finally(() => {
                 btn.style.opacity = '1';
                 btn.style.pointerEvents = 'auto';

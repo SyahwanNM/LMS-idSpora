@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\ManualPayment;
+use App\Models\PaymentProof;
 
 class EventRegistration extends Model
 {

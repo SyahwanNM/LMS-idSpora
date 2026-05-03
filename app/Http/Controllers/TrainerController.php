@@ -369,21 +369,81 @@ class TrainerController extends Controller
 
     private function ensureTemplateStructureExists(Course $course): void
     {
-        if ((int) ($course->template_id ?? 0) <= 0) {
-            return;
-        }
-
+        // Kalau sudah ada modul, tidak perlu clone
         if ((int) $course->modules()->count() > 0) {
             return;
         }
 
-        $template = $course->template()->with('modules')->first();
+        // Coba ambil template dari course, atau fallback ke template default berdasarkan level
+        $template = null;
+
+        if ((int) ($course->template_id ?? 0) > 0) {
+            $template = $course->template()->with('modules')->first();
+        }
+
+        // Fallback: cari template aktif berdasarkan level course
+        if (!$template || $template->modules->isEmpty()) {
+            $level = $course->level ?: 'beginner';
+            $template = \App\Models\CourseTemplate::query()
+                ->where('level', $level)
+                ->where('status', 'active')
+                ->withCount('modules')
+                ->having('modules_count', '>', 0)
+                ->orderByDesc('version')
+                ->with('modules')
+                ->first();
+        }
+
         if (!$template || $template->modules->isEmpty()) {
             return;
         }
 
-        app(CourseTemplateCloneService::class)
-            ->cloneToCourse($course, $template, replaceExisting: false);
+        // Assign template ke course jika belum ada
+        if ((int) ($course->template_id ?? 0) <= 0) {
+            $course->template_id      = $template->id;
+            $course->template_version = $template->version;
+            $course->saveQuietly();
+        }
+
+        // Hitung berapa unit yang sudah punya judul — clone hanya sejumlah itu
+        // Jika belum ada unit titles sama sekali, clone semua dari template
+        $unitCount = (int) $course->units()->count();
+
+        if ($unitCount > 0) {
+            // Clone hanya slot untuk unit yang sudah punya judul
+            $slotsNeeded = $unitCount * 3;
+            $templateSlots = $template->modules()
+                ->orderBy('order_no')
+                ->take($slotsNeeded)
+                ->get();
+
+            if ($templateSlots->isEmpty()) {
+                return;
+            }
+
+            $rows = $templateSlots->map(fn($m) => [
+                'course_id'     => $course->id,
+                'order_no'      => (int) $m->order_no,
+                'title'         => (string) $m->title,
+                'description'   => $m->description,
+                'type'          => (string) $m->type,
+                'content_url'   => '',
+                'file_name'     => null,
+                'mime_type'     => null,
+                'file_size'     => 0,
+                'is_free'       => false,
+                'preview_pages' => 0,
+                'duration'      => (int) ($m->duration ?? 0),
+                'created_at'    => now(),
+                'updated_at'    => now(),
+            ])->values()->all();
+
+            \App\Models\CourseModule::insert($rows);
+        } else {
+            // Tidak ada unit titles → clone semua dari template (perilaku lama)
+            app(CourseTemplateCloneService::class)
+                ->cloneToCourse($course, $template, replaceExisting: false);
+        }
     }
 
     private function ensureQuizSlotPerUnit(Course $course): void
@@ -2405,7 +2465,7 @@ class TrainerController extends Controller
 
         // Kunci Quiz ke Slot Bab Ini
         $quizModule = \App\Models\CourseModule::where('id', $request->quiz_module_id)->where('course_id', $id)->firstOrFail();
-        $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'approved']);
+        $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'pending_review']);
 
         // Delete old questions
         $quizModule->quizQuestions()->delete();

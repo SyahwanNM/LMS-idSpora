@@ -211,7 +211,7 @@
                         <th>Name Course </th>
                         <th>Created Date</th>
                         <th>Level</th>
-                        <th>Price</th>
+                        <th>Price (Rp)</th>
                         <th>Completeness Status</th>
                         <th>Actions</th>
                     </tr>
@@ -223,6 +223,10 @@
                     $isPublished = ($course->status === 'active');
 
                     $modulesCol = $course->modules ?? collect();
+                    // For trainer courses, only count approved modules (same as preview)
+                    if (!empty($course->trainer_id)) {
+                        $modulesCol = $modulesCol->filter(fn($m) => $m->review_status === 'approved');
+                    }
                     $totalModules = $modulesCol->count();
                     $pdfSlots = $modulesCol->where('type', 'pdf');
                     $videoSlots = $modulesCol->where('type', 'video');
@@ -273,7 +277,7 @@
                         <td>
                             @if($isPublished)
                             <div class="status_kelengkapan_complete">Complete</div>
-                            @elseif($hasMissingMaterial)
+                            @elseif($totalModules <= 0)
                             <div class="status_kelengkapan_miss">Missing Material</div>
                             @else
                             <div class="status_kelengkapan_inprogress">On Progress</div>
@@ -303,7 +307,7 @@
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
                                 'title' => $m->title,
-                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Dokumen Materi',
+                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Material Document',
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
@@ -396,7 +400,7 @@
                                     <h4 id="cp-level">Beginner</h4>
                                 </div>
                                 <div class="list-info info-green">
-                                    <h5>PRICE</h5>
+                                    <h5>PRICE (Rp)</h5>
                                     <h4 id="cp-price">Rp250.000</h4>
                                 </div>
                                 <div class="list-info info-yellow">
@@ -439,6 +443,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div id="summary-missing-warn" style="display:none;"></div>
                             </div>
                         </div>
 
@@ -846,8 +851,8 @@
                 var countQuiz = visibleModules.filter(m => m.type === 'quiz').length;
 
                 setText('count-pdf', countPdf);
-                setText('count-video', countVideo); // Asumsi ID elemen ringkasan video adalah 'count-video' (perlu ditambahkan di HTML jika belum ada)
-                setText('count-quiz', countQuiz); // Asumsi ID elemen ringkasan kuis adalah 'count-quiz'
+                setText('count-video', countVideo);
+                setText('count-quiz', countQuiz);
 
                 // --- RENDER TAB CONTENTS ---
 
@@ -916,7 +921,7 @@
                                     <h4>${m.title}</h4>
                                     <div class="soal-passing">
                                         <div class="info-item">
-                                            <p>Jumlah Soal</p>
+                                            <p>total number of Question</p>
                                             <h5>${m.question_count || 0} Soal</h5>
                                         </div>
                                         <div class="info-item passing-score">
@@ -1071,7 +1076,7 @@
                     if (subTextEl) subTextEl.style.display = 'none';
                     if (footerTextEl) footerTextEl.textContent = 'This action cannot be undone.';
                     if (btnEl) {
-                        btnEl.textContent = 'Ya, Publish Course';
+                        btnEl.textContent = 'Yes, Publish Course';
                         btnEl.style.display = '';
                         btnEl.className = 'btn btn-primary';
                     }

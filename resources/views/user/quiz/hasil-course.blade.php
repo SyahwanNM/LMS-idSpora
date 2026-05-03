@@ -110,9 +110,13 @@
                                     $letter = $letters[$aIndex] ?? chr(97 + $aIndex);
 
                                     $optClass = 'qr-option';
-                                    if ($isAnswerCorrect) {
+                                    
+                                    // Rule: Only show 'is-correct' if the user actually picked it.
+                                    // If they picked wrong or didn't pick at all, don't show the correct one.
+                                    if ($isAnswerCorrect && $isSelected) {
                                         $optClass .= ' is-correct';
                                     }
+
                                     if ($isSelected) {
                                         $optClass .= ' is-selected';
                                         if (!$isAnswerCorrect) {

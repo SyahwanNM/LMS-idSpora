@@ -236,25 +236,6 @@ class QuizController extends Controller
             return redirect()->route('user.quiz.result.short', $attempt);
         }
 
-        // Backfill started_at for legacy attempts so timer works reliably
-        if (!$attempt->started_at) {
-            $attempt->forceFill(['started_at' => Carbon::now()])->save();
-            $attempt->refresh();
-        }
-
-        // Auto-complete jika attempt sudah expired
-        $isLastQuiz = !$course->modules()
-            ->where('type', 'quiz')
-            ->where('order_no', '>', $module->order_no)
-            ->exists();
-        $durationSeconds = ($isLastQuiz ? 15 : 10) * 60;
-        $expiredAt = $attempt->started_at->copy()->addSeconds($durationSeconds);
-        if ($expiredAt->isPast()) {
-            $attempt->update(['completed_at' => Carbon::now('Asia/Jakarta')]);
-            $this->syncProgressIfPassed($course, $module, $attempt);
-            return redirect()->route('user.quiz.result.short', $attempt);
-        }
-
         $questions = $module->quizQuestions()->with('answers')->get();
 
         if ($questions->count() === 0) {
@@ -303,7 +284,9 @@ class QuizController extends Controller
         $currentQuestion = $questions[$currentQuestionIndex];
 
         return view('user.quiz.take', [
-            'course' => $course->loadMissing('units'),
+            'course' => $course->loadMissing(['units', 'modules' => function($q) {
+                $q->orderBy('order_no');
+            }]),
             'module' => $module,
             'attempt' => $attempt,
             'questions' => $questions,

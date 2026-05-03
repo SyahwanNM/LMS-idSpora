@@ -376,24 +376,20 @@
                             </div>
                         </div>
                         @endif
-                        @if(!empty($event->benefit))
+                        @php
+                            $benefitItems = is_array($event->benefit)
+                                ? $event->benefit
+                                : array_values(array_filter(array_map('trim', preg_split('/\|\s*|\r\n|\n/', (string)($event->benefit ?? ''))), fn($s) => $s !== ''));
+                        @endphp
+                        @if(!empty($benefitItems))
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
                                 <h6 class="text-dark mb-2"><i class="bi bi-gift me-2"></i>Benefit</h6>
-                                @php
-                                    $raw = $event->benefit ?? '';
-                                    $parts = preg_split('/\|\s*|\r\n|\n/', $raw);
-                                    $items = array_values(array_filter(array_map('trim', (array)$parts), function($s){ return $s !== ''; }));
-                                @endphp
-                                @if(count($items))
-                                    <ul class="mb-0 ps-3 small">
-                                        @foreach($items as $b)
-                                            <li>{{ $b }}</li>
-                                        @endforeach
-                                    </ul>
-                                @else
-                                    <div class="small">{!! nl2br(e($event->benefit)) !!}</div>
-                                @endif
+                                <ul class="mb-0 ps-3 small">
+                                    @foreach($benefitItems as $b)
+                                        <li>{{ $b }}</li>
+                                    @endforeach
+                                </ul>
                             </div>
                         </div>
                         @endif

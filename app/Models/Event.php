@@ -79,6 +79,7 @@ class Event extends Model
         'longitude' => 'decimal:7',
         'schedule_json' => 'array',
         'expenses_json' => 'array',
+        'benefit' => 'array',
         'is_reseller_event' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',

@@ -28,11 +28,11 @@
     default => null,
   };
   $lateBannerClass = $lateUploads === 1 ? 'level-1' : ($lateUploads === 2 ? 'level-2' : '');
-  $pendingInvitationItems = collect($dashboardInvitations ?? [])->values();
-  $activeAssignmentItems = collect($activeAssignments ?? [])->values();
-  $revenueCourseItems = collect($revenueCourses ?? [])->values();
-  $completedCourseItems = collect($completedCourses ?? [])->values();
-  $feedbackItems = collect($recentEventFeedbacks ?? [])->values();
+  $pendingInvitationItems = collect($pendingInvitationItems ?? [])->values();
+  $activeAssignmentItems = collect($activeAssignmentItems ?? [])->values();
+  $revenueCourseItems = collect($revenueCourseItems ?? [])->values();
+  $completedCourseItems = collect($completedCourseItems ?? [])->values();
+  $feedbackItems = collect($feedbackItems ?? [])->values();
   $walletBalance = (float) ($trainer->wallet_balance ?? 0);
   $totalCompletedCourses = (int) data_get($trainerActivity, 'total_courses_completed', 0);
   $averageRating = (float) data_get($trainerActivity, 'average_rating', 0);
@@ -949,7 +949,7 @@
               };
               $schemePercent = (int) ($assignmentRow['scheme_percent'] ?? 0);
               $activeParticipantsCount = (int) ($assignmentRow['active_participants_count'] ?? 0);
-              $feePerParticipant = (float) ($assignmentRow['fee_per_participant'] ?? 0);
+              
               $estimatedFee = (float) ($assignmentRow['estimated_fee'] ?? 0);
               $assignmentIcon = match ($schemePercent) {
                 35 => 'bi-journal-text',
@@ -968,7 +968,7 @@
                     {{ $eventDate }} • {{ $assignmentRow['scheme_label'] }}
                   </p>
                   <p class="assignment-meta">
-                    Fee/Peserta Rp {{ number_format($feePerParticipant, 0, ',', '.') }}
+                    
                     • Peserta Aktif {{ number_format($activeParticipantsCount) }}
                     • Estimasi Rp {{ number_format($estimatedFee, 0, ',', '.') }}
                   </p>
@@ -1438,4 +1438,5 @@
     </script>
   @endpush
 
+@include('trainer.partials.scheme-selection-modal')
 @endsection

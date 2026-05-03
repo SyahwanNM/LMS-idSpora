@@ -208,9 +208,9 @@
                             <p class="mt-1 text-xs text-gray-500">Courses only appear on the trainer dashboard if the trainer is selected.</p>
                         </div>
 
-                        <!-- Harga -->
+                        <!-- Price -->
                         <div>
-                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price</label>
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp)</label>
                             <input type="text" name="price" id="price" required
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="{{ old('price', $course->price) }}" placeholder="Enter Course Price">

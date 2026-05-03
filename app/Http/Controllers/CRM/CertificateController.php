@@ -63,20 +63,23 @@ class CertificateController extends Controller
         }
 
         $request->validate([
-            'certificate_logo' => 'nullable|array',
-            'certificate_logo.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
-            'certificate_signature' => 'nullable|array',
-            'certificate_signature.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
-            'certificate_template' => 'required|string|in:template_1,template_2,template_3',
-            'delete_logos' => 'nullable|array',
-            'delete_logos.*' => 'string',
-            'delete_signatures' => 'nullable|array',
-            'delete_signatures.*' => 'string',
+            'certificate_template'        => 'required|string|in:template_1,template_2,template_3',
+            'certificate_logo'            => 'nullable|array',
+            'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+            'delete_logos'                => 'nullable|array',
+            'delete_logos.*'              => 'nullable|string',
+            'delete_signatures'           => 'nullable|array',
+            'delete_signatures.*'         => 'nullable|string',
+            'certificate_signature_file'  => 'nullable|array',
+            'certificate_signature_file.*'=> 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+            'existing_signature_image'    => 'nullable|array',
+            'signature_name'              => 'nullable|array',
+            'signature_position'          => 'nullable|array',
         ]);
 
         $data = ['certificate_template' => $request->certificate_template];
-        
-        // Handle Logos
+
+        // Handle Logos (unchanged)
         $existingLogos = is_array($event->certificate_logo) ? $event->certificate_logo : ($event->certificate_logo ? [$event->certificate_logo] : []);
         if($request->has('delete_logos')) {
             foreach($request->delete_logos as $logo) {
@@ -93,22 +96,8 @@ class CertificateController extends Controller
         }
         $data['certificate_logo'] = array_values(array_unique($existingLogos));
 
-        // Handle Signatures
-        $existingSigs = is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : []);
-        if($request->get('delete_signatures')) {
-            foreach($request->delete_signatures as $sig) {
-                if(!empty($sig)) {
-                    Storage::disk('public')->delete(str_replace('storage/', '', $sig));
-                    $existingSigs = array_values(array_filter($existingSigs, fn($s) => $s !== $sig));
-                }
-            }
-        }
-        if ($request->hasFile('certificate_signature')) {
-            foreach($request->file('certificate_signature') as $file) {
-                $existingSigs[] = $file->store('certificates', 'public');
-            }
-        }
-        $data['certificate_signature'] = array_values(array_unique($existingSigs));
+        // Handle Signatures (new format: array of {image, name, position})
+        $data['certificate_signature'] = $this->processSignatures($request, $event->certificate_signature);
 
         $event->update($data);
         return redirect()->route('admin.crm.certificates.index', ['tab' => 'events'])->with('success', 'Konfigurasi sertifikat event berhasil diperbarui!');
@@ -136,20 +125,23 @@ class CertificateController extends Controller
         }
 
         $request->validate([
-            'certificate_logo' => 'nullable|array',
-            'certificate_logo.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
-            'certificate_signature' => 'nullable|array',
-            'certificate_signature.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
-            'certificate_template' => 'required|string|in:template_1,template_2,template_3',
-            'delete_logos' => 'nullable|array',
-            'delete_logos.*' => 'string',
-            'delete_signatures' => 'nullable|array',
-            'delete_signatures.*' => 'string',
+            'certificate_template'        => 'required|string|in:template_1,template_2,template_3',
+            'certificate_logo'            => 'nullable|array',
+            'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+            'delete_logos'                => 'nullable|array',
+            'delete_logos.*'              => 'nullable|string',
+            'delete_signatures'           => 'nullable|array',
+            'delete_signatures.*'         => 'nullable|string',
+            'certificate_signature_file'  => 'nullable|array',
+            'certificate_signature_file.*'=> 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
+            'existing_signature_image'    => 'nullable|array',
+            'signature_name'              => 'nullable|array',
+            'signature_position'          => 'nullable|array',
         ]);
 
         $data = ['certificate_template' => $request->certificate_template];
-        
-        // Handle Logos
+
+        // Handle Logos (unchanged)
         $existingLogos = is_array($course->certificate_logo) ? $course->certificate_logo : ($course->certificate_logo ? [$course->certificate_logo] : []);
         if($request->has('delete_logos')) {
             foreach($request->delete_logos as $logo) {
@@ -166,25 +158,88 @@ class CertificateController extends Controller
         }
         $data['certificate_logo'] = array_values(array_unique($existingLogos));
 
-        // Handle Signatures
-        $existingSigs = is_array($course->certificate_signature) ? $course->certificate_signature : ($course->certificate_signature ? [$course->certificate_signature] : []);
-        if($request->has('delete_signatures')) {
-            foreach($request->delete_signatures as $sig) {
-                if(!empty($sig)) {
-                    Storage::disk('public')->delete(str_replace('storage/', '', $sig));
-                    $existingSigs = array_values(array_filter($existingSigs, fn($s) => $s !== $sig));
-                }
-            }
-        }
-        if ($request->hasFile('certificate_signature')) {
-            foreach($request->file('certificate_signature') as $file) {
-                $existingSigs[] = $file->store('certificates', 'public');
-            }
-        }
-        $data['certificate_signature'] = array_values(array_unique($existingSigs));
+        // Handle Signatures (new format: array of {image, name, position})
+        $data['certificate_signature'] = $this->processSignatures($request, $course->certificate_signature);
 
         $course->update($data);
         return redirect()->route('admin.crm.certificates.index', ['tab' => 'courses'])->with('success', 'Konfigurasi sertifikat kursus berhasil diperbarui!');
+    }
+
+    /**
+     * Proses data tanda tangan dari form baru.
+     * Mengembalikan array of {image, name, position}.
+     */
+    private function processSignatures(Request $request, $existingRaw): array
+    {
+        // Normalisasi data lama
+        $existingRaw = is_array($existingRaw) ? $existingRaw : ($existingRaw ? [$existingRaw] : []);
+
+        // Konversi data lama ke format baru (string path → {image, name, position})
+        $oldSigs = array_map(function ($s) {
+            if (is_array($s)) return $s;
+            return ['image' => $s, 'name' => '', 'position' => ''];
+        }, $existingRaw);
+
+        // Path gambar yang harus dihapus
+        $toDelete = array_filter((array) $request->input('delete_signatures', []));
+        foreach ($toDelete as $delPath) {
+            Storage::disk('public')->delete(str_replace('storage/', '', $delPath));
+            $oldSigs = array_values(array_filter($oldSigs, fn($s) => ($s['image'] ?? '') !== $delPath));
+        }
+
+        // Re-index existing sigs by their image path for lookup
+        $oldSigsByPath = [];
+        foreach ($oldSigs as $s) {
+            $oldSigsByPath[$s['image']] = $s;
+        }
+
+        $newSigs = [];
+        $existingImages = $request->input('existing_signature_image', []);
+        $sigNames       = $request->input('signature_name', []);
+        $sigPositions   = $request->input('signature_position', []);
+        $sigFiles       = $request->file('certificate_signature_file', []);
+
+        // Semua index yang ada di form (dari existing + new)
+        $allIndexes = array_unique(array_merge(
+            array_keys($existingImages),
+            array_keys($sigNames),
+            array_keys($sigPositions),
+            array_keys($sigFiles ?? [])
+        ));
+        sort($allIndexes);
+
+        foreach ($allIndexes as $idx) {
+            $existingPath = $existingImages[$idx] ?? null;
+            $newFile      = $sigFiles[$idx] ?? null;
+            $name         = trim($sigNames[$idx] ?? '');
+            $position     = trim($sigPositions[$idx] ?? '');
+
+            // Skip if this signature was marked for deletion
+            if ($existingPath && in_array($existingPath, $toDelete)) {
+                continue;
+            }
+
+            if ($newFile && $newFile->isValid()) {
+                // Hapus file lama jika ada
+                if ($existingPath) {
+                    Storage::disk('public')->delete(str_replace('storage/', '', $existingPath));
+                }
+                $imagePath = $newFile->store('certificates', 'public');
+            } elseif ($existingPath) {
+                $imagePath = $existingPath;
+            } else {
+                // Tidak ada gambar — lewati
+                continue;
+            }
+
+            $newSigs[] = [
+                'image'    => $imagePath,
+                'name'     => $name,
+                'position' => $position,
+            ];
+        }
+
+        return array_values(array_slice($newSigs, 0, 3));
     }
 
     public function show(Event $event, $registration)
@@ -220,6 +275,7 @@ class CertificateController extends Controller
         
         $this->authorizeAccess($event, $registration);
         $certificateReady = $this->isCertificateReady($event, $registration);
+        
         $force = $request->boolean('force');
         
         if(!$certificateReady && !$force) {
@@ -235,16 +291,9 @@ class CertificateController extends Controller
         
         $data = $this->getCertificateData($event, $registration->fresh());
         
-        $dompdf = new Dompdf();
-        $options = $dompdf->getOptions();
-        $options->set('show_warnings', true);
-        $options->setIsRemoteEnabled(true);
-        $options->setIsHtml5ParserEnabled(true);
-        $dompdf->setOptions($options);
-        
+        $dompdf = $this->makeDompdf();
         $html = trim(view('events.certificate-pdf-only', $data)->render());
         $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         
         $filename = 'Sertifikat_'.Str::slug($event->title).'_'.Str::slug($registration->user->name).'.pdf';
@@ -263,12 +312,6 @@ class CertificateController extends Controller
         $tempDir = storage_path('app/temp/certs_'.time());
         if(!is_dir($tempDir)) mkdir($tempDir, 0755, true);
 
-        $dompdf = new Dompdf();
-        $dompdf->setPaper('A4', 'landscape');
-        $options = $dompdf->getOptions();
-        $options->setIsRemoteEnabled(true);
-        $dompdf->setOptions($options);
-
         foreach($registrations as $registration) {
             if(!$registration->certificate_number) {
                 $registration->update([
@@ -277,10 +320,13 @@ class CertificateController extends Controller
                 ]);
             }
             $data = $this->getCertificateData($event, $registration->fresh());
-            $html = view('events.certificate-pdf', $data)->render();
-            $dompdf->loadHtml($html);
+            $html = trim(view('events.certificate-pdf-only', $data)->render());
+
+            // Buat instance Dompdf BARU untuk setiap sertifikat agar state tidak bocor
+            $dompdf = $this->makeDompdf();
+            $dompdf->loadHtml($html, 'UTF-8');
             $dompdf->render();
-            
+
             $name = Str::slug($registration->user->name).'_'.$registration->id.'.pdf';
             file_put_contents($tempDir.'/'.$name, $dompdf->output());
         }
@@ -310,8 +356,14 @@ class CertificateController extends Controller
         
         $this->authorizeAccessCourse($course, $enrollment);
         
-        if($enrollment->status !== 'completed' && !$request->boolean('force')) {
+        $certificateReady = $this->isCertificateReadyCourse($course, $enrollment);
+        
+        if(!$certificateReady && !$request->boolean('force')) {
             return redirect()->back()->with('error','Kursus belum selesai.');
+        }
+
+        if($certificateReady && $enrollment->status !== 'completed'){
+            $enrollment->update(['status' => 'completed']);
         }
 
 
@@ -324,15 +376,9 @@ class CertificateController extends Controller
         
         $data = $this->getCertificateDataCourse($course, $enrollment->fresh());
         
-        $dompdf = new Dompdf();
-        $options = $dompdf->getOptions();
-        $options->setIsRemoteEnabled(true);
-        $options->setIsHtml5ParserEnabled(true);
-        $dompdf->setOptions($options);
-        
+        $dompdf = $this->makeDompdf();
         $html = trim(view('courses.certificate-pdf-only', $data)->render());
         $dompdf->loadHtml($html, 'UTF-8');
-        $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         
         $filename = 'Sertifikat_Course_'.Str::slug($course->name).'_'.Str::slug($enrollment->user->name).'.pdf';
@@ -351,6 +397,16 @@ class CertificateController extends Controller
         
         $this->authorizeAccessCourse($course, $enrollment);
         
+        $certificateReady = $this->isCertificateReadyCourse($course, $enrollment);
+        if(!$certificateReady) {
+            // Jika belum siap, arahkan ke halaman belajar
+            return redirect()->route('course.learn', $course->id)->with('error','Selesaikan semua modul untuk melihat sertifikat.');
+        }
+
+        if($enrollment->status !== 'completed'){
+            $enrollment->update(['status' => 'completed']);
+        }
+
         if(!$enrollment->certificate_number) {
             $enrollment->update([
                 'certificate_number' => self::generateCertificateNumberCourse($course, $enrollment),
@@ -374,12 +430,6 @@ class CertificateController extends Controller
         $tempDir = storage_path('app/temp/course_certs_'.time());
         if(!is_dir($tempDir)) mkdir($tempDir, 0755, true);
 
-        $dompdf = new Dompdf();
-        $dompdf->setPaper('A4', 'landscape');
-        $options = $dompdf->getOptions();
-        $options->setIsRemoteEnabled(true);
-        $dompdf->setOptions($options);
-
         foreach($enrollments as $enrollment) {
             if(!$enrollment->certificate_number) {
                 $enrollment->update([
@@ -388,10 +438,13 @@ class CertificateController extends Controller
                 ]);
             }
             $data = $this->getCertificateDataCourse($course, $enrollment->fresh());
-            $html = view('courses.certificate-pdf', $data)->render();
-            $dompdf->loadHtml($html);
+            $html = trim(view('courses.certificate-pdf-only', $data)->render());
+
+            // Buat instance Dompdf BARU untuk setiap sertifikat agar state tidak bocor
+            $dompdf = $this->makeDompdf();
+            $dompdf->loadHtml($html, 'UTF-8');
             $dompdf->render();
-            
+
             $name = Str::slug($enrollment->user->name).'_'.$enrollment->id.'.pdf';
             file_put_contents($tempDir.'/'.$name, $dompdf->output());
         }
@@ -412,68 +465,140 @@ class CertificateController extends Controller
         return response()->download($zipPath)->deleteFileAfterSend(true);
     }
 
+    /**
+     * Buat instance Dompdf baru dengan konfigurasi standar.
+     * Selalu gunakan instance baru untuk setiap dokumen agar state render tidak bocor.
+     */
+    private function makeDompdf(): Dompdf
+    {
+        $dompdf = new Dompdf();
+        $dompdf->setPaper('A4', 'landscape');
+        $options = $dompdf->getOptions();
+        $options->setIsRemoteEnabled(true);
+        $options->setIsHtml5ParserEnabled(true);
+        $dompdf->setOptions($options);
+        return $dompdf;
+    }
+
     private function getCertificateData(Event $event, EventRegistration $registration)
     {
-        $logos = [];
+        $logosBase64 = [];
+        $logosUrl = [];
         foreach(is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
             $path = str_replace('storage/', '', $l);
             if(Storage::disk('public')->exists($path)) {
                 $mime = Storage::disk('public')->mimeType($path);
                 $content = base64_encode(Storage::disk('public')->get($path));
-                $logos[] = "data:$mime;base64,$content";
+                $logosBase64[] = "data:$mime;base64,$content";
+                $logosUrl[] = request()->schemeAndHttpHost() . '/uploads/' . $path;
             }
         }
-        $sigs = [];
-        foreach(is_array($event->certificate_signature) ? $event->certificate_signature : [] as $s) {
-            $path = str_replace('storage/', '', $s);
-            if(Storage::disk('public')->exists($path)) {
-                $mime = Storage::disk('public')->mimeType($path);
-                $content = base64_encode(Storage::disk('public')->get($path));
-                $sigs[] = "data:$mime;base64,$content";
+
+        $sigsRaw = is_array($event->certificate_signature) ? $event->certificate_signature : [];
+        $signaturesData = [];
+        $signaturesBase64 = []; // backward compat
+        foreach ($sigsRaw as $s) {
+            $isObj    = is_array($s);
+            $imgPath  = $isObj ? ($s['image'] ?? '') : $s;
+            $sigName  = $isObj ? ($s['name'] ?? '') : '';
+            $sigPos   = $isObj ? ($s['position'] ?? '') : '';
+
+            $path = str_replace('storage/', '', $imgPath);
+            if ($path && Storage::disk('public')->exists($path)) {
+                $mime    = Storage::disk('public')->mimeType($path);
+                $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
+                $url     = request()->schemeAndHttpHost() . '/uploads/' . $path;
+                $signaturesBase64[] = $b64;
+                $signaturesData[]   = [
+                    'base64' => $b64, 
+                    'url'    => $url,
+                    'name'   => $sigName, 
+                    'position' => $sigPos
+                ];
             }
         }
+
         return [
-            'event' => $event,
-            'user' => $registration->user,
-            'issuedAt' => $registration->certificate_issued_at ?? now(),
-            'certificateNumber' => $registration->certificate_number,
-            'logosBase64' => $logos,
-            'signaturesBase64' => $sigs,
+            'event'            => $event,
+            'user'             => $registration->user,
+            'issuedAt'         => $registration->certificate_issued_at ?? now(),
+            'certificateNumber'=> $registration->certificate_number,
+            'logosBase64'      => $logosBase64,
+            'logosUrl'         => $logosUrl,
+            'signaturesBase64' => $signaturesBase64,
+            'signaturesData'   => $signaturesData,
         ];
     }
 
     private function getCertificateDataCourse(Course $course, Enrollment $enrollment)
     {
-        $logos = [];
+        $logosBase64 = [];
+        $logosUrl = [];
         foreach(is_array($course->certificate_logo) ? $course->certificate_logo : [] as $l) {
             $path = str_replace('storage/', '', $l);
             if(Storage::disk('public')->exists($path)) {
                 $mime = Storage::disk('public')->mimeType($path);
                 $content = base64_encode(Storage::disk('public')->get($path));
-                $logos[] = "data:$mime;base64,$content";
+                $logosBase64[] = "data:$mime;base64,$content";
+                $logosUrl[] = request()->schemeAndHttpHost() . '/uploads/' . $path;
             }
         }
-        $sigs = [];
-        foreach(is_array($course->certificate_signature) ? $course->certificate_signature : [] as $s) {
-            $path = str_replace('storage/', '', $s);
-            if(Storage::disk('public')->exists($path)) {
-                $mime = Storage::disk('public')->mimeType($path);
-                $content = base64_encode(Storage::disk('public')->get($path));
-                $sigs[] = "data:$mime;base64,$content";
+
+        $sigsRaw = is_array($course->certificate_signature) ? $course->certificate_signature : [];
+        $signaturesData = [];
+        $signaturesBase64 = []; // backward compat
+        foreach ($sigsRaw as $s) {
+            $isObj    = is_array($s);
+            $imgPath  = $isObj ? ($s['image'] ?? '') : $s;
+            $sigName  = $isObj ? ($s['name'] ?? '') : '';
+            $sigPos   = $isObj ? ($s['position'] ?? '') : '';
+
+            $path = str_replace('storage/', '', $imgPath);
+            if ($path && Storage::disk('public')->exists($path)) {
+                $mime    = Storage::disk('public')->mimeType($path);
+                $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
+                $url     = request()->schemeAndHttpHost() . '/uploads/' . $path;
+                $signaturesBase64[] = $b64;
+                $signaturesData[]   = [
+                    'base64' => $b64, 
+                    'url'    => $url,
+                    'name'   => $sigName, 
+                    'position' => $sigPos
+                ];
             }
         }
+
         return [
-            'course' => $course,
-            'user' => $enrollment->user,
-            'issuedAt' => $enrollment->certificate_issued_at ?? now(),
-            'certificateNumber' => $enrollment->certificate_number,
-            'logosBase64' => $logos,
-            'signaturesBase64' => $sigs,
+            'course'           => $course,
+            'user'             => $enrollment->user,
+            'issuedAt'         => $enrollment->certificate_issued_at ?? now(),
+            'certificateNumber'=> $enrollment->certificate_number,
+            'logosBase64'      => $logosBase64,
+            'logosUrl'         => $logosUrl,
+            'signaturesBase64' => $signaturesBase64,
+            'signaturesData'   => $signaturesData,
         ];
+    }
+
+    public function isCertificateReadyCourse(Course $course, Enrollment $enrollment) {
+        if ($enrollment->status === 'completed' || $enrollment->certificate_issued_at) return true;
+        
+        // Cek jika progress sudah 100%
+        return $enrollment->isFullyCompleted();
     }
 
     public function isCertificateReady(Event $event, EventRegistration $registration = null) {
         if ($registration && $registration->certificate_issued_at) return true;
+        
+        // Jika user sudah absen hadir, sertifikat boleh diakses tanpa menunggu event selesai
+        if ($registration) {
+            $status = strtolower((string) ($registration->attendance_status ?? ''));
+            $isAttended = in_array($status, ['present', 'attended', 'checked-in', 'yes'], true) 
+                || !empty($registration->attended_at);
+            
+            if ($isAttended) return true;
+        }
+
         return $event->isFinished();
     }
 

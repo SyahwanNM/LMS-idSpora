@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
@@ -99,7 +99,6 @@
                                 <th>Date</th>
                                 <th>Location</th>
                                 <th>Link</th>
-                                <th>Reseller</th>
                                 <th>Documents Completion</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -163,13 +162,7 @@
                                         —
                                     @endif
                                 </td>
-                                <td>
-                                    @if((bool) ($event->is_reseller_event ?? false))
-                                        <span class="badge bg-success">Yes</span>
-                                    @else
-                                        <span class="badge bg-secondary">No</span>
-                                    @endif
-                                </td>
+                               
                                 <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
@@ -818,7 +811,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="deskripsi" class="form-label fw-semibold">Description Event <span class="text-danger">*</span></label>
-                                    <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description') }}</textarea>
+                                    <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{!! old('description') !!}</textarea>
                                     <div class="form-text">Describe the event details: topic, target participants, brief agenda, and benefits.</div>
                                 </div>
                                 <div class="mb-3">
@@ -830,9 +823,9 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Start & End Time <span class="text-danger">*</span></label>
                                     <div class="d-flex align-items-center gap-2">
-                                        <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time') }}">
+                                        <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time') }}" placeholder="00:00">
                                         <span>s/d</span>
-                                        <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}">
+                                        <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}" placeholder="00:00">
                                     </div>
                                     <div class="form-text">Fill in the start time (required). End time is optional.</div>
                                 </div>
@@ -917,7 +910,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
-                                    <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{{ old('terms_and_conditions') }}</textarea>
+                                    <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{!! old('terms_and_conditions') !!}</textarea>
                                     <div class="form-text">Optional. Write rules/requirements for participants (refund, certificate terms, etc.).</div>
                                 </div>
                                 <div class="mb-3">
@@ -1033,17 +1026,19 @@
 
                     if (pct >= 100) {
                         if (body) body.innerHTML = '<p>Are you sure you want to publish this event? All documents are complete and the event will be displayed to the public shortly.</p>';
+                        if (confirmBtn) confirmBtn.style.display = '';
                     } else {
                         if (body) {
-                            var html = '<p>The document completeness for this event is not yet complete:</p><ul>';
+                            var html = '<div class="alert alert-warning"><p class="mb-2 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Document completion is not yet 100%:</p><ul class="mb-2">';
                             if (Array.isArray(missing) && missing.length) {
                                 missing.forEach(function(it){ html += '<li>' + it + '</li>'; });
                             } else {
-                                html += '<li>Some documents are not yet complete</li>';
+                                html += '<li>Some documents are still missing</li>';
                             }
-                            html += '</ul><p>Are you sure you want to publish this event?</p>';
+                            html += '</ul><p class="mb-0 small">Please complete all documents before publishing.</p></div>';
                             body.innerHTML = html;
                         }
+                        if (confirmBtn) confirmBtn.style.display = 'none';
                     }
                     pendingPublishForm = form;
                     if (publishModal) publishModal.show();
@@ -1063,6 +1058,7 @@
                         confirmBtn.classList.add('btn-danger');
                     }
                     if (body) body.innerHTML = '<p>Are you sure you want to unpublish this event? The event will no longer be visible to the public.</p>';
+                    if (confirmBtn) confirmBtn.style.display = '';
                     
                     pendingPublishForm = form;
                     if (publishModal) publishModal.show();
@@ -1297,6 +1293,20 @@
             tTriggers.forEach(el => { try { new bootstrap.Tooltip(el); } catch(_){} });
         }
 
+        // Initialize Timepicker (Flatpickr 24h)
+        window.initTimePicker = function(selector) {
+            if (!window.flatpickr) return;
+            flatpickr(selector, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                allowInput: true,
+                disableMobile: true
+            });
+        }
+        initTimePicker('.js-timepicker');
+
         // Materi autocomplete (show after 2 chars) + validation
         function setupGenericAutocomplete(inputEl, boxEl, options, invalidEl) {
             if(!inputEl || !boxEl) return;
@@ -1526,8 +1536,8 @@
             if(!placeNameGroup || !placeNameInput) return;
             const mode = String(locationModeEl?.value || '').toLowerCase();
             const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
-            const hasValue = String(placeNameInput.value || '').trim() !== '';
-            const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+            // Always show place name for offline/hybrid so user can fill it even without maps
+            const shouldShow = isOfflineHybrid;
             placeNameGroup.classList.toggle('d-none', !shouldShow);
             placeNameInput.required = shouldShow;
             if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
@@ -1542,11 +1552,12 @@
             if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
             if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
 
-            if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+            // Make maps_url optional, but zoom_link required if online/hybrid
+            if(mapsInput) mapsInput.required = false; 
             if(zoomInput) zoomInput.required = (isOnline || isHybrid);
 
             // Visual '*' must match the required logic.
-            if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+            if (mapsRequiredStar) mapsRequiredStar.style.display = 'none';
             if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
 
             // Hide place name by default; shown after Deteksi or if already filled
@@ -1994,8 +2005,8 @@
         function createScheduleRow(idx) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" /></td>
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" /></td>
+                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="00:00" /></td>
+                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="00:00" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">
@@ -2008,6 +2019,10 @@
         function addScheduleRow() {
             const row = createScheduleRow(scheduleIndex++);
             scheduleTableBody.appendChild(row);
+            // Initialize timepicker for new row
+            if (typeof initTimePicker === 'function') {
+                initTimePicker(row.querySelectorAll('.js-timepicker'));
+            }
         }
         if (addScheduleBtn && scheduleTableBody) {
             addScheduleBtn.addEventListener('click', addScheduleRow);
@@ -2818,8 +2833,8 @@ function initEditEventLocationAndBenefits(modalEl){
         if(!placeNameGroup || !placeNameInput) return;
         const mode = String(locationModeEl?.value || '').toLowerCase();
         const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
-        const hasValue = String(placeNameInput.value || '').trim() !== '';
-        const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+        // Always show place name for offline/hybrid
+        const shouldShow = isOfflineHybrid;
         placeNameGroup.classList.toggle('d-none', !shouldShow);
         placeNameInput.required = shouldShow;
         if(placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
@@ -2834,9 +2849,10 @@ function initEditEventLocationAndBenefits(modalEl){
         if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
         if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
 
-        if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+        // Make maps_url optional, zoom_link required if online/hybrid
+        if(mapsInput) mapsInput.required = false; 
         if(zoomInput) zoomInput.required = (isOnline || isHybrid);
-        if(mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+        if(mapsRequiredStar) mapsRequiredStar.style.display = 'none';
         if(zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
 
         showPlaceNameIfNeeded(false);

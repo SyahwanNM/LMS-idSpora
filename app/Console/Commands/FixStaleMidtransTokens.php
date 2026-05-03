@@ -100,28 +100,42 @@ class FixStaleMidtransTokens extends Command
                     $this->line("  [token cleared] {$payment->order_id}" . ($hadToken ? ' (had stale token)' : ''));
                 }
             } catch (\Throwable $e) {
-                // 404 = never charged at Midtrans → mark expired
+                // 404 dari Midtrans = order belum pernah dicharge (user belum buka popup Snap).
+                // Ini NORMAL selama snap token masih dalam masa berlaku (< 24 jam).
+                // Hanya set expired jika token sudah > 24 jam atau tidak ada token sama sekali.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours  = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 25; // tidak ada token → anggap sudah expired
 
-                    if ($payment->event_registration_id) {
-                        $reg = EventRegistration::find($payment->event_registration_id);
-                        if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
-                            $reg->status = 'expired';
-                            $reg->save();
+                    if ($tokenAgeHours >= 24) {
+                        // Token sudah kedaluwarsa → set expired
+                        $payment->status = 'expired';
+                        $payment->save();
+
+                        if ($payment->event_registration_id) {
+                            $reg = EventRegistration::find($payment->event_registration_id);
+                            if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                                $reg->status = 'expired';
+                                $reg->save();
+                            }
                         }
-                    }
-                    if ($payment->enrollment_id) {
-                        $enr = Enrollment::find($payment->enrollment_id);
-                        if ($enr && $enr->status !== 'active') {
-                            $enr->status = 'expired';
-                            $enr->save();
+                        if ($payment->enrollment_id) {
+                            $enr = Enrollment::find($payment->enrollment_id);
+                            if ($enr && $enr->status !== 'active') {
+                                $enr->status = 'expired';
+                                $enr->save();
+                            }
                         }
+                        $this->line("  [expired/token-stale] {$payment->order_id} (token age: {$tokenAgeHours}h)");
+                    } else {
+                        // Token masih valid, user belum buka popup → biarkan pending, hanya clear token
+                        $payment->save(); // simpan perubahan metadata (token sudah di-unset di atas)
+                        $this->line("  [skip/not-yet-opened] {$payment->order_id} (token age: {$tokenAgeHours}h)");
                     }
-                    $this->line("  [expired/404] {$payment->order_id}");
                 } else {
-                    // Just clear the token even if status check fails
+                    // Error lain → tetap clear token tapi jangan ubah status
                     $payment->save();
                     $this->warn("  [token cleared, status unknown] {$payment->order_id}: {$e->getMessage()}");
                 }

@@ -51,7 +51,7 @@ class DashboardController extends Controller
             $registeredIds = EventRegistration::query()
                 ->where('user_id', $userId)
                 ->whereIn('event_id', $eventIds)
-                ->where('status', 'active')
+                ->where('status', '!=', 'rejected')
                 ->pluck('event_id')
                 ->all();
 
@@ -104,17 +104,19 @@ class DashboardController extends Controller
             ->orderBy('order')
             ->get();
 
-        // Get events registered by the current user (only active registrations and future/ongoing events)
-        $userEvents = EventRegistration::query()
+        // Get events registered by the current user (only upcoming ones)
+        $userRegistrations = EventRegistration::query()
             ->where('user_id', Auth::id())
             ->where('status', 'active')
-            ->with('event')
-            ->whereHas('event', function ($q) {
-                $q->where('event_date', '>=', now()->startOfDay());
+            ->whereHas('event', function($q) {
+                $q->where('event_date', '>=', Carbon::today());
             })
+            ->with('event')
             ->get()
-            ->pluck('event')
-            ->sortBy('event_date');
+            ->sortBy(function($reg) {
+                return $reg->event->event_date;
+            });
+
 
         // Get active course enrollments for "Lanjutkan Belajar" section
         $userEnrollments = Enrollment::query()
@@ -157,8 +159,8 @@ class DashboardController extends Controller
             if (!$label) {
                 continue;
             }
-            $hours = ((int) $row->total_seconds) / 3600;
-            $dailyLearning[$label] = (float) number_format($hours, 1);
+            $minutes = ((int) $row->total_seconds) / 60;
+            $dailyLearning[$label] = (float) round($minutes);
         }
 
         $learningChartData = array_values($dailyLearning);
@@ -190,28 +192,73 @@ class DashboardController extends Controller
                 if (!$dayName) {
                     continue;
                 }
-                $durationHours = ($record->module->duration ?? 0) / 3600;
-                $dailyLearning[$dayName] += $durationHours;
+                $durationMinutes = ($record->module->duration ?? 0) / 60;
+                $dailyLearning[$dayName] += $durationMinutes;
             }
 
             foreach ($dailyLearning as $day => $value) {
-                $dailyLearning[$day] = (float) number_format($value, 1);
+                $dailyLearning[$day] = (float) round($value);
             }
 
             $learningChartData = array_values($dailyLearning);
         }
 
-        // Get popular topics (categories with most enrollments)
-        $popularTopics = \App\Models\Category::query()
-            ->withCount('enrollments')
-            ->orderByDesc('enrollments_count')
-            ->limit(4)
-            ->get();
+        // Personalized Popular Topics: Categories related to user's enrollment and event history.
+        // If user is new (no enrollments/registrations), it will be empty.
+        $user = Auth::user();
+        $popularTopics = collect();
+
+        if ($user) {
+            $userCategoryIds = Enrollment::query()
+                ->where('user_id', $user->id)
+                ->whereHas('course', function($q) {
+                    $q->whereNotNull('category_id');
+                })
+                ->join('courses', 'enrollments.course_id', '=', 'courses.id')
+                ->pluck('courses.category_id')
+                ->unique()
+                ->toArray();
+
+            // Try to match event 'materi' with category names if possible for more 'theme' coverage
+            $userEventMateri = EventRegistration::query()
+                ->where('user_id', $user->id)
+                ->join('events', 'event_registrations.event_id', '=', 'events.id')
+                ->pluck('events.materi')
+                ->unique()
+                ->filter()
+                ->toArray();
+
+            $eventRelatedCategoryIds = [];
+            if (!empty($userEventMateri)) {
+                $eventRelatedCategoryIds = \App\Models\Category::query()
+                    ->where(function($q) use ($userEventMateri) {
+                        foreach ($userEventMateri as $materi) {
+                            $q->orWhere('name', 'like', '%' . $materi . '%');
+                        }
+                    })
+                    ->pluck('id')
+                    ->toArray();
+            }
+
+            $allRelevantIds = array_unique(array_merge($userCategoryIds, $eventRelatedCategoryIds));
+
+            if (!empty($allRelevantIds)) {
+                $popularTopics = \App\Models\Category::query()
+                    ->whereIn('id', $allRelevantIds)
+                    ->withCount('courses')
+                    ->withCount(['enrollments as enrollments_count' => function ($q) {
+                        $q->whereIn('enrollments.status', ['active', 'completed', 'expired']);
+                    }])
+                    ->orderByDesc('enrollments_count')
+                    ->limit(4)
+                    ->get();
+            }
+        }
 
         return view('user.dashboard', [
             'upcomingEvents' => $upcomingEvents,
             'featuredCourses' => $featuredCourses,
-            'userEvents' => $userEvents,
+            'userRegistrations' => $userRegistrations,
             'userEnrollments' => $userEnrollments,
             'learningChartData' => $learningChartData,
             'popularTopics' => $popularTopics,

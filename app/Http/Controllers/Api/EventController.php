@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class EventController extends Controller
 {
@@ -949,6 +950,15 @@ class EventController extends Controller
 
         // Sync status real-time dari Midtrans jika ada pending order
         if ($payment && $payment->order_id) {
+            // Cek umur snap token — Midtrans return 404 jika user belum membuka popup
+            // sama sekali (transaksi belum diinisiasi di sisi Midtrans). Ini normal
+            // selama token masih dalam masa berlaku (< 24 jam).
+            $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+            $tokenAgeHours  = $tokenCreatedAt
+                ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                : 0;
+            $tokenStillValid = $tokenAgeHours < 24;
+
             try {
                 $this->configureMidtrans();
                 $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
@@ -971,8 +981,18 @@ class EventController extends Controller
                     $payment = null; // tidak ada pending order aktif
                 }
             } catch (\Throwable $e) {
-                // 404 dari Midtrans = belum pernah dicharge = expired
-                if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
+                $is404 = str_contains($e->getMessage(), '404')
+                    || str_contains(strtolower($e->getMessage()), 'not found');
+
+                if ($is404 && $tokenStillValid) {
+                    // Token masih valid dan user belum membuka popup Midtrans sama sekali.
+                    // Midtrans belum mengenal order ini → biarkan tetap pending, jangan expired.
+                    Log::info('midtransPendingOrder: 404 dari Midtrans tapi token masih valid, biarkan pending.', [
+                        'order_id'        => $payment->order_id,
+                        'token_age_hours' => $tokenAgeHours,
+                    ]);
+                } elseif ($is404 && !$tokenStillValid) {
+                    // Token sudah > 24 jam dan Midtrans tidak mengenal order → benar-benar expired.
                     $payment->status = 'expired';
                     $payment->save();
                     $reg = EventRegistration::find($payment->event_registration_id);
@@ -982,7 +1002,7 @@ class EventController extends Controller
                     }
                     $payment = null;
                 }
-                // Error lain: biarkan tetap pending, jangan blokir user
+                // Error lain (network, server error): biarkan tetap pending, jangan blokir user.
             }
         }
 

@@ -97,12 +97,18 @@ class EventModuleController extends Controller
         $filename = time() . '_' . str_replace(' ', '_', $originalName);
         $path = $file->storeAs('events/modules/submissions/' . $event->id, $filename, 'public');
 
-        EventTrainerModule::create([
-            'event_id'      => $event->id,
-            'trainer_id'    => $trainerId,
-            'original_name' => $originalName,
-            'path'          => $path,
-            'status'        => 'pending_review',
+        $event->update([
+            'module_path' => $path,
+            'module_submitted_at' => now(),
+            'material_status' => 'pending_review',
+            'material_approved_at' => null,
+            'material_approved_by' => null,
+            'material_rejection_reason' => null,
+            'module_verified_at' => null,
+            'module_verified_by' => null,
+            'module_rejected_at' => null,
+            'module_rejected_by' => null,
+            'module_rejection_reason' => null,
         ]);
 
         // Update event material_status to pending_review if not already approved

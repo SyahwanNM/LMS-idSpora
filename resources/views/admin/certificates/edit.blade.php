@@ -71,6 +71,10 @@
         justify-content: center;
         cursor: pointer;
         font-size: 12px;
+        z-index: 10;
+    }
+    .logo-item-wrapper {
+        overflow: visible !important;
     }
 </style>
 @endsection
@@ -91,6 +95,21 @@
 @if(session('success'))
     <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show mb-4" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="alert alert-danger border-0 shadow-sm alert-dismissible fade show mb-4" role="alert">
+        <div class="d-flex align-items-center mb-1">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span class="fw-bold">Gagal memperbarui konfigurasi:</span>
+        </div>
+        <ul class="mb-0 smaller">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 @endif
@@ -173,7 +192,7 @@
                                 <span class="text-primary smaller" style="cursor: pointer;" id="addLogoBtn" onclick="addLogoField()">+ Tambah Baris</span>
                             </label>
                             <div id="logoUploadContainer">
-                                <input type="file" name="certificate_logo[]" class="form-control form-control-sm mb-2" accept="image/*" id="logoInput">
+                                <input type="file" name="certificate_logo[]" class="form-control form-control-sm mb-2" accept="image/*" onchange="previewNewAsset(this)">
                             </div>
                             <div class="smaller text-muted mb-3"><i class="bi bi-info-circle me-1"></i>Maksimal 3 logo partner tambahan.</div>
                             
@@ -181,8 +200,8 @@
                                 @php $logos = is_array($event->certificate_logo) ? $event->certificate_logo : ($event->certificate_logo ? [$event->certificate_logo] : []); @endphp
                                 @foreach($logos as $logo)
                                     <div class="position-relative logo-item-wrapper">
-                                        <img src="{{ Storage::url(str_replace('storage/', '', $logo)) }}" class="asset-preview">
-                                        <div class="delete-overlay" onclick="markDelete('logo', '{{ $logo }}', this)"><i class="bi bi-x"></i></div>
+                                        <img src="{{ asset('uploads/' . $logo) }}" class="asset-preview">
+                                        <div class="delete-overlay" onclick="markDelete('logo', '{{ $logo }}', this, event)"><i class="bi bi-x"></i></div>
                                         <input type="hidden" name="delete_logos[]" value="">
                                     </div>
                                 @endforeach
@@ -190,20 +209,64 @@
                         </div>
 
                         <!-- Signatures -->
-                        <div class="col-md-6">
-                            <label class="form-label smaller fw-bold text-muted">Upload Tanda Tangan</label>
-                            <input type="file" name="certificate_signature[]" class="form-control form-control-sm mb-3" accept="image/*" multiple id="sigInput">
-                            
-                            <div id="existingSigs" class="d-flex flex-wrap gap-2">
-                                @php $sigs = is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : []); @endphp
-                                @foreach($sigs as $sig)
-                                    <div class="position-relative">
-                                        <img src="{{ Storage::url(str_replace('storage/', '', $sig)) }}" class="asset-preview">
-                                        <div class="delete-overlay" onclick="markDelete('sig', '{{ $sig }}', this)"><i class="bi bi-x"></i></div>
-                                        <input type="hidden" name="delete_signatures[]" value="">
+                        <div class="col-12">
+                            <label class="form-label smaller fw-bold text-muted d-flex justify-content-between">
+                                Tanda Tangan
+                                <span class="text-primary smaller" style="cursor: pointer;" onclick="addSignatureField()">+ Tambah Tanda Tangan</span>
+                            </label>
+
+                            <div id="signaturesContainer">
+                                @php
+                                    $sigs = is_array($event->certificate_signature)
+                                        ? $event->certificate_signature
+                                        : ($event->certificate_signature ? [$event->certificate_signature] : []);
+                                @endphp
+
+                                @forelse($sigs as $i => $sig)
+                                    @php
+                                        $isObj = is_array($sig);
+                                        $sigPath = $isObj ? ($sig['image'] ?? '') : $sig;
+                                        $sigName = $isObj ? ($sig['name'] ?? '') : '';
+                                        $sigPos  = $isObj ? ($sig['position'] ?? '') : '';
+                                    @endphp
+                                    <div class="sig-entry card border mb-3 p-3" style="background:#f8fafc;border-radius:10px;">
+                                        <div class="row g-3 align-items-center">
+                                            <div class="col-md-4">
+                                                <label class="form-label smaller text-muted mb-1">Gambar TTD <span class="text-danger">*</span></label>
+                                                @if($sigPath)
+                                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                                        <img src="{{ asset('uploads/' . $sigPath) }}" style="height:45px;object-fit:contain;border:1px solid #e2e8f0;border-radius:6px;padding:3px;background:white;">
+                                                        <label class="smaller text-primary" style="cursor:pointer;">
+                                                            <input type="checkbox" name="replace_sig_{{ $i }}" value="1" style="display:none;" onchange="toggleSigReplace(this, {{ $i }})">
+                                                            Ganti Gambar
+                                                        </label>
+                                                    </div>
+                                                    <input type="hidden" name="existing_signature_image[{{ $i }}]" value="{{ $sigPath }}">
+                                                    <div id="sig_file_{{ $i }}" style="display:none;">
+                                                        <input type="file" name="certificate_signature_file[{{ $i }}]" class="form-control form-control-sm" accept="image/*">
+                                                    </div>
+                                                @else
+                                                    <input type="file" name="certificate_signature_file[{{ $i }}]" class="form-control form-control-sm" accept="image/*">
+                                                @endif
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label smaller text-muted mb-1">Nama Penandatangan</label>
+                                                <input type="text" name="signature_name[{{ $i }}]" value="{{ $sigName }}" class="form-control form-control-sm" placeholder="cth: Dr. Ahmad Fauzi">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label smaller text-muted mb-1">Jabatan</label>
+                                                <input type="text" name="signature_position[{{ $i }}]" value="{{ $sigPos }}" class="form-control form-control-sm" placeholder="cth: Direktur Utama">
+                                            </div>
+                                            <div class="col-md-2 d-flex align-items-end">
+                                                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeSigEntry(this, '{{ $sigPath }}', event)"><i class="bi bi-trash"></i> Hapus</button>
+                                                <input type="hidden" name="delete_signatures[]" value="">
+                                            </div>
+                                        </div>
                                     </div>
-                                @endforeach
+                                @empty
+                                @endforelse
                             </div>
+                            <div class="smaller text-muted"><i class="bi bi-info-circle me-1"></i>Gunakan PNG transparan untuk hasil terbaik. Maksimal 3 tanda tangan.</div>
                         </div>
                     </div>
                 </div>
@@ -217,23 +280,29 @@
         <!-- Sidebar Info -->
         <div class="col-lg-4">
             <div class="card-minimal h-100 p-4">
-                <h6 class="fw-bold text-navy mb-3">Panduan Desain</h6>
+                <h6 class="fw-bold text-navy mb-3">Panduan & Syarat Aset</h6>
                 <div class="d-flex align-items-start mb-3">
                     <div class="me-3 text-primary"><i class="bi bi-info-circle fs-4"></i></div>
                     <div class="smaller text-muted">
-                        <b>Logo Default:</b> Logo IdSPora akan selalu muncul sebagai identitas penyelenggara utama.
+                        <b>Format File:</b> Mendukung JPG, JPEG, PNG, WEBP, dan SVG.
+                    </div>
+                </div>
+                <div class="d-flex align-items-start mb-3">
+                    <div class="me-3 text-danger"><i class="bi bi-hdd fs-4"></i></div>
+                    <div class="smaller text-muted">
+                        <b>Ukuran Maksimal:</b> 2MB (2048 KB) per file. File yang lebih besar akan otomatis ditolak.
                     </div>
                 </div>
                 <div class="d-flex align-items-start mb-3">
                     <div class="me-3 text-warning"><i class="bi bi-layers fs-4"></i></div>
                     <div class="smaller text-muted">
-                        <b>Partner Logo:</b> Digunakan jika event bekerja sama dengan instansi lain. Max 3 logo tambahan.
+                        <b>Jumlah Maksimal:</b> Maksimal 3 Logo Partner dan 3 Tanda Tangan.
                     </div>
                 </div>
                 <div class="d-flex align-items-start mb-4">
                     <div class="me-3 text-success"><i class="bi bi-pen fs-4"></i></div>
                     <div class="smaller text-muted">
-                        <b>Tanda Tangan:</b> Pastikan menggunakan latar belakang transparan (PNG) untuk estetika maksimal.
+                        <b>Rekomendasi TTD:</b> Gunakan background transparan (PNG/SVG) agar terlihat menyatu dengan sertifikat.
                     </div>
                 </div>
 
@@ -254,15 +323,35 @@
         document.getElementById('selected_template').value = id;
     }
 
-    function markDelete(type, path, element) {
+    function markDelete(type, path, element, event) {
+        if(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         if(confirm('Hapus aset ini?')) {
-            const input = element.nextElementSibling;
-            input.value = path;
-            const wrapper = element.closest('.position-relative');
+            const wrapper = element.closest('.logo-item-wrapper') || element.closest('.position-relative');
+            const input = wrapper.querySelector('input[name="delete_logos[]"]');
+            if (input) input.value = path;
             wrapper.style.opacity = '0.3';
             wrapper.style.pointerEvents = 'none';
             wrapper.classList.add('marked-deleted');
             checkLogoCount();
+        }
+    }
+
+    function previewNewAsset(input) {
+        const file = input.files[0];
+        if (file) {
+            let preview = input.parentElement.querySelector('.new-asset-preview');
+            if (!preview) {
+                preview = document.createElement('img');
+                preview.className = 'new-asset-preview mt-2';
+                preview.style.cssText = 'height:40px; border-radius:4px; border:1px solid #e2e8f0; object-fit:contain; background:white; padding:2px;';
+                input.parentElement.appendChild(preview);
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) { preview.src = e.target.result; }
+            reader.readAsDataURL(file);
         }
     }
 
@@ -275,7 +364,9 @@
             const div = document.createElement('div');
             div.className = 'd-flex gap-2 mb-2';
             div.innerHTML = `
-                <input type="file" name="certificate_logo[]" class="form-control form-control-sm" accept="image/*">
+                <div class="d-flex flex-column gap-1 w-100">
+                    <input type="file" name="certificate_logo[]" class="form-control form-control-sm" accept="image/*" onchange="previewNewAsset(this)">
+                </div>
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.remove(); checkLogoCount();"><i class="bi bi-trash"></i></button>
             `;
             container.appendChild(div);
@@ -287,7 +378,6 @@
         const currentInputs = document.querySelectorAll('#logoUploadContainer input[type="file"]').length;
         const existingLogos = document.querySelectorAll('.logo-item-wrapper:not(.marked-deleted)').length;
         const btn = document.getElementById('addLogoBtn');
-        
         if ((currentInputs + existingLogos) >= 3) {
             btn.style.display = 'none';
         } else {
@@ -295,7 +385,61 @@
         }
     }
 
-    // Initial check
+    let sigIndex = {{ count(is_array($event->certificate_signature) ? $event->certificate_signature : ($event->certificate_signature ? [$event->certificate_signature] : [])) }};
+
+    function addSignatureField() {
+        const container = document.getElementById('signaturesContainer');
+        const existing = container.querySelectorAll('.sig-entry').length;
+        if (existing >= 3) { alert('Maksimal 3 tanda tangan.'); return; }
+        const idx = sigIndex++;
+        const div = document.createElement('div');
+        div.className = 'sig-entry card border mb-3 p-3';
+        div.style.cssText = 'background:#f8fafc;border-radius:10px;';
+        div.innerHTML = `
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <label class="form-label smaller text-muted mb-1">Gambar TTD <span class="text-danger">*</span></label>
+                    <input type="file" name="certificate_signature_file[${idx}]" class="form-control form-control-sm" accept="image/*" onchange="previewNewAsset(this)">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label smaller text-muted mb-1">Nama Penandatangan</label>
+                    <input type="text" name="signature_name[${idx}]" class="form-control form-control-sm" placeholder="cth: Dr. Ahmad Fauzi">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label smaller text-muted mb-1">Jabatan</label>
+                    <input type="text" name="signature_position[${idx}]" class="form-control form-control-sm" placeholder="cth: Direktur Utama">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('.sig-entry').remove()"><i class="bi bi-trash"></i> Hapus</button>
+                    <input type="hidden" name="delete_signatures[]" value="">
+                </div>
+            </div>`;
+        container.appendChild(div);
+    }
+
+    function toggleSigReplace(checkbox, idx) {
+        const fileDiv = document.getElementById('sig_file_' + idx);
+        if (!fileDiv) return;
+        fileDiv.style.display = checkbox.checked ? 'block' : 'none';
+    }
+
+    function removeSigEntry(btn, path, event) {
+        if(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (!confirm('Hapus tanda tangan ini?')) return;
+        const entry = btn.closest('.sig-entry');
+        if (path) {
+            const hidden = entry.querySelector('input[name="delete_signatures[]"]') || entry.querySelector('input[name^="delete_signatures"]');
+            if (hidden) hidden.value = path;
+            entry.style.opacity = '0.3';
+            entry.style.pointerEvents = 'none';
+        } else {
+            entry.remove();
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', checkLogoCount);
 </script>
 @endsection

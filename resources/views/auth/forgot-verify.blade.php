@@ -45,31 +45,31 @@
             <form action="{{ route('verifikasi.verify') }}" method="post">
                 @csrf
                 <div class="mb-3">
-                    <h6 class="fw-600">Input Verification Code</h6>
+                    <h6 class="fw-600">Masukkan Kode Verifikasi</h6>
                     <input type="text" name="verification_code" class="form-control text-center fs-4 fw-bold"
                            value="{{ old('verification_code') }}" placeholder="000000" maxlength="6" required autofocus>
                     
                     <div class="mt-3 text-center">
                         <div id="otp-timer-container" class="smaller p-2 rounded-3 bg-white bg-opacity-10 border border-white border-opacity-10">
-                            <span class="text-white opacity-75">The code is valid for:</span>
+                            <span class="text-white opacity-75">Kode berlaku selama:</span>
                             <span id="otp-timer" class="fw-bold text-warning ms-1">10:00</span>
                         </div>
                         <div id="otp-expired-msg" class="smaller p-2 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-20 text-danger fw-bold d-none">
-                            The code has expired. Please resend it.
+                            Kode telah kadaluarsa. Silakan kirim ulang.
                         </div>
                     </div>
                     
-                    <small class="text-white opacity-75 d-block mt-3 text-center">The verification code has been sent to your email.</small>
+                    <small class="text-white opacity-75 d-block mt-3 text-center">Kode verifikasi telah dikirim ke email Anda</small>
                 </div>
-                <button type="submit" id="verifyBtn" class="btn-register">Password Verification</button>
+                <button type="submit" id="verifyBtn" class="btn-register">Verifikasi Password</button>
             </form>
 
             <div style="margin-top:25px; text-align:center; font-size:14px;">
                 <form id="resendForm" action="{{ route('forgot-password.resend') }}" method="post" style="display:inline;">
                     @csrf
-                    <p class="mb-2 opacity-75">Didn’t receive the code?</p>
+                    <p class="mb-2 opacity-75">Tidak menerima kode?</p>
                     <button id="resendBtn" type="submit" class="btn btn-outline-warning rounded-pill px-4 fw-bold smaller">
-                        Resend Code
+                        Kirim Ulang Kode
                     </button>
                 </form>
                 <div class="cooldown" id="cooldownText" style="margin-top:10px; opacity:0.6;">Tunggu <span id="sec">60</span> detik untuk kirim ulang</div>

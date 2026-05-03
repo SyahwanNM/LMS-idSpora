@@ -185,7 +185,7 @@ $validator = Validator::make($request->all(), $rules, $messages);
         $request->session()->put('otp_expires_at', $expiresAt->toIso8601String());
 
         return redirect()->route('verifikasi')
-            ->with('success', 'Registration successful! A verification code has been sent to your email.');
+            ->with('success', 'Registrasi berhasil! Kode verifikasi telah dikirim ke email Anda.');
     }
 
     public function logout(Request $request)
@@ -306,17 +306,7 @@ $validator = Validator::make($request->all(), $rules, $messages);
             // Set cooldown start
             $request->session()->put('register_otp_last_resend_at', now());
             $request->session()->put('otp_expires_at', $expiresAt->toIso8601String());
-
-            // Track resend count
-            $resendCount = (int) $request->session()->get('register_otp_resend_count', 0) + 1;
-            $request->session()->put('register_otp_resend_count', $resendCount);
-
-            $msg = 'A new verification code has been sent. Please check your Inbox/Spam folder.';
-            if ($resendCount >= 3) {
-                $msg = 'Verification code resent. If you still don\'t receive it, please check your Spam folder or contact support.';
-            }
-
-            return back()->with('success', $msg)->with('resend_count', $resendCount);
+            return back()->with('success', 'Kode verifikasi baru telah dikirim. Periksa folder Inbox/Spam.');
         } catch (\Throwable $e) {
             \Log::error('Resend registration verification failed: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Failed to resend verification code.']);
@@ -470,7 +460,7 @@ $validator = Validator::make($request->all(), $rules, $messages);
             Mail::to($email)->send(new PasswordResetMail($verificationCode, $user->name));
             $request->session()->put('forgot_password_last_sent_at', now()->toIso8601String());
             $request->session()->put('otp_expires_at', now()->addMinutes(self::VERIFICATION_CODE_EXPIRES_MINUTES)->toIso8601String());
-            return back()->with('success', 'A new verification code has been sent to your email.');
+            return back()->with('success', 'Kode verifikasi baru telah dikirim ke email Anda.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Failed to send email. Please try again.']);
         }

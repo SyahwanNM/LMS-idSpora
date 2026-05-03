@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta name="csrf-token" content="{{ csrf_token() }}"> <title>Courses</title> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"> <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> @vite(['resources/css/app.css', 'resources/js/app.js']) <style> /* FIX FOOTER FULL WIDTH */ body { overflow-x: hidden; margin: 0; } .footer-section { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; margin-top: 40px; }
@@ -188,28 +188,21 @@
                                         $imgSrc = 'https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image';
                                     }
                                 @endphp
+                                @php
+                                    $isSaved = auth()->check() && auth()->user()->savedCourses()->where('course_id', $course->id)->exists();
+                                @endphp
                                 <img class="thumb" src="{{ $imgSrc }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                                 <div class="badge-save-group" style="gap:12px;">
                                     <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
-                                    @auth
-                                    @php $isSaved1 = in_array((int)$course->id, $savedCourseIds ?? []); @endphp
-                                    <button class="save-btn {{ $isSaved1 ? 'active' : '' }}"
-                                        aria-label="Save course" type="button"
-                                        data-save-url="{{ route('courses.save', $course) }}"
-                                        onclick="event.preventDefault(); event.stopPropagation(); toggleSaveCourse(this)"
-                                        style="{{ $isSaved1 ? 'color:#ef4444;' : '' }}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-                                            <path d="M2 2v13.5l6-3 6 3V2z" fill="{{ $isSaved1 ? '#ef4444' : 'currentColor' }}" />
+                                    <button class="save-btn {{ $isSaved ? 'active' : '' }}" 
+                                            aria-label="Save course" type="button" 
+                                            data-course-id="{{ $course->id }}"
+                                            data-save-url="{{ route('courses.save', $course) }}"
+                                            onclick="event.preventDefault();">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                            <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                         </svg>
                                     </button>
-                                    @else
-                                    <button class="save-btn" aria-label="Save course" type="button"
-                                        onclick="event.preventDefault(); window.location.href='{{ route('login') }}'">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M2 2v13.5l6-3 6 3V2z" />
-                                        </svg>
-                                    </button>
-                                    @endauth
                                 </div>
                             </div>
 
@@ -288,29 +281,21 @@
                                 $imgSrc = 'https://via.placeholder.com/300x200/4f46e5/ffffff?text=No+Image';
                             }
                         @endphp
+                        @php
+                            $isSaved = !empty($course->is_saved);
+                        @endphp
                         <img class="thumb" src="{{ $imgSrc }}" alt="{{ $course->name }}" style="width: 100%; height: 200px; object-fit: cover;">
                         <div class="badge-save-group" style="gap:12px;">
                             <span class="course-badge {{ $course->level }}">{{ ucfirst($course->level) }}</span>
-                            @auth
-                            @php $isSaved2 = in_array((int)$course->id, $savedCourseIds ?? []); @endphp
-                            <button class="save-btn {{ $isSaved2 ? 'active' : '' }}"
-                                aria-label="Save course" type="button"
-                                data-save-url="{{ route('courses.save', $course) }}"
-                                onclick="event.preventDefault(); event.stopPropagation(); toggleSaveCourse(this)"
-                                style="{{ $isSaved2 ? 'color:#ef4444;' : '' }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" fill="{{ $isSaved2 ? '#ef4444' : 'currentColor' }}" />
+                            <button class="save-btn {{ $isSaved ? 'active' : '' }}" 
+                                    aria-label="Save course" type="button"
+                                    data-course-id="{{ $course->id }}"
+                                    data-save-url="{{ route('courses.save', $course) }}"
+                                    onclick="event.preventDefault();">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                 </svg>
                             </button>
-                            @else
-                            <button class="save-btn" aria-label="Save course" type="button"
-                                onclick="event.preventDefault(); window.location.href='{{ route('login') }}'">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                    viewBox="0 0 16 16">
-                                    <path d="M2 2v13.5l6-3 6 3V2z" />
-                                </svg>
-                            </button>
-                            @endauth
                         </div>
                     </div>
 
@@ -395,35 +380,53 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function toggleSaveCourse(btn) {
-    const url = btn.getAttribute('data-save-url');
-    btn.style.opacity = '0.7';
-    btn.style.pointerEvents = 'none';
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(r => { if (r.status === 401) { window.location.href = "{{ route('login') }}"; return null; } return r.json(); })
-    .then(data => {
-        if (data && data.success !== undefined) {
-            if (data.saved) {
-                btn.classList.add('active');
-                btn.style.color = '#ef4444';
-                const path = btn.querySelector('svg path');
-                if (path) path.style.fill = '#ef4444';
-            } else {
-                btn.classList.remove('active');
-                btn.style.color = '';
-                const path = btn.querySelector('svg path');
-                if (path) path.style.fill = '';
-            }
-        }
-    })
-    .finally(() => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; });
-}
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.save-btn').forEach(btn => {
+            btn.addEventListener('click', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const courseId = this.getAttribute('data-course-id');
+                const url = this.getAttribute('data-save-url');
+                const svg = this.querySelector('svg');
+                const path = svg.querySelector('path');
+                
+                this.disabled = true;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = "{{ route('login') }}";
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.success) {
+                        if (data.saved) {
+                            this.classList.add('active');
+                            svg.setAttribute('fill', '#dc3545');
+                            path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
+                        } else {
+                            this.classList.remove('active');
+                            svg.setAttribute('fill', 'currentColor');
+                            path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error))
+                .finally(() => {
+                    this.disabled = false;
+                });
+            });
+        });
+    });
 </script>
 </html>

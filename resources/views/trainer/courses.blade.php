@@ -100,9 +100,7 @@
         </section>
 
         @php
-            $allCourses = ($courses ?? collect())->values();
             $statusData = [
-                ['id' => 'courses-all', 'label' => 'Semua', 'data' => $allCourses],
                 ['id' => 'courses-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingCourses ?? collect()],
                 ['id' => 'courses-upcoming', 'label' => 'Mendatang', 'data' => $upcomingCourses ?? collect()],
                 ['id' => 'courses-finished', 'label' => 'Selesai', 'data' => $finishedCourses ?? collect()],
@@ -129,24 +127,17 @@
                     @else
                         <div class="card-course">
                             @foreach($status['data'] as $course)
-                                @php
-                                    $courseCardImage = $course->card_thumbnail_url;
-                                    $processingAssigned = (int) ($course->processing_assigned_count ?? 0);
-                                    $processingUploaded = (int) ($course->processing_uploaded_count ?? 0);
-                                    $processingRevision = (int) ($course->processing_revision_count ?? 0);
-                                    $processingReady = (int) ($course->processing_ready_count ?? 0);
-                                    $hasProcessing = ($processingAssigned + $processingUploaded + $processingRevision + $processingReady) > 0;
-                                @endphp
                                 <article class="card-item">
-                                    <div class="card-media {{ $courseCardImage ? '' : 'no-image' }}">
+                                    <div class="card-media {{ $course->card_thumbnail ? '' : 'no-image' }}">
                                         <p class="badge-online">{{ strtoupper($course->level ?? 'GENERAL') }}</p>
                                         <div class="rating">
                                             <i class="bi bi-star-fill"></i>
                                             <p>{{ number_format($course->reviews_avg_rating ?? 0, 1) }}</p>
                                         </div>
 
-                                        @if($courseCardImage)
-                                            <img class="card-image" src="{{ $courseCardImage }}" alt="{{ $course->name }}">
+                                        @php $thumbUrl = $course->card_thumbnail_url; @endphp
+                                        @if(!empty($thumbUrl))
+                                            <img class="card-image" src="{{ $thumbUrl }}" alt="{{ $course->name }}">
                                         @else
                                             <div class="no-image-placeholder" aria-hidden="true">
                                                 <i class="bi bi-image"></i>
@@ -159,6 +150,14 @@
                                             <h3>{{ Str::limit($course->name, 44) }}</h3>
                                             <p>{{ Str::limit($course->description ?? 'Deskripsi belum tersedia.', 80) }}</p>
                                         </div>
+
+                                        @php
+                                            $processingAssigned = (int) ($course->processing_assigned_count ?? 0);
+                                            $processingUploaded = (int) ($course->processing_uploaded_count ?? 0);
+                                            $processingRevision = (int) ($course->processing_revision_count ?? 0);
+                                            $processingReady = (int) ($course->processing_ready_count ?? 0);
+                                            $hasProcessing = ($processingAssigned + $processingUploaded + $processingRevision + $processingReady) > 0;
+                                        @endphp
 
                                         @if($hasProcessing)
                                             <div class="processing-mini-row" aria-label="Status proses materi">

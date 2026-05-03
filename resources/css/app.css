@@ -5279,6 +5279,22 @@ input[type="time"] {
     gap: 12px;
 }
 
+.box_luar_kuis.quiz-take-v2 .quiz-title-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: #111827;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.box_luar_kuis.quiz-take-v2 .quiz-title-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 .box_luar_kuis.quiz-take-v2 .quiz-title {
     font-size: 22px;
     font-weight: 700;

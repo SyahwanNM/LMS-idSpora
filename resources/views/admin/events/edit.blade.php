@@ -271,7 +271,7 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addBenefitRow"><i
                                         class="bi bi-plus-circle me-1"></i>Tambah Benefit</button>
                                 <input type="hidden" name="benefit" id="benefit"
-                                    value="{{ old('benefit', $event->benefit) }}">
+                                    value="{{ old('benefit', is_array($event->benefit) ? implode('|', $event->benefit) : ($event->benefit ?? '')) }}">
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
                             <div class="mb-3 {{ trim($defaultPlaceName) !== '' ? '' : 'd-none' }}" id="placeNameGroup">

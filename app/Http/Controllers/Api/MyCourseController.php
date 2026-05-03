@@ -21,7 +21,7 @@ class MyCourseController extends Controller
 
         $activeCourseIds = Enrollment::query()
             ->where('user_id', $user->id)
-            ->whereIn('status', ['active', 'completed'])
+            ->where('status', 'active')
             ->pluck('course_id')
             ->all();
 

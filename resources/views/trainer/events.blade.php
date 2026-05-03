@@ -57,9 +57,7 @@
     </div>
   </div>
   @php
-    $allEvents = ($events ?? collect())->values();
     $statusData = [
-      ['id' => 'events-all', 'label' => 'Semua', 'data' => $allEvents],
       ['id' => 'events-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingEvents ?? collect()],
       ['id' => 'events-upcoming', 'label' => 'Mendatang', 'data' => $upcomingEvents ?? collect()],
       ['id' => 'events-finished', 'label' => 'Selesai', 'data' => $finishedEvents ?? collect()],
@@ -86,17 +84,16 @@
         @else
           <div class="card-course">
             @foreach($status['data'] as $event)
-              @php
-                $eventCardImage = $event->image_url;
-              @endphp
               <a href="{{ route('trainer.events.show', $event->id) }}" class="card-item">
                 <div class="card-media">
                   <p class="badge-online">{{ strtoupper($event->type ?? 'ONLINE SESSION') }}</p>
 
-                  @if(!empty($eventCardImage))
-                    <img src="{{ $eventCardImage }}" alt="{{ $event->title }}" class="card-image" />
+                  @php $posterUrl = $event->image_url; @endphp
+                  @if(!empty($posterUrl))
+                    <img src="{{ $posterUrl }}" alt="{{ $event->title }}" class="card-image" />
                   @else
-                    <div class="card-image-empty">Gambar event belum diupload admin</div>
+                    <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop"
+                      alt="Default Image" class="card-image" />
                   @endif
 
                   <div class="rating">
@@ -105,7 +102,7 @@
                       <path
                         d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
                     </svg>
-                    <p>{{ number_format($event->feedbacks_avg_rating ?? 0, 1) }}</p>
+                    <p>5.0</p>
                   </div>
                 </div>
 
@@ -128,33 +125,18 @@
                         </svg>
                         <p>{{ $event->participants_count ?? 0 }} Learners</p>
                       </div>
-                      <div class="total-path">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-stack"
-                          viewBox="0 0 16 16">
-                          <path
-                            d="m14.12 10.163 1.715.858c.22.11.22.424 0 .534L8.267 15.34a.6.6 0 0 1-.534 0L.165 11.555a.299.299 0 0 1 0-.534l1.716-.858 5.317 2.659c.505.252 1.1.252 1.604 0l5.317-2.66zM7.733.063a.6.6 0 0 1 .534 0l7.568 3.784a.3.3 0 0 1 0 .535L8.267 8.165a.6.6 0 0 1-.534 0L.165 4.382a.299.299 0 0 1 0-.535z" />
-                          <path
-                            d="m14.12 6.576 1.715.858c.22.11.22.424 0 .534l-7.568 3.784a.6.6 0 0 1-.534 0L.165 7.968a.299.299 0 0 1 0-.534l1.716-.858 5.317 2.659c.505.252 1.1.252 1.604 0z" />
+                      <div class="total-fee">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="none"
+                          stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
+                          class="icon-outline">
+                          <rect x="0.75" y="3" width="13.5" height="9" rx="2"></rect>
+                          <path d="M0.75 6.5h13.5"></path>
+                          <rect x="11" y="7.5" width="2" height="1.5" rx="0.5"></rect>
                         </svg>
-                        <p>{{ number_format($event->schedule_count ?? 0) }}
-                          UNIT{{ (int) ($event->schedule_count ?? 0) !== 1 ? 'S' : '' }}</p>
-                      </div>
-                      <div class="total-path">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-cash-coin"
-                          viewBox="0 0 16 16">
-                          <path fill-rule="evenodd"
-                            d="M11 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8m0 1A5 5 0 1 0 11 6a5 5 0 0 0 0 10" />
-                          <path
-                            d="M12.5 10.5a.5.5 0 0 1-.5.5h-1v1a.5.5 0 0 1-1 0v-1H9a.5.5 0 0 1 0-1h1V9H9a.5.5 0 0 1 0-1h1V7a.5.5 0 0 1 1 0v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 .5.5" />
-                          <path d="M4 0a2 2 0 0 0-2 2v1h1V2a1 1 0 0 1 1-1h1V0z" />
-                          <path d="M2 6h4V5H2z" />
-                          <path d="M5 8H2v1h3z" />
-                        </svg>
-                        @if((float) ($event->fee_per_participant ?? 0) > 0)
+                        @if((float) ($event->fee_trainer ?? 0) > 0)
                           <p>
-                            Rp {{ number_format((float) $event->fee_per_participant, 0, ',', '.') }}/peserta
+                            Rp {{ number_format((float) $event->fee_trainer, 0, ',', '.') }}
                             @if((bool) ($event->is_fallback_to_event_price ?? false))
-                              (harga event)
                             @endif
                           </p>
                         @else

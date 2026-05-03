@@ -133,6 +133,12 @@ class ProfileController extends Controller
             $user->password = Hash::make($validated['password']);
         }
         
+        \Log::info('Profile Update Request', [
+            'has_avatar' => $request->hasFile('avatar'),
+            'all_files' => array_keys($request->allFiles()),
+            'user_id' => $user->id
+        ]);
+
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
