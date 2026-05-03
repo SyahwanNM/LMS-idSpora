@@ -766,7 +766,7 @@ class EventController extends Controller
             $hasZoomLink = !empty($event->zoom_link);
             $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
             $hasVbg = !empty($event->vbg_path);
-            $hasModule = !empty($event->module_path);
+            $hasModule = !empty($event->module_path) || $event->approvedTrainerModules()->exists();
             $hasAbsFile = !empty($event->attendance_path);
             $hasAbsQrImg = !empty($event->attendance_qr_image);
             $hasAbsQrToken = !empty($event->attendance_qr_token);

@@ -197,11 +197,12 @@
 
         /* Locked resource styling: gray/disabled appearance (default for non-feedback cards) */
         .resource-card.locked {
-            opacity: 0.6;
+            background-color: #f0f0f0;
+            pointer-events: none;
         }
 
         .resource-card.locked .img-resource svg {
-            opacity: 0.6;
+            opacity: 1;
         }
 
         .resource-card.locked .resource-value {
@@ -210,7 +211,7 @@
 
         .resource-card.locked .link-share {
             pointer-events: none;
-            opacity: 0.6;
+            opacity: 0.4;
         }
 
         /* Participant Resources: make cards more compact */
@@ -1472,8 +1473,8 @@
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
                     $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    // Unlock saat event selesai dan user terdaftar (meski belum ada modul)
-                    $moduleUnlocked = $isRegistered && $eventIsFinished;
+                    // Unlock setelah event selesai DAN feedback sudah diisi
+                    $moduleUnlocked = $isRegistered && $eventIsFinished && $hasFeedback;
                 @endphp
                 @if($isRegistered || $approvedModules->isNotEmpty())
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
@@ -1493,6 +1494,8 @@
                             <p>Available upon registration</p>
                         @elseif(!$eventIsFinished)
                             <p>Available after event completion</p>
+                        @elseif(!$hasFeedback)
+                            <p>Available after submitting feedback</p>
                         @elseif($approvedModules->isEmpty())
                             <p>Not available</p>
                         @else
@@ -1735,7 +1738,7 @@
                     @endif
                 </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}"
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventFinished) ? '' : 'locked' }}"
                     style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1753,7 +1756,7 @@
                         @endif
                     </div>
 
-                    @if($isRegistered && $attendanceSubmitted)
+                    @if($isRegistered && $attendanceSubmitted && $eventFinished)
                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
                             @if(isset($hasFeedback) && $hasFeedback)
@@ -1780,7 +1783,7 @@
             </div>
         </section>
 
-        @if($isRegistered && $attendanceSubmitted)
+        @if($isRegistered && $attendanceSubmitted && $eventFinished)
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
                     <div class="d-flex justify-content-between align-items-center"
