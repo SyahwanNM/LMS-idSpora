@@ -647,11 +647,11 @@
                     @if($lockNextByFree)
                         Buy Course
                     @elseif($lockNextByVideo)
-                        Terkunci
+                        Locked
                     @elseif($lockNext)
-                        Terkunci
+                        Locked
                     @elseif(!$nextModule)
-                        Selesai & Beri Ulasan
+                        Completed & Give Rating
                     @else
                         Next
                     @endif

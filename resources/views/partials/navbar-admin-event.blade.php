@@ -20,9 +20,6 @@
                 <li>Manage Event</li>
             </a>
             <a href="">
-                <li>Manage Users</li>
-            </a>
-            <a href="">
                 <li>Report</li>
             </a>
         </ul>

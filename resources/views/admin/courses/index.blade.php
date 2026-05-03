@@ -307,7 +307,7 @@
                                 return [
                                 'type' => $m->type, // pdf, video, quiz
                                 'title' => $m->title,
-                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Dokumen Materi',
+                                'subtitle' => $m->description ? \Illuminate\Support\Str::limit(strip_tags($m->description), 60) : 'Material Document',
                                 'duration' => $m->formatted_duration ?? '',
                                 // Extra fields for Quiz if needed
                                 'question_count' => $m->type === 'quiz' ? $m->quizQuestions->count() : 0,
@@ -921,7 +921,7 @@
                                     <h4>${m.title}</h4>
                                     <div class="soal-passing">
                                         <div class="info-item">
-                                            <p>Jumlah Soal</p>
+                                            <p>total number of Question</p>
                                             <h5>${m.question_count || 0} Soal</h5>
                                         </div>
                                         <div class="info-item passing-score">

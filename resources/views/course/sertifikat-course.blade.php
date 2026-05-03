@@ -199,22 +199,22 @@
             <div class="step-wrapper">
                 <div class="step-item">
                     <span class="step-num">1</span>
-                    <span>Beri Penilaian Kelas</span>
+                    <span>Give Course Rating</span>
                 </div>
                 <div class="step-line"></div>
                 <div class="step-item active">
                     <span class="step-num">2</span>
-                    <span>Cetak Sertifikat</span>
+                    <span>Print Certificate</span>
                 </div>
             </div>
         </div>
 
         <div class="text-center">
-            <h1 class="congrats-title">Selamat Anda telah menyelesaikan semua Modul!</h1>
+            <h1 class="congrats-title">Congratulations, You have completed all the Modules!</h1>
             
             <p class="congrats-text">
-                Kami sangat bangga atas dedikasi dan kerja keras Anda dalam menyelesaikan semua modul kursus. 
-                Ini adalah pencapaian yang luar biasa dan merupakan bukti komitmen Anda terhadap pengembangan diri.
+                We are very proud of your dedication and hard work in completing all the course modules. 
+                This is a remarkable achievement and proof of your commitment to self-development.
             </p>
 
             <div class="certificate-preview-box">
@@ -227,10 +227,10 @@
 
             <div class="flex flex-wrap justify-center gap-4 mb-12 action-area">
                 <a href="{{ route('dashboard') }}" class="btn-back">
-                    <i class="bi bi-arrow-left me-2"></i>Kembali ke Dashboard
+                    <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
                 </a>
                 <a href="{{ route('course.certificates.download', [$course->id, $enrollment->id]) }}" class="btn-cetak">
-                    <i class="bi bi-printer me-2"></i>Cetak Sertifikat
+                    <i class="bi bi-printer me-2"></i>Print Certificate
                 </a>
             </div>
         </div>

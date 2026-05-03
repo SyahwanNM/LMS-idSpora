@@ -222,12 +222,12 @@
             <div class="step-wrapper">
                 <div class="step-item active">
                     <span class="step-num">1</span>
-                    <span>Beri Penilaian Kelas</span>
+                    <span>Give Course Rating</span>
                 </div>
                 <div class="step-line"></div>
                 <div class="step-item inactive">
                     <span class="step-num">2</span>
-                    <span>Cetak Sertifikat</span>
+                    <span>Print Certificate</span>
                 </div>
             </div>
         </div>
@@ -240,14 +240,14 @@
             <!-- Rating Card -->
             <div class="feedback-card">
                 <div class="mb-8">
-                    <h2 class="text-2xl font-extrabold text-slate-900">Berikan penilaian Anda</h2>
-                    <p class="text-base text-slate-500 font-semibold mt-1">Sebelum cetak sertifikat, berikan penilaian terlebih dahulu</p>
+                    <h2 class="text-2xl font-extrabold text-slate-900">Give Course Rating</h2>
+                    <p class="text-base text-slate-500 font-semibold mt-1">Before printing the certificate, please provide an assessment first.</p>
                 </div>
 
                 <div class="space-y-2">
                     <!-- Course Rating -->
                     <div class="rating-row">
-                        <div class="rating-question">Bagaimana kurikulum dan proses belajar di kelas ini?</div>
+                        <div class="rating-question">How is the curriculum and learning process in this class?</div>
                         <div class="stars-container">
                             <div id="course_stars" class="star-group">
                                 <i class="bi bi-star" data-value="1"></i>
@@ -264,7 +264,7 @@
 
                     <!-- Trainer Rating -->
                     <div class="rating-row">
-                        <div class="rating-question">Bagaimana Trainer Mengajar dalam proses belajar di kelas ini?</div>
+                        <div class="rating-question">How did the trainer teach during this class?</div>
                         <div class="stars-container">
                             <div id="trainer_stars" class="star-group">
                                 <i class="bi bi-star" data-value="1"></i>
@@ -285,12 +285,12 @@
             <div class="feedback-card">
                 <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Feedback</h2>
                 <textarea name="comment" class="feedback-textarea" 
-                    placeholder="Ceritakan pengalaman mengesankan Anda selama mempelajari kelas ini. Beri tahu siswa lain mengenai kualitas materi yang diajarkan"></textarea>
+                    placeholder="Tell us about your impressive experience while learning in this class. Let other students know about the quality of the material taught"></textarea>
             </div>
 
             <div class="flex justify-center mb-12">
                 <button type="submit" id="submitBtn" class="submit-btn" disabled>
-                    Simpan Penilaian
+                    Save Rating
                 </button>
             </div>
         </form>

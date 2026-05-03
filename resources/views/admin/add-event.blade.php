@@ -99,7 +99,6 @@
                                 <th>Date</th>
                                 <th>Location</th>
                                 <th>Link</th>
-                                <th>Reseller</th>
                                 <th>Documents Completion</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -163,13 +162,7 @@
                                         —
                                     @endif
                                 </td>
-                                <td>
-                                    @if((bool) ($event->is_reseller_event ?? false))
-                                        <span class="badge bg-success">Yes</span>
-                                    @else
-                                        <span class="badge bg-secondary">No</span>
-                                    @endif
-                                </td>
+                               
                                 <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
@@ -830,9 +823,9 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Start & End Time <span class="text-danger">*</span></label>
                                     <div class="d-flex align-items-center gap-2">
-                                        <input type="text" name="event_time" id="masuk1" class="form-control js-timepicker" required value="{{ old('event_time') }}" placeholder="00:00">
+                                        <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time') }}" placeholder="00:00">
                                         <span>s/d</span>
-                                        <input type="text" name="event_time_end" id="masuk2" class="form-control js-timepicker" value="{{ old('event_time_end') }}" placeholder="00:00">
+                                        <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}" placeholder="00:00">
                                     </div>
                                     <div class="form-text">Fill in the start time (required). End time is optional.</div>
                                 </div>
@@ -2012,8 +2005,8 @@
         function createScheduleRow(idx) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="text" class="form-control form-control-sm js-timepicker" name="schedule[${idx}][start]" placeholder="00:00" /></td>
-                <td><input type="text" class="form-control form-control-sm js-timepicker" name="schedule[${idx}][end]" placeholder="00:00" /></td>
+                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="00:00" /></td>
+                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="00:00" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">

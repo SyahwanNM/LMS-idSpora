@@ -347,6 +347,18 @@
                             <input class="cari_course" id="growthSearch" type="text" placeholder="Search Courses" value="{{ $growthQuery ?? '' }}">
                         </div>
                     </div>
+                    <div class="filter-group">
+                    <label for="filter-kelola-pertumbuhan" class="filter-label" style="margin-left: -300px;">Action Type</label>
+                    <div>
+                    <select id="filter-kelola-pertumbuhan" class="filter-input" style="min-width:130px; margin-left:-300px;">
+                        <option value="high-part">All Type</option>
+                        <option value="high-part">High to low Participants</option>
+                        <option value="low-part">Low to high participants</option>
+                        <option value="high-rate">High to low Rating</option>
+                        <option value="low-rate">low to high Rating</option>
+                    </select>
+                    </div>
+                    </div>
                     <div class="box_filter">
                         <p class="mulai_course">Month</p>
                         <input class="tanggal_course" id="growthMonth" type="month" value="{{ $growthMonth ?? now()->format('Y-m') }}">

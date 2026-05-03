@@ -134,7 +134,7 @@ class CourseRevenueDetailController extends Controller
         $expenseTotal = (float) array_sum(array_map(fn ($r) => (float) ($r['total'] ?? 0), $expenseRows));
 
         $profit = (float) ($revenueTotal - $expenseTotal);
-        $profitStatus = $profit >= 0 ? 'Menguntungkan' : 'Rugi';
+        $profitStatus = $profit >= 0 ? 'Profitable' : 'Loss';
 
         $viewData = [
             'course' => $course,

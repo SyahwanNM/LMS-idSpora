@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Pendapatan</title>
+    <title>View Revenue</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -105,7 +105,7 @@
             @if(count($expenseRows) <= 0)
                 <div class="box_isi_pengeluaran">
                     <div class="judul_pertama">
-                        <p class="subjudul_pertama">Pengeluaran</p>
+                        <p class="subjudul_pertama">Expenses</p>
                         <p class="persentase_box">0.0%</p>
                     </div>
                     <h5>Rp. 0</h5>
@@ -185,17 +185,17 @@
             data: {
                 labels: ['Total'],
                 datasets: [{
-                        label: 'Pendapatan',
+                        label: 'Revenue',
                         data: [Number(financeData.revenue || 0)],
                         backgroundColor: '#3b82f6'
                     },
                     {
-                        label: 'Pengeluaran',
+                        label: 'Expenses',
                         data: [Number(financeData.expense || 0)],
                         backgroundColor: '#ef4444'
                     },
                     {
-                        label: 'Keuntungan',
+                        label: 'Profit',
                         data: [Number(financeData.profit || 0)],
                         backgroundColor: '#22c55e'
                     }

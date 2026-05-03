@@ -201,10 +201,10 @@
                                 <label class="form-label fw-semibold">Event Start & End Time <span
                                         class="text-danger">*</span></label>
                                 <div class="d-flex align-items-center gap-2">
-                                    <input type="text" name="event_time" id="masuk1" class="form-control js-timepicker" required
+                                    <input type="time" name="event_time" id="masuk1" class="form-control" required
                                         value="{{ old('event_time', $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '') }}" placeholder="00:00">
                                     <span>s/d</span>
-                                    <input type="text" name="event_time_end" id="masuk2" class="form-control js-timepicker"
+                                    <input type="time" name="event_time_end" id="masuk2" class="form-control"
                                         value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}" placeholder="00:00">
                                 </div>
                                 <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
@@ -325,9 +325,9 @@
                                         @if(is_array($existingSchedule) && count($existingSchedule))
                                             @foreach($existingSchedule as $i => $row)
                                                 <tr>
-                                                    <td><input type="text" class="form-control form-control-sm js-timepicker"
+                                                    <td><input type="time" class="form-control form-control-sm"
                                                             name="schedule[{{ $i }}][start]" value="{{ $row['start'] ?? '' }}" placeholder="00:00"></td>
-                                                    <td><input type="text" class="form-control form-control-sm js-timepicker"
+                                                    <td><input type="time" class="form-control form-control-sm"
                                                             name="schedule[{{ $i }}][end]" value="{{ $row['end'] ?? '' }}" placeholder="00:00"></td>
                                                     <td><input type="text" class="form-control form-control-sm"
                                                             name="schedule[{{ $i }}][title]" placeholder="Nama kegiatan"

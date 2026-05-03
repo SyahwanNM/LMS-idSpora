@@ -18,7 +18,7 @@
             margin-top: 0 !important;
         }
 
-       
+
         .desc-box .tab-content .tab-pane {
             padding: 16px 20px 24px;
         }
@@ -57,6 +57,7 @@
         .desc-box .tab-content #nav-contact .terms-content {
             margin-top: 4px !important;
         }
+
         /* Align Facebook icon baseline with other share icons */
         .share .share-list .bi-facebook {
             position: relative;
@@ -213,7 +214,6 @@
             opacity: 0.6;
         }
 
-        /* Participant Resources: make cards more compact */
         .resource-box {
             padding: 20px;
             width: auto !important;
@@ -231,7 +231,7 @@
 
         .resource-box .participant-resources {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             align-items: start;
         }
@@ -241,13 +241,14 @@
             min-height: 105px !important;
             height: auto !important;
         }
+
         .resource-box .participant-resources .resource-card .img-resource {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 34px;
             height: 34px;
-            
+
         }
 
         .resource-box .participant-resources .resource-card .resource-value h6 {
@@ -259,7 +260,7 @@
             line-height: 1.25;
         }
 
-        
+
         /* Feedback card: do NOT blur when locked, instead show an overlay message */
         .add-rating.locked {
             opacity: 1 !important;
@@ -513,6 +514,7 @@
             width: 20px !important;
             height: 20px !important;
         }
+
         /* RESPONSIVENESS FIXES */
         @media (max-width: 992px) {
             .container-ungu {
@@ -669,10 +671,8 @@
             .box-copy button {
                 width: 100% !important;
             }
-           
+
         }
-    
-        
     </style>
 
 </head>
@@ -698,7 +698,7 @@
                         @php
                             $allSpeakers = $event->speakers()->with('trainer')->get();
                             if ($allSpeakers->isEmpty()) {
-                                $allSpeakers = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)['name' => trim($name), 'trainer' => null])->values();
+                                $allSpeakers = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object) ['name' => trim($name), 'trainer' => null])->values();
                             }
                         @endphp
                         @if($allSpeakers->isNotEmpty())
@@ -776,7 +776,8 @@
                         $gcalQuery = collect($gcalParams)
                             ->filter(fn($v) => !is_null($v) && $v !== '')
                             ->map(function ($v, $k) {
-                                return $k . '=' . urlencode($v); })
+                                return $k . '=' . urlencode($v);
+                            })
                             ->implode('&');
                         $gcalUrl = $gcalBase . '&' . $gcalQuery;
                         // Determine registration state for top buttons
@@ -832,7 +833,8 @@
                     $tanggalLbl = $startDate ? $startDate->format('d F Y') : null;
                 @endphp
                 <p class="small text-white mb-0">
-                    {{ isset($event) && !empty($event->short_description) ? $event->short_description : '' }}</p>
+                    {{ isset($event) && !empty($event->short_description) ? $event->short_description : '' }}
+                </p>
             </div>
         </div>
         <div class="detail-box">
@@ -1030,8 +1032,8 @@
                         $speakerRows = $event->speakers()->with('trainer')->get();
                         if ($speakerRows->isEmpty()) {
                             // Fallback: parse from speaker string
-                            $speakerRows = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)[
-                                'name'    => trim($name),
+                            $speakerRows = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object) [
+                                'name' => trim($name),
                                 'trainer' => null,
                             ])->values();
                         }
@@ -1048,19 +1050,22 @@
                             <div class="d-flex align-items-center gap-2" style="max-width:180px;">
                                 @if($profileUrl)
                                     <a href="{{ $profileUrl }}" class="event-info-value"
-                                       style="color:inherit; text-decoration:none; font-size:{{ $nameFontSize }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;"
-                                       title="{{ $sp->name }}">
+                                        style="color:inherit; text-decoration:none; font-size:{{ $nameFontSize }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;"
+                                        title="{{ $sp->name }}">
                                         {{ $sp->name }}
                                     </a>
-                                    <a href="{{ $profileUrl }}" class="event-speaker-value btn p-1 flex-shrink-0" aria-label="Lihat profil trainer">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
-                                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
+                                    <a href="{{ $profileUrl }}" class="event-speaker-value btn p-1 flex-shrink-0"
+                                        aria-label="Lihat profil trainer">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                            class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd"
+                                                d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708" />
                                         </svg>
                                     </a>
                                 @else
                                     <span class="event-info-value"
-                                          style="font-size:{{ $nameFontSize }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;"
-                                          title="{{ $sp->name }}">
+                                        style="font-size:{{ $nameFontSize }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;"
+                                        title="{{ $sp->name }}">
                                         {{ $sp->name }}
                                     </span>
                                 @endif
@@ -1385,93 +1390,109 @@
                     $moduleUnlocked = $isRegistered && $eventIsFinished && $hasFeedback;
                 @endphp
                 @if($isRegistered || $approvedModules->isNotEmpty())
-                <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                            class="bi bi-file-earmark-text" viewBox="0 0 16 16">
-                            <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
-                            <path d="M5.5 9a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
-                            <path d="M5.5 11a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3z" />
-                            <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z" />
-                            <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Modules</h6>
-                        @if(!$isRegistered)
-                            <p>Available upon registration</p>
-                        @elseif(!$eventIsFinished)
-                            <p>Available after event completion</p>
-                        @elseif($approvedModules->isEmpty())
-                            <p>Not available</p>
+                    <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
+                        <div class="img-resource">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-file-earmark-text" viewBox="0 0 16 16">
+                                <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
+                                <path d="M5.5 9a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
+                                <path d="M5.5 11a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3z" />
+                                <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z" />
+                                <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14" />
+                            </svg>
+                        </div>
+                        <div class="resource-value">
+                            <h6>Modules</h6>
+                            @if(!$isRegistered)
+                                <p>Available upon registration</p>
+                            @elseif(!$eventIsFinished)
+                                <p>Available after event completion</p>
+                            @elseif($approvedModules->isEmpty())
+                                <p>Not available</p>
+                            @else
+                                <p>{{ $approvedModules->count() }} Modules Available</p>
+                            @endif
+                        </div>
+                        @if($moduleUnlocked)
+                            <button type="button" class="link-share d-flex align-items-center" data-bs-toggle="modal"
+                                data-bs-target="#modulesDownloadModal" title="Unduh Materi"
+                                style="background:none; border:none; padding:0; cursor:pointer; margin-left:auto;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    class="share-bi bi-download" viewBox="0 0 16 16">
+                                    <path
+                                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z" />
+                                    <path
+                                        d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z" />
+                                </svg>
+                            </button>
                         @else
-                            <p>{{ $approvedModules->count() }} Modules Available</p>
+                            <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
                         @endif
                     </div>
-                    @if($moduleUnlocked)
-                        <button type="button" class="link-share d-flex align-items-center"
-                            data-bs-toggle="modal" data-bs-target="#modulesDownloadModal"
-                            title="Unduh Materi"
-                            style="background:none; border:none; padding:0; cursor:pointer; margin-left:auto;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-download" viewBox="0 0 16 16">
-                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                            </svg>
-                        </button>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
-                    @endif
-                </div>
                 @endif
 
                 {{-- Modal unduh modul --}}
                 @if($moduleUnlocked)
-                <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content" style="border-radius:16px;">
-                            <div class="modal-header border-0 pb-0">
-                                <h5 class="modal-title fw-bold" id="modulesDownloadModalLabel">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-                                        <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
-                                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
-                                        <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
-                                    </svg>
-                                    Download Modules 
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
-                                <div class="d-flex flex-column gap-2">
-                                    @foreach($approvedModules as $mod)
-                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
-                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
-                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
-                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
-                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                                                </svg>
-                                            </div>
-                                            <div style="overflow:hidden;">
-                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
-                                                @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
-                                                @endif
-                                            </div>
-                                        </a>
-                                    @endforeach
+                    <div class="modal fade" id="modulesDownloadModal" tabindex="-1"
+                        aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content" style="border-radius:16px;">
+                                <div class="modal-header border-0 pb-0">
+                                    <h5 class="modal-title fw-bold" id="modulesDownloadModalLabel">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                            class="me-2" viewBox="0 0 16 16">
+                                            <path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z" />
+                                            <path
+                                                d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z" />
+                                            <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14" />
+                                        </svg>
+                                        Download Modules
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
                                 </div>
-                            </div>
-                            <div class="modal-footer border-0 pt-0">
+                                <div class="modal-body pt-2">
+                                    <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to
+                                        download:</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        @foreach($approvedModules as $mod)
+                                            <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
+                                                style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                onmouseover="this.style.background='#eff6ff'"
+                                                onmouseout="this.style.background='#f8fafc'">
+                                                <div
+                                                    style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                        fill="#2563eb" viewBox="0 0 16 16">
+                                                        <path
+                                                            d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z" />
+                                                        <path
+                                                            d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z" />
+                                                    </svg>
+                                                </div>
+                                                <div style="overflow:hidden;">
+                                                    <div
+                                                        style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                                        {{ $mod->original_name }}</div>
+                                                    @if($mod->trainer)
+                                                        <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 pt-0">
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventIsFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventIsFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}"
+                    style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
@@ -1511,7 +1532,7 @@
                     </div>
                     @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
                         <span class="d-inline-flex align-items-center""
-                            title="Berhasil Dilakukan">
+                                title=" Berhasil Dilakukan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                 stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                 aria-label="Attendance Successful">
@@ -1552,19 +1573,24 @@
                         <h6>Certificate</h6>
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                            <div class="box-resources-sertif">
-                              <p>Silakan preview / unduh.</p>
-                                <div class="box-sertif-after-event">
-                                  
-                                    <a class="view-sertif-event" href="{{ route('certificates.show', [$event->id, $registration->id]) }}" target="_blank"
-                                       style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; color:#111;">
-                                        <svg  xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                                        </svg>
-                                    </a>
+                                <div class="box-resources-sertif">
+                                    <p>Silakan preview / unduh.</p>
+                                    <div class="box-sertif-after-event">
+
+                                        <a class="view-sertif-event"
+                                            href="{{ route('certificates.show', [$event->id, $registration->id]) }}"
+                                            target="_blank"
+                                            style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; color:#111;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                                class="bi bi-eye" viewBox="0 0 16 16">
+                                                <path
+                                                    d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z" />
+                                                <path
+                                                    d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0" />
+                                            </svg>
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
                             @elseif(isset($attendanceSubmitted) && $attendanceSubmitted)
                                 <p>Available after feedback.</p>
                             @elseif($eventIsFinished)
@@ -1577,44 +1603,50 @@
                         @endif
                     </div>
                 </div>
-            @if(!empty($event->zoom_link))
-            <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
-                    @php
-                        $isHybrid = !empty($event->zoom_link) && (!empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude)));
-                    @endphp
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-camera-video" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z"/>
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Link Zoom</h6>
-                        <p>{{ $isRegistered ? 'Available after booking' : 'Available after booking' }}</p>
-                    </div>
-                    @if($isRegistered && !empty($event->zoom_link))
-                        <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                @if(!empty($event->zoom_link))
+                    <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+                        @php
+                            $isHybrid = !empty($event->zoom_link) && (!empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude)));
+                        @endphp
+                        <div class="img-resource">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                class="bi bi-camera-video" viewBox="0 0 16 16">
                                 <path fill-rule="evenodd"
-                                    d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd"
-                                    d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                    d="M0 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v.5l3.553-2.132A.5.5 0 0 1 16 3.5v9a.5.5 0 0 1-.447.5.5.5 0 0 1-.276-.083L11 10.5V11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5zm2-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H2zm12 2.5-3 1.8v2.4l3 1.8V6.5z" />
                             </svg>
-                        </a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
-                    @endif
-                </div>
-            @endif
+                        </div>
+                        <div class="resource-value">
+                            <h6>Link Zoom</h6>
+                            <p>{{ $isRegistered ? 'Available after booking' : 'Available after booking' }}</p>
+                        </div>
+                        @if($isRegistered && !empty($event->zoom_link))
+                            <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd"
+                                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                    <path fill-rule="evenodd"
+                                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                </svg>
+                            </a>
+                        @else
+                            <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                        @endif
+                    </div>
+                @endif
 
                 @php
                     $mapLink = '';
                     if (!empty($event->maps_url)) {
                         $maps = trim($event->maps_url);
-                        if (\Illuminate\Support\Str::startsWith($maps, ['http://','https://','//'])) {
+                        if (\Illuminate\Support\Str::startsWith($maps, ['http://', 'https://', '//'])) {
                             $mapLink = $maps;
                         } else {
-                            try { $mapLink = Storage::url($maps); } catch (\Throwable $e) { $mapLink = $maps; }
+                            try {
+                                $mapLink = Storage::url($maps);
+                            } catch (\Throwable $e) {
+                                $mapLink = $maps;
+                            }
                         }
                     } elseif (!empty($event->latitude) && !empty($event->longitude)) {
                         $mapLink = 'https://www.google.com/maps?q=' . $event->latitude . ',' . $event->longitude;
@@ -1623,30 +1655,35 @@
                 @endphp
 
                 @if($showMapsCard)
-                <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt" viewBox="0 0 16 16">
-                            <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
-                            <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Location Map</h6>
-                        <p>{{ $isRegistered ? 'Available after seat booking' : 'Available after seat booking' }}</p>
-                    </div>
-                    @if($isRegistered && $mapLink)
-                        <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
+                        <div class="img-resource">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-geo-alt" viewBox="0 0 16 16">
+                                <path
+                                    d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" />
+                                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4m0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
                             </svg>
-                        </a>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
-                    @endif
-                </div>
+                        </div>
+                        <div class="resource-value">
+                            <h6>Location Map</h6>
+                            <p>{{ $isRegistered ? 'Available after seat booking' : 'Available after seat booking' }}</p>
+                        </div>
+                        @if($isRegistered && $mapLink)
+                            <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd"
+                                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                    <path fill-rule="evenodd"
+                                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                </svg>
+                            </a>
+                        @else
+                            <span class="link-share d-flex align-items-center" style="opacity:.4; cursor:not-allowed;"></span>
+                        @endif
+                    </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventIsFinished) ? '' : 'locked' }}"
+                <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventIsFinished) ? '' : 'locked' }}"
                     style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1692,73 +1729,85 @@
         </section>
 
         @if($isRegistered && $attendanceSubmitted)
-        <div id="feedbackSection"
-            style="display: none; background-color: white; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 20px; margin-left: clamp(16px, 4%, 70px); margin-right: clamp(16px, 4%, 70px); border-radius: 10px; width: auto; overflow: hidden;">
-            <div class="d-flex justify-content-between align-items-center"
-                style="margin-top: 20px; margin-left: 25px; margin-bottom: 10px;">
-                <h5 class="mb-0 fw-bold" style="font-size: 1.1rem; color: #333;">Feedback & Reviews</h5>
-                <button type="button" onclick="toggleFeedbackSection()" aria-label="Close"
-                    style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s; margin-right: 25px;"
-                    onmouseover="this.style.backgroundColor='#e9ecef'"
-                    onmouseout="this.style.backgroundColor='transparent'">
-                    <span style="line-height: 1;">&times;</span>
-                </button>
-            </div>
-            <div class="row g-0">
-            </div>
-            <div class="col-md-12" style="background-color: white; padding: 1rem;">
-                <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
-                @if(isset($hasFeedback) && $hasFeedback)
-                    <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
-                        Feedback already submitted and cannot be sent again.
-                    </div>
-                @else
-                    <form action="#" method="POST" id="feedback-form">
-                        @csrf
+            <div id="feedbackSection"
+                style="display: none; background-color: white; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 20px; margin-left: clamp(16px, 4%, 70px); margin-right: clamp(16px, 4%, 70px); border-radius: 10px; width: auto; overflow: hidden;">
+                <div class="d-flex justify-content-between align-items-center"
+                    style="margin-top: 20px; margin-left: 25px; margin-bottom: 10px;">
+                    <h5 class="mb-0 fw-bold" style="font-size: 1.1rem; color: #333;">Feedback & Reviews</h5>
+                    <button type="button" onclick="toggleFeedbackSection()" aria-label="Close"
+                        style="background: none; border: none; font-size: 1.3rem; color: #666; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background-color 0.2s; margin-right: 25px;"
+                        onmouseover="this.style.backgroundColor='#e9ecef'"
+                        onmouseout="this.style.backgroundColor='transparent'">
+                        <span style="line-height: 1;">&times;</span>
+                    </button>
+                </div>
+                <div class="row g-0">
+                </div>
+                <div class="col-md-12" style="background-color: white; padding: 1rem;">
+                    <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
+                    @if(isset($hasFeedback) && $hasFeedback)
+                        <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
+                            Feedback already submitted and cannot be sent again.
+                        </div>
+                    @else
+                        <form action="#" method="POST" id="feedback-form">
+                            @csrf
 
-                        <div class="feedback-rating-row" style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 15px;">
-                    
-                            <div style="flex: 1 1 140px; min-width: 0;">
-                                <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Event Ratings</label>
-                                <div class="stars-rating-input" data-target="eventRating"
-                                    style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
-                                    <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                            <div class="feedback-rating-row"
+                                style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 15px;">
+
+                                <div style="flex: 1 1 140px; min-width: 0;">
+                                    <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Event
+                                        Ratings</label>
+                                    <div class="stars-rating-input" data-target="eventRating"
+                                        style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
+                                        <span data-rating="1"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="2"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="3"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="4"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="5"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                    </div>
+                                </div>
+
+                                <!-- Speaker Rating -->
+                                <div style="flex: 1 1 140px; min-width: 0;">
+                                    <label class="form-label mb-1"
+                                        style="font-weight: 500; color: #333; font-size: 0.9rem;">Speaker Ratings</label>
+                                    <div class="stars-rating-input" data-target="speakerRating"
+                                        style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
+                                        <span data-rating="1"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="2"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="3"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="4"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                        <span data-rating="5"
+                                            style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Speaker Rating -->
-                            <div style="flex: 1 1 140px; min-width: 0;">
-                                <label class="form-label mb-1"
-                                    style="font-weight: 500; color: #333; font-size: 0.9rem;">Speaker Ratings</label>
-                                <div class="stars-rating-input" data-target="speakerRating"
-                                    style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
-                                    <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                    <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
-                                </div>
+                            <div class="mb-3">
+                                <textarea id="feedback-text" name="feedback" class="form-control" rows="4"
+                                    placeholder="Write your thoughts..." required
+                                    style="width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
                             </div>
-                        </div>
 
-                        <div class="mb-3">
-                            <textarea id="feedback-text" name="feedback" class="form-control"
-                                rows="4" placeholder="Write your thoughts..." required
-                                style="width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
-                        </div>
-
-                        <button type="button" id="submit-feedback-btn" class="btn fw-semibold"
-                            style="width: 100%; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
-                            Submit Feedback
-                        </button>
-                    </form>
-                @endif
+                            <button type="button" id="submit-feedback-btn" class="btn fw-semibold"
+                                style="width: 100%; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
+                                Submit Feedback
+                            </button>
+                        </form>
+                    @endif
+                </div>
             </div>
-        </div>
         @endif
 
         <div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
@@ -1814,14 +1863,16 @@
                             </div>
                             <p class="mb-1 fw-semibold text-success">Attendance Successful Dilakukan</p>
                             <p class="text-muted" style="margin-bottom:16px;">
-                                {{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}</p>
+                                {{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}
+                            </p>
                             <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
                         </div>
                         <div class="mt-3">
-                            <div id="qr-status" class="alert alert-info small">Point your camera at the QR code to scan it.</div>
+                            <div id="qr-status" class="alert alert-info small">Point your camera at the QR code to scan
+                                it.</div>
                             <div class="d-flex justify-content-center mt-2 gap-2 flex-wrap">
-                                <button id="qr-permission-btn" type="button"
-                                    class="btn btn-sm btn-primary d-none">Allow Camera</button>
+                                <button id="qr-permission-btn" type="button" class="btn btn-sm btn-primary d-none">Allow
+                                    Camera</button>
                                 <button id="qr-test-btn" type="button"
                                     class="btn btn-sm btn-outline-primary d-none">Test Kamera</button>
                                 <label class="btn btn-sm btn-outline-secondary d-none" id="qr-upload-btn">
@@ -1862,468 +1913,469 @@
                     </div>
                 </div>
             </div>
-            </div>
+        </div>
 
         <div class="desc-box">
-        <nav>
-            <div class="nav nav-tabs" id="nav-tab" role="tablist">
-                <button class="nav-event nav-link active" id="nav-home-tab" data-bs-toggle="tab"
-                    data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home"
-                    aria-selected="true">Overview</button>
-                <button class="nav-event nav-link" id="nav-profile-tab" data-bs-toggle="tab"
-                    data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile"
-                    aria-selected="false">Schedule</button>
-                <button class="nav-event nav-link" id="nav-contact-tab" data-bs-toggle="tab"
-                    data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact"
-                    aria-selected="false">Terms & Condition</button>
-                <span class="ms-auto d-flex align-items-center" style="gap:8px; font-size:12px;">
-                    @if($hasCertificate && $event->certificate_path)
-                        <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                <path fill-rule="evenodd"
-                                    d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                <path fill-rule="evenodd"
-                                    d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                            </svg>
-                        </a>
-                    @endif
-                </span>
-            </div>
-            <div class="tab-content" id="nav-tabContent">
-                <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab"
-                    tabindex="0">
-                    {!! $event->description ?? '' !!}
+            <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                    <button class="nav-event nav-link active" id="nav-home-tab" data-bs-toggle="tab"
+                        data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home"
+                        aria-selected="true">Overview</button>
+                    <button class="nav-event nav-link" id="nav-profile-tab" data-bs-toggle="tab"
+                        data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile"
+                        aria-selected="false">Schedule</button>
+                    <button class="nav-event nav-link" id="nav-contact-tab" data-bs-toggle="tab"
+                        data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact"
+                        aria-selected="false">Terms & Condition</button>
+                    <span class="ms-auto d-flex align-items-center" style="gap:8px; font-size:12px;">
+                        @if($hasCertificate && $event->certificate_path)
+                            <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                    class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd"
+                                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                    <path fill-rule="evenodd"
+                                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                </svg>
+                            </a>
+                        @endif
+                    </span>
                 </div>
-                <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab"
-                    tabindex="0">
-                    <div class="scroll-schedule-box">
-                        <div class="schedule-box">
-                            <h6 class="title-schedule">Event Schedule</h6>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab"
+                        tabindex="0">
+                        {!! $event->description ?? '' !!}
+                    </div>
+                    <div class="tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab"
+                        tabindex="0">
+                        <div class="scroll-schedule-box">
+                            <div class="schedule-box">
+                                <h6 class="title-schedule">Event Schedule</h6>
 
 
-                            <!-- QR scanning library -->
-                            <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function () {
-                                    var scanner = null;
-                                    var modalEl = document.getElementById('scanQrModal');
-                                    if (!modalEl) return;
-                                    // Helper to detect secure origin acceptance (https or localhost)
-                                    function isSecureEnough() {
-                                        var isLocalhost = ['localhost', '127.0.0.1', '::1'].indexOf(location.hostname) !== -1;
-                                        return window.isSecureContext || isLocalhost;
-                                    }
+                                <!-- QR scanning library -->
+                                <script
+                                    src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        var scanner = null;
+                                        var modalEl = document.getElementById('scanQrModal');
+                                        if (!modalEl) return;
+                                        // Helper to detect secure origin acceptance (https or localhost)
+                                        function isSecureEnough() {
+                                            var isLocalhost = ['localhost', '127.0.0.1', '::1'].indexOf(location.hostname) !== -1;
+                                            return window.isSecureContext || isLocalhost;
+                                        }
 
-                                    // Attempt to request camera permission directly (user-gesture)
-                                    function requestCameraPermission(statusEl, onDone) {
-                                        var constraintsAttempts = [
-                                            { video: { facingMode: { exact: 'environment' } } },
-                                            { video: { facingMode: { ideal: 'environment' } } },
-                                            { video: true }
-                                        ];
-                                        var p = Promise.resolve();
-                                        constraintsAttempts.forEach(function (constraints) {
-                                            p = p.catch(function () {
-                                                return navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
-                                                    try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (_e) { }
-                                                    if (typeof onDone === 'function') onDone(true);
-                                                    throw '__BREAK__';
+                                        // Attempt to request camera permission directly (user-gesture)
+                                        function requestCameraPermission(statusEl, onDone) {
+                                            var constraintsAttempts = [
+                                                { video: { facingMode: { exact: 'environment' } } },
+                                                { video: { facingMode: { ideal: 'environment' } } },
+                                                { video: true }
+                                            ];
+                                            var p = Promise.resolve();
+                                            constraintsAttempts.forEach(function (constraints) {
+                                                p = p.catch(function () {
+                                                    return navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+                                                        try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (_e) { }
+                                                        if (typeof onDone === 'function') onDone(true);
+                                                        throw '__BREAK__';
+                                                    });
                                                 });
                                             });
-                                        });
-                                        return p.catch(function (e) { if (e === '__BREAK__') return; if (typeof onDone === 'function') onDone(false, e); });
-                                    }
-
-                                    // Try to read Permissions API when available
-                                    function checkPermissionState() {
-                                        if (navigator.permissions && navigator.permissions.query) {
-                                            try { return navigator.permissions.query({ name: 'camera' }); } catch (_e) { return Promise.resolve(null); }
+                                            return p.catch(function (e) { if (e === '__BREAK__') return; if (typeof onDone === 'function') onDone(false, e); });
                                         }
-                                        return Promise.resolve(null);
-                                    }
 
-                                    modalEl.addEventListener('shown.bs.modal', function () {
-                                        try {
-                                            var el = document.getElementById('qr-reader');
-                                            if (!el) return;
-                                            if (scanner) { try { scanner.stop(); } catch (e) { } }
-                                            // Ensure Html5Qrcode library is available; load fallback if missing
-                                            if (!window.Html5Qrcode) {
-                                                if (statusEl) {
-                                                    statusEl.className = 'alert alert-warning small';
-                                                    statusEl.textContent = 'Memuat library pemindaian QR...';
-                                                }
-                                                var fallback = document.createElement('script');
-                                                fallback.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js';
-                                                fallback.async = true;
-                                                fallback.onload = function () {
-                                                    try {
-                                                        scanner = new Html5Qrcode('qr-reader');
-                                                    } catch (err) {
-                                                        console.error('Init Html5Qrcode gagal setelah fallback', err);
-                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memuat library QR. Gunakan unggah gambar sebagai alternatif.'; }
-                                                        if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
-                                                        return;
-                                                    }
-                                                    // Lanjut ke alur normal di bawah
-                                                };
-                                                fallback.onerror = function () {
-                                                    console.error('Gagal memuat library Html5Qrcode dari CDN');
-                                                    if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Library QR tidak termuat. Silakan gunakan unggah gambar.'; }
-                                                    if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
-                                                };
-                                                document.head.appendChild(fallback);
-                                                // Jangan lanjutkan hingga library termuat
-                                                return;
+                                        // Try to read Permissions API when available
+                                        function checkPermissionState() {
+                                            if (navigator.permissions && navigator.permissions.query) {
+                                                try { return navigator.permissions.query({ name: 'camera' }); } catch (_e) { return Promise.resolve(null); }
                                             }
-                                            scanner = new Html5Qrcode("qr-reader");
-                                            var statusEl = document.getElementById('qr-status');
-                                            var successEl = document.getElementById('qr-success');
-                                            var permBtn = document.getElementById('qr-permission-btn');
-                                            var testBtn = document.getElementById('qr-test-btn');
-                                            var uploadBtn = document.getElementById('qr-upload-btn');
-                                            var fileInput = document.getElementById('qr-file-input');
-                                            var eventStartedFlag = {{ (isset($eventStarted) && $eventStarted) ? 'true' : 'false' }};
-                                            // Reset views each time modal opens
-                                            if (successEl) successEl.classList.add('d-none');
-                                            if (el) el.style.display = '';
-                                            var currentEventId = {{ (int) ($event->id ?? 0) }};
-                                            var eventQrToken = @json($event->attendance_qr_token ?? null);
-                                            // Gate scanning if event hasn't started
-                                            if (!eventStartedFlag) {
-                                                if (statusEl) {
-                                                    statusEl.className = 'alert alert-warning small';
-                                                    statusEl.textContent = 'Scan tersedia saat acara dimulai.';
-                                                }
-                                                if (permBtn) { permBtn.classList.add('d-none'); }
-                                                if (uploadBtn) { uploadBtn.classList.add('d-none'); }
-                                                return;
-                                            }
-                                            // If insecure origin and not localhost, camera will be blocked
-                                            if (!isSecureEnough()) {
-                                                if (statusEl) {
-                                                    statusEl.className = 'alert alert-warning small';
-                                                    statusEl.innerHTML = 'Kamera diblokir pada koneksi non-HTTPS.<br>Gunakan HTTPS atau localhost.<br><small>Opsi solusi cepat:<br>- Aktifkan SSL di Laragon lalu akses: https://domain.test<br>- atau gunakan ngrok/cloudflared untuk URL https publik.</small>';
-                                                }
-                                                if (permBtn) { permBtn.classList.add('d-none'); }
-                                                if (testBtn) { testBtn.classList.remove('d-none'); }
-                                                if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
-                                                return;
-                                            }
+                                            return Promise.resolve(null);
+                                        }
 
-                                            function beginScan(cameraIdOrFacingMode) {
-                                                return scanner.start(cameraIdOrFacingMode, { fps: 10, qrbox: { width: 250, height: 250 } }, function (decodedText) {
-                                                    // Validate QR: must contain event URL with matching token
-                                                    var ok = false;
-                                                    try {
-                                                        var url = new URL(decodedText);
-                                                        ok = url.pathname.indexOf('/events/' + currentEventId) !== -1 && (!!eventQrToken ? url.searchParams.get('t') === eventQrToken : true);
-                                                    } catch (_e) {
-                                                        // Fallback string check
-                                                        ok = decodedText && decodedText.indexOf('/events/' + currentEventId) !== -1 && (!eventQrToken || decodedText.indexOf('t=' + eventQrToken) !== -1);
-                                                    }
-                                                    if (ok) {
-                                                        if (statusEl) { statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil! Menyimpan absensi...'; }
-                                                        // Stop camera and show success UI
-                                                        try { scanner.stop(); } catch (e) { }
-                                                        if (el) el.style.display = 'none';
-                                                        if (successEl) successEl.classList.remove('d-none');
-                                                        // NOTE: If you want to persist attendance here via AJAX, call a route.
-                                                        // Currently no attendance route is exposed in routes/web.php. If added, perform fetch here.
-                                                    } else {
+                                        modalEl.addEventListener('shown.bs.modal', function () {
+                                            try {
+                                                var el = document.getElementById('qr-reader');
+                                                if (!el) return;
+                                                if (scanner) { try { scanner.stop(); } catch (e) { } }
+                                                // Ensure Html5Qrcode library is available; load fallback if missing
+                                                if (!window.Html5Qrcode) {
+                                                    if (statusEl) {
                                                         statusEl.className = 'alert alert-warning small';
-                                                        statusEl.textContent = 'QR tidak cocok dengan event ini.';
+                                                        statusEl.textContent = 'Memuat library pemindaian QR...';
                                                     }
-                                                }, function (err) { /* per-frame failure, ignore */ });
-                                            }
-
-                                            // Helper: robust start attempts sequence
-                                            function tryStartSequence() {
-                                                // Attempt environment, then user, then enumerate
-                                                var tried = false;
-                                                return beginScan({ facingMode: 'environment' }).catch(function (e1) {
-                                                    tried = true;
-                                                    // If permission denied, show controls
-                                                    if (permBtn && e1 && (e1.name === 'NotAllowedError' || e1.message?.toLowerCase().includes('permission'))) {
-                                                        permBtn.classList.remove('d-none'); permBtn.disabled = false;
-                                                    }
-                                                    return beginScan({ facingMode: 'user' });
-                                                }).catch(function (e2) {
-                                                    if (Html5Qrcode && Html5Qrcode.getCameras) {
-                                                        return Html5Qrcode.getCameras().then(function (cameras) {
-                                                            if (!cameras || !cameras.length) { throw new Error('Tidak ada kamera terdeteksi'); }
-                                                            var back = cameras.find(function (c) { return /back|rear|environment/i.test(c.label); });
-                                                            var chosen = (back || cameras[0]).id;
-                                                            return beginScan(chosen);
-                                                        });
-                                                    }
-                                                    throw e2;
-                                                }).catch(function (eFinal) {
-                                                    console.warn('Gagal memulai kamera', eFinal);
-                                                    if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (eFinal && eFinal.message ? eFinal.message : eFinal); }
-                                                    if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
-                                                    if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
-                                                    return Promise.reject(eFinal);
-                                                });
-                                            }
-
-                                            // Preflight permission to improve camera availability (especially iOS)
-                                            var preflight = function () {
-                                                if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
-                                                if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { return Promise.resolve(); }
-                                                return checkPermissionState().then(function (state) {
-                                                    if (state && state.state === 'denied') {
-                                                        if (statusEl) {
-                                                            statusEl.className = 'alert alert-danger small';
-                                                            statusEl.innerHTML = 'Izin kamera ditolak oleh browser. Buka pengaturan situs dan izinkan kamera, lalu coba lagi.';
-                                                        }
-                                                        if (permBtn) {
-                                                            permBtn.classList.remove('d-none');
-                                                            permBtn.disabled = false;
-                                                        }
-                                                        return Promise.resolve();
-                                                    }
-                                                    // Attempt a quick silent preflight; if it fails, we’ll show the manual button
-                                                    return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
-                                                        .then(function (stream) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (_e) { } })
-                                                        .catch(function (e) { console.warn('Preflight getUserMedia failed', e); });
-                                                });
-                                            };
-
-                                            preflight().then(function () {
-                                                // If permission still not granted, show manual button to request
-                                                if (navigator.permissions && navigator.permissions.query) {
-                                                    navigator.permissions.query({ name: 'camera' }).then(function (ps) {
-                                                        if (ps && ps.state !== 'granted' && permBtn) {
-                                                            permBtn.classList.remove('d-none');
-                                                            permBtn.disabled = false;
-                                                            if (testBtn) { testBtn.classList.remove('d-none'); }
-                                                        }
-                                                    }).catch(function () { });
-                                                } else {
-                                                    if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
-                                                    if (testBtn) { testBtn.classList.remove('d-none'); }
-                                                }
-                                                // Try robust start
-                                                return tryStartSequence();
-                                            }).catch(function () { /* already handled in tryStartSequence */ });
-
-                                            // Hook manual permission button
-                                            // Test camera button (diagnostic)
-                                            if (testBtn) {
-                                                testBtn.onclick = function () {
-                                                    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-                                                        statusEl.className = 'alert alert-danger small';
-                                                        statusEl.textContent = 'Browser tidak mendukung kamera.';
-                                                        return;
-                                                    }
-                                                    statusEl.className = 'alert alert-info small';
-                                                    statusEl.textContent = 'Menguji akses kamera...';
-                                                    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
-                                                        .then(function (stream) {
-                                                            try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (_e) { }
-                                                            statusEl.className = 'alert alert-success small';
-                                                            statusEl.textContent = 'Tes berhasil: kamera dapat diakses.';
-                                                            testBtn.classList.add('d-none');
-                                                            // Attempt start after successful test
-                                                            tryStartSequence();
-                                                        })
-                                                        .catch(function (err) {
-                                                            statusEl.className = 'alert alert-danger small';
-                                                            statusEl.textContent = 'Tes gagal: ' + (err && err.message ? err.message : err);
-                                                            uploadBtn && uploadBtn.classList.remove('d-none');
-                                                            permBtn && (permBtn.classList.remove('d-none'), permBtn.disabled = false);
-                                                        });
-                                                };
-                                            }
-                                            if (permBtn) {
-                                                permBtn.onclick = function () {
-                                                    permBtn.disabled = true;
-                                                    if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
-                                                    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Browser tidak mendukung kamera.'; }
-                                                        return;
-                                                    }
-                                                    requestCameraPermission(statusEl, function (granted, err) {
-                                                        if (!granted) {
-                                                            if (statusEl) {
-                                                                statusEl.className = 'alert alert-danger small';
-                                                                statusEl.textContent = 'Izin kamera gagal: ' + (err && err.message ? err.message : 'Unknown error');
-                                                            }
-                                                            permBtn.disabled = false;
+                                                    var fallback = document.createElement('script');
+                                                    fallback.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/minified/html5-qrcode.min.js';
+                                                    fallback.async = true;
+                                                    fallback.onload = function () {
+                                                        try {
+                                                            scanner = new Html5Qrcode('qr-reader');
+                                                        } catch (err) {
+                                                            console.error('Init Html5Qrcode gagal setelah fallback', err);
+                                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memuat library QR. Gunakan unggah gambar sebagai alternatif.'; }
+                                                            if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
                                                             return;
                                                         }
-                                                        // After permission granted, try to start scan again
-                                                        if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memulai kamera...'; }
-                                                        if (Html5Qrcode && Html5Qrcode.getCameras) {
-                                                            Html5Qrcode.getCameras().then(function (cameras) {
-                                                                var back = cameras && cameras.find(function (c) { return /back|rear|environment/i.test(c.label); });
-                                                                var chosen = (back || (cameras && cameras[0]) || {}).id || { facingMode: 'environment' };
-                                                                beginScan(chosen).then(function () {
-                                                                    permBtn.classList.add('d-none');
-                                                                }).catch(function (e) {
-                                                                    console.error('start error', e);
-                                                                    if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
-                                                                    permBtn.disabled = false;
-                                                                });
-                                                            }).catch(function () {
-                                                                beginScan({ facingMode: 'environment' }).then(function () {
-                                                                    permBtn.classList.add('d-none');
-                                                                }).catch(function (e) {
-                                                                    console.error('start error', e);
-                                                                    if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
-                                                                    permBtn.disabled = false;
-                                                                });
-                                                            });
-                                                        } else {
-                                                            tryStartSequence().then(function () { permBtn.classList.add('d-none'); }).catch(function (e) {
-                                                                console.error('start error', e);
-                                                                if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
-                                                                permBtn.disabled = false;
-                                                            });
-                                                        }
-                                                    });
-                                                };
-                                            }
-                                            // File upload fallback
-                                            if (fileInput) {
-                                                fileInput.onchange = function () {
-                                                    var f = fileInput.files && fileInput.files[0];
-                                                    if (!f) return;
-                                                    statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memindai gambar...';
-                                                    scanner.scanFile(f, true).then(function (decodedText) {
+                                                        // Lanjut ke alur normal di bawah
+                                                    };
+                                                    fallback.onerror = function () {
+                                                        console.error('Gagal memuat library Html5Qrcode dari CDN');
+                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Library QR tidak termuat. Silakan gunakan unggah gambar.'; }
+                                                        if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                                    };
+                                                    document.head.appendChild(fallback);
+                                                    // Jangan lanjutkan hingga library termuat
+                                                    return;
+                                                }
+                                                scanner = new Html5Qrcode("qr-reader");
+                                                var statusEl = document.getElementById('qr-status');
+                                                var successEl = document.getElementById('qr-success');
+                                                var permBtn = document.getElementById('qr-permission-btn');
+                                                var testBtn = document.getElementById('qr-test-btn');
+                                                var uploadBtn = document.getElementById('qr-upload-btn');
+                                                var fileInput = document.getElementById('qr-file-input');
+                                                var eventStartedFlag = {{ (isset($eventStarted) && $eventStarted) ? 'true' : 'false' }};
+                                                // Reset views each time modal opens
+                                                if (successEl) successEl.classList.add('d-none');
+                                                if (el) el.style.display = '';
+                                                var currentEventId = {{ (int) ($event->id ?? 0) }};
+                                                var eventQrToken = @json($event->attendance_qr_token ?? null);
+                                                // Gate scanning if event hasn't started
+                                                if (!eventStartedFlag) {
+                                                    if (statusEl) {
+                                                        statusEl.className = 'alert alert-warning small';
+                                                        statusEl.textContent = 'Scan tersedia saat acara dimulai.';
+                                                    }
+                                                    if (permBtn) { permBtn.classList.add('d-none'); }
+                                                    if (uploadBtn) { uploadBtn.classList.add('d-none'); }
+                                                    return;
+                                                }
+                                                // If insecure origin and not localhost, camera will be blocked
+                                                if (!isSecureEnough()) {
+                                                    if (statusEl) {
+                                                        statusEl.className = 'alert alert-warning small';
+                                                        statusEl.innerHTML = 'Kamera diblokir pada koneksi non-HTTPS.<br>Gunakan HTTPS atau localhost.<br><small>Opsi solusi cepat:<br>- Aktifkan SSL di Laragon lalu akses: https://domain.test<br>- atau gunakan ngrok/cloudflared untuk URL https publik.</small>';
+                                                    }
+                                                    if (permBtn) { permBtn.classList.add('d-none'); }
+                                                    if (testBtn) { testBtn.classList.remove('d-none'); }
+                                                    if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                                    return;
+                                                }
+
+                                                function beginScan(cameraIdOrFacingMode) {
+                                                    return scanner.start(cameraIdOrFacingMode, { fps: 10, qrbox: { width: 250, height: 250 } }, function (decodedText) {
+                                                        // Validate QR: must contain event URL with matching token
                                                         var ok = false;
                                                         try {
                                                             var url = new URL(decodedText);
                                                             ok = url.pathname.indexOf('/events/' + currentEventId) !== -1 && (!!eventQrToken ? url.searchParams.get('t') === eventQrToken : true);
                                                         } catch (_e) {
+                                                            // Fallback string check
                                                             ok = decodedText && decodedText.indexOf('/events/' + currentEventId) !== -1 && (!eventQrToken || decodedText.indexOf('t=' + eventQrToken) !== -1);
                                                         }
                                                         if (ok) {
-                                                            if (statusEl) { statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil dari gambar! Menyimpan absensi...'; }
+                                                            if (statusEl) { statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil! Menyimpan absensi...'; }
+                                                            // Stop camera and show success UI
                                                             try { scanner.stop(); } catch (e) { }
                                                             if (el) el.style.display = 'none';
                                                             if (successEl) successEl.classList.remove('d-none');
+                                                            // NOTE: If you want to persist attendance here via AJAX, call a route.
+                                                            // Currently no attendance route is exposed in routes/web.php. If added, perform fetch here.
                                                         } else {
                                                             statusEl.className = 'alert alert-warning small';
-                                                            statusEl.textContent = 'Gambar tidak cocok dengan event ini.';
+                                                            statusEl.textContent = 'QR tidak cocok dengan event ini.';
                                                         }
-                                                    }).catch(function (err) {
-                                                        console.error('scanFile error', err);
-                                                        statusEl.className = 'alert alert-danger small';
-                                                        statusEl.textContent = 'Gagal memindai gambar QR.';
+                                                    }, function (err) { /* per-frame failure, ignore */ });
+                                                }
+
+                                                // Helper: robust start attempts sequence
+                                                function tryStartSequence() {
+                                                    // Attempt environment, then user, then enumerate
+                                                    var tried = false;
+                                                    return beginScan({ facingMode: 'environment' }).catch(function (e1) {
+                                                        tried = true;
+                                                        // If permission denied, show controls
+                                                        if (permBtn && e1 && (e1.name === 'NotAllowedError' || e1.message?.toLowerCase().includes('permission'))) {
+                                                            permBtn.classList.remove('d-none'); permBtn.disabled = false;
+                                                        }
+                                                        return beginScan({ facingMode: 'user' });
+                                                    }).catch(function (e2) {
+                                                        if (Html5Qrcode && Html5Qrcode.getCameras) {
+                                                            return Html5Qrcode.getCameras().then(function (cameras) {
+                                                                if (!cameras || !cameras.length) { throw new Error('Tidak ada kamera terdeteksi'); }
+                                                                var back = cameras.find(function (c) { return /back|rear|environment/i.test(c.label); });
+                                                                var chosen = (back || cameras[0]).id;
+                                                                return beginScan(chosen);
+                                                            });
+                                                        }
+                                                        throw e2;
+                                                    }).catch(function (eFinal) {
+                                                        console.warn('Gagal memulai kamera', eFinal);
+                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (eFinal && eFinal.message ? eFinal.message : eFinal); }
+                                                        if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
+                                                        if (uploadBtn) { uploadBtn.classList.remove('d-none'); }
+                                                        return Promise.reject(eFinal);
+                                                    });
+                                                }
+
+                                                // Preflight permission to improve camera availability (especially iOS)
+                                                var preflight = function () {
+                                                    if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
+                                                    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { return Promise.resolve(); }
+                                                    return checkPermissionState().then(function (state) {
+                                                        if (state && state.state === 'denied') {
+                                                            if (statusEl) {
+                                                                statusEl.className = 'alert alert-danger small';
+                                                                statusEl.innerHTML = 'Izin kamera ditolak oleh browser. Buka pengaturan situs dan izinkan kamera, lalu coba lagi.';
+                                                            }
+                                                            if (permBtn) {
+                                                                permBtn.classList.remove('d-none');
+                                                                permBtn.disabled = false;
+                                                            }
+                                                            return Promise.resolve();
+                                                        }
+                                                        // Attempt a quick silent preflight; if it fails, we’ll show the manual button
+                                                        return navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+                                                            .then(function (stream) { try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (_e) { } })
+                                                            .catch(function (e) { console.warn('Preflight getUserMedia failed', e); });
                                                     });
                                                 };
-                                                if (uploadBtn) {
-                                                    uploadBtn.onclick = function () { fileInput && fileInput.click(); };
+
+                                                preflight().then(function () {
+                                                    // If permission still not granted, show manual button to request
+                                                    if (navigator.permissions && navigator.permissions.query) {
+                                                        navigator.permissions.query({ name: 'camera' }).then(function (ps) {
+                                                            if (ps && ps.state !== 'granted' && permBtn) {
+                                                                permBtn.classList.remove('d-none');
+                                                                permBtn.disabled = false;
+                                                                if (testBtn) { testBtn.classList.remove('d-none'); }
+                                                            }
+                                                        }).catch(function () { });
+                                                    } else {
+                                                        if (permBtn) { permBtn.classList.remove('d-none'); permBtn.disabled = false; }
+                                                        if (testBtn) { testBtn.classList.remove('d-none'); }
+                                                    }
+                                                    // Try robust start
+                                                    return tryStartSequence();
+                                                }).catch(function () { /* already handled in tryStartSequence */ });
+
+                                                // Hook manual permission button
+                                                // Test camera button (diagnostic)
+                                                if (testBtn) {
+                                                    testBtn.onclick = function () {
+                                                        if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                                                            statusEl.className = 'alert alert-danger small';
+                                                            statusEl.textContent = 'Browser tidak mendukung kamera.';
+                                                            return;
+                                                        }
+                                                        statusEl.className = 'alert alert-info small';
+                                                        statusEl.textContent = 'Menguji akses kamera...';
+                                                        navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+                                                            .then(function (stream) {
+                                                                try { stream.getTracks().forEach(function (t) { t.stop(); }); } catch (_e) { }
+                                                                statusEl.className = 'alert alert-success small';
+                                                                statusEl.textContent = 'Tes berhasil: kamera dapat diakses.';
+                                                                testBtn.classList.add('d-none');
+                                                                // Attempt start after successful test
+                                                                tryStartSequence();
+                                                            })
+                                                            .catch(function (err) {
+                                                                statusEl.className = 'alert alert-danger small';
+                                                                statusEl.textContent = 'Tes gagal: ' + (err && err.message ? err.message : err);
+                                                                uploadBtn && uploadBtn.classList.remove('d-none');
+                                                                permBtn && (permBtn.classList.remove('d-none'), permBtn.disabled = false);
+                                                            });
+                                                    };
                                                 }
+                                                if (permBtn) {
+                                                    permBtn.onclick = function () {
+                                                        permBtn.disabled = true;
+                                                        if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Meminta izin kamera...'; }
+                                                        if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+                                                            if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Browser tidak mendukung kamera.'; }
+                                                            return;
+                                                        }
+                                                        requestCameraPermission(statusEl, function (granted, err) {
+                                                            if (!granted) {
+                                                                if (statusEl) {
+                                                                    statusEl.className = 'alert alert-danger small';
+                                                                    statusEl.textContent = 'Izin kamera gagal: ' + (err && err.message ? err.message : 'Unknown error');
+                                                                }
+                                                                permBtn.disabled = false;
+                                                                return;
+                                                            }
+                                                            // After permission granted, try to start scan again
+                                                            if (statusEl) { statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memulai kamera...'; }
+                                                            if (Html5Qrcode && Html5Qrcode.getCameras) {
+                                                                Html5Qrcode.getCameras().then(function (cameras) {
+                                                                    var back = cameras && cameras.find(function (c) { return /back|rear|environment/i.test(c.label); });
+                                                                    var chosen = (back || (cameras && cameras[0]) || {}).id || { facingMode: 'environment' };
+                                                                    beginScan(chosen).then(function () {
+                                                                        permBtn.classList.add('d-none');
+                                                                    }).catch(function (e) {
+                                                                        console.error('start error', e);
+                                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                                        permBtn.disabled = false;
+                                                                    });
+                                                                }).catch(function () {
+                                                                    beginScan({ facingMode: 'environment' }).then(function () {
+                                                                        permBtn.classList.add('d-none');
+                                                                    }).catch(function (e) {
+                                                                        console.error('start error', e);
+                                                                        if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                                        permBtn.disabled = false;
+                                                                    });
+                                                                });
+                                                            } else {
+                                                                tryStartSequence().then(function () { permBtn.classList.add('d-none'); }).catch(function (e) {
+                                                                    console.error('start error', e);
+                                                                    if (statusEl) { statusEl.className = 'alert alert-danger small'; statusEl.textContent = 'Gagal memulai kamera: ' + (e && e.message ? e.message : e); }
+                                                                    permBtn.disabled = false;
+                                                                });
+                                                            }
+                                                        });
+                                                    };
+                                                }
+                                                // File upload fallback
+                                                if (fileInput) {
+                                                    fileInput.onchange = function () {
+                                                        var f = fileInput.files && fileInput.files[0];
+                                                        if (!f) return;
+                                                        statusEl.className = 'alert alert-info small'; statusEl.textContent = 'Memindai gambar...';
+                                                        scanner.scanFile(f, true).then(function (decodedText) {
+                                                            var ok = false;
+                                                            try {
+                                                                var url = new URL(decodedText);
+                                                                ok = url.pathname.indexOf('/events/' + currentEventId) !== -1 && (!!eventQrToken ? url.searchParams.get('t') === eventQrToken : true);
+                                                            } catch (_e) {
+                                                                ok = decodedText && decodedText.indexOf('/events/' + currentEventId) !== -1 && (!eventQrToken || decodedText.indexOf('t=' + eventQrToken) !== -1);
+                                                            }
+                                                            if (ok) {
+                                                                if (statusEl) { statusEl.className = 'alert alert-success small'; statusEl.textContent = 'Scan berhasil dari gambar! Menyimpan absensi...'; }
+                                                                try { scanner.stop(); } catch (e) { }
+                                                                if (el) el.style.display = 'none';
+                                                                if (successEl) successEl.classList.remove('d-none');
+                                                            } else {
+                                                                statusEl.className = 'alert alert-warning small';
+                                                                statusEl.textContent = 'Gambar tidak cocok dengan event ini.';
+                                                            }
+                                                        }).catch(function (err) {
+                                                            console.error('scanFile error', err);
+                                                            statusEl.className = 'alert alert-danger small';
+                                                            statusEl.textContent = 'Gagal memindai gambar QR.';
+                                                        });
+                                                    };
+                                                    if (uploadBtn) {
+                                                        uploadBtn.onclick = function () { fileInput && fileInput.click(); };
+                                                    }
+                                                }
+                                            } catch (e) {
+                                                console.error(e);
                                             }
-                                        } catch (e) {
-                                            console.error(e);
-                                        }
+                                        });
+                                        modalEl.addEventListener('hidden.bs.modal', function () {
+                                            if (scanner) {
+                                                scanner.stop().catch(function () {/* ignore */ });
+                                                scanner.clear();
+                                                scanner = null;
+                                            }
+                                            // Reset UI for next open
+                                            var el = document.getElementById('qr-reader');
+                                            var successEl = document.getElementById('qr-success');
+                                            var permBtn = document.getElementById('qr-permission-btn');
+                                            if (el) el.style.display = '';
+                                            if (successEl) successEl.classList.add('d-none');
+                                            if (permBtn) permBtn.classList.add('d-none');
+                                        });
                                     });
-                                    modalEl.addEventListener('hidden.bs.modal', function () {
-                                        if (scanner) {
-                                            scanner.stop().catch(function () {/* ignore */ });
-                                            scanner.clear();
-                                            scanner = null;
-                                        }
-                                        // Reset UI for next open
-                                        var el = document.getElementById('qr-reader');
-                                        var successEl = document.getElementById('qr-success');
-                                        var permBtn = document.getElementById('qr-permission-btn');
-                                        if (el) el.style.display = '';
-                                        if (successEl) successEl.classList.add('d-none');
-                                        if (permBtn) permBtn.classList.add('d-none');
-                                    });
-                                });
-                            </script>
-                            @php
-                                $items = collect();
-                                if (isset($event)) {
-                                    // Schedule MUST come from schedule_json
-                                    $rawSchedule = $event->schedule_json ?? null;
-
-                                    // Normalize to array (supports casted array, JSON string, or stdClass)
-                                    $scheduleArr = null;
-                                    if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
-                                        $decoded = json_decode($rawSchedule, true);
-                                        $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
-                                    } elseif (is_array($rawSchedule)) {
-                                        $scheduleArr = $rawSchedule;
-                                    } elseif (is_object($rawSchedule)) {
-                                        $scheduleArr = json_decode(json_encode($rawSchedule), true);
-                                    }
-
-                                    if (is_array($scheduleArr)) {
-                                        $items = collect($scheduleArr)->map(function ($row) {
-                                            $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
-                                            return (object) [
-                                                'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
-                                                'end' => $row['end'] ?? ($row['time_end'] ?? null),
-                                                'title' => $row['title'] ?? ($row['activity'] ?? ''),
-                                                'description' => $row['description'] ?? ($row['desc'] ?? ''),
-                                            ];
-                                        })->filter(function ($it) {
-                                            return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
-                                        })->values();
-                                    }
-                                }
-                                $formatTime = function ($t) {
-                                    if (empty($t))
-                                        return null;
-                                    try {
-                                        return \Carbon\Carbon::parse($t)->format('H.i');
-                                    } catch (\Throwable $e) {
-                                        return is_string($t) ? $t : null;
-                                    }
-                                };
-                            @endphp
-                            @forelse($items as $idx => $it)
+                                </script>
                                 @php
-                                    $start = $formatTime($it->start ?? null);
-                                    $end = $formatTime($it->end ?? null);
-                                    $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
-                                    if ($timeStr)
-                                        $timeStr .= ' WIB';
+                                    $items = collect();
+                                    if (isset($event)) {
+                                        // Schedule MUST come from schedule_json
+                                        $rawSchedule = $event->schedule_json ?? null;
+
+                                        // Normalize to array (supports casted array, JSON string, or stdClass)
+                                        $scheduleArr = null;
+                                        if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                                            $decoded = json_decode($rawSchedule, true);
+                                            $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                                        } elseif (is_array($rawSchedule)) {
+                                            $scheduleArr = $rawSchedule;
+                                        } elseif (is_object($rawSchedule)) {
+                                            $scheduleArr = json_decode(json_encode($rawSchedule), true);
+                                        }
+
+                                        if (is_array($scheduleArr)) {
+                                            $items = collect($scheduleArr)->map(function ($row) {
+                                                $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
+                                                return (object) [
+                                                    'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                                                    'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                                                    'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                                                    'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                                                ];
+                                            })->filter(function ($it) {
+                                                return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                                            })->values();
+                                        }
+                                    }
+                                    $formatTime = function ($t) {
+                                        if (empty($t))
+                                            return null;
+                                        try {
+                                            return \Carbon\Carbon::parse($t)->format('H.i');
+                                        } catch (\Throwable $e) {
+                                            return is_string($t) ? $t : null;
+                                        }
+                                    };
                                 @endphp
-                                <div class="schedule-item-box">
-                                    <div class="schedule-line"></div>
-                                    <div class="schedule-item">
-                                        <p class="time">{{ $timeStr ?: '-' }}</p>
-                                        <p class="activity">{{ $it->title ?? '' }}</p>
-                                        <p class="desc">{{ $it->description ?? '' }}</p>
+                                @forelse($items as $idx => $it)
+                                    @php
+                                        $start = $formatTime($it->start ?? null);
+                                        $end = $formatTime($it->end ?? null);
+                                        $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                                        if ($timeStr)
+                                            $timeStr .= ' WIB';
+                                    @endphp
+                                    <div class="schedule-item-box">
+                                        <div class="schedule-line"></div>
+                                        <div class="schedule-item">
+                                            <p class="time">{{ $timeStr ?: '-' }}</p>
+                                            <p class="activity">{{ $it->title ?? '' }}</p>
+                                            <p class="desc">{{ $it->description ?? '' }}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <br>
-                            @empty
-                                <p class="text-muted" style="margin-left:0;">Schedule will be announced.</p>
-                            @endforelse
+                                    <br>
+                                @empty
+                                    <p class="text-muted" style="margin-left:0;">Schedule will be announced.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+                    <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel"
+                        aria-labelledby="nav-contact-tab" tabindex="0">
+                        <h6 style="margin-left: 40px;" class="title-schedule">Terms & Condition</h6>
+                        <div style="margin-left: 40px;" class="terms-content" style="margin-top: 10px;">
+                            @php
+                                $termsHtml = isset($event) ? ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')) : '';
+                                $termsText = trim(preg_replace('/\xC2\xA0|\s+/', ' ', strip_tags((string) $termsHtml)));
+                            @endphp
+
+                            @if($termsText === '')
+                                <p class="text-muted" style="margin:0;">Terms and Conditions will be announced soon</p>
+                            @else
+                                {!! $termsHtml !!}
+                            @endif
                         </div>
                     </div>
                 </div>
-                <div class="terms-box tab-pane fade" id="nav-contact" role="tabpanel" aria-labelledby="nav-contact-tab"
-                    tabindex="0">
-                    <h6 style="margin-left: 40px;" class="title-schedule">Terms & Condition</h6>
-                    <div style="margin-left: 40px;"  class="terms-content" style="margin-top: 10px;">
-                        @php
-                            $termsHtml = isset($event) ? ($event->terms_and_condition ?? ($event->terms_and_conditions ?? '')) : '';
-                            $termsText = trim(preg_replace('/\xC2\xA0|\s+/', ' ', strip_tags((string) $termsHtml)));
-                        @endphp
 
-                        @if($termsText === '')
-                            <p class="text-muted" style="margin:0;">Terms and Conditions will be announced soon</p>
-                        @else
-                            {!! $termsHtml !!}
-                        @endif
-                    </div>
-                </div>
-            </div>
-            
         </div>
-</main>
- <div class="footer-section-wrapper">
+    </main>
+    <div class="footer-section-wrapper">
         @include('partials.footer-after-login')
     </div>
 
@@ -2942,8 +2994,8 @@
                 });
             }
         })();
-        </script>
-        
-    </body>
+    </script>
+
+</body>
 
 </html>

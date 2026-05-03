@@ -310,57 +310,229 @@
     <div class="box_modul_luar quiz-take-v3">
         <!-- LEFT: Sidebar Utama (Course Navigation) -->
         <div class="box_modul_kiri">
-            <div style="padding: 24px; border-bottom: 1px solid #f3f4f6;">
-                <h5 style="font-weight: 700; margin: 0; font-size: 16px; color: #111827;">Course Content</h5>
-                <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{{ $course->name }}</p>
+            <div style="background-color: #f4dc21ea; width: 10%; height: 5%; padding: 10px; margin-top: 35px; margin-bottom: 10px; border-radius: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16" style="margin-top: -20px;">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                </svg>
             </div>
-            <div class="accordion-box">
-                @foreach($filteredModules as $mIdx => $m)
+            @php
+                $modulesList = $modules ?? (isset($course) ? ($course->modules ?? collect()) : collect());
+                $modulesList = $modulesList instanceof \Illuminate\Support\Collection ? $modulesList->values() : collect($modulesList)->values();
+                $activeModule = $currentModule ?? $modulesList->first();
+                $passingPercent = 75;
+
+                $freeAccessMode = $freeAccessMode ?? ((isset($course) && (int)($course->price ?? 0) <= 0) ? (string)($course->free_access_mode ?? 'limit_2') : 'all');
+                $freeAccessibleModuleIds = $freeAccessibleModuleIds ?? [];
+                if (!is_array($freeAccessibleModuleIds)) {
+                    $freeAccessibleModuleIds = [];
+                }
+                $isFreeLimited = ((string)($freeAccessMode ?? 'all') === 'limit_2');
+
+                $passedQuizModuleIds = [];
+                if (auth()->check() && $modulesList->isNotEmpty()) {
+                    $quizModuleIds = $modulesList
+                        ->filter(fn($m) => strtolower(trim((string) ($m->type ?? ''))) === 'quiz')
+                        ->pluck('id')
+                        ->map(fn($id) => (int) $id)
+                        ->values()
+                        ->all();
+
+                    if (!empty($quizModuleIds)) {
+                        $completedAttempts = \App\Models\QuizAttempt::query()
+                            ->where('user_id', auth()->id())
+                            ->whereIn('course_module_id', $quizModuleIds)
+                            ->whereNotNull('completed_at')
+                            ->orderByDesc('completed_at')
+                            ->limit(200)
+                            ->get();
+
+                        $passedQuizModuleIds = $completedAttempts
+                            ->filter(fn($a) => $a->isPassed($passingPercent))
+                            ->pluck('course_module_id')
+                            ->map(fn($id) => (int) $id)
+                            ->unique()
+                            ->values()
+                            ->all();
+                    }
+                }
+
+                // Completed material module IDs (pdf/video) from Progress table
+                $completedMaterialModuleIds = [];
+                if (auth()->check() && isset($course)) {
+                    $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+                        ->where('course_id', $course->id)
+                        ->whereIn('status', ['active', 'completed', 'expired'])
+                        ->first();
+                    if ($enrollment) {
+                        // For video modules: require BOTH completed=1 AND video_watched=1
+                        // This prevents old stale records (completed=1, video_watched=0) from showing checkmarks
+                        $videoModuleIds = $modulesList
+                            ->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) === 'video')
+                            ->pluck('id')->map(fn($id) => (int)$id)->all();
+
+                        $completedMaterialModuleIds = \App\Models\Progress::where('enrollment_id', $enrollment->id)
+                            ->where('completed', true)
+                            ->get(['course_module_id', 'video_watched'])
+                            ->filter(function ($p) use ($videoModuleIds) {
+                                $mid = (int) $p->course_module_id;
+                                if (in_array($mid, $videoModuleIds, true)) {
+                                    return (bool) $p->video_watched; // video: need video_watched=1 too
+                                }
+                                return true; // pdf/other: completed=1 is enough
+                            })
+                            ->pluck('course_module_id')
+                            ->map(fn($id) => (int) $id)
+                            ->values()
+                            ->all();
+                    }
+                }
+
+                $currentQuizPassed = true;
+                if ($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') {
+                    $currentQuizPassed = in_array((int) $activeModule->id, $passedQuizModuleIds, true);
+                }
+
+                $totalModules = $modulesList->count();
+                $filteredModules = $modulesList->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) !== 'pdf')->values();
+                $pdfCount = $modulesList->where('type', 'pdf')->count();
+                $videoCount = $modulesList->where('type', 'video')->count();
+                $quizCount = $modulesList->where('type', 'quiz')->count();
+                $missingMaterials = [];
+                if ($totalModules <= 0) { $missingMaterials[] = 'Modul'; }
+                if ($pdfCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
+                if ($videoCount <= 0) { $missingMaterials[] = 'Video'; }
+                if ($quizCount <= 0) { $missingMaterials[] = 'Kuis'; }
+            @endphp
+
+            {{-- UI tetap seperti sebelumnya, tapi konten dinamis dari backend --}}
+            @if(!empty($missingMaterials))
+                <div class="alert alert-warning" role="alert" style="margin: 0 0 12px 0;">
+                    <div style="font-weight:600;">Oops, course modules are incomplete.</div>
+                    <div style="margin-top:6px;">{{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.</div>
+                </div>
+            @endif
+
+            <div class="accordion-box"
+                data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
+                data-active-module-id="{{ $activeModule?->id }}"
+            >
+                @forelse($modulesList as $m)
                     @php
-                        $isActive = (int)$activeModule->id === (int)$m->id;
+                        $isActive = $activeModule && ((int)$activeModule->id === (int)$m->id);
+                        $typeLabel = $m->type ? strtoupper($m->type) : 'MATERI';
+                        $prevModule = $modulesList->get($loop->index - 1);
+                        $mId = (int) $m->id;
+                        $isDone = false;
                         $mType = strtolower(trim((string)($m->type ?? '')));
+                        if (auth()->check()) {
+                            if ($mType === 'quiz') {
+                                $isDone = in_array($mId, $passedQuizModuleIds, true);
+                            } else {
+                                $isDone = in_array($mId, $completedMaterialModuleIds, true);
+                            }
+                        }
 
                         // SEQUENTIAL GATING LOGIC:
                         // A module is locked if ANY preceding QUIZ has not been passed.
-                        // However, we ALWAYS allow the current active module so the user can finish it.
+                        // We use $filteredModules (which skips PDFs) to determine the sequence.
                         $isLocked = false;
-                        if (!$isActive) {
-                            $precedingModules = $filteredModules->take($mIdx);
+                        $lockReason = '';
+
+                        // Get all modules that appear BEFORE the current one in the sidebar
+                        $currentIdxInFiltered = $filteredModules->search(fn($fm) => (int)$fm->id === $mId);
+                        if ($currentIdxInFiltered !== false) {
+                            $precedingModules = $filteredModules->take($currentIdxInFiltered);
                             foreach ($precedingModules as $pm) {
                                 if (strtolower(trim((string)($pm->type ?? ''))) === 'quiz') {
                                     if (!in_array((int)$pm->id, $passedQuizModuleIds, true)) {
                                         $isLocked = true;
+                                        $lockReason = 'quiz';
                                         break;
                                     }
                                 }
+                                // Optional: also lock if previous video is not completed
+                                /*
+                                if (strtolower(trim((string)($pm->type ?? ''))) === 'video') {
+                                    if (!in_array((int)$pm->id, $completedMaterialModuleIds, true)) {
+                                        $isLocked = true;
+                                        $lockReason = 'video';
+                                        break;
+                                    }
+                                }
+                                */
                             }
                         }
-                        
-                        $isDone = $mType === 'quiz' 
-                            ? in_array((int)$m->id, $passedQuizModuleIds) 
-                            : in_array((int)$m->id, $completedMaterialModuleIds);
+
+                        if ($isFreeLimited && !in_array((int) $m->id, $freeAccessibleModuleIds, true)) {
+                            $isLocked = true;
+                            $lockReason = 'free';
+                        }
+
+                        $descLines = [];
+                        if (!empty($m->description)) {
+                            $cleanDesc = trim(strip_tags((string) $m->description));
+                            if ($cleanDesc !== '') {
+                                // Split into short lines to preserve the original "list" feel
+                                $descLines = array_values(array_filter(preg_split('/\r?\n|\.|\!|\?/u', $cleanDesc)));
+                            }
+                        }
+                        $descLines = array_slice($descLines, 0, 3);
+
+                        // Unified UI: Skip all PDF modules in sidebar as they are now integrated into video lessons
+                        $skipInSidebar = false;
+                        if (strtolower(trim((string)($m->type ?? ''))) === 'pdf') {
+                            $skipInSidebar = true;
+                        }
                     @endphp
-                    <div class="accordion-item {{ $isActive ? 'active' : '' }} {{ $isLocked ? 'is-locked' : '' }}">
-                        <button class="accordion-header" type="button" 
-                                @if(!$isLocked) onclick="window.location.href='{{ route('course.learn', [$course->id, 'module' => $m->id]) }}'" @endif
-                                style="{{ $isLocked ? 'cursor: not-allowed;' : '' }}">
-                            <span style="display:flex; align-items:center; gap:10px; min-width:0; flex: 1;">
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size: 13px; font-weight: 500;">{{ $m->title }}</span>
+
+                    @if(!$skipInSidebar)
+
+                    <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
+                        <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
+                            <span style="display:flex; align-items:center; gap:10px; min-width:0;">
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
                             </span>
-                            <span style="display: flex; align-items: center; gap: 8px;">
-                                @if($isDone)
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#16a34a" viewBox="0 0 16 16">
-                                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-                                    </svg>
-                                @elseif($isLocked)
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#9ca3af" viewBox="0 0 16 16">
-                                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                                    </svg>
-                                @endif
+                            <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
+                                <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    @if($isDone)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#16a34a" class="bi bi-check-circle-fill" viewBox="0 0 16 16" aria-label="Completed">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                        </svg>
+                                    @elseif($isLocked)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                        </svg>
+                                    @endif
+                                </span>
+                                <span class="arrow" style="width:16px; text-align:center;">▲</span>
                             </span>
                         </button>
+                        <div class="accordion-content">
+                            <p>Tipe: {{ $typeLabel }}</p>
+                            @if($isLocked)
+                                <hr>
+                                @if($lockReason === 'free')
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Enroll or purchase this course to unlock this module.</p>
+                                @else
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Pass the quiz first to unlock the next material.</p>
+                                @endif
+                            @endif
+                            {{-- HIDE DESKRIPSI DI ACCORDION MENU BAWAH --}}
+                            {{-- @if(!empty($descLines))
+                                <hr>
+                                @foreach($descLines as $idx => $line)
+                                    <p>{{ trim($line) }}</p>
+                                    @if($idx < count($descLines) - 1)
+                                        <hr>
+                                    @endif
+                                @endforeach
+                            @endif --}}
+                        </div>
                     </div>
-                @endforeach
+                    @endif
+                @empty
+                    <div class="text-muted" style="padding:12px;">No modules available for this course.</div>
+                @endforelse
             </div>
         </div>
 
@@ -370,7 +542,7 @@
             <div class="quiz-main-content">
                 <div style="width: 100%; max-width: 800px; box-sizing: border-box;">
                     <div style="margin-bottom: 32px;">
-                        <span style="display: inline-block; padding: 6px 12px; background: #fef3c7; color: #d97706; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; margin-bottom: 12px;">Quiz Module</span>
+                        <span style="display: inline-block; padding: 6px 12px; background: #fef3c7; color: #d97706; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; margin-bottom: 12px; margin-top: 35px;">Quiz Module</span>
                         <h1 style="font-size: 22px; font-weight: 800; color: #111827; margin: 0; word-break: break-word;">{{ $module->title }}</h1>
                     </div>
 
