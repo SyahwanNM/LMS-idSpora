@@ -45,6 +45,7 @@ class Event extends Model
         'event_time_end',
         'event_date',
         'material_deadline',
+        'material_revision_deadline',
         'benefit',
         'maps_url',
         'latitude',
@@ -58,15 +59,13 @@ class Event extends Model
         'schedule_json',
         'expenses_json',
         'manage_action',
-
-        // publishing
-        'is_published',
-        'published_at',
+        'is_reseller_event',
     ];
 
     protected $casts = [
         'event_date' => 'date',
         'material_deadline' => 'datetime',
+        'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
         'module_submitted_at' => 'datetime',
@@ -80,12 +79,11 @@ class Event extends Model
         'longitude' => 'decimal:7',
         'schedule_json' => 'array',
         'expenses_json' => 'array',
+        'benefit' => 'array',
         'is_reseller_event' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
-
-        'is_published' => 'boolean',
-        'published_at' => 'datetime',
+        'module_path' => 'array', // Added to support multiple trainer modules
     ];
 
     /**
@@ -93,17 +91,17 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
-        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
-        $isOfflineOnly = $hasMaps && !$hasZoom;
-
+        // Count completed items for the UI-perceived requirements.
+        // Business rule (used across admin views):
+        // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
+        // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
         $hasVbg = !empty($this->vbg_path);
         $hasModule = !empty($this->module_path);
-        $hasAttendance = !empty($this->attendance_path)
-            || !empty($this->attendance_qr_image)
-            || !empty($this->attendance_qr_token);
+        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
 
-        // Offline-only events do not require Virtual Background.
+        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
+
+        // Return the raw count of completed items (not the denominator-aware percent).
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {
             $count++;
@@ -114,24 +112,22 @@ class Event extends Model
         if ($hasAttendance) {
             $count++;
         }
-
-        return $count;
+        return (int) max(0, $count);
     }
 
     /**
-     * Percentage (0-100) of document completeness based on required operational docs.
+     * Percentage (0-100) of document completeness based on 3 required docs.
      */
     public function getDocumentsCompletionPercentAttribute(): int
     {
-        $hasMaps = trim((string) ($this->maps_url ?? '')) !== '';
-        $hasZoom = trim((string) ($this->zoom_link ?? '')) !== '';
-        $isOfflineOnly = $hasMaps && !$hasZoom;
-        $total = $isOfflineOnly
-            ? 2 // Module (Trainer), Absensi (QR/File)
-            : 3; // + Virtual Background
-
-        $done = max(0, min($total, (int) $this->documents_completed_count));
-        return $total > 0 ? (int) floor(($done / $total) * 100) : 0;
+        // Determine denominator according to offline/online rule
+        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
+        $total = $isOfflineOnly ? 2 : 3;
+        $done = (int) $this->documents_completed_count;
+        $done = max(0, min($total, $done));
+        if ($total === 0) return 0;
+        if ($done === $total) return 100;
+        return (int) floor(($done / $total) * 100);
     }
 
     public function getModuleSubmissionUrlAttribute(): ?string

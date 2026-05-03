@@ -331,32 +331,8 @@
                                                 <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
                                                 <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
                                                 <td>
-                                                    @php
-                                                        $st = strtolower((string)$reg->status);
-                                                        $now = \Carbon\Carbon::now()->startOfDay();
-                                                        $eventDate = \Carbon\Carbon::parse($event->event_date)->startOfDay();
-                                                        $hasAttended = !empty($reg->attended_at) || in_array(strtolower((string)($reg->attendance_status ?? '')), ['yes', 'present', 'attended']);
-                                                        
-                                                        $displayStatus = strtoupper($reg->status ?? '-');
-                                                        $badgeClass = 'bg-secondary';
-                                                        
-                                                        if ($st === 'active') {
-                                                            if ($hasAttended) {
-                                                                $displayStatus = 'ATTEND';
-                                                                $badgeClass = 'bg-success';
-                                                            } elseif ($now->greaterThanOrEqualTo($eventDate)) {
-                                                                $displayStatus = 'ALPA';
-                                                                $badgeClass = 'bg-danger';
-                                                            } else {
-                                                                $displayStatus = 'REGISTERED';
-                                                                $badgeClass = 'bg-primary';
-                                                            }
-                                                        } elseif ($st === 'rejected') {
-                                                            $displayStatus = 'REJECTED';
-                                                            $badgeClass = 'bg-danger';
-                                                        }
-                                                    @endphp
-                                                    <span class="badge {{ $badgeClass }}">{{ $displayStatus }}</span>
+                                                    @php $st = strtolower((string)$reg->status); @endphp
+                                                <span class="badge {{ $st === 'active' ? 'bg-success' : ($st === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">{{ strtoupper($reg->status ?? '-') }}</span>
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                             </tr>
@@ -400,24 +376,20 @@
                             </div>
                         </div>
                         @endif
-                        @if(!empty($event->benefit))
+                        @php
+                            $benefitItems = is_array($event->benefit)
+                                ? $event->benefit
+                                : array_values(array_filter(array_map('trim', preg_split('/\|\s*|\r\n|\n/', (string)($event->benefit ?? ''))), fn($s) => $s !== ''));
+                        @endphp
+                        @if(!empty($benefitItems))
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
                                 <h6 class="text-dark mb-2"><i class="bi bi-gift me-2"></i>Benefit</h6>
-                                @php
-                                    $raw = $event->benefit ?? '';
-                                    $parts = preg_split('/\|\s*|\r\n|\n/', $raw);
-                                    $items = array_values(array_filter(array_map('trim', (array)$parts), function($s){ return $s !== ''; }));
-                                @endphp
-                                @if(count($items))
-                                    <ul class="mb-0 ps-3 small">
-                                        @foreach($items as $b)
-                                            <li>{{ $b }}</li>
-                                        @endforeach
-                                    </ul>
-                                @else
-                                    <div class="small">{!! nl2br(e($event->benefit)) !!}</div>
-                                @endif
+                                <ul class="mb-0 ps-3 small">
+                                    @foreach($benefitItems as $b)
+                                        <li>{{ $b }}</li>
+                                    @endforeach
+                                </ul>
                             </div>
                         </div>
                         @endif

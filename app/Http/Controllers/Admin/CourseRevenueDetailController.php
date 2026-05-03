@@ -16,13 +16,137 @@ class CourseRevenueDetailController extends Controller
      */
     private const REVENUE_ENROLLMENT_STATUSES = ['active', 'expired', 'completed'];
 
+    /**
+     * GET /api/admin/courses/{course}/revenue-detail
+     *
+     * Mengembalikan data financial detail course dalam format JSON.
+     * Query params opsional:
+     *   - from  : tanggal awal (YYYY-MM-DD), default awal bulan ini
+     *   - to    : tanggal akhir (YYYY-MM-DD), default hari ini
+     */
+    public function apiShow(Request $request, Course $course): \Illuminate\Http\JsonResponse
+    {
+        [$from, $to] = $this->parseDateRange($request);
+
+        $base = Enrollment::query()
+            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+            ->leftJoin('manual_payments', function ($join) {
+                $join->on('enrollments.id', '=', 'manual_payments.enrollment_id')
+                     ->whereIn('manual_payments.status', ['paid', 'verified', 'settled']);
+            })
+            ->where('enrollments.course_id', $course->id)
+            ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
+            ->whereBetween('enrollments.enrolled_at', [$from, $to]);
+
+        $transactionsCount = (int) $base->clone()->count('enrollments.id');
+        $participantsCount = (int) $base->clone()->distinct('enrollments.user_id')->count('enrollments.user_id');
+
+        $calcPrice = $this->coursePriceExpr('enrollments.enrolled_at');
+        $priceExpr = 'COALESCE(manual_payments.amount, ' . $calcPrice . ')';
+
+        $revenueTotal = (float) ($base->clone()
+            ->selectRaw('SUM(' . $priceExpr . ') as total_revenue')
+            ->value('total_revenue') ?: 0);
+
+        // Breakdown normal vs referral
+        $payments = \App\Models\ManualPayment::where('course_id', $course->id)
+            ->whereIn('status', ['paid', 'verified', 'settled'])
+            ->whereBetween('created_at', [$from, $to])
+            ->get(['amount', 'referral_code']);
+
+        $normalPayments   = $payments->filter(fn($p) => empty($p->referral_code));
+        $referralPayments = $payments->filter(fn($p) => !empty($p->referral_code));
+
+        $incomeRows = [];
+        if ($normalPayments->count() > 0) {
+            $normalTotal = (float) $normalPayments->sum('amount');
+            $normalUnit  = (float) round($normalTotal / $normalPayments->count());
+            $incomeRows[] = ['label' => 'Tiket Normal', 'qty' => $normalPayments->count(), 'unit_price' => $normalUnit, 'total' => $normalTotal];
+        }
+        if ($referralPayments->count() > 0) {
+            $referralTotal = (float) $referralPayments->sum('amount');
+            $referralUnit  = (float) round($referralTotal / $referralPayments->count());
+            $incomeRows[] = ['label' => 'Tiket Referral', 'qty' => $referralPayments->count(), 'unit_price' => $referralUnit, 'total' => $referralTotal];
+        }
+        if (empty($incomeRows)) {
+            $unitPrice = $transactionsCount > 0 ? (float) round($revenueTotal / $transactionsCount) : (float) ($course->price ?? 0);
+            $incomeRows[] = ['label' => 'Tiket Pendaftar', 'qty' => $transactionsCount, 'unit_price' => $unitPrice, 'total' => $revenueTotal];
+        }
+
+        // Expense breakdown
+        $normalUnitPrice       = (float) ($course->price ?? 0);
+        $referralDiscountTotal = 0.0;
+        foreach ($referralPayments as $rp) {
+            $referralDiscountTotal += max(0, $normalUnitPrice - (float) ($rp->amount ?? 0));
+        }
+
+        $expenseRows = [];
+        $rawExpenses = $course->expenses_json;
+        if (is_array($rawExpenses)) {
+            foreach ($rawExpenses as $row) {
+                if (!is_array($row)) continue;
+                $item  = trim((string) ($row['item'] ?? ''));
+                $total = $row['total'] ?? null;
+                if ($total === null) {
+                    $qty   = (int) ($row['quantity'] ?? 0);
+                    $unit  = (int) ($row['unit_price'] ?? 0);
+                    $total = max(0, $qty) * max(0, $unit);
+                }
+                $total = max(0.0, (float) $total);
+                if ($item === '' && $total <= 0) continue;
+                $expenseRows[] = ['item' => $item !== '' ? $item : 'Pengeluaran', 'total' => $total];
+            }
+        }
+        usort($expenseRows, fn($a, $b) => ($b['total'] ?? 0) <=> ($a['total'] ?? 0));
+
+        if ($referralDiscountTotal > 0) {
+            $expenseRows[] = [
+                'item'  => 'Diskon Kode Referral (' . $referralPayments->count() . ' peserta)',
+                'total' => $referralDiscountTotal,
+            ];
+        }
+
+        $expenseTotal = (float) array_sum(array_map(fn($r) => (float) ($r['total'] ?? 0), $expenseRows));
+        $profit       = $revenueTotal - $expenseTotal;
+        $unitPrice    = $transactionsCount > 0
+            ? (float) round($revenueTotal / $transactionsCount)
+            : (float) ($course->price ?? 0);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Financial detail course',
+            'data'    => [
+                'course' => [
+                    'id'     => $course->id,
+                    'name'   => $course->name,
+                    'status' => $course->status,
+                    'price'  => (float) $course->price,
+                ],
+                'period' => [
+                    'from' => $from->toDateString(),
+                    'to'   => $to->toDateString(),
+                ],
+                'stats' => [
+                    'participants'   => $participantsCount,
+                    'transactions'   => $transactionsCount,
+                    'unit_price'     => $unitPrice,
+                    'revenue_total'  => $revenueTotal,
+                    'expense_total'  => $expenseTotal,
+                    'profit'         => $profit,
+                    'profit_status'  => $profit >= 0 ? 'Menguntungkan' : 'Rugi',
+                ],
+                'income_breakdown'  => $incomeRows,
+                'expense_breakdown' => $expenseRows,
+            ],
+        ]);
+    }
+
     public function show(Request $request)
     {
         $courseId = (int) $request->query('course_id', 0);
         if ($courseId <= 0) {
             abort(404);
         }
-
         $course = Course::query()
             ->select('id', 'name', 'status', 'price', 'discount_percent', 'discount_start', 'discount_end', 'expenses_json', 'created_at')
             ->findOrFail($courseId);
@@ -134,7 +258,7 @@ class CourseRevenueDetailController extends Controller
         $expenseTotal = (float) array_sum(array_map(fn ($r) => (float) ($r['total'] ?? 0), $expenseRows));
 
         $profit = (float) ($revenueTotal - $expenseTotal);
-        $profitStatus = $profit >= 0 ? 'Profitable' : 'Loss';
+        $profitStatus = $profit >= 0 ? 'Menguntungkan' : 'Rugi';
 
         $viewData = [
             'course' => $course,

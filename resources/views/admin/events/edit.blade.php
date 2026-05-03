@@ -187,7 +187,7 @@
 
                             <div class="mb-3">
                                 <label for="deskripsi" class="form-label fw-semibold">Event Description <span class="text-danger">*</span></label>
-                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{!! old('description', $event->description ?? '') !!}</textarea>
+                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ strip_tags(old('description', $event->description ?? '')) }}</textarea>
                                 <div class="form-text">Explain the event details: topic, target participants, brief agenda, and benefits.</div>
                             </div>
 
@@ -202,10 +202,10 @@
                                         class="text-danger">*</span></label>
                                 <div class="d-flex align-items-center gap-2">
                                     <input type="time" name="event_time" id="masuk1" class="form-control" required
-                                        value="{{ old('event_time', $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '') }}" placeholder="00:00">
+                                        value="{{ old('event_time', $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : '') }}">
                                     <span>s/d</span>
                                     <input type="time" name="event_time_end" id="masuk2" class="form-control"
-                                        value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}" placeholder="00:00">
+                                        value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}">
                                 </div>
                                 <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                             </div>
@@ -271,7 +271,7 @@
                                 <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addBenefitRow"><i
                                         class="bi bi-plus-circle me-1"></i>Tambah Benefit</button>
                                 <input type="hidden" name="benefit" id="benefit"
-                                    value="{{ old('benefit', $event->benefit) }}">
+                                    value="{{ old('benefit', is_array($event->benefit) ? implode('|', $event->benefit) : ($event->benefit ?? '')) }}">
                                 <div class="form-text">Tambah satu per satu; akan digabung otomatis saat disimpan.</div>
                             </div>
                             <div class="mb-3 {{ trim($defaultPlaceName) !== '' ? '' : 'd-none' }}" id="placeNameGroup">
@@ -304,7 +304,7 @@
                             <div class="mb-3">
                                 <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                 <textarea name="terms_and_conditions" id="terms" class="form-control"
-                                    rows="6">{!! old('terms_and_conditions', $event->terms_and_conditions ?? '') !!}</textarea>
+                                    rows="6">{{ strip_tags(old('terms_and_conditions', $event->terms_and_conditions ?? '')) }}</textarea>
                                 <div class="form-text">Optional. Write rules/requirements for participants (refunds, certificate terms, etc.).</div>
                             </div>
                             <div class="mb-3">
@@ -326,9 +326,9 @@
                                             @foreach($existingSchedule as $i => $row)
                                                 <tr>
                                                     <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][start]" value="{{ $row['start'] ?? '' }}" placeholder="00:00"></td>
+                                                            name="schedule[{{ $i }}][start]" value="{{ $row['start'] ?? '' }}"></td>
                                                     <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][end]" value="{{ $row['end'] ?? '' }}" placeholder="00:00"></td>
+                                                            name="schedule[{{ $i }}][end]" value="{{ $row['end'] ?? '' }}"></td>
                                                     <td><input type="text" class="form-control form-control-sm"
                                                             name="schedule[{{ $i }}][title]" placeholder="Nama kegiatan"
                                                             value="{{ $row['title'] ?? '' }}"></td>
@@ -579,20 +579,6 @@
                     });
                 }
             } catch (_) { }
-
-            // Initialize Timepicker (Flatpickr 24h)
-            window.initTimePicker = function(selector) {
-                if (!window.flatpickr) return;
-                flatpickr(selector, {
-                    enableTime: true,
-                    noCalendar: true,
-                    dateFormat: "H:i",
-                    time_24hr: true,
-                    allowInput: true,
-                    disableMobile: true
-                });
-            }
-            initTimePicker('.js-timepicker');
 
             // Auto-show edit modal when visiting the edit page
             try {
@@ -1052,17 +1038,10 @@
             if (scheduleTableBody) scheduleIndex = scheduleTableBody.querySelectorAll('tr').length;
             function createScheduleRow(idx) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td><input type="text" class="form-control form-control-sm js-timepicker" name="schedule[${idx}][start]" placeholder="00:00"></td><td><input type="text" class="form-control form-control-sm js-timepicker" name="schedule[${idx}][end]" placeholder="00:00"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
+                tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
                 return tr;
             }
-            function addScheduleRow() { 
-                if (!scheduleTableBody) return; 
-                const row = createScheduleRow(scheduleIndex++);
-                scheduleTableBody.appendChild(row); 
-                if (typeof initTimePicker === 'function') {
-                    initTimePicker(row.querySelectorAll('.js-timepicker'));
-                }
-            }
+            function addScheduleRow() { if (!scheduleTableBody) return; console.debug('addScheduleRow()', scheduleIndex); scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
             // prefer delegated click so handler works even if button moves or is re-rendered
             document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addScheduleRow')) { console.debug('delegated addScheduleRow click'); addScheduleRow(); } });
             // also attach directly to the button when available (reliability across browsers/modal states)

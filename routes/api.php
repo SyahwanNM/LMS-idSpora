@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EventCertificateController;
+use App\Http\Controllers\Api\CourseCertificateController;
 use App\Http\Controllers\Api\EventAttendanceController;
 use App\Http\Controllers\Admin\CourseReportController as AdminCourseReportController;
 use App\Http\Controllers\Api\PaymentController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\Admin\EventGrowthReportController as AdminEventGrowthReportController;
 use App\Http\Controllers\Api\Trainer\EventController as TrainerEventController;
 use App\Http\Controllers\Api\Trainer\EventModuleSubmissionController as TrainerEventModuleSubmissionController;
+use App\Http\Controllers\Api\Trainer\CourseSubmissionController as TrainerCourseSubmissionController;
 
 
 // Throttle login to mitigate brute-force attempts (10 req/min per IP or user)
@@ -108,6 +110,19 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
         ->whereNumber('event')
         ->name('api.events.certificate.download');
 
+    // Course certificates
+    Route::get('/me/course-certificates', [CourseCertificateController::class, 'index']);
+    Route::get('/courses/{course}/certificate', [CourseCertificateController::class, 'show'])->whereNumber('course');
+    Route::get('/courses/{course}/certificate/download', [CourseCertificateController::class, 'download'])
+        ->whereNumber('course')
+        ->name('api.courses.certificate.download');
+
+    // Midtrans payment endpoints untuk course
+    Route::get('/courses/{course}/midtrans/pending-order', [PaymentController::class, 'coursePendingOrder'])->whereNumber('course');
+    Route::get('/courses/{course}/midtrans/snap-token',    [PaymentController::class, 'courseSnapToken'])->whereNumber('course');
+    // Finalize/refresh by order_id (called from onClose/onSuccess after Snap popup)
+    Route::post('/courses/midtrans/finalize/{orderId}',    [PaymentController::class, 'refreshCoursePayment']);
+
     // Event attendance (QR scan)
     Route::get('/events/{event}/attendance/status', [EventAttendanceController::class, 'status'])->whereNumber('event');
     Route::get('/events/{event}/attendance/qr-info', [EventAttendanceController::class, 'qrInfo'])->whereNumber('event');
@@ -124,6 +139,9 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
         // Module submissions (upload for admin approval)
         Route::get('event-module-submissions', [TrainerEventModuleSubmissionController::class, 'index']);
         Route::post('events/{event}/module-submissions', [TrainerEventModuleSubmissionController::class, 'store']);
+
+        // Course submissions: trainer kirim daftar judul → otomatis buat course + clone template modul
+        Route::post('course-submissions', [TrainerCourseSubmissionController::class, 'store']);
     });
 });
 
@@ -136,9 +154,18 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->
 
     // Events CRUD
     Route::apiResource('events', AdminEventController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    // Upload dokumen operasional event (virtual background & absensi)
+    Route::post('events/{event}/documents', [AdminEventController::class, 'uploadDocuments'])->whereNumber('event');
+    // Trainer module submissions: list, approve, reject
+    Route::get('events/{event}/trainer-modules', [AdminEventController::class, 'listModules'])->whereNumber('event');
+    Route::post('events/{event}/trainer-modules/{module}/approve', [AdminEventController::class, 'approveModule'])->whereNumber('event')->whereNumber('module');
+    Route::post('events/{event}/trainer-modules/{module}/reject', [AdminEventController::class, 'rejectModule'])->whereNumber('event')->whereNumber('module');
 
     // Courses CRUD
     Route::apiResource('courses', AdminCourseController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    // Publish / Unpublish course
+    Route::post('courses/{course}/publish',   [AdminCourseController::class, 'publish'])->whereNumber('course');
+    Route::post('courses/{course}/unpublish', [AdminCourseController::class, 'unpublish'])->whereNumber('course');
 
     // Course templates CRUD (versioned blueprint for courses)
     Route::apiResource('course-templates', AdminCourseTemplateController::class)
@@ -164,6 +191,9 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->
     Route::get('reports/event-revenue', function (\Illuminate\Http\Request $request) {
         return app(\App\Http\Controllers\Admin\AdminController::class)->eventRevenueApi($request);
     })->name('api.admin.reports.event-revenue');
+
+    // Course revenue detail (financial breakdown per course)
+    Route::get('courses/{course}/revenue-detail', [\App\Http\Controllers\Admin\CourseRevenueDetailController::class, 'apiShow'])->whereNumber('course');
 
     // Reports
     Route::get('reports/events/growth', AdminEventGrowthReportController::class);
