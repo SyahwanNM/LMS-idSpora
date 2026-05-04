@@ -30,4 +30,13 @@ class TrainerNotification extends Model
     {
         return $this->belongsTo(User::class, 'trainer_id');
     }
+
+    public function effectiveInvitationStatus(): string
+    {
+        if ($this->expires_at && $this->expires_at->isPast() && $this->invitation_status === 'pending') {
+            return 'expired';
+        }
+
+        return (string) ($this->data['invitation_status'] ?? $this->invitation_status ?? 'pending');
+    }
 }

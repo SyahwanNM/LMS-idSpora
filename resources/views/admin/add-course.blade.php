@@ -61,8 +61,13 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-dark" for="course-trainer">Trainer <span class="text-danger">*</span></label>
-                                <select id="course-trainer" name="trainer_id" class="form-select" required data-selected="{{ old('trainer_id') }}">
+                                <select id="course-trainer" name="trainer_id" class="form-select" required>
                                     <option value="" selected disabled>Choose trainer</option>
+                                    @foreach($trainers as $trainer)
+                                        <option value="{{ $trainer->id }}" {{ old('trainer_id') == $trainer->id ? 'selected' : '' }}>
+                                            {{ $trainer->name }} ({{ $trainer->email }})
+                                        </option>
+                                    @endforeach
                                 </select>
                                 <div class="sanity-msg" data-for="course-trainer"></div>
                             </div>
@@ -85,17 +90,13 @@
                             @if(isset($categories) && $categories->count())
                             <div class="col-md-6">
                                 <label class="form-label text-dark" for="course-category">Category <span class="text-danger">*</span></label>
-                                <div style="position:relative;">
-                                    <input type="text" id="course-category-input" class="form-control" placeholder="Type to search category..." autocomplete="off">
-                                    <input type="hidden" id="course-category" name="category_id">
-                                    <input type="hidden" id="course-category-name" name="category_name">
-                                    <ul id="category-suggestions" style="display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; z-index:999; list-style:none; margin:0; padding:4px 0; max-height:180px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.1);">
-                                        @foreach($categories as $cat)
-                                        <li data-id="{{ $cat->id }}" data-name="{{ $cat->name }}" style="padding:5px 14px; cursor:pointer; font-size:13px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">{{ $cat->name }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                                <div class="sanity-msg" data-for="course-category" style="margin-top: -5px;"></div>
+                                <select id="course-category" name="category_id" class="form-select" required>
+                                    <option value="" selected disabled>Pilih Kategori</option>
+                                    @foreach($categories as $cat)
+                                        <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="sanity-msg" data-for="course-category"></div>
                             </div>
                             @else
                             <input type="hidden" name="category_id" value="1">
@@ -288,65 +289,6 @@
     })();
     </script>
 
-    <script>
-        (function(){
-            const inp = document.getElementById('course-category-input');
-            const hidden = document.getElementById('course-category');
-            const hiddenName = document.getElementById('course-category-name');
-            const list = document.getElementById('category-suggestions');
-            
-            if (inp && list) {
-                const allItems = Array.from(list.querySelectorAll('li'));
-
-                function showSuggestions() {
-                    const q = inp.value.toLowerCase();
-                    let any = false;
-                    allItems.forEach(li => {
-                        const match = li.dataset.name.toLowerCase().includes(q);
-                        li.style.display = match ? '' : 'none';
-                        if (match) any = true;
-                    });
-                    list.style.display = any ? 'block' : 'none';
-                }
-
-                inp.addEventListener('input', function() {
-                    hidden.value = '';
-                    hiddenName.value = '';
-                    showSuggestions();
-                });
-
-                inp.addEventListener('focus', showSuggestions);
-                inp.addEventListener('click', showSuggestions);
-
-                inp.addEventListener('blur', function() {
-                    const val = this.value.trim();
-                    if (val && !hidden.value) {
-                        hiddenName.value = val;
-                    }
-                    setTimeout(() => { list.style.display = 'none'; }, 250);
-                });
-
-                list.addEventListener('mousedown', function(e) {
-                    const li = e.target.closest('li');
-                    if (!li) return;
-                    e.preventDefault();
-                    inp.value = li.dataset.name;
-                    hidden.value = li.dataset.id;
-                    hiddenName.value = '';
-                    list.style.display = 'none';
-                    inp.classList.remove('is-invalid');
-                    const m = document.querySelector('.sanity-msg[data-for="course-category"]');
-                    if (m) { m.textContent = ''; m.classList.remove('show'); }
-                });
-
-                document.addEventListener('click', function(e) {
-                    if (!inp.contains(e.target) && !list.contains(e.target)) {
-                        list.style.display = 'none';
-                    }
-                });
-            }
-        })();
-    </script>
 
     <script>
         (function() {
@@ -1379,43 +1321,6 @@
             };
         })();
 
-        // Trainer dropdown - load from admin JSON endpoint
-        (function() {
-            const trainerSelect = document.getElementById('course-trainer');
-            if (!trainerSelect) return;
-
-            const selectedTrainerId = (trainerSelect.getAttribute('data-selected') || '').trim();
-
-            const endpoint = '/admin/api/trainers';
-            fetch(endpoint, {
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'same-origin'
-                })
-                .then((r) => r.ok ? r.json() : Promise.reject(r))
-                .then((json) => {
-                    const trainers = Array.isArray(json?.data) ? json.data : [];
-                    if (trainers.length === 0) {
-                        trainerSelect.innerHTML = '<option value="" selected disabled>Belum ada trainer</option>';
-                        return;
-                    }
-                    trainerSelect.innerHTML = '<option value="" selected disabled>Choose trainer</option>';
-                    trainers.forEach((t) => {
-                        if (!t || typeof t.id === 'undefined') return;
-                        const opt = document.createElement('option');
-                        opt.value = String(t.id);
-                        opt.textContent = (t.name || ('Trainer #' + t.id));
-                        if (selectedTrainerId !== '' && opt.value === selectedTrainerId) {
-                            opt.selected = true;
-                        }
-                        trainerSelect.appendChild(opt);
-                    });
-                })
-                .catch(() => {
-                    trainerSelect.innerHTML = '<option value="" selected disabled>Gagal memuat trainer</option>';
-                });
-        })();
 
             // File previews (small box)
             (function(){

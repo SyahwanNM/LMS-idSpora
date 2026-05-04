@@ -60,7 +60,8 @@ Route::get('admin/course-builder', function () {
 // Legacy Add Course page (standalone view) with categories for the form
 Route::get('/admin/add-course', function () {
     $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
-    return view('admin/add-course', compact('categories'));
+    $trainers = \App\Models\User::where('role', 'trainer')->orderBy('name')->get(['id', 'name', 'email']);
+    return view('admin/add-course', compact('categories', 'trainers'));
 })->name('admin.add-course');
 Route::get('/admin/view-modul-course', function () {
     return view('admin/view-modul-course');

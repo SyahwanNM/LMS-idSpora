@@ -829,7 +829,7 @@
                     $authUser = Auth::user();
                     $registration = isset($event) && $authUser ? $event->registrations()->where('user_id', $authUser->id)->first() : null;
                     $isRegistered = $registration && $registration->status === 'active';
-                    $eventDate = isset($event) && $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
+                    $eventDate = isset($event) && $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date, config('app.timezone'))) : null;
                     $parseEventTime = function ($date, $raw) {
                         if (empty($raw))
                             return null;
@@ -844,7 +844,7 @@
                         // If includes date part already, parse directly
                         if (preg_match('/\d{4}-\d{2}-\d{2}/', $norm)) {
                             try {
-                                return \Carbon\Carbon::parse($norm);
+                                return \Carbon\Carbon::parse($norm, config('app.timezone'));
                             } catch (\Throwable $e) {
                                 return null;
                             }
@@ -853,14 +853,14 @@
                         if ($date) {
                             $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : (string) $date;
                             try {
-                                return \Carbon\Carbon::parse($dateStr . ' ' . $norm);
+                                return \Carbon\Carbon::parse($dateStr . ' ' . $norm, config('app.timezone'));
                             } catch (\Throwable $e) {
                                 return null;
                             }
                         }
                         // Fallback parse
                         try {
-                            return \Carbon\Carbon::parse($norm);
+                            return \Carbon\Carbon::parse($norm, config('app.timezone'));
                         } catch (\Throwable $e) {
                             return null;
                         }
@@ -934,7 +934,7 @@
             <section class="detail-box-right">
                 @php
                     $eventObj = isset($event) ? $event : null;
-                    $nowTs = \Carbon\Carbon::now();
+                    $nowTs = \Carbon\Carbon::now(config('app.timezone'));
                     // Event states
                     // Finished if now is after the event end time (or end of event day if time end missing)
                     $eventFinished = false;
@@ -1472,8 +1472,8 @@
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
                     $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    // Unlock saat event selesai dan user terdaftar (meski belum ada modul)
-                    $moduleUnlocked = $isRegistered && $eventIsFinished;
+                    // Unlock saat user selesai mengisi feedback (sertifikat dan modul)
+                    $moduleUnlocked = $isRegistered && isset($hasFeedback) && $hasFeedback;
                 @endphp
                 @if($isRegistered || $approvedModules->isNotEmpty())
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
@@ -1491,8 +1491,8 @@
                         <h6>Modules</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
-                        @elseif(!$eventIsFinished)
-                            <p>Available after event completion</p>
+                        @elseif(!isset($hasFeedback) || !$hasFeedback)
+                            <p>Available after send feedback.</p>
                         @elseif($approvedModules->isEmpty())
                             <p>Not available</p>
                         @else
@@ -1562,7 +1562,7 @@
                 </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventIsFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
@@ -1735,7 +1735,7 @@
                     @endif
                 </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}"
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventFinished) ? '' : 'locked' }}"
                     style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1753,7 +1753,7 @@
                         @endif
                     </div>
 
-                    @if($isRegistered && $attendanceSubmitted)
+                    @if($isRegistered && $attendanceSubmitted && $eventFinished)
                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
                             @if(isset($hasFeedback) && $hasFeedback)
@@ -1780,7 +1780,7 @@
             </div>
         </section>
 
-        @if($isRegistered && $attendanceSubmitted)
+        @if($isRegistered && $attendanceSubmitted && $eventFinished)
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
                     <div class="d-flex justify-content-between align-items-center"

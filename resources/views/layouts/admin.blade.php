@@ -54,7 +54,7 @@
                         <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
                     </li>
                     @endif
-                    @unless(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*'))
+                    @unless(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*') || request()->routeIs('admin.reports'))
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
                     </li>

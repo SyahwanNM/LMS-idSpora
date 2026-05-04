@@ -115,82 +115,15 @@
                             </div>
                         </div>
 
-                        <!-- Hidden/Visible Category to satisfy required -->
-                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
-                            <div>
-                                <label for="category_id_input"
-                                    class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                                <div style="position:relative;">
-                                    <input type="text" id="category_id_input" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white" placeholder="Type to search category..." autocomplete="off"
-                                        value="{{ old('category_id', $course->category_id) ? ($categories->firstWhere('id', old('category_id', $course->category_id))?->name ?? '') : '' }}">
-                                    <input type="hidden" name="category_id" id="category_id" value="{{ old('category_id', $course->category_id) }}">
-                                    <input type="hidden" name="category_name" id="category_name_hidden" value="">
-                                    <ul id="edit-category-suggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #dee2e6; border-radius:6px; z-index:999; list-style:none; margin:2px 0 0; padding:4px 0; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.1);">
-                                        @foreach($categories as $cat)
-                                        <li data-id="{{ $cat->id }}" data-name="{{ $cat->name }}" style="padding:8px 14px; cursor:pointer; font-size:14px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">{{ $cat->name }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                                <script>
-                                (function(){
-                                    const inp = document.getElementById('category_id_input');
-                                    const hidden = document.getElementById('category_id');
-                                    const hiddenName = document.getElementById('category_name_hidden');
-                                    const list = document.getElementById('edit-category-suggestions');
-                                    const allItems = Array.from(list.querySelectorAll('li'));
-
-                                    inp.addEventListener('input', function() {
-                                        const q = this.value.toLowerCase();
-                                        hidden.value = '';
-                                        hiddenName.value = '';
-                                        let any = false;
-                                        allItems.forEach(li => {
-                                            const match = li.dataset.name.toLowerCase().includes(q);
-                                            li.style.display = match ? '' : 'none';
-                                            if (match) any = true;
-                                        });
-                                        list.style.display = (q && any) ? 'block' : 'none';
-                                    });
-
-                                    inp.addEventListener('focus', function() {
-                                        if (!this.value) {
-                                            allItems.forEach(li => li.style.display = '');
-                                            list.style.display = 'block';
-                                        }
-                                    });
-
-                                    inp.addEventListener('blur', function() {
-                                        const val = this.value.trim();
-                                        if (val && !hidden.value) {
-                                            hiddenName.value = val;
-                                        }
-                                        setTimeout(() => { list.style.display = 'none'; }, 150);
-                                    });
-
-                                    list.addEventListener('click', function(e) {
-                                        const li = e.target.closest('li');
-                                        if (!li) return;
-                                        inp.value = li.dataset.name;
-                                        hidden.value = li.dataset.id;
-                                        hiddenName.value = '';
-                                        list.style.display = 'none';
-                                    });
-
-                                    document.addEventListener('click', function(e) {
-                                        if (!inp.contains(e.target) && !list.contains(e.target)) {
-                                            list.style.display = 'none';
-                                        }
-                                    });
-
-                                    // Sync on form submit
-                                    inp.closest('form')?.addEventListener('submit', function() {
-                                        if (!hidden.value.trim() && inp.value.trim()) {
-                                            hiddenName.value = inp.value.trim();
-                                        }
-                                    });
-                                })();
-                                </script>
-                            </div>
+                        <div>
+                            <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                            <select name="category_id" id="category_id" required
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                <option value="" disabled>Select Category</option>
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ old('category_id', $course->category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
 
                         <!-- Trainer Assignment -->
@@ -460,7 +393,12 @@
         const grid          = document.getElementById('module-titles-grid');
 
         function renderModuleTitles(level) {
-            const count = levelModules[level] || 0;
+            let count = levelModules[level] || 0;
+            // Ensure we show at least the number of units that already exist in the database
+            const unitKeys = Object.keys(existingTitles).map(k => parseInt(k));
+            const maxExistingUnit = unitKeys.length > 0 ? Math.max(...unitKeys) : 0;
+            if (maxExistingUnit > count) count = maxExistingUnit;
+
             grid.innerHTML = '';
             if (!count) { section.style.display = 'none'; return; }
 
@@ -472,7 +410,7 @@
                 col.innerHTML = `
                     <label class="form-label text-dark small" for="unit-title-${i}">Module ${i}</label>
                     <input id="unit-title-${i}" name="unit_titles[${i}]" type="text"
-                           class="form-control form-control-sm"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                            placeholder="Title module ${i}"
                            value="${existing.replace(/"/g, '&quot;')}">`;
                 grid.appendChild(col);

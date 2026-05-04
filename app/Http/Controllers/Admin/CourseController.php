@@ -1058,6 +1058,21 @@ class CourseController extends Controller
             $this->notifyTrainerCourseInvitation($course, (int) $course->trainer_id);
         }
 
+        // Save unit titles from form input
+        $unitTitlesInput = $request->input('unit_titles', []);
+        $unitCount = 0;
+        if (is_array($unitTitlesInput)) {
+            foreach ($unitTitlesInput as $unitNo => $title) {
+                $title = trim((string) $title);
+                if ($title === '') continue;
+                \App\Models\CourseUnit::updateOrCreate(
+                    ['course_id' => $course->id, 'unit_no' => (int) $unitNo],
+                    ['title' => $title]
+                );
+                $unitCount++;
+            }
+        }
+
         // Create modules from payload
         $modulesPayload = json_decode($request->input('modules_payload', '[]'), true);
         if (is_array($modulesPayload) && !empty($modulesPayload)) {
@@ -1141,20 +1156,12 @@ class CourseController extends Controller
                 }
             }
         } elseif ($template) {
-            app(CourseTemplateCloneService::class)
-                ->cloneToCourse($course, $template, replaceExisting: false);
-        }
-
-        // Save unit titles from form input
-        $unitTitles = $request->input('unit_titles', []);
-        if (is_array($unitTitles)) {
-            foreach ($unitTitles as $unitNo => $title) {
-                $title = trim((string) $title);
-                if ($title === '') continue;
-                \App\Models\CourseUnit::updateOrCreate(
-                    ['course_id' => $course->id, 'unit_no' => (int) $unitNo],
-                    ['title' => $title]
-                );
+            if ($unitCount > 0) {
+                app(CourseTemplateCloneService::class)
+                    ->cloneSlotsByUnitCount($course, $template, $unitCount);
+            } else {
+                app(CourseTemplateCloneService::class)
+                    ->cloneToCourse($course, $template, replaceExisting: false);
             }
         }
 
@@ -1623,14 +1630,12 @@ class CourseController extends Controller
         // Save Academic Unit header titles (admin-managed)
         $unitTitles = $request->input('unit_titles');
         if (is_array($unitTitles)) {
-            $unitCount = (int) ceil(max(0, (int) $course->modules()->count()) / 3);
+            $maxUnitNo = 0;
             foreach ($unitTitles as $unitNoRaw => $titleRaw) {
                 $unitNo = (int) $unitNoRaw;
-                if ($unitNo <= 0 || ($unitCount > 0 && $unitNo > $unitCount)) {
-                    continue;
-                }
+                if ($unitNo <= 0) continue;
+                
                 $title = trim((string) $titleRaw);
-
                 if ($title === '') {
                     \App\Models\CourseUnit::query()
                         ->where('course_id', $course->id)
@@ -1643,6 +1648,54 @@ class CourseController extends Controller
                     ['course_id' => $course->id, 'unit_no' => $unitNo],
                     ['title' => $title]
                 );
+                if ($unitNo > $maxUnitNo) $maxUnitNo = $unitNo;
+            }
+
+            // If we added new units, ensure modules exist for them
+            if ($maxUnitNo > 0) {
+                $currentModuleCount = (int) $course->modules()->count();
+                $expectedModuleCount = $maxUnitNo * 3;
+                
+                if ($currentModuleCount < $expectedModuleCount && $template) {
+                    $hasModuleChanges = true;
+                    $diff = $expectedModuleCount - $currentModuleCount;
+                    $unitsToAdd = (int) ceil($diff / 3);
+                    
+                    // We can't easily use cloneSlotsByUnitCount here because it starts from order_no 1.
+                    // Let's manually append.
+                    $templateModules = $template->modules()->orderBy('order_no')->get();
+                    if ($templateModules->isNotEmpty()) {
+                        $rows = [];
+                        for ($i = $currentModuleCount; $i < $expectedModuleCount; $i++) {
+                            $blueprint = $templateModules->get($i % $templateModules->count());
+                            $uNo = (int) floor($i / 3) + 1;
+                            $typeLabel = match($blueprint->type) {
+                                'pdf' => 'PDF Material',
+                                'video' => 'Video Lesson',
+                                'quiz' => 'Quiz',
+                                default => 'Material'
+                            };
+
+                            $rows[] = [
+                                'course_id' => $course->id,
+                                'order_no' => $i + 1,
+                                'title' => "Module $uNo - $typeLabel",
+                                'description' => $blueprint->description,
+                                'type' => (string) $blueprint->type,
+                                'content_url' => '',
+                                'file_name' => null,
+                                'mime_type' => null,
+                                'file_size' => 0,
+                                'is_free' => false,
+                                'preview_pages' => 0,
+                                'duration' => (int) ($blueprint->duration ?? 0),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                        CourseModule::insert($rows);
+                    }
+                }
             }
         }
 

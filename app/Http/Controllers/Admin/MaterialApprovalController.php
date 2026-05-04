@@ -319,10 +319,13 @@ class MaterialApprovalController extends Controller
         $unitTitles = $material->units->pluck('title', 'unit_no');
 
         // Grouping logic (consistent with studio: chunk by 3)
+        // If course has units, ensure we have at least that many chunks
         $chunks = $allModules->chunk(3)->values();
+        $unitCount = max($chunks->count(), $material->units->count());
         $unitSummaries = [];
 
-        foreach ($chunks as $index => $unitModules) {
+        for ($index = 0; $index < $unitCount; $index++) {
+            $unitModules = $chunks->get($index, collect());
             $unitNo = $index + 1;
             
             // A module is considered "uploaded/active" if it has a file, description, or is a quiz with questions.

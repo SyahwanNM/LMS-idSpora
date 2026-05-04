@@ -374,28 +374,10 @@ class TrainerController extends Controller
             return;
         }
 
-        // Coba ambil template dari course, atau fallback ke template default berdasarkan level
-        $template = null;
-
-        if ((int) ($course->template_id ?? 0) > 0) {
-            $template = $course->template()->with('modules')->first();
-        }
-
-        // Fallback: cari template aktif berdasarkan level course
-        if (!$template || $template->modules->isEmpty()) {
-            $level = $course->level ?: 'beginner';
-            $template = \App\Models\CourseTemplate::query()
-                ->where('level', $level)
-                ->where('status', 'active')
-                ->withCount('modules')
-                ->having('modules_count', '>', 0)
-                ->orderByDesc('version')
-                ->with('modules')
-                ->first();
-        }
-
-        if (!$template || $template->modules->isEmpty()) {
-            return;
+        $template = \App\Models\CourseTemplate::find($course->template_id);
+        if (!$template) {
+            $template = \App\Models\CourseTemplate::where('level', $course->level)->first();
+            if (!$template) return;
         }
 
         // Assign template ke course jika belum ada
@@ -405,43 +387,13 @@ class TrainerController extends Controller
             $course->saveQuietly();
         }
 
-        // Hitung berapa unit yang sudah punya judul — clone hanya sejumlah itu
-        // Jika belum ada unit titles sama sekali, clone semua dari template
         $unitCount = (int) $course->units()->count();
 
         if ($unitCount > 0) {
-            // Clone hanya slot untuk unit yang sudah punya judul
-            $slotsNeeded = $unitCount * 3;
-            $templateSlots = $template->modules()
-                ->orderBy('order_no')
-                ->take($slotsNeeded)
-                ->get();
-
-            if ($templateSlots->isEmpty()) {
-                return;
-            }
-
-            $rows = $templateSlots->map(fn($m) => [
-                'course_id'     => $course->id,
-                'order_no'      => (int) $m->order_no,
-                'title'         => (string) $m->title,
-                'description'   => $m->description,
-                'type'          => (string) $m->type,
-                'content_url'   => '',
-                'file_name'     => null,
-                'mime_type'     => null,
-                'file_size'     => 0,
-                'is_free'       => false,
-                'preview_pages' => 0,
-                'duration'      => (int) ($m->duration ?? 0),
-                'created_at'    => now(),
-                'updated_at'    => now(),
-            ])->values()->all();
-
-            \App\Models\CourseModule::insert($rows);
+            app(\App\Services\CourseTemplateCloneService::class)
+                ->cloneSlotsByUnitCount($course, $template, $unitCount);
         } else {
-            // Tidak ada unit titles → clone semua dari template (perilaku lama)
-            app(CourseTemplateCloneService::class)
+            app(\App\Services\CourseTemplateCloneService::class)
                 ->cloneToCourse($course, $template, replaceExisting: false);
         }
     }
@@ -1417,8 +1369,8 @@ class TrainerController extends Controller
         $this->ensureTemplateStructureExists($course);
         $this->ensureQuizSlotPerUnit($course);
 
-        // 1. Ambil semua modul course, lalu pecah per Bab (chunk 3)
-        $unitIndex = $request->query('unit', 0); // Default ke Bab 1 (index 0)
+        // 1. Ambil semua modul course
+        $unitIndex = (int) $request->query('unit', 0); // Default ke Bab 1 (index 0)
         $allModules = \App\Models\CourseModule::where('course_id', $id)
             ->with([
                 'quizQuestions' => function ($query) {
@@ -1432,9 +1384,20 @@ class TrainerController extends Controller
             ->withCount('quizQuestions')
             ->orderBy('order_no', 'asc')
             ->get();
-        $chunks = $allModules->chunk(3)->values();
 
-        // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
+        // 2. Tentukan jumlah Bab (Unit)
+        // Jika ada CourseUnit, gunakan itu. Jika tidak, gunakan chunk 3.
+        $units = \App\Models\CourseUnit::where('course_id', $id)->orderBy('unit_no')->get();
+        if ($units->isNotEmpty()) {
+            $unitCount = $units->count();
+            // Group modules by units (assuming 3 modules per unit as convention)
+            $chunks = $allModules->chunk(3)->values();
+        } else {
+            $chunks = $allModules->chunk(3)->values();
+            $unitCount = $chunks->count();
+        }
+
+        // 3. Ambil modul-modul HANYA untuk Bab yang dipilih
         $activeUnitModules = $chunks->get($unitIndex, collect());
 
         // Hanya tampilkan materi yang sudah diupload untuk bab (unit) yang sedang aktif saja.
@@ -1468,7 +1431,9 @@ class TrainerController extends Controller
             return redirect()->route('trainer.courses')->with('error', 'Silabus untuk bab ini belum tersedia.');
         }
 
-        $unitTitle = "Modul " . ($unitIndex + 1);
+        $unitNo = $unitIndex + 1;
+        $unit = \App\Models\CourseUnit::where('course_id', $id)->where('unit_no', $unitNo)->first();
+        $unitTitle = $unit && !empty($unit->title) ? $unit->title : ("Bab " . $unitNo);
 
         return view('trainer.content-studio', compact(
             'course',

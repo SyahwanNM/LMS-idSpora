@@ -11,6 +11,7 @@
     ];
 
     $courseModules = $course->modules ?? collect();
+    $units = $course->units->sortBy('unit_no');
     $moduleChunks = $courseModules->values()->chunk(3);
 @endphp
 
@@ -131,14 +132,17 @@
                     <p>ACADEMIC UNITS (ADMIN MANAGED)</p>
                 </div>
 
-                @if($moduleChunks->count() > 0)
-                    @foreach($moduleChunks as $idx => $chunk)
+                @if($units->count() > 0)
+                    @foreach($units as $idx => $unit)
+                        @php
+                            $chunk = $moduleChunks->get($idx, collect());
+                        @endphp
                         <div class="unit-card {{ $idx > 0 ? 'compact' : '' }}">
                             <div class="unit-top">
-                                <div class="unit-index {{ $idx > 0 ? 'muted' : '' }}">{{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}
+                                <div class="unit-index {{ $idx > 0 ? 'muted' : '' }}">{{ str_pad($unit->unit_no, 2, '0', STR_PAD_LEFT) }}
                                 </div>
                                 <div class="unit-title">
-                                    <h3>Academic Unit: Module {{ $idx + 1 }}</h3>
+                                    <h3>Academic Unit: {{ $unit->title ?: ('Module ' . $unit->unit_no) }}</h3>
                                     <div class="unit-meta">
                                         <span><i class="bi bi-folder"></i> {{ $chunk->count() }} OPERATIONAL ASSETS</span>
                                     </div>
