@@ -351,11 +351,11 @@
                     <label for="filter-kelola-pertumbuhan" class="filter-label" style="margin-left: -300px;">Action Type</label>
                     <div>
                     <select id="filter-kelola-pertumbuhan" class="filter-input" style="min-width:130px; margin-left:-300px;">
-                        <option value="high-part">All Type</option>
-                        <option value="high-part">High to low Participants</option>
-                        <option value="low-part">Low to high participants</option>
-                        <option value="high-rate">High to low Rating</option>
-                        <option value="low-rate">low to high Rating</option>
+                        <option value="">All Type</option>
+                        <option value="high-part">High to Low Participants</option>
+                        <option value="low-part">Low to High Participants</option>
+                        <option value="high-rate">High to Low Rating</option>
+                        <option value="low-rate">Low to High Rating</option>
                     </select>
                     </div>
                     </div>
@@ -1127,7 +1127,7 @@
                 ch.update();
             };
 
-            const fetchAndRender = async (period) => {
+            let fetchAndRender = async (period) => {
                 const url = new URL(apiUrl, window.location.origin);
                 url.searchParams.set('period', period);
 
@@ -1191,6 +1191,47 @@
                         console.warn(err);
                     }
                 });
+            }
+            // ── Action Type sorting filter ──────────────────────────────
+            const actionFilter = document.getElementById('filter-kelola-pertumbuhan');
+            if (actionFilter) {
+                function sortGrowthTable() {
+                    const sortVal = actionFilter.value;
+                    if (!sortVal || !tbody) return;
+
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    // Don't sort if it's the "no data" placeholder row
+                    if (rows.length <= 1 && rows[0]?.querySelectorAll('td').length <= 1) return;
+
+                    rows.sort((a, b) => {
+                        const cellsA = a.querySelectorAll('td');
+                        const cellsB = b.querySelectorAll('td');
+                        if (sortVal === 'high-part' || sortVal === 'low-part') {
+                            // Participants column is index 5
+                            const valA = parseInt(cellsA[5]?.textContent || '0', 10);
+                            const valB = parseInt(cellsB[5]?.textContent || '0', 10);
+                            return sortVal === 'high-part' ? valB - valA : valA - valB;
+                        }
+                        if (sortVal === 'high-rate' || sortVal === 'low-rate') {
+                            // Rating column is index 6
+                            const valA = parseFloat(cellsA[6]?.textContent || '0');
+                            const valB = parseFloat(cellsB[6]?.textContent || '0');
+                            return sortVal === 'high-rate' ? valB - valA : valA - valB;
+                        }
+                        return 0;
+                    });
+
+                    rows.forEach(r => tbody.appendChild(r));
+                }
+
+                actionFilter.addEventListener('change', sortGrowthTable);
+
+                // Also re-sort after data is fetched from API
+                const origFetchAndRender = fetchAndRender;
+                fetchAndRender = async (period) => {
+                    await origFetchAndRender(period);
+                    sortGrowthTable();
+                };
             }
         })();
     </script>

@@ -136,6 +136,10 @@
         }
 
         @media (max-width: 992px) {
+            html, body {
+                overflow: auto;
+                height: auto;
+            }
             .quiz-take-v3 {
                 flex-direction: column;
                 height: auto;
@@ -310,11 +314,13 @@
     <div class="box_modul_luar quiz-take-v3">
         <!-- LEFT: Sidebar Utama (Course Navigation) -->
         <div class="box_modul_kiri">
-            <div style="background-color: #f4dc21ea; width: 10%; height: 5%; padding: 10px; margin-top: 35px; margin-bottom: 10px; border-radius: 4px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16" style="margin-top: -20px;">
-                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
-                </svg>
-            </div>
+            <a href="{{ isset($course) ? route('course.learn', $course->id) . '?module=' . ($module->id ?? '') : '#' }}" style="text-decoration: none; color: inherit; display: inline-block;">
+                <div style="background-color: #f4dc21ea; width: max-content; padding: 6px 10px; margin-top: 35px; margin-bottom: 10px; margin-left: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                    </svg>
+                </div>
+            </a>
             @php
                 $modulesList = $modules ?? (isset($course) ? ($course->modules ?? collect()) : collect());
                 $modulesList = $modulesList instanceof \Illuminate\Support\Collection ? $modulesList->values() : collect($modulesList)->values();
@@ -483,6 +489,14 @@
                         if (strtolower(trim((string)($m->type ?? ''))) === 'pdf') {
                             $skipInSidebar = true;
                         }
+
+                        // Replace 'Video Lesson' in title with the actual unit title
+                        $mTitle = $m->title ?? 'Materi';
+                        $unitNo = (int) ceil(($m->order_no ?? 0) / 3);
+                        $unit = $course->units->firstWhere('unit_no', $unitNo);
+                        if ($unit && !empty($unit->title)) {
+                            $mTitle = str_replace('Video Lesson', $unit->title, $mTitle);
+                        }
                     @endphp
 
                     @if(!$skipInSidebar)
@@ -490,7 +504,7 @@
                     <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
                         <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $mTitle }}</span>
                             </span>
                             <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
                                 <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
