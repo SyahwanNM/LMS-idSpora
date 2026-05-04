@@ -157,6 +157,7 @@
                     ->whereIn('status', ['active', 'completed', 'expired'])
                     ->exists();
             @endphp
+
             <div class="accordion-box"
                 data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
                 data-active-module-id="{{ $activeModule?->id }}"
