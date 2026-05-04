@@ -187,7 +187,7 @@
 
                             <div class="mb-3">
                                 <label for="deskripsi" class="form-label fw-semibold">Event Description <span class="text-danger">*</span></label>
-                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ strip_tags(old('description', $event->description ?? '')) }}</textarea>
+                                <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{!! old('description', $event->description ?? '') !!}</textarea>
                                 <div class="form-text">Explain the event details: topic, target participants, brief agenda, and benefits.</div>
                             </div>
 
@@ -304,7 +304,7 @@
                             <div class="mb-3">
                                 <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
                                 <textarea name="terms_and_conditions" id="terms" class="form-control"
-                                    rows="6">{{ strip_tags(old('terms_and_conditions', $event->terms_and_conditions ?? '')) }}</textarea>
+                                    rows="6">{!! old('terms_and_conditions', $event->terms_and_conditions ?? '') !!}</textarea>
                                 <div class="form-text">Optional. Write rules/requirements for participants (refunds, certificate terms, etc.).</div>
                             </div>
                             <div class="mb-3">
