@@ -148,6 +148,7 @@ class CourseController extends Controller
         }
 
         $course->load([
+            'units',
             'modules' => function ($q) {
                 $q->orderBy('order_no');
             },
@@ -208,42 +209,47 @@ class CourseController extends Controller
             }
         }
 
-        // Gate: only lock the module immediately after an unpassed quiz
+        // Gate: sequential progression logic
         $passingPercent = 75;
-        if ($currentModule && $currentModule->order_no && $isUserEnrolled) {
-            $prevModule = $modules
-                ->filter(fn($m) => (int) ($m->order_no ?? 0) < (int) $currentModule->order_no)
-                ->sortByDesc('order_no')
-                ->first();
+        if ($currentModule && $isUserEnrolled) {
+            $precedingModules = $modules
+                ->filter(fn($m) => (int) ($m->order_no ?? 0) < (int) ($currentModule->order_no ?? 0))
+                ->sortBy('order_no');
 
-            if ($prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
-                $lastAttempt = QuizAttempt::query()
-                    ->where('user_id', $user->id)
-                    ->where('course_module_id', $prevModule->id)
-                    ->whereNotNull('completed_at')
-                    ->orderByDesc('completed_at')
-                    ->first();
-
-                $passedPrevQuiz = $lastAttempt ? $lastAttempt->isPassed($passingPercent) : false;
-
-                if (!$passedPrevQuiz) {
-                    $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
-                    return redirect()->to($target)
-                        ->with('error', 'You must complete the quiz firstahulu baru bisa lanjut ke tahap selanjutnya.');
+            foreach ($precedingModules as $pm) {
+                $pmType = strtolower(trim((string)($pm->type ?? '')));
+                
+                if ($pmType === 'quiz') {
+                    $attempts = QuizAttempt::where('user_id', $user->id)
+                        ->where('course_module_id', $pm->id)
+                        ->whereNotNull('completed_at')
+                        ->get();
+                    
+                    $passed = $attempts->contains(fn($a) => $a->isPassed($passingPercent));
+                    $attemptCount = $attempts->count();
+                    
+                    if (!$passed) {
+                        $isCurrentQuiz = strtolower(trim((string)($currentModule->type ?? ''))) === 'quiz';
+                        // Lock if: attempts < 3 OR trying to open a quiz
+                        if ($attemptCount < 3 || $isCurrentQuiz) {
+                            $target = route('course.learn', $course->id) . '?module=' . $pm->id;
+                            $msg = $isCurrentQuiz 
+                                ? 'Anda harus meluluskan kuis sebelumnya untuk membuka kuis ini.' 
+                                : 'Silakan selesaikan kuis sebelumnya atau coba hingga 3 kali untuk membuka materi ini.';
+                            return redirect()->to($target)->with('error', $msg);
+                        }
+                    }
                 }
-            }
-
-            if ($prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'video') {
-                $enrollmentId = $enrollment->id ?? 0;
-                $videoProgress = Progress::where('enrollment_id', $enrollmentId)
-                    ->where('course_module_id', $prevModule->id)
-                    ->where('completed', true)
-                    ->exists();
-
-                if (!$videoProgress) {
-                    $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
-                    return redirect()->to($target)
-                        ->with('error', 'Silakan selesaikan video lesson sebelumnya sampai akhir untuk melanjutkan.');
+                
+                if ($pmType === 'video') {
+                    $videoProgress = Progress::where('enrollment_id', $enrollment->id ?? 0)
+                        ->where('course_module_id', $pm->id)
+                        ->where('completed', true)
+                        ->exists();
+                    if (!$videoProgress) {
+                        $target = route('course.learn', $course->id) . '?module=' . $pm->id;
+                        return redirect()->to($target)->with('error', 'Silakan selesaikan video lesson sebelumnya sampai akhir untuk melanjutkan.');
+                    }
                 }
             }
         }
@@ -400,6 +406,7 @@ class CourseController extends Controller
             'type' => 'course_invitation',
             'title' => 'Undangan Menjadi Trainer Course',
             'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
+            'invitation_status' => 'pending',
             'data' => [
                 'entity_type' => 'course',
                 'entity_id' => $course->id,

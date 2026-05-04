@@ -54,9 +54,11 @@
                         <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
                     </li>
                     @endif
+                    @unless(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*'))
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
                     </li>
+                    @endunless
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">

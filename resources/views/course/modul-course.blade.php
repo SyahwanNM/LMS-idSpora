@@ -60,6 +60,7 @@
                 $isFreeLimited = ((string)($freeAccessMode ?? 'all') === 'limit_2');
 
                 $passedQuizModuleIds = [];
+                $quizAttemptCounts = [];
                 if (auth()->check() && $modulesList->isNotEmpty()) {
                     $quizModuleIds = $modulesList
                         ->filter(fn($m) => strtolower(trim((string) ($m->type ?? ''))) === 'quiz')
@@ -73,8 +74,6 @@
                             ->where('user_id', auth()->id())
                             ->whereIn('course_module_id', $quizModuleIds)
                             ->whereNotNull('completed_at')
-                            ->orderByDesc('completed_at')
-                            ->limit(200)
                             ->get();
 
                         $passedQuizModuleIds = $completedAttempts
@@ -83,6 +82,15 @@
                             ->map(fn($id) => (int) $id)
                             ->unique()
                             ->values()
+                            ->all();
+
+                        $quizAttemptCounts = \App\Models\QuizAttempt::query()
+                            ->where('user_id', auth()->id())
+                            ->whereIn('course_module_id', $quizModuleIds)
+                            ->whereNotNull('completed_at')
+                            ->selectRaw('course_module_id, count(*) as total')
+                            ->groupBy('course_module_id')
+                            ->pluck('total', 'course_module_id')
                             ->all();
                     }
                 }
@@ -143,6 +151,12 @@
                 </div>
             @endif
 
+            @php
+                $isEnrolled = auth()->check() && \App\Models\Enrollment::where('user_id', auth()->id())
+                    ->where('course_id', $course->id)
+                    ->whereIn('status', ['active', 'completed', 'expired'])
+                    ->exists();
+            @endphp
             <div class="accordion-box"
                 data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
                 data-active-module-id="{{ $activeModule?->id }}"
@@ -175,10 +189,16 @@
                             $precedingModules = $filteredModules->take($currentIdxInFiltered);
                             foreach ($precedingModules as $pm) {
                                 if (strtolower(trim((string)($pm->type ?? ''))) === 'quiz') {
-                                    if (!in_array((int)$pm->id, $passedQuizModuleIds, true)) {
-                                        $isLocked = true;
-                                        $lockReason = 'quiz';
-                                        break;
+                                    $passed = in_array((int)$pm->id, $passedQuizModuleIds, true);
+                                    $attCount = $quizAttemptCounts[(int)$pm->id] ?? 0;
+                                    
+                                    if (!$passed) {
+                                        // Lock if: attempts < 3 OR current module is also a quiz
+                                        if ($attCount < 3 || $mType === 'quiz') {
+                                            $isLocked = true;
+                                            $lockReason = 'quiz';
+                                            break;
+                                        }
                                     }
                                 }
                                 // Optional: also lock if previous video is not completed
@@ -214,6 +234,14 @@
                         if (strtolower(trim((string)($m->type ?? ''))) === 'pdf') {
                             $skipInSidebar = true;
                         }
+
+
+                        $mTitle = $m->title ?? 'Materi';
+                        $unitNo = (int) ceil($m->order_no / 3);
+                        $unit = $course->units->firstWhere('unit_no', $unitNo);
+                        if ($unit && !empty($unit->title)) {
+                            $mTitle = str_replace('Video Lesson', $unit->title, $mTitle);
+                        }
                     @endphp
 
                     @if(!$skipInSidebar)
@@ -221,7 +249,7 @@
                     <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
                         <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $m->title ?? 'Materi' }}</span>
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $mTitle }}</span>
                             </span>
                             <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
                                 <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
@@ -402,7 +430,15 @@
                     </div>
                 @endif
             @endif
-            <h2 class="judul_modul">{{ $cm->title ?? 'Gambaran Umum' }}</h2>
+            @php
+                $activeMTitle = $cm->title ?? 'Gambaran Umum';
+                $activeUnitNo = (int) ceil(($cm->order_no ?? 0) / 3);
+                $activeUnit = $course->units->firstWhere('unit_no', $activeUnitNo);
+                if ($activeUnit && !empty($activeUnit->title)) {
+                    $activeMTitle = str_replace('Video Lesson', $activeUnit->title, $activeMTitle);
+                }
+            @endphp
+            <h2 class="judul_modul">{{ $activeMTitle }}</h2>
 
             @if(!($isQuiz ?? false))
                 <div class="box_luar_deskripsi_modul">
@@ -442,9 +478,16 @@
                         if ($idx !== false && $idx > 0) {
                             $prev = $modulesList->get($idx - 1);
                             $beforeQuizTitle = $prev?->title ?? null;
+                            if ($beforeQuizTitle) {
+                                $pUnitNo = (int) ceil(($prev->order_no ?? 0) / 3);
+                                $pUnit = $course->units->firstWhere('unit_no', $pUnitNo);
+                                if ($pUnit && !empty($pUnit->title)) {
+                                    $beforeQuizTitle = str_replace('Video Lesson', $pUnit->title, $beforeQuizTitle);
+                                }
+                            }
                         }
                     }
-                    $beforeQuizTitle = $beforeQuizTitle ?: ($cm->title ?? 'materi sebelumnya');
+                    $beforeQuizTitle = $beforeQuizTitle ?: ($activeMTitle ?? 'materi sebelumnya');
 
                     $attempts = collect();
                     $ongoingAttempt = null;
@@ -543,10 +586,17 @@
                         Wait <span id="quizCooldownTimer">...</span>
                         </button>
                             @else
-                                <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
-                                    Start
-                                    <span style="margin-left:8px;">›</span>
-                                </a>
+                                @if(!$isEnrolled)
+                                    <a href="#" id="startQuizBtn" data-trial="1" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
+                                        Start
+                                        <span style="margin-left:8px;">›</span>
+                                    </a>
+                                @else
+                                    <a href="#" id="startQuizBtn" data-start-url="{{ $startUrl }}" class="btn" style="background:#f4c430; color:#1f2937; border-radius:999px; padding:10px 18px; font-weight:700;">
+                                        Start
+                                        <span style="margin-left:8px;">›</span>
+                                    </a>
+                                @endif
                             @endif
                         </div>
                     </div>
@@ -611,7 +661,16 @@
                     }
                 }
 
-                $lockNext = ($cm && ($moduleType === 'quiz') && auth()->check() && !$currentQuizPassed);
+                $lockNext = false;
+                if ($cm && $moduleType === 'quiz' && auth()->check() && !$currentQuizPassed) {
+                    $cmId = (int)$cm->id;
+                    $attCount = $quizAttemptCounts[$cmId] ?? 0;
+                    $nextIsQuiz = $nextModule && strtolower(trim((string)($nextModule->type ?? ''))) === 'quiz';
+                    
+                    if ($attCount < 3 || $nextIsQuiz) {
+                        $lockNext = true;
+                    }
+                }
 
                 $lockNextByFree = false;
                 if (isset($course) && (int)($course->price ?? 0) <= 0 && ((string)($freeAccessMode ?? 'all') === 'limit_2') && $nextModule) {
@@ -964,6 +1023,25 @@
             </div>
         </div>
     </div>
+
+    <!-- Quiz Trial Confirmation Modal -->
+    <div id="quizTrialModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45); align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:20px; padding:36px 32px; max-width:380px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:quizModalIn .2s ease;">
+            <div style="font-size:48px; margin-bottom:12px;">🔒</div>
+            <h3 style="font-weight:800; font-size:20px; color:#1f2937; margin:0 0 10px 0;">Want to take the quiz?</h3>
+            <p style="color:#6b7280; font-size:14px; margin:0 0 24px 0;">You need to buy this course to take the quiz. Would you like to proceed to payment?</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <a href="{{ isset($course) ? route('course.detail', $course->id) : '#' }}"
+                    style="flex:1; padding:10px 0; border-radius:999px; border:1.5px solid #e5e7eb; background:#fff; color:#374151; font-weight:600; font-size:14px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+                    No
+                </a>
+                <a href="{{ isset($course) ? route('course.payment', $course->id) : '#' }}"
+                    style="flex:1; padding:10px 0; border-radius:999px; background:#f4c430; color:#1f2937; font-weight:700; font-size:14px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">
+                    Yes, Buy
+                </a>
+            </div>
+        </div>
+    </div>
     <style>
         @keyframes quizModalIn {
             from { transform: scale(.92); opacity: 0; }
@@ -1010,9 +1088,16 @@ if (cooldownTimerEl && startBtn && startBtn.hasAttribute('data-cooldown-remainin
 
             function openQuizModal(e) {
                 e.preventDefault();
-                const url = startBtn.getAttribute('data-start-url') || '#';
-                confirmBtn.href = url;
-                modal.style.display = 'flex';
+                const isTrial = startBtn.getAttribute('data-trial') === '1';
+                
+                if (isTrial) {
+                    const trialModal = document.getElementById('quizTrialModal');
+                    if (trialModal) trialModal.style.display = 'flex';
+                } else {
+                    const url = startBtn.getAttribute('data-start-url') || '#';
+                    confirmBtn.href = url;
+                    modal.style.display = 'flex';
+                }
             }
 
             if (!startBtn || !modal) return;
@@ -1027,6 +1112,13 @@ if (cooldownTimerEl && startBtn && startBtn.hasAttribute('data-cooldown-remainin
             modal.addEventListener('click', function(e) {
                 if (e.target === modal) modal.style.display = 'none';
             });
+
+            const trialModal = document.getElementById('quizTrialModal');
+            if (trialModal) {
+                trialModal.addEventListener('click', function(e) {
+                    if (e.target === trialModal) trialModal.style.display = 'none';
+                });
+            }
         })();
     </script>
 </body>

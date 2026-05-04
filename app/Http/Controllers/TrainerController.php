@@ -600,7 +600,7 @@ class TrainerController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
-        $dashboardInvitations = TrainerNotification::query()
+        $pendingInvitationItems = TrainerNotification::query()
             ->where('trainer_id', $user->id)
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
@@ -651,7 +651,7 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $activeAssignments = TrainerAssignment::query()
+        $activeAssignmentItems = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
             ->with([
@@ -705,7 +705,7 @@ class TrainerController extends Controller
             })
             ->values();
 
-        $revenueCourses = (clone $coursesQuery)
+        $revenueCourseItems = (clone $coursesQuery)
             ->withCount([
                 'enrollments as monthly_active_students_count' => function ($query) {
                     $query->where('status', 'active')
@@ -737,7 +737,7 @@ class TrainerController extends Controller
             })
             ->values();
 
-        $completedCourses = (clone $coursesQuery)
+        $completedCourseItems = (clone $coursesQuery)
             ->whereIn('status', ['completed', 'finished', 'archived', 'approved'])
             ->withCount([
                 'enrollments as active_students_count' => function ($query) {
@@ -750,7 +750,7 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $recentEventFeedbacks = Feedback::query()
+        $feedbackItems = Feedback::query()
             ->whereHas('event', function ($query) use ($user) {
                 $query->where('trainer_id', $user->id);
             })
@@ -778,11 +778,11 @@ class TrainerController extends Controller
             'totalStudents',
             'totalCertificates',
             'teachingHistory',
-            'activeAssignments',
-            'revenueCourses',
-            'completedCourses',
-            'recentEventFeedbacks',
-            'dashboardInvitations',
+            'activeAssignmentItems',
+            'revenueCourseItems',
+            'completedCourseItems',
+            'feedbackItems',
+            'pendingInvitationItems',
             'unreadInvitationCount',
             'trainerActivity',
             'availableContributionSchemes'

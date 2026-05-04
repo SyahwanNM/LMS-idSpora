@@ -159,6 +159,17 @@ class QuizController extends Controller
     // User methods for taking quiz
     public function start(Course $course, CourseModule $module)
     {
+        $user = Auth::user();
+        $isEnrolled = $user && Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed', 'expired'])
+            ->exists();
+
+        if (!$isEnrolled) {
+            return redirect()->route('course.payment', $course->id)
+                ->with('info', 'Please purchase this course to take the quiz and unlock all materials.');
+        }
+
         if ($module->type !== 'quiz') {
             abort(404, 'This module is not a quiz');
         }
