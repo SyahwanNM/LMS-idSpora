@@ -17,7 +17,10 @@
             </button>
 
             <!-- Burger Menu Toggler -->
-            <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler">
+            <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler" 
+                    data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
+                    style="z-index: 2001;">
                 <div class="burger-icon">
                     <span></span>
                     <span></span>
@@ -413,6 +416,7 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     height: 18px;
     position: relative;
     cursor: pointer;
+    z-index: 2000;
 }
 
 .burger-icon span {
@@ -597,29 +601,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (navCollapseEl && burgerToggler) {
         // Safe Check for Bootstrap
-        const getBootstrap = () => window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
+        const getBootstrap = () => {
+            if (window.bootstrap) return window.bootstrap;
+            if (typeof bootstrap !== 'undefined') return bootstrap;
+            return null;
+        };
         
+        let _navbarInitialized = false;
         const initNavbar = () => {
+            if (_navbarInitialized) return;
             const bs = getBootstrap();
             if (!bs) return;
+            _navbarInitialized = true;
 
             const bsNav = new bs.Collapse(navCollapseEl, { toggle: false });
 
-            burgerToggler.addEventListener('click', function (e) {
-                e.preventDefault();
-                const isOpen = navCollapseEl.classList.contains('show');
-                if (isOpen) {
-                    bsNav.hide();
-                    burgerToggler.classList.add('collapsed');
-                    toggleBackdrop(false);
-                } else {
-                    if (mobileSearchExpandable && mobileSearchExpandable.classList.contains('active')) {
-                        mobileSearchExpandable.classList.remove('active');
-                    }
-                    bsNav.show();
-                    burgerToggler.classList.remove('collapsed');
-                    toggleBackdrop(true);
-                }
+            // Listen to Bootstrap collapse events for backdrop and icon animation
+            navCollapseEl.addEventListener('show.bs.collapse', function () {
+                burgerToggler.classList.remove('collapsed');
+                toggleBackdrop(true);
+            });
+
+            navCollapseEl.addEventListener('hide.bs.collapse', function () {
+                burgerToggler.classList.add('collapsed');
+                toggleBackdrop(false);
             });
 
             if (mobileSearchBtn && mobileSearchExpandable) {
@@ -747,9 +752,12 @@ function toggleNotificationDropdown() {
         dropdown.style.display = 'block';
     } else {
         dropdown.style.display = 'none';
-        if (backdrop && !document.getElementById('mobileSearchExpandable').classList.contains('active')) {
-            backdrop.classList.remove('show');
-            document.body.style.overflow = '';
+        if (backdrop) {
+            const searchEl = document.getElementById('mobileSearchExpandable');
+            if (!searchEl || !searchEl.classList.contains('active')) {
+                backdrop.classList.remove('show');
+                document.body.style.overflow = '';
+            }
         }
     }
 }

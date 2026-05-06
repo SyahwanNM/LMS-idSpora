@@ -8881,23 +8881,84 @@ textarea::placeholder {
 
     /*Modul*/
     .box_modul_luar {
+        display: flex !important;
         flex-direction: column;
-        padding: 18px;
-        gap: 16px;
+        padding: 16px;
+        gap: 0; /* Gap handled by margins */
+        height: auto;
+        min-height: 100vh;
+        overflow-y: visible;
+    }
+
+    .mobile-sidebar-toggle {
+        order: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px;
+        background: #fff;
+        border: 1.5px solid #e5e7eb;
+        border-radius: 14px;
+        color: #252346;
+        font-weight: 600;
+        font-size: 14px;
+        margin-top: 35px;
+        margin-bottom: 15px;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        position: relative;
+        z-index: 10;
     }
 
     .box_modul_kiri {
+        order: 2;
         width: 100%;
         flex: 0 0 auto;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, padding 0.3s ease;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
     }
-    .scroll-modul-box{
-        margin-top: 20px;
+
+    .box_modul_kiri.show-mobile {
+        max-height: 2000px;
+        padding-bottom: 20px;
+        overflow-y: visible;
+    }
+
+    .scroll-modul-box {
+        order: 3;
+        margin-top: 0;
+        padding-right: 0;
+        overflow-y: visible;
+        height: auto;
     }
 
     .box_modul_kanan {
-        padding-top: 20px;
-        margin-top: 0px;
+        padding-top: 10px;
+        margin-top: 0;
+        flex: 0 0 auto;
+        overflow-y: visible;
+    }
 
+    .mobile-sidebar-toggle:active {
+        transform: scale(0.98);
+    }
+
+    .mobile-sidebar-toggle svg {
+        color: #f4c430;
+    }
+
+    .scroll-modul-box {
+        margin-top: 0;
+        padding-right: 0;
+        overflow-y: visible;
+        height: auto;
     }
 
     .box_luar_deskripsi_modul {

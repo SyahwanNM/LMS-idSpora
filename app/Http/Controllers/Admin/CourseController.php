@@ -234,8 +234,8 @@ class CourseController extends Controller
                         if ($attemptCount < 3 || $isCurrentQuiz) {
                             $target = route('course.learn', $course->id) . '?module=' . $pm->id;
                             $msg = $isCurrentQuiz 
-                                ? 'Anda harus meluluskan kuis sebelumnya untuk membuka kuis ini.' 
-                                : 'Silakan selesaikan kuis sebelumnya atau coba hingga 3 kali untuk membuka materi ini.';
+                                ? 'You must pass the previous quiz to unlock this quiz.' 
+                                : 'Please complete the previous quiz or try up to 3 times to unlock this material..';
                             return redirect()->to($target)->with('error', $msg);
                         }
                     }
@@ -248,7 +248,7 @@ class CourseController extends Controller
                         ->exists();
                     if (!$videoProgress) {
                         $target = route('course.learn', $course->id) . '?module=' . $pm->id;
-                        return redirect()->to($target)->with('error', 'Silakan selesaikan video lesson sebelumnya sampai akhir untuk melanjutkan.');
+                        return redirect()->to($target)->with('error', 'Please complete the previous video lesson to the end to continue.');
                     }
                 }
             }

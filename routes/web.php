@@ -526,6 +526,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
         Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
         Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');
+        Route::get('/admin/courses/export', [CourseController::class, 'export'])->name('admin.courses.export');
         Route::get('/admin/courses/create', [CourseController::class, 'create'])->name('admin.courses.create');
         Route::post('/admin/courses', [CourseController::class, 'store'])->name('admin.courses.store');
         Route::get('/admin/courses/{course}', [CourseController::class, 'show'])->name('admin.courses.show');

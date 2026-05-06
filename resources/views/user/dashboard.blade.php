@@ -311,7 +311,8 @@
                                                             : route('course.learn', $course->id);
                                                     @endphp
                                                     <div class="d-flex align-items-center justify-content-center gap-2">
-                                                            <a href="{{ route('course.certificates.download', [$course->id, $enrollment->id]) }}?force=1" 
+                                                        @if($progress >= 100)
+                                                            <a href="{{ route('course.certificates.download', [$course->id, $enrollment->id]) }}" 
                                                                 class="btn btn-sm btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center"
                                                                 style="width: 36px; height: 36px;" title="Download Sertifikat">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
@@ -319,6 +320,7 @@
                                                                     <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
                                                                 </svg>
                                                             </a>
+                                                        @endif
 
                                                         <a href="{{ $continueUrl }}"
                                                             class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"

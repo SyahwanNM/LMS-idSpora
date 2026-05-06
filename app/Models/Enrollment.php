@@ -107,15 +107,27 @@ class Enrollment extends Model
 
         $completedModules = $this->progress()->where('completed', true)->count();
         
-        return (int) round(($completedModules / $totalModules) * 100);
+        // Use floor to ensure 100% is only reached when actually finished
+        return (int) floor(($completedModules / $totalModules) * 100);
     }
 
     /**
-     * Check if enrollment is 100% complete.
+     * Check if enrollment is 100% complete (strictly all modules finished).
      */
     public function isFullyCompleted(): bool
     {
-        return $this->getProgressPercentage() >= 100;
+        if (!$this->relationLoaded('course') || !$this->course) {
+            return false;
+        }
+
+        $totalModules = $this->course->modules()->count();
+        if ($totalModules === 0) {
+            return false;
+        }
+
+        $completedModules = $this->progress()->where('completed', true)->count();
+
+        return $completedModules >= $totalModules;
     }
 }
 

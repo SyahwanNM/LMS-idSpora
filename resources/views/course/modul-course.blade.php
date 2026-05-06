@@ -13,7 +13,15 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        html, body { overflow: hidden; height: 100%; }
+        html, body { 
+            height: 100%;
+        }
+        @media (min-width: 993px) {
+            html, body { overflow: hidden; }
+        }
+        @media (max-width: 992px) {
+            html, body { overflow: auto; height: auto; }
+        }
         .wysiwyg-output {
             width: 100% !important;
             max-width: 100% !important;
@@ -45,7 +53,17 @@
 <body>
     @include("partials.navbar-after-login")
     <div class="box_modul_luar">
-        <div class="box_modul_kiri">
+        <!-- Mobile Toggle Sidebar -->
+        <button class="mobile-sidebar-toggle d-lg-none" type="button" id="sidebarToggle" style="order: 1;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H2zM3 3H2v1h1V3z"/>
+                <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9zM5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/>
+                <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5V7zM2 7h1v1H2V7zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5H2zm1 .5H2v1h1v-1z"/>
+            </svg>
+            <span>Daftar Materi</span>
+        </button>
+
+        <div class="box_modul_kiri" style="order: 2;">
             @php
                 $modulesList = $modules ?? (isset($course) ? ($course->modules ?? collect()) : collect());
                 $modulesList = $modulesList instanceof \Illuminate\Support\Collection ? $modulesList->values() : collect($modulesList)->values();
@@ -147,7 +165,7 @@
             @if(!empty($missingMaterials))
                 <div class="alert alert-warning" role="alert" style="margin: 0 0 12px 0;">
                     <div style="font-weight:600;">Oops, course modules are incomplete.</div>
-                    <div style="margin-top:6px;">{{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.</div>
+                    <div style="margin-top:6px;">{{ implode(', ', $missingMaterials) }} are missing. Please contact the trainer.</div>
                 </div>
             @endif
 
@@ -295,7 +313,7 @@
                 @endforelse
             </div>
         </div>
-        <div class="scroll-modul-box">
+        <div class="scroll-modul-box" style="order: 3;">
         <div class="box_modul_kanan">
             @php
                 $cm = $activeModule;
@@ -425,8 +443,8 @@
                                 <path fill-rule="evenodd" d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383z"/>
                                 <path fill-rule="evenodd" d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
                             </svg>
-                            <p class="mt-3 fw-medium text-secondary">Materi belum diunggah oleh Trainer.</p>
-                            <small class="text-muted">Silakan hubungi admin atau tunggu pembaruan materi.</small>
+                            <p class="mt-3 fw-medium text-secondary">Materials have not been uploaded by the Trainer.</p>
+                            <small class="text-muted">Please contact admin or wait for material updates.</small>
                         </div>
                     </div>
                 @endif
@@ -450,7 +468,7 @@
                             @elseif(!empty(trim(strip_tags((string)($relatedDescription ?? '')))))
                                 {!! $relatedDescription !!}
                             @else
-                                <p class="text-muted">Deskripsi materi belum tersedia.</p>
+                                <p class="text-muted">Material description is not available yet.</p>
                             @endif
                         </div>
                     </div>
@@ -471,7 +489,7 @@
                         $durationMinutes = $isLastQuiz ? 15 : 10;
                     }
 
-                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' minutes') : '10 menit';
+                    $durationText = $durationMinutes > 0 ? ($durationMinutes.' minutes') : '10 minutes';
 
                     $beforeQuizTitle = null;
                     if ($cm && isset($modulesList) && $modulesList instanceof \Illuminate\Support\Collection) {
@@ -488,7 +506,7 @@
                             }
                         }
                     }
-                    $beforeQuizTitle = $beforeQuizTitle ?: ($activeMTitle ?? 'materi sebelumnya');
+                    $beforeQuizTitle = $beforeQuizTitle ?: ($activeMTitle ?? 'previous material');
 
                     $attempts = collect();
                     $ongoingAttempt = null;
@@ -668,7 +686,7 @@
                     $attCount = $quizAttemptCounts[$cmId] ?? 0;
                     $nextIsQuiz = $nextModule && strtolower(trim((string)($nextModule->type ?? ''))) === 'quiz';
                     
-                    if ($attCount < 3 || $nextIsQuiz) {
+                    if ($attCount < 3 || $nextIsQuiz || !$nextModule) {
                         $lockNext = true;
                     }
                 }
@@ -821,7 +839,7 @@
                 if (isLockedVideo) {
                     Swal.fire({
                         title: 'Oops!',
-                        text: 'Silakan selesaikan video lesson ini sampai akhir untuk melanjutkan.',
+                        text: 'Please finish this video lesson to continue.',
                         icon: 'warning',
                         confirmButtonColor: '#f4c430',
                     });
@@ -914,7 +932,7 @@
                           const nextText = nextBtn.querySelector('p');
                           if (nextText) {
                               @if(!$nextModule)
-                                  nextText.textContent = 'Selesai & Beri Ulasan';
+                                  nextText.textContent = 'Completed & Give Rating';
                               @else
                                   nextText.textContent = 'Next';
                               @endif
@@ -931,8 +949,8 @@
                       }
 
                       Swal.fire({
-                          title: 'Berhasil!',
-                          text: 'Video telah selesai, silakan lanjut ke modul berikutnya.',
+                          title: 'Success!',
+                          text: 'Video completed, please proceed to the next module.',
                           icon: 'success',
                           confirmButtonColor: '#16a34a',
                       });
@@ -1121,6 +1139,23 @@ if (cooldownTimerEl && startBtn && startBtn.hasAttribute('data-cooldown-remainin
                 });
             }
         })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.box_modul_kiri');
+            
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('show-mobile');
+                    
+                    // Update button text or icon if needed
+                    const isVisible = sidebar.classList.contains('show-mobile');
+                    toggleBtn.style.background = isVisible ? '#f4c430' : '#fff';
+                    toggleBtn.style.color = isVisible ? '#1f2937' : '#252346';
+                });
+            }
+        });
     </script>
 </body>
 

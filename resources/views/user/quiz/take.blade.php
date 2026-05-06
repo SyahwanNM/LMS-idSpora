@@ -55,15 +55,35 @@
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
     <style>
-        html, body { overflow: hidden; height: 100%; margin: 0; padding: 0; width: 100vw; }
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%;
+            background: #fdfdfd;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Desktop specific: lock height and hide overflow */
+        @media (min-width: 993px) {
+            html, body { 
+                overflow: hidden; 
+                height: 100%; 
+            }
+            .quiz-take-v3 {
+                height: calc(100vh - 64px);
+                overflow: hidden;
+            }
+        }
+
         .quiz-take-v3 {
             display: flex;
             width: 100%;
-            height: calc(100vh - 64px);
-            overflow: hidden;
             background: #fdfdfd;
             padding-top: 50px;
+            transition: all 0.3s ease;
         }
+
+        /* Sidebars */
         .box_modul_kiri {
             width: 320px;
             background: #fff;
@@ -72,14 +92,17 @@
             overflow-x: hidden;
             flex-shrink: 0;
             margin-top: 15px;
+            display: flex;
+            flex-direction: column;
         }
+
         .box_modul_kanan_quiz {
             flex: 1;
             display: flex;
             min-width: 0;
-            overflow: hidden;
             margin-top: 15px;
         }
+
         .quiz-main-content {
             flex: 1;
             overflow-y: auto;
@@ -90,6 +113,7 @@
             align-items: center;
             min-width: 0;
         }
+
         .quiz-nav-right {
             width: 320px;
             background: #fff;
@@ -103,7 +127,7 @@
             margin-top: 15px;
         }
 
-        /* Quiz Navigation: Flex wrap is safer than grid for preventing cut-off */
+        /* Question Navigation Numbers */
         .nomor_kuis {
             display: flex;
             flex-wrap: wrap;
@@ -112,7 +136,7 @@
             justify-content: flex-start;
         }
         .nomor_kuis button {
-            width: 42px; /* Standard size */
+            width: 42px;
             height: 42px;
             border-radius: 10px;
             font-size: 14px;
@@ -124,69 +148,35 @@
             font-weight: 600;
             flex-shrink: 0;
             padding: 0;
+            background: #f3f4f6;
+            color: #6b7280;
         }
-        .kuis_aktif { background: #f4c430 !important; color: #111827 !important; font-weight: 700; border: none !important; }
-        .kuis_belum_diisi { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
-        .nomor_kuis button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        
-        /* Responsive Breakpoints */
-        @media (max-width: 1200px) {
-            .box_modul_kiri { width: 250px; }
-            .quiz-nav-right { width: 250px; }
+        .kuis_aktif { 
+            background: #f4c430 !important; 
+            color: #111827 !important; 
+            font-weight: 700; 
+            border: none !important; 
         }
-
-        @media (max-width: 992px) {
-            html, body {
-                overflow: auto;
-                height: auto;
-            }
-            .quiz-take-v3 {
-                flex-direction: column;
-                height: auto;
-                overflow: visible;
-                padding-top: 20px;
-            }
-            .box_modul_kiri {
-                width: 100%;
-                height: 300px;
-                border-right: none;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            .box_modul_kanan_quiz {
-                flex-direction: column;
-                width: 100%;
-                height: auto;
-                overflow: visible;
-            }
-            .quiz-main-content {
-                width: 100%;
-                padding: 30px 20px;
-                overflow: visible;
-            }
-            .quiz-nav-right {
-                width: 100%;
-                height: auto;
-                border-left: none;
-                border-top: 1px solid #e5e7eb;
-                padding-bottom: 50px;
-            }
-            .nomor_kuis { justify-content: center; }
+        .nomor_kuis button:hover:not(:disabled) { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
         }
         
-        /* Sidebar Utama Styles */
-        .accordion-header { width: 100%; padding: 16px; display: flex; justify-content: space-between; align-items: center; background: #fff; border: none; border-bottom: 1px solid #f3f4f6; text-align: left; transition: background 0.2s; }
-        .accordion-header:hover:not(.is-locked) { background: #f9fafb; }
-        .accordion-item.active .accordion-header { background: #fefce8; border-left: 4px solid #f4c430; }
-        .accordion-item.is-locked .accordion-header { 
-            opacity: 0.5; 
-            cursor: not-allowed !important; 
-            pointer-events: none !important; /* Disable all clicks */
-            background: #f9fafb;
+        /* Answer Options */
+        .quiz-answer-option {
+            width: 100%;
+            box-sizing: border-box;
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 15px;
+            padding: 18px 20px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            white-space: normal !important;
         }
-        .accordion-item.is-locked .accordion-header * {
-            pointer-events: none !important;
-        }
-        
         .quiz-answer-option.selected {
             border-color: #f4c430 !important;
             background: #fefce8 !important;
@@ -200,22 +190,6 @@
             color: #111827 !important;
             font-weight: 700 !important;
         }
-        
-        /* Choice styles to fix overflow */
-        .quiz-answer-option {
-            width: 100%;
-            box-sizing: border-box;
-            display: flex !important;
-            align-items: flex-start !important;
-            gap: 15px;
-            padding: 18px 20px;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #fff;
-            white-space: normal !important; /* Force wrap */
-        }
         .quiz-answer-option p {
             flex: 1;
             min-width: 0;
@@ -226,7 +200,6 @@
             line-height: 1.5;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            white-space: normal !important;
         }
         .quiz-option-letter {
             width: 32px;
@@ -241,6 +214,131 @@
             color: #6b7280;
             flex-shrink: 0;
             margin-top: -2px;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1200px) {
+            .box_modul_kiri { width: 260px; }
+            .quiz-nav-right { width: 260px; }
+        }
+
+        @media (max-width: 992px) {
+            .quiz-take-v3 {
+                flex-direction: column;
+                padding-top: 80px !important;
+                height: auto;
+                overflow: visible;
+                padding: 15px;
+            }
+            
+            .box_modul_kiri {
+                order: 2;
+                width: 100% !important;
+                border-right: none;
+                margin-top: 0;
+                max-height: 0 !important;
+                overflow: hidden !important;
+                transition: max-height 0.3s ease-out;
+                padding: 0 !important;
+                margin-bottom: 0 !important;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .box_modul_kiri.show-mobile {
+                max-height: 2000px !important;
+                margin-bottom: 20px !important;
+                padding: 0 15px !important;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .box_modul_kanan_quiz {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100%;
+                margin-top: 0;
+                order: 3;
+            }
+
+            .quiz-main-content {
+                width: 100%;
+                padding: 20px 0;
+                order: 2;
+            }
+
+            .quiz-nav-right {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid #e5e7eb;
+                margin-top: 20px;
+                padding: 24px 0;
+                order: 3;
+                background: #fff;
+            }
+
+            /* Sticky Timer on Mobile */
+            .timer-container {
+                position: relative;
+                top: 0;
+                z-index: 10;
+                margin-bottom: 20px !important;
+                box-shadow: none;
+            }
+
+            .box_soal_kuis {
+                padding: 25px 20px !important;
+            }
+
+            .nomor_kuis {
+                justify-content: center;
+            }
+
+            .navbar {
+                z-index: 2000 !important;
+            }
+            .navbar-collapse {
+                z-index: 2002 !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .quiz-nav-buttons {
+                flex-direction: column-reverse;
+                gap: 12px !important;
+            }
+            .quiz-nav-buttons button {
+                width: 100%;
+            }
+        }
+
+        /* Sidebar Styles */
+        .accordion-header { 
+            width: 100%; 
+            padding: 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #fff; 
+            border: none; 
+            border-bottom: 1px solid #f3f4f6; 
+            text-align: left; 
+            transition: background 0.2s; 
+        }
+        .accordion-header:hover:not(.is-locked) { background: #f9fafb; }
+        .accordion-item.active .accordion-header { background: #fefce8; border-left: 4px solid #f4c430; }
+        .accordion-item.is-locked .accordion-header { 
+            opacity: 0.5; 
+            cursor: not-allowed !important; 
+            background: #f9fafb;
+        }
+        .accordion-content {
+            padding: 15px;
+            background: #fff;
+            display: none;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .accordion-item.active .accordion-content {
+            display: block;
         }
     </style>
 </head>
@@ -312,8 +410,19 @@
     @endphp
 
     <div class="box_modul_luar quiz-take-v3">
+        <!-- Mobile Toggle Sidebar -->
+        <button class="mobile-sidebar-toggle d-lg-none" type="button" id="sidebarToggle" 
+                style="order: 1; background: #fff; color: #252346; border: 1px solid #e5e7eb;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H2zM3 3H2v1h1V3z"/>
+                <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9zM5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/>
+                <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5V7zM2 7h1v1H2V7zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5H2zm1 .5H2v1h1v-1z"/>
+            </svg>
+            <span>Daftar Materi</span>
+        </button>
+
         <!-- LEFT: Sidebar Utama (Course Navigation) -->
-        <div class="box_modul_kiri">
+        <div class="box_modul_kiri" style="order: 2;">
             <a href="{{ isset($course) ? route('course.learn', $course->id) . '?module=' . ($module->id ?? '') : '#' }}" style="text-decoration: none; color: inherit; display: inline-block;">
                 <div style="background-color: #f4dc21ea; width: max-content; padding: 6px 10px; margin-top: 35px; margin-bottom: 10px; margin-left: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
@@ -358,6 +467,15 @@
                             ->map(fn($id) => (int) $id)
                             ->unique()
                             ->values()
+                            ->all();
+
+                        $quizAttemptCounts = \App\Models\QuizAttempt::query()
+                            ->where('user_id', auth()->id())
+                            ->whereIn('course_module_id', $quizModuleIds)
+                            ->whereNotNull('completed_at')
+                            ->selectRaw('course_module_id, count(*) as total')
+                            ->groupBy('course_module_id')
+                            ->pluck('total', 'course_module_id')
                             ->all();
                     }
                 }
@@ -450,10 +568,16 @@
                             $precedingModules = $filteredModules->take($currentIdxInFiltered);
                             foreach ($precedingModules as $pm) {
                                 if (strtolower(trim((string)($pm->type ?? ''))) === 'quiz') {
-                                    if (!in_array((int)$pm->id, $passedQuizModuleIds, true)) {
-                                        $isLocked = true;
-                                        $lockReason = 'quiz';
-                                        break;
+                                    $passed = in_array((int)$pm->id, $passedQuizModuleIds, true);
+                                    $attCount = $quizAttemptCounts[(int)$pm->id] ?? 0;
+                                    
+                                    if (!$passed) {
+                                        // Lock if: attempts < 3 OR current module is also a quiz
+                                        if ($attCount < 3 || $mType === 'quiz') {
+                                            $isLocked = true;
+                                            $lockReason = 'quiz';
+                                            break;
+                                        }
                                     }
                                 }
                                 // Optional: also lock if previous video is not completed
@@ -551,7 +675,7 @@
         </div>
 
         <!-- RIGHT AREA: Split into Main Content and Quiz Navigation -->
-        <div class="box_modul_kanan_quiz">
+        <div class="box_modul_kanan_quiz" style="order: 3;">
             <!-- MIDDLE: Question Content -->
             <div class="quiz-main-content">
                 <div style="width: 100%; max-width: 800px; box-sizing: border-box;">
@@ -584,7 +708,7 @@
                                 @endforeach
                             </div>
 
-                            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                            <div class="quiz-nav-buttons" style="display: flex; justify-content: space-between; gap: 20px;">
                                 <button type="button" class="previous_question btn btn-light py-3 px-4 fw-bold" data-prev-url="{{ $prevUrl }}" style="border-radius: 12px; flex: 1;">Previous</button>
                                 <button type="submit" class="next_question btn btn-warning py-3 px-4 fw-bold" style="border-radius: 12px; flex: 1; background: #f4c430; border: none;">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
                             </div>
@@ -595,7 +719,7 @@
 
             <!-- RIGHT: Quiz Navigation (Question Numbers) -->
             <div class="quiz-nav-right">
-                <div style="margin-bottom: 32px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 16px;">
+                <div class="timer-container" style="margin-bottom: 32px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 16px;">
                     <p style="font-size: 13px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">Time Remaining</p>
                     <p id="quizTimer" style="margin: 0; font-size: 28px; font-weight: 800; color: #111827; font-family: monospace;">--:--</p>
                 </div>
@@ -628,6 +752,25 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Accordion toggle logic
+            const accItems = document.querySelectorAll('.accordion-item');
+            accItems.forEach(item => {
+                const header = item.querySelector('.accordion-header');
+                if (!header) return;
+                header.addEventListener('click', (e) => {
+                    // Prevent navigation if we just want to toggle
+                    e.preventDefault();
+                    
+                    const isOpen = item.classList.contains('active');
+                    // Close others
+                    accItems.forEach(other => other.classList.remove('active'));
+                    // Toggle current
+                    if (!isOpen) {
+                        item.classList.add('active');
+                    }
+                });
+            });
+
             // ── Answer persistence via sessionStorage ──────────────────────────────
             const QUIZ_STORAGE_KEY = 'quiz_draft_{{ $attempt->id }}_q{{ $currentQuestion->id }}';
 
@@ -686,10 +829,10 @@
                         e.preventDefault();
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
-                                title: 'Peringatan!',
-                                text: 'Anda harus menyelesaikan soal ini terlebih dahulu',
+                                title: 'Warning!',
+                                text: 'You must complete this question first.',
                                 icon: 'warning',
-                                confirmButtonText: 'Tutup',
+                                confirmButtonText: 'Close',
                                 confirmButtonColor: '#f4c430'
                             });
                         } else {
@@ -703,10 +846,10 @@
                         if (unansweredCount > 0) {
                             e.preventDefault();
                             Swal.fire({
-                                title: 'Peringatan!',
-                                text: 'Anda harus menyelesaikan semua soal kuis terlebih dahulu',
+                                title: 'Warning!',
+                                text: 'You must complete all quiz questions first.',
                                 icon: 'warning',
-                                confirmButtonText: 'Tutup',
+                                confirmButtonText: 'Close',
                                 confirmButtonColor: '#f4c430'
                             });
                             return;
@@ -762,7 +905,7 @@
                 _draftDirty = false;
                 const overlay = document.createElement('div');
                 overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;';
-                overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:32px;text-align:center;"><h3>Waktu Habis!</h3><p>Mengumpulkan kuis...</p></div>';
+                overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:32px;text-align:center;"><h3>Time\'s Up!</h3><p>Submitting quiz...</p></div>';
                 document.body.appendChild(overlay);
 
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -777,7 +920,7 @@
             }
 
             if (timerEl && endsAtIso) {
-                const endsAt = new Date(endsAtIso).getTime() - (7 * 60 * 1000) - (7 * 1000);
+                const endsAt = new Date(endsAtIso).getTime();
                 const intv = setInterval(() => {
                     const remaining = Math.floor((endsAt - Date.now()) / 1000);
                     timerEl.textContent = formatTime(remaining);
@@ -786,6 +929,19 @@
                         finishAttempt();
                     }
                 }, 1000);
+            }
+
+            // Mobile Sidebar Toggle
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.box_modul_kiri');
+            
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('show-mobile');
+                    const isVisible = sidebar.classList.contains('show-mobile');
+                    toggleBtn.style.background = isVisible ? '#f4c430' : '#fff';
+                    toggleBtn.style.color = isVisible ? '#1f2937' : '#252346';
+                });
             }
         });
     </script>

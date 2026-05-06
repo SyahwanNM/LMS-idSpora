@@ -276,7 +276,8 @@ class CertificateController extends Controller
         $this->authorizeAccess($event, $registration);
         $certificateReady = $this->isCertificateReady($event, $registration);
         
-        $force = $request->boolean('force');
+        $isAdmin = Auth::check() && Auth::user()->role === 'admin';
+        $force = $request->boolean('force') && $isAdmin;
         
         if(!$certificateReady && !$force) {
             return redirect()->back()->with('info','Sertifikat belum tersedia.');
@@ -358,7 +359,10 @@ class CertificateController extends Controller
         
         $certificateReady = $this->isCertificateReadyCourse($course, $enrollment);
         
-        if(!$certificateReady && !$request->boolean('force')) {
+        $isAdmin = Auth::check() && Auth::user()->role === 'admin';
+        $force = $request->boolean('force') && $isAdmin;
+        
+        if(!$certificateReady && !$force) {
             return redirect()->back()->with('error','Kursus belum selesai.');
         }
 

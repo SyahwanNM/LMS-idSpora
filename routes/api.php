@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EventCertificateController;
-use App\Http\Controllers\Api\CourseCertificateController;
+use App\Http\Controllers\User\CourseCertificateController;
 use App\Http\Controllers\Api\EventAttendanceController;
 use App\Http\Controllers\Admin\CourseReportController as AdminCourseReportController;
 use App\Http\Controllers\Api\PaymentController;

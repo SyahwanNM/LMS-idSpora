@@ -1045,7 +1045,7 @@
 
             const renderRows = (rows) => {
                 if (!Array.isArray(rows) || rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Belum ada data.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No data has been entered yet.</td></tr>';
                     return;
                 }
 

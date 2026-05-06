@@ -148,9 +148,60 @@ class EventController extends Controller
         ]);
     }
 
+    /**
+     * GET /api/admin/events/{event}/registrations
+     * Daftar peserta terdaftar pada sebuah event, dengan filter pencarian nama/email.
+     */
+    public function registrations(Request $request, Event $event)
+    {
+        $q       = trim((string) $request->query('q', ''));
+        $perPage = max(1, min((int) $request->query('per_page', 20), 100));
+
+        $query = \App\Models\EventRegistration::query()
+            ->with('user:id,name,email')
+            ->where('event_id', $event->id)
+            ->when($q !== '', function ($query) use ($q) {
+                $query->whereHas('user', function ($uq) use ($q) {
+                    $uq->where('name', 'like', "%{$q}%")
+                       ->orWhere('email', 'like', "%{$q}%");
+                });
+            })
+            ->latest('created_at');
+
+        $paginated = $query->paginate($perPage)->appends($request->query());
+
+        $isFinished = method_exists($event, 'isFinished') && $event->isFinished();
+
+        $data = $paginated->map(fn($reg) => [
+            'id'              => $reg->id,
+            'user_id'         => $reg->user_id,
+            'name'            => $reg->user?->name,
+            'email'           => $reg->user?->email,
+            'status'          => ($isFinished && $reg->status === 'active' && empty($reg->attended_at))
+                                    ? 'alpha'
+                                    : $reg->status,
+            'registered_at'   => $reg->created_at?->toDateTimeString(),
+            'total_price'     => (float) ($reg->total_price ?? 0),
+            'attended'        => !empty($reg->attended_at),
+            'attended_at'     => $reg->attended_at?->toISOString(),
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Daftar peserta event',
+            'data'    => $data,
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'per_page'     => $paginated->perPage(),
+                'total'        => $paginated->total(),
+                'last_page'    => $paginated->lastPage(),
+            ],
+        ]);
+    }
+
     public function store(Request $request)
     {
-        $validated = $this->validatePayload($request);
+        $validated = $this->validatePayload($request, isUpdate: false);
 
         $imagePath = $this->storeEventImageIfAny($request);
 
@@ -192,6 +243,7 @@ class EventController extends Controller
             'expenses_json' => $expenseRows,
             'is_published' => $isPublished,
             'published_at' => $publishedAt,
+            'is_reseller_event' => (bool) ($validated['is_reseller_event'] ?? false),
         ]);
 
         foreach ($scheduleRows as $row) {
@@ -213,7 +265,7 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
-        $validated = $this->validatePayload($request);
+        $validated = $this->validatePayload($request, isUpdate: true);
 
         $data = [
             'title' => $validated['title'],
@@ -237,10 +289,37 @@ class EventController extends Controller
             'event_time' => $validated['event_time'],
             'event_time_end' => $validated['event_time_end'] ?? null,
             'material_deadline' => $validated['material_deadline'] ?? null,
+            'is_reseller_event' => (bool) ($validated['is_reseller_event'] ?? $event->is_reseller_event ?? false),
         ];
 
         if (array_key_exists('is_published', $validated)) {
             $isPublished = (bool) $validated['is_published'];
+
+            // Guard: cek kelengkapan sebelum boleh publish
+            if ($isPublished) {
+                $incomplete = [];
+
+                if (empty($event->vbg_path)) {
+                    $incomplete[] = 'Virtual background (vbg) belum diupload';
+                }
+
+                $hasApprovedModule = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                    ->where('status', 'approved')
+                    ->exists();
+
+                if (!$hasApprovedModule) {
+                    $incomplete[] = 'Belum ada modul trainer yang disetujui';
+                }
+
+                if (!empty($incomplete)) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Event belum lengkap, tidak dapat dipublish.',
+                        'data'    => ['incomplete' => $incomplete],
+                    ], 422);
+                }
+            }
+
             $data['is_published'] = $isPublished;
 
             if ($isPublished) {
@@ -545,42 +624,50 @@ class EventController extends Controller
         ]);
     }
 
-    private function validatePayload(Request $request): array
+    private function validatePayload(Request $request, bool $isUpdate = false): array
     {
+        // Saat store: materi, jenis, image, is_reseller_event wajib diisi
+        // Saat update: boleh kosong (tidak perlu re-upload / re-set)
+        $materiRule        = $isUpdate ? 'nullable|string|max:255'              : 'required|string|max:255';
+        $jenisRule         = $isUpdate ? 'nullable|string|max:100'              : 'required|string|max:100';
+        $imageRule         = $isUpdate ? 'nullable|image|mimes:jpg,jpeg,png|max:5120' : 'required|image|mimes:jpg,jpeg,png|max:5120';
+        $resellerRule      = $isUpdate ? 'nullable|boolean'                     : 'required|boolean';
+
         return $request->validate([
-            'title' => 'required|string|max:255',
-            'speaker' => 'required|string|max:255',
-            'manage_action' => 'required|in:manage,create',
-            'materi' => 'nullable|string|max:255',
-            'jenis' => 'nullable|string|max:100',
-            'short_description' => 'required|string',
-            'description' => 'required',
+            'title'                => 'required|string|max:255',
+            'speaker'              => 'required|string|max:255',
+            'manage_action'        => 'required|in:manage,create',
+            'materi'               => $materiRule,
+            'jenis'                => $jenisRule,
+            'short_description'    => 'required|string',
+            'description'          => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location' => 'required|string|max:255',
-            'maps_url' => 'nullable|string|max:512',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'zoom_link' => 'nullable|url|max:255',
-            'price' => 'required|numeric|min:0',
-            'discount_percentage' => 'nullable|integer|min:0|max:100',
-            'discount_until' => 'nullable|date',
-            'event_date' => 'required|date',
-            'event_time' => 'required',
-            'event_time_end' => 'nullable',
-            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
-            'benefit' => 'nullable|array',
-            'benefit.*' => 'string|max:255',
-            'is_published' => 'nullable|boolean',
-            'published_at' => 'nullable|date',
-            'schedule' => 'nullable|array',
-            'schedule.*.start' => 'nullable|string',
-            'schedule.*.end' => 'nullable|string',
-            'schedule.*.title' => 'nullable|string|max:255',
+            'location'             => 'required|string|max:255',
+            'maps_url'             => 'nullable|string|max:512',
+            'latitude'             => 'nullable|numeric|between:-90,90',
+            'longitude'            => 'nullable|numeric|between:-180,180',
+            'zoom_link'            => 'nullable|url|max:255',
+            'price'                => 'required|numeric|min:0',
+            'discount_percentage'  => 'nullable|integer|min:0|max:100',
+            'discount_until'       => 'nullable|date',
+            'event_date'           => 'required|date',
+            'event_time'           => 'required',
+            'event_time_end'       => 'nullable',
+            'material_deadline'    => 'nullable|date|after_or_equal:today|before:event_date',
+            'image'                => $imageRule,
+            'benefit'              => 'nullable|array',
+            'benefit.*'            => 'string|max:255',
+            'is_published'         => 'nullable|boolean',
+            'published_at'         => 'nullable|date',
+            'is_reseller_event'    => $resellerRule,
+            'schedule'             => 'nullable|array',
+            'schedule.*.start'     => 'nullable|string',
+            'schedule.*.end'       => 'nullable|string',
+            'schedule.*.title'     => 'nullable|string|max:255',
             'schedule.*.description' => 'nullable|string|max:500',
-            'expenses' => 'nullable|array',
-            'expenses.*.item' => 'nullable|string|max:255',
-            'expenses.*.quantity' => 'nullable|numeric|min:0',
+            'expenses'             => 'nullable|array',
+            'expenses.*.item'      => 'nullable|string|max:255',
+            'expenses.*.quantity'  => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
         ]);
     }

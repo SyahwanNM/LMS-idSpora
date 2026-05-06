@@ -364,9 +364,7 @@
             </li>
             @endforelse
         </ul>
-        <div class="align-items-center" style="padding: 20px; text-align: center !important;">
-            <a href="{{ route('courses.index') }}" class="btn btn-primary me-2" style="display:inline-block;">See All Courses</a>
-        </div>
+        
     </section>
 </main>
 

@@ -7,6 +7,7 @@ use App\Models\Course;
 use App\Models\CourseUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ApiAdminCourseController extends Controller
 {
@@ -110,7 +111,7 @@ class ApiAdminCourseController extends Controller
             'trainer_id'                 => $validated['trainer_id'] ?? null,
             'description'                => $validated['description'] ?? null,
             'level'                      => $validated['level'],
-            'status'                     => $validated['status'] ?? 'draft',
+            'status'                     => 'archive',
             'price'                      => $validated['price'],
             'duration'                   => $validated['duration'] ?? 0,
             'free_access_mode'           => $validated['free_access_mode'] ?? 'limit_2',
@@ -144,7 +145,6 @@ class ApiAdminCourseController extends Controller
             'trainer_id'         => $validated['trainer_id'] ?? $course->trainer_id,
             'description'        => $validated['description'] ?? $course->description,
             'level'              => $validated['level'],
-            'status'             => $validated['status'] ?? $course->status,
             'price'              => $validated['price'],
             'duration'           => $validated['duration'] ?? $course->duration ?? 0,
             'free_access_mode'   => $validated['free_access_mode'] ?? ($course->free_access_mode ?? 'limit_2'),
@@ -275,20 +275,33 @@ class ApiAdminCourseController extends Controller
 
     private function validatePayload(Request $request, bool $isUpdate): array
     {
-        $mediaRule = $isUpdate
+        // Saat update: media & card_thumbnail boleh kosong (tidak wajib re-upload)
+        // Saat store: wajib diisi
+        $mediaRule        = $isUpdate
             ? 'nullable|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800'
-            : 'nullable|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800';
+            : 'required|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800';
 
-        return $request->validate([
+        $cardThumbRule    = $isUpdate
+            ? 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480'
+            : 'required|file|mimes:jpeg,png,jpg,gif,webp|max:20480';
+
+        $trainerRule      = $isUpdate
+            ? ['nullable', 'integer', Rule::exists('users', 'id')->where('role', 'trainer')]
+            : ['required', 'integer', Rule::exists('users', 'id')->where('role', 'trainer')];
+        $descriptionRule  = $isUpdate ? 'nullable|string'          : 'required|string';
+        $freeAccessRule   = $isUpdate ? 'nullable|in:all,limit_2,none' : 'required|in:all,limit_2,none';
+        $unitTitlesRule   = $isUpdate ? 'nullable|array'           : 'required|array|min:1';
+        $statusRule       = null; // status tidak bisa diubah via store maupun update
+
+        $rules = [
             'name'               => 'required|string|max:255',
             'category_id'        => 'required|exists:categories,id',
-            'trainer_id'         => 'nullable|exists:users,id',
-            'description'        => 'nullable|string',
+            'trainer_id'         => $trainerRule,
+            'description'        => $descriptionRule,
             'level'              => 'required|in:beginner,intermediate,advanced',
-            'status'             => 'nullable|in:draft,active,archive,approved',
             'price'              => 'required|integer|min:0',
             'duration'           => 'nullable|integer|min:0',
-            'free_access_mode'   => 'nullable|in:all,limit_2,none',
+            'free_access_mode'   => $freeAccessRule,
             'is_reseller_course' => 'nullable|boolean',
             'discount_percent'   => 'nullable|integer|min:1|max:100',
             'discount_start'     => 'nullable|date',
@@ -299,11 +312,18 @@ class ApiAdminCourseController extends Controller
             'expenses.*.unit_price' => 'nullable|integer|min:0',
             'expenses.*.total'      => 'nullable|integer|min:0',
             'media'              => $mediaRule,
-            'image'              => $mediaRule,
-            'card_thumbnail'     => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
-            'unit_titles'        => 'nullable|array',
-            'unit_titles.*'      => 'nullable|string|max:255',
-        ]);
+            'image'              => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800',
+            'card_thumbnail'     => $cardThumbRule,
+            'unit_titles'        => $unitTitlesRule,
+            'unit_titles.*'      => 'required|string|max:255',
+        ];
+
+        // status hanya bisa diubah saat update
+        if ($statusRule !== null) {
+            $rules['status'] = $statusRule;
+        }
+
+        return $request->validate($rules);
     }
 
     private function handleMediaUpload(Request $request, ?Course $course): array
