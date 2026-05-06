@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>quiz</title>
+    <title>{{ $course->title ?? 'Learn' }} - {{ $cm->title ?? 'Module' }}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -54,7 +54,7 @@
     @include("partials.navbar-after-login")
     <div class="box_modul_luar">
         <!-- Mobile Toggle Sidebar -->
-        <button class="mobile-sidebar-toggle d-lg-none" type="button" id="sidebarToggle" style="order: 1;">
+        <button class="mobile-sidebar-toggle d-lg-none" type="button" id="sidebarToggle" style="order: 1; background: #fff; color: #252346; border: 1px solid #e5e7eb;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H2zM3 3H2v1h1V3z"/>
                 <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9zM5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/>
@@ -1146,14 +1146,17 @@ if (cooldownTimerEl && startBtn && startBtn.hasAttribute('data-cooldown-remainin
             const sidebar = document.querySelector('.box_modul_kiri');
             
             if (toggleBtn && sidebar) {
-                toggleBtn.addEventListener('click', function() {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
                     sidebar.classList.toggle('show-mobile');
                     
-                    // Update button text or icon if needed
                     const isVisible = sidebar.classList.contains('show-mobile');
+                    // Sync button appearance with state
                     toggleBtn.style.background = isVisible ? '#f4c430' : '#fff';
                     toggleBtn.style.color = isVisible ? '#1f2937' : '#252346';
                 });
+            } else {
+                console.warn('Sidebar toggle elements not found:', { toggleBtn, sidebar });
             }
         });
     </script>
