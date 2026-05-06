@@ -145,13 +145,13 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Revenue per Course Level</h4>
+                    <h4>Total Expenses</h4>
                     <h3 class="total_kenaikan" id="topLevelRevenue">
-                        Rp. {{ number_format((float)(($revenueReport['revenue_by_level'][0]['revenue_total'] ?? 0)), 0, ',', '.') }}
+                        Rp. {{ number_format((float)($revenueReport['totals']['total_expenses'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="topLevelRevenueChange">
                         @php
-                        $chg = $revenueReport['changes']['top_level_revenue'] ?? ['percent' => 0, 'direction' => 'up'];
+                        $chg = $revenueReport['changes']['total_expenses'] ?? ['percent' => 0, 'direction' => 'up'];
                         $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
@@ -170,18 +170,13 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Revenue per Module</h4>
+                    <h4>Total Profit</h4>
                     <h3 class="total_kenaikan" id="totalTransactions">
-                        @php
-                        $totalRevenue = (float)($revenueReport['totals']['total_revenue'] ?? 0);
-                        $totalTransactions = (int)($revenueReport['totals']['total_transactions'] ?? 0);
-                        $revenuePerModule = $totalTransactions > 0 ? (float) round($totalRevenue / $totalTransactions) : 0;
-                        @endphp
-                        Rp. {{ number_format($revenuePerModule, 0, ',', '.') }}
+                        Rp. {{ number_format((float)($revenueReport['totals']['total_profit'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="revenuePerModuleChange">
                         @php
-                        $chg = $revenueReport['changes']['revenue_per_module'] ?? ['percent' => 0, 'direction' => 'up'];
+                        $chg = $revenueReport['changes']['total_profit'] ?? ['percent' => 0, 'direction' => 'up'];
                         $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp

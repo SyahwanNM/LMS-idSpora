@@ -1037,7 +1037,7 @@ body {
 
 .search-container {
     width: 100%;
-    max-width: 1000px;
+    max-width: 2000px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1181,6 +1181,7 @@ body {
 }
 
 .section-title {
+    width: 100%;
     text-align: center;
     margin: 30px 0 20px;
 }
@@ -1188,6 +1189,8 @@ body {
 .section-title h3 {
     font-weight: 600;
     font-size: 24px;
+    margin: 0 auto;
+    display: inline-block;
 }
 
 .carousel-inner {
@@ -2294,7 +2297,8 @@ section.event .header-card h3 {
     background: #1e2a47;
     padding: 20px;
     border-radius: 15px;
-    max-width: 1000px;
+    max-width: 2000px;
+    width: 100%;
     margin: auto;
     flex-direction: column;
     display: flex;

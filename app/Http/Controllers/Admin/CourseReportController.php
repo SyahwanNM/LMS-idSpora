@@ -741,6 +741,14 @@ class CourseReportController extends Controller
 
         $rows = $rows->values();
 
+        $totalExpenses = (float) $rows->sum('expense_total');
+        $totalProfit = (float) ($totals['total_revenue'] ?? 0) - $totalExpenses;
+
+        $totals = array_merge($totals, [
+            'total_expenses' => $totalExpenses,
+            'total_profit' => $totalProfit,
+        ]);
+
         $revenueByLevel = $baseEnrollments->clone()
             ->groupBy('courses.level')
             ->selectRaw('courses.level as level')
@@ -780,6 +788,23 @@ class CourseReportController extends Controller
                     'revenue_total' => (float) $r->revenue_total,
                 ])
                 ->values();
+
+            // Calculate total expenses for the comparison period
+            $compareCourseIds = $compareBase->clone()->distinct('enrollments.course_id')->pluck('enrollments.course_id');
+            $compareCourses = \App\Models\Course::whereIn('id', $compareCourseIds)->select('id', 'expenses_json')->get();
+            $compareTotalExpenses = 0.0;
+            foreach ($compareCourses as $cc) {
+                $eArr = $cc->expenses_json;
+                if (is_array($eArr)) {
+                    foreach ($eArr as $ex) {
+                        if (is_array($ex) && isset($ex['total'])) {
+                            $compareTotalExpenses += (float) $ex['total'];
+                        }
+                    }
+                }
+            }
+            $compareTotals['total_expenses'] = $compareTotalExpenses;
+            $compareTotals['total_profit'] = (float) ($compareTotals['total_revenue'] ?? 0) - $compareTotalExpenses;
         }
 
         $revenuePerModule = ($totals['total_transactions'] ?? 0) > 0
@@ -795,6 +820,8 @@ class CourseReportController extends Controller
         $changes = [
             'label' => $compareLabel,
             'total_revenue' => $this->percentChange((float) ($totals['total_revenue'] ?? 0), (float) ($compareTotals['total_revenue'] ?? 0)),
+            'total_expenses' => $this->percentChange((float) ($totals['total_expenses'] ?? 0), (float) ($compareTotals['total_expenses'] ?? 0)),
+            'total_profit' => $this->percentChange((float) ($totals['total_profit'] ?? 0), (float) ($compareTotals['total_profit'] ?? 0)),
             'top_level_revenue' => $this->percentChange($topLevelCurrent, $topLevelCompare),
             'revenue_per_module' => $this->percentChange($revenuePerModule, $compareRevenuePerModule),
         ];

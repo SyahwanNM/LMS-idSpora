@@ -40,7 +40,7 @@
 
 @include('partials.navbar-after-login') 
 <body style="padding-top: 0;"> 
-    <main class="container-xl pb-5">
+    <main style="background-color: #f3f3f3;" class="container-xl pb-5">
         <div id="carouselCaptions" class="carousel slide rounded-4 overflow-hidden mb-4 hero-carousel" data-bs-ride="carousel">
                 <div class="carousel-indicators">
                     @forelse($courseCarousels as $index => $carousel)
