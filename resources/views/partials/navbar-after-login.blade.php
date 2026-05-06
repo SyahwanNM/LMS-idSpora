@@ -18,7 +18,6 @@
 
             <!-- Burger Menu Toggler -->
             <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler" 
-                    data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
                     style="z-index: 2001;">
                 <div class="burger-icon">
@@ -611,19 +610,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const initNavbar = () => {
             if (_navbarInitialized) return;
             const bs = getBootstrap();
-            if (!bs) return;
+            if (!bs || !bs.Collapse) return;
             _navbarInitialized = true;
 
             const bsNav = new bs.Collapse(navCollapseEl, { toggle: false });
 
+            // Manual toggle for burger because we removed data-bs-toggle to avoid conflicts
+            burgerToggler.addEventListener('click', function(e) {
+                e.preventDefault();
+                bsNav.toggle();
+            });
+
             // Listen to Bootstrap collapse events for backdrop and icon animation
             navCollapseEl.addEventListener('show.bs.collapse', function () {
                 burgerToggler.classList.remove('collapsed');
+                burgerToggler.setAttribute('aria-expanded', 'true');
                 toggleBackdrop(true);
             });
 
             navCollapseEl.addEventListener('hide.bs.collapse', function () {
                 burgerToggler.classList.add('collapsed');
+                burgerToggler.setAttribute('aria-expanded', 'false');
                 toggleBackdrop(false);
             });
 
@@ -632,7 +639,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     bsNav.hide();
                     burgerToggler.classList.add('collapsed');
                     mobileSearchExpandable.classList.add('active');
-                    document.getElementById('mobileSearchInput').focus();
+                    const inputEl = document.getElementById('mobileSearchInput');
+                    if (inputEl) inputEl.focus();
                     toggleBackdrop(true);
                 });
 
@@ -645,29 +653,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             backdrop.addEventListener('click', () => {
-                const navCollapseEl = document.getElementById('navbarSupportedContent');
-                const burgerToggler = document.getElementById('burgerToggler');
-                const mobileSearchExpandable = document.getElementById('mobileSearchExpandable');
-                const bsNav = getBootstrap() ? getBootstrap().Collapse.getInstance(navCollapseEl) : null;
+                const bsInstance = bs.Collapse.getInstance(navCollapseEl);
+                if (bsInstance) bsInstance.hide();
                 
-                if (bsNav) bsNav.hide();
                 if (mobileSearchExpandable) mobileSearchExpandable.classList.remove('active');
                 if (burgerToggler) burgerToggler.classList.add('collapsed');
                 
-                // Also close our custom dropdowns
-                document.getElementById('notificationDropdown').style.display = 'none';
-                if (document.getElementById('userDropdownMenu')) document.getElementById('userDropdownMenu').style.display = 'none';
+                // Safe access to dropdowns
+                const notifD = document.getElementById('notificationDropdown');
+                const userD = document.getElementById('userDropdownMenu');
+                if (notifD) notifD.style.display = 'none';
+                if (userD) userD.style.display = 'none';
                 
                 toggleBackdrop(false);
             });
         };
 
-        // Try to init, or wait if bootstrap isn't ready
-        if (getBootstrap()) {
-            initNavbar();
-        } else {
-            window.addEventListener('load', initNavbar);
-        }
+        // Polling for bootstrap availability (more reliable for modules/CDN)
+        let _bsCheckCount = 0;
+        const _bsInterval = setInterval(() => {
+            if (getBootstrap()) {
+                clearInterval(_bsInterval);
+                initNavbar();
+            }
+            if (++_bsCheckCount > 100) clearInterval(_bsInterval); // give up after 10s
+        }, 100);
+
+        // Also check on load for insurance
+        window.addEventListener('load', initNavbar);
     }
 });
 
