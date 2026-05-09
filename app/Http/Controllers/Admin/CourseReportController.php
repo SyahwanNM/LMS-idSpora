@@ -183,6 +183,7 @@ class CourseReportController extends Controller
         $period = $this->normalizePeriod($request->query('period', 'monthly'));
         $month = trim((string) $request->query('month', '')); // YYYY-MM
         $q = trim((string) $request->query('q', ''));
+        $actionType = trim((string) $request->query('action_type', 'all'));
 
         [$from, $to, $monthResolved] = $this->parseGrowthRangeFromMonth($month, $period);
 
@@ -191,7 +192,7 @@ class CourseReportController extends Controller
             [$from, $to] = $this->defaultDateRange($period);
         }
 
-        $growthReport = $this->buildGrowthReport(from: $from, to: $to, period: $period, q: $q);
+        $growthReport = $this->buildGrowthReport(from: $from, to: $to, period: $period, q: $q, actionType: $actionType);
 
         // Build chart series from the same rows as the table
         $chartYear = $monthResolved instanceof Carbon ? (int) $monthResolved->year : (int) Carbon::now()->year;
@@ -423,7 +424,7 @@ class CourseReportController extends Controller
         return [$from, $to];
     }
 
-    private function buildGrowthReport(Carbon $from, Carbon $to, string $period = 'monthly', string $q = ''): array
+    private function buildGrowthReport(Carbon $from, Carbon $to, string $period = 'monthly', string $q = '', string $actionType = 'all'): array
     {
         $q = trim($q);
         $courseIdFilter = null;
@@ -519,6 +520,15 @@ class CourseReportController extends Controller
         });
 
         $rows = $rows->values();
+
+        // Sorting berdasarkan action_type
+        $rows = match ($actionType) {
+            'high_to_low_participants' => $rows->sortByDesc('participants_count')->values(),
+            'low_to_high_participants' => $rows->sortBy('participants_count')->values(),
+            'high_to_low_rating'       => $rows->sortByDesc('rating_avg')->values(),
+            'low_to_high_rating'       => $rows->sortBy('rating_avg')->values(),
+            default                    => $rows, // 'all' — urutan default (created_at desc)
+        };
 
         $baseEnrollments = Enrollment::query()
             ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)

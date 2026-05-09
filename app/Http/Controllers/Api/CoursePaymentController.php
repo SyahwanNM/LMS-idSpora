@@ -160,9 +160,28 @@ class CoursePaymentController extends Controller
         }
 
         $validated = $request->validate([
-            'whatsapp' => ['nullable', 'string', 'max:32', 'regex:/^[0-9]{8,15}$/'],
+            'full_name'    => 'nullable|string|max:255',
+            'email'        => 'nullable|email|max:255',
+            'whatsapp'     => ['nullable', 'string', 'max:32', 'regex:/^[0-9]{8,15}$/'],
             'referral_code' => 'nullable|string|max:64',
         ]);
+
+        // Fallback ke data user jika field tidak dikirim / kosong
+        $fullName = $validated['full_name'] ?: $user->name;
+        $email    = $validated['email']     ?: $user->email;
+
+        // Sync profil user jika ada perubahan
+        $profileUpdates = [];
+        if ($fullName !== $user->name) {
+            $profileUpdates['name'] = $fullName;
+        }
+        if ($email !== $user->email) {
+            $profileUpdates['email'] = $email;
+        }
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
 
         $whatsapp = isset($validated['whatsapp']) ? trim((string) $validated['whatsapp']) : null;
         $referralCode = isset($validated['referral_code']) ? trim((string) $validated['referral_code']) : null;

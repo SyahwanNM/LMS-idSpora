@@ -164,7 +164,7 @@
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
                                     <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
                                 </svg>
-                                Nama Akan digunakan pada sertifikat
+                                Name will be used on certificate
                             </div>
                         </div>
 
@@ -251,8 +251,9 @@
                     @endif
 
                     @if(!$isFree)
-                        <div id="midtransSection" style="display:none;">
-                            <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay with Midtrans</button>
+                        {{-- midtransSection: tampil langsung jika midtrans tersedia, JS akan hide jika method manual --}}
+                        <div id="midtransSection" @if(!$midtransClientKey) style="display:none;" @endif>
+                            <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay Now!</button>
                             <div class="small text-muted mt-2">Payment will be verified automatically after success.</div>
                         </div>
                     @endif
@@ -483,8 +484,12 @@
                 showQrisBtn.style.opacity = (method === 'manual' && okManualBase) ? '1' : '0.5';
             }
             if(midtransPayBtn){
-                midtransPayBtn.disabled = !(method === 'midtrans' && okMidtrans);
-                midtransPayBtn.style.opacity = (method === 'midtrans' && okMidtrans) ? '1' : '0.5';
+                // Gunakan CSS disabled visual (bukan HTML disabled attribute) agar
+                // click event tetap ter-trigger dan bisa tampilkan pesan error yang jelas.
+                const isOk = method === 'midtrans' && okMidtrans;
+                midtransPayBtn.style.opacity = isOk ? '1' : '0.5';
+                midtransPayBtn.style.cursor  = isOk ? 'pointer' : 'not-allowed';
+                midtransPayBtn.dataset.formValid = isOk ? '1' : '0';
             }
             // payNow button depends on proof selected
             if(payNowBtn){
@@ -508,6 +513,20 @@
                 validate();
             }));
         }
+
+        // Inisialisasi tampilan tombol saat halaman pertama load
+        // Paksa show midtransSection jika midtrans tersedia (tidak andalkan radio state)
+        if(!isFree && midtransSection){
+            const hasMidtransKey = @json(!empty($midtransClientKey));
+            const selectedMethod = getSelectedMethod();
+            if(hasMidtransKey && selectedMethod === 'midtrans'){
+                midtransSection.style.display = '';
+                if(manualPaySection) manualPaySection.style.display = 'none';
+            } else {
+                toggleMethodUI();
+            }
+        }
+        validate();
 
         form.addEventListener('submit', function(e){
             if(isFree){
@@ -711,7 +730,7 @@
             const pending = await fetchPendingOrder();
             cachedPending = pending;
             if(pending && pending.pending && pending.order_id){
-                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                midtransPayBtn.textContent = 'Continue Midtrans payment';
 
                 // Autofill WA from pending payment if empty
                 if (pending.whatsapp_number && wa && (!wa.value || wa.value.trim() === '')) {
@@ -745,7 +764,7 @@
             } else if (pending && pending.needs_force_new) {
                 // Previous order expired/rejected — reset to fresh payment state
                 cachedPending = null;
-                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                midtransPayBtn.textContent = 'Pay Now!';
                 validate();
             }
         }
@@ -774,10 +793,16 @@
             const forceNewFromQuery = (new URLSearchParams(window.location.search)).get('force_new') === '1';
             const forceNewFromExpired = !!(cachedPending && cachedPending.needs_force_new);
 
-            // ensure validation up-to-date
-            validate();
-            if(midtransPayBtn && midtransPayBtn.disabled){
-                showAppNotify('Please complete your details before paying.', 'error');
+            // Cek dataset.formValid yang di-set oleh validate()
+            // Tombol tidak pakai HTML disabled agar click tetap ter-trigger
+            if(midtransPayBtn && midtransPayBtn.dataset.formValid !== '1'){
+                const waVal0 = wa ? wa.value.trim() : '';
+                if(!waVal0 || !isValidPhone(waVal0)){
+                    showAppNotify('Please fill in your WhatsApp number before paying.', 'error');
+                    if(wa) wa.focus();
+                } else {
+                    showAppNotify('Please complete all required fields before paying.', 'error');
+                }
                 return;
             }
 
@@ -830,7 +855,7 @@
                 }
 
                 // If we used pending order, make label reflect it
-                if(data && data.snap_token && originalText !== 'Lanjutkan pembayaran Midtrans'){
+                if(data && data.snap_token && originalText !== 'Continue Payment'){
                     try { await ensurePendingLabel(); } catch(_e) {}
                 }
 
@@ -848,36 +873,21 @@
                     onPending: async function(){
                         // keep as pending; user can retry later
                         try { await postFinalize(data.order_id); } catch(_e) {}
-                        showAppNotify('Payment pending. Please complete the paybayaran di Midtrans.', 'info');
+                        showAppNotify('Payment pending. Please complete payment now!', 'info');
                         // Update label for next attempt
                         cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
-                        if(midtransPayBtn) midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                        if(midtransPayBtn) midtransPayBtn.textContent = 'Continue Payment';
                     },
                     onError: function(){
                         showAppNotify('Payment failed. Please try again.', 'error');
                     },
-                    onClose: async function(){
-                        // Always check status when popup closes (handles timer expiry, close button, etc.)
-                        midtransPayBtn.disabled = true;
-                        midtransPayBtn.textContent = 'Memeriksa status...';
-                        try {
-                            const result = await postFinalize(data.order_id);
-                            if (result && result.status === 'settled') {
-                                showMidtransSuccessModal();
-                                setTimeout(function(){
-                                    window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
-                                }, 1400);
-                                return;
-                            }
-                            if (result && (result.status === 'expired' || result.status === 'rejected')) {
-                                cachedPending = null;
-                                window.location.href = window.location.pathname + '?force_new=1';
-                                return;
-                            }
-                        } catch(_e) {}
-                        // Still pending or unknown — re-enable button
+                    onClose: function(){
+                        // User menutup popup — JANGAN finalize di sini.
+                        // Token Midtrans masih valid selama < 24 jam, biarkan user lanjut bayar.
+                        // Cukup re-enable tombol dengan label "Lanjutkan".
+                        cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
                         midtransPayBtn.disabled = false;
-                        midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                        midtransPayBtn.textContent = 'Continue Payment';
                         validate();
                     }
                 });
@@ -886,7 +896,7 @@
             } finally {
                 midtransPayBtn.disabled = false;
                 if(cachedPending && cachedPending.pending && cachedPending.order_id){
-                    midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                    midtransPayBtn.textContent = 'Continue Payment';
                 } else {
                     midtransPayBtn.textContent = originalText;
                 }
@@ -908,11 +918,10 @@
         if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
             cachedPending = null;
             if (midtransPayBtn) {
-                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                midtransPayBtn.textContent = 'Pay Now';
             }
         }
     });
     </script>
 </body>
 </html>
-

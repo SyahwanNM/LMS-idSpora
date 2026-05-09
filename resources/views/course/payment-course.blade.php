@@ -508,6 +508,8 @@
             var pendingProofSubmit = false;
             var checkReferralUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-referral', $course) : '');
             var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
+            // Declare cachedPending at outer scope so updatePayButtonState can access it
+            var cachedPending = null;
             var referralState = referralInput ? 'idle' : 'disabled';
             var referralTimer = null;
 
@@ -609,6 +611,11 @@
                     if (code !== '' && referralState !== 'valid') {
                         disable = true;
                     }
+                }
+                // If there's a pending Midtrans order, always allow Continue Payment button
+                // regardless of WA validation (user already submitted WA when creating the order)
+                if (disable && cachedPending && cachedPending.pending && cachedPending.order_id) {
+                    disable = false;
                 }
                 if (showQrisBtn) showQrisBtn.disabled = disable;
                 if (midtransPayBtn) midtransPayBtn.disabled = disable;
@@ -791,18 +798,21 @@
             // Midtrans pay flow
             if (midtransPayBtn) {
                 var pendingOrderUrl = @json(route('courses.payment.pending-order', $course));
-                var cachedPending = null;
 
                 async function fetchPendingCourseOrder(){
                     if (!pendingOrderUrl) return null;
                     try {
                         var res = await fetch(pendingOrderUrl, {
                             method: 'GET',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
                             credentials: 'same-origin'
                         });
-                        var data = await res.json();
+                        // Check ok BEFORE parsing JSON to avoid crash on redirect/HTML response
                         if (!res.ok) return null;
+                        var data = await res.json();
                         return data;
                     } catch(_e) {
                         return null;
@@ -866,7 +876,26 @@
                         return;
                     }
                     if (typeof window.snap === 'undefined') {
-                        alert('Midtrans belum siap. Pastikan client key sudah diset.');
+                        // Try to reload Midtrans snap.js dynamically if not loaded yet
+                        var clientKey = @json($midtransClientKey ?? '');
+                        var isProduction = @json($midtransIsProduction ?? false);
+                        if (clientKey) {
+                            var snapSrc = 'https://app' + (isProduction ? '' : '.sandbox') + '.midtrans.com/snap/snap.js';
+                            var script = document.createElement('script');
+                            script.src = snapSrc;
+                            script.setAttribute('data-client-key', clientKey);
+                            script.onload = function() {
+                                midtransPayBtn.click();
+                            };
+                            script.onerror = function() {
+                                alert('Gagal memuat Midtrans. Periksa koneksi internet Anda.');
+                                midtransPayBtn.disabled = false;
+                                midtransPayBtn.textContent = originalText;
+                            };
+                            document.head.appendChild(script);
+                        } else {
+                            alert('Midtrans belum dikonfigurasi. Hubungi admin.');
+                        }
                         return;
                     }
 
@@ -878,7 +907,9 @@
                     var referralVal = getReferralCode();
 
                     var snapTokenUrl = @json(route('courses.payment.snap-token', $course));
-                    var refreshUrl = @json(route('payment.refresh-course', ['orderId' => 'ORDER_ID']));
+                    // Use API route for finalize so it works with Bearer token (mobile/API clients)
+                    // Falls back to web route for session-based auth (browser)
+                    var refreshUrl = '/api/courses/midtrans/finalize/ORDER_ID';
                     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
                     async function getOrCreateSnapToken(forceNew){
@@ -926,8 +957,19 @@
                             }
                         }
 
+                        // Set cachedPending BEFORE snap.pay() so finally block reads it correctly
+                        // snap.pay() is non-blocking — finally runs immediately after popup opens
+                        cachedPending = {
+                            pending: true,
+                            order_id: data.order_id,
+                            snap_token: data.snap_token,
+                            snap_token_created_at: Date.now()
+                        };
+                        midtransPayBtn.textContent = 'Continue Payment';
+
                         window.snap.pay(data.snap_token, {
                             onSuccess: async function(){
+                                cachedPending = null;
                                 try {
                                     var rUrl = refreshUrl.replace('ORDER_ID', encodeURIComponent(data.order_id));
                                     await fetch(rUrl, {
@@ -944,15 +986,15 @@
                                 window.location.href = @json(route('course.learn', $course));
                             },
                             onPending: function(){
-                                alert('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.');
                                 cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
                                 midtransPayBtn.textContent = 'Continue Payment';
                             },
                             onError: function(){
+                                cachedPending = null;
                                 alert('Pembayaran gagal. Silakan coba lagi.');
                             },
                             onClose: async function(){
-                                // Always check status when popup closes
+                                // Always check status when popup closes (including when timer expires)
                                 midtransPayBtn.disabled = true;
                                 midtransPayBtn.textContent = 'Memeriksa status...';
                                 try {
@@ -968,25 +1010,34 @@
                                         body: JSON.stringify({})
                                     });
                                     var result = await res.json();
-                                    if (result && result.status === 'settled') {
+                                    if (result && (result.payment_status === 'settled' || result.status === 'settled')) {
                                         window.location.href = @json(route('course.learn', $course));
                                         return;
                                     }
-                                    if (result && (result.status === 'expired' || result.status === 'rejected')) {
+                                    if (result && (
+                                        result.payment_status === 'expired' || result.payment_status === 'rejected' ||
+                                        result.status === 'expired' || result.status === 'rejected'
+                                    )) {
                                         cachedPending = null;
+                                        alert('Waktu pembayaran habis. Silakan buat order baru.');
                                         window.location.href = window.location.pathname + '?force_new=1';
                                         return;
                                     }
                                 } catch(_e) {}
+                                // Status still pending — user closed popup manually before paying
                                 midtransPayBtn.disabled = false;
                                 midtransPayBtn.textContent = 'Continue Payment';
                                 updatePayButtonState();
                             }
                         });
                     } catch(err) {
+                        // Reset cachedPending on error so user can retry fresh
+                        cachedPending = null;
                         alert(String(err && err.message ? err.message : err));
                     } finally {
                         midtransPayBtn.disabled = false;
+                        // cachedPending was set before snap.pay() — if it's still set here,
+                        // snap popup was opened and user hasn't paid yet → show "Continue Payment"
                         if (cachedPending && cachedPending.pending && cachedPending.order_id) {
                             midtransPayBtn.textContent = 'Continue Payment';
                         } else {

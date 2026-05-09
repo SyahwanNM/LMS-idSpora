@@ -67,10 +67,18 @@
                                 <div class="sanity-msg" data-for="course-trainer"></div>
                             </div>
                         </div>
-                        {{-- Module titles: shown dynamically based on selected level --}}
-                        <div id="module-titles-section" class="mb-3" style="display:none;">
+                        {{-- Module titles: dynamic, free-form (not tied to level) --}}
+                        <div id="module-titles-section" class="mb-3">
                             <label class="form-label text-dark fw-semibold">Input Title Module <span class="text-danger">*</span></label>
                             <div id="module-titles-grid" class="row g-3"></div>
+                            <div class="mt-2 d-flex gap-2">
+                                <button type="button" id="add-module-btn" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i> Add Module
+                                </button>
+                                <button type="button" id="remove-module-btn" class="btn btn-outline-danger btn-sm" style="display:none;">
+                                    <i class="bi bi-dash-circle me-1"></i> Remove Last
+                                </button>
+                            </div>
                         </div>
 
                         <div class="row g-3 mb-3">
@@ -230,38 +238,53 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-    // Dynamic module title inputs based on level
+    // Dynamic module title inputs — free-form, not tied to level
     (function () {
-        const levelModules = { beginner: 3, intermediate: 6, advanced: 12 };
-        const levelSelect  = document.getElementById('course-level');
-        const section      = document.getElementById('module-titles-section');
-        const grid         = document.getElementById('module-titles-grid');
+        const grid          = document.getElementById('module-titles-grid');
+        const addBtn        = document.getElementById('add-module-btn');
+        const removeBtn     = document.getElementById('remove-module-btn');
+        let moduleCount     = 0;
 
-        function renderModuleTitles(level) {
-            const count = levelModules[level] || 0;
-            grid.innerHTML = '';
-            if (!count) { section.style.display = 'none'; return; }
-
-            section.style.display = 'block';
-            for (let i = 1; i <= count; i++) {
-                const col = document.createElement('div');
-                col.className = 'col-md-4';
-                col.innerHTML = `
-                    <label class="form-label text-dark small" for="module-title-${i}">Module ${i}</label>
-                    <input id="module-title-${i}" name="unit_titles[${i}]" type="text"
-                           class="form-control form-control-sm"
-                           placeholder="Title module ${i}" required>`;
-                grid.appendChild(col);
-            }
+        function updateRemoveBtn() {
+            removeBtn.style.display = moduleCount > 0 ? 'inline-flex' : 'none';
         }
 
-        if (levelSelect) {
-            levelSelect.addEventListener('change', function () {
-                renderModuleTitles(this.value);
-            });
-            // init if old value exists
-            if (levelSelect.value) renderModuleTitles(levelSelect.value);
+        function addModule(prefill) {
+            moduleCount++;
+            const col = document.createElement('div');
+            col.className = 'col-md-4';
+            col.dataset.moduleIndex = moduleCount;
+            col.innerHTML = `
+                <label class="form-label text-dark small">Module ${moduleCount}</label>
+                <input name="unit_titles[${moduleCount}]" type="text"
+                       class="form-control form-control-sm"
+                       placeholder="Title module ${moduleCount}"
+                       value="${prefill ? String(prefill).replace(/"/g, '&quot;') : ''}"
+                       required>`;
+            grid.appendChild(col);
+            updateRemoveBtn();
         }
+
+        function removeLastModule() {
+            if (moduleCount <= 0) return;
+            const last = grid.querySelector(`[data-module-index="${moduleCount}"]`);
+            if (last) last.remove();
+            moduleCount--;
+            updateRemoveBtn();
+        }
+
+        if (addBtn)    addBtn.addEventListener('click', () => addModule(''));
+        if (removeBtn) removeBtn.addEventListener('click', removeLastModule);
+
+        // Restore old values on validation error
+        @if(old('unit_titles'))
+            @foreach(old('unit_titles') as $idx => $title)
+                addModule(@json($title));
+            @endforeach
+        @else
+            // Start with 1 empty module by default
+            addModule('');
+        @endif
     })();
     </script>
 

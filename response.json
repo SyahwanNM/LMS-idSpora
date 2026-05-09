@@ -1,0 +1,52 @@
+{
+  "status": "success",
+  "message": "Event berhasil diupdate",
+  "data": {
+    "id": 85,
+    "title": "Workshop Laravel 2026",
+    "manage_action": "manage",
+    "image": "events/VXhIbuaVVY2o7u7qyV5Lp4OI1J3SGcNSDzOq.png",
+    "vbg_path": null,
+    "certificate_path": null,
+    "module_path": null,
+    "material_status": "pending",
+    "material_approved_at": null,
+    "module_submission_path": null,
+    "certificate_logo": null,
+    "certificate_signature": null,
+    "certificate_template": "template_1",
+    "speaker": "alang",
+    "description": "Workshop yang menjelaskan basic laravel",
+    "short_description": "Workshop intensif",
+    "material": null,
+    "jenis": null,
+    "terms_and_conditions": null,
+    "benefit": null,
+    "location": "Zoom Meeting",
+    "price": "150000.00",
+    "maps_url": null,
+    "latitude": null,
+    "longitude": null,
+    "zoom_link": null,
+    "attendance_qr_token": null,
+    "attendance_qr_image": null,
+    "attendance_qr_generated_at": null,
+    "schedule_json": [
+      {
+        "start": "09:00",
+        "end": "10:00",
+        "title": "Opening",
+        "description": "Pembukaan acara"
+      }
+    ],
+    "expenses_json": [],
+    "discount_percentage": 0,
+    "discount_until": null,
+    "event_time": "09:00",
+    "event_time_end": "17:00",
+    "ended_at": null,
+    "event_date": "2026-05-31T17:00:00.000000Z",
+    "material_deadline": null,
+    "material_revision_deadline": null
+  }
+}

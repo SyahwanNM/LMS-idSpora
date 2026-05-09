@@ -331,8 +331,17 @@
                                                 <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
                                                 <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
                                                 <td>
-                                                    @php $st = strtolower((string)$reg->status); @endphp
-                                                <span class="badge {{ $st === 'active' ? 'bg-success' : ($st === 'rejected' ? 'bg-danger' : 'bg-secondary') }}">{{ strtoupper($reg->status ?? '-') }}</span>
+                                                    @php
+                                                        $st = strtolower((string)$reg->status);
+                                                        $eventFinished = method_exists($event, 'isFinished') && $event->isFinished();
+                                                        $isAlpha = $eventFinished && $st === 'active' && empty($reg->attended_at);
+                                                        $displayStatus = $isAlpha ? 'alpha' : $st;
+                                                    @endphp
+                                                    <span class="badge {{
+                                                        $displayStatus === 'active' ? 'bg-success' :
+                                                        ($displayStatus === 'alpha' ? 'bg-warning text-dark' :
+                                                        ($displayStatus === 'rejected' ? 'bg-danger' : 'bg-secondary'))
+                                                    }}">{{ strtoupper($displayStatus) }}</span>
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                             </tr>
@@ -376,24 +385,20 @@
                             </div>
                         </div>
                         @endif
-                        @if(!empty($event->benefit))
+                        @php
+                            $benefitItems = is_array($event->benefit)
+                                ? $event->benefit
+                                : array_values(array_filter(array_map('trim', preg_split('/\|\s*|\r\n|\n/', (string)($event->benefit ?? ''))), fn($s) => $s !== ''));
+                        @endphp
+                        @if(!empty($benefitItems))
                         <div class="col-lg-6">
                             <div class="border rounded p-3 h-100">
                                 <h6 class="text-dark mb-2"><i class="bi bi-gift me-2"></i>Benefit</h6>
-                                @php
-                                    $raw = $event->benefit ?? '';
-                                    $parts = preg_split('/\|\s*|\r\n|\n/', $raw);
-                                    $items = array_values(array_filter(array_map('trim', (array)$parts), function($s){ return $s !== ''; }));
-                                @endphp
-                                @if(count($items))
-                                    <ul class="mb-0 ps-3 small">
-                                        @foreach($items as $b)
-                                            <li>{{ $b }}</li>
-                                        @endforeach
-                                    </ul>
-                                @else
-                                    <div class="small">{!! nl2br(e($event->benefit)) !!}</div>
-                                @endif
+                                <ul class="mb-0 ps-3 small">
+                                    @foreach($benefitItems as $b)
+                                        <li>{{ $b }}</li>
+                                    @endforeach
+                                </ul>
                             </div>
                         </div>
                         @endif

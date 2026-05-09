@@ -815,7 +815,7 @@ class PaymentController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['status' => 'error', 'code' => 401, 'message' => 'Unauthorized'], 401);
         }
 
         $this->configureMidtrans();
@@ -825,7 +825,7 @@ class PaymentController extends Controller
         $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
         $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
         if ($baseAmount <= 0) {
-            return response()->json(['message' => 'Course gratis, tidak perlu Midtrans.'], 400);
+            return response()->json(['status' => 'error', 'code' => 400, 'message' => 'Course gratis, tidak perlu Midtrans.'], 400);
         }
 
         $rawReferralCode = trim((string) $request->query('referral_code', $request->input('referral_code')));
@@ -836,6 +836,8 @@ class PaymentController extends Controller
             && strcasecmp($rawReferralCode, (string) $user->referral_code) === 0
         ) {
             return response()->json([
+                'status' => 'error',
+                'code' => 422,
                 'message' => 'Kode referral tidak boleh menggunakan kode milik sendiri.',
             ], 422);
         }
@@ -845,6 +847,8 @@ class PaymentController extends Controller
             : null;
         if ($rawReferralCode !== '' && (bool) ($course->is_reseller_course ?? false) && !$referrer) {
             return response()->json([
+                'status' => 'error',
+                'code' => 422,
                 'message' => 'Kode referral tidak valid.',
             ], 422);
         }
@@ -880,6 +884,9 @@ class PaymentController extends Controller
                 if ($existingToken) {
                     DB::commit();
                     return response()->json([
+                        'status' => 'success',
+                        'code' => 200,
+                        'message' => 'Token pembayaran yang sedang berjalan ditemukan.',
                         'snap_token' => $existingToken,
                         'order_id' => $payment->order_id,
                         'amount' => (int) round((float) $payment->amount),
@@ -945,6 +952,9 @@ class PaymentController extends Controller
             DB::commit();
 
             return response()->json([
+                'status' => 'success',
+                'code' => 201,
+                'message' => 'Token pembayaran Midtrans berhasil dibuat.',
                 'snap_token' => $snapToken,
                 'order_id' => $payment->order_id,
                 'amount' => $grossAmount,
@@ -1025,6 +1035,9 @@ class PaymentController extends Controller
 
                     DB::commit();
                     return response()->json([
+                        'status' => 'success',
+                        'code' => 201,
+                        'message' => 'Token pembayaran Midtrans berhasil dibuat (retry).',
                         'snap_token' => $snapToken,
                         'order_id' => $newPayment->order_id,
                         'amount' => $grossAmount,
@@ -1038,7 +1051,7 @@ class PaymentController extends Controller
             }
 
             Log::error('Midtrans courseSnapToken failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans.'], 500);
+            return response()->json(['status' => 'error', 'code' => 500, 'message' => 'Gagal membuat pembayaran Midtrans.'], 500);
         }
     }
 
@@ -1379,7 +1392,7 @@ class PaymentController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['status' => 'error', 'code' => 401, 'message' => 'Unauthorized'], 401);
         }
 
         $payment = ManualPayment::query()
@@ -1401,6 +1414,7 @@ class PaymentController extends Controller
                 );
 
                 if ($actualStatus !== 'pending') {
+                    // Immediately update DB — no grace period
                     $payment->status = $actualStatus;
                     $payment->save();
 
@@ -1412,19 +1426,28 @@ class PaymentController extends Controller
                         }
                     }
 
-                    $payment = null; // treat as no pending payment
+                    $payment = null;
                 }
             } catch (\Throwable $e) {
-                // 404 = never charged → expired
+                // 404 = order not yet charged (user hasn't opened Snap popup yet).
+                // Only expire if token is older than 24 hours.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
-                    $reg = EventRegistration::find($payment->event_registration_id);
-                    if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
-                        $reg->status = 'expired';
-                        $reg->save();
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 25;
+
+                    if ($tokenAgeHours >= 24) {
+                        $payment->status = 'expired';
+                        $payment->save();
+                        $reg = EventRegistration::find($payment->event_registration_id);
+                        if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                            $reg->status = 'expired';
+                            $reg->save();
+                        }
+                        $payment = null;
                     }
-                    $payment = null;
+                    // else: token still valid (user hasn't opened popup yet), keep as pending
                 }
                 // Other errors: keep as pending, don't block the user
             }
@@ -1449,6 +1472,9 @@ class PaymentController extends Controller
         $hasExpiredRegistration = $registrationExpired && !$payment;
 
         return response()->json([
+            'status' => 'success',
+            'code' => 200,
+            'message' => $payment ? 'Terdapat pending order.' : 'Tidak ada pending order.',
             'pending' => (bool) $payment,
             'order_id' => $payment?->order_id,
             'amount' => $payment ? (int) round((float) $payment->amount) : null,
@@ -1488,6 +1514,7 @@ class PaymentController extends Controller
                 );
 
                 if ($actualStatus !== 'pending') {
+                    // Immediately update DB — no grace period here
                     $payment->status = $actualStatus;
                     $payment->save();
 
@@ -1503,16 +1530,26 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
-                    if ($payment->enrollment_id) {
-                        $enr = Enrollment::find($payment->enrollment_id);
-                        if ($enr && $enr->status !== 'active') {
-                            $enr->status = 'expired';
-                            $enr->save();
+                    // 404 = order not yet charged (user hasn't opened Snap popup yet).
+                    // Only expire if token is older than 24 hours.
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 25;
+
+                    if ($tokenAgeHours >= 24) {
+                        $payment->status = 'expired';
+                        $payment->save();
+                        if ($payment->enrollment_id) {
+                            $enr = Enrollment::find($payment->enrollment_id);
+                            if ($enr && $enr->status !== 'active') {
+                                $enr->status = 'expired';
+                                $enr->save();
+                            }
                         }
+                        $payment = null;
                     }
-                    $payment = null;
+                    // else: token still valid (user hasn't opened popup yet), keep as pending
                 }
                 // Other errors: keep as pending, don't block the user
             }
@@ -1529,6 +1566,9 @@ class PaymentController extends Controller
         }
 
         return response()->json([
+            'status' => 'success',
+            'code' => 200,
+            'message' => $payment ? 'Terdapat pending order.' : 'Tidak ada pending order.',
             'pending' => (bool) $payment,
             'order_id' => $payment?->order_id,
             'amount' => $payment ? (int) round((float) $payment->amount) : null,
@@ -1603,14 +1643,16 @@ class PaymentController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'OK',
+                'status' => 'success',
+                'code' => 200,
+                'message' => 'Status pembayaran berhasil diperbarui.',
                 'order_id' => $orderId,
-                'status' => $payment->status,
+                'payment_status' => $payment->status,
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Midtrans refreshCoursePayment failed', ['order_id' => $orderId, 'error' => $e->getMessage()]);
-            return response()->json(['message' => 'Gagal memeriksa status pembayaran.'], 500);
+            return response()->json(['status' => 'error', 'code' => 500, 'message' => 'Gagal memeriksa status pembayaran.'], 500);
         }
     }
 

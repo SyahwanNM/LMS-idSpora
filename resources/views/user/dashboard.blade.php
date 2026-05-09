@@ -146,6 +146,10 @@
 
 <body style="background-color: var(--bg-main); padding-top: 0;">
     @include("partials.navbar-after-login")
+    @if(session('login_success'))
+    @php session()->flash('success', session('login_success')); @endphp
+    @endif
+    @include("partials.flash")
 
     <main class="container-xl">
         {{-- <div class="container pb-5"> --}}

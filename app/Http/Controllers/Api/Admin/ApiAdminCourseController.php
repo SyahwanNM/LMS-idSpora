@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\CourseUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ApiAdminCourseController extends Controller
 {
@@ -109,7 +111,7 @@ class ApiAdminCourseController extends Controller
             'trainer_id'                 => $validated['trainer_id'] ?? null,
             'description'                => $validated['description'] ?? null,
             'level'                      => $validated['level'],
-            'status'                     => $validated['status'] ?? 'draft',
+            'status'                     => 'archive',
             'price'                      => $validated['price'],
             'duration'                   => $validated['duration'] ?? 0,
             'free_access_mode'           => $validated['free_access_mode'] ?? 'limit_2',
@@ -123,7 +125,10 @@ class ApiAdminCourseController extends Controller
             'card_thumbnail'             => $cardThumbPath,
         ]);
 
-        return $this->jsonSuccess('Course berhasil dibuat', $course->fresh()->load('category', 'trainer:id,name,email'), null, 201);
+        // Save unit titles (module section headers)
+        $this->saveUnitTitles($course, $request->input('unit_titles', []));
+
+        return $this->jsonSuccess('Course berhasil dibuat', $course->fresh()->load('category', 'trainer:id,name,email', 'units'), null, 201);
     }
 
     // -------------------------------------------------------------------------
@@ -140,7 +145,6 @@ class ApiAdminCourseController extends Controller
             'trainer_id'         => $validated['trainer_id'] ?? $course->trainer_id,
             'description'        => $validated['description'] ?? $course->description,
             'level'              => $validated['level'],
-            'status'             => $validated['status'] ?? $course->status,
             'price'              => $validated['price'],
             'duration'           => $validated['duration'] ?? $course->duration ?? 0,
             'free_access_mode'   => $validated['free_access_mode'] ?? ($course->free_access_mode ?? 'limit_2'),
@@ -167,7 +171,76 @@ class ApiAdminCourseController extends Controller
 
         $course->update($data);
 
-        return $this->jsonSuccess('Course berhasil diupdate', $course->fresh()->load('category', 'trainer:id,name,email'));
+        // Save unit titles (module section headers)
+        if ($request->has('unit_titles')) {
+            $this->saveUnitTitles($course, $request->input('unit_titles', []));
+        }
+
+        return $this->jsonSuccess('Course berhasil diupdate', $course->fresh()->load('category', 'trainer:id,name,email', 'units'));
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/admin/courses/{course}/publish
+    // -------------------------------------------------------------------------
+
+    public function publish(Course $course)
+    {
+        if (((string) $course->status) === 'active') {
+            return $this->jsonError('Course sudah dipublish sebelumnya.', 422);
+        }
+
+        // Validasi kelengkapan materi sebelum publish
+        $totalModules = (int) $course->modules()->count();
+        $pdfCount     = (int) $course->modules()->where('type', 'pdf')->count();
+        $videoCount   = (int) $course->modules()->where('type', 'video')->count();
+        $quizCount    = (int) $course->modules()->where('type', 'quiz')->count();
+
+        $missing = [];
+        if ($totalModules <= 0) {
+            $missing[] = 'Modul';
+        }
+        if ($pdfCount <= 0) {
+            $missing[] = 'Modul (PDF)';
+        }
+        if ($videoCount <= 0) {
+            $missing[] = 'Video';
+        }
+        if ($quizCount <= 0) {
+            $missing[] = 'Kuis';
+        }
+
+        if (!empty($missing)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Course tidak dapat dipublish. Lengkapi terlebih dahulu: ' . implode(', ', $missing) . '.',
+                'data'    => [
+                    'missing'       => $missing,
+                    'total_modules' => $totalModules,
+                    'pdf_count'     => $pdfCount,
+                    'video_count'   => $videoCount,
+                    'quiz_count'    => $quizCount,
+                ],
+            ], 422);
+        }
+
+        $course->update(['status' => 'active']);
+
+        return $this->jsonSuccess('Course berhasil dipublish', $course->fresh()->load('category', 'trainer:id,name,email'));
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/admin/courses/{course}/unpublish
+    // -------------------------------------------------------------------------
+
+    public function unpublish(Course $course)
+    {
+        if (((string) $course->status) !== 'active') {
+            return $this->jsonError('Course belum dipublish.', 422);
+        }
+
+        $course->update(['status' => 'approved']);
+
+        return $this->jsonSuccess('Course berhasil di-unpublish', $course->fresh()->load('category', 'trainer:id,name,email'));
     }
 
     // -------------------------------------------------------------------------
@@ -202,20 +275,33 @@ class ApiAdminCourseController extends Controller
 
     private function validatePayload(Request $request, bool $isUpdate): array
     {
-        $mediaRule = $isUpdate
+        // Saat update: media & card_thumbnail boleh kosong (tidak wajib re-upload)
+        // Saat store: wajib diisi
+        $mediaRule        = $isUpdate
             ? 'nullable|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800'
-            : 'nullable|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800';
+            : 'required|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800';
 
-        return $request->validate([
+        $cardThumbRule    = $isUpdate
+            ? 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480'
+            : 'required|file|mimes:jpeg,png,jpg,gif,webp|max:20480';
+
+        $trainerRule      = $isUpdate
+            ? ['nullable', 'integer', Rule::exists('users', 'id')->where('role', 'trainer')]
+            : ['required', 'integer', Rule::exists('users', 'id')->where('role', 'trainer')];
+        $descriptionRule  = $isUpdate ? 'nullable|string'          : 'required|string';
+        $freeAccessRule   = $isUpdate ? 'nullable|in:all,limit_2,none' : 'required|in:all,limit_2,none';
+        $unitTitlesRule   = $isUpdate ? 'nullable|array'           : 'required|array|min:1';
+        $statusRule       = null; // status tidak bisa diubah via store maupun update
+
+        $rules = [
             'name'               => 'required|string|max:255',
             'category_id'        => 'required|exists:categories,id',
-            'trainer_id'         => 'nullable|exists:users,id',
-            'description'        => 'nullable|string',
+            'trainer_id'         => $trainerRule,
+            'description'        => $descriptionRule,
             'level'              => 'required|in:beginner,intermediate,advanced',
-            'status'             => 'nullable|in:draft,active,archive,approved',
             'price'              => 'required|integer|min:0',
             'duration'           => 'nullable|integer|min:0',
-            'free_access_mode'   => 'nullable|in:all,limit_2,none',
+            'free_access_mode'   => $freeAccessRule,
             'is_reseller_course' => 'nullable|boolean',
             'discount_percent'   => 'nullable|integer|min:1|max:100',
             'discount_start'     => 'nullable|date',
@@ -226,9 +312,18 @@ class ApiAdminCourseController extends Controller
             'expenses.*.unit_price' => 'nullable|integer|min:0',
             'expenses.*.total'      => 'nullable|integer|min:0',
             'media'              => $mediaRule,
-            'image'              => $mediaRule,
-            'card_thumbnail'     => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:20480',
-        ]);
+            'image'              => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,mp4,webm,ogg|max:204800',
+            'card_thumbnail'     => $cardThumbRule,
+            'unit_titles'        => $unitTitlesRule,
+            'unit_titles.*'      => 'required|string|max:255',
+        ];
+
+        // status hanya bisa diubah saat update
+        if ($statusRule !== null) {
+            $rules['status'] = $statusRule;
+        }
+
+        return $request->validate($rules);
     }
 
     private function handleMediaUpload(Request $request, ?Course $course): array
@@ -284,5 +379,31 @@ class ApiAdminCourseController extends Controller
         }
 
         return !empty($rows) ? $rows : null;
+    }
+
+    /**
+     * Persist unit titles (module section headers) for a course.
+     * Accepts both indexed array [1 => 'Title 1', 2 => 'Title 2']
+     * and sequential array ['Title 1', 'Title 2'].
+     */
+    private function saveUnitTitles(Course $course, mixed $input): void
+    {
+        if (!is_array($input) || empty($input)) {
+            return;
+        }
+
+        // Re-index sequential arrays starting from 1
+        $isSequential = array_keys($input) === range(0, count($input) - 1);
+        foreach ($input as $key => $title) {
+            $title = trim((string) $title);
+            if ($title === '') {
+                continue;
+            }
+            $unitNo = $isSequential ? ((int) $key + 1) : (int) $key;
+            CourseUnit::updateOrCreate(
+                ['course_id' => $course->id, 'unit_no' => $unitNo],
+                ['title' => $title]
+            );
+        }
     }
 }
