@@ -154,6 +154,8 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->
 
     // Events CRUD
     Route::apiResource('events', AdminEventController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
+    // Duplikasi event
+    Route::post('events/{event}/duplicate', [AdminEventController::class, 'duplicate'])->whereNumber('event');
     // Upload dokumen operasional event (virtual background & absensi)
     Route::post('events/{event}/documents', [AdminEventController::class, 'uploadDocuments'])->whereNumber('event');
     // Trainer module submissions: list, approve, reject

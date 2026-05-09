@@ -242,14 +242,37 @@
                                 <div class="form-text">Select event location type. Maps/Zoom fields will adjust accordingly.</div>
                             </div>
                             <div class="mb-3">
-                                <label for="hargaDisplay" class="form-label fw-semibold">Price (Rp) <span
-                                        class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" id="hargaDisplay" class="form-control" required placeholder="0"
-                                        value="{{ number_format(old('price', $event->price), 0, ',', '.') }}">
-                                    <input type="hidden" name="price" id="harga" value="{{ old('price', $event->price) }}">
+                                <label for="hargaDisplay" class="form-label fw-semibold">Price (Rp) <span class="text-danger">*</span></label>
+                                @php
+                                    $editLocMode = old('location_mode', ((!empty($event->maps_url) && !empty($event->zoom_link)) ? 'hybrid' : (!empty($event->zoom_link) ? 'online' : 'offline')));
+                                @endphp
+                                {{-- Single price (offline / online) --}}
+                                <div id="price-single-wrap" class="{{ $editLocMode === 'hybrid' ? 'd-none' : '' }}">
+                                    <div class="input-group">
+                                        <input type="text" id="hargaDisplay" class="form-control" placeholder="0"
+                                            value="{{ number_format(old('price', $event->price), 0, ',', '.') }}">
+                                        <input type="hidden" name="price" id="harga" value="{{ old('price', $event->price) }}">
+                                    </div>
                                 </div>
-                                <small class="form-text">Enter numbers only; automatically formatted with thousands separators. Enter 0 for free.</small>
+                                {{-- Hybrid: separate offline & online prices --}}
+                                <div id="price-hybrid-wrap" class="{{ $editLocMode === 'hybrid' ? '' : 'd-none' }}">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-semibold mb-1">Offline Price (Rp)</label>
+                                            <input type="text" id="hargaOfflineDisplay" class="form-control" placeholder="0"
+                                                value="{{ number_format(old('price_offline', $event->price_offline ?? 0), 0, ',', '.') }}">
+                                            <input type="hidden" name="price_offline" id="hargaOffline" value="{{ old('price_offline', $event->price_offline ?? 0) }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-semibold mb-1">Online Price (Rp)</label>
+                                            <input type="text" id="hargaOnlineDisplay" class="form-control" placeholder="0"
+                                                value="{{ number_format(old('price_online', $event->price_online ?? 0), 0, ',', '.') }}">
+                                            <input type="hidden" name="price_online" id="hargaOnline" value="{{ old('price_online', $event->price_online ?? 0) }}">
+                                        </div>
+                                    </div>
+                                    <small class="form-text">Set 0 for free. The lower price will be used as the base price.</small>
+                                </div>
+                                <small class="form-text {{ $editLocMode === 'hybrid' ? 'd-none' : '' }}" id="price-single-hint">Enter numbers only; automatically formatted with thousands separators. Enter 0 for free.</small>
                             </div>
                             <div class="mb-3">
                                 <label for="diskon" class="form-label fw-semibold">Discount (%)</label>
@@ -816,6 +839,23 @@
 
                 showPlaceNameIfNeeded(false);
 
+                // Toggle hybrid price fields
+                const priceSingle = document.getElementById('price-single-wrap');
+                const priceHybrid = document.getElementById('price-hybrid-wrap');
+                const priceSingleHint = document.getElementById('price-single-hint');
+                const hargaDisplayEl = document.getElementById('hargaDisplay');
+                if (isHybrid) {
+                    priceSingle?.classList.add('d-none');
+                    priceHybrid?.classList.remove('d-none');
+                    priceSingleHint?.classList.add('d-none');
+                    if (hargaDisplayEl) hargaDisplayEl.required = false;
+                } else {
+                    priceSingle?.classList.remove('d-none');
+                    priceHybrid?.classList.add('d-none');
+                    priceSingleHint?.classList.remove('d-none');
+                    if (hargaDisplayEl) hargaDisplayEl.required = true;
+                }
+
                 if(isOnline){
                     if(mapsInput) mapsInput.value = '';
                     const latInp = document.getElementById('latitude');
@@ -971,6 +1011,31 @@
                 hargaDisplay.addEventListener('input', () => { const raw = unformatNumber(hargaDisplay.value); hargaDisplay.value = formatThousands(raw); updateHargaState(); });
                 updateHargaState();
             }
+
+            // Hybrid price inputs: currency formatting
+            (function initHybridPriceInputs() {
+                const pairs = [
+                    { display: 'hargaOfflineDisplay', hidden: 'hargaOffline' },
+                    { display: 'hargaOnlineDisplay',  hidden: 'hargaOnline'  },
+                ];
+                pairs.forEach(function(p) {
+                    const disp = document.getElementById(p.display);
+                    const hidn = document.getElementById(p.hidden);
+                    if (!disp || !hidn) return;
+                    const sync = function() {
+                        const raw = unformatNumber(disp.value);
+                        disp.value = formatThousands(raw);
+                        hidn.value = raw;
+                    };
+                    disp.addEventListener('keydown', function(e) {
+                        const allowed = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
+                        if (allowed.includes(e.key)) return;
+                        if (!/\d/.test(e.key)) e.preventDefault();
+                    });
+                    disp.addEventListener('input', sync);
+                    sync();
+                });
+            })();
             // Diskon input clamp + toggle discount_until
             function toggleDiscountUntil() {
                 if (!discountUntilInput) return;

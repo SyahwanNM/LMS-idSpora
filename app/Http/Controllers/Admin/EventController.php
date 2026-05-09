@@ -164,17 +164,25 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
-        // Normalize price input: allow formatted values (e.g. "1.000.000") from client-side
-        // by stripping non-digit characters so validation accepts numeric values.
-        $rawPrice = $request->input('price', null);
-        if (!is_null($rawPrice)) {
-            $clean = preg_replace('/\D/', '', (string) $rawPrice);
-            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        // Normalize price inputs (strip formatting like "1.000.000")
+        foreach (['price', 'price_offline', 'price_online'] as $field) {
+            $raw = $request->input($field, null);
+            if (!is_null($raw)) {
+                $clean = preg_replace('/\D/', '', (string) $raw);
+                $request->merge([$field => $clean === '' ? 0 : (int) $clean]);
+            }
+        }
+
+        // For hybrid events: derive base price as the minimum of offline/online
+        $locMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        if ($locMode === 'hybrid') {
+            $priceOffline = (int) $request->input('price_offline', 0);
+            $priceOnline  = (int) $request->input('price_online', 0);
+            $request->merge(['price' => min($priceOffline, $priceOnline)]);
         }
 
         // Derive location from place_name or location_mode if location is missing or empty
         if (!$request->has('location') || empty($request->input('location'))) {
-            $locMode = $request->input('location_mode');
             $pName = $request->input('place_name');
             if ($locMode === 'online') {
                 $request->merge(['location' => 'Online']);
@@ -207,6 +215,8 @@ class EventController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'zoom_link' => 'nullable|url|max:255',
             'price' => 'required|numeric|min:0',
+            'price_offline' => 'nullable|numeric|min:0',
+            'price_online' => 'nullable|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
@@ -325,6 +335,8 @@ class EventController extends Controller
             'longitude' => $mapsUrl !== '' ? $longitude : null,
             'zoom_link' => $zoomLink !== '' ? $zoomLink : null,
             'price' => $request->price,
+            'price_offline' => $request->price_offline ?? null,
+            'price_online' => $request->price_online ?? null,
             'discount_percentage' => $request->discount_percentage ?? 0,
             'discount_until' => $request->discount_until,
             'event_date' => $request->event_date,
@@ -514,11 +526,21 @@ class EventController extends Controller
             }
         }
 
-        // Normalize price input in case client sent a formatted string (e.g. "1.000.000").
-        $rawPrice = $request->input('price', null);
-        if (!is_null($rawPrice)) {
-            $clean = preg_replace('/\D/', '', (string) $rawPrice);
-            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        // Normalize price inputs in case client sent formatted strings (e.g. "1.000.000").
+        foreach (['price', 'price_offline', 'price_online'] as $field) {
+            $raw = $request->input($field, null);
+            if (!is_null($raw)) {
+                $clean = preg_replace('/\D/', '', (string) $raw);
+                $request->merge([$field => $clean === '' ? 0 : (int) $clean]);
+            }
+        }
+
+        // For hybrid events: derive base price as the minimum of offline/online
+        $updateLocMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        if ($updateLocMode === 'hybrid') {
+            $priceOffline = (int) $request->input('price_offline', 0);
+            $priceOnline  = (int) $request->input('price_online', 0);
+            $request->merge(['price' => min($priceOffline, $priceOnline)]);
         }
 
         $request->validate([
@@ -542,6 +564,8 @@ class EventController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'zoom_link' => 'nullable|url|max:255',
             'price' => 'required|numeric|min:0',
+            'price_offline' => 'nullable|numeric|min:0',
+            'price_online' => 'nullable|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
@@ -579,6 +603,8 @@ class EventController extends Controller
             'longitude',
             'zoom_link',
             'price',
+            'price_offline',
+            'price_online',
             'discount_percentage',
             'discount_until',
             'event_date',
@@ -747,6 +773,118 @@ class EventController extends Controller
         $toHistory = is_string($prev) && str_contains($prev, '/admin/events/history');
         $route = $toHistory ? route('admin.events.history') : route('admin.add-event');
         return redirect($route)->with('success', 'Event deleted successfully!');
+    }
+
+    /**
+     * Duplicate an event: copy all content fields, reset operational docs,
+     * unpublished, no participants.
+     */
+    public function duplicate(Event $event)
+    {
+        $copy = $event->replicate([
+            'is_published', 'published_at',
+            'vbg_path', 'module_path', 'module_submission_path', 'certificate_path',
+            'material_status', 'material_approved_at', 'material_approved_by', 'material_rejection_reason',
+            'module_submitted_at', 'module_verified_at', 'module_verified_by',
+            'module_rejected_at', 'module_rejected_by', 'module_rejection_reason',
+            'attendance_qr_token', 'attendance_qr_image', 'attendance_qr_generated_at',
+        ]);
+
+        $copy->title                      = $event->title . ' (Copy)';
+        $copy->is_published               = false;
+        $copy->published_at               = null;
+        $copy->vbg_path                   = null;
+        $copy->module_path                = null;
+        $copy->module_submission_path     = null;
+        $copy->certificate_path           = null;
+        $copy->material_status            = 'pending'; // NOT NULL, reset to default
+        $copy->material_approved_at       = null;
+        $copy->material_approved_by       = null;
+        $copy->material_rejection_reason  = null;
+        $copy->module_submitted_at        = null;
+        $copy->module_verified_at         = null;
+        $copy->module_verified_by         = null;
+        $copy->module_rejected_at         = null;
+        $copy->module_rejected_by         = null;
+        $copy->module_rejection_reason    = null;
+        $copy->attendance_qr_token        = null;
+        $copy->attendance_qr_image        = null;
+        $copy->attendance_qr_generated_at = null;
+        $copy->save();
+
+        // Copy schedule items
+        foreach ($event->scheduleItems as $item) {
+            $copy->scheduleItems()->create($item->only([
+                'time_start', 'time_end', 'activity', 'speaker', 'order',
+            ]));
+        }
+
+        // Copy expenses
+        foreach ($event->expenses as $expense) {
+            $copy->expenses()->create($expense->only([
+                'item', 'quantity', 'unit_price', 'total', 'note',
+            ]));
+        }
+
+        // Auto-generate attendance QR for the duplicated event
+        $this->generateAttendanceQrForEvent($copy);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Event duplicated successfully.',
+            'data'    => ['id' => $copy->id, 'title' => $copy->title],
+        ], 201);
+    }
+
+    /**
+     * Generate attendance QR code for an event (shared helper).
+     */
+    private function generateAttendanceQrForEvent(Event $event): void
+    {
+        try {
+            $token    = bin2hex(random_bytes(16));
+            $content  = url('/events/' . $event->id . '?t=' . $token);
+            $filename = null;
+            $png      = null;
+
+            try {
+                if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                    $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                }
+            } catch (\Throwable $e) {
+                $png = null;
+            }
+
+            if ($png) {
+                $filename = 'events/qr/event-' . $event->id . '-qr.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+            } else {
+                $svg = null;
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) {
+                    $svg = null;
+                }
+
+                if ($svg) {
+                    $filename = 'events/qr/event-' . $event->id . '-qr.svg';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                } else {
+                    $filename = 'events/qr/event-' . $event->id . '-qr.png';
+                    $placeholder = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $placeholder);
+                }
+            }
+
+            $event->attendance_qr_token        = $token;
+            $event->attendance_qr_image        = $filename;
+            $event->attendance_qr_generated_at = now();
+            $event->save();
+        } catch (\Throwable $e) {
+            // QR generation is non-critical — do not fail the request
+        }
     }
 
     /**

@@ -573,8 +573,25 @@ class PaymentController extends Controller
 
         $forceNew = (bool) $request->boolean('force_new');
 
-        $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
-        $baseAmount = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+        // Resolve base amount — for hybrid events use attendance_type to pick the right price
+        $attendanceType = strtolower(trim((string) $request->query('attendance_type', $request->input('attendance_type', 'offline'))));
+        $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link)
+                          && ($event->price_offline > 0 || $event->price_online > 0);
+
+        if ($isHybridEvent) {
+            $rawHybridPrice = $attendanceType === 'online'
+                              ? (float) ($event->price_online ?? 0)
+                              : (float) ($event->price_offline ?? 0);
+            $discountPct    = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
+                              ? (float) ($event->discount_percentage ?? 0) : 0.0;
+            $baseAmount     = $discountPct > 0
+                              ? round($rawHybridPrice * (1 - $discountPct / 100), 2)
+                              : $rawHybridPrice;
+        } else {
+            $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
+            $baseAmount  = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+        }
+
         if ($baseAmount <= 0) {
             return response()->json(['message' => 'Event gratis, tidak perlu Midtrans.'], 400);
         }
@@ -676,6 +693,7 @@ class PaymentController extends Controller
                     'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
                     'event_id' => $event->id,
                     'event_title' => $event->title,
+                    'attendance_type' => $attendanceType,
                 ]),
             ]);
             $payment->save();

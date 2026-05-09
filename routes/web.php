@@ -609,6 +609,9 @@ Route::middleware(['auth'])->group(function () {
             ]
         ]);
 
+        // Duplicate event
+        Route::post('/admin/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('admin.events.duplicate');
+
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)
         Route::get('/admin/certificates', function () {
             return redirect()->route('admin.crm.certificates.index');

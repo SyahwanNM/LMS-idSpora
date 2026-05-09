@@ -39,7 +39,7 @@ class DashboardController extends Controller
         $upcomingEvents = Event::active()
             ->where('is_published', true)
             ->withCount(['registrationsActive as registrations_count'])
-            ->orderByDesc('created_at')
+            ->orderBy('event_date')
             ->limit(8)
             ->get();
 

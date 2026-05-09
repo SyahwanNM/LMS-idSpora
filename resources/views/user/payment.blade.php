@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+﻿@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
@@ -139,9 +139,21 @@
         <input type="hidden" name="event_id" value="{{ $event->id ?? '' }}">
 
         @php
+            $isHybridPayment = isset($event) && !empty($event->maps_url) && !empty($event->zoom_link)
+                               && ($event->price_offline > 0 || $event->price_online > 0);
+            $discountRate    = (isset($event) && $event->hasDiscount() && !empty($event->discount_percentage))
+                               ? (float) $event->discount_percentage / 100 : 0.0;
+            $priceOfflineFinal = $isHybridPayment
+                               ? (int) round((float)($event->price_offline ?? 0) * (1 - $discountRate))
+                               : 0;
+            $priceOnlineFinal  = $isHybridPayment
+                               ? (int) round((float)($event->price_online ?? 0) * (1 - $discountRate))
+                               : 0;
             $isFree = isset($event) ? ((int)($event->price ?? 0) === 0) : false;
             $hasDiscount = isset($event) ? $event->hasDiscount() : false;
-            $finalPrice = isset($event) ? ($hasDiscount ? ($event->discounted_price ?? 0) : ($event->price ?? 0)) : 0;
+            $finalPrice = $isHybridPayment
+                        ? $priceOfflineFinal  // default to offline price
+                        : (isset($event) ? ($hasDiscount ? ($event->discounted_price ?? 0) : ($event->price ?? 0)) : 0);
         @endphp
 
         <div class="payment-container" style="margin-top: 0;">
@@ -182,7 +194,29 @@
                             <div class="form-text small">Enter the reseller referral code to get a discount/commission.</div>
                         </div>
                         @endif
-                         
+
+                        @if($isHybridPayment)
+                        <div class="mb-custom" style="margin-top:14px;">
+                            <label class="form-label-custom" style="margin-bottom:8px;">Attendance Type <span style="color:#ef4444;">*</span></label>
+                            <input type="hidden" name="attendance_type" id="attendanceTypeInput" value="offline">
+                            <div style="display:flex; gap:10px;">
+                                <label id="label-offline" style="flex:1; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:2px solid #1565c0; background:#e8f4fd; cursor:pointer; font-size:13px; font-weight:600; color:#1565c0; transition:all .2s;">
+                                    <input type="radio" name="attendance_type_radio" value="offline" checked style="accent-color:#1565c0;">
+                                    <span>Offline</span>
+                                    <span id="price-offline-label" style="margin-left:auto; font-weight:700;">
+                                        Rp{{ number_format($priceOfflineFinal, 0, ',', '.') }}
+                                    </span>
+                                </label>
+                                <label id="label-online" style="flex:1; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:2px solid #e0e0e0; background:#fff; cursor:pointer; font-size:13px; font-weight:600; color:#555; transition:all .2s;">
+                                    <input type="radio" name="attendance_type_radio" value="online" style="accent-color:#c62828;">
+                                    <span>Online</span>
+                                    <span id="price-online-label" style="margin-left:auto; font-weight:700;">
+                                        Rp{{ number_format($priceOnlineFinal, 0, ',', '.') }}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     
                     
@@ -200,14 +234,22 @@
                             <div class="order-info">
                                 <h5>{{ isset($event)? $event->title : 'Event Title' }}</h5>
                                 <p>IdSpora</p>
-                                <div class="price-text" id="eventPriceText" data-base-amount="{{ (int) round($finalPrice ?? 0) }}">
-                                    @if($isFree) 
-                                        FREE 
+                                <div class="price-text" id="eventPriceText"
+                                    data-base-amount="{{ (int) round($finalPrice ?? 0) }}"
+                                    data-is-hybrid="{{ $isHybridPayment ? 'true' : 'false' }}"
+                                    data-price-offline="{{ $priceOfflineFinal ?? 0 }}"
+                                    data-price-online="{{ $priceOnlineFinal ?? 0 }}"
+                                    data-price-offline-raw="{{ (int) round((float)($event->price_offline ?? 0)) }}"
+                                    data-price-online-raw="{{ (int) round((float)($event->price_online ?? 0)) }}">
+                                    @if($isFree)
+                                        FREE
+                                    @elseif($isHybridPayment)
+                                        Rp{{ number_format($priceOfflineFinal, 0, ',', '.') }}
                                     @elseif(isset($event) && $event->hasDiscount())
                                         <span style="text-decoration: line-through; color: #888; font-size: 0.85em; margin-right: 6px; font-weight: 400;">Rp{{ number_format($event->price, 0, ',', '.') }}</span>
                                         Rp{{ number_format($finalPrice, 0, ',', '.') }}
-                                    @else 
-                                        Rp{{ number_format($finalPrice, 0, ',', '.') }} 
+                                    @else
+                                        Rp{{ number_format($finalPrice, 0, ',', '.') }}
                                     @endif
                                 </div>
                             </div>
@@ -376,6 +418,62 @@
             }
         }
 
+        // --- Hybrid attendance type radio ---
+        const isHybrid = eventPriceEl?.dataset.isHybrid === 'true';
+        const priceOffline = parseInt(eventPriceEl?.dataset.priceOffline || '0', 10);
+        const priceOnline  = parseInt(eventPriceEl?.dataset.priceOnline  || '0', 10);
+        const priceOfflineRaw = parseInt(eventPriceEl?.dataset.priceOfflineRaw || '0', 10);
+        const priceOnlineRaw  = parseInt(eventPriceEl?.dataset.priceOnlineRaw  || '0', 10);
+        const attendanceTypeInput = document.getElementById('attendanceTypeInput');
+        const labelOffline = document.getElementById('label-offline');
+        const labelOnline  = document.getElementById('label-online');
+
+        function setHybridPrice(type) {
+            if (!isHybrid || !eventPriceEl) return;
+            const price = type === 'online' ? priceOnline : priceOffline;
+            const raw   = type === 'online' ? priceOnlineRaw : priceOfflineRaw;
+            // Update checkout price display
+            eventPriceEl.dataset.baseAmount = price;
+            if (price === 0) {
+                eventPriceEl.textContent = 'FREE';
+            } else if (raw > price) {
+                eventPriceEl.innerHTML = '<span style="text-decoration:line-through;color:#888;font-size:0.85em;margin-right:6px;font-weight:400;">Rp' + formatRupiah(raw) + '</span>Rp' + formatRupiah(price);
+            } else {
+                eventPriceEl.textContent = 'Rp' + formatRupiah(price);
+            }
+            // Update hidden input
+            if (attendanceTypeInput) attendanceTypeInput.value = type;
+            // Update label styles
+            if (labelOffline && labelOnline) {
+                if (type === 'offline') {
+                    labelOffline.style.border = '2px solid #1565c0';
+                    labelOffline.style.background = '#e8f4fd';
+                    labelOffline.style.color = '#1565c0';
+                    labelOnline.style.border = '2px solid #e0e0e0';
+                    labelOnline.style.background = '#fff';
+                    labelOnline.style.color = '#555';
+                } else {
+                    labelOnline.style.border = '2px solid #c62828';
+                    labelOnline.style.background = '#fce4ec';
+                    labelOnline.style.color = '#c62828';
+                    labelOffline.style.border = '2px solid #e0e0e0';
+                    labelOffline.style.background = '#fff';
+                    labelOffline.style.color = '#555';
+                }
+            }
+            // Re-trigger referral recalculation if active
+            if (typeof recalcReferral === 'function') recalcReferral();
+        }
+
+        if (isHybrid) {
+            document.querySelectorAll('input[name="attendance_type_radio"]').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    setHybridPrice(this.value);
+                });
+            });
+            // Init
+            setHybridPrice('offline');
+        }
         let _referralTimer = null;
         async function validateReferralServer(code){
             if(!checkReferralUrl) return null;
@@ -745,7 +843,7 @@
             } else if (pending && pending.needs_force_new) {
                 // Previous order expired/rejected — reset to fresh payment state
                 cachedPending = null;
-                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                midtransPayBtn.textContent = 'Pay Now';
                 validate();
             }
         }
@@ -797,6 +895,9 @@
                 if(waVal) url.searchParams.set('whatsapp', waVal);
                 if(referralInput && referralInput.value && referralInput.value.trim() !== '') url.searchParams.set('referral_code', referralInput.value.trim());
                 if(forceNew) url.searchParams.set('force_new', '1');
+                // Pass attendance_type for hybrid events
+                const attendanceTypeEl = document.getElementById('attendanceTypeInput');
+                if(attendanceTypeEl && attendanceTypeEl.value) url.searchParams.set('attendance_type', attendanceTypeEl.value);
 
                 const res = await fetch(url.toString(), {
                     method: 'GET',
@@ -908,7 +1009,7 @@
         if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
             cachedPending = null;
             if (midtransPayBtn) {
-                midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                midtransPayBtn.textContent = 'Pay Now';
             }
         }
     });

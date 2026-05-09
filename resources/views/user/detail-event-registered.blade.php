@@ -965,37 +965,99 @@
                             }
                         }
                     }
+                    // Hybrid pricing
+                    $isHybridEvent = $eventObj && !empty($eventObj->maps_url) && !empty($eventObj->zoom_link);
+                    $priceOffline  = $eventObj ? (float) ($eventObj->price_offline ?? 0) : 0.0;
+                    $priceOnline   = $eventObj ? (float) ($eventObj->price_online  ?? 0) : 0.0;
+                    $hasHybridPrices = $isHybridEvent && ($priceOffline > 0 || $priceOnline > 0);
+
+                    // Apply discount to hybrid prices too
+                    $discountRate       = ($hasActiveDiscount && !empty($eventObj->discount_percentage))
+                                            ? (float) $eventObj->discount_percentage / 100
+                                            : 0.0;
+                    $priceOfflineFinal  = $discountRate > 0 ? round($priceOffline * (1 - $discountRate)) : $priceOffline;
+                    $priceOnlineFinal   = $discountRate > 0 ? round($priceOnline  * (1 - $discountRate)) : $priceOnline;
                 @endphp
                 <div class="info-price-box">
-                    @php $isFreeNow = ((int) $finalPrice) === 0; @endphp
-                    <div class="price-box">
-                        <span>
-                            @if($hasActiveDiscount && $basePrice > 0)
-                                Rp.{{ number_format($basePrice, 0, ',', '.') }}
+                    @if($hasHybridPrices)
+                        {{-- Hybrid: show offline & online prices separately --}}
+                        <div class="price-box">
+                            <div class="d-flex flex-column gap-2">
+                                {{-- Offline --}}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:#e8f4fd;color:#1565c0;border:1px solid #90caf9;text-decoration:none;">Offline</span>
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        @if($hasActiveDiscount && $priceOffline > 0)
+                                            <span style="font-size:0.82rem;color:#9e9e9e;text-decoration:line-through;">Rp.{{ number_format($priceOffline, 0, ',', '.') }}</span>
+                                        @endif
+                                        @if((int)$priceOfflineFinal === 0)
+                                            <h5 class="price-free mb-0">FREE!</h5>
+                                        @else
+                                            <h5 class="mb-0">Rp.{{ number_format($priceOfflineFinal, 0, ',', '.') }}</h5>
+                                        @endif
+                                    </div>
+                                </div>
+                                {{-- Online --}}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:#fce4ec;color:#c62828;border:1px solid #f48fb1;text-decoration:none;">Online</span>
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        @if($hasActiveDiscount && $priceOnline > 0)
+                                            <span style="font-size:0.82rem;color:#9e9e9e;text-decoration:line-through;">Rp.{{ number_format($priceOnline, 0, ',', '.') }}</span>
+                                        @endif
+                                        @if((int)$priceOnlineFinal === 0)
+                                            <h5 class="price-free mb-0">FREE!</h5>
+                                        @else
+                                            <h5 class="mb-0">Rp.{{ number_format($priceOnlineFinal, 0, ',', '.') }}</h5>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if($hasActiveDiscount && $discountMsg)
+                                <div class="diskon-time mt-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-alarm" viewBox="0 0 16 16">
+                                        <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z"/>
+                                        <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/>
+                                    </svg>
+                                    <p>{{ $discountMsg }}</p>
+                                </div>
                             @endif
-                        </span>
-                        @if($isFreeNow)
-                            <h5 class="price-free">FREE!</h5>
-                        @else
-                            <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
-                        @endif
-                        @if($hasActiveDiscount && $discountMsg)
-                            <div class="diskon-time">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                    class="bi bi-alarm" viewBox="0 0 16 16">
-                                    <path
-                                        d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z" />
-                                    <path
-                                        d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
-                                </svg>
-                                <p>{{ $discountMsg }}</p>
+                        </div>
+                        @if($hasActiveDiscount)
+                            <div class="diskon-event">
+                                <p>{{ $eventObj->discount_percentage }}% OFF</p>
                             </div>
                         @endif
-                    </div>
-                    @if($hasActiveDiscount)
-                        <div class="diskon-event">
-                            <p>{{ $eventObj->discount_percentage }}% OFF</p>
+                    @else
+                        @php $isFreeNow = ((int) $finalPrice) === 0; @endphp
+                        <div class="price-box">
+                            <span>
+                                @if($hasActiveDiscount && $basePrice > 0)
+                                    Rp.{{ number_format($basePrice, 0, ',', '.') }}
+                                @endif
+                            </span>
+                            @if($isFreeNow)
+                                <h5 class="price-free">FREE!</h5>
+                            @else
+                                <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
+                            @endif
+                            @if($hasActiveDiscount && $discountMsg)
+                                <div class="diskon-time">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-alarm" viewBox="0 0 16 16">
+                                        <path
+                                            d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z" />
+                                        <path
+                                            d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
+                                    </svg>
+                                    <p>{{ $discountMsg }}</p>
+                                </div>
+                            @endif
                         </div>
+                        @if($hasActiveDiscount)
+                            <div class="diskon-event">
+                                <p>{{ $eventObj->discount_percentage }}% OFF</p>
+                            </div>
+                        @endif
                     @endif
                 </div>
                 <hr class="line-info">
@@ -1214,7 +1276,7 @@
                     @elseif($midtransExpired)
                         <a class="bookseat text-white text-center"
                             href="{{ route('payment', ['event' => $event->id, 'force_new' => 1]) }}"
-                            style="text-decoration:none;">Bayar lagi</a>
+                            style="text-decoration:none;">Payment Again</a>
                     @elseif($paymentUnderReview)
                         <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
                     @elseif($canRegister)
