@@ -279,7 +279,7 @@ class QuizController extends Controller
             ->where('type', 'quiz')
             ->where('order_no', '>', $module->order_no)
             ->exists();
-        $durationMinutes = $isLastQuiz ? 15 : 10;
+        $durationMinutes = $isLastQuiz ? 8 : 3;
         $durationSeconds = $durationMinutes * 60;
 
         // Calculate remaining seconds from server (prevents local time drift issues)
