@@ -10,107 +10,35 @@ use App\Models\EventRegistration;
 use App\Models\ManualPayment;
 use App\Models\PaymentProof;
 use Illuminate\Support\Facades\Storage;
-use App\Models\User;
 
 class ManualPaymentController extends Controller
 {
-    private const REFERRAL_DISCOUNT_RATE = 0.10;
-
-    private function resolveValidReferrer(?User $buyer, ?string $referralCode): ?User
-    {
-        $code = trim((string) $referralCode);
-        if ($code === '') {
-            return null;
-        }
-
-        $referrer = User::query()->where('referral_code', $code)->first();
-        if (!$referrer) {
-            return null;
-        }
-        if ($buyer && (int) $referrer->id === (int) $buyer->id) {
-            return null;
-        }
-
-        return $referrer;
-    }
-
-    private function applyReferralDiscountAmount(float $baseAmount, bool $hasValidReferral): float
-    {
-        $base = max(0, (float) $baseAmount);
-        if (!$hasValidReferral) {
-            return $base;
-        }
-        return max(0, round($base * (1 - self::REFERRAL_DISCOUNT_RATE), 2));
-    }
-
-    public function checkReferral(Request $request, Event $event)
-    {
-        $user = $request->user();
-        $code = trim((string) $request->query('code', ''));
-
-        $finalPrice = method_exists($event, 'hasDiscount') && $event->hasDiscount()
-            ? (float) ($event->discounted_price ?? $event->price)
-            : (float) ($event->price ?? 0);
-
-        if (!(bool) ($event->is_reseller_event ?? false)) {
-            return response()->json([
-                'valid' => false,
-                'message' => 'Event ini tidak mendukung referral.',
-                'base_amount' => (int) round($finalPrice),
-                'discount_rate' => 0,
-                'final_amount' => (int) round($finalPrice),
-            ]);
-        }
-
-        $referrer = $this->resolveValidReferrer($user, $code);
-        if (!$referrer) {
-            if ($user && $code !== '' && $code === (string) ($user->referral_code ?? '')) {
-                return response()->json([
-                    'valid' => false,
-                    'message' => 'Kode referral tidak boleh menggunakan kode milik sendiri.',
-                    'base_amount' => (int) round($finalPrice),
-                    'discount_rate' => 0,
-                    'final_amount' => (int) round($finalPrice),
-                ]);
-            }
-
-            return response()->json([
-                'valid' => false,
-                'message' => $code === '' ? '' : 'Kode referral tidak ditemukan.',
-                'base_amount' => (int) round($finalPrice),
-                'discount_rate' => 0,
-                'final_amount' => (int) round($finalPrice),
-            ]);
-        }
-
-        $final = $this->applyReferralDiscountAmount($finalPrice, true);
-        return response()->json([
-            'valid' => true,
-            'message' => 'Kode referral valid. Diskon 10% diterapkan.',
-            'base_amount' => (int) round($finalPrice),
-            'discount_rate' => self::REFERRAL_DISCOUNT_RATE,
-            'final_amount' => (int) round($final),
-        ]);
-    }
-
     public function register(Request $request, Event $event)
     {
         $user = $request->user();
         if(!$user){ return redirect()->back()->with('error','Harap login terlebih dahulu.'); }
 
-        $hasPendingMidtrans = ManualPayment::query()
-            ->where('event_id', $event->id)
-            ->where('user_id', $user->id)
-            ->where('method', 'midtrans')
-            ->where('status', 'pending')
-            ->exists();
+        // If event is free, redirect to normal register
+        // Resolve price based on attendance_type for hybrid events
+        $attendanceType = strtolower(trim((string) $request->input('attendance_type', 'offline')));
+        $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link)
+                          && ($event->price_offline > 0 || $event->price_online > 0);
 
-        if ($hasPendingMidtrans) {
-            return redirect()->back()->with('warning', 'Anda memiliki pembayaran Midtrans yang masih pending. Silakan selesaikan pembayaran Midtrans terlebih dahulu.');
+        if ($isHybridEvent) {
+            $rawPrice    = $attendanceType === 'online'
+                           ? (float) ($event->price_online ?? 0)
+                           : (float) ($event->price_offline ?? 0);
+            $discountPct = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
+                           ? (float) ($event->discount_percentage ?? 0) : 0.0;
+            $finalPrice  = $discountPct > 0
+                           ? round($rawPrice * (1 - $discountPct / 100), 2)
+                           : $rawPrice;
+        } else {
+            $finalPrice = method_exists($event,'hasDiscount') && $event->hasDiscount()
+                          ? ($event->discounted_price ?? $event->price)
+                          : ($event->price ?? 0);
         }
 
-        // If event is free, redirect to normal register
-        $finalPrice = method_exists($event,'hasDiscount') && $event->hasDiscount() ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0);
         $isFree = (int)$finalPrice <= 0;
         // If free, call existing register endpoint behavior
         if($isFree){
@@ -119,15 +47,6 @@ class ManualPaymentController extends Controller
 
         // Validate upload
         $request->validate([ 'payment_proof' => 'nullable|image|mimes:jpg,jpeg,png|max:5120' ]);
-
-        // Referral/discount: only for reseller-enabled events.
-        $rawReferralCode = trim((string) $request->input('referral_code'));
-        $referrer = (bool) ($event->is_reseller_event ?? false)
-            ? $this->resolveValidReferrer($user, $rawReferralCode)
-            : null;
-        $referralCode = $referrer ? $rawReferralCode : null;
-
-        $finalAmount = $this->applyReferralDiscountAmount((float) $finalPrice, $referrer !== null);
 
         // Create or update pending registration
         $existing = EventRegistration::where('user_id', $user->id)->where('event_id', $event->id)->first();
@@ -138,20 +57,20 @@ class ManualPaymentController extends Controller
                 'event_id' => $event->id,
                 'status' => 'pending',
                 'registration_code' => 'EVT-'.strtoupper(uniqid()),
-                'total_price' => $finalAmount,
+                'total_price' => $finalPrice,
             ]);
             $msg = 'Pendaftaran terkirim; menunggu verifikasi admin.';
         } else {
             $existing->update([
                 'status' => 'pending',
-                'total_price' => $finalAmount,
+                'total_price' => $finalPrice,
             ]);
             $msg = 'Bukti pembayaran diperbarui; menunggu verifikasi admin.';
         }
 
         // Find existing pending or rejected manual payment
         $manual = ManualPayment::where('event_registration_id', $existing->id)
-            ->whereIn('status', ['pending', 'rejected', 'expired'])
+            ->whereIn('status', ['pending', 'rejected'])
             ->orderBy('id', 'desc')
             ->first();
 
@@ -164,11 +83,15 @@ class ManualPaymentController extends Controller
             'event_id' => $event->id,
             'event_registration_id' => $existing->id,
             'user_id' => $user->id,
-            'amount' => $finalAmount,
+            'amount' => $finalPrice,
             'currency' => 'IDR',
             'method' => 'qris',
             'status' => 'pending',
-            'referral_code' => $referralCode,
+            'referral_code' => $request->input('referral_code'),
+            'metadata' => array_merge((array) ($manual->metadata ?? []), [
+                'attendance_type' => $attendanceType,
+                'source' => 'event',
+            ]),
         ])->save();
 
         if ($request->hasFile('payment_proof')) {

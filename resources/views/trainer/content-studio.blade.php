@@ -68,11 +68,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
     <style>
         main.content-studio-main {
-            max-width: 1000px;
-            margin: 0 auto;
+            width: 100%;
+            margin: 0;
             padding: 0;
             flex: 1;
-            width: 100%;
         }
 
         .studio-header {
@@ -1259,6 +1258,7 @@
                                 </div>
                                 <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk menyisipkan gambar
                                     di dalam teks, atau tombol <strong>Code Block</strong> untuk potongan kode.</p>
+
                             </div>
                         </div>
 
@@ -1613,7 +1613,7 @@
                             Baru</p>
                         <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">atau drag & drop</p>
                         <input type="file" id="replacementFileInput" style="display: none;"
-                            accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc,.jpg,.png,.jpeg" />
+                            accept=".mp4" />
                     </div>
                 </div>
 
@@ -2303,6 +2303,8 @@
                     return;
                 }
 
+
+
                 const previewBtn = event.target.closest('.preview-material-btn');
                 if (previewBtn) {
                     openMaterialPreview(
@@ -2687,7 +2689,13 @@
                 }
 
                 syncEditorContentToInput();
-                const hasEditorContent = !!(moduleContentInput && moduleContentInput.value.trim() !== '');
+                const editorContent = moduleContentInput ? moduleContentInput.value.trim() : '';
+                const isDefaultContent = editorContent === '<p>Tulis pengantar materi di sini...</p>' || editorContent === '';
+                const hasEditorContent = !isDefaultContent;
+
+                const pdfFiles = document.getElementById('pdfFileInput')?.files;
+                const hasPdfFile = pdfFiles && pdfFiles.length > 0;
+
                 if (!hasEditorContent) {
                     return showNotificationModal('Perhatian', 'Silakan isi materi di editor terlebih dahulu.', 'error');
                 }

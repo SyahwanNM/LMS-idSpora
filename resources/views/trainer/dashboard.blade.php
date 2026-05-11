@@ -28,11 +28,11 @@
     default => null,
   };
   $lateBannerClass = $lateUploads === 1 ? 'level-1' : ($lateUploads === 2 ? 'level-2' : '');
-  $pendingInvitationItems = collect($dashboardInvitations ?? [])->values();
-  $activeAssignmentItems = collect($activeAssignments ?? [])->values();
-  $revenueCourseItems = collect($revenueCourses ?? [])->values();
-  $completedCourseItems = collect($completedCourses ?? [])->values();
-  $feedbackItems = collect($recentEventFeedbacks ?? [])->values();
+  $pendingInvitationItems = collect($pendingInvitationItems ?? [])->values();
+  $activeAssignmentItems = collect($activeAssignmentItems ?? [])->values();
+  $revenueCourseItems = collect($revenueCourseItems ?? [])->values();
+  $completedCourseItems = collect($completedCourseItems ?? [])->values();
+  $feedbackItems = collect($feedbackItems ?? [])->values();
   $walletBalance = (float) ($trainer->wallet_balance ?? 0);
   $totalCompletedCourses = (int) data_get($trainerActivity, 'total_courses_completed', 0);
   $averageRating = (float) data_get($trainerActivity, 'average_rating', 0);
@@ -1438,4 +1438,5 @@
     </script>
   @endpush
 
+@include('trainer.partials.scheme-selection-modal')
 @endsection

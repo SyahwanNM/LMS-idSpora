@@ -214,7 +214,9 @@
 </head>
 
 <body>
-    <img class="back" src="aset/back.png" alt="">
+    <a href="{{ route('login') }}" aria-label="Kembali ke Login">
+        <img class="back" src="{{ asset('aset/back.png') }}" alt="Kembali">
+    </a>
     <div class="main-container">
         <div class="kiri">
             <img class="logo" src="{{ asset('aset/logo.png') }}" alt="">
@@ -241,7 +243,7 @@
 
             <form action="{{ route('new-password.reset') }}" method="post">
                 @csrf
-                <input type="hidden" name="token" value="{{ session('token') ?? request('token') }}">
+                <input type="hidden" name="token" value="{{ old('token', session('token') ?? request('token')) }}">
                 
                 <div class="mb-3">
                     <h6>Password Baru</h6>

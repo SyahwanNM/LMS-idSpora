@@ -118,9 +118,7 @@ class AdminController extends Controller
             ->get()
             ->filter(function (TrainerNotification $notification) {
                 $data = is_array($notification->data) ? $notification->data : [];
-                $status = method_exists($notification, 'effectiveInvitationStatus')
-                    ? $notification->effectiveInvitationStatus()
-                    : (string) data_get($data, 'invitation_status', 'pending');
+                $status = (string) data_get($data, 'invitation_status', 'pending');
                 if ($status !== 'pending') {
                     return false;
                 }
@@ -152,9 +150,7 @@ class AdminController extends Controller
                     'id' => $notification->id,
                     'trainer' => $notification->trainer?->name ?? 'Trainer',
                     'title' => (string) $notification->title,
-                    'entity_type' => method_exists($notification, 'effectiveEntityType')
-                        ? $notification->effectiveEntityType()
-                        : (string) data_get($data, 'entity_type', 'course'),
+                    'entity_type' => (string) data_get($data, 'entity_type', 'course'),
                     'entity_id' => (int) data_get($data, 'entity_id', 0),
                     'due_at_text' => $dueAtText,
                 ];
@@ -392,64 +388,74 @@ class AdminController extends Controller
             ->groupBy('event_id')
             ->pluck('total', 'event_id');
 
-        // Get events filtered by the selected month/year with participants count + average ratings
+        // Get events with participants count and ratings
         $events = \App\Models\Event::query()
             ->whereYear('event_date', $selectedDate->year)
             ->whereMonth('event_date', $selectedDate->month)
             ->withCount('registrations')
-            ->withAvg('feedbacks as event_rating_avg', 'rating')
-            ->withAvg('feedbacks as speaker_rating_avg', 'speaker_rating')
+            ->withAvg('feedbacks', 'rating')
+            ->withAvg('feedbacks', 'speaker_rating')
             ->orderBy('event_date', 'asc')
             ->get();
-
-        // Categorize events: upcoming, active, completed
-        $now = Carbon::now();
-        $activeCount = 0;
-        $completedCount = 0;
-        $upcomingCount = 0;
-        $totalEventsAll = $events->count();
-        foreach ($events as $e) {
-            if (empty($e->event_date)) {
-                continue;
-            }
-            $start = $e->start_at; // accessor from model combines date + time safely
-            $end = $e->end_at;     // accessor from model handles fallback to endOfDay
-            if ($start && $end) {
-                if ($now->lt($start)) {
-                    $upcomingCount++;
-                } else if ($now->gt($end)) {
-                    $completedCount++;
-                } else {
-                    $activeCount++;
-                }
-            } else if ($start) {
-                if ($now->lt($start)) {
-                    $upcomingCount++;
-                } else {
-                    $activeCount++;
-                }
-            }
-        }
-        $percentCompleted = $totalEventsAll > 0 ? round(($completedCount / $totalEventsAll) * 100) : 0;
-        $percentNotCompleted = $totalEventsAll > 0 ? round((($totalEventsAll - $completedCount) / $totalEventsAll) * 100) : 0;
 
         // Map into simple rows for the Pendapatan table
         $eventRows = $events->map(function ($e) use ($revenueMap) {
             $price = $e->discounted_price ?? $e->price;
             $revenue = (float) ($revenueMap[$e->id] ?? 0);
-            
-            // Operational cost from DB: sum of EventExpense rows (accessor handles relation/json)
-            $expense = (float) ($e->expenses_total ?? 0.0);
-            $profit = $revenue - $expense;
 
-            // Detail items for the modal
+            // Detail items for the modal — breakdown normal vs referral
             $registeredCount = (int) $e->registrations()->where('status', 'active')->count();
-            $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
-            
-            $incomeRows = [
-                ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
-            ];
-            
+
+            // Ambil semua manual payments settled untuk event ini
+            $payments = \App\Models\ManualPayment::where('event_id', $e->id)
+                ->whereIn('status', ['paid', 'verified', 'settled'])
+                ->get(['amount', 'referral_code']);
+
+            $normalPayments  = $payments->filter(fn($p) => empty($p->referral_code));
+            $referralPayments = $payments->filter(fn($p) => !empty($p->referral_code));
+
+            $incomeRows = [];
+
+            if ($normalPayments->count() > 0) {
+                $normalTotal = (float) $normalPayments->sum('amount');
+                $normalUnit  = (float) round($normalTotal / $normalPayments->count());
+                $incomeRows[] = [
+                    'label' => 'Tiket Normal',
+                    'qty'   => $normalPayments->count(),
+                    'unit'  => $normalUnit,
+                    'total' => $normalTotal,
+                ];
+            }
+
+            if ($referralPayments->count() > 0) {
+                $referralTotal = (float) $referralPayments->sum('amount');
+                $referralUnit  = (float) round($referralTotal / $referralPayments->count());
+                $incomeRows[] = [
+                    'label' => 'Tiket Referral',
+                    'qty'   => $referralPayments->count(),
+                    'unit'  => $referralUnit,
+                    'total' => $referralTotal,
+                ];
+            }
+
+            // Fallback jika tidak ada data manual payment
+            if (empty($incomeRows)) {
+                $avgUnit = $registeredCount > 0 ? (float) round($revenue / $registeredCount, 2) : 0.0;
+                $incomeRows = [
+                    ['label' => 'Tiket Pendaftar', 'qty' => $registeredCount, 'unit' => $avgUnit, 'total' => (float)$revenue]
+                ];
+            }
+
+            // Hitung referral discount sebagai pengeluaran
+            $referralDiscountTotal = 0.0;
+            if ($referralPayments->count() > 0) {
+                // Diskon = selisih harga normal - harga referral per transaksi
+                $normalUnitPrice = (float) ($e->price ?? 0);
+                foreach ($referralPayments as $rp) {
+                    $referralDiscountTotal += max(0, $normalUnitPrice - (float)($rp->amount ?? 0));
+                }
+            }
+
             $expenseModels = $e->expenses()->get(['item', 'quantity', 'unit_price', 'total']);
             $expenseRows = $expenseModels->map(function($row) {
                 return [
@@ -459,6 +465,32 @@ class AdminController extends Controller
                     'total' => (float)($row->total ?? 0),
                 ];
             })->values()->all();
+
+            // Tambahkan referral discount sebagai pengeluaran jika ada
+            if ($referralDiscountTotal > 0) {
+                $expenseRows[] = [
+                    'label' => 'Diskon Kode Referral (' . $referralPayments->count() . ' peserta)',
+                    'qty'   => $referralPayments->count(),
+                    'unit'  => $referralPayments->count() > 0 ? round($referralDiscountTotal / $referralPayments->count()) : 0,
+                    'total' => $referralDiscountTotal,
+                ];
+            }
+
+            // Add trainer salaries from event_speakers
+            $speakerSalaries = \App\Models\EventSpeaker::where('event_id', $e->id)
+                ->where('salary', '>', 0)
+                ->get(['name', 'salary']);
+            foreach ($speakerSalaries as $sp) {
+                $expenseRows[] = [
+                    'label' => 'Gaji Trainer: ' . $sp->name,
+                    'qty'   => 1,
+                    'unit'  => (float) $sp->salary,
+                    'total' => (float) $sp->salary,
+                ];
+            }
+            $salaryTotal = $speakerSalaries->sum('salary');
+            $expense = (float) ($e->expenses_total ?? 0.0) + (float) $salaryTotal + $referralDiscountTotal;
+            $profit  = $revenue - $expense;
 
             return [
                 'id' => $e->id,
@@ -477,52 +509,51 @@ class AdminController extends Controller
 
         // Build rows for Pertumbuhan table (growth metrics per event)
         $growthRows = $events->map(function ($e) {
-            $eventRating = $e->event_rating_avg;
-            $speakerRating = $e->speaker_rating_avg;
-
             return [
                 'id' => $e->id,
                 'name' => $e->title,
                 'date' => optional($e->event_date)->format('d/m/Y'),
                 'participants' => (int) $e->registrations_count,
                 'speaker' => $e->speaker,
-                'event_rating' => is_null($eventRating) ? null : round((float) $eventRating, 1),
-                'speaker_rating' => is_null($speakerRating) ? null : round((float) $speakerRating, 1),
+                'event_rating' => $e->feedbacks_avg_rating ? round($e->feedbacks_avg_rating, 1) : null,
+                'speaker_rating' => $e->feedbacks_avg_speaker_rating ? round($e->feedbacks_avg_speaker_rating, 1) : null,
+                'is_free' => (float) ($e->price ?? 0) <= 0,
+                'manage_action' => $e->manage_action,
             ];
         });
 
-        // Build rows for Operasional table (document completeness per event)
-        $operationalRows = $events->map(function ($e) {
-            return [
-                'id' => $e->id,
-                'name' => $e->title,
-                'date' => optional($e->event_date)->format('d/m/Y'),
-                'type' => $e->jenis ?? 'N/A',
-                'documents_percent' => $e->documents_completion_percent, // accessor from model
-                'has_vbg' => !empty($e->vbg_path),
-                'has_cert' => !empty($e->certificate_path),
-                'has_abs' => !empty($e->attendance_path),
-                // URLs expected by the reports view
-                'vbg_url' => !empty($e->vbg_path) ? ($e->vbg_file_url ?? '') : '',
-                'cert_url' => !empty($e->certificate_path) ? Storage::url($e->certificate_path) : '',
-                'abs_url' => !empty($e->attendance_path) ? Storage::url($e->attendance_path) : '',
-                // attendance QR data
-                'qr_token' => $e->attendance_qr_token,
-                'qr_url' => $e->attendance_qr_token ? url('/events/' . $e->id . '?t=' . $e->attendance_qr_token) : null,
-                'qr_image_url' => $e->attendance_qr_image_url,
-            ];
-        });
+        // Summary stats dari $growthRows (sama dengan tabel)
+        $totalFreeParticipants  = $growthRows->where('is_free', true)->sum('participants');
+        $totalPaidParticipants  = $growthRows->where('is_free', false)->sum('participants');
+        $totalManageEvents      = $growthRows->where('manage_action', 'manage')->count();
+        $totalCreateEvents      = $growthRows->where('manage_action', '!=', 'manage')->count();
+
+        // Peserta per hari untuk chart — derived from $growthRows (same events as the table)
+        $freeParticipantByDay = [];
+        $paidParticipantByDay = [];
+        foreach ($growthRows as $row) {
+            if (empty($row['date'])) continue;
+            try {
+                $day = (int) \Carbon\Carbon::createFromFormat('d/m/Y', $row['date'])->day;
+            } catch (\Throwable $e) { continue; }
+            if ($row['is_free']) {
+                $freeParticipantByDay[$day] = ($freeParticipantByDay[$day] ?? 0) + $row['participants'];
+            } else {
+                $paidParticipantByDay[$day] = ($paidParticipantByDay[$day] ?? 0) + $row['participants'];
+            }
+        }
+
+        $chartFreeParticipantData = [];
+        $chartPaidParticipantData = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $chartFreeParticipantData[] = (int) ($freeParticipantByDay[$d] ?? 0);
+            $chartPaidParticipantData[] = (int) ($paidParticipantByDay[$d] ?? 0);
+        }
 
         return view('admin.reports', compact(
             'activeTab',
             'eventRows',
             'growthRows',
-            'operationalRows',
-            'activeCount',
-            'completedCount',
-            'upcomingCount',
-            'percentCompleted',
-            'percentNotCompleted',
             'chartLabels',
             'chartFreeData',
             'chartPaidData',
@@ -531,7 +562,13 @@ class AdminController extends Controller
             'totalPaidEventsSelected',
             'totalFreeEventsSelected',
             'totalCreateEventsSelected',
-            'totalManageEventsSelected'
+            'totalManageEventsSelected',
+            'totalFreeParticipants',
+            'totalPaidParticipants',
+            'totalManageEvents',
+            'totalCreateEvents',
+            'chartFreeParticipantData',
+            'chartPaidParticipantData'
         ));
     }
 

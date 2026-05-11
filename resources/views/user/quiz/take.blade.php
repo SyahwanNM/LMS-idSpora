@@ -1,5 +1,3 @@
-@include("partials.navbar-after-login")
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -16,6 +14,7 @@
 </head>
 
 <body>
+    @include("partials.navbar-after-login")
     @php
         $selectedAnswerId = collect($attempt->answers ?? [])->firstWhere('question_id', $currentQuestion->id)['answer_id'] ?? null;
         $total = $questions->count();
@@ -33,135 +32,416 @@
             }
         }
 
+        // Ambil subtitle modul dari course_units berdasarkan nomor modul
+        $quizModuleSubtitle = null;
+        if (preg_match('/^Module\s*(\d+)/i', (string) ($module->title ?? ''), $mm)) {
+            $unitNum = (int) $mm[1];
+            $unit = $course->units->firstWhere('unit_no', $unitNum);
+            if ($unit && !empty($unit->title)) {
+                $quizModuleSubtitle = $unit->title;
+            }
+        }
+        if (!$quizModuleSubtitle) {
+            // Fallback: parse dari title modul (e.g. "Module 1 - Testing" → "Testing")
+            if (preg_match('/^Module\s*\d+\s*-\s*(.+)$/i', (string) ($module->title ?? ''), $mm)) {
+                $sub = trim($mm[1]);
+                if (!preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $sub)) {
+                    $quizModuleSubtitle = $sub;
+                }
+            }
+        }
+        $quizPageTitle = 'Quiz ' . $quizNumber . ($quizModuleSubtitle ? ' - ' . $quizModuleSubtitle : '');
+
         $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
     @endphp
-    <div class="box_luar_kuis quiz-take-v2" id="quizTakeRoot">
-        <div class="box_kuis_kiri quiz-modules">
+    <style>
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%;
+            background: #fdfdfd;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Desktop specific: lock height and hide overflow */
+        @media (min-width: 993px) {
+            html, body { 
+                overflow: hidden; 
+                height: 100%; 
+            }
+            .quiz-take-v3 {
+                height: calc(100vh - 64px);
+                overflow: hidden;
+            }
+        }
+
+        .quiz-take-v3 {
+            display: flex;
+            width: 100%;
+            background: #fdfdfd;
+            padding-top: 50px;
+            transition: all 0.3s ease;
+        }
+
+        /* Sidebars */
+        .box_modul_kiri {
+            width: 320px;
+            background: #fff;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .box_modul_kanan_quiz {
+            flex: 1;
+            display: flex;
+            min-width: 0;
+            margin-top: 15px;
+        }
+
+        .quiz-main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 40px 60px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .quiz-nav-right {
+            width: 320px;
+            background: #fff;
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 24px 15px;
+            flex-shrink: 0;
+            margin-top: 15px;
+        }
+
+        /* Question Navigation Numbers */
+        .nomor_kuis {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .nomor_kuis button {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+            font-weight: 600;
+            flex-shrink: 0;
+            padding: 0;
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .kuis_aktif { 
+            background: #f4c430 !important; 
+            color: #111827 !important; 
+            font-weight: 700; 
+            border: none !important; 
+        }
+        .nomor_kuis button:hover:not(:disabled) { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+        }
+        
+        /* Answer Options */
+        .quiz-answer-option {
+            width: 100%;
+            box-sizing: border-box;
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 15px;
+            padding: 18px 20px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            white-space: normal !important;
+        }
+        .quiz-answer-option.selected {
+            border-color: #f4c430 !important;
+            background: #fefce8 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .quiz-answer-option.selected .quiz-option-letter {
+            background: #f4c430 !important;
+            color: #111827 !important;
+        }
+        .quiz-answer-option.selected p {
+            color: #111827 !important;
+            font-weight: 700 !important;
+        }
+        .quiz-answer-option p {
+            flex: 1;
+            min-width: 0;
+            margin: 0 !important;
+            font-size: 15px;
+            color: #374151;
+            font-weight: 500;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .quiz-option-letter {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #6b7280;
+            flex-shrink: 0;
+            margin-top: -2px;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1200px) {
+            .box_modul_kiri { width: 260px; }
+            .quiz-nav-right { width: 260px; }
+        }
+
+        @media (max-width: 992px) {
+            .quiz-take-v3 {
+                flex-direction: column;
+                padding-top: 80px !important;
+                height: auto;
+                overflow: visible;
+                padding: 15px;
+            }
+            
+            .box_modul_kiri {
+                order: 2;
+                width: 100% !important;
+                border-right: none;
+                margin-top: 0;
+                max-height: 0 !important;
+                overflow: hidden !important;
+                transition: max-height 0.3s ease-out;
+                padding: 0 !important;
+                margin-bottom: 0 !important;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .box_modul_kiri.show-mobile {
+                max-height: 2000px !important;
+                margin-bottom: 20px !important;
+                padding: 0 15px !important;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .box_modul_kanan_quiz {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100%;
+                margin-top: 0;
+                order: 3;
+            }
+
+            .quiz-main-content {
+                width: 100%;
+                padding: 20px 0;
+                order: 2;
+            }
+
+            .quiz-nav-right {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid #e5e7eb;
+                margin-top: 20px;
+                padding: 24px 0;
+                order: 3;
+                background: #fff;
+            }
+
+            /* Sticky Timer on Mobile */
+            .timer-container {
+                position: relative;
+                top: 0;
+                z-index: 10;
+                margin-bottom: 20px !important;
+                box-shadow: none;
+            }
+
+            .box_soal_kuis {
+                padding: 25px 20px !important;
+            }
+
+            .nomor_kuis {
+                justify-content: center;
+            }
+
+            .navbar {
+                z-index: 2000 !important;
+            }
+            .navbar-collapse {
+                z-index: 2002 !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .quiz-nav-buttons {
+                flex-direction: column-reverse;
+                gap: 12px !important;
+            }
+            .quiz-nav-buttons button {
+                width: 100%;
+            }
+        }
+
+        /* Sidebar Styles */
+        .accordion-header { 
+            width: 100%; 
+            padding: 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #fff; 
+            border: none; 
+            border-bottom: 1px solid #f3f4f6; 
+            text-align: left; 
+            transition: background 0.2s; 
+        }
+        .accordion-header:hover:not(.is-locked) { background: #f9fafb; }
+        .accordion-item.active .accordion-header { background: #fefce8; border-left: 4px solid #f4c430; }
+        .accordion-item.is-locked .accordion-header { 
+            opacity: 0.5; 
+            cursor: not-allowed !important; 
+            background: #f9fafb;
+        }
+        .accordion-content {
+            padding: 15px;
+            background: #fff;
+            display: none;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .accordion-item.active .accordion-content {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    @include("partials.navbar-after-login")
+
+    @php
+        $selectedAnswerId = collect($attempt->answers ?? [])->firstWhere('question_id', $currentQuestion->id)['answer_id'] ?? null;
+        $total = $questions->count();
+        $prevIndex = max(0, $currentQuestionIndex - 1);
+        $prevUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $prevIndex]);
+        $resultUrl = route('user.quiz.result.short', $attempt);
+        $finishUrl = route('user.quiz.finish', [$course, $module, $attempt]);
+        
+        // Logic for Sidebar Utama (Course Navigation)
+        $modulesList = $course->modules ?? collect();
+        
+        // Remove PDFs from the list first to match the sidebar display
+        $filteredModules = $modulesList->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) !== 'pdf')->values();
+        
+        $activeModule = $module;
+        $activeModuleIndex = $filteredModules->search(fn($m) => (int)$m->id === (int)$activeModule->id);
+        if ($activeModuleIndex === false) {
+            // Fallback to order_no if search fails
+            $activeModuleIndex = 0;
+        }
+        
+        $passingPercent = 75;
+
+        // Fetch passed quizzes for checkmarks
+        $passedQuizModuleIds = [];
+        if (auth()->check() && $modulesList->isNotEmpty()) {
+            $quizModuleIds = $modulesList
+                ->filter(fn($m) => strtolower(trim((string) ($m->type ?? ''))) === 'quiz')
+                ->pluck('id')
+                ->map(fn($id) => (int) $id)
+                ->all();
+
+            if (!empty($quizModuleIds)) {
+                $passedQuizModuleIds = \App\Models\QuizAttempt::where('user_id', auth()->id())
+                    ->whereIn('course_module_id', $quizModuleIds)
+                    ->whereNotNull('completed_at')
+                    ->get()
+                    ->filter(fn($a) => $a->isPassed($passingPercent))
+                    ->pluck('course_module_id')
+                    ->map(fn($id) => (int) $id)
+                    ->unique()
+                    ->all();
+            }
+        }
+
+        // Fetch completed materials for checkmarks
+        $completedMaterialModuleIds = [];
+        if (auth()->check()) {
+            $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->first();
+            if ($enrollment) {
+                $completedMaterialModuleIds = \App\Models\Progress::where('enrollment_id', $enrollment->id)
+                    ->where('completed', true)
+                    ->pluck('course_module_id')
+                    ->map(fn($id) => (int) $id)
+                    ->all();
+            }
+        }
+
+        $isLastQuestion = ($currentQuestionIndex + 1) >= $total;
+    @endphp
+
+    <div class="box_modul_luar quiz-take-v3">
+        <!-- Mobile Toggle Sidebar -->
+        <button class="mobile-sidebar-toggle d-lg-none" type="button" id="sidebarToggle" 
+                style="order: 1; background: #fff; color: #252346; border: 1px solid #e5e7eb;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-list-task" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M2 2.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H2zM3 3H2v1h1V3z"/>
+                <path d="M5 3.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM5.5 7a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9zM5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5z"/>
+                <path fill-rule="evenodd" d="M1.5 7a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5V7zM2 7h1v1H2V7zm0 3.5a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5H2zm1 .5H2v1h1v-1z"/>
+            </svg>
+            <span>Daftar Materi</span>
+        </button>
+
+        <!-- LEFT: Sidebar Utama (Course Navigation) -->
+        <div class="box_modul_kiri" style="order: 2;">
+            <a href="{{ isset($course) ? route('course.learn', $course->id) . '?module=' . ($module->id ?? '') : '#' }}" style="text-decoration: none; color: inherit; display: inline-block;">
+                <div style="background-color: #f4dc21ea; width: max-content; padding: 6px 10px; margin-top: 35px; margin-bottom: 10px; margin-left: 15px; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                    </svg>
+                </div>
+            </a>
             @php
-                $modulesList = $course->modules()->orderBy('order_no')->get();
+                $modulesList = $modules ?? (isset($course) ? ($course->modules ?? collect()) : collect());
+                $modulesList = $modulesList instanceof \Illuminate\Support\Collection ? $modulesList->values() : collect($modulesList)->values();
+                $activeModule = $currentModule ?? $modulesList->first();
                 $passingPercent = 75;
 
-                $normalizeGroupKey = function ($title, $fallbackIndex = 1) {
-                    $t = trim((string) $title);
-                    if ($t === '') {
-                        return 'UNIT_'.$fallbackIndex;
-                    }
-
-                    if (preg_match('/^(Module\s*\d+)/i', $t, $m)) {
-                        return mb_strtoupper(trim($m[1]));
-                    }
-
-                    $t2 = preg_replace('/\s*-\s*(PDF\s*Material|Video\s*Lesson|Quiz)\s*$/i', '', $t);
-                    $t2 = trim((string) $t2);
-                    return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_'.$fallbackIndex);
-                };
-
-                $formatDisplayTitle = function (string $groupKey, string $kind) {
-                    $isModuleKey = \Illuminate\Support\Str::startsWith($groupKey, 'MODULE');
-                    $isUnitKey = \Illuminate\Support\Str::startsWith($groupKey, 'UNIT_');
-
-                    $prefix = '';
-                    if ($isModuleKey) {
-                        $prefix = ucwords(strtolower($groupKey));
-                    } elseif ($isUnitKey) {
-                        $num = str_replace('UNIT_', '', $groupKey);
-                        $prefix = 'Module ' . $num;
-                    }
-
-                    $hasPrefix = $isModuleKey || $isUnitKey;
-
-                    if ($kind === 'material') {
-                        return $hasPrefix ? ($prefix . ' - Materi') : 'Materi';
-                    }
-                    if ($kind === 'quiz') {
-                        return $hasPrefix ? ($prefix . ' - Quiz') : 'Quiz';
-                    }
-                    return $hasPrefix ? $prefix : $groupKey;
-                };
-
-                // Build display list: per group show (Materi = PDF+Video combined) + Quiz
-                $grouped = [];
-                $groupOrder = [];
-                $unitCounter = 1;
-                $currentGenericKey = null;
-                $isGenericUnitTitle = function ($title) {
-                    $t = trim((string) $title);
-                    return (bool) preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $t);
-                };
-                foreach ($modulesList as $m) {
-                    $titleStr = (string) ($m->title ?? '');
-                    $type = strtolower(trim((string) ($m->type ?? '')));
-
-                    if ($isGenericUnitTitle($titleStr)) {
-                        if (!$currentGenericKey) {
-                            $currentGenericKey = 'UNIT_'.$unitCounter;
-                            $unitCounter++;
-                        }
-                        $key = $currentGenericKey;
-                        if ($type === 'quiz') {
-                            $currentGenericKey = null;
-                        }
-                    } else {
-                        $currentGenericKey = null;
-                        $key = $normalizeGroupKey($titleStr, $unitCounter);
-                        if (\Illuminate\Support\Str::startsWith($key, 'UNIT_')) {
-                            $unitCounter++;
-                        }
-                    }
-
-                    if (!array_key_exists($key, $grouped)) {
-                        $grouped[$key] = [
-                            'key' => $key,
-                            'pdf' => null,
-                            'video' => null,
-                            'quiz' => null,
-                        ];
-                        $groupOrder[] = $key;
-                    }
-
-                    if ($type === 'pdf' && !$grouped[$key]['pdf']) $grouped[$key]['pdf'] = $m;
-                    if ($type === 'video' && !$grouped[$key]['video']) $grouped[$key]['video'] = $m;
-                    if ($type === 'quiz' && !$grouped[$key]['quiz']) $grouped[$key]['quiz'] = $m;
-                }
-
-                $displayItems = collect();
-                foreach ($groupOrder as $key) {
-                    $g = $grouped[$key];
-
-                    if ($g['pdf'] || $g['video']) {
-                        $rep = $g['pdf'] ?: $g['video'];
-                        $displayItems->push([
-                            'kind' => 'material',
-                            'key' => $key,
-                            'title' => $formatDisplayTitle($key, 'material'),
-                            'rep' => $rep,
-                            'pdf' => $g['pdf'],
-                            'video' => $g['video'],
-                            'quiz' => $g['quiz'],
-                        ]);
-                    }
-
-                    if ($g['quiz']) {
-                        $displayItems->push([
-                            'kind' => 'quiz',
-                            'key' => $key,
-                            'title' => $formatDisplayTitle($key, 'quiz'),
-                            'rep' => $g['quiz'],
-                            'pdf' => $g['pdf'],
-                            'video' => $g['video'],
-                            'quiz' => $g['quiz'],
-                        ]);
-                    }
-                }
-
                 $freeAccessMode = $freeAccessMode ?? ((isset($course) && (int)($course->price ?? 0) <= 0) ? (string)($course->free_access_mode ?? 'limit_2') : 'all');
-                
-                $freeAccessibleModuleIds = [];
-                if ($freeAccessMode === 'limit_2') {
-                    $freeAccessibleModuleIds = $modulesList->take(2)->pluck('id')->map(fn($id) => (int) $id)->values()->all();
+                $freeAccessibleModuleIds = $freeAccessibleModuleIds ?? [];
+                if (!is_array($freeAccessibleModuleIds)) {
+                    $freeAccessibleModuleIds = [];
                 }
-
-                $isFreeLimited = ($freeAccessMode === 'limit_2');
+                $isFreeLimited = ((string)($freeAccessMode ?? 'all') === 'limit_2');
 
                 $passedQuizModuleIds = [];
                 if (auth()->check() && $modulesList->isNotEmpty()) {
@@ -188,309 +468,482 @@
                             ->unique()
                             ->values()
                             ->all();
+
+                        $quizAttemptCounts = \App\Models\QuizAttempt::query()
+                            ->where('user_id', auth()->id())
+                            ->whereIn('course_module_id', $quizModuleIds)
+                            ->whereNotNull('completed_at')
+                            ->selectRaw('course_module_id, count(*) as total')
+                            ->groupBy('course_module_id')
+                            ->pluck('total', 'course_module_id')
+                            ->all();
                     }
                 }
+
+                // Completed material module IDs (pdf/video) from Progress table
+                $completedMaterialModuleIds = [];
+                if (auth()->check() && isset($course)) {
+                    $enrollment = \App\Models\Enrollment::where('user_id', auth()->id())
+                        ->where('course_id', $course->id)
+                        ->whereIn('status', ['active', 'completed', 'expired'])
+                        ->first();
+                    if ($enrollment) {
+                        // For video modules: require BOTH completed=1 AND video_watched=1
+                        // This prevents old stale records (completed=1, video_watched=0) from showing checkmarks
+                        $videoModuleIds = $modulesList
+                            ->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) === 'video')
+                            ->pluck('id')->map(fn($id) => (int)$id)->all();
+
+                        $completedMaterialModuleIds = \App\Models\Progress::where('enrollment_id', $enrollment->id)
+                            ->where('completed', true)
+                            ->get(['course_module_id', 'video_watched'])
+                            ->filter(function ($p) use ($videoModuleIds) {
+                                $mid = (int) $p->course_module_id;
+                                if (in_array($mid, $videoModuleIds, true)) {
+                                    return (bool) $p->video_watched; // video: need video_watched=1 too
+                                }
+                                return true; // pdf/other: completed=1 is enough
+                            })
+                            ->pluck('course_module_id')
+                            ->map(fn($id) => (int) $id)
+                            ->values()
+                            ->all();
+                    }
+                }
+
+                $currentQuizPassed = true;
+                if ($activeModule && strtolower(trim((string) ($activeModule->type ?? ''))) === 'quiz') {
+                    $currentQuizPassed = in_array((int) $activeModule->id, $passedQuizModuleIds, true);
+                }
+
+                $totalModules = $modulesList->count();
+                $filteredModules = $modulesList->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) !== 'pdf')->values();
+                $pdfCount = $modulesList->where('type', 'pdf')->count();
+                $videoCount = $modulesList->where('type', 'video')->count();
+                $quizCount = $modulesList->where('type', 'quiz')->count();
+                $missingMaterials = [];
+                if ($totalModules <= 0) { $missingMaterials[] = 'Modul'; }
+                if ($pdfCount <= 0) { $missingMaterials[] = 'Modul (PDF)'; }
+                if ($videoCount <= 0) { $missingMaterials[] = 'Video'; }
+                if ($quizCount <= 0) { $missingMaterials[] = 'Kuis'; }
             @endphp
 
-            <div class="quiz-modules-head">
-                <div class="quiz-modules-title">Daftar Modul</div>
-                <button type="button" class="quiz-modules-close" id="closeModulesBtn" aria-label="Tutup daftar modul">&times;</button>
-            </div>
+            {{-- UI tetap seperti sebelumnya, tapi konten dinamis dari backend --}}
+            @if(!empty($missingMaterials))
+                <div class="alert alert-warning" role="alert" style="margin: 0 0 12px 0;">
+                    <div style="font-weight:600;">Oops, course modules are incomplete.</div>
+                    <div style="margin-top:6px;">{{ implode(', ', $missingMaterials) }} belum ada. Segera hubungi trainer.</div>
+                </div>
+            @endif
 
-            <div class="accordion-box">
-                @php $hasFailedPrevQuiz = false; @endphp
-                @forelse($displayItems as $it)
+            <div class="accordion-box"
+                data-learn-base="{{ isset($course) ? route('course.learn', $course->id) : '' }}"
+                data-active-module-id="{{ $activeModule?->id }}"
+            >
+                @forelse($modulesList as $m)
                     @php
-                        $rep = $it['rep'];
-                        $isActive = ((int) ($module->id ?? 0) === (int) ($rep->id ?? 0))
-                            && (($it['kind'] ?? '') === 'quiz'); 
-                        $typeLabel = ($it['kind'] ?? '') === 'quiz' ? 'QUIZ' : 'MATERI';
-                        
-                        $isLocked = $hasFailedPrevQuiz;
-                        $lockReason = $hasFailedPrevQuiz ? 'quiz' : '';
-
-                        if ($isFreeLimited && !$isLocked) {
-                            $candidateIds = [];
-                            if (($it['kind'] ?? '') === 'quiz') {
-                                $candidateIds[] = (int) ($rep->id ?? 0);
+                        $isActive = $activeModule && ((int)$activeModule->id === (int)$m->id);
+                        $typeLabel = $m->type ? strtoupper($m->type) : 'MATERI';
+                        $prevModule = $modulesList->get($loop->index - 1);
+                        $mId = (int) $m->id;
+                        $isDone = false;
+                        $mType = strtolower(trim((string)($m->type ?? '')));
+                        if (auth()->check()) {
+                            if ($mType === 'quiz') {
+                                $isDone = in_array($mId, $passedQuizModuleIds, true);
                             } else {
-                                if (!empty($it['pdf']?->id)) $candidateIds[] = (int) $it['pdf']->id;
-                                if (!empty($it['video']?->id)) $candidateIds[] = (int) $it['video']->id;
-                                if (empty($candidateIds)) $candidateIds[] = (int) ($rep->id ?? 0);
-                            }
-
-                            $allowedAny = false;
-                            foreach ($candidateIds as $cid) {
-                                if ($cid > 0 && in_array($cid, $freeAccessibleModuleIds, true)) { $allowedAny = true; break; }
-                            }
-
-                            if (!$allowedAny) {
-                                $isLocked = true;
-                                $lockReason = 'free';
+                                $isDone = in_array($mId, $completedMaterialModuleIds, true);
                             }
                         }
 
-                        // Cascading quiz check: if this is a quiz and not passed, ALL subsequent items will be locked.
-                        if (($it['kind'] ?? '') === 'quiz') {
-                            $quizId = (int) ($rep->id ?? 0);
-                            if (auth()->check() && !in_array($quizId, $passedQuizModuleIds, true)) {
-                                $hasFailedPrevQuiz = true;
+                        // SEQUENTIAL GATING LOGIC:
+                        // A module is locked if ANY preceding QUIZ has not been passed.
+                        // We use $filteredModules (which skips PDFs) to determine the sequence.
+                        $isLocked = false;
+                        $lockReason = '';
+
+                        // Get all modules that appear BEFORE the current one in the sidebar
+                        $currentIdxInFiltered = $filteredModules->search(fn($fm) => (int)$fm->id === $mId);
+                        if ($currentIdxInFiltered !== false) {
+                            $precedingModules = $filteredModules->take($currentIdxInFiltered);
+                            foreach ($precedingModules as $pm) {
+                                if (strtolower(trim((string)($pm->type ?? ''))) === 'quiz') {
+                                    $passed = in_array((int)$pm->id, $passedQuizModuleIds, true);
+                                    $attCount = $quizAttemptCounts[(int)$pm->id] ?? 0;
+                                    
+                                    if (!$passed) {
+                                        // Lock if: attempts < 3 OR current module is also a quiz
+                                        if ($attCount < 3 || $mType === 'quiz') {
+                                            $isLocked = true;
+                                            $lockReason = 'quiz';
+                                            break;
+                                        }
+                                    }
+                                }
+                                // Optional: also lock if previous video is not completed
+                                /*
+                                if (strtolower(trim((string)($pm->type ?? ''))) === 'video') {
+                                    if (!in_array((int)$pm->id, $completedMaterialModuleIds, true)) {
+                                        $isLocked = true;
+                                        $lockReason = 'video';
+                                        break;
+                                    }
+                                }
+                                */
                             }
                         }
 
-                        $learnUrl = route('course.learn', $course->id) . '?module=' . (int) ($rep->id ?? 0);
+                        if ($isFreeLimited && !in_array((int) $m->id, $freeAccessibleModuleIds, true)) {
+                            $isLocked = true;
+                            $lockReason = 'free';
+                        }
+
+                        $descLines = [];
+                        if (!empty($m->description)) {
+                            $cleanDesc = trim(strip_tags((string) $m->description));
+                            if ($cleanDesc !== '') {
+                                // Split into short lines to preserve the original "list" feel
+                                $descLines = array_values(array_filter(preg_split('/\r?\n|\.|\!|\?/u', $cleanDesc)));
+                            }
+                        }
+                        $descLines = array_slice($descLines, 0, 3);
+
+                        // Unified UI: Skip all PDF modules in sidebar as they are now integrated into video lessons
+                        $skipInSidebar = false;
+                        if (strtolower(trim((string)($m->type ?? ''))) === 'pdf') {
+                            $skipInSidebar = true;
+                        }
+
+                        // Replace 'Video Lesson' in title with the actual unit title
+                        $mTitle = $m->title ?? 'Materi';
+                        $unitNo = (int) ceil(($m->order_no ?? 0) / 3);
+                        $unit = $course->units->firstWhere('unit_no', $unitNo);
+                        if ($unit && !empty($unit->title)) {
+                            $mTitle = str_replace('Video Lesson', $unit->title, $mTitle);
+                        }
                     @endphp
-                    <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}" data-learn-url="{{ $learnUrl }}">
-                        <button class="accordion-header" type="button">
+
+                    @if(!$skipInSidebar)
+
+                    <div class="accordion-item {{ $isActive ? 'selected active' : '' }} {{ $isLocked ? 'is-locked' : '' }}" data-locked="{{ $isLocked ? '1' : '0' }}" data-locked-reason="{{ $lockReason }}">
+                        <button class="accordion-header" type="button" data-module-id="{{ $m->id }}">
                             <span style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $it['title'] ?? ($rep->title ?? 'Materi') }}</span>
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $mTitle }}</span>
                             </span>
-                            <span style="display:flex; align-items:center; gap:10px; flex:0 0 auto;">
-                                @if($isLocked)
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
-                                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                                    </svg>
-                                @endif
-                                <span style="font-size:12px; font-weight:700; opacity:.75;">{{ $typeLabel }}</span>
-                                <span class="arrow">▲</span>
+                            <span style="display:flex; align-items:center; gap:8px; flex:0 0 auto;">
+                                <span style="width:20px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    @if($isDone)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#16a34a" class="bi bi-check-circle-fill" viewBox="0 0 16 16" aria-label="Completed">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                        </svg>
+                                    @elseif($isLocked)
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#111827" class="bi bi-lock-fill" viewBox="0 0 16 16" aria-hidden="true">
+                                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                        </svg>
+                                    @endif
+                                </span>
+                                <span class="arrow" style="width:16px; text-align:center;">▲</span>
                             </span>
                         </button>
                         <div class="accordion-content">
+                            <p>Tipe: {{ $typeLabel }}</p>
                             @if($isLocked)
+                                <hr>
                                 @if($lockReason === 'free')
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Daftar atau beli course untuk membuka modul ini.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Enroll or purchase this course to unlock this module.</p>
                                 @else
-                                    <p class="text-muted" style="margin:0; font-size:13px;">Terkunci. Lulus kuis dulu untuk membuka materi berikutnya.</p>
+                                    <p class="text-muted" style="margin:0; font-size:13px;">Locked. Pass the quiz first to unlock the next material.</p>
                                 @endif
-                            @else
-                                <p class="text-muted" style="margin:0; font-size:13px;">Klik untuk mereview materi.</p>
                             @endif
+                            {{-- HIDE DESKRIPSI DI ACCORDION MENU BAWAH --}}
+                            {{-- @if(!empty($descLines))
+                                <hr>
+                                @foreach($descLines as $idx => $line)
+                                    <p>{{ trim($line) }}</p>
+                                    @if($idx < count($descLines) - 1)
+                                        <hr>
+                                    @endif
+                                @endforeach
+                            @endif --}}
                         </div>
                     </div>
+                    @endif
                 @empty
-                    <div class="text-muted" style="padding:12px;">Belum ada modul pada course ini.</div>
+                    <div class="text-muted" style="padding:12px;">No modules available for this course.</div>
                 @endforelse
             </div>
         </div>
 
-        <div class="box_kuis_kanan">
-            <div class="quiz-title-row" style="margin-top: 6px;">
-                <div class="quiz-title-left">
-                    <button type="button" class="quiz-modules-open d-none" id="openModulesBtn" aria-label="Buka daftar modul">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5m0 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5"/>
-                        </svg>
-                    </button>
-                    <h1 class="quiz-title">Kuis {{ $quizNumber }} : {{ $module->title }}</h1>
+        <!-- RIGHT AREA: Split into Main Content and Quiz Navigation -->
+        <div class="box_modul_kanan_quiz" style="order: 3;">
+            <!-- MIDDLE: Question Content -->
+            <div class="quiz-main-content">
+                <div style="width: 100%; max-width: 800px; box-sizing: border-box;">
+                    <div style="margin-bottom: 32px;">
+                        <span style="display: inline-block; padding: 6px 12px; background: #fef3c7; color: #d97706; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; margin-bottom: 12px; margin-top: 35px;">Quiz Module</span>
+                        <h1 style="font-size: 22px; font-weight: 800; color: #111827; margin: 0; word-break: break-word;">{{ $module->title }}</h1>
+                    </div>
+
+                    <div class="box_soal_kuis" style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #f3f4f6; width: 100%; box-sizing: border-box;">
+                        <h2 class="pertanyaan_kuis" style="font-size: 18px; font-weight: 600; line-height: 1.6; margin-bottom: 32px; color: #374151; word-break: break-word; white-space: normal !important;">
+                            {{ $currentQuestionIndex + 1 }}. {{ $currentQuestion->question }}
+                        </h2>
+
+                        <form id="quizAnswerForm" action="{{ route('user.quiz.answer', [$course, $module, $attempt]) }}" method="POST" novalidate style="width: 100%;">
+                            @csrf
+                            <input type="hidden" name="question_id" value="{{ $currentQuestion->id }}">
+
+                            <div class="options-container" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px; width: 100%;">
+                                @foreach($currentQuestion->answers as $answer)
+                                    @php
+                                        $letter = chr(65 + $loop->index);
+                                        $checked = $selectedAnswerId && (int)$selectedAnswerId === (int)$answer->id;
+                                    @endphp
+
+                                    <label class="quiz-answer-option {{ $checked ? 'selected' : '' }}" data-answer-id="{{ $answer->id }}" style="position: relative;">
+                                        <input type="radio" name="answer_id" value="{{ $answer->id }}" {{ $checked ? 'checked' : '' }} required style="position: absolute; opacity: 0; pointer-events: none;">
+                                        <span class="quiz-option-letter">{{ $letter }}</span>
+                                        <p>{{ $answer->answer_text }}</p>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <div class="quiz-nav-buttons" style="display: flex; justify-content: space-between; gap: 20px;">
+                                <button type="button" class="previous_question btn btn-light py-3 px-4 fw-bold" data-prev-url="{{ $prevUrl }}" style="border-radius: 12px; flex: 1;">Previous</button>
+                                <button type="submit" class="next_question btn btn-warning py-3 px-4 fw-bold" style="border-radius: 12px; flex: 1; background: #f4c430; border: none;">{{ $isLastQuestion ? 'Submit' : 'Next' }}</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            <div class="box_soal_kuis">
-                <div id="quizHeaderBlock" style="margin-bottom:12px;">
-                    <p class="waktu_kuis" id="quizTimer">--:--:--</p>
-                    <div class="quiz-sidebar-heading" style="margin-top: 8px; margin-bottom:6px; font-weight:600;">Questions</div>
-                    <div class="nomor_kuis" style="margin-bottom: 16px; display:flex; gap:10px; flex-wrap:wrap;">
-                        @foreach($questions as $idx => $q)
-                            @php
-                                $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
-                                $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
-                                $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
-                            @endphp
-                            <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
-                        @endforeach
+            <!-- RIGHT: Quiz Navigation (Question Numbers) -->
+            <div class="quiz-nav-right">
+                <div class="timer-container" style="margin-bottom: 32px; text-align: center; padding: 20px; background: #f9fafb; border-radius: 16px;">
+                    <p style="font-size: 13px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">Time Remaining</p>
+                    <p id="quizTimer" style="margin: 0; font-size: 28px; font-weight: 800; color: #111827; font-family: monospace;">--:--</p>
+                </div>
+
+                <h5 style="font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 16px;">Question Navigation</h5>
+                <div class="nomor_kuis" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                    @foreach($questions as $idx => $q)
+                        @php
+                            $isAnswered = in_array($q->id, $answeredQuestionIds ?? [], true);
+                            $cls = $idx === $currentQuestionIndex ? 'kuis_aktif' : (!$isAnswered ? 'kuis_belum_diisi' : '');
+                            $goUrl = route('user.quiz.take', [$course, $module, $attempt, 'q' => $idx]);
+                        @endphp
+                        <button type="button" class="{{ $cls }}" onclick="window.location.href='{{ $goUrl }}'">{{ $idx + 1 }}</button>
+                    @endforeach
+                </div>
+
+                <div style="margin-top: auto; padding-top: 24px; border-top: 1px solid #f3f4f6;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <div style="width: 12px; height: 12px; background: #f4c430; border-radius: 3px;"></div>
+                        <span style="font-size: 12px; color: #6b7280;">Current Position</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="width: 12px; height: 12px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 3px;"></div>
+                        <span style="font-size: 12px; color: #6b7280;">Not Answered</span>
                     </div>
                 </div>
-                <h2 class="pertanyaan_kuis">{{ $currentQuestionIndex + 1 }}. {{ $currentQuestion->question }}</h2>
-
-                <form id="quizAnswerForm" action="{{ route('user.quiz.answer', [$course, $module, $attempt]) }}" method="POST" novalidate>
-                    @csrf
-                    <input type="hidden" name="question_id" value="{{ $currentQuestion->id }}">
-
-                    @foreach($currentQuestion->answers as $answer)
-                        @php
-                            $letter = chr(65 + $loop->index);
-                            $checked = $selectedAnswerId && (int)$selectedAnswerId === (int)$answer->id;
-                        @endphp
-
-                        <label class="pilihan_jawaban_kuis quiz-answer-option {{ $checked ? 'selected' : '' }}" data-answer-id="{{ $answer->id }}">
-                            <input class="d-none" type="radio" name="answer_id" value="{{ $answer->id }}" {{ $checked ? 'checked' : '' }} required>
-                            <span class="quiz-option-letter" aria-hidden="true">{{ $letter }}.</span>
-                            <p class="mb-0">{{ $answer->answer_text }}</p>
-                        </label>
-                    @endforeach
-
-                    <div class="tombol_kuis">
-                        <button type="button" class="previous_question" onclick="window.location.href='{{ $prevUrl }}'">Previous Question</button>
-                        <button type="submit" class="next_question">{{ $isLastQuestion ? 'Send' : 'Send' }}</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
 
     <script>
-        // Click-to-select answers
-        document.querySelectorAll('.quiz-answer-option').forEach(opt => {
-            opt.addEventListener('click', () => {
-                const radio = opt.querySelector('input[type="radio"]');
-                if (radio) radio.checked = true;
-                document.querySelectorAll('.quiz-answer-option').forEach(x => x.classList.remove('selected'));
-                opt.classList.add('selected');
-                
-                // Clear any custom validity if previously set
-                if (radio) radio.setCustomValidity(''); 
-            });
-        });
-
-        // Form submission validation
-        const quizForm = document.getElementById('quizAnswerForm');
-        if (quizForm) {
-            quizForm.addEventListener('submit', function(e) {
-                const checked = document.querySelector('input[name="answer_id"]:checked');
-                if (!checked) {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Accordion toggle logic
+            const accItems = document.querySelectorAll('.accordion-item');
+            accItems.forEach(item => {
+                const header = item.querySelector('.accordion-header');
+                if (!header) return;
+                header.addEventListener('click', (e) => {
+                    // Prevent navigation if we just want to toggle
                     e.preventDefault();
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Peringatan!',
-                            text: 'Anda harus menyelesaikan soal ini terlebih dahulu',
-                            icon: 'warning',
-                            confirmButtonText: 'Tutup',
-                            confirmButtonColor: '#f4c430'
-                        });
-                    } else {
-                        alert('Anda harus menyelesaikan semua soal kuis ini terlebih dahulu');
+                    
+                    const isOpen = item.classList.contains('active');
+                    // Close others
+                    accItems.forEach(other => other.classList.remove('active'));
+                    // Toggle current
+                    if (!isOpen) {
+                        item.classList.add('active');
                     }
-                    return;
-                }
+                });
+            });
 
-                @if($isLastQuestion)
-                    const unansweredCount = document.querySelectorAll('.nomor_kuis button.kuis_belum_diisi').length;
-                    if (unansweredCount > 0) {
+            // ── Answer persistence via sessionStorage ──────────────────────────────
+            const QUIZ_STORAGE_KEY = 'quiz_draft_{{ $attempt->id }}_q{{ $currentQuestion->id }}';
+
+            // Restore saved draft answer on page load (before server-selected takes effect)
+            (function restoreDraft() {
+                try {
+                    const saved = sessionStorage.getItem(QUIZ_STORAGE_KEY);
+                    if (!saved) return;
+                    const savedId = parseInt(saved, 10);
+                    if (!savedId) return;
+
+                    const alreadyChecked = document.querySelector('input[name="answer_id"]:checked');
+                    if (alreadyChecked) return;
+
+                    const target = document.querySelector('input[name="answer_id"][value="' + savedId + '"]');
+                    if (target) {
+                        target.checked = true;
+                        const label = target.closest('.quiz-answer-option');
+                        if (label) {
+                            document.querySelectorAll('.quiz-answer-option').forEach(x => x.classList.remove('selected'));
+                            label.classList.add('selected');
+                        }
+                    }
+                } catch (_e) {}
+            })();
+
+            let _draftDirty = false;
+            @if($selectedAnswerId)
+            _draftDirty = false;
+            @endif
+
+            // Click-to-select answers
+            document.querySelectorAll('.quiz-answer-option').forEach(opt => {
+                opt.addEventListener('click', function(e) {
+                    const radio = this.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.checked = true;
+                    }
+                    document.querySelectorAll('.quiz-answer-option').forEach(x => x.classList.remove('selected'));
+                    this.classList.add('selected');
+                    if (radio) radio.setCustomValidity('');
+
+                    try {
+                        sessionStorage.setItem(QUIZ_STORAGE_KEY, radio ? radio.value : '');
+                    } catch (_e) {}
+                    _draftDirty = true;
+                });
+            });
+
+            // Form validation
+            const quizForm = document.getElementById('quizAnswerForm');
+            if (quizForm) {
+                quizForm.addEventListener('submit', function(e) {
+                    const checked = document.querySelector('input[name="answer_id"]:checked');
+                    if (!checked) {
                         e.preventDefault();
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
-                                title: 'Peringatan!',
-                                text: 'Anda harus menyelesaikan semua soal kuis terlebih dahulu sebelum lanjut',
+                                title: 'Warning!',
+                                text: 'You must complete this question first.',
                                 icon: 'warning',
-                                confirmButtonText: 'Tutup',
+                                confirmButtonText: 'Close',
                                 confirmButtonColor: '#f4c430'
                             });
                         } else {
-                            alert('Anda harus menyelesaikan kuis terlebih dahulu sebelum lanjut');
+                            alert('Anda harus menyelesaikan soal ini terlebih dahulu');
                         }
+                        return;
                     }
-                @endif
-            });
-        }
 
-        // Sidebar accordion
-        const accItems = document.querySelectorAll('.box_kuis_kiri.quiz-modules .accordion-item');
-        accItems.forEach(item => {
-            const header = item.querySelector('.accordion-header');
-            if (!header) return;
-            header.addEventListener('click', (e) => {
-                e.preventDefault();
-                const isOpen = item.classList.contains('active');
-                if (!isOpen) {
-                    accItems.forEach(other => {
-                        if (other !== item) other.classList.remove('active');
-                    });
-                    item.classList.add('active');
-                    return;
-                }
+                    @if($isLastQuestion)
+                        const unansweredCount = document.querySelectorAll('.nomor_kuis button.kuis_belum_diisi').length;
+                        if (unansweredCount > 0) {
+                            e.preventDefault();
+                            Swal.fire({
+                                title: 'Warning!',
+                                text: 'You must complete all quiz questions first.',
+                                icon: 'warning',
+                                confirmButtonText: 'Close',
+                                confirmButtonColor: '#f4c430'
+                            });
+                            return;
+                        }
+                    @endif
 
-                const locked = item.getAttribute('data-locked') === '1';
-                if (locked) {
-                    const reason = item.getAttribute('data-locked-reason') || '';
-                    if (reason === 'free') {
+                    _draftDirty = false;
+                    try { sessionStorage.removeItem(QUIZ_STORAGE_KEY); } catch (_e) {}
+                });
+            }
+
+            // Navigation warnings
+            const prevBtn = document.querySelector('.previous_question');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function(e) {
+                    const checked = document.querySelector('input[name="answer_id"]:checked');
+                    const prevUrl = this.getAttribute('data-prev-url');
+                    if (_draftDirty && checked) {
+                        e.preventDefault();
                         Swal.fire({
-                            title: 'Oops!',
-                            text: 'Materi ini terkunci. Silakan beli atau daftar course ini untuk membuka seluruh materi.',
+                            title: 'Answer Not Saved',
+                            text: 'Continue without saving?',
                             icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes',
                             confirmButtonColor: '#f4c430',
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                _draftDirty = false;
+                                window.location.href = prevUrl;
+                            }
                         });
                     } else {
-                        Swal.fire({
-                            title: 'Oops!',
-                            text: 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.',
-                            icon: 'warning',
-                            confirmButtonColor: '#f4c430',
-                        });
+                        window.location.href = prevUrl;
                     }
-                    return;
-                }
-
-                const url = item.getAttribute('data-learn-url');
-                if (url) {
-                    window.location.href = url;
-                }
-            });
-        });
-
-        // Sidebar open/close
-        const rootEl = document.getElementById('quizTakeRoot');
-        const modulesSidebar = document.querySelector('.box_kuis_kiri.quiz-modules');
-        const openModulesBtn = document.getElementById('openModulesBtn');
-        const closeModulesBtn = document.getElementById('closeModulesBtn');
-
-        function setModulesOpen(isOpen) {
-            if (!modulesSidebar) return;
-            modulesSidebar.classList.toggle('closed', !isOpen);
-            if (openModulesBtn) openModulesBtn.classList.toggle('d-none', isOpen);
-            if (rootEl) rootEl.classList.toggle('modules-closed', !isOpen);
-        }
-
-        if (closeModulesBtn) {
-            closeModulesBtn.addEventListener('click', () => setModulesOpen(false));
-        }
-        if (openModulesBtn) {
-            openModulesBtn.addEventListener('click', () => setModulesOpen(true));
-        }
-
-        // Timer (module duration in seconds), based on server-provided endsAt
-        const endsAtIso = @json($endsAtIso ?? null);
-        const timerEl = document.getElementById('quizTimer');
-        const finishUrl = @json($finishUrl);
-        const resultUrl = @json($resultUrl);
-
-        function formatTime(totalSeconds) {
-            const s = Math.max(0, Math.floor(totalSeconds));
-            const h = Math.floor(s / 3600);
-            const m = Math.floor((s % 3600) / 60);
-            const r = s % 60;
-            return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
-        }
-
-        async function finishAttempt() {
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-            try {
-                await fetch(finishUrl, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': token || '',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
                 });
-            } catch (e) {
-                // ignore
             }
-            window.location.href = resultUrl;
-        }
 
-        if (timerEl && endsAtIso) {
-            const endsAt = new Date(endsAtIso).getTime();
-            const tick = () => {
-                const now = Date.now();
-                const remaining = Math.floor((endsAt - now) / 1000);
-                timerEl.textContent = formatTime(remaining);
-                if (remaining <= 0) {
-                    clearInterval(intv);
-                    finishAttempt();
-                }
-            };
-            tick();
-            const intv = setInterval(tick, 1000);
-        }
+            // Timer Logic
+            const endsAtIso = @json($endsAtIso ?? null);
+            const timerEl = document.getElementById('quizTimer');
+            const finishUrl = @json($finishUrl);
+            const resultUrl = @json($resultUrl);
+
+            function formatTime(totalSeconds) {
+                const s = Math.max(0, Math.floor(totalSeconds));
+                const m = Math.floor(s / 60);
+                const r = s % 60;
+                return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+            }
+
+            async function finishAttempt() {
+                _draftDirty = false;
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;';
+                overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:32px;text-align:center;"><h3>Time\'s Up!</h3><p>Submitting quiz...</p></div>';
+                document.body.appendChild(overlay);
+
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                try {
+                    await fetch(finishUrl, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': token || '' },
+                        keepalive: true,
+                    });
+                } catch (e) {}
+                setTimeout(() => { window.location.href = resultUrl; }, 1000);
+            }
+
+            if (timerEl && endsAtIso) {
+                const endsAt = new Date(endsAtIso).getTime();
+                const intv = setInterval(() => {
+                    const remaining = Math.floor((endsAt - Date.now()) / 1000);
+                    timerEl.textContent = formatTime(remaining);
+                    if (remaining <= 0) {
+                        clearInterval(intv);
+                        finishAttempt();
+                    }
+                }, 1000);
+            }
+
+            // Mobile Sidebar Toggle
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const sidebar = document.querySelector('.box_modul_kiri');
+            
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('show-mobile');
+                    const isVisible = sidebar.classList.contains('show-mobile');
+                    toggleBtn.style.background = isVisible ? '#f4c430' : '#fff';
+                    toggleBtn.style.color = isVisible ? '#1f2937' : '#252346';
+                });
+            }
+        });
     </script>
 
 </body>

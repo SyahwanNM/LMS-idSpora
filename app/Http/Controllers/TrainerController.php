@@ -64,34 +64,18 @@ class TrainerController extends Controller
             $assignment = $this->latestEventAssignment((int) $event->id, $trainerId);
         }
 
-        // Check admin-set fixed salary in event_speakers for this trainer
-        $fixedSpeaker = null;
-        if ($trainerId > 0) {
-            $fixedSpeaker = \App\Models\EventSpeaker::query()
-                ->where('event_id', (int) $event->id)
-                ->where('trainer_id', (int) $trainerId)
-                ->latest('id')
-                ->first();
-        }
-
-        if ($fixedSpeaker && (float) $fixedSpeaker->salary > 0) {
-            $salary = round((float) $fixedSpeaker->salary, 2);
-            return [
-                'scheme_percent' => $assignment?->getSchemePercentage() ?? 0,
-                'event_price' => (float) ($event->price ?? 0),
-                'active_participants_count' => $activeParticipants,
-                'fee_trainer' => $salary,   // show fixed salary for UI consistency
-                'estimated_fee' => $salary,         // fixed payout (not multiplied by participants)
-                'is_fallback_to_event_price' => false,
-            ];
-        }
-
-        // Fallback: existing per-participant / scheme logic
         $schemePercent = (int) ($assignment?->getSchemePercentage() ?? 0);
         $isFallbackToEventPrice = false;
 
         if ($schemePercent <= 0 && $trainerId > 0) {
-            $acceptedNotification = $this->latestEventInvitation((int) $event->id, $trainerId);
+            $acceptedNotification = TrainerNotification::query()
+                ->where('trainer_id', $trainerId)
+                ->where('type', 'event_invitation')
+                ->where(function ($query) use ($event) {
+                    $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+                })
+                ->orderByDesc('id')
+                ->first();
 
             $notificationScheme = (int) data_get($acceptedNotification?->data ?? [], 'scheme_type', 0);
             $notificationStatus = (string) data_get($acceptedNotification?->data ?? [], 'invitation_status', (string) ($acceptedNotification?->invitation_status ?? ''));
@@ -104,13 +88,13 @@ class TrainerController extends Controller
         $eventPrice = (float) ($event->price ?? 0);
 
         if ($schemePercent <= 0 && $eventPrice > 0) {
+            // Fallback for legacy/main-trainer events that do not have assignment scheme yet.
             $isFallbackToEventPrice = true;
         }
 
         $feePerParticipant = ($eventPrice > 0 && $schemePercent > 0)
             ? round(($eventPrice * $schemePercent) / 100, 2)
             : ($isFallbackToEventPrice ? round($eventPrice, 2) : 0);
-
         $estimatedFee = ($activeParticipants > 0 && $feePerParticipant > 0)
             ? round($activeParticipants * $feePerParticipant, 2)
             : 0;
@@ -119,7 +103,7 @@ class TrainerController extends Controller
             'scheme_percent' => $schemePercent,
             'event_price' => $eventPrice,
             'active_participants_count' => $activeParticipants,
-            'fee_trainer' => $feePerParticipant,
+            'fee_per_participant' => $feePerParticipant,
             'estimated_fee' => $estimatedFee,
             'is_fallback_to_event_price' => $isFallbackToEventPrice,
         ];
@@ -385,21 +369,33 @@ class TrainerController extends Controller
 
     private function ensureTemplateStructureExists(Course $course): void
     {
-        if ((int) ($course->template_id ?? 0) <= 0) {
-            return;
-        }
-
+        // Kalau sudah ada modul, tidak perlu clone
         if ((int) $course->modules()->count() > 0) {
             return;
         }
 
-        $template = $course->template()->with('modules')->first();
-        if (!$template || $template->modules->isEmpty()) {
-            return;
+        $template = \App\Models\CourseTemplate::find($course->template_id);
+        if (!$template) {
+            $template = \App\Models\CourseTemplate::where('level', $course->level)->first();
+            if (!$template) return;
         }
 
-        app(CourseTemplateCloneService::class)
-            ->cloneToCourse($course, $template, replaceExisting: false);
+        // Assign template ke course jika belum ada
+        if ((int) ($course->template_id ?? 0) <= 0) {
+            $course->template_id      = $template->id;
+            $course->template_version = $template->version;
+            $course->saveQuietly();
+        }
+
+        $unitCount = (int) $course->units()->count();
+
+        if ($unitCount > 0) {
+            app(\App\Services\CourseTemplateCloneService::class)
+                ->cloneSlotsByUnitCount($course, $template, $unitCount);
+        } else {
+            app(\App\Services\CourseTemplateCloneService::class)
+                ->cloneToCourse($course, $template, replaceExisting: false);
+        }
     }
 
     private function ensureQuizSlotPerUnit(Course $course): void
@@ -556,7 +552,7 @@ class TrainerController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
-        $dashboardInvitations = TrainerNotification::query()
+        $pendingInvitationItems = TrainerNotification::query()
             ->where('trainer_id', $user->id)
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
@@ -607,7 +603,7 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $activeAssignments = TrainerAssignment::query()
+        $activeAssignmentItems = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
             ->with([
@@ -646,7 +642,7 @@ class TrainerController extends Controller
                     'scheme_percent' => $schemePercent,
                     'event_price' => $eventPrice,
                     'active_participants_count' => $activeParticipants,
-                    'fee_trainer' => $feePerParticipant,
+                    'fee_per_participant' => $feePerParticipant,
                     'estimated_fee' => $estimatedFee,
                     'deadline' => $assignment->sla_upload_deadline,
                     'remaining_hours' => $assignment->getRemainingHours(),
@@ -661,7 +657,7 @@ class TrainerController extends Controller
             })
             ->values();
 
-        $revenueCourses = (clone $coursesQuery)
+        $revenueCourseItems = (clone $coursesQuery)
             ->withCount([
                 'enrollments as monthly_active_students_count' => function ($query) {
                     $query->where('status', 'active')
@@ -693,7 +689,7 @@ class TrainerController extends Controller
             })
             ->values();
 
-        $completedCourses = (clone $coursesQuery)
+        $completedCourseItems = (clone $coursesQuery)
             ->whereIn('status', ['completed', 'finished', 'archived', 'approved'])
             ->withCount([
                 'enrollments as active_students_count' => function ($query) {
@@ -706,7 +702,7 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $recentEventFeedbacks = Feedback::query()
+        $feedbackItems = Feedback::query()
             ->whereHas('event', function ($query) use ($user) {
                 $query->where('trainer_id', $user->id);
             })
@@ -734,11 +730,11 @@ class TrainerController extends Controller
             'totalStudents',
             'totalCertificates',
             'teachingHistory',
-            'activeAssignments',
-            'revenueCourses',
-            'completedCourses',
-            'recentEventFeedbacks',
-            'dashboardInvitations',
+            'activeAssignmentItems',
+            'revenueCourseItems',
+            'completedCourseItems',
+            'feedbackItems',
+            'pendingInvitationItems',
             'unreadInvitationCount',
             'trainerActivity',
             'availableContributionSchemes'
@@ -871,7 +867,8 @@ class TrainerController extends Controller
                 $query->orderBy('order_no', 'asc')->with('quizQuestions');
             },
             'enrollments.user',
-            'reviews'
+            'reviews',
+            'units',
         ])
             ->where('id', $id)
             ->where('trainer_id', $trainerId)
@@ -937,11 +934,11 @@ class TrainerController extends Controller
 
         // Include events where trainer is assigned via trainer_id OR speaker name match
         $query = \App\Models\Event::where(function ($q) use ($user, $trainerName) {
-            $q->where('trainer_id', $user->id);
-            if ($trainerName !== '') {
-                $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
-            }
-        })
+                $q->where('trainer_id', $user->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
@@ -960,10 +957,8 @@ class TrainerController extends Controller
             ->get()
             ->filter(function ($event) use ($user, $trainerName) {
                 // Exact name match for speaker field to avoid partial false positives
-                if ((int) ($event->trainer_id ?? 0) === (int) $user->id)
-                    return true;
-                if ($trainerName === '')
-                    return false;
+                if ((int) ($event->trainer_id ?? 0) === (int) $user->id) return true;
+                if ($trainerName === '') return false;
                 $names = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
                 return in_array(mb_strtolower($trainerName), $names, true);
             })
@@ -1113,24 +1108,6 @@ class TrainerController extends Controller
                 $myMaterialStatus = 'pending_review';
             } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
                 $myMaterialStatus = 'rejected';
-            }
-        }
-
-        if ($myMaterialStatus === 'not_uploaded') {
-            if (!empty($event->module_path) || ($event->material_status ?? '') === 'pending_review') {
-                $myMaterialStatus = 'pending_review';
-            }
-
-            //Jika material co-trainer ada
-            $assignment = $this->latestEventAssignment((int) $event->id, (int) $trainerId);
-            if ($myMaterialStatus === 'not_uploaded' && $assignment) {
-                if (($assignment->material_status ?? '') === 'approved') {
-                    $myMaterialStatus = 'approved';
-                } elseif (($assignment->material_status ?? '') === 'pending_review') {
-                    $myMaterialStatus = 'pending_review';
-                } elseif (($assignment->material_status ?? '') === 'rejected') {
-                    $myMaterialStatus = 'rejected';
-                }
             }
         }
 
@@ -1392,8 +1369,8 @@ class TrainerController extends Controller
         $this->ensureTemplateStructureExists($course);
         $this->ensureQuizSlotPerUnit($course);
 
-        // 1. Ambil semua modul course, lalu pecah per Bab (chunk 3)
-        $unitIndex = $request->query('unit', 0); // Default ke Bab 1 (index 0)
+        // 1. Ambil semua modul course
+        $unitIndex = (int) $request->query('unit', 0); // Default ke Bab 1 (index 0)
         $allModules = \App\Models\CourseModule::where('course_id', $id)
             ->with([
                 'quizQuestions' => function ($query) {
@@ -1407,9 +1384,20 @@ class TrainerController extends Controller
             ->withCount('quizQuestions')
             ->orderBy('order_no', 'asc')
             ->get();
-        $chunks = $allModules->chunk(3)->values();
 
-        // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
+        // 2. Tentukan jumlah Bab (Unit)
+        // Jika ada CourseUnit, gunakan itu. Jika tidak, gunakan chunk 3.
+        $units = \App\Models\CourseUnit::where('course_id', $id)->orderBy('unit_no')->get();
+        if ($units->isNotEmpty()) {
+            $unitCount = $units->count();
+            // Group modules by units (assuming 3 modules per unit as convention)
+            $chunks = $allModules->chunk(3)->values();
+        } else {
+            $chunks = $allModules->chunk(3)->values();
+            $unitCount = $chunks->count();
+        }
+
+        // 3. Ambil modul-modul HANYA untuk Bab yang dipilih
         $activeUnitModules = $chunks->get($unitIndex, collect());
 
         // Hanya tampilkan materi yang sudah diupload untuk bab (unit) yang sedang aktif saja.
@@ -1443,7 +1431,9 @@ class TrainerController extends Controller
             return redirect()->route('trainer.courses')->with('error', 'Silabus untuk bab ini belum tersedia.');
         }
 
-        $unitTitle = "Modul " . ($unitIndex + 1);
+        $unitNo = $unitIndex + 1;
+        $unit = \App\Models\CourseUnit::where('course_id', $id)->where('unit_no', $unitNo)->first();
+        $unitTitle = $unit && !empty($unit->title) ? $unit->title : ("Bab " . $unitNo);
 
         return view('trainer.content-studio', compact(
             'course',
@@ -1560,7 +1550,7 @@ class TrainerController extends Controller
         $trainerId = Auth::id();
 
         $baseQuery = \App\Models\ManualPayment::query()
-            ->with(['user:id,name', 'event:id,title,trainer_id,price', 'course:id,name,trainer_id,price'])
+            ->with(['user:id,name', 'event:id,title,trainer_id', 'course:id,name,trainer_id'])
             ->where('status', 'settled')
             ->where(function ($query) use ($trainerId) {
                 $query->whereHas('course', function ($courseQuery) use ($trainerId) {
@@ -1575,46 +1565,7 @@ class TrainerController extends Controller
             ->latest('created_at')
             ->paginate(10);
 
-        // Events: use resolveEventCompensation to compute fee_trainer & estimated_fee
-        $events = \App\Models\Event::query()
-            ->where('trainer_id', $trainerId)
-            ->withCount([
-                'registrations as active_participants_count' => function ($q) {
-                    $q->where('status', 'active');
-                }
-            ])
-            ->get()
-            ->map(function ($e) use ($trainerId) {
-                $comp = $this->resolveEventCompensation($e, $trainerId);
-                return array_merge(['event' => $e], $comp);
-            });
-
-        // Courses: calculate estimated revenue based on trainer_revenue_percent and active enrollments
-        $courses = \App\Models\Course::query()
-            ->where('trainer_id', $trainerId)
-            ->withCount([
-                'enrollments as active_students_count' => function ($q) {
-                    $q->where('status', 'active');
-                }
-            ])
-            ->get()
-            ->map(function ($c) {
-                $active = (int) ($c->active_students_count ?? 0);
-                $percent = (int) ($c->trainer_revenue_percent ?? 0);
-                $estimated = ($active > 0 && $c->price > 0 && $percent > 0)
-                    ? round(($active * $c->price * $percent) / 100, 2)
-                    : 0;
-                return [
-                    'course' => $c,
-                    'scheme_percent' => $percent,
-                    'active_students' => $active,
-                    'estimated_revenue' => $estimated,
-                ];
-            });
-
-        $estimatedTotal = $events->sum('estimated_fee') + collect($courses)->sum('estimated_revenue');
-
-        return view('trainer.finance', compact('totalEarned', 'payments', 'events', 'courses', 'estimatedTotal'));
+        return view('trainer.finance', compact('totalEarned', 'payments'));
     }
 
     public function show()
@@ -1823,13 +1774,82 @@ class TrainerController extends Controller
 
     public function uploadCourseMaterials(Request $request, $id)
     {
-        $request->validate([
-            'target_modules' => 'required|string', // Kumpulan ID modul di Bab ini
-            'replace_module_id' => 'nullable|integer',
-            'module_content_html' => 'nullable|string|max:300000',
-            'files' => 'required_without:module_content_html|array',
-            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
+        // Check if upload was silently rejected by PHP (post_max_size exceeded)
+        if ($request->server('CONTENT_LENGTH') > 0 && empty($_FILES) && empty($_POST)) {
+            return response()->json([
+                'success' => false,
+                'error' => 'File terlalu besar. Ukuran maksimal yang diizinkan server adalah 512MB.',
+            ], 413);
+        }
+
+        // Log incoming request for debugging
+        \Illuminate\Support\Facades\Log::info('uploadCourseMaterials', [
+            'course_id' => $id,
+            'has_files' => $request->hasFile('files'),
+            'files_count' => count($request->file('files') ?? []),
+            'content_length' => $request->server('CONTENT_LENGTH'),
+            'files_info' => collect($request->file('files') ?? [])->map(fn($f) => [
+                'name' => $f?->getClientOriginalName(),
+                'size' => $f?->getSize(),
+                'mime' => $f?->getMimeType(),
+                'ext' => $f?->getClientOriginalExtension(),
+                'valid' => $f?->isValid(),
+                'error' => $f?->getError(),
+            ])->toArray(),
         ]);
+
+        try {
+            $request->validate([
+                'target_modules' => 'required|string',
+                'replace_module_id' => 'nullable|integer',
+                'module_content_html' => 'nullable|string|max:300000',
+                'files' => 'required_without:module_content_html|array',
+                'files.*' => [
+                    'required',
+                    function ($attribute, $value, $fail) {
+                        if (!$value || !($value instanceof \Illuminate\Http\UploadedFile)) {
+                            $fail('File tidak valid.');
+                            return;
+                        }
+                        // Check PHP upload error code directly
+                        if ($value->getError() !== UPLOAD_ERR_OK) {
+                            $errorMessages = [
+                                UPLOAD_ERR_INI_SIZE   => 'File melebihi batas upload_max_filesize di server (' . ini_get('upload_max_filesize') . ').',
+                                UPLOAD_ERR_FORM_SIZE  => 'File melebihi batas MAX_FILE_SIZE di form.',
+                                UPLOAD_ERR_PARTIAL    => 'File hanya terupload sebagian. Coba lagi.',
+                                UPLOAD_ERR_NO_FILE    => 'Tidak ada file yang diupload.',
+                                UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary server tidak tersedia.',
+                                UPLOAD_ERR_CANT_WRITE => 'Gagal menyimpan file ke disk server.',
+                                UPLOAD_ERR_EXTENSION  => 'Upload dihentikan oleh ekstensi PHP.',
+                            ];
+                            $fail($errorMessages[$value->getError()] ?? 'Upload gagal dengan error code: ' . $value->getError());
+                            return;
+                        }
+                        // Validate by extension only (avoid mimes which requires fileinfo)
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        $allowed = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc', 'jpg', 'png', 'jpeg'];
+                        if (!in_array($ext, $allowed)) {
+                            $fail("Format .$ext tidak diizinkan. Format yang diizinkan: " . implode(', ', $allowed));
+                            return;
+                        }
+                        // 512MB size limit
+                        if ($value->getSize() > 512 * 1024 * 1024) {
+                            $fail('Ukuran file maksimal 512MB. File Anda: ' . round($value->getSize() / 1024 / 1024, 1) . 'MB.');
+                        }
+                    },
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Illuminate\Support\Facades\Log::warning('uploadCourseMaterials validation failed', [
+                'errors' => $e->errors(),
+                'course_id' => $id,
+            ]);
+            return response()->json([
+                'success' => false,
+                'error' => collect($e->errors())->flatten()->first() ?? 'Validasi gagal.',
+                'validation_errors' => $e->errors(),
+            ], 422);
+        }
 
         $course = \App\Models\Course::findOrFail($id);
         if ($course->trainer_id !== Auth::id()) {
@@ -2301,7 +2321,16 @@ class TrainerController extends Controller
             }
         }
 
-        if (!empty($primaryMaterialPath)) {
+        if (!empty($primaryMaterialPath) && $firstFile) {
+            // Always save to event_trainer_modules for per-trainer tracking
+            \App\Models\EventTrainerModule::create([
+                'event_id'      => $event->id,
+                'trainer_id'    => $trainerId,
+                'original_name' => $firstFile->getClientOriginalName(),
+                'path'          => $primaryMaterialPath,
+                'status'        => 'pending_review',
+            ]);
+
             if ($isPrimaryTrainer || !$assignment) {
                 $event->update([
                     'module_path' => $primaryMaterialPath,
@@ -2401,7 +2430,7 @@ class TrainerController extends Controller
 
         // Kunci Quiz ke Slot Bab Ini
         $quizModule = \App\Models\CourseModule::where('id', $request->quiz_module_id)->where('course_id', $id)->firstOrFail();
-        $quizModule->update(['content_url' => 'quiz_submitted']);
+        $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'pending_review']);
 
         // Delete old questions
         $quizModule->quizQuestions()->delete();

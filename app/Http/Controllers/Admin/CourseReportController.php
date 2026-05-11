@@ -25,7 +25,16 @@ class CourseReportController extends Controller
     public function index(Request $request)
     {
         $period = $this->normalizePeriod($request->query('period', 'monthly'));
-        [$from, $to, $hasCustomRange] = $this->parseDateRange($request, $period);
+        $monthRaw = trim((string) $request->query('month', ''));
+
+        // For revenue: empty month = show all data (matches "All Months" dropdown default)
+        if ($monthRaw === '' || $monthRaw === 'all') {
+            $from = Carbon::create(2000, 1, 1)->startOfDay();
+            $to = Carbon::now()->endOfDay();
+            $hasCustomRange = false;
+        } else {
+            [$from, $to, $hasCustomRange] = $this->parseDateRange($request, $period);
+        }
 
         $courses = Course::query()
             ->select('courses.id', 'courses.name', 'courses.status')
@@ -59,10 +68,69 @@ class CourseReportController extends Controller
         [$growthFrom, $growthTo, $growthMonthResolved] = $this->parseGrowthRangeFromMonth($growthMonth, $growthPeriod);
         $growthReport = $this->buildGrowthReport(from: $growthFrom, to: $growthTo, period: $growthPeriod, q: $growthQuery);
 
-        // Chart (Jan–Dec) should be DB-backed but keep the same UI/labels.
-        // The year should follow the selected growth month.
+        // Chart: build series from growthReport rows (same data as the table)
+        // Aggregate per month of course_created_at within the selected year
         $growthChartYear = $growthMonthResolved instanceof Carbon ? (int) $growthMonthResolved->year : (int) Carbon::now()->year;
-        $growthChart = $this->buildGrowthChartYearSeries($growthChartYear);
+        $rows = $growthReport['rows'] ?? collect();
+
+        $viewsByM = array_fill(1, 12, 0);
+        $participantsByM = array_fill(1, 12, 0);
+        $watchByM = array_fill(1, 12, 0);
+        $ratingByM = array_fill(1, 12, []);
+
+        foreach ($rows as $row) {
+            $createdAt = $row['course_created_at'] ?? null;
+            if (!$createdAt) continue;
+            try {
+                $m = (int) Carbon::parse($createdAt)->month;
+            } catch (\Throwable $e) { continue; }
+            if ($m < 1 || $m > 12) continue;
+            $viewsByM[$m]       += (int) ($row['total_views'] ?? 0);
+            $participantsByM[$m]+= (int) ($row['participants_count'] ?? 0);
+            $watchByM[$m]       += (int) ($row['avg_watch_minutes'] ?? 0);
+            if (($row['rating_avg'] ?? 0) > 0) {
+                $ratingByM[$m][] = (float) $row['rating_avg'];
+            }
+        }
+
+        $chartViews = $chartParticipants = $chartWatch = $chartRating = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $chartViews[]        = $viewsByM[$m];
+            $chartParticipants[] = $participantsByM[$m];
+            $chartWatch[]        = $watchByM[$m];
+            $chartRating[]       = count($ratingByM[$m]) > 0
+                ? (float) round(array_sum($ratingByM[$m]) / count($ratingByM[$m]), 1)
+                : 0;
+        }
+
+        $growthChart = [
+            'year'   => $growthChartYear,
+            'labels' => ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],
+            'series' => [
+                'views'        => $chartViews,
+                'participants' => $chartParticipants,
+                'watch_minutes'=> $chartWatch,
+                'rating'       => $chartRating,
+            ],
+        ];
+
+        // Get available months from course enrollments for dropdown filter
+        $enrollmentMonths = \App\Models\Enrollment::query()
+            ->join('courses', 'courses.id', '=', 'enrollments.course_id')
+            ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
+            ->selectRaw("DATE_FORMAT(enrollments.enrolled_at, '%Y-%m') as month_val, DATE_FORMAT(enrollments.enrolled_at, '%M %Y') as month_label")
+            ->groupBy('month_val', 'month_label')
+            ->orderByDesc('month_val')
+            ->pluck('month_label', 'month_val');
+
+        $courseMonths = \App\Models\Course::query()
+            ->whereIn('status', ['active'])
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_val, DATE_FORMAT(created_at, '%M %Y') as month_label")
+            ->groupBy('month_val', 'month_label')
+            ->orderByDesc('month_val')
+            ->pluck('month_label', 'month_val');
+
+        $availableMonths = $enrollmentMonths->union($courseMonths)->sortKeysDesc();
 
         return view('admin.report', [
             'courses' => $courses,
@@ -74,16 +142,38 @@ class CourseReportController extends Controller
             'growthQuery' => $growthQuery,
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
+            'availableMonths' => $availableMonths,
         ]);
     }
 
     public function revenue(Request $request)
     {
-        $period = $this->normalizePeriod($request->query('period', 'monthly'));
-        [$from, $to, $hasCustomRange] = $this->parseDateRange($request, $period);
+        $monthRaw = trim((string) $request->query('month', ''));
+        $period   = $this->normalizePeriod($request->query('period', 'monthly'));
+        $q        = trim((string) $request->query('q', ''));
 
-        $q = trim((string) $request->query('q', ''));
-        $revenueReport = $this->buildRevenueReport(from: $from, to: $to, period: $period, hasCustomRange: $hasCustomRange, q: $q);
+        // "all" or empty = no month filter, show all data
+        if ($monthRaw === '' || $monthRaw === 'all') {
+            $from         = Carbon::create(2000, 1, 1)->startOfDay();
+            $to           = Carbon::now()->endOfDay();
+            $hasCustomRange = false;
+        } else {
+            // month = YYYY-MM → filter whole month
+            try {
+                $base = Carbon::createFromFormat('Y-m', $monthRaw)->startOfMonth();
+                $from = $base->copy()->startOfDay();
+                $to   = $base->copy()->endOfMonth()->endOfDay();
+            } catch (\Throwable $e) {
+                $from = Carbon::now()->startOfMonth()->startOfDay();
+                $to   = Carbon::now()->endOfDay();
+            }
+            $hasCustomRange = true;
+        }
+
+        $revenueReport = $this->buildRevenueReport(
+            from: $from, to: $to, period: $period,
+            hasCustomRange: $hasCustomRange, q: $q
+        );
 
         return response()->json($revenueReport);
     }
@@ -93,6 +183,7 @@ class CourseReportController extends Controller
         $period = $this->normalizePeriod($request->query('period', 'monthly'));
         $month = trim((string) $request->query('month', '')); // YYYY-MM
         $q = trim((string) $request->query('q', ''));
+        $actionType = trim((string) $request->query('action_type', 'all'));
 
         [$from, $to, $monthResolved] = $this->parseGrowthRangeFromMonth($month, $period);
 
@@ -101,11 +192,41 @@ class CourseReportController extends Controller
             [$from, $to] = $this->defaultDateRange($period);
         }
 
-        $growthReport = $this->buildGrowthReport(from: $from, to: $to, period: $period, q: $q);
+        $growthReport = $this->buildGrowthReport(from: $from, to: $to, period: $period, q: $q, actionType: $actionType);
 
-        // Also include chart series for the selected year (based on selected month when provided).
+        // Build chart series from the same rows as the table
         $chartYear = $monthResolved instanceof Carbon ? (int) $monthResolved->year : (int) Carbon::now()->year;
-        $growthReport['chart'] = $this->buildGrowthChartYearSeries($chartYear);
+        $rows = $growthReport['rows'] ?? collect();
+
+        $viewsByM = array_fill(1, 12, 0);
+        $participantsByM = array_fill(1, 12, 0);
+        $watchByM = array_fill(1, 12, 0);
+        $ratingByM = array_fill(1, 12, []);
+
+        foreach ($rows as $row) {
+            $createdAt = $row['course_created_at'] ?? null;
+            if (!$createdAt) continue;
+            try { $m = (int) Carbon::parse($createdAt)->month; } catch (\Throwable $e) { continue; }
+            if ($m < 1 || $m > 12) continue;
+            $viewsByM[$m]        += (int) ($row['total_views'] ?? 0);
+            $participantsByM[$m] += (int) ($row['participants_count'] ?? 0);
+            $watchByM[$m]        += (int) ($row['avg_watch_minutes'] ?? 0);
+            if (($row['rating_avg'] ?? 0) > 0) $ratingByM[$m][] = (float) $row['rating_avg'];
+        }
+
+        $cv = $cp = $cw = $cr = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $cv[] = $viewsByM[$m];
+            $cp[] = $participantsByM[$m];
+            $cw[] = $watchByM[$m];
+            $cr[] = count($ratingByM[$m]) > 0 ? (float) round(array_sum($ratingByM[$m]) / count($ratingByM[$m]), 1) : 0;
+        }
+
+        $growthReport['chart'] = [
+            'year'   => $chartYear,
+            'labels' => ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'],
+            'series' => ['views' => $cv, 'participants' => $cp, 'watch_minutes' => $cw, 'rating' => $cr],
+        ];
 
         return response()->json($growthReport);
     }
@@ -303,7 +424,7 @@ class CourseReportController extends Controller
         return [$from, $to];
     }
 
-    private function buildGrowthReport(Carbon $from, Carbon $to, string $period = 'monthly', string $q = ''): array
+    private function buildGrowthReport(Carbon $from, Carbon $to, string $period = 'monthly', string $q = '', string $actionType = 'all'): array
     {
         $q = trim($q);
         $courseIdFilter = null;
@@ -313,8 +434,9 @@ class CourseReportController extends Controller
                 ->select('id');
         }
 
-        // Base: all courses, with optional enrollments in range.
+        // Base: only published/completed courses (exclude on progress)
         $courseAgg = Course::query()
+            ->whereIn('courses.status', ['active'])
             ->leftJoin('enrollments', function ($join) use ($from, $to) {
                 $join->on('courses.id', '=', 'enrollments.course_id')
                     ->whereIn('enrollments.status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -373,6 +495,7 @@ class CourseReportController extends Controller
                 'course_id' => $courseId,
                 'course_name' => (string) $r->name,
                 'course_level' => $r->level,
+                'course_created_at' => $r->created_at ? \Carbon\Carbon::parse($r->created_at)->toDateString() : null,
                 'total_views' => $totalViews,
                 'total_views_compact' => $this->formatCompactNumber($totalViews),
                 'participants_count' => $participantsCount,
@@ -384,12 +507,28 @@ class CourseReportController extends Controller
             ];
         });
 
-        if ($q === '') {
-            $rows = $rows->filter(function($row) {
-                return $row['total_views'] > 0 || $row['avg_watch_minutes'] > 0 || $row['comments_count'] > 0;
-            });
-        }
+        // Selalu filter berdasarkan created_at course sesuai periode yang dipilih.
+        // Berlaku baik saat ada search query maupun tidak.
+        $courseCreatedMap = \App\Models\Course::whereIn('id', $courseAgg->pluck('id'))
+            ->pluck('created_at', 'id');
+
+        $rows = $rows->filter(function ($row) use ($from, $to, $courseCreatedMap) {
+            $createdAt = $courseCreatedMap->get($row['course_id']);
+            if (!$createdAt) return false;
+            $created = $createdAt instanceof \Carbon\Carbon ? $createdAt : \Carbon\Carbon::parse($createdAt);
+            return $created->between($from, $to);
+        });
+
         $rows = $rows->values();
+
+        // Sorting berdasarkan action_type
+        $rows = match ($actionType) {
+            'high_to_low_participants' => $rows->sortByDesc('participants_count')->values(),
+            'low_to_high_participants' => $rows->sortBy('participants_count')->values(),
+            'high_to_low_rating'       => $rows->sortByDesc('rating_avg')->values(),
+            'low_to_high_rating'       => $rows->sortBy('rating_avg')->values(),
+            default                    => $rows, // 'all' — urutan default (created_at desc)
+        };
 
         $baseEnrollments = Enrollment::query()
             ->whereIn('status', self::REVENUE_ENROLLMENT_STATUSES)
@@ -548,13 +687,16 @@ class CourseReportController extends Controller
             ->keyBy('course_id');
 
         $courses = \App\Models\Course::query()
+            ->whereIn('status', ['active'])
             ->select('id', 'name', 'level', 'price', 'expenses_json', 'created_at')
             ->orderByDesc('created_at')
             ->get();
 
-        $rows = $courses->map(function ($c) use ($stats) {
+        $rows = $courses->map(function ($c) use ($stats, $from, $to) {
             $stat = $stats->get($c->id);
 
+            // Hanya tampilkan course yang memiliki transaksi di periode yang dipilih
+            // Course tanpa transaksi di periode ini tetap ditampilkan tapi dengan nilai 0
             $expense = 0.0;
             $expensesArr = $c->expenses_json;
             if (is_array($expensesArr)) {
@@ -574,22 +716,38 @@ class CourseReportController extends Controller
                 'transactions_count' => $stat ? (int) $stat->transactions_count : 0,
                 'revenue_total' => $stat ? (float) $stat->revenue_total : 0.0,
                 'expense_total' => $expense,
-                'last_paid_at' => $stat && $stat->last_paid_at ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString() : null,
+                'last_paid_at' => $stat && $stat->last_paid_at
+                    ? \Carbon\Carbon::parse($stat->last_paid_at)->toDateString()
+                    : null,
+                'created_at' => $c->created_at ? \Carbon\Carbon::parse($c->created_at)->toDateString() : null,
+                'has_transaction_in_period' => $stat !== null,
             ];
         });
 
-        // Filter: only show courses with revenue/transactions unless searching
-        if (!isset($q) || $q === '') {
-            $rows = $rows->filter(function($row) {
-                return $row['transactions_count'] > 0;
-            });
-        } elseif (isset($q) && $q !== '') {
+        // Filter hanya berdasarkan search query jika ada
+        if (isset($q) && $q !== '') {
             $rows = $rows->filter(function($row) use ($q) {
                 return stripos($row['course_name'], $q) !== false;
             });
         }
-        
+
+        // Jika ada filter bulan (bukan all-time range), hanya tampilkan course yang punya transaksi di periode itu
+        $isAllTime = $from->year <= 2001;
+        if (!$isAllTime) {
+            $rows = $rows->filter(function($row) {
+                return $row['has_transaction_in_period'] === true;
+            });
+        }
+
         $rows = $rows->values();
+
+        $totalExpenses = (float) $rows->sum('expense_total');
+        $totalProfit = (float) ($totals['total_revenue'] ?? 0) - $totalExpenses;
+
+        $totals = array_merge($totals, [
+            'total_expenses' => $totalExpenses,
+            'total_profit' => $totalProfit,
+        ]);
 
         $revenueByLevel = $baseEnrollments->clone()
             ->groupBy('courses.level')
@@ -630,6 +788,23 @@ class CourseReportController extends Controller
                     'revenue_total' => (float) $r->revenue_total,
                 ])
                 ->values();
+
+            // Calculate total expenses for the comparison period
+            $compareCourseIds = $compareBase->clone()->distinct('enrollments.course_id')->pluck('enrollments.course_id');
+            $compareCourses = \App\Models\Course::whereIn('id', $compareCourseIds)->select('id', 'expenses_json')->get();
+            $compareTotalExpenses = 0.0;
+            foreach ($compareCourses as $cc) {
+                $eArr = $cc->expenses_json;
+                if (is_array($eArr)) {
+                    foreach ($eArr as $ex) {
+                        if (is_array($ex) && isset($ex['total'])) {
+                            $compareTotalExpenses += (float) $ex['total'];
+                        }
+                    }
+                }
+            }
+            $compareTotals['total_expenses'] = $compareTotalExpenses;
+            $compareTotals['total_profit'] = (float) ($compareTotals['total_revenue'] ?? 0) - $compareTotalExpenses;
         }
 
         $revenuePerModule = ($totals['total_transactions'] ?? 0) > 0
@@ -645,6 +820,8 @@ class CourseReportController extends Controller
         $changes = [
             'label' => $compareLabel,
             'total_revenue' => $this->percentChange((float) ($totals['total_revenue'] ?? 0), (float) ($compareTotals['total_revenue'] ?? 0)),
+            'total_expenses' => $this->percentChange((float) ($totals['total_expenses'] ?? 0), (float) ($compareTotals['total_expenses'] ?? 0)),
+            'total_profit' => $this->percentChange((float) ($totals['total_profit'] ?? 0), (float) ($compareTotals['total_profit'] ?? 0)),
             'top_level_revenue' => $this->percentChange($topLevelCurrent, $topLevelCompare),
             'revenue_per_module' => $this->percentChange($revenuePerModule, $compareRevenuePerModule),
         ];
@@ -667,13 +844,13 @@ class CourseReportController extends Controller
             $seconds = max(0, $to->diffInSeconds($from));
             $compareTo = $from->copy()->subSecond()->endOfDay();
             $compareFrom = $compareTo->copy()->subSeconds($seconds)->startOfDay();
-            return [$compareFrom, $compareTo, 'dari periode sebelumnya'];
+            return [$compareFrom, $compareTo, 'from the previous period'];
         }
 
         return match ($period) {
-            'daily' => [$from->copy()->subDay()->startOfDay(), $from->copy()->subDay()->endOfDay(), 'dari kemarin'],
-            'weekly' => [$from->copy()->subWeek()->startOfDay(), $to->copy()->subWeek()->endOfDay(), 'dari minggu lalu'],
-            default => [$from->copy()->subMonthNoOverflow()->startOfMonth()->startOfDay(), $to->copy()->subMonthNoOverflow()->endOfDay(), 'dari bulan lalu'],
+            'daily' => [$from->copy()->subDay()->startOfDay(), $from->copy()->subDay()->endOfDay(), 'from yesterday'],
+            'weekly' => [$from->copy()->subWeek()->startOfDay(), $to->copy()->subWeek()->endOfDay(), 'from last week'],
+            default => [$from->copy()->subMonthNoOverflow()->startOfMonth()->startOfDay(), $to->copy()->subMonthNoOverflow()->endOfDay(), 'from last month'],
         };
     }
 

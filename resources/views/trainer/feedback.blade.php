@@ -230,7 +230,7 @@
       const response = textarea.value.trim();
 
       if (!response) {
-        textarea.focus();
+        alert('Please write a response before submitting.');
         return;
       }
 
@@ -259,11 +259,12 @@
             // Reload page to show new reply
             location.reload();
           } else {
-            console.error('Error: ' + (data.message || 'Failed to save reply'));
+            alert('Error: ' + (data.message || 'Failed to save reply'));
           }
         })
         .catch(error => {
           console.error('Error:', error);
+          alert('An error occurred while saving the reply.');
         });
     }
   </script>

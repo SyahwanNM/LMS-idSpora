@@ -133,6 +133,12 @@ class ProfileController extends Controller
             $user->password = Hash::make($validated['password']);
         }
         
+        \Log::info('Profile Update Request', [
+            'has_avatar' => $request->hasFile('avatar'),
+            'all_files' => array_keys($request->allFiles()),
+            'user_id' => $user->id
+        ]);
+
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
@@ -224,17 +230,33 @@ class ProfileController extends Controller
         // Fetch saved item IDs to mark them in the UI
         $savedEventIds = \DB::table('user_saved_events')
             ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
             ->pluck('event_id')
             ->all();
-            
+
+        // Build a map of event_id => saved_at for display
+        $savedEventAtMap = \DB::table('user_saved_events')
+            ->where('user_id', $user->id)
+            ->pluck('created_at', 'event_id');
+
         $savedCourseIds = \DB::table('user_saved_courses')
             ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
             ->pluck('course_id')
             ->all();
 
+        // Build a map of course_id => saved_at for display
+        $savedAtMap = \DB::table('user_saved_courses')
+            ->where('user_id', $user->id)
+            ->pluck('created_at', 'course_id');
+
         // Also fetch the full saved items for the 'Saved' tab
-        $savedEvents = \App\Models\Event::whereIn('id', $savedEventIds)->get();
-        $savedCourses = \App\Models\Course::whereIn('id', $savedCourseIds)->get();
+        $savedEvents = \App\Models\Event::whereIn('id', $savedEventIds)
+            ->orderByRaw(empty($savedEventIds) ? '1' : 'FIELD(id, ' . implode(',', array_map('intval', $savedEventIds)) . ')')
+            ->get();
+        $savedCourses = \App\Models\Course::whereIn('id', $savedCourseIds)
+            ->orderByRaw('FIELD(id, ' . implode(',', array_map('intval', $savedCourseIds ?: [0])) . ')')
+            ->get();
             
         $activitiesLogs = \App\Models\ActivityLog::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
@@ -255,6 +277,8 @@ class ProfileController extends Controller
             'savedCourseIds',
             'savedEvents',
             'savedCourses',
+            'savedAtMap',
+            'savedEventAtMap',
             'activitiesLogs'
         ));
     }

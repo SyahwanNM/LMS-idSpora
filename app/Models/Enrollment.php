@@ -34,6 +34,15 @@ class Enrollment extends Model
     }
 
     /**
+     * Alias for `user()` to keep backward compatibility with older code
+     * that expects an enrollment to have a `student` relationship.
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
      * Get the course that the enrollment belongs to.
      */
     public function course(): BelongsTo
@@ -50,6 +59,39 @@ class Enrollment extends Model
     }
 
     /**
+     * Get the ID of the next module to continue (first incomplete module).
+     * Returns null if all modules are completed or no modules exist.
+     */
+    public function getNextModuleId(): ?int
+    {
+        if (!$this->relationLoaded('course') || !$this->course) {
+            return null;
+        }
+
+        $modules = $this->course->relationLoaded('modules')
+            ? $this->course->modules->sortBy('order_no')
+            : $this->course->modules()->orderBy('order_no')->get();
+
+        if ($modules->isEmpty()) {
+            return null;
+        }
+
+        $completedIds = $this->relationLoaded('progress')
+            ? $this->progress->where('completed', true)->pluck('course_module_id')->map(fn($id) => (int) $id)->all()
+            : $this->progress()->where('completed', true)->pluck('course_module_id')->map(fn($id) => (int) $id)->all();
+
+        // Find first incomplete module
+        foreach ($modules as $module) {
+            if (!in_array((int) $module->id, $completedIds, true)) {
+                return (int) $module->id;
+            }
+        }
+
+        // All completed — return last module
+        return (int) $modules->last()->id;
+    }
+
+    /**
      * Calculate the progress percentage of the course.
      */
     public function getProgressPercentage(): int
@@ -58,26 +100,34 @@ class Enrollment extends Model
             return 0;
         }
 
-        $totalModules = $this->course->relationLoaded('modules')
-            ? $this->course->modules->count()
-            : $this->course->modules()->count();
+        $totalModules = $this->course->modules()->count();
         if ($totalModules === 0) {
             return 0;
         }
 
-        $completedModules = $this->relationLoaded('progress')
-            ? $this->progress->where('completed', true)->count()
-            : $this->progress()->where('completed', true)->count();
+        $completedModules = $this->progress()->where('completed', true)->count();
         
-        return (int) round(($completedModules / $totalModules) * 100);
+        // Use floor to ensure 100% is only reached when actually finished
+        return (int) floor(($completedModules / $totalModules) * 100);
     }
 
     /**
-     * Check if the enrollment is fully completed (progress is 100%).
+     * Check if enrollment is 100% complete (strictly all modules finished).
      */
     public function isFullyCompleted(): bool
     {
-        return $this->getProgressPercentage() >= 100;
+        if (!$this->relationLoaded('course') || !$this->course) {
+            return false;
+        }
+
+        $totalModules = $this->course->modules()->count();
+        if ($totalModules === 0) {
+            return false;
+        }
+
+        $completedModules = $this->progress()->where('completed', true)->count();
+
+        return $completedModules >= $totalModules;
     }
 }
 

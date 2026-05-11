@@ -194,17 +194,90 @@
         @endif
     </div>
 
-    <!-- Feedback List -->
+    <!-- Feedback List / Event List -->
     <div class="col-lg-8">
         @php
             $analysis = ($type ?? 'event') == 'event' ? $eventAnalysis : $courseAnalysis;
+            $isFiltered = ($type ?? 'event') == 'event' ? $eventId : $courseId;
             $items = ($type ?? 'event') == 'event' ? ($analysis ? $analysis['feedbacks'] : $recentFeedbacks) : ($analysis ? $analysis['reviews'] : $recentReviews);
-            $selectedTitle = ($type ?? 'event') == 'event' ? ($analysis ? $analysis['event']->title : 'Feedback Terbaru') : ($analysis ? $analysis['course']->name : 'Review Terbaru');
+            $selectedTitle = ($type ?? 'event') == 'event' ? ($analysis ? $analysis['event']->title : 'Daftar Analisis Per Event') : ($analysis ? $analysis['course']->name : 'Daftar Analisis Per Course');
         @endphp
 
-        <div class="card-minimal overflow-hidden">
-            <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <!-- Event/Course Summary List (only if not filtered) -->
+        @if(!$isFiltered)
+        <div class="card-minimal mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0">{{ $selectedTitle }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" style="border-collapse: separate; border-spacing: 0 8px;">
+                        <thead>
+                            <tr class="text-muted smaller fw-bold text-uppercase" style="letter-spacing: 0.5px; border-bottom: 2px solid #f1f5f9;">
+                                <th class="ps-0 border-0">{{ ($type ?? 'event') == 'event' ? 'Event' : 'Course' }}</th>
+                                <th class="text-center border-0">Ulasan</th>
+                                <th class="text-center border-0">Rating</th>
+                                @if(($type ?? 'event') == 'event')
+                                <th class="text-center border-0">Speaker</th>
+                                @endif
+                                <th class="text-end pe-0 border-0">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse(($type ?? 'event') == 'event' ? $events : $courses as $item)
+                            <tr style="background: #fbfcfe; transition: all 0.2s ease;">
+                                <td class="ps-0 border-0" style="border-radius: 8px 0 0 8px;">
+                                    <div class="fw-bold text-navy small">{{ ($type ?? 'event') == 'event' ? $item->title : $item->name }}</div>
+                                    @if(($type ?? 'event') == 'event')
+                                    <div class="text-muted smaller" style="font-size: 0.7rem;"><i class="bi bi-calendar3 me-1"></i>{{ $item->event_date ? $item->event_date->format('d M Y') : '-' }}</div>
+                                    @endif
+                                </td>
+                                <td class="text-center border-0">
+                                    <span class="badge rounded-pill bg-light text-dark border">{{ ($type ?? 'event') == 'event' ? $item->feedbacks_count : $item->reviews_count }}</span>
+                                </td>
+                                <td class="text-center border-0">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <span class="fw-bold text-navy me-1 small">{{ number_format(($type ?? 'event') == 'event' ? $item->feedbacks_avg_rating : $item->reviews_avg_rating, 1) }}</span>
+                                        <i class="bi bi-star-fill text-warning smaller"></i>
+                                    </div>
+                                </td>
+                                @if(($type ?? 'event') == 'event')
+                                <td class="text-center border-0">
+                                    <span class="text-muted small">{{ number_format($item->feedbacks_avg_speaker_rating, 1) ?: '-' }}</span>
+                                </td>
+                                @endif
+                                <td class="text-end pe-0 border-0" style="border-radius: 0 8px 8px 0;">
+                                    <a href="{{ route('admin.crm.feedback.index', ['type' => $type, (($type ?? 'event') == 'event' ? 'event_id' : 'course_id') => $item->id]) }}" 
+                                       class="btn btn-sm btn-navy px-3" 
+                                       style="background: var(--crm-navy); color: white; font-size: 0.7rem; border-radius: 6px;">
+                                        Lihat Feedback
+                                    </a>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted small">Tidak ada data untuk dianalisis</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4">
+                    {{ (($type ?? 'event') == 'event' ? $events : $courses)->links() }}
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if($isFiltered || $recentFeedbacks->isNotEmpty() || $recentReviews->isNotEmpty())
+        <div class="card-minimal overflow-hidden">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">{{ $isFiltered ? 'Feedback Detail: ' . $selectedTitle : 'Ulasan Terbaru' }}</h5>
+                @if($isFiltered)
+                <a href="{{ route('admin.crm.feedback.index', ['type' => $type]) }}" class="btn btn-link text-navy text-decoration-none small p-0">
+                    <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar
+                </a>
+                @endif
             </div>
             <div class="card-body p-0">
                 @forelse($items as $feedback)
@@ -232,13 +305,12 @@
                             @endif
                         </div>
                     </div>
-                    @if($feedback->comment ?? (isset($feedback->comment) ? $feedback->comment : null))
+                    @php
+                        $comment = $feedback->comment;
+                    @endphp
+                    @if($comment)
                         <p class="mb-0 text-dark small lh-base">
-                            "{{ $feedback->comment ?? $feedback->comment }}"
-                        </p>
-                    @elseif(isset($feedback->review) || isset($feedback->comment))
-                        <p class="mb-0 text-dark small lh-base">
-                            "{{ $feedback->comment ?? ($feedback->review ?? '') }}"
+                            "{{ $comment }}"
                         </p>
                     @else
                         <span class="text-muted smaller"><i>Tidak ada komentar tertulis</i></span>
@@ -247,11 +319,12 @@
                 @empty
                 <div class="text-center py-5">
                     <i class="bi bi-chat-square-dots text-muted opacity-25" style="font-size: 3rem;"></i>
-                    <p class="text-muted small mt-2">Belum ada feedback yang dapat dianalisis</p>
+                    <p class="text-muted small mt-2">Belum ada feedback untuk ditampilkan</p>
                 </div>
                 @endforelse
             </div>
         </div>
+        @endif
     </div>
 </div>
 @endsection

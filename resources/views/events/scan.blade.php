@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+﻿@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +14,9 @@
         .scan-container { max-width: 860px; margin: 24px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
         .scan-header { padding: 16px 20px; border-bottom: 1px solid #eee; }
         .scan-body { padding: 16px 20px 24px; }
-        #reader { width: 100%; min-height: 360px; border: 1px dashed #ddd; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fafafa; }
+        #reader { width: 100%; min-height: 300px; border: 1px dashed #ddd; border-radius: 8px; background: #fafafa; overflow: hidden; }
+        #reader video { width: 100% !important; height: auto !important; object-fit: cover; }
+        #reader canvas { width: 100% !important; height: auto !important; }
         .status { font-size: 14px; color: #374151; }
         .status.ok { color: #16a34a; font-weight: 600; }
         .status.warn { color: #b45309; font-weight: 600; }
@@ -25,8 +27,11 @@
         .success-anim .check { stroke: #22c55e; stroke-width: 6; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawCheck 600ms 500ms ease-out forwards; }
         @keyframes drawCircle { to { stroke-dashoffset: 0; } }
         @keyframes drawCheck { to { stroke-dashoffset: 0; } }
-        /* Disable-style for label acting as upload button */
         .btn.disabled { pointer-events: none; opacity: 0.6; }
+        @media (max-width: 600px) {
+            .scan-container { margin: 0; border-radius: 0; box-shadow: none; }
+            .scan-body { padding: 12px 12px 20px; }
+        }
     </style>
 </head>
 <body>
@@ -36,7 +41,7 @@
             <h5 class="mb-0">Scan QR Event</h5>
             <small class="text-muted">{{ $event->title ?? 'Event' }}</small>
         </div>
-        <a class="btn btn-sm btn-outline-secondary" href="{{ route('events.show', $event) }}">Kembali ke Detail</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ route('events.show', $event) }}">Back to Detail</a>
     </div>
     <div class="scan-body">
         @php
@@ -44,11 +49,11 @@
         @endphp
         @if(!$canScan)
             <div class="alert alert-warning" role="alert">
-                Scan kamera tersedia saat acara dimulai dan Anda terdaftar aktif.
+                Camera scan is available when the event has started and you are an active registrant.
             </div>
         @endif
         <div class="mb-3">
-            <p class="status" id="scan-status">{{ $canScan ? 'Menyiapkan kamera...' : 'Kamera dinonaktifkan.' }}</p>
+            <p class="status" id="scan-status">{{ $canScan ? 'Preparing camera...' : 'Camera disabled.' }}</p>
         </div>
         <div id="reader"></div>
         <div id="success-anim" class="success-anim">
@@ -56,28 +61,28 @@
                 <circle class="circle" cx="60" cy="60" r="48"></circle>
                 <path class="check" d="M40 60 L55 75 L82 45"></path>
             </svg>
-            <div class="status ok mt-2">Absensi Berhasil Dilakukan</div>
+            <div class="status ok mt-2">Attendance Recorded Successfully</div>
         </div>
         <div class="mt-3 d-flex align-items-center" style="gap:12px;">
-            <label class="btn btn-outline-primary btn-sm mb-0 {{ !$canScan ? 'disabled' : '' }}" for="file-input" title="Upload Foto untuk Scan" aria-label="Upload Foto untuk Scan">
+            <label class="btn btn-outline-primary btn-sm mb-0 {{ !$canScan ? 'disabled' : '' }}" for="file-input" title="Upload Photo to Scan" aria-label="Upload Photo to Scan">
                 <i class="bi bi-upload"></i>
-                <span class="visually-hidden">Upload Foto untuk Scan</span>
+                <span class="visually-hidden">Upload Photo to Scan</span>
             </label>
             <input id="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;" @if(!$canScan) disabled @endif>
 
-            <button id="start-btn" class="btn btn-outline-success btn-sm" type="button" @if(!$canScan) disabled @endif title="Mulai Kamera" aria-label="Mulai Kamera">
+            <button id="start-btn" class="btn btn-outline-success btn-sm" type="button" @if(!$canScan) disabled @endif title="Start Camera" aria-label="Start Camera">
                 <i class="bi bi-camera-video"></i>
-                <span class="visually-hidden">Mulai Kamera</span>
+                <span class="visually-hidden">Start Camera</span>
             </button>
 
-            <button id="stop-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Hentikan Kamera" aria-label="Hentikan Kamera">
+            <button id="stop-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Stop Camera" aria-label="Stop Camera">
                 <i class="bi bi-stop-circle"></i>
-                <span class="visually-hidden">Hentikan Kamera</span>
+                <span class="visually-hidden">Stop Camera</span>
             </button>
 
-            <button id="swap-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Ganti Kamera" aria-label="Ganti Kamera">
+            <button id="swap-btn" class="btn btn-outline-secondary btn-sm" type="button" disabled title="Switch Camera" aria-label="Switch Camera">
                 <i class="bi bi-arrow-repeat"></i>
-                <span class="visually-hidden">Ganti Kamera</span>
+                <span class="visually-hidden">Switch Camera</span>
             </button>
         </div>
         <div class="mt-3">
@@ -109,7 +114,7 @@
         statusEl.className = 'status' + (cls ? (' ' + cls) : '');
     }
     function setResult(text, cls){
-        // Tidak tampilkan teks hasil scan
+        // Do not display raw scan result text
         resultEl.textContent = '';
         resultEl.className = '';
     }
@@ -126,9 +131,9 @@
 
     async function startCamera(cameraId){
         try {
-            if (!Html5Qrcode) { setStatus('Library scanner tidak tersedia.', 'err'); return; }
+            if (!Html5Qrcode) { setStatus('Scanner library not available.', 'err'); return; }
             const devices = await Html5Qrcode.getCameras();
-            if (!devices || devices.length === 0) { setStatus('Tidak ada kamera terdeteksi.', 'err'); return; }
+            if (!devices || devices.length === 0) { setStatus('No camera detected.', 'err'); return; }
             cameras = devices;
             // Pilih kamera default: prefer "back/rear/environment" jika tersedia
             function pickPreferred(devs){
@@ -141,14 +146,16 @@
                 activeCameraId = cameraId;
             }
             html5Qr = new Html5Qrcode('reader');
-            setStatus('Membuka kamera...', 'warn');
+            setStatus('Opening camera...', 'warn');
+            const readerWidth = document.getElementById('reader')?.offsetWidth || 300;
+            const qrSize = Math.min(260, Math.floor(readerWidth * 0.7));
             await html5Qr.start(
                 activeCameraId,
-                { fps: 10, qrbox: { width: 260, height: 260 } },
+                { fps: 10, qrbox: { width: qrSize, height: qrSize } },
                 async (decodedText, decodedResult) => {
                     if (isSaving) return; // prevent duplicate submissions
                     isSaving = true;
-                    setResult('Berhasil: ' + decodedText, 'ok');
+                    setResult('Decoded: ' + decodedText, 'ok');
                     await persistAttendance(decodedText);
                 },
                 (errorMessage) => {
@@ -160,9 +167,9 @@
             swapBtn.disabled = !(cameras && cameras.length > 1);
             // Disable upload while camera is active
             setUploadEnabled(false);
-            setStatus('Kamera aktif, Scan pada QR Code yang diberikan oleh Panitia Penyelenggara Event', 'ok');
+            setStatus('Camera active. Scan the QR Code provided by the Event Organizer.', 'ok');
         } catch (e) {
-            setStatus('Gagal membuka kamera: ' + (e && e.message ? e.message : e), 'err');
+            setStatus('Failed to open camera: ' + (e && e.message ? e.message : e), 'err');
         }
     }
 
@@ -177,10 +184,10 @@
                 startBtn.disabled = false;
                 // Re-enable upload when camera stops
                 setUploadEnabled(true);
-                setStatus('Kamera dihentikan.', 'warn');
+                setStatus('Camera stopped.', 'warn');
             }
         } catch (e) {
-            // Abaikan error saat menghentikan kamera
+        // Ignore errors when stopping camera
         }
     }
 
@@ -222,7 +229,7 @@
                 }
             } catch(_) { /* ignore json parse errors */ }
             if (resp.ok) {
-                setStatus(data.message || 'Attendance berhasil disimpan.', 'ok');
+                setStatus(data.message || 'Attendance saved successfully.', 'ok');
                 // Show success animation and hide camera view
                 try {
                     if (readerEl) readerEl.style.display = 'none';
@@ -231,17 +238,17 @@
                 try {
                     await stopCamera();
                 } catch (e) {
-                    setStatus('Attendance tersimpan. Kamera tidak dimatikan.', 'warn');
+                    setStatus('Attendance saved. Camera could not be stopped.', 'warn');
                 }
             } else {
-                setStatus((data && data.message) ? data.message : ('Attendance gagal ('+resp.status+').'), 'err');
+                setStatus((data && data.message) ? data.message : ('Attendance failed ('+resp.status+').'), 'err');
             }
         } catch (e) {
             const msg = (e && e.message ? e.message : e);
             if (String(msg).toLowerCase().includes('failed to fetch')) {
-                setStatus('Gagal menyimpan attendance: masalah jaringan atau alamat tidak cocok. Coba ulang dan pastikan halaman dan server sama domain.', 'err');
+                setStatus('Failed to save attendance: network issue or address mismatch. Please retry and ensure the page and server share the same domain.', 'err');
             } else {
-                setStatus('Gagal menyimpan attendance: ' + msg, 'err');
+                setStatus('Failed to save attendance: ' + msg, 'err');
             }
         } finally {
             isSaving = false;
@@ -254,7 +261,7 @@
 
     startBtn.addEventListener('click', function(){
         if (!canScan) {
-            setStatus('Scan kamera tersedia saat acara dimulai dan Anda terdaftar aktif.', 'warn');
+            setStatus('Camera scan is available when the event has started and you are an active registrant.', 'warn');
             return;
         }
         startCamera();
@@ -263,7 +270,7 @@
     function swapCamera(){
         try {
             if (!cameras || cameras.length < 2) {
-                setStatus('Tidak ada kamera lain untuk diganti.', 'warn');
+                setStatus('No other camera available to switch.', 'warn');
                 return;
             }
             const idx = cameras.findIndex(c => c.id === activeCameraId);
@@ -271,7 +278,7 @@
             const nextId = cameras[nextIdx].id;
             stopCamera().then(() => startCamera(nextId));
         } catch(e){
-            setStatus('Gagal mengganti kamera.', 'err');
+            setStatus('Failed to switch camera.', 'err');
         }
     }
 
@@ -285,7 +292,7 @@
         async function decodeBlobWithFallback(blob){
             try {
                 if (!html5Qr) html5Qr = new Html5Qrcode('reader');
-                setStatus('Memindai gambar...', 'warn');
+                setStatus('Scanning image...', 'warn');
                 const decodedText = await html5Qr.scanFile(blob, true);
                 return decodedText;
             } catch (primaryError) {
@@ -309,7 +316,7 @@
                             if (code && code.data) {
                                 resolve(code.data);
                             } else {
-                                reject(new Error('jsQR gagal decode'));
+                                reject(new Error('jsQR failed to decode'));
                             }
                         } catch (e) {
                             reject(e);
@@ -319,7 +326,7 @@
                     };
                     img.onerror = function(){
                         URL.revokeObjectURL(url);
-                        reject(new Error('Gagal memuat gambar untuk decode'));
+                        reject(new Error('Failed to load image for decoding'));
                     };
                     img.src = url;
                 });
@@ -343,25 +350,25 @@
                     canvas.toBlob(async (pngBlob) => {
                         try {
                             const decodedText = await decodeBlobWithFallback(pngBlob);
-                            setResult('Berhasil: ' + decodedText, 'ok');
-                            setStatus('Pemindaian dari foto selesai.', 'ok');
+                            setResult('Decoded: ' + decodedText, 'ok');
+                            setStatus('Image scan complete.', 'ok');
                             persistAttendance(decodedText);
                         } catch (e) {
-                            setResult('Tidak dapat membaca QR dari foto.', 'err');
-                            setStatus('Pastikan QR jelas dan tidak blur.', 'warn');
+                            setResult('Could not read QR from image.', 'err');
+                            setStatus('Make sure the QR is clear and not blurry.', 'warn');
                         }
                         URL.revokeObjectURL(url);
                     }, 'image/png');
                 };
                 img.onerror = function(){
-                    setResult('Tidak dapat membaca QR dari foto.', 'err');
-                    setStatus('Unggah PNG/JPG/WebP yang jelas.', 'warn');
+                    setResult('Could not read QR from image.', 'err');
+                    setStatus('Please upload a clear PNG/JPG/WebP image.', 'warn');
                     URL.revokeObjectURL(url);
                 };
                 img.src = url;
             } catch (e) {
-                setResult('Tidak dapat memproses file SVG.', 'err');
-                setStatus('Unggah PNG/JPG/WebP yang jelas.', 'warn');
+                setResult('Could not process SVG file.', 'err');
+                setStatus('Please upload a clear PNG/JPG/WebP image.', 'warn');
             }
             return;
         }
@@ -369,19 +376,19 @@
         // Restrict to raster image formats for reliable decoding
         const allowed = ['image/png','image/jpeg','image/webp'];
         if (!allowed.includes(type)) {
-            setResult('Format tidak didukung. Unggah PNG/JPG/WebP.', 'err');
-            setStatus('Upload foto berformat PNG/JPG/WebP.', 'warn');
+            setResult('Unsupported format. Please upload PNG/JPG/WebP.', 'err');
+            setStatus('Upload a PNG/JPG/WebP photo.', 'warn');
             return;
         }
 
         try {
             const decodedText = await decodeBlobWithFallback(file);
-            setResult('Berhasil: ' + decodedText, 'ok');
-            setStatus('Pemindaian dari foto selesai.', 'ok');
+            setResult('Decoded: ' + decodedText, 'ok');
+            setStatus('Image scan complete.', 'ok');
             persistAttendance(decodedText);
         } catch (e) {
-            setResult('Tidak dapat membaca QR dari foto.', 'err');
-            setStatus('Pastikan QR jelas, fokus, dan tidak terpotong.', 'warn');
+            setResult('Could not read QR from image.', 'err');
+            setStatus('Make sure the QR is clear, in focus, and not cropped.', 'warn');
         }
     });
 })();
@@ -389,3 +396,4 @@
 </body>
 </html>
 @include('partials.footer-after-login')
+

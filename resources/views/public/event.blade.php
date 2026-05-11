@@ -34,10 +34,9 @@
 
         /* Footer Full Width */
         .footer-section-wrapper {
-            flex-shrink: 0;   /* Footer tidak boleh mengecil */
-            width: 100%;      /* Lebar penuh */
-            margin-top: auto; /* Dorong ke paling bawah jika konten sedikit */
-            background: #fff; /* Atau sesuaikan dengan warna background footer asli */
+            flex-shrink: 0;
+            width: 100%;
+            margin-top: auto;
         }
 
         /* --- EXISTING STYLES --- */
@@ -46,84 +45,16 @@
         }
 
         /* Event Grid Responsive */
+        
         .event .event-list {
             display: grid;
             row-gap: 40px;
             grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 20px;
+            align-items: stretch;
         }
 
-        @media (max-width: 576px) {
-            .event .event-list {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .event .card-event .thumb-wrapper {
-            position: relative;
-            height: 380px;
-            overflow: hidden;
-            border-radius: 12px 12px 0 0;
-        }
-
-        .event .card-event .card-image-event {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .event .card-event:hover .card-image-event {
-            transform: scale(1.05);
-        }
-
-        /* Media Queries for Thumb Height */
-        @media (max-width:1200px) { .event .card-event .thumb-wrapper { height: 360px; } }
-        @media (max-width:992px) { .event .card-event .thumb-wrapper { height: 340px; } }
-        @media (max-width:768px) { .event .card-event .thumb-wrapper { height: 280px; } }
-
-        /* Event Section Spacing */
-        section.event { margin-top: 55px; }
-        section.event .header-card { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; }
-        section.event .header-card h3 { margin-top: 10px; font-weight: 700; color: #212529; }
-
-        /* Titles */
-        .event .card-event { border: 1px solid #eee; border-radius: 12px; transition: box-shadow 0.3s; background: #fff; }
-        .event .card-event:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
-        .event .card-event .card-body { padding: 20px; }
-        .event .card-event .event-title {
-            color: #212529;
-            font-weight: 600;
-            font-size: 1.25rem;
-            margin-bottom: 10px;
-            margin-left: 0;
-            text-align: left;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.4;
-        }
-
-        /* Badges */
-        .event .card-event .discount-badge {
-            position: absolute; bottom: 12px; left: 12px;
-            background: #212f4d; color: #d6bc3a;
-            font-size: 13px; font-weight: 600; padding: 6px 10px 5px;
-            border-radius: 6px; line-height: 1; letter-spacing: .5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
-            display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase;
-        }
-
-        .event .card-event .manage-badge {
-            position: absolute; top: 12px; left: 12px;
-            color: #fff; font-size: 12px; font-weight: 600;
-            padding: 5px 10px; border-radius: 6px;
-            line-height: 1; letter-spacing: .5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, .25); text-transform: uppercase;
-        }
-        .event .card-event .manage-badge.manage { background: #0d6efd; }
-        .event .card-event .manage-badge.create { background: #6f42c1; }
+     
 
         /* Tags & Meta */
         .tags { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.85rem; }
@@ -132,7 +63,8 @@
 
         /* Description & Info */
         .desc-event { font-size: 0.9rem; color: #555; margin-bottom: 15px; line-height: 1.5; height: 42px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        
+        /* Push price+button to bottom of card */
+        .event .card-event .card-body .keterangan { margin-top: auto; }
         .keterangan-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #555; }
         .keterangan-item { display: flex; align-items: center; gap: 8px; }
 
@@ -182,26 +114,6 @@
         }
         .header-card .dropdown-menu .dropdown-divider { margin: .35rem 0; }
         .header-card .dropdown-menu .dropdown-item.active { font-weight: 700; }
-    </style>
-    <style>
-        .carousel-control-prev,
-        .carousel-control-next {
-            display: none !important;
-        }
-        .carousel-indicators [data-bs-target] {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #f4c430;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-            border: none;
-            margin: 0 4px;
-        }
-        .carousel-indicators .active {
-            opacity: 1;
-            background-color: #51376c;
-        }
     </style>
 </head>
 
@@ -285,12 +197,12 @@
 
                     <div class="search-container flex-grow-1">
                         <div class="search-wrap">
-                            <input id="site-search" name="search" value="{{ request('search') }}" class="form-control border-0 rounded-pill ps-4 py-2 search-input-2" type="search" placeholder="Cari event berdasarkan judul, pembicara atau kategori..." aria-label="Search" style="box-shadow: none;">
+                            <input id="site-search" name="search" value="{{ request('search') }}" class="form-control border-0 rounded-pill ps-4 py-2 search-input-2" type="search" placeholder="Search for events by event name..." aria-label="Search" style="box-shadow: none;">
                             <ul id="search-suggest" class="search-suggest" role="listbox" aria-label="Search suggestions"></ul>
                         </div>
                     </div>
                     <button id="search-submit-trigger" class="btn rounded-pill px-4 fw-bold" type="button" style="background-color: #51376c; color: white;">
-                        Cari
+                        Search
                     </button>
                 </form>
             </div>
@@ -298,14 +210,14 @@
 
         <section class="event">
             <div class="header-card">
-                <h3>Daftar Event</h3>
+                <h3>Event List</h3>
                 <div class="dropdown-box d-flex gap-2 flex-wrap">
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'Any Day')) }}
+                            {{ request('day') === 'weekdays' ? 'Weekdays' : (request('day') === 'weekend' ? 'Weekend' : (request('day') === 'today' ? 'Today' : 'All day')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {{ !request('day') ? 'active' : '' }}" href="#" data-filter="day" data-value="">Any Day</a></li>
+                            <li><a class="dropdown-item {{ !request('day') ? 'active' : '' }}" href="#" data-filter="day" data-value="">All day</a></li>
                             <li><a class="dropdown-item {{ request('day') === 'weekdays' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekdays">Weekdays</a></li>
                             <li><a class="dropdown-item {{ request('day') === 'weekend' ? 'active' : '' }}" href="#" data-filter="day" data-value="weekend">Weekend</a></li>
                             <li><a class="dropdown-item {{ request('day') === 'today' ? 'active' : '' }}" href="#" data-filter="day" data-value="today">Today</a></li>
@@ -316,7 +228,7 @@
                             {{ request('event_type') === 'online' ? 'Online' : (request('event_type') === 'offline' ? 'Offline' : (request('event_type') === 'hybrid' ? 'Hybrid' : 'Event Type')) }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {{ !request('event_type') ? 'active' : '' }}" href="#" data-filter="event_type" data-value="">Any Type</a></li>
+                            <li><a class="dropdown-item {{ !request('event_type') ? 'active' : '' }}" href="#" data-filter="event_type" data-value="">All Types</a></li>
                             <li><a class="dropdown-item {{ request('event_type') === 'online' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="online">Online</a></li>
                             <li><a class="dropdown-item {{ request('event_type') === 'offline' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="offline">Offline</a></li>
                             <li><a class="dropdown-item {{ request('event_type') === 'hybrid' ? 'active' : '' }}" href="#" data-filter="event_type" data-value="hybrid">Hybrid</a></li>
@@ -324,19 +236,19 @@
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {{ request('category') ? ucwords(request('category')) : 'Any Category' }}
+                            {{ request('category') ? ucwords(request('category')) : 'All Category' }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="#" data-filter="category" data-value="">Any Category</a></li>
+                            <li><a class="dropdown-item {{ !request('category') ? 'active' : '' }}" href="#" data-filter="category" data-value="">All Category</a></li>
                             <li><a class="dropdown-item {{ request('category') === 'workshop' ? 'active' : '' }}" href="#" data-filter="category" data-value="workshop">Workshop</a></li>
-                            <li><a class="dropdown-item {{ request('category') === 'training' ? 'active' : '' }}" href="#" data-filter="category" data-value="training">Training</a></li>
+                            <li><a class="dropdown-item {{ request('category') === 'seminar' ? 'active' : '' }}" href="#" data-filter="category" data-value="seminar">Seminar</a></li>
                             <li><a class="dropdown-item {{ request('category') === 'webinar' ? 'active' : '' }}" href="#" data-filter="category" data-value="webinar">Webinar</a></li>
                         </ul>
                     </div>
                     <div class="dropdown">
                         @php
                             $reqStatus = request('status');
-                            $statusLabel = $reqStatus === 'upcoming' ? 'Mendatang' : ($reqStatus === 'ongoing' ? 'Sedang Berlangsung' : ($reqStatus === 'finished' ? 'Telah Selesai' : 'Semua Status'));
+                            $statusLabel = $reqStatus === 'upcoming' ? 'Upcoming' : ($reqStatus === 'ongoing' ? 'On Going' : ($reqStatus === 'finished' ? 'Finished' : 'All Status'));
                         @endphp
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="statusFilterBtn">
                             {{ $statusLabel }}
@@ -345,24 +257,24 @@
                             <li><h6 class="dropdown-header">Tampilkan</h6></li>
                             <li>
                                 <a class="dropdown-item {{ empty($reqStatus) ? 'active' : '' }}" href="#" data-status-filter data-value="all" aria-current="{{ empty($reqStatus) ? 'true' : 'false' }}">
-                                    Semua Status
+                                    All Status
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><h6 class="dropdown-header">Status Event</h6></li>
+                            <li><h6 class="dropdown-header">All Status</h6></li>
                             <li>
                                 <a class="dropdown-item {{ $reqStatus === 'upcoming' ? 'active' : '' }}" href="#" data-status-filter data-value="upcoming" aria-current="{{ $reqStatus === 'upcoming' ? 'true' : 'false' }}">
-                                    Mendatang
+                                    Upcoming
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {{ $reqStatus === 'ongoing' ? 'active' : '' }}" href="#" data-status-filter data-value="ongoing" aria-current="{{ $reqStatus === 'ongoing' ? 'true' : 'false' }}">
-                                    Sedang Berlangsung
+                                    On Going
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item {{ $reqStatus === 'finished' ? 'active' : '' }}" href="#" data-status-filter data-value="finished" aria-current="{{ $reqStatus === 'finished' ? 'true' : 'false' }}">
-                                    Telah Selesai
+                                    Finished
                                 </a>
                             </li>
                         </ul>
@@ -421,9 +333,17 @@
                             @if($showDiscountBadge && $percentOff > 0)
                                 <span class="discount-badge">{{ $percentOff }}% off</span>
                             @endif
+                            @php
+                                $isSaved = !empty($event->is_saved);
+                            @endphp
                             <div class="badge-save-group" style="gap:12px;">
-                                <button class="save-btn" aria-label="Save event" type="button">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2v13.5l6-3 6 3V2z" /></svg>
+                                <button class="save-btn {{ $isSaved ? 'active' : '' }}" 
+                                        aria-label="Save event" type="button"
+                                        data-event-id="{{ $event->id }}"
+                                        data-save-url="{{ route('events.save', $event) }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                        <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
+                                    </svg>
                                 </button>
                             </div>
                         </div>
@@ -446,12 +366,14 @@
                                         <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
                                     </svg>
                                     <span>
-                                        @if($event->trainer)
+                                        @if($event->speaker)
+                                            {{ $event->speaker }}
+                                        @elseif($event->trainer)
                                             <a href="{{ route('public.trainer-profile.show', $event->trainer->id) }}" style="color: inherit; text-decoration: none; font-weight: 500;" onclick="event.stopPropagation();">
                                                 {{ $event->trainer->full_name_with_title ?: $event->trainer->name }}
                                             </a>
                                         @else
-                                            {{ $event->speaker ?? 'idSpora Team' }}
+                                            idSpora Team
                                         @endif
                                     </span>
                                 </div>
@@ -461,7 +383,7 @@
                                 </div>
                                 <div class="keterangan-item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6" /></svg>
-                                    <span>
+                                <span>
                                         @if($event->location)
                                             {{ $event->location }}@if($event->event_time) • {{ $event->event_time?->format('H:i') }} WIB @endif
                                         @else
@@ -473,7 +395,7 @@
 
                             @if($startAt)
                                 <div class="countdown-wrapper" data-countdown-wrapper>
-                                    <span class="countdown-label" data-countdown-label>Mulai dalam:</span>
+                                    <span class="countdown-label" data-countdown-label>Start In:</span>
                                     <span class="countdown-timer" data-countdown data-start-ts="{{ $startAt->timestamp }}" @if($endAt) data-end-ts="{{ $endAt->timestamp }}" @endif>--</span>
                                 </div>
                             @endif
@@ -486,7 +408,7 @@
                                     @else
                                         @php $isFree = (int)$event->price === 0; @endphp
                                         @if($isFree)
-                                            <span class="price-now price-free">Gratis</span>
+                                            <span class="price-now price-free">Free</span>
                                         @else
                                             <span class="price-now">{{ 'Rp'.number_format($event->price,0,',','.') }}</span>
                                         @endif
@@ -495,8 +417,8 @@
                                 @php 
                                     $registered = !empty($event->is_registered);
                                     $isFinished = ($status === 'finished');
-                                    $btnLabel = $isFinished ? 'Telah Selesai' : ($registered ? 'Anda Terdaftar' : 'Daftar');
-                                    $btnClass = $isFinished ? 'btn-secondary' : ($registered ? 'btn-success' : 'btn-primary');
+                                    $btnLabel = $registered ? 'Registered' : ($isFinished ? 'Finished' : 'See Details');
+                                    $btnClass = $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary');
                                 @endphp
                                 <button class="btn-register register-btn btn {{ $btnClass }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
                                     {{ $btnLabel }}
@@ -506,8 +428,8 @@
                     </div>
                 @empty
                     <div class="text-center py-5" style="grid-column:1/-1;">
-                        <h5 class="mb-2">Belum ada event</h5>
-                        <p class="text-muted mb-0">Event akan segera tersedia.</p>
+                        <h5 class="mb-2">There are no events yet</h5>
+                        <p class="text-muted mb-0">Event will be available soon.</p>
                     </div>
                 @endforelse
             </div>
@@ -520,11 +442,11 @@
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header bg-success text-white py-2">
-                            <h6 class="modal-title">Pendaftaran Berhasil</h6>
+                            <h6 class="modal-title">Registration Successful</h6>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p class="mb-0">Anda berhasil terdaftar pada event: <strong id="registeredEventTitle"></strong></p>
+                            <p class="mb-0">You have successfully registered for the event: <strong id="registeredEventTitle"></strong></p>
                         </div>
                         <div class="modal-footer py-2">
                             <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
@@ -536,7 +458,7 @@
         </section>
         
     </main> <div class="footer-section-wrapper">
-        @include('partials.footer-after-login')
+        @include('partials.footer-before-login')
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function(){
@@ -676,7 +598,7 @@
                 const statusInput = document.getElementById('filter-status');
                 const links = document.querySelectorAll('[data-status-filter]');
                 function labelOf(val){
-                    if(val==='upcoming') return 'Mendatang'; if(val==='ongoing') return 'Sedang Berlangsung'; if(val==='finished') return 'Telah Selesai'; return 'Semua Status';
+                    if(val==='upcoming') return 'Upcoming'; if(val==='ongoing') return 'On Going'; if(val==='finished') return 'Finished'; return 'All Status';
                 }
                 const cur = (new URLSearchParams(window.location.search).get('status')) || '{{ request('status') }}' || '';
                 if(statusBtn){ statusBtn.textContent = labelOf(cur || 'all'); }
@@ -689,6 +611,54 @@
                     });
                 });
             })();
+
+            // --- Logika Save Event ---
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const eventId = this.getAttribute('data-event-id');
+                    const url = this.getAttribute('data-save-url');
+                    const svg = this.querySelector('svg');
+                    const path = svg.querySelector('path');
+                    
+                    this.disabled = true;
+
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (response.status === 401) {
+                            window.location.href = "{{ route('login') }}";
+                            return;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.success) {
+                            if (data.saved) {
+                                this.classList.add('active');
+                                svg.setAttribute('fill', '#dc3545');
+                                path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
+                            } else {
+                                this.classList.remove('active');
+                                svg.setAttribute('fill', 'currentColor');
+                                path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error:', error))
+                    .finally(() => {
+                        this.disabled = false;
+                    });
+                });
+            });
         });
 
         // --- Countdown Script ---
@@ -702,9 +672,9 @@
                 const minutes = Math.floor(sec/60); sec%=60;
                 const seconds = sec;
                 const parts = [];
-                if(days > 0) parts.push(days + ' hari');
-                if(hours > 0 || days > 0) parts.push(hours + ' jam');
-                if(days === 0 && hours === 0){ parts.push(pad(minutes) + ':' + pad(seconds)); } else { parts.push(minutes + ' menit'); }
+                if(days > 0) parts.push(days + ' day');
+                if(hours > 0 || days > 0) parts.push(hours + ' hour');
+                if(days === 0 && hours === 0){ parts.push(pad(minutes) + ':' + pad(seconds)); } else { parts.push(minutes + ' minute'); }
                 return parts.join(' ');
             }
             function update(){
@@ -714,13 +684,57 @@
                     const endAttr = el.getAttribute('data-end-ts');
                     const end = endAttr ? parseInt(endAttr,10) : null;
                     const label = el.closest('[data-countdown-wrapper]')?.querySelector('[data-countdown-label]');
-                    if(end && now > end){ el.textContent = 'Telah Selesai'; el.classList.remove('started'); el.classList.add('expired'); if(label) label.textContent = 'Status:'; return; }
-                    if(now >= start){ el.textContent = 'Sedang Berlangsung'; el.classList.remove('expired'); el.classList.add('started'); if(label) label.textContent = 'Status:'; return; }
-                    const diff = start - now; el.textContent = formatDiff(diff); el.classList.remove('started','expired'); if(label) label.textContent = 'Mulai dalam:';
+                    if(end && now > end){
+                        el.textContent = 'Finished'; el.classList.remove('started'); el.classList.add('expired');
+                        if(label) label.textContent = 'Status:';
+                        // Update register button if not registered
+                        const card = el.closest('.card-event');
+                        if(card){
+                            const btn = card.querySelector('.register-btn');
+                            if(btn && !btn.classList.contains('btn-success')){
+                                btn.textContent = 'Finished';
+                                btn.classList.remove('btn-primary','btn-warning');
+                                btn.classList.add('btn-secondary');
+                                btn.disabled = true;
+                            }
+                        }
+                        return;
+                    }
+                    if(now >= start){ el.textContent = 'Ongoing'; el.classList.remove('expired'); el.classList.add('started'); if(label) label.textContent = 'Status:'; return; }
+                    const diff = start - now; el.textContent = formatDiff(diff); el.classList.remove('started','expired'); if(label) label.textContent = 'Begin at:';
                 });
             }
             update(); setInterval(update, 1000);
         })();
+    </script>
+
+    <script>
+        function toggleSaveEvent(btn) {
+            const url = btn.getAttribute('data-save-url');
+            btn.style.opacity = '0.7';
+            btn.style.pointerEvents = 'none';
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => { if (r.status === 401) { window.location.href = "{{ route('login') }}"; return null; } return r.json(); })
+            .then(data => {
+                if (data && data.success) {
+                    if (data.saved) {
+                        btn.classList.add('active');
+                        btn.style.color = '#ef4444';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.color = '';
+                    }
+                }
+            })
+            .finally(() => { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; });
+        }
     </script>
 </body>
 </html>

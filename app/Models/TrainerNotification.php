@@ -33,37 +33,10 @@ class TrainerNotification extends Model
 
     public function effectiveInvitationStatus(): string
     {
-        $statusFromData = trim((string) data_get($this->data, 'invitation_status', ''));
-        if ($statusFromData !== '') {
-            return $statusFromData;
+        if ($this->expires_at && $this->expires_at->isPast() && $this->invitation_status === 'pending') {
+            return 'expired';
         }
 
-        $statusFromColumn = trim((string) ($this->invitation_status ?? ''));
-        if ($statusFromColumn !== '') {
-            return $statusFromColumn;
-        }
-
-        return in_array($this->type, ['course_invitation', 'event_invitation'], true)
-            ? 'pending'
-            : '';
-    }
-
-    public function effectiveEntityType(): string
-    {
-        $entityType = trim((string) data_get($this->data, 'entity_type', ''));
-        if ($entityType !== '') {
-            return $entityType;
-        }
-
-        return match ((string) $this->type) {
-            'course_invitation' => 'course',
-            'event_invitation' => 'event',
-            default => '',
-        };
-    }
-
-    public function effectiveEntityId(): int
-    {
-        return (int) data_get($this->data, 'entity_id', 0);
+        return (string) ($this->data['invitation_status'] ?? $this->invitation_status ?? 'pending');
     }
 }

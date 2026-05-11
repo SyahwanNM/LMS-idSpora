@@ -33,7 +33,7 @@ class CourseAccessController extends Controller
         $isFreeCourse = (int) ($course->price ?? 0) <= 0;
         $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
         if ($isFreeCourse && $freeAccessMode === 'limit_2') {
-            $modulesQuery->limit(2);
+            $modulesQuery->limit(3); // unlock full first unit (pdf+video+quiz)
         }
 
         $modules = $modulesQuery->get();
@@ -75,7 +75,7 @@ class CourseAccessController extends Controller
         $isFreeCourse = (int) ($course->price ?? 0) <= 0;
         $freeAccessMode = $isFreeCourse ? (string) ($course->free_access_mode ?? 'limit_2') : 'all';
         if ($isFreeCourse && $freeAccessMode === 'limit_2') {
-            $allowedIds = $course->modules()->orderBy('order_no')->limit(2)->pluck('id')->all();
+            $allowedIds = $course->modules()->orderBy('order_no')->limit(3)->pluck('id')->all();
             if (!in_array((int) $module->id, array_map('intval', $allowedIds), true)) {
                 return response()->json([
                     'status' => 'error',
@@ -168,7 +168,7 @@ class CourseAccessController extends Controller
         $enrolledActive = Enrollment::query()
             ->where('user_id', $userId)
             ->where('course_id', $course->id)
-            ->whereIn('status', ['active', 'completed'])
+            ->where('status', 'active')
             ->exists();
 
         $hasSettledPayment = ManualPayment::query()
@@ -215,13 +215,11 @@ class CourseAccessController extends Controller
         }
 
         if ($enrollment->status !== 'active' && $hasSettledPayment) {
-            if ($enrollment->status !== 'completed') {
-                $enrollment->status = 'active';
-                $enrollment->save();
-            }
+            $enrollment->status = 'active';
+            $enrollment->save();
         }
 
-        if (!in_array((string) $enrollment->status, ['active', 'completed'], true)) {
+        if ($enrollment->status !== 'active') {
             return [
                 'status' => 403,
                 'body' => [

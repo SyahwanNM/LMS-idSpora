@@ -37,14 +37,14 @@ Route::middleware(['auth', 'admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
-    // Pull non-admin users with event participations for the Manage User table and view modal
+    // Pull regular users only (exclude admin and trainer)
     $users = \App\Models\User::with([
         'eventRegistrations' => function ($q) {
             $q->with('event')->orderBy('created_at', 'desc');
         }
     ])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
-        ->where('role', '!=', 'admin')
+        ->where('role', 'user')
         ->orderBy('name')
         ->get();
     return view('/admin/add-users', compact('users'));
@@ -60,7 +60,8 @@ Route::get('admin/course-builder', function () {
 // Legacy Add Course page (standalone view) with categories for the form
 Route::get('/admin/add-course', function () {
     $categories = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
-    return view('admin/add-course', compact('categories'));
+    $trainers = \App\Models\User::where('role', 'trainer')->orderBy('name')->get(['id', 'name', 'email']);
+    return view('admin/add-course', compact('categories', 'trainers'));
 })->name('admin.add-course');
 Route::get('/admin/view-modul-course', function () {
     return view('admin/view-modul-course');
@@ -78,8 +79,6 @@ Route::get('/admin/preview-pendapatan', function () {
 // Admin dashboard (only for admin users)
 Route::middleware(['admin'])->group(function () {
     Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
-    Route::get('/admin/reseller/dashboard', [ResellerController::class, 'adminDashboard'])->name('admin.reseller.dashboard');
-    Route::get('/admin/reseller/data', [ResellerController::class, 'adminData'])->name('admin.reseller.data');
     // Admin view: Pendapatan (financial breakdown)
     Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
         ->name('admin.view-pendapatan');
@@ -140,8 +139,6 @@ Route::middleware(['admin'])->group(function () {
     // Course management routes
     // Publish course (set status active)
     Route::post('/admin/courses/{course}/publish', [CourseController::class, 'publish'])->name('admin.courses.publish');
-    // Unpublish course (cancel publish)
-    Route::post('/admin/courses/{course}/unpublish', [CourseController::class, 'unpublish'])->name('admin.courses.unpublish');
     Route::get('/admin/courses/export', [CourseController::class, 'export'])->name('admin.courses.export');
     Route::get('/admin/courses/{course}/participants', [CourseController::class, 'participants'])->name('admin.courses.participants');
     Route::get('/admin/courses', [CourseController::class, 'index'])->name('admin.courses.index');

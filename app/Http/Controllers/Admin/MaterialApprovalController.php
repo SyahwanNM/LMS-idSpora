@@ -142,12 +142,8 @@ class MaterialApprovalController extends Controller
                 if ((int) $notification->trainer_id !== (int) $material->trainer_id) {
                     return false;
                 }
-                $entityType = method_exists($notification, 'effectiveEntityType')
-                    ? $notification->effectiveEntityType()
-                    : (string) data_get($notification->data, 'entity_type');
-                $entityId = method_exists($notification, 'effectiveEntityId')
-                    ? $notification->effectiveEntityId()
-                    : (int) data_get($notification->data, 'entity_id');
+                $entityType = (string) data_get($notification->data, 'entity_type');
+                $entityId = (int) data_get($notification->data, 'entity_id');
 
                 return $entityType === 'course' && $entityId === (int) $material->id && in_array($entityId, $courseIds, true);
             });
@@ -189,7 +185,14 @@ class MaterialApprovalController extends Controller
         $this->syncLegacyEventMaterialsToAssignments();
 
         $query = Course::with(['trainer', 'category', 'modules'])
-            ->where('status', 'pending_review')
+            ->where(function ($q) {
+                $q->where('status', 'pending_review')
+                  ->orWhereHas('modules', function ($mq) {
+                      $mq->where('review_status', 'pending_review')
+                         ->whereNotNull('content_url')
+                         ->where('content_url', '!=', '');
+                  });
+            })
             ->withCount('modules');
 
         // Search functionality
@@ -252,77 +255,35 @@ class MaterialApprovalController extends Controller
 
         $pendingMaterials = $query->paginate(15);
 
-        $pendingEventModulesQuery = TrainerAssignment::query()
+        $pendingEventModulesQuery = \App\Models\EventTrainerModule::query()
             ->with([
                 'event:id,title,jenis,event_date,material_deadline',
                 'trainer:id,name,email,avatar',
             ])
-            ->whereHas('event')
-            ->whereNotNull('material_path')
-            ->where(function ($q) {
-                $q->whereNull('material_status')
-                    ->orWhereIn('material_status', ['pending', 'pending_review']);
-            });
+            ->where('status', 'pending_review');
 
         if ($request->filled('search')) {
             $search = (string) $request->search;
             $pendingEventModulesQuery->where(function ($q) use ($search) {
-                $q->whereHas('event', function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%");
-                })->orWhereHas('trainer', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
+                $q->whereHas('event', fn($q) => $q->where('title', 'like', "%{$search}%"))
+                  ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
         $pendingEventModules = $pendingEventModulesQuery
-            ->orderByDesc('material_submitted_at')
-            ->orderByDesc('updated_at')
             ->orderByDesc('created_at')
-            ->get([
-                'id',
-                'event_id',
-                'trainer_id',
-                'material_path',
-                'material_status',
-                'material_submitted_at',
-                'created_at',
-                'updated_at',
-            ]);
-
-        // Backward-compat display: older rows may not have module_submitted_at filled.
-        // For pending items, updated_at usually reflects the module upload time.
-        $pendingEventModules->transform(function (TrainerAssignment $assignment) {
-            if (empty($assignment->material_submitted_at) && !empty($assignment->material_path)) {
-                $assignment->setAttribute('material_submitted_at', $assignment->updated_at);
-            }
-
-            $assignment->setAttribute('module_file_url', !empty($assignment->material_path)
-                ? Storage::url($assignment->material_path)
-                : null);
-
-            return $assignment;
-        });
+            ->get();
 
         // Statistics
-        $totalPending = Course::where('status', 'pending_review')->count()
-            + TrainerAssignment::query()
-                ->whereNotNull('material_path')
-                ->where(function ($q) {
-                    $q->whereNull('material_status')
-                        ->orWhereIn('material_status', ['pending', 'pending_review']);
-                })
-                ->count();
-        $totalApproved = Course::where('status', 'approved')->count()
-            + TrainerAssignment::query()
-                ->whereNotNull('material_path')
-                ->where('material_status', 'approved')
-                ->count();
+        $totalPending = Course::where(function ($q) {
+                $q->where('status', 'pending_review')
+                  ->orWhereHas('modules', fn($mq) => $mq->where('review_status', 'pending_review')->whereNotNull('content_url')->where('content_url', '!=', ''));
+            })->count()
+            + \App\Models\EventTrainerModule::where('status', 'pending_review')->count();
+        $totalApproved = Course::whereIn('status', ['approved', 'active'])->count()
+            + \App\Models\EventTrainerModule::where('status', 'approved')->count();
         $totalRejected = Course::where('status', 'rejected')->count()
-            + TrainerAssignment::query()
-                ->whereNotNull('material_path')
-                ->where('material_status', 'rejected')
-                ->count();
+            + \App\Models\EventTrainerModule::where('status', 'rejected')->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 
@@ -342,62 +303,67 @@ class MaterialApprovalController extends Controller
      */
     public function show(Course $material)
     {
+        // Load relationships
         $material->load([
             'trainer',
             'category',
             'modules.quizQuestions',
             'modules.quizQuestions.answers',
-            'reviews'
+            'reviews',
+            'units'
         ]);
 
         $structureCompleteness = $this->assessStructureCompleteness($material);
 
-        // Ambil semua modul yang sudah punya konten (file/quiz/teks)
-        $uploadedModules = $material->modules->filter(function ($module) {
-            $hasFile = !empty($module->content_url) && $module->content_url !== 'quiz_submitted';
-            $hasText = $module->isPdf() && trim((string) ($module->description ?? '')) !== '';
-            $hasQuiz = $module->isQuiz();
-            return $hasFile || $hasText || $hasQuiz;
-        })->values();
+        $allModules = $material->modules->sortBy('order_no');
+        $unitTitles = $material->units->pluck('title', 'unit_no');
 
+        // Grouping logic (consistent with studio: chunk by 3)
+        // If course has units, ensure we have at least that many chunks
+        $chunks = $allModules->chunk(3)->values();
+        $unitCount = max($chunks->count(), $material->units->count());
+        $unitSummaries = [];
+
+        for ($index = 0; $index < $unitCount; $index++) {
+            $unitModules = $chunks->get($index, collect());
+            $unitNo = $index + 1;
+            
+            // A module is considered "uploaded/active" if it has a file, description, or is a quiz with questions.
+            $uploadedInUnit = $unitModules->filter(fn($m) => 
+                !empty($m->content_url) || 
+                !empty($m->description) || 
+                ($m->isQuiz() && $m->quizQuestions->count() > 0)
+            );
+
+            $anyPending = $uploadedInUnit->contains('review_status', 'pending_review');
+            $anyRejected = $uploadedInUnit->contains('review_status', 'rejected');
+            $allApproved = $uploadedInUnit->isNotEmpty() && $uploadedInUnit->every('review_status', 'approved');
+
+            $unitSummaries[] = [
+                'unit_no' => $unitNo,
+                'unit_label' => "Bab $unitNo" . (isset($unitTitles[$unitNo]) ? ": " . $unitTitles[$unitNo] : ""),
+                'total' => $unitModules->count(),
+                'uploaded' => $uploadedInUnit->count(),
+                'any_pending' => $anyPending,
+                'any_rejected' => $anyRejected,
+                'all_approved' => $allApproved,
+                'modules' => $unitModules
+            ];
+        }
+
+        $uploadedModules = $allModules->filter(fn($m) => 
+            !empty($m->content_url) || 
+            !empty($m->description) || 
+            ($m->isQuiz() && $m->quizQuestions->count() > 0)
+        );
         $uploadedModulesCount = $uploadedModules->count();
 
-        // Kelompokkan SEMUA modul per unit (bab) — setiap bab = 3 modul berurutan
-        $allModules = $material->modules->sortBy('order_no')->values();
-        $unitChunks = $allModules->chunk(3)->values();
-
-        // Map tiap unit dengan status kelengkapannya
-        $unitSummaries = $unitChunks->map(function ($unitModules, $unitIndex) {
-            $total = $unitModules->count();
-            $uploaded = $unitModules->filter(function ($m) {
-                $hasFile = !empty($m->content_url) && $m->content_url !== 'quiz_submitted';
-                $hasText = $m->isPdf() && trim((string) ($m->description ?? '')) !== '';
-                $hasQuiz = $m->isQuiz();
-                return $hasFile || $hasText || $hasQuiz;
-            })->count();
-
-            $allApproved = $unitModules->every(fn($m) => ($m->review_status ?? 'pending_review') === 'approved' || $m->isQuiz());
-            $anyRejected = $unitModules->contains(fn($m) => ($m->review_status ?? '') === 'rejected');
-            $anyPending = $unitModules->contains(fn($m) => !$m->isQuiz() && ($m->review_status ?? 'pending_review') === 'pending_review' && (!empty($m->content_url) || (trim((string) ($m->description ?? '')) !== '')));
-
-            return [
-                'unit_index' => $unitIndex,
-                'unit_label' => 'Bab ' . ($unitIndex + 1),
-                'modules' => $unitModules->values(),
-                'total' => $total,
-                'uploaded' => $uploaded,
-                'all_approved' => $allApproved,
-                'any_rejected' => $anyRejected,
-                'any_pending' => $anyPending,
-            ];
-        })->values();
-
         return view('admin.material.show', compact(
-            'material',
-            'structureCompleteness',
-            'uploadedModules',
-            'uploadedModulesCount',
-            'unitSummaries'
+            'material', 
+            'structureCompleteness', 
+            'unitSummaries', 
+            'uploadedModulesCount', 
+            'uploadedModules'
         ));
     }
 
@@ -429,7 +395,12 @@ class MaterialApprovalController extends Controller
             ->where('review_status', '!=', 'approved')
             ->doesntExist();
 
-        if ($allModulesApproved && $material->status === 'pending_review') {
+        // Auto-approve course if all present modules are approved
+        $hasAnyApproved = CourseModule::where('course_id', $material->id)
+            ->where('review_status', 'approved')
+            ->exists();
+
+        if ($allModulesApproved && $hasAnyApproved && $material->status === 'pending_review') {
             $material->update([
                 'status' => 'approved',
                 'approved_at' => now(),
@@ -462,6 +433,81 @@ class MaterialApprovalController extends Controller
     /**
      * Reject a single module with reason
      */
+
+    /**
+     * Approve all modules in a specific unit (Bab)
+     */
+    public function approveUnit(Request $request, Course $material)
+    {
+        $unitNo = (int) $request->input('unit_no');
+        if ($unitNo <= 0) {
+            return back()->with('error', 'Nomor bab tidak valid.');
+        }
+
+        // Each unit consists of 3 modules (chunk by 3)
+        $startOrder = ($unitNo - 1) * 3 + 1;
+        $endOrder = $unitNo * 3;
+
+        $modules = CourseModule::where('course_id', $material->id)
+            ->whereBetween('order_no', [$startOrder, $endOrder])
+            ->get();
+
+        if ($modules->isEmpty()) {
+            return back()->with('error', "Materi pada Bab {$unitNo} tidak ditemukan.");
+        }
+
+        foreach ($modules as $module) {
+            // Only approve if it has content (to avoid approving empty slots accidentally)
+            $hasContent = $module->type === 'quiz' 
+                ? ($module->quizQuestions()->count() > 0)
+                : (!empty($module->content_url) || !empty($module->description));
+
+            if ($hasContent) {
+                $module->update([
+                    'review_status' => 'approved',
+                    'reviewed_at' => now(),
+                    'reviewed_by' => Auth::id(),
+                    'review_rejection_reason' => null,
+                ]);
+            }
+        }
+
+        // Trigger course-level approval check
+        $allModulesApproved = CourseModule::where('course_id', $material->id)
+            ->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereNotNull('content_url')
+                          ->where('content_url', '!=', '');
+                })->orWhere(function ($inner) {
+                    $inner->whereNotNull('description')
+                          ->where('description', '!=', '');
+                })->orWhere(function ($inner) {
+                    $inner->where('type', 'quiz')
+                          ->whereHas('quizQuestions');
+                });
+            })
+            ->where('review_status', '!=', 'approved')
+            ->doesntExist();
+
+        // Auto-approve course if all present modules are approved
+        $hasAnyApproved = CourseModule::where('course_id', $material->id)
+            ->where('review_status', 'approved')
+            ->exists();
+
+        if ($allModulesApproved && $hasAnyApproved && $material->status === 'pending_review') {
+            $material->update([
+                'status' => 'approved',
+                'approved_at' => now(),
+                'approved_by' => Auth::id(),
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.material.show', $material)
+            ->with('success', "Seluruh materi pada Bab {$unitNo} yang tersedia telah disetujui.");
+    }
     public function rejectModule(Request $request, Course $material, CourseModule $module)
     {
         if ((int) $module->course_id !== (int) $material->id) {
@@ -509,96 +555,6 @@ class MaterialApprovalController extends Controller
             ->with('success', 'Modul "' . $module->title . '" ditolak dan catatan revisi telah dikirim ke trainer.');
     }
 
-    /**
-     * Approve all modules within a specific unit (bab)
-     */
-    public function approveUnit(Course $material, int $unitIndex)
-    {
-        $allModules = CourseModule::where('course_id', $material->id)
-            ->orderBy('order_no', 'asc')
-            ->get();
-
-        $chunks = $allModules->chunk(3)->values();
-        $unitModules = $chunks->get($unitIndex, collect());
-
-        if ($unitModules->isEmpty()) {
-            return redirect()->route('admin.material.show', $material)
-                ->with('error', 'Unit (bab) tidak ditemukan.');
-        }
-
-        $approvedCount = 0;
-        foreach ($unitModules as $module) {
-            if ($module->isQuiz()) {
-                continue; // Quiz tidak perlu approve manual
-            }
-            $hasContent = !empty($module->content_url) || trim((string) ($module->description ?? '')) !== '';
-            if (!$hasContent) {
-                continue;
-            }
-            $module->update([
-                'review_status' => 'approved',
-                'reviewed_at' => now(),
-                'reviewed_by' => Auth::id(),
-                'review_rejection_reason' => null,
-            ]);
-            $approvedCount++;
-        }
-
-        // Cek apakah seluruh course sudah approved
-        $allModulesApprovedNow = CourseModule::where('course_id', $material->id)
-            ->where(function ($q) {
-                $q->whereNotIn('type', ['quiz'])
-                    ->where(function ($inner) {
-                        $inner->whereNotNull('content_url')
-                            ->orWhereNotNull('description');
-                    });
-            })
-            ->where('review_status', '!=', 'approved')
-            ->doesntExist();
-
-        if ($allModulesApprovedNow && $material->status === 'pending_review') {
-            $material->update([
-                'status' => 'approved',
-                'approved_at' => now(),
-                'approved_by' => Auth::id(),
-                'rejected_at' => null,
-                'rejection_reason' => null,
-            ]);
-
-            if (!empty($material->trainer_id)) {
-                TrainerNotification::create([
-                    'trainer_id' => (int) $material->trainer_id,
-                    'type' => 'course_material_approved',
-                    'title' => 'Semua Materi Course Diterima',
-                    'message' => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
-                    'data' => [
-                        'entity_type' => 'course',
-                        'entity_id' => (int) $material->id,
-                        'url' => route('trainer.detail-course', $material->id),
-                    ],
-                    'expires_at' => now()->addDays(30),
-                ]);
-            }
-        } elseif (!empty($material->trainer_id)) {
-            // Notifikasi bab diapprove sebagian
-            TrainerNotification::create([
-                'trainer_id' => (int) $material->trainer_id,
-                'type' => 'course_material_approved',
-                'title' => 'Materi Bab ' . ($unitIndex + 1) . ' Diterima',
-                'message' => 'Materi Bab ' . ($unitIndex + 1) . ' pada course "' . $material->name . '" telah disetujui.',
-                'data' => [
-                    'entity_type' => 'course',
-                    'entity_id' => (int) $material->id,
-                    'url' => route('trainer.detail-course', $material->id),
-                ],
-                'expires_at' => now()->addDays(30),
-            ]);
-        }
-
-        return redirect()
-            ->route('admin.material.show', $material)
-            ->with('success', 'Bab ' . ($unitIndex + 1) . ': ' . $approvedCount . ' modul berhasil disetujui.');
-    }
 
     /**
      * Reject all modules within a specific unit (bab) with reason
@@ -727,6 +683,31 @@ class MaterialApprovalController extends Controller
                 ->with('error', 'Belum ada materi yang diupload trainer. Approval hanya bisa dilakukan untuk materi yang sudah ada.');
         }
 
+                // Ensure all modules are marked as approved when bulk approving the course material
+        CourseModule::where('course_id', $material->id)
+            ->where(function ($q) {
+                // 1. Approve modules with content (PDF/Video)
+                $q->where(function ($inner) {
+                    $inner->whereNotNull('content_url')
+                          ->where('content_url', '!=', '');
+                })
+                // 2. Approve modules with description (Text module)
+                ->orWhere(function ($inner) {
+                    $inner->whereNotNull('description')
+                          ->where('description', '!=', '');
+                })
+                // 3. Approve quizzes that have questions
+                ->orWhere(function ($inner) {
+                    $inner->where('type', 'quiz')
+                          ->whereHas('quizQuestions');
+                });
+            })
+            ->update([
+                'review_status' => 'approved',
+                'reviewed_at' => now(),
+                'reviewed_by' => Auth::id(),
+            ]);
+
         $material->update([
             'status' => 'approved',
             'approved_at' => now(),
@@ -805,13 +786,16 @@ class MaterialApprovalController extends Controller
     public function approved(Request $request)
     {
         $query = Course::with(['trainer', 'category'])
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'active'])
             ->withCount('modules');
 
-        $approvedEventModulesQuery = Event::query()
-            ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_path')
-            ->where('material_status', 'approved');
+        $approvedEventModulesQuery = \App\Models\EventTrainerModule::query()
+            ->with([
+                'event:id,title,jenis,event_date,material_deadline',
+                'trainer:id,name,email,avatar',
+                'reviewer:id,name',
+            ])
+            ->where('status', 'approved');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -823,10 +807,8 @@ class MaterialApprovalController extends Controller
             });
 
             $approvedEventModulesQuery->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhereHas('trainer', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
+                $q->whereHas('event', fn($q) => $q->where('title', 'like', "%{$search}%"))
+                  ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -860,21 +842,11 @@ class MaterialApprovalController extends Controller
             }
         }
 
-        $approvedMaterials = $query->orderBy('approved_at', 'desc')->paginate(15);
+        $approvedMaterials = $query->orderByRaw('CASE WHEN approved_at IS NULL THEN created_at ELSE approved_at END DESC')->paginate(15);
 
         $approvedEventModules = $approvedEventModulesQuery
-            ->orderByDesc('material_approved_at')
-            ->orderByDesc('event_date')
-            ->orderByDesc('created_at')
-            ->get([
-                'id',
-                'trainer_id',
-                'title',
-                'jenis',
-                'event_date',
-                'module_path',
-                'material_approved_at as module_verified_at',
-            ]);
+            ->orderByRaw('CASE WHEN reviewed_at IS NULL THEN created_at ELSE reviewed_at END DESC')
+            ->get();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
 
@@ -890,10 +862,11 @@ class MaterialApprovalController extends Controller
             ->where('status', 'rejected')
             ->withCount('modules');
 
-        $rejectedEventModulesQuery = Event::query()
-            ->with(['trainer:id,name,email,avatar'])
-            ->whereNotNull('module_path')
-            ->where('material_status', 'rejected');
+        $rejectedEventModulesQuery = \App\Models\EventTrainerModule::query()
+            ->with(['trainer:id,name,email,avatar', 'event'])
+            ->whereHas('event')
+            ->whereHas('trainer')
+            ->where('status', 'rejected');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -905,7 +878,10 @@ class MaterialApprovalController extends Controller
             });
 
             $rejectedEventModulesQuery->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
+                $q->where('original_name', 'like', "%{$search}%")
+                    ->orWhereHas('event', function ($q) use ($search) {
+                        $q->where('title', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('trainer', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     });

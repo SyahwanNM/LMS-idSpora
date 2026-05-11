@@ -126,44 +126,7 @@
                             </td>
                         </tr>
 
-                        <!-- Modal Detail -->
-                        <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                                    <div class="modal-header border-0 pb-0">
-                                        <h5 class="modal-title fw-bold">Detail Broadcast</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4">
-                                        <div class="mb-4">
-                                            <label class="text-muted smaller fw-bold text-uppercase ls-wide mb-1">Judul / Subjek</label>
-                                            <div class="p-3 border rounded-3 bg-light fw-bold">{{ $item->title }}</div>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label class="text-muted smaller fw-bold text-uppercase ls-wide mb-1">Pesan</label>
-                                            <div class="p-3 border rounded-3 bg-white" style="white-space: pre-wrap; font-size: 0.9rem;">{{ $item->message }}</div>
-                                        </div>
-                                        <div class="row g-3">
-                                            <div class="col-6">
-                                                <div class="p-3 bg-light rounded-4">
-                                                    <div class="text-muted smaller fw-bold text-uppercase mb-1">Segmen</div>
-                                                    <div class="fw-bold">{{ $seg[1] }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="p-3 bg-light rounded-4">
-                                                    <div class="text-muted smaller fw-bold text-uppercase mb-1">Platform</div>
-                                                    <div class="fw-bold">{{ ucfirst($item->platform) }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer border-0">
-                                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
                         @empty
                         <tr>
                             <td colspan="7" class="text-center py-5">
@@ -179,4 +142,54 @@
                 </table>
             </div>
         </div>
+
+        @foreach($broadcasts as $item)
+            @php
+                $segments = [
+                    'all' => ['bg-light text-dark', 'Semua'],
+                    'reseller' => ['bg-warning-subtle text-warning', 'Reseller'],
+                    'trainer' => ['bg-info-subtle text-info', 'Trainer'],
+                    'no_event' => ['bg-danger-subtle text-danger', 'Belum Ikut Event']
+                ];
+                $seg = $segments[$item->segment] ?? ['bg-secondary-subtle', 'Lainnya'];
+            @endphp
+            <!-- Modal Detail -->
+            <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold">Detail Broadcast</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-4">
+                                <label class="text-muted smaller fw-bold text-uppercase ls-wide mb-1">Judul / Subjek</label>
+                                <div class="p-3 border rounded-3 bg-light fw-bold">{{ $item->title }}</div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="text-muted smaller fw-bold text-uppercase ls-wide mb-1">Pesan</label>
+                                <div class="p-3 border rounded-3 bg-white" style="white-space: pre-wrap; font-size: 0.9rem;">{{ $item->message }}</div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded-4">
+                                        <div class="text-muted smaller fw-bold text-uppercase mb-1">Segmen</div>
+                                        <div class="fw-bold">{{ $seg[1] }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded-4">
+                                        <div class="text-muted smaller fw-bold text-uppercase mb-1">Platform</div>
+                                        <div class="fw-bold">{{ ucfirst($item->platform) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
 @endsection

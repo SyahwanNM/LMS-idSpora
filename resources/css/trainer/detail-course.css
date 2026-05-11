@@ -1228,8 +1228,8 @@ main.detail-course {
     padding: 0;
     background-color: var(--base-clr);
     overflow-y: auto;
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     width: 100%;
 }
 

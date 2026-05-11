@@ -57,9 +57,7 @@
     </div>
   </div>
   @php
-    $allEvents = ($events ?? collect())->values();
     $statusData = [
-      ['id' => 'events-all', 'label' => 'Semua', 'data' => $allEvents],
       ['id' => 'events-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingEvents ?? collect()],
       ['id' => 'events-upcoming', 'label' => 'Mendatang', 'data' => $upcomingEvents ?? collect()],
       ['id' => 'events-finished', 'label' => 'Selesai', 'data' => $finishedEvents ?? collect()],
@@ -86,17 +84,16 @@
         @else
           <div class="card-course">
             @foreach($status['data'] as $event)
-              @php
-                $eventCardImage = $event->image_url;
-              @endphp
               <a href="{{ route('trainer.events.show', $event->id) }}" class="card-item">
                 <div class="card-media">
                   <p class="badge-online">{{ strtoupper($event->type ?? 'ONLINE SESSION') }}</p>
 
-                  @if(!empty($eventCardImage))
-                    <img src="{{ $eventCardImage }}" alt="{{ $event->title }}" class="card-image" />
+                  @php $posterUrl = $event->image_url; @endphp
+                  @if(!empty($posterUrl))
+                    <img src="{{ $posterUrl }}" alt="{{ $event->title }}" class="card-image" />
                   @else
-                    <div class="card-image-empty">Gambar event belum diupload admin</div>
+                    <img src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=300&fit=crop"
+                      alt="Default Image" class="card-image" />
                   @endif
 
                   <div class="rating">
@@ -105,7 +102,7 @@
                       <path
                         d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
                     </svg>
-                    <p>{{ number_format($event->feedbacks_avg_rating ?? 0, 1) }}</p>
+                    <p>5.0</p>
                   </div>
                 </div>
 

@@ -8,24 +8,6 @@
 
         <!-- PART 2: MOBILE CONTROLS (Always visible on mobile) -->
         <div class="d-flex align-items-center d-lg-none ms-auto me-2 position-relative">
-            <!-- Expandable Mobile Search Bar (Slides in from the right) -->
-            <div class="mobile-search-expandable" id="mobileSearchExpandable">
-                <form action="{{ request()->routeIs('events.*') ? route('events.index') : route('courses.index') }}" method="GET" class="d-flex align-items-center w-100 h-100 px-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="rgba(255,255,255,0.5)" viewBox="0 0 16 16" class="me-2">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                    </svg>
-                    <input type="text" name="search" class="form-control bg-transparent border-0 text-white p-0 shadow-none" placeholder="Cari..." id="mobileSearchInput" value="{{ request('search') }}">
-                    <button type="button" class="btn-close btn-close-white ms-2" id="closeMobileSearch" style="font-size: 0.7rem;"></button>
-                </form>
-            </div>
-
-            <!-- Mobile Search Icon -->
-            <button class="btn btn-nav-icon me-2" type="button" id="mobileSearchBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.106a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
-                </svg>
-            </button>
-            
             <!-- Mobile Notif Icon -->
             <button class="btn btn-nav-icon position-relative me-3" type="button" id="mobileNotifBtn" onclick="toggleNotificationDropdown()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -35,7 +17,9 @@
             </button>
 
             <!-- Burger Menu Toggler -->
-            <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler">
+            <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler" 
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
+                    style="z-index: 2001;">
                 <div class="burger-icon">
                     <span></span>
                     <span></span>
@@ -55,7 +39,7 @@
                         <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Kursus</a>
+                        <a class="nav-link {{ request()->routeIs('courses.index') ? 'active' : '' }}" href="{{ route('courses.index') }}">Course</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('events.index') ? 'active' : '' }}" href="{{ route('events.index') }}">Event</a>
@@ -66,18 +50,6 @@
                 <!-- RIGHT SIDE: DESKTOP ACTIONS (HIDDEN ON MOBILE TILL COLLAPSE) -->
                 <div class="desktop-actions-nav d-flex flex-column flex-lg-row align-items-start align-items-lg-center mt-lg-0 mt-3">
                     
-                    <!-- Search Bar (Desktop) -->
-                    <div class="nav-search-wrapper d-none d-lg-block me-lg-4">
-                        <form class="search-form-premium" action="{{ request()->routeIs('events.*') ? route('events.index') : route('courses.index') }}" method="GET" role="search">
-                            <span class="search-icon-inside">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                                </svg>
-                            </span>
-                            <input class="form-control nav-input-premium" type="search" name="search" placeholder="Cari apa saja..." aria-label="Search" value="{{ request('search') }}">
-                        </form>
-                    </div>
-
                     <!-- Notif Icon (Desktop) -->
                     <div class="d-none d-lg-block me-lg-3">
                         <button class="btn btn-nav-icon position-relative" type="button" id="notifBtn" onclick="toggleNotificationDropdown()">
@@ -106,14 +78,14 @@
                         <!-- Account Dropdown Menu (Internal to collapse on mobile) -->
                         <ul class="dropdown-menu account-menu-premium" id="userDropdownMenu" style="display: none;">
                             <li><a class="dropdown-item" href="{{ route('reseller.index') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8 2a.5.5 0 0 1 .5.5V4a.5.5 0 0 1-1 0V2.5A.5.5 0 0 1 8 2zM3.732 3.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM2 8a.5.5 0 0 1 .5-.5h1.586a.5.5 0 0 1 0 1H2.5A.5.5 0 0 1 2 8zm1.732 4.268a.5.5 0 0 1 0-.707l.914-.915a.5.5 0 1 1 .708.708l-.915.914a.5.5 0 0 1-.707 0zm4.268 1.732a.5.5 0 0 1-.5-.5V11a.5.5 0 0 1 1 0v2.5a.5.5 0 0 1-.5.5zm4.268-1.732a.5.5 0 0 1 .707 0l.915.914a.5.5 0 1 1-.708.708l-.914-.915a.5.5 0 0 1 0-.707zM14 8a.5.5 0 0 1-.5.5h-1.586a.5.5 0 0 1 0-1H13.5A.5.5 0 0 1 14 8zM12.268 3.732a.5.5 0 0 1 0 .707l-.914.915a.5.5 0 1 1-.708-.708l.915-.914a.5.5 0 0 1 .707 0zM8 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>Reseller</a></li>
-                            <li><a class="dropdown-item" href="{{ route('profile.index') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>Profil Saya</a></li>
-                            <li><a class="dropdown-item" href="{{ route('profile.history') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>Riwayat Event dan Course</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.index') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/></svg>My Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile.history') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>History Event & Course</a></li>
                             <li><a class="dropdown-item" href="{{ route('profile.settings') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.233 1.841-.53 2.508l-.242.21c-1.082.942-1.082 2.59 0 3.532l.242.21c.763.667.976 1.688.53 2.508l-.169.311c-.699 1.282.704 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.311.17c1.282.699 2.686-.704 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .53-2.508l.242-.21c1.082-.942 1.082-2.59 0-3.532l-.242-.21a1.464 1.464 0 0 1-.53-2.508l.169-.311c.699-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg>Pengaturan</a></li>
-                            <li><a class="dropdown-item" href="{{ route('public.guide') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>Panduan Platform</a></li>
+                            <li><a class="dropdown-item" href="{{ route('public.guide') }}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/></svg>Tutorial Platform</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <button type="button" class="dropdown-item text-danger" onclick="openLogoutModal()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>Keluar
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>Sign Out
                                 </button>
                             </li>
                         </ul>
@@ -187,19 +159,19 @@
                     </svg>
                 </div>
                 
-                <h4 class="text-white font-bold mb-2">Keluar</h4>
-                <p class="text-gray-400 mb-4 px-3" style="color: rgba(255,255,255,0.6);">Apakah Anda yakin ingin keluar dari akun Anda?</p>
+                <h4 class="text-white font-bold mb-2">Sign Out</h4>
+                <p class="text-gray-400 mb-4 px-3" style="color: rgba(255,255,255,0.6);">Are you sure you want to sign out of your account?</p>
                 
                 <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
                     <button type="button" class="btn px-4 py-2" data-bs-dismiss="modal"
-                            style="border-radius: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 500;">
-                        Batal
+                            style="border-radius: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); font-weight: 500; min-width: 120px;">
+                        Cancel
                     </button>
                     <form action="{{ route('logout') }}" method="POST" id="logoutForm">
                         @csrf
                         <button type="submit" class="btn px-4 py-2 w-100" 
-                                style="border-radius: 12px; background: #EF4444; color: #fff; border: none; font-weight: 600;">
-                            Ya, Keluar
+                                style="border-radius: 12px; background: #EF4444; color: #fff; border: none; font-weight: 600; min-width: 120px;">
+                            Yes, Sign Out
                         </button>
                     </form>
                 </div>
@@ -232,19 +204,16 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     color: #fff !important; /* Force global text color to white */
 }
 
-/* Fix Tailwind Conflict for Bootstrap Collapse */
+/* Fix Tailwind/Global Conflict for Bootstrap Collapse */
 .premium-nav .collapse.navbar-collapse {
-    display: none; /* Default Bootstrap behavior */
     visibility: visible !important;
 }
 
-.premium-nav .collapse.navbar-collapse.show {
-    display: block !important;
-}
-
+/* Ensure Desktop Layout */
 @media (min-width: 992px) {
     .premium-nav .collapse.navbar-collapse {
         display: flex !important;
+        flex-basis: auto;
     }
 }
 
@@ -432,27 +401,6 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     overflow: hidden;
 }
 
-/* Notification item expand/collapse */
-/* Prevent Bootstrap active/focus from turning items white */
-.notification-dropdown-premium .dropdown-item,
-.notification-dropdown-premium .dropdown-item:hover,
-.notification-dropdown-premium .dropdown-item:focus,
-.notification-dropdown-premium .dropdown-item:focus-visible,
-.notification-dropdown-premium .dropdown-item:active,
-.notification-dropdown-premium .dropdown-item.active {
-    background: transparent !important;
-    color: inherit !important;
-}
-
-.notification-dropdown-premium .dropdown-item:focus {
-    outline: none;
-    box-shadow: none !important;
-}
-
-.js-notif-item .notif-message-full {
-    white-space: pre-line;
-}
-
 .dropdown-header-premium {
     background: rgba(255, 255, 255, 0.03);
     padding: 1rem 1.2rem;
@@ -467,6 +415,7 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     height: 18px;
     position: relative;
     cursor: pointer;
+    z-index: 2000;
 }
 
 .burger-icon span {
@@ -609,8 +558,7 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+    background: transparent;
     z-index: 1040;
     display: none;
     opacity: 0;
@@ -652,29 +600,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (navCollapseEl && burgerToggler) {
         // Safe Check for Bootstrap
-        const getBootstrap = () => window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
+        const getBootstrap = () => {
+            if (window.bootstrap) return window.bootstrap;
+            if (typeof bootstrap !== 'undefined') return bootstrap;
+            return null;
+        };
         
+        let _navbarInitialized = false;
         const initNavbar = () => {
+            if (_navbarInitialized) return;
             const bs = getBootstrap();
-            if (!bs) return;
+            if (!bs || !bs.Collapse) return;
+            _navbarInitialized = true;
 
             const bsNav = new bs.Collapse(navCollapseEl, { toggle: false });
 
-            burgerToggler.addEventListener('click', function (e) {
+            // Manual toggle for burger because we removed data-bs-toggle to avoid conflicts
+            burgerToggler.addEventListener('click', function(e) {
                 e.preventDefault();
-                const isOpen = navCollapseEl.classList.contains('show');
-                if (isOpen) {
-                    bsNav.hide();
-                    burgerToggler.classList.add('collapsed');
-                    toggleBackdrop(false);
-                } else {
-                    if (mobileSearchExpandable && mobileSearchExpandable.classList.contains('active')) {
-                        mobileSearchExpandable.classList.remove('active');
-                    }
-                    bsNav.show();
-                    burgerToggler.classList.remove('collapsed');
-                    toggleBackdrop(true);
-                }
+                bsNav.toggle();
+            });
+
+            // Listen to Bootstrap collapse events for backdrop and icon animation
+            navCollapseEl.addEventListener('show.bs.collapse', function () {
+                burgerToggler.classList.remove('collapsed');
+                burgerToggler.setAttribute('aria-expanded', 'true');
+                toggleBackdrop(true);
+            });
+
+            navCollapseEl.addEventListener('hide.bs.collapse', function () {
+                burgerToggler.classList.add('collapsed');
+                burgerToggler.setAttribute('aria-expanded', 'false');
+                toggleBackdrop(false);
             });
 
             if (mobileSearchBtn && mobileSearchExpandable) {
@@ -682,7 +639,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     bsNav.hide();
                     burgerToggler.classList.add('collapsed');
                     mobileSearchExpandable.classList.add('active');
-                    document.getElementById('mobileSearchInput').focus();
+                    const inputEl = document.getElementById('mobileSearchInput');
+                    if (inputEl) inputEl.focus();
                     toggleBackdrop(true);
                 });
 
@@ -695,29 +653,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             backdrop.addEventListener('click', () => {
-                const navCollapseEl = document.getElementById('navbarSupportedContent');
-                const burgerToggler = document.getElementById('burgerToggler');
-                const mobileSearchExpandable = document.getElementById('mobileSearchExpandable');
-                const bsNav = getBootstrap() ? getBootstrap().Collapse.getInstance(navCollapseEl) : null;
+                const bsInstance = bs.Collapse.getInstance(navCollapseEl);
+                if (bsInstance) bsInstance.hide();
                 
-                if (bsNav) bsNav.hide();
                 if (mobileSearchExpandable) mobileSearchExpandable.classList.remove('active');
                 if (burgerToggler) burgerToggler.classList.add('collapsed');
                 
-                // Also close our custom dropdowns
-                document.getElementById('notificationDropdown').style.display = 'none';
-                if (document.getElementById('userDropdownMenu')) document.getElementById('userDropdownMenu').style.display = 'none';
+                // Safe access to dropdowns
+                const notifD = document.getElementById('notificationDropdown');
+                const userD = document.getElementById('userDropdownMenu');
+                if (notifD) notifD.style.display = 'none';
+                if (userD) userD.style.display = 'none';
                 
                 toggleBackdrop(false);
             });
         };
 
-        // Try to init, or wait if bootstrap isn't ready
-        if (getBootstrap()) {
-            initNavbar();
-        } else {
-            window.addEventListener('load', initNavbar);
-        }
+        // Polling for bootstrap availability (more reliable for modules/CDN)
+        let _bsCheckCount = 0;
+        const _bsInterval = setInterval(() => {
+            if (getBootstrap()) {
+                clearInterval(_bsInterval);
+                initNavbar();
+            }
+            if (++_bsCheckCount > 100) clearInterval(_bsInterval); // give up after 10s
+        }, 100);
+
+        // Also check on load for insurance
+        window.addEventListener('load', initNavbar);
     }
 });
 
@@ -802,9 +765,12 @@ function toggleNotificationDropdown() {
         dropdown.style.display = 'block';
     } else {
         dropdown.style.display = 'none';
-        if (backdrop && !document.getElementById('mobileSearchExpandable').classList.contains('active')) {
-            backdrop.classList.remove('show');
-            document.body.style.overflow = '';
+        if (backdrop) {
+            const searchEl = document.getElementById('mobileSearchExpandable');
+            if (!searchEl || !searchEl.classList.contains('active')) {
+                backdrop.classList.remove('show');
+                document.body.style.overflow = '';
+            }
         }
     }
 }

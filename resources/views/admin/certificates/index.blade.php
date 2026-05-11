@@ -65,7 +65,7 @@
                 <label class="form-label smaller fw-bold text-muted">Status Kesiapan</label>
                 <select id="certificateStatusFilter" class="form-select form-select-sm">
                     <option value="all">Semua Status</option>
-                    <option value="ready">Siap Generate (H+3)</option>
+                    <option value="ready">Siap Terbit</option>
                     <option value="configured">Dikonfigurasi</option>
                     <option value="not-configured">Belum Ada Aset</option>
                 </select>
@@ -116,8 +116,7 @@
                                 $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
                                 $isFinished = false;
                                 if($eventDate) {
-                                    $certificateReadyDate = $eventDate->copy()->addDays(3);
-                                    $isFinished = $certificateReadyDate->isPast();
+                                    $isFinished = $eventDate->isPast() || $eventDate->isToday();
                                 }
                                 $status = 'not-configured';
                                 if($isConfigured) { $status = $isFinished ? 'ready' : 'configured'; }
@@ -148,7 +147,7 @@
                                         @if($isFinished)
                                             <span class="badge rounded-pill px-2 py-1" style="font-size: 0.65rem; background: var(--crm-accent-light); color: var(--crm-primary); border: 1px solid rgba(109, 40, 217, 0.2);">SIAP DITERBITKAN</span>
                                         @else
-                                            <span class="badge bg-light text-muted border border-secondary border-opacity-10 rounded-pill px-2 py-1" style="font-size: 0.65rem;">MENUNGGU H+3</span>
+                                            <span class="badge bg-light text-muted border border-secondary border-opacity-10 rounded-pill px-2 py-1" style="font-size: 0.65rem;">BELUM MULAI</span>
                                         @endif
                                     @else
                                         <span class="text-muted smaller">---</span>
@@ -246,37 +245,6 @@
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="info-card h-100" style="border-left: 4px solid var(--crm-primary);">
-            <h6 class="fw-bold text-navy mb-3">Ketentuan Penerbitan</h6>
-            <ul class="smaller text-muted ps-3 mb-0">
-                <li class="mb-2">Sertifikat hanya dapat diterbitkan <b>3 hari setelah</b> tanggal pelaksanaan event berakhir untuk memastikan sinkronisasi absensi.</li>
-                <li class="mb-2">Pastikan <b>Logo Partner</b> dan <b>Tanda Tangan Authorized</b> telah diupload pada menu pengaturan masing-masing event.</li>
-                <li>Gunakan fitur "Generate" untuk memproses sertifikat secara massal dalam format arsip terkompresi.</li>
-            </ul>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="info-card h-100" style="border-left: 4px solid var(--crm-secondary);">
-            <h6 class="fw-bold text-navy mb-3">Bantuan Cepat</h6>
-            <div class="d-flex align-items-center mb-3">
-                <div class="p-2 bg-white rounded border me-3"><i class="bi bi-file-earmark-pdf text-danger fs-4"></i></div>
-                <div>
-                    <div class="small fw-bold">Manual Book Sertifikat</div>
-                    <a href="#" class="smaller text-primary text-decoration-none">Unduh Panduan (PDF)</a>
-                </div>
-            </div>
-            <div class="d-flex align-items-center">
-                <div class="p-2 bg-white rounded border me-3"><i class="bi bi-envelope text-info fs-4"></i></div>
-                <div>
-                    <div class="small fw-bold">Hubungi Support IT</div>
-                    <a href="mailto:support@idspora.com" class="smaller text-primary text-decoration-none">Kirim Email Bantuan</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 @endsection
 
 @section('scripts')
@@ -303,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.course-row').forEach(row => {
             const title = (row.getAttribute('data-title') || '').toLowerCase();
             const matchSearch = searchTerm === '' || title.includes(searchTerm);
-            // Courses don't have H+3 logic in this filter yet, but could be added if needed
+            // Courses logic can be added here if needed
             row.style.display = matchSearch ? '' : 'none';
         });
     }

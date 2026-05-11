@@ -22,9 +22,10 @@ class PublicCourseController extends Controller
             ->withCount([
                 'enrollments as enrollments_count' => function ($q) {
                     $q->select(DB::raw('COUNT(DISTINCT user_id)'))
-                        ->where('status', 'active');
+                        ->whereIn('status', ['active', 'completed']);
                 },
             ])
+            ->withAvg('reviews as rating_avg', 'rating')
             ->where('status','active');
 
         if($search = $request->get('search')){
@@ -55,13 +56,34 @@ class PublicCourseController extends Controller
 
         if ($sort = $request->get('price')) {
             if (in_array($sort, ['asc', 'desc'])) {
-                $query->orderBy('price', $sort);
+                // Sort by effective price (after discount if active)
+                $query->orderByRaw("
+                    CASE
+                        WHEN discount_percent > 0
+                             AND (discount_start IS NULL OR discount_start <= NOW())
+                             AND (discount_end IS NULL OR discount_end >= NOW())
+                        THEN price * (1 - discount_percent / 100)
+                        ELSE price
+                    END " . strtoupper($sort)
+                );
             }
         } else {
             $query->latest();
         }
 
         $courses = $query->paginate(12)->withQueryString();
+        // Featured: published-only, most recently updated
+        $featuredCourses = Course::with(['category','modules'])
+            ->withCount([
+                'enrollments as enrollments_count' => function ($q) {
+                    $q->select(DB::raw('COUNT(DISTINCT user_id)'))
+                        ->where('status', 'active');
+                },
+            ])
+            ->where('status','active')
+            ->orderBy('updated_at','desc')
+            ->take(8)
+            ->get();
 
         // Data for filter dropdowns
         $categories = \App\Models\Category::orderBy('name')->get();
@@ -77,6 +99,15 @@ class PublicCourseController extends Controller
         $continueEnrollments = collect();
         $user = $request->user();
         if ($user) {
+            $userSavedCourseIds = DB::table('user_saved_courses')
+                ->where('user_id', $user->id)
+                ->pluck('course_id')->toArray();
+
+            $courses->getCollection()->transform(function ($c) use ($userSavedCourseIds) {
+                $c->is_saved = in_array($c->id, $userSavedCourseIds);
+                return $c;
+            });
+
             $fromEnrollments = Enrollment::query()
                 ->where('user_id', $user->id)
                 ->where('status', 'active')
@@ -100,7 +131,7 @@ class PublicCourseController extends Controller
                             ->withCount([
                                 'enrollments as enrollments_count' => function ($qq) {
                                     $qq->select(DB::raw('COUNT(DISTINCT user_id)'))
-                                        ->where('status', 'active');
+                                        ->whereIn('status', ['active', 'completed']);
                                 },
                             ]);
                     },
@@ -119,43 +150,6 @@ class PublicCourseController extends Controller
                 ->values();
         }
 
-            return view('course.index', compact('courses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments', 'categories', 'topics'));
-    }
-    public function toggleSave(Request $request, Course $course)
-    {
-        $user = $request->user();
-        if (!$user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        $isSaved = $user->savedCourses()->where('course_id', $course->id)->exists();
-
-        if ($isSaved) {
-            $user->savedCourses()->detach($course->id);
-            $action = 'Unsave Course';
-            $description = 'Menghapus course dari simpanan: ' . $course->name;
-            $saved = false;
-        } else {
-            $user->savedCourses()->attach($course->id);
-            $action = 'Save Course';
-            $description = 'Menyimpan course: ' . $course->name;
-            $saved = true;
-        }
-
-        \App\Models\ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => $action,
-            'description' => $description
-        ]);
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'saved' => $saved,
-                'message' => $saved ? 'Course berhasil disimpan' : 'Course dihapus dari simpanan'
-            ]);
-        }
-
-        return back()->with('success', $saved ? 'Course berhasil disimpan' : 'Course dihapus dari simpanan');
+        return view('course.index', compact('courses','featuredCourses', 'courseCarousels', 'learnableCourseIds', 'continueEnrollments', 'categories', 'topics'));
     }
 }

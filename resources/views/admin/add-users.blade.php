@@ -59,56 +59,78 @@
     <div class="modal-view modal fade" id="viewUserModal-{{ $user->id }}" tabindex="-1" aria-labelledby="viewUserModalLabel-{{ $user->id }}" aria-hidden="true">
         <div class="modal-dialog custom-modal">
             <div class="view-modal-user-event modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewUserModalLabel-{{ $user->id }}">Detail Users: {{ $user->name }}</h5>
+                <div class="modal-header border-bottom pb-3">
+                    <h5 class="modal-title fw-bold" id="viewUserModalLabel-{{ $user->id }}">Detail Pengguna: &nbsp;{{ $user->name }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="box-modal-view">
-                        <div class="box-view-kiri">
-                            <h5>Informasi Pengguna</h5>
-                            <img class="profile-biodata" src="{{ $user->avatar_url }}" alt="Avatar">
-                            <div class="box-biodata">
-                                <h6>{{ $user->name }}</h6>
-                                <p>{{ $user->email }}</p>
+                        {{-- Kiri: Informasi Pengguna --}}
+                        <div class="box-view-kiri text-center">
+                            <h5 class="fw-semibold mb-3" style="text-align:left;">Informasi Pengguna</h5>
+                            <img class="profile-biodata rounded-circle mb-2"
+                                src="{{ $user->avatar_url ?? 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&background=51376c&color=fff&size=120' }}"
+                                alt="Avatar" style="width:90px;height:90px;object-fit:cover;">
+                            <div class="box-biodata mt-2">
+                                <h6 class="fw-bold mb-1">{{ $user->name }}</h6>
+                                <p class="mb-1 text-muted" style="font-size:13px;">{{ $user->email }}</p>
+                                @if($user->phone)
+                                    <p class="mb-1" style="font-size:13px;">{{ $user->phone }}</p>
+                                @endif
                                 <br>
-                                <p>Profesi: {{ $user->profession ?? '-' }}</p>
-                                <p>Institusi: {{ $user->institution ?? '-' }}</p>
-                                <p>Bio: {{ $user->bio ?? '-' }}</p>
-                                <p>Bergabung Sejak: {{ optional($user->created_at)->translatedFormat('d F Y') }}</p>
+                                @if($user->institution)
+                                    <p class="mb-1" style="font-size:13px;">{{ $user->institution }}</p>
+                                @endif
+                                @if($user->profession)
+                                    <p class="mb-1" style="font-size:13px;">Profesi : {{ $user->profession }}</p>
+                                @endif
+                                <br>
+                                <p class="mb-0" style="font-size:13px;">Bergabung sejak</p>
+                                <p class="fw-semibold" style="font-size:13px;">{{ optional($user->created_at)->translatedFormat('d F Y') }}</p>
                             </div>
                         </div>
-                        <div class="box-view-kanan">
-                            <div class="box-total">
-                                <h5>Total Partisipasi Acara</h5>
-                                <h6>{{ $user->eventRegistrations->count() }} Acara</h6>
-                            </div>
-                            <div class="scroll-view-box">
-                                <table class="table-daftar-acara table">
-                                    <thead>
-                                        <tr>
-                                            <th style="background-color: #E4E4E6;" scope="col">Nama Acara</th>
-                                            <th style="background-color: #E4E4E6;" scope="col">Tanggal</th>
-                                            <th style="background-color: #E4E4E6;" scope="col">Kategori</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse(($user->eventRegistrations ?? collect()) as $reg)
-                                        @php($evt = $reg->event)
-                                        <tr>
-                                            <td>{{ $evt?->title ?? '-' }}</td>
-                                            <td>{{ ($evt?->start_at?->translatedFormat('d F Y')) ?? '-' }}</td>
-                                            <td>{{ (($evt?->price ?? 0) > 0) ? 'Berbayar' : 'Free' }}</td>
-                                        </tr>
-                                        @empty
-                                        <tr>
-                                            <td colspan="3" class="text-center">Belum ada partisipasi acara.</td>
-                                        </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
+
+                        {{-- Kanan: Statistik & Daftar Acara --}}
+                        <div class="box-view-kanan" style="display:flex; flex-direction:column; gap:16px;">
+                            {{-- Total Partisipasi --}}
+                            <div class="d-flex justify-content-between align-items-center p-3 border rounded-3" style="background:#fff;">
+                                <div>
+                                    <p class="mb-1 text-muted" style="font-size:13px;">Total Partisipasi Acara</p>
+                                    <h4 class="fw-bold mb-0">{{ $user->eventRegistrations->count() }}</h4>
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#6c757d" class="bi bi-calendar3" viewBox="0 0 16 16">
+                                    <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2M1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857z"/>
+                                    <path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2m3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
+                                </svg>
                             </div>
 
+                            {{-- Daftar Acara --}}
+                            <div class="border rounded-3 p-3" style="background:#fff;">
+                                <h6 class="fw-bold mb-3">Daftar Acara yang Dihadiri</h6>
+                                <div class="scroll-view-box">
+                                    <table class="table-daftar-acara table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="background-color:#E4E4E6; font-size:13px;">Nama Event</th>
+                                                <th style="background-color:#E4E4E6; font-size:13px;">Tanggal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse(($user->eventRegistrations ?? collect()) as $reg)
+                                            @php($evt = $reg->event)
+                                            <tr>
+                                                <td style="font-size:13px;">{{ $evt?->title ?? '-' }}</td>
+                                                <td style="font-size:13px;">{{ ($evt?->start_at?->translatedFormat('d F Y')) ?? '-' }}</td>
+                                            </tr>
+                                            @empty
+                                            <tr>
+                                                <td colspan="2" class="text-center text-muted" style="font-size:13px;">Belum ada partisipasi acara.</td>
+                                            </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

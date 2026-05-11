@@ -594,20 +594,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Add slide up animation
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideUp {
-        from {
-            transform: translateY(0);
-            opacity: 1;
+{
+    // Scoped block to avoid global identifier conflicts
+    const bannerStyle = document.createElement('style');
+    bannerStyle.textContent = `
+        @keyframes slideUp {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-120%);
+                opacity: 0;
+            }
         }
-        to {
-            transform: translateY(-120%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
+    `;
+    document.head.appendChild(bannerStyle);
+}
 </script>
 @endif
