@@ -681,26 +681,23 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse(($approvedEventModules ?? collect()) as $etm)
+                            @forelse(($approvedEventModules ?? collect()) as $event)
                                 <tr>
                                     <td>
                                         <div>
-                                            <h6 class="course-title">{{ Str::limit($etm->event?->title ?? '-', 48) }}</h6>
+                                            <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
                                             <div class="text-muted" style="font-size:0.72rem;">
-                                                {{ $etm->event?->jenis ?? '-' }}{{ $etm->event?->event_date ? ' • ' . $etm->event->event_date->format('d M Y') : '' }}
-                                            </div>
-                                            <div class="text-muted" style="font-size:0.7rem; margin-top:2px;">
-                                                <i class="bi bi-file-earmark me-1"></i>{{ $etm->original_name }}
+                                                {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="trainer-info">
-                                            <img src="{{ $etm->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                            <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
                                                 class="trainer-avatar">
                                             <div>
-                                                <div class="trainer-name">{{ $etm->trainer?->name ?? 'Anonim' }}</div>
-                                                <div style="font-size: 0.72rem; color:#64748b;">{{ $etm->trainer?->email }}</div>
+                                                <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
+                                                <div style="font-size: 0.72rem; color:#64748b;">{{ $event->trainer?->email }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -709,10 +706,10 @@
                                     </td>
                                     <td>
                                         <div style="font-weight: 600; color: #334155;">
-                                            {{ $etm->reviewed_at?->format('d M Y') ?? '-' }}
+                                            {{ $event->module_verified_at?->format('d M Y') ?? '-' }}
                                         </div>
                                         <div style="font-size: 0.72rem; color:#64748b;">
-                                            {{ $etm->reviewed_at?->diffForHumans() ?? '' }}
+                                            {{ $event->module_verified_at?->diffForHumans() ?? '' }}
                                         </div>
                                     </td>
                                     <td>
@@ -720,23 +717,21 @@
                                     </td>
                                     <td>
                                         @php
-                                            $eventDeadline = $etm->event?->material_deadline;
+                                            $eventDeadline = $event->material_deadline;
                                             $eventLate = $eventDeadline ? now()->gt($eventDeadline) : false;
                                         @endphp
-                                        <div style="font-weight: 600; color: #334155;">{{ $eventDeadline ? \Carbon\Carbon::parse($eventDeadline)->format('d M Y H:i') : 'Belum ditentukan' }}</div>
+                                        <div style="font-weight: 600; color: #334155;">{{ $eventDeadline ? $eventDeadline->format('d M Y H:i') : 'Belum ditentukan' }}</div>
                                         <div style="font-size: 0.72rem; color: {{ $eventLate ? '#b91c1c' : '#64748b' }};">{{ $eventLate ? 'Melewati deadline' : 'Tanpa deadline' }}</div>
                                     </td>
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="btn-action"
+                                            <a href="{{ $event->module_file_url }}" target="_blank" class="btn-action"
                                                 style="color:#166534; border-color:#bbf7d0; background:#f0fdf4;">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            @if($etm->event)
-                                                <a href="{{ route('admin.events.show', $etm->event) }}" class="btn-action">
-                                                    <i class="bi bi-arrow-right"></i>
-                                                </a>
-                                            @endif
+                                            <a href="{{ route('admin.events.show', $event) }}" class="btn-action">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>

@@ -267,12 +267,13 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const icon = btn.querySelector('i');
                     if (data.saved) {
-                        btn.textContent = 'Saved';
+                        btn.innerHTML = '<i class="bi bi-bookmark-fill me-2"></i>Saved';
                         btn.classList.remove('btn-outline-secondary');
                         btn.classList.add('btn-danger');
                     } else {
-                        btn.textContent = 'Save';
+                        btn.innerHTML = '<i class="bi bi-bookmark me-2"></i>Save Event';
                         btn.classList.remove('btn-danger');
                         btn.classList.add('btn-outline-secondary');
                     }

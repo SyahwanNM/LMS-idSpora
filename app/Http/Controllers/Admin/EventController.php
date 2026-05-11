@@ -117,12 +117,6 @@ class EventController extends Controller
             return;
         }
 
-        $hasZoomLink = !empty($event->zoom_link);
-        $hasMapLink = !empty($event->maps_url) || (!empty($event->latitude) && !empty($event->longitude));
-        $locationMode = $hasZoomLink && $hasMapLink
-            ? 'hybrid'
-            : ($hasZoomLink ? 'online' : 'offline');
-
         TrainerNotification::create([
             'trainer_id' => $trainer->id,
             'type' => 'event_invitation',
@@ -135,11 +129,6 @@ class EventController extends Controller
                 'url' => route('trainer.events.show', $event->id),
                 'invitation_status' => 'pending',
                 'invitation_source' => $source,
-                'location_mode' => $locationMode,
-                'location' => $event->location,
-                'maps_url' => $event->maps_url,
-                'zoom_link' => $event->zoom_link,
-                'vbg_path' => $event->vbg_path,
                 'due_at' => ($event->material_deadline ?: now()->addDays(7))->toIso8601String(),
                 'material_deadline' => optional($event->material_deadline)->toIso8601String(),
             ],
@@ -148,16 +137,7 @@ class EventController extends Controller
 
     public function index()
     {
-        $threshold = now()->subHours(6)->format('Y-m-d H:i:s');
-        $events = Event::query()
-            ->where(function ($q) use ($threshold) {
-                $q->whereNull('event_date')
-                    ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
-            })
-            ->latest()
-            ->paginate(10);
-        $events = Event::query()->latest()->paginate(10);
-        return view('admin.events.index', compact('events'));
+        return $this->create();
     }
 
     public function create()
@@ -169,12 +149,7 @@ class EventController extends Controller
             ->orderByDesc('created_at')
             ->paginate(10);
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()
-            ->whereNotNull('jenis')
-            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
-            ->distinct()
-            ->orderBy('jenis')
-            ->pluck('jenis');
+        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
     }
 
@@ -189,12 +164,33 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
-        // Normalize price input: allow formatted values (e.g. "1.000.000") from client-side
-        // by stripping non-digit characters so validation accepts numeric values.
-        $rawPrice = $request->input('price', null);
-        if (!is_null($rawPrice)) {
-            $clean = preg_replace('/\D/', '', (string) $rawPrice);
-            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        // Normalize price inputs (strip formatting like "1.000.000")
+        foreach (['price', 'price_offline', 'price_online'] as $field) {
+            $raw = $request->input($field, null);
+            if (!is_null($raw)) {
+                $clean = preg_replace('/\D/', '', (string) $raw);
+                $request->merge([$field => $clean === '' ? 0 : (int) $clean]);
+            }
+        }
+
+        // For hybrid events: derive base price as the minimum of offline/online
+        $locMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        if ($locMode === 'hybrid') {
+            $priceOffline = (int) $request->input('price_offline', 0);
+            $priceOnline  = (int) $request->input('price_online', 0);
+            $request->merge(['price' => min($priceOffline, $priceOnline)]);
+        }
+
+        // Derive location from place_name or location_mode if location is missing or empty
+        if (!$request->has('location') || empty($request->input('location'))) {
+            $pName = $request->input('place_name');
+            if ($locMode === 'online') {
+                $request->merge(['location' => 'Online']);
+            } elseif (!empty($pName)) {
+                $request->merge(['location' => $pName]);
+            } else {
+                $request->merge(['location' => $locMode ?: 'Online']);
+            }
         }
 
         $request->validate([
@@ -213,18 +209,20 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location_mode' => 'required|in:offline,online,hybrid',
-            'place_name' => 'nullable|string|max:255|required_if:location_mode,offline,hybrid',
-            'maps_url' => 'nullable|string|max:512|required_if:location_mode,offline,hybrid',
+            'location' => 'nullable|string|max:255',
+            'maps_url' => 'nullable|string|max:512',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'zoom_link' => 'nullable|url|max:255|required_if:location_mode,online,hybrid',
+            'zoom_link' => 'nullable|url|max:255',
             'price' => 'required|numeric|min:0',
+            'price_offline' => 'nullable|numeric|min:0',
+            'price_online' => 'nullable|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -237,37 +235,14 @@ class EventController extends Controller
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
-
-            'is_reseller_event' => 'nullable|boolean',
         ]);
 
-        // Debug: log submitted reseller inputs
-        Log::info('EventController@update submitted reseller values', [
-            'is_reseller_event_raw' => $request->input('is_reseller_event'),
-            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
-        ]);
-
-        // Debug: log submitted reseller inputs
-        Log::info('EventController@store submitted reseller values', [
-            'is_reseller_event_raw' => $request->input('is_reseller_event'),
-            'is_reseller_event_radio_raw' => $request->input('is_reseller_event_radio')
-        ]);
-
-        $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
-        $placeName = trim((string) $request->input('place_name', ''));
-
+        // Allow hybrid events: maps_url and zoom_link may both be filled.
         // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
         $mapsUrl = trim((string) $request->input('maps_url', ''));
         $zoomLink = trim((string) $request->input('zoom_link', ''));
-        if ($locationMode === 'online') {
-            $mapsUrl = '';
-        } elseif ($locationMode === 'offline') {
-            $zoomLink = '';
-        }
-
         $latitude = $mapsUrl !== '' ? $request->input('latitude') : null;
         $longitude = $mapsUrl !== '' ? $request->input('longitude') : null;
-        $locationValue = $locationMode === 'online' ? 'Online' : $placeName;
 
         // Simpan gambar ke storage
         $imagePath = $request->file('image')->store('events', 'public');
@@ -348,24 +323,26 @@ class EventController extends Controller
             'title' => $request->title,
             'speaker' => $normalizedSpeaker,
             'manage_action' => $request->manage_action,
-            'is_reseller_event' => $request->boolean('is_reseller_event'),
             'materi' => $request->materi,
             'jenis' => $request->jenis,
             'short_description' => $request->short_description,
             'description' => $request->description,
             'benefit' => $request->benefit,
             'terms_and_conditions' => $request->terms_and_conditions,
-            'location' => $locationValue,
+            'location' => $request->location,
             'maps_url' => $mapsUrl !== '' ? $mapsUrl : null,
             'latitude' => $mapsUrl !== '' ? $latitude : null,
             'longitude' => $mapsUrl !== '' ? $longitude : null,
             'zoom_link' => $zoomLink !== '' ? $zoomLink : null,
             'price' => $request->price,
+            'price_offline' => $request->price_offline ?? null,
+            'price_online' => $request->price_online ?? null,
             'discount_percentage' => $request->discount_percentage ?? 0,
             'discount_until' => $request->discount_until,
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
+            'material_deadline' => $request->material_deadline,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
@@ -390,7 +367,7 @@ class EventController extends Controller
         }
 
         // Notify about zoom link if provided
-        if (!empty($zoomLink)) {
+        if (!empty($request->zoom_link)) {
             foreach ($assignedTrainerIds as $trainerId) {
                 TrainerNotification::create([
                     'trainer_id' => (int) $trainerId,
@@ -400,7 +377,7 @@ class EventController extends Controller
                     'data' => [
                         'entity_type' => 'event',
                         'entity_id' => (int) $event->id,
-                        'zoom_link' => $zoomLink,
+                        'zoom_link' => $request->zoom_link,
                         'url' => route('trainer.events.show', $event->id),
                     ],
                     'expires_at' => now()->addDays(30),
@@ -494,12 +471,7 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
-        $jenisOptions = Event::query()
-            ->whereNotNull('jenis')
-            ->whereRaw('LOWER(jenis) <> ?', ['hbb'])
-            ->distinct()
-            ->orderBy('jenis')
-            ->pluck('jenis');
+        $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
     }
 
@@ -543,11 +515,32 @@ class EventController extends Controller
             'zoom_link' => $normalizedZoomLink,
         ]);
 
-        // Normalize price input in case client sent a formatted string (e.g. "1.000.000").
-        $rawPrice = $request->input('price', null);
-        if (!is_null($rawPrice)) {
-            $clean = preg_replace('/\D/', '', (string) $rawPrice);
-            $request->merge(['price' => $clean === '' ? 0 : (int) $clean]);
+        // Derive location for update as well
+        if (!$request->has('location') || empty($request->input('location'))) {
+            if ($normalizedLocationMode === 'online') {
+                $request->merge(['location' => 'Online']);
+            } elseif (!empty($normalizedPlaceName)) {
+                $request->merge(['location' => $normalizedPlaceName]);
+            } else {
+                $request->merge(['location' => $normalizedLocationMode ?: 'Online']);
+            }
+        }
+
+        // Normalize price inputs in case client sent formatted strings (e.g. "1.000.000").
+        foreach (['price', 'price_offline', 'price_online'] as $field) {
+            $raw = $request->input($field, null);
+            if (!is_null($raw)) {
+                $clean = preg_replace('/\D/', '', (string) $raw);
+                $request->merge([$field => $clean === '' ? 0 : (int) $clean]);
+            }
+        }
+
+        // For hybrid events: derive base price as the minimum of offline/online
+        $updateLocMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
+        if ($updateLocMode === 'hybrid') {
+            $priceOffline = (int) $request->input('price_offline', 0);
+            $priceOnline  = (int) $request->input('price_online', 0);
+            $request->merge(['price' => min($priceOffline, $priceOnline)]);
         }
 
         $request->validate([
@@ -565,18 +558,20 @@ class EventController extends Controller
             'short_description' => 'required|string',
             'description' => 'required',
             'terms_and_conditions' => 'nullable|string',
-            'location_mode' => 'required|in:offline,online,hybrid',
-            'place_name' => 'nullable|string|max:255|required_if:location_mode,offline,hybrid',
-            'maps_url' => 'nullable|string|max:512|required_if:location_mode,offline,hybrid',
+            'location' => 'nullable|string|max:255',
+            'maps_url' => 'nullable|string|max:512',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'zoom_link' => 'nullable|url|max:255|required_if:location_mode,online,hybrid',
+            'zoom_link' => 'nullable|url|max:255',
             'price' => 'required|numeric|min:0',
+            'price_offline' => 'nullable|numeric|min:0',
+            'price_online' => 'nullable|numeric|min:0',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'benefit' => 'nullable|string',
@@ -589,8 +584,6 @@ class EventController extends Controller
             'expenses.*.item' => 'nullable|string|max:255',
             'expenses.*.quantity' => 'nullable|numeric|min:0',
             'expenses.*.unit_price' => 'nullable|numeric|min:0',
-
-            'is_reseller_event' => 'nullable|boolean',
         ]);
 
         $data = $request->only([
@@ -604,40 +597,26 @@ class EventController extends Controller
             'description',
             'benefit',
             'terms_and_conditions',
+            'location',
             'maps_url',
             'latitude',
             'longitude',
             'zoom_link',
             'price',
+            'price_offline',
+            'price_online',
             'discount_percentage',
             'discount_until',
             'event_date',
             'event_time',
-            'event_time_end'
+            'event_time_end',
+            'material_deadline'
         ]);
 
-        // Determine reseller flag robustly (hidden input or radio fallback)
-        if ($request->has('is_reseller_event')) {
-            $data['is_reseller_event'] = $request->boolean('is_reseller_event');
-        } elseif ($request->has('is_reseller_event_radio')) {
-            $data['is_reseller_event'] = ((string) $request->input('is_reseller_event_radio')) === '1';
-        } else {
-            $data['is_reseller_event'] = false;
-        }
-
-        $locationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
-        $placeName = trim((string) $request->input('place_name', ''));
-
+        // Allow hybrid events: maps_url and zoom_link may both be filled.
         // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
         $mapsUrl = trim((string) $request->input('maps_url', ''));
         $zoomLink = trim((string) $request->input('zoom_link', ''));
-        if ($locationMode === 'online') {
-            $mapsUrl = '';
-        } elseif ($locationMode === 'offline') {
-            $zoomLink = '';
-        }
-
-        $data['location'] = $locationMode === 'online' ? 'Online' : $placeName;
         $data['maps_url'] = $mapsUrl !== '' ? $mapsUrl : null;
         $data['zoom_link'] = $zoomLink !== '' ? $zoomLink : null;
         $data['latitude'] = $mapsUrl !== '' ? $request->input('latitude') : null;
@@ -794,6 +773,118 @@ class EventController extends Controller
         $toHistory = is_string($prev) && str_contains($prev, '/admin/events/history');
         $route = $toHistory ? route('admin.events.history') : route('admin.add-event');
         return redirect($route)->with('success', 'Event deleted successfully!');
+    }
+
+    /**
+     * Duplicate an event: copy all content fields, reset operational docs,
+     * unpublished, no participants.
+     */
+    public function duplicate(Event $event)
+    {
+        $copy = $event->replicate([
+            'is_published', 'published_at',
+            'vbg_path', 'module_path', 'module_submission_path', 'certificate_path',
+            'material_status', 'material_approved_at', 'material_approved_by', 'material_rejection_reason',
+            'module_submitted_at', 'module_verified_at', 'module_verified_by',
+            'module_rejected_at', 'module_rejected_by', 'module_rejection_reason',
+            'attendance_qr_token', 'attendance_qr_image', 'attendance_qr_generated_at',
+        ]);
+
+        $copy->title                      = $event->title . ' (Copy)';
+        $copy->is_published               = false;
+        $copy->published_at               = null;
+        $copy->vbg_path                   = null;
+        $copy->module_path                = null;
+        $copy->module_submission_path     = null;
+        $copy->certificate_path           = null;
+        $copy->material_status            = 'pending'; // NOT NULL, reset to default
+        $copy->material_approved_at       = null;
+        $copy->material_approved_by       = null;
+        $copy->material_rejection_reason  = null;
+        $copy->module_submitted_at        = null;
+        $copy->module_verified_at         = null;
+        $copy->module_verified_by         = null;
+        $copy->module_rejected_at         = null;
+        $copy->module_rejected_by         = null;
+        $copy->module_rejection_reason    = null;
+        $copy->attendance_qr_token        = null;
+        $copy->attendance_qr_image        = null;
+        $copy->attendance_qr_generated_at = null;
+        $copy->save();
+
+        // Copy schedule items
+        foreach ($event->scheduleItems as $item) {
+            $copy->scheduleItems()->create($item->only([
+                'time_start', 'time_end', 'activity', 'speaker', 'order',
+            ]));
+        }
+
+        // Copy expenses
+        foreach ($event->expenses as $expense) {
+            $copy->expenses()->create($expense->only([
+                'item', 'quantity', 'unit_price', 'total', 'note',
+            ]));
+        }
+
+        // Auto-generate attendance QR for the duplicated event
+        $this->generateAttendanceQrForEvent($copy);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Event duplicated successfully.',
+            'data'    => ['id' => $copy->id, 'title' => $copy->title],
+        ], 201);
+    }
+
+    /**
+     * Generate attendance QR code for an event (shared helper).
+     */
+    private function generateAttendanceQrForEvent(Event $event): void
+    {
+        try {
+            $token    = bin2hex(random_bytes(16));
+            $content  = url('/events/' . $event->id . '?t=' . $token);
+            $filename = null;
+            $png      = null;
+
+            try {
+                if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                    $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
+                }
+            } catch (\Throwable $e) {
+                $png = null;
+            }
+
+            if ($png) {
+                $filename = 'events/qr/event-' . $event->id . '-qr.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
+            } else {
+                $svg = null;
+                try {
+                    if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
+                        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                    }
+                } catch (\Throwable $e) {
+                    $svg = null;
+                }
+
+                if ($svg) {
+                    $filename = 'events/qr/event-' . $event->id . '-qr.svg';
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
+                } else {
+                    $filename = 'events/qr/event-' . $event->id . '-qr.png';
+                    $placeholder = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $placeholder);
+                }
+            }
+
+            $event->attendance_qr_token        = $token;
+            $event->attendance_qr_image        = $filename;
+            $event->attendance_qr_generated_at = now();
+            $event->save();
+        } catch (\Throwable $e) {
+            // QR generation is non-critical — do not fail the request
+        }
     }
 
     /**
@@ -1359,8 +1450,8 @@ class EventController extends Controller
                     $m->status = 'settled';
                     $m->save();
 
-                    // Process Referral Commission (10%) only for reseller-enabled events
-                    if ((bool) ($event->is_reseller_event ?? false) && !empty($m->referral_code)) {
+                    // Process Referral Commission (10%)
+                    if (!empty($m->referral_code)) {
                         $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
                         if ($referrer && $referrer->id !== $m->user_id) {
                             $commissionAmount = $m->amount * 0.10; // 10% commission

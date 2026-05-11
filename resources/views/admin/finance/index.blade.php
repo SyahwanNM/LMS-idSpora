@@ -482,30 +482,145 @@
                 </div>
             </div>
 
-            <!-- Top Performers / Top Earners -->
+            <!-- Expenses Section -->
             <div class="col-lg-3">
                 <div class="stat-card">
-                    <h5 class="card-title">Top Affiliates</h5>
-                    <div class="performer-list mt-3">
-                        @forelse($topPerformers as $index => $performer)
-                            <div class="performer-item" style="padding: 8px 0;">
-                                <div class="avatar-circle-sm" style="width: 32px; height: 32px; font-size: 11px;">
-                                    {{ strtoupper(substr($performer->name, 0, 2)) }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold" style="font-size: 11px;">{{ $performer->name }}</div>
-                                    <div class="text-success" style="font-size: 10px;">Rp {{ number_format($performer->total_commission / 1000, 0, ',', '.') }}k</div>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-muted small italic">Belum ada data.</p>
-                        @endforelse
-                    </div>
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-light w-100 rounded-pill small fw-bold py-1" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#exportModal">
-                            <i class="bi bi-download me-1"></i> Ekspor
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Daftar Pengeluaran</h5>
+                        <button class="btn btn-sm btn-outline-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#expenseModal">
+                            <i class="bi bi-plus"></i>
                         </button>
                     </div>
+                    <div class="performer-list mt-3">
+                        @php
+                            $recentExpenses = \App\Models\Expense::latest('expense_date')->limit(4)->get();
+                        @endphp
+                        @forelse($recentExpenses as $expense)
+                            <div class="performer-item" style="padding: 8px 0;">
+                                <div class="avatar-circle-sm" style="width: 32px; height: 32px; font-size: 11px; background: #FFF0F0; color: #D93F3F;">
+                                    <i class="bi bi-arrow-down-right"></i>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div class="fw-bold" style="font-size: 11px;">{{ $expense->description }}</div>
+                                    <div class="text-muted" style="font-size: 9px;">{{ $expense->expense_date->format('d M Y') }}</div>
+                                </div>
+                                <div class="text-danger fw-bold" style="font-size: 10px;">-Rp {{ number_format($expense->amount / 1000, 0, ',', '.') }}k</div>
+                            </div>
+                        @empty
+                            <p class="text-muted small italic">Belum ada pengeluaran.</p>
+                        @endforelse
+                    </div>
+                    <div class="mt-3 d-grid gap-2">
+                        <button type="button" class="btn btn-primary rounded-pill small fw-bold py-2" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#expenseModal">
+                            <i class="bi bi-plus-circle me-1"></i> Catat Pengeluaran
+                        </button>
+                        <button type="button" class="btn btn-outline-dark rounded-pill small fw-bold py-2" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#trainerPaymentModal">
+                            <i class="bi bi-person-check me-1"></i> Input Gaji Trainer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Modal -->
+        <div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow">
+                    <form action="{{ route('admin.finance.store-expense') }}" method="POST">
+                        @csrf
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold">Catat Pengeluaran Baru</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Keterangan Pengeluaran</label>
+                                <input type="text" name="description" class="form-control rounded-3" placeholder="Contoh: Sewa Server" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Kategori</label>
+                                <select name="category" class="form-select rounded-3">
+                                    <option value="Operasional">Operasional</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Tools">Tools/Software</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Nominal (Rp)</label>
+                                    <input type="number" name="amount" class="form-control rounded-3" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Tanggal</label>
+                                    <input type="date" name="expense_date" class="form-control rounded-3" value="{{ date('Y-m-d') }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">Simpan Pengeluaran</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trainer Payment Modal -->
+        <div class="modal fade" id="trainerPaymentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-4 shadow">
+                    <form action="{{ route('admin.finance.store-trainer-payment') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold">Kirim Gaji & Nota Trainer</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Pilih Trainer</label>
+                                <select name="trainer_id" class="form-select rounded-3" required>
+                                    @foreach(\App\Models\User::where('role', 'trainer')->get() as $trainer)
+                                        <option value="{{ $trainer->id }}">{{ $trainer->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Bulan</label>
+                                    <select name="month" class="form-select rounded-3">
+                                        @foreach(range(1, 12) as $m)
+                                            <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Tahun</label>
+                                    <input type="number" name="year" class="form-control rounded-3" value="{{ date('Y') }}" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Nominal Gaji (Rp)</label>
+                                <input type="number" name="amount" class="form-control rounded-3" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Upload Nota Gaji (PDF/Image)</label>
+                                <input type="file" name="salary_slip" class="form-control rounded-3">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Upload Bukti Transfer (Image)</label>
+                                <input type="file" name="proof_of_payment" class="form-control rounded-3">
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label small fw-bold">Catatan Pendek</label>
+                                <textarea name="note" class="form-control rounded-3" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">Kirim Gaji</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

@@ -141,6 +141,22 @@
         .save-btn {
             transition: all 0.2s ease;
         }
+
+        /* Hilangkan kotak kuning pada hover carousel control */
+        .carousel-control-prev,
+        .carousel-control-next {
+            background: transparent !important;
+            border: none !important;
+            width: 10% !important;
+            transition: opacity 0.3s ease !important;
+        }
+
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            background: transparent !important;
+            transform: none !important;
+            opacity: 0.8 !important;
+        }
     </style>
 </head>
 
@@ -224,6 +240,9 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
+            
+
+
 
 
 
@@ -260,7 +279,15 @@
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
-                                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
+                                                            @php
+                                                                $cMedia = $course->card_thumbnail ?? $course->media;
+                                                                if ($cMedia) {
+                                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
+                                                                } else {
+                                                                    $imgSrc = asset('aset/poster.png');
+                                                                }
+                                                            @endphp
+                                                            <img src="{{ $imgSrc }}"
                                                                 class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
                                                         <h6 class="fw-semibold mb-0"
@@ -287,16 +314,28 @@
                                                             ? route('course.learn', $course->id) . '?module=' . $nextModuleId
                                                             : route('course.learn', $course->id);
                                                     @endphp
-                                                    
-                                                    <a href="{{ $continueUrl }}"
-                                                        class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                                        style="width: 36px; height: 36px; background-color: var(--navy);">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                            fill="currentColor" viewBox="0 0 16 16">
-                                                            <path
-                                                                d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                                                        </svg>
-                                                    </a>
+                                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                                        @if($progress >= 100)
+                                                            <a href="{{ route('course.certificates.download', [$course->id, $enrollment->id]) }}" 
+                                                                class="btn btn-sm btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                                style="width: 36px; height: 36px;" title="Download Sertifikat">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                                                </svg>
+                                                            </a>
+                                                        @endif
+
+                                                        <a href="{{ $continueUrl }}"
+                                                            class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                            style="width: 36px; height: 36px; background-color: var(--navy);" title="Lanjutkan Belajar">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                                fill="currentColor" viewBox="0 0 16 16">
+                                                                <path
+                                                                    d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                                            </svg>
+                                                        </a>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -325,7 +364,15 @@
                                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
-                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
+                                            @php
+                                                $cMedia = $course->card_thumbnail ?? $course->media;
+                                                if ($cMedia) {
+                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
+                                                } else {
+                                                    $imgSrc = 'https://via.placeholder.com/280x160';
+                                                }
+                                            @endphp
+                                            <img src="{{ $imgSrc }}"
                                                 class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
                                             <span
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
@@ -337,8 +384,11 @@
                                                 data-save-url="{{ route('courses.save', $course) }}"
                                                 onclick="event.stopPropagation(); toggleSaveCourse(this)"
                                                 style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                @php
+                                                    $isSaved = !empty($course->is_saved);
+                                                @endphp
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
                                         </div>
@@ -436,8 +486,11 @@
                                                     data-save-url="{{ route('events.save', $event) }}"
                                                     onclick="event.stopPropagation(); toggleSaveEvent(this)"
                                                     style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                @php
+                                                    $isSaved = !empty($event->is_saved);
+                                                @endphp
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
                                     </div>
@@ -527,17 +580,34 @@
                                         <div
                                             class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
                                             <div class="d-flex flex-column">
-                                                @if($event->price == 0)
-                                                <span
-                                                    style="color: #198754; font-weight:700; font-size:16px;">Free</span>
+                                                @php
+                                                    $isHybridCard = !empty($event->maps_url) && !empty($event->zoom_link)
+                                                                    && ($event->price_offline > 0 || $event->price_online > 0);
+                                                    $discountPctCard = ($event->discount_percentage > 0 && $event->hasDiscount())
+                                                                       ? (float) $event->discount_percentage : 0.0;
+                                                @endphp
+                                                @if($isHybridCard)
+                                                    @php
+                                                        $offFinal = $discountPctCard > 0 ? round((float)$event->price_offline * (1 - $discountPctCard/100)) : (float)$event->price_offline;
+                                                        $onFinal  = $discountPctCard > 0 ? round((float)$event->price_online  * (1 - $discountPctCard/100)) : (float)$event->price_online;
+                                                    @endphp
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <span style="font-size:0.65rem;font-weight:600;padding:1px 6px;border-radius:20px;background:#e8f4fd;color:#1565c0;border:1px solid #90caf9;white-space:nowrap;">Offline</span>
+                                                            <span style="color:var(--navy);font-weight:700;font-size:14px;">{{ $offFinal > 0 ? 'Rp '.number_format($offFinal,0,',','.') : 'Free' }}</span>
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <span style="font-size:0.65rem;font-weight:600;padding:1px 6px;border-radius:20px;background:#fce4ec;color:#c62828;border:1px solid #f48fb1;white-space:nowrap;">Online</span>
+                                                            <span style="color:var(--navy);font-weight:700;font-size:14px;">{{ $onFinal > 0 ? 'Rp '.number_format($onFinal,0,',','.') : 'Free' }}</span>
+                                                        </div>
+                                                    </div>
+                                                @elseif($event->price == 0)
+                                                    <span style="color: #198754; font-weight:700; font-size:16px;">Free</span>
                                                 @else
-                                                @if($event->original_price && $event->original_price > $event->price)
-                                                <span
-                                                    style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
-                                                    {{ number_format($event->original_price, 0, ',', '.') }}</span>
-                                                @endif
-                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
-                                                    {{ number_format($event->price, 0, ',', '.') }}</span>
+                                                    @if($event->original_price && $event->original_price > $event->price)
+                                                        <span style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp {{ number_format($event->original_price, 0, ',', '.') }}</span>
+                                                    @endif
+                                                    <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp {{ number_format($event->price, 0, ',', '.') }}</span>
                                                 @endif
                                             </div>
                                             <a href="{{ route('events.show', $event->id) }}"
@@ -576,8 +646,7 @@
                             @php
                                 $today = \Carbon\Carbon::now();
                                 $daysToShow = 5;
-                                // Prepare unique dates that have events for the user
-                                $eventDates = $userEvents->pluck('event_date')->map(function($date) {
+                                $eventDates = $userRegistrations->pluck('event.event_date')->map(function($date) {
                                     return $date ? (\Carbon\Carbon::parse($date)->format('Y-m-d')) : null;
                                 })->filter()->unique()->toArray();
                             @endphp
@@ -610,26 +679,25 @@
                                 $defaultStyle = ['icon' => 'bi-calendar-event', 'bg' => '#f3f4f6', 'color' => '#6b7280'];
                             @endphp
 
-                            @forelse($userEvents as $userEv)
+                            @forelse($userRegistrations as $registration)
                                 @php
+                                    $userEv = $registration->event;
                                     $style = $eventStyles[strtoupper($userEv->jenis)] ?? $defaultStyle;
                                     $evDate = $userEv->event_date ? $userEv->event_date->format('d M Y') : 'TBA';
                                     $evTime = $userEv->event_time ? (\Carbon\Carbon::parse($userEv->event_time)->format('H:i')) : 'TBA';
                                 @endphp
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                        style="width: 45px; height: 45px; background-color: {{ $style['bg'] }}; color: {{ $style['color'] }};">
-                                        <i class="bi {{ $style['icon'] }}" style="font-size: 20px;"></i>
-                                    </div>
+                                <div class="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
                                     <div class="flex-grow-1 min-w-0">
                                         <h6 class="fw-bold mb-0 text-truncate" style="font-size: 14px;">{{ $userEv->title }}</h6>
                                         <small class="text-muted d-block text-truncate" style="font-size: 11px;">
                                             {{ $evDate }} • {{ $evTime }} WIB
                                         </small>
                                     </div>
-                                    <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0;">
-                                        <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
-                                    </a>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             @empty
                                 <div class="text-center py-4">
@@ -662,6 +730,7 @@
                         </div>
                     </div>
 
+                    @if($popularTopics->count() > 0)
                     {{-- /* Sidebar - Topik Populer */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -672,7 +741,7 @@
                         </div>
 
                         <div class="d-flex flex-column gap-3">
-                            @forelse($popularTopics as $index => $topic)
+                            @foreach($popularTopics as $index => $topic)
                                 @php
                                     $name = strtolower($topic->name ?? '');
                                     if (str_contains($name, 'design') || str_contains($name, 'ui') || str_contains($name, 'ux') || str_contains($name, 'art')) {
@@ -714,13 +783,10 @@
                                         <i class="bi bi-chevron-right" style="font-size: 14px;"></i>
                                     </div>
                                 </a>
-                            @empty
-                                <div class="text-center py-3">
-                                    <small class="text-muted">No topic data available.</small>
-                                </div>
-                            @endforelse
+                            @endforeach
                         </div>
                     </div>
+                    @endif
 
                         </div>
                     </div>
@@ -730,6 +796,8 @@
             </div>
         {{-- </div> --}}
     </main>
+
+
 
     @include('partials.footer-after-login')
 
@@ -762,7 +830,7 @@
                 data: {
                     labels: initialLabels,
                     datasets: [{
-                        label: 'Jam Belajar',
+                        label: 'Waktu Belajar',
                         data: initialDataValues,
                         backgroundColor: toBackgroundColors(initialDataValues),
                         borderRadius: 8, // Membuat sudut bar membulat
@@ -784,7 +852,7 @@
                             displayColors: false,
                             callbacks: {
                                 label: function (context) {
-                                    return context.raw + ' Jam';
+                                    return context.raw + ' Menit';
                                 }
                             }
                         }
@@ -800,7 +868,9 @@
                             },
                             ticks: {
                                 font: { family: 'Poppins', size: 10 },
-                                color: '#94a3b8'
+                                color: '#94a3b8',
+                                precision: 0, // Memastikan angka bulat untuk menit
+                                stepSize: 1 // Minimal lompatan 1 menit
                             }
                         },
                         x: {
@@ -886,12 +956,16 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        btn.style.color = '#ef4444';
+                        svg.setAttribute('fill', '#dc3545');
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
-                        btn.style.color = '#64748b';
+                        svg.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
                     }
                 }
             })
@@ -928,12 +1002,16 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        btn.style.color = '#ef4444';
+                        svg.setAttribute('fill', '#dc3545');
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
-                        btn.style.color = '#64748b';
+                        svg.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
                     }
                 }
             })
@@ -946,27 +1024,6 @@
             });
         }
     </script>
-
-<style>
-    .carousel-control-prev,
-    .carousel-control-next {
-        display: none !important;
-    }
-    .carousel-indicators [data-bs-target] {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background-color: #f4c430;
-        opacity: 0.5;
-        transition: opacity 0.2s;
-        border: none;
-        margin: 0 4px;
-    }
-    .carousel-indicators .active {
-        opacity: 1;
-        background-color: #51376c;
-    }
-</style>
 </body>
 
 </html>

@@ -370,7 +370,7 @@
             </button>
           </div>
           <small class="file-hint mt-2">
-            Minimum 8 characters, containing uppercase letters (A-Z), numbers (0-9), and symbols (!@#$%).
+            Minimal 8 karakter, mengandung huruf besar (A-Z), angka (0-9), dan simbol (!@#$%).
           </small>
         </div>
 

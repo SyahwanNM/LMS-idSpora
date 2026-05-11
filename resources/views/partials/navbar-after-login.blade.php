@@ -17,7 +17,9 @@
             </button>
 
             <!-- Burger Menu Toggler -->
-            <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler">
+            <button class="navbar-toggler border-0 p-0 collapsed" type="button" id="burgerToggler" 
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"
+                    style="z-index: 2001;">
                 <div class="burger-icon">
                     <span></span>
                     <span></span>
@@ -202,19 +204,16 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     color: #fff !important; /* Force global text color to white */
 }
 
-/* Fix Tailwind Conflict for Bootstrap Collapse */
+/* Fix Tailwind/Global Conflict for Bootstrap Collapse */
 .premium-nav .collapse.navbar-collapse {
-    display: none; /* Default Bootstrap behavior */
     visibility: visible !important;
 }
 
-.premium-nav .collapse.navbar-collapse.show {
-    display: block !important;
-}
-
+/* Ensure Desktop Layout */
 @media (min-width: 992px) {
     .premium-nav .collapse.navbar-collapse {
         display: flex !important;
+        flex-basis: auto;
     }
 }
 
@@ -402,27 +401,6 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     overflow: hidden;
 }
 
-/* Notification item expand/collapse */
-/* Prevent Bootstrap active/focus from turning items white */
-.notification-dropdown-premium .dropdown-item,
-.notification-dropdown-premium .dropdown-item:hover,
-.notification-dropdown-premium .dropdown-item:focus,
-.notification-dropdown-premium .dropdown-item:focus-visible,
-.notification-dropdown-premium .dropdown-item:active,
-.notification-dropdown-premium .dropdown-item.active {
-    background: transparent !important;
-    color: inherit !important;
-}
-
-.notification-dropdown-premium .dropdown-item:focus {
-    outline: none;
-    box-shadow: none !important;
-}
-
-.js-notif-item .notif-message-full {
-    white-space: pre-line;
-}
-
 .dropdown-header-premium {
     background: rgba(255, 255, 255, 0.03);
     padding: 1rem 1.2rem;
@@ -437,6 +415,7 @@ PREMIUM DESIGN SYSTEM - AUTH NAVBAR
     height: 18px;
     position: relative;
     cursor: pointer;
+    z-index: 2000;
 }
 
 .burger-icon span {
@@ -621,29 +600,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (navCollapseEl && burgerToggler) {
         // Safe Check for Bootstrap
-        const getBootstrap = () => window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
+        const getBootstrap = () => {
+            if (window.bootstrap) return window.bootstrap;
+            if (typeof bootstrap !== 'undefined') return bootstrap;
+            return null;
+        };
         
+        let _navbarInitialized = false;
         const initNavbar = () => {
+            if (_navbarInitialized) return;
             const bs = getBootstrap();
-            if (!bs) return;
+            if (!bs || !bs.Collapse) return;
+            _navbarInitialized = true;
 
             const bsNav = new bs.Collapse(navCollapseEl, { toggle: false });
 
-            burgerToggler.addEventListener('click', function (e) {
+            // Manual toggle for burger because we removed data-bs-toggle to avoid conflicts
+            burgerToggler.addEventListener('click', function(e) {
                 e.preventDefault();
-                const isOpen = navCollapseEl.classList.contains('show');
-                if (isOpen) {
-                    bsNav.hide();
-                    burgerToggler.classList.add('collapsed');
-                    toggleBackdrop(false);
-                } else {
-                    if (mobileSearchExpandable && mobileSearchExpandable.classList.contains('active')) {
-                        mobileSearchExpandable.classList.remove('active');
-                    }
-                    bsNav.show();
-                    burgerToggler.classList.remove('collapsed');
-                    toggleBackdrop(true);
-                }
+                bsNav.toggle();
+            });
+
+            // Listen to Bootstrap collapse events for backdrop and icon animation
+            navCollapseEl.addEventListener('show.bs.collapse', function () {
+                burgerToggler.classList.remove('collapsed');
+                burgerToggler.setAttribute('aria-expanded', 'true');
+                toggleBackdrop(true);
+            });
+
+            navCollapseEl.addEventListener('hide.bs.collapse', function () {
+                burgerToggler.classList.add('collapsed');
+                burgerToggler.setAttribute('aria-expanded', 'false');
+                toggleBackdrop(false);
             });
 
             if (mobileSearchBtn && mobileSearchExpandable) {
@@ -651,7 +639,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     bsNav.hide();
                     burgerToggler.classList.add('collapsed');
                     mobileSearchExpandable.classList.add('active');
-                    document.getElementById('mobileSearchInput').focus();
+                    const inputEl = document.getElementById('mobileSearchInput');
+                    if (inputEl) inputEl.focus();
                     toggleBackdrop(true);
                 });
 
@@ -664,29 +653,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             backdrop.addEventListener('click', () => {
-                const navCollapseEl = document.getElementById('navbarSupportedContent');
-                const burgerToggler = document.getElementById('burgerToggler');
-                const mobileSearchExpandable = document.getElementById('mobileSearchExpandable');
-                const bsNav = getBootstrap() ? getBootstrap().Collapse.getInstance(navCollapseEl) : null;
+                const bsInstance = bs.Collapse.getInstance(navCollapseEl);
+                if (bsInstance) bsInstance.hide();
                 
-                if (bsNav) bsNav.hide();
                 if (mobileSearchExpandable) mobileSearchExpandable.classList.remove('active');
                 if (burgerToggler) burgerToggler.classList.add('collapsed');
                 
-                // Also close our custom dropdowns
-                document.getElementById('notificationDropdown').style.display = 'none';
-                if (document.getElementById('userDropdownMenu')) document.getElementById('userDropdownMenu').style.display = 'none';
+                // Safe access to dropdowns
+                const notifD = document.getElementById('notificationDropdown');
+                const userD = document.getElementById('userDropdownMenu');
+                if (notifD) notifD.style.display = 'none';
+                if (userD) userD.style.display = 'none';
                 
                 toggleBackdrop(false);
             });
         };
 
-        // Try to init, or wait if bootstrap isn't ready
-        if (getBootstrap()) {
-            initNavbar();
-        } else {
-            window.addEventListener('load', initNavbar);
-        }
+        // Polling for bootstrap availability (more reliable for modules/CDN)
+        let _bsCheckCount = 0;
+        const _bsInterval = setInterval(() => {
+            if (getBootstrap()) {
+                clearInterval(_bsInterval);
+                initNavbar();
+            }
+            if (++_bsCheckCount > 100) clearInterval(_bsInterval); // give up after 10s
+        }, 100);
+
+        // Also check on load for insurance
+        window.addEventListener('load', initNavbar);
     }
 });
 
@@ -771,9 +765,12 @@ function toggleNotificationDropdown() {
         dropdown.style.display = 'block';
     } else {
         dropdown.style.display = 'none';
-        if (backdrop && !document.getElementById('mobileSearchExpandable').classList.contains('active')) {
-            backdrop.classList.remove('show');
-            document.body.style.overflow = '';
+        if (backdrop) {
+            const searchEl = document.getElementById('mobileSearchExpandable');
+            if (!searchEl || !searchEl.classList.contains('active')) {
+                backdrop.classList.remove('show');
+                document.body.style.overflow = '';
+            }
         }
     }
 }

@@ -13,9 +13,6 @@ class Course extends Model
         'template_id',
         'template_version',
         'trainer_id',
-        'trainer_contribution_scheme',
-        'trainer_revenue_percent',
-        'trainer_scheme_accepted_at',
         'description',
         'level',
         'status',
@@ -28,13 +25,15 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
+        'expenses_json',
         'user_id',
         'rejection_reason',
         'approved_at',
         'rejected_at',
         'approved_by',
-        'expenses_json',
-        'is_reseller_course',
+        'certificate_logo',
+        'certificate_signature',
+        'certificate_template',
     ];
 
     protected $casts = [
@@ -42,10 +41,47 @@ class Course extends Model
         'rejected_at' => 'datetime',
         'discount_start' => 'datetime',
         'discount_end' => 'datetime',
-        'trainer_scheme_accepted_at' => 'datetime',
         'expenses_json' => 'array',
-        'is_reseller_course' => 'boolean',
+        'certificate_logo' => 'array',
+        'certificate_signature' => 'array',
     ];
+
+    public function getCardThumbnailUrlAttribute(): ?string
+    {
+        return $this->buildPublicFileUrl($this->card_thumbnail);
+    }
+
+    private function buildPublicFileUrl(?string $path): ?string
+    {
+        $path = trim((string) $path);
+        if ($path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        $normalized = str_replace('\\', '/', $path);
+        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
+        $normalized = ltrim($normalized, '/');
+
+        if (str_starts_with($normalized, 'public/')) {
+            $normalized = ltrim(substr($normalized, 7), '/');
+        }
+        if (str_starts_with($normalized, 'storage/app/public/')) {
+            $normalized = ltrim(substr($normalized, 19), '/');
+        }
+
+        if (str_starts_with($normalized, 'uploads/')) {
+            return asset($normalized);
+        }
+        if (str_starts_with($normalized, 'storage/')) {
+            $normalized = ltrim(substr($normalized, 8), '/');
+        }
+
+        return asset('uploads/' . $normalized);
+    }
 
     // protected $casts = [
     //     'expenses_json' => 'array',
@@ -76,11 +112,6 @@ class Course extends Model
     public function units()
     {
         return $this->hasMany(CourseUnit::class)->orderBy('unit_no');
-    }
-
-    public function quizzes()
-    {
-        return $this->hasMany(Quiz::class, 'course_id');
     }
 
     public function certificates()
@@ -115,94 +146,43 @@ class Course extends Model
     }
 
     /**
-     * Approver relation (admin who approved/rejected)
+     * Determine if the course has an active discount.
      */
-    public function approver()
-    {
-        return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    public function getCardThumbnailUrlAttribute(): ?string
-    {
-        $thumbnail = trim((string) ($this->card_thumbnail ?? ''));
-        if ($thumbnail !== '') {
-            return $this->resolvePublicImageUrl($thumbnail);
-        }
-
-        $media = trim((string) ($this->media ?? ''));
-        $mediaType = strtolower(trim((string) ($this->media_type ?? '')));
-        if ($media !== '' && ($mediaType === 'image' || $this->looksLikeImagePath($media))) {
-            return $this->resolvePublicImageUrl($media);
-        }
-
-        return null;
-    }
-
-    private function looksLikeImagePath(string $path): bool
-    {
-        $ext = strtolower(pathinfo(parse_url($path, PHP_URL_PATH) ?? $path, PATHINFO_EXTENSION));
-        return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'], true);
-    }
-
-    private function resolvePublicImageUrl(string $path): string
-    {
-        $path = trim($path);
-        if ($path === '') {
-            return '';
-        }
-
-        if (preg_match('#^https?://#i', $path)) {
-            return $path;
-        }
-
-        $normalized = str_replace('\\', '/', $path);
-        $normalized = preg_replace('#^\./#', '', $normalized) ?? $normalized;
-        $normalized = ltrim($normalized, '/');
-
-        if (str_starts_with($normalized, 'public/')) {
-            $normalized = ltrim(substr($normalized, 7), '/');
-        }
-
-        if (str_starts_with($normalized, 'storage/')) {
-            return asset($normalized);
-        }
-
-        if (str_starts_with($normalized, 'uploads/')) {
-            return asset($normalized);
-        }
-
-        if (Storage::disk('public')->exists($normalized)) {
-            return Storage::disk('public')->url($normalized);
-        }
-
-        return asset('storage/' . $normalized);
-    }
-
     public function hasDiscount(): bool
     {
-        if (($this->discount_percent ?? 0) <= 0) {
+        if ($this->discount_percent <= 0) {
             return false;
         }
 
         $now = now();
-        if ($this->discount_start && $this->discount_start > $now) {
+        
+        if ($this->discount_start && $now->lt($this->discount_start)) {
             return false;
         }
-        if ($this->discount_end && $this->discount_end < $now) {
+        
+        if ($this->discount_end && $now->gt($this->discount_end)) {
             return false;
         }
 
         return true;
     }
 
-    public function getDiscountedPriceAttribute(): float
+    /**
+     * Get the price after discount.
+     */
+    public function getDiscountedPriceAttribute()
     {
-        $base = (float) ($this->price ?? 0);
-        if (!$this->hasDiscount()) {
-            return $base;
+        if ($this->hasDiscount()) {
+            return $this->price * (1 - ($this->discount_percent / 100));
         }
+        return $this->price;
+    }
 
-        $perc = (float) ($this->discount_percent ?? 0);
-        return max(0, $base * (1 - ($perc / 100)));
+    /**
+     * Approver relation (admin who approved/rejected)
+     */
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

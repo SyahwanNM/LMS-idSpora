@@ -792,4 +792,82 @@ class EventController extends Controller
             // QR generation is non-critical — do not fail the request
         }
     }
+
+    /**
+     * POST /api/admin/events/{event}/duplicate
+     * Menduplikasi event: menyalin semua data konten, reset dokumen operasional,
+     * status tidak publish, dan tanpa peserta.
+     */
+    public function duplicate(Event $event): JsonResponse
+    {
+        // Field konten yang disalin
+        $copy = $event->replicate([
+            // Reset: status publish
+            'is_published',
+            'published_at',
+            // Reset: dokumen operasional
+            'vbg_path',
+            'module_path',
+            'module_submission_path',
+            'certificate_path',
+            'material_status',
+            'material_approved_at',
+            'material_approved_by',
+            'material_rejection_reason',
+            'module_submitted_at',
+            'module_verified_at',
+            'module_verified_by',
+            'module_rejected_at',
+            'module_rejected_by',
+            'module_rejection_reason',
+            // Reset: QR attendance (akan di-generate ulang)
+            'attendance_qr_token',
+            'attendance_qr_image',
+            'attendance_qr_generated_at',
+        ]);
+
+        $copy->title        = $event->title . ' (Copy)';
+        $copy->is_published = false;
+        $copy->published_at = null;
+
+        // Reset semua dokumen operasional
+        $copy->vbg_path                   = null;
+        $copy->module_path                = null;
+        $copy->module_submission_path     = null;
+        $copy->certificate_path           = null;
+        $copy->material_status            = 'pending'; // NOT NULL, reset to default
+        $copy->material_approved_at       = null;
+        $copy->material_approved_by       = null;
+        $copy->material_rejection_reason  = null;
+        $copy->module_submitted_at        = null;
+        $copy->module_verified_at         = null;
+        $copy->module_verified_by         = null;
+        $copy->module_rejected_at         = null;
+        $copy->module_rejected_by         = null;
+        $copy->module_rejection_reason    = null;
+        $copy->attendance_qr_token        = null;
+        $copy->attendance_qr_image        = null;
+        $copy->attendance_qr_generated_at = null;
+
+        $copy->save();
+
+        // Salin schedule items
+        foreach ($event->scheduleItems as $item) {
+            $copy->scheduleItems()->create($item->only([
+                'time_start', 'time_end', 'activity', 'speaker', 'order',
+            ]));
+        }
+
+        // Salin expenses
+        foreach ($event->expenses as $expense) {
+            $copy->expenses()->create($expense->only([
+                'item', 'quantity', 'unit_price', 'total', 'note',
+            ]));
+        }
+
+        // Generate QR attendance baru untuk event duplikat
+        $this->generateAttendanceQr($copy);
+
+        return $this->jsonSuccess('Event berhasil diduplikasi.', $copy->fresh(), null, 201);
+    }
 }

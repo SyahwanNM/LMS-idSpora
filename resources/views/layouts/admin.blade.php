@@ -54,10 +54,16 @@
                         <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
                     </li>
                     @endif
+                    @unless(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*') || request()->routeIs('admin.reports'))
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
+                    </li>
+                    @endunless
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
-                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
                                 <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                             </span>
@@ -135,116 +141,117 @@
     
     <script>
     document.addEventListener('DOMContentLoaded', function(){
-        // Ensure dropdown initialization even if other scripts errored earlier
-        var trigger = document.getElementById('adminProfileDropdown');
-        if (trigger && window.bootstrap && bootstrap.Dropdown) {
-            try { new bootstrap.Dropdown(trigger, { autoClose: 'outside' }); } catch(e){}
-            // Defensive: manually toggle on click if data-api missed
-            trigger.addEventListener('click', function(ev){ try {
-                const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside' });
-                dd.toggle();
-                // Fallback: force show if still hidden
-                const menu = document.querySelector('ul.profile-dropdown.dropdown-menu');
-                if(menu && !menu.classList.contains('show')){
-                    menu.classList.add('show');
-                    menu.style.display = 'block';
-                    trigger.setAttribute('aria-expanded', 'true');
-                }
-            } catch(e){} });
-
-            // Close button in dropdown
-            document.querySelectorAll('.dropdown-close').forEach(function(btn){
-                btn.addEventListener('click', function(ev){
-                    ev.preventDefault(); ev.stopPropagation();
-                    try {
-                        const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside', display: 'static' });
-                        dd.hide();
-                    } catch(e){}
-                });
-            });
-        }
-        // Auto-show any server-rendered Bootstrap toasts (flash messages)
-        try {
-            document.querySelectorAll('.toast').forEach(function(t){
-                try {
-                    if(window.bootstrap && bootstrap.Toast){
-                        var inst = bootstrap.Toast.getOrCreateInstance(t);
-                        inst.show();
-                    }
-                } catch(e) {}
-            });
-        } catch(e) {}
-        
-        // Logout confirmation (modern modal)
+        const trigger = document.getElementById('adminProfileDropdown');
         const logoutTrigger = document.getElementById('logoutTrigger');
         const logoutForm = document.getElementById('logoutForm');
         const modalEl = document.getElementById('confirmLogoutModal');
-        if (logoutTrigger && logoutForm && modalEl && window.bootstrap && bootstrap.Modal) {
-            const confirmModal = new bootstrap.Modal(modalEl);
 
-            const initialBodyHtml = modalEl.querySelector('.modal-body')?.innerHTML || '';
-            const initialBodyClass = modalEl.querySelector('.modal-body')?.className || '';
-            const initialFooterHtml = modalEl.querySelector('.modal-footer')?.innerHTML || '';
-            const initialFooterDisplay = modalEl.querySelector('.modal-footer')?.style.display || '';
+        const getBootstrap = () => window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
 
-            function resetLogoutModal(){
-                const body = modalEl.querySelector('.modal-body');
-                const footer = modalEl.querySelector('.modal-footer');
-                if(body){
-                    body.className = initialBodyClass;
-                    body.innerHTML = initialBodyHtml;
-                }
-                if(footer){
-                    footer.style.display = initialFooterDisplay;
-                    footer.innerHTML = initialFooterHtml;
-                }
-                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
-                if(confirmBtn) confirmBtn.disabled = false;
+        let _adminInitDone = false;
+        const initAdminNavbar = () => {
+            if (_adminInitDone) return;
+            const bs = getBootstrap();
+            if (!bs || !bs.Dropdown || !bs.Modal) return;
+            _adminInitDone = true;
+
+            // 1. Profile Dropdown Logic
+            if (trigger) {
+                const dd = new bs.Dropdown(trigger, { autoClose: 'outside' });
+                trigger.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    dd.toggle();
+                });
+
+                // Close button in dropdown
+                document.querySelectorAll('.dropdown-close').forEach(function(btn){
+                    btn.addEventListener('click', function(ev){
+                        ev.preventDefault(); ev.stopPropagation();
+                        dd.hide();
+                    });
+                });
             }
 
-            logoutTrigger.addEventListener('click', function(ev){
-                ev.preventDefault();
-                resetLogoutModal();
-                confirmModal.show();
-                // focus confirm button for faster keyboard flow
-                setTimeout(function(){
-                    try { modalEl.querySelector('#logoutConfirmBtn')?.focus(); } catch(e) {}
-                }, 150);
-            });
+            // 2. Logout Modal Logic
+            if (logoutTrigger && logoutForm && modalEl) {
+                const confirmModal = new bs.Modal(modalEl);
 
-            function showLogoutSuccessState(){
-                const body = modalEl.querySelector('.modal-body');
-                const footer = modalEl.querySelector('.modal-footer');
-                if(footer) footer.style.display = 'none';
-                if(body){
-                    body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
-                    body.innerHTML = `
-                        <div class="logout-success-feedback text-center">
-                            <svg class="check-anim" viewBox="0 0 72 72" width="88" height="88" aria-hidden="true">
-                                <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
-                                <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
-                            </svg>
-                            <p class="fw-semibold mb-1 mt-3">Logout successful</p>
-                            <small class="text-muted">Redirecting...</small>
-                        </div>`;
+                const initialBodyHtml = modalEl.querySelector('.modal-body')?.innerHTML || '';
+                const initialBodyClass = modalEl.querySelector('.modal-body')?.className || '';
+                const initialFooterHtml = modalEl.querySelector('.modal-footer')?.innerHTML || '';
+                const initialFooterDisplay = modalEl.querySelector('.modal-footer')?.style.display || '';
+
+                function resetLogoutModal(){
+                    const body = modalEl.querySelector('.modal-body');
+                    const footer = modalEl.querySelector('.modal-footer');
+                    if(body){
+                        body.className = initialBodyClass;
+                        body.innerHTML = initialBodyHtml;
+                    }
+                    if(footer){
+                        footer.style.display = initialFooterDisplay;
+                        footer.innerHTML = initialFooterHtml;
+                    }
+                    const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
+                    if(confirmBtn) confirmBtn.disabled = false;
                 }
+
+                logoutTrigger.addEventListener('click', function(ev){
+                    ev.preventDefault();
+                    resetLogoutModal();
+                    confirmModal.show();
+                    setTimeout(function(){
+                        try { modalEl.querySelector('#logoutConfirmBtn')?.focus(); } catch(e) {}
+                    }, 150);
+                });
+
+                function showLogoutSuccessState(){
+                    const body = modalEl.querySelector('.modal-body');
+                    const footer = modalEl.querySelector('.modal-footer');
+                    if(footer) footer.style.display = 'none';
+                    if(body){
+                        body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
+                        body.innerHTML = `
+                            <div class="logout-success-feedback text-center">
+                                <svg class="check-anim" viewBox="0 0 72 72" width="88" height="88" aria-hidden="true">
+                                    <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
+                                    <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
+                                </svg>
+                                <p class="fw-semibold mb-1 mt-3">Logout successful</p>
+                                <small class="text-muted">Redirecting...</small>
+                            </div>`;
+                    }
+                }
+
+                modalEl.addEventListener('click', function(ev){
+                    const target = ev.target;
+                    const btn = target && (target.id === 'logoutConfirmBtn' ? target : target.closest && target.closest('#logoutConfirmBtn'));
+                    if(!btn) return;
+                    ev.preventDefault();
+                    btn.disabled = true;
+                    try { showLogoutSuccessState(); } catch(e){}
+                    setTimeout(function(){ logoutForm.submit(); }, 900);
+                });
+
+                modalEl.addEventListener('hidden.bs.modal', function(){
+                    try { resetLogoutModal(); } catch(e){}
+                });
             }
+        };
 
-            modalEl.addEventListener('click', function(ev){
-                const target = ev.target;
-                const btn = target && (target.id === 'logoutConfirmBtn' ? target : target.closest && target.closest('#logoutConfirmBtn'));
-                if(!btn) return;
-                ev.preventDefault();
-                btn.disabled = true;
-                try { showLogoutSuccessState(); } catch(e){}
-                setTimeout(function(){ logoutForm.submit(); }, 900);
-            });
+        // Polling for bootstrap
+        let _checkCount = 0;
+        const _interval = setInterval(() => {
+            if (getBootstrap() && getBootstrap().Dropdown) {
+                clearInterval(_interval);
+                initAdminNavbar();
+            }
+            if (++_checkCount > 100) clearInterval(_interval);
+        }, 100);
 
-            modalEl.addEventListener('hidden.bs.modal', function(){
-                // keep modal consistent if user closes it mid-way
-                try { resetLogoutModal(); } catch(e){}
-            });
-        }
+        window.addEventListener('load', initAdminNavbar);
+    });
+
         
         // Inactivity auto-logout (idle timeout)
         try {
@@ -404,6 +411,49 @@
             });
         } catch(e){}
     });
+
+    // Programmatic API for the new notification banner (replaces legacy Bootstrap toasts)
+    window.adminNotify = function(type, message, timeout){
+        try {
+            const kind = (type === 'error') ? 'error' : 'success';
+            const text = (message == null) ? '' : String(message);
+            const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
+
+            let wrap = document.getElementById('globalNotifications');
+            if(!wrap){
+                wrap = document.createElement('div');
+                wrap.id = 'globalNotifications';
+                wrap.className = 'global-notification';
+                wrap.setAttribute('aria-live', 'polite');
+                wrap.setAttribute('aria-atomic', 'true');
+                document.body.appendChild(wrap);
+            }
+
+            const n = document.createElement('div');
+            n.className = 'notification ' + kind;
+            n.setAttribute('role', 'status');
+            n.setAttribute('data-timeout', String(ms));
+
+            const msg = document.createElement('div');
+            msg.className = 'notif-message';
+            msg.textContent = text;
+
+            const close = document.createElement('button');
+            close.className = 'notif-close';
+            close.setAttribute('aria-label', 'Close');
+            close.type = 'button';
+            close.innerHTML = '&times;';
+
+            n.appendChild(msg);
+            n.appendChild(close);
+            wrap.appendChild(n);
+
+            const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+            close.addEventListener('click', hide);
+            setTimeout(function(){ n.classList.add('show'); }, 20);
+            setTimeout(hide, ms);
+        } catch(e){}
+    };
     </script>
 
     @yield('scripts')

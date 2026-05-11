@@ -646,7 +646,7 @@
 
                 if (currentUserReferral && code.toUpperCase() === String(currentUserReferral).trim().toUpperCase()) {
                     referralState = 'invalid';
-                    setReferralMessage('Referral code may not use your own code.', 'error');
+                    setReferralMessage('Kode referral tidak boleh menggunakan kode milik sendiri.', 'error');
                     setTotalAmount(baseAmount);
                     updatePayButtonState();
                     return;
@@ -654,7 +654,7 @@
 
                 if (!data) {
                     referralState = 'invalid';
-                    setReferralMessage('Failed to check referral code. Please try again.', 'error');
+                    setReferralMessage('Gagal memeriksa kode referral. Coba lagi.', 'error');
                     setTotalAmount(baseAmount);
                     updatePayButtonState();
                     return;
@@ -662,11 +662,11 @@
 
                 if (data.valid) {
                     referralState = 'valid';
-                    setReferralMessage(data.message || 'Referral code valid. 10% discount applied.', 'success');
+                    setReferralMessage(data.message || 'Kode referral valid. Diskon 10% diterapkan.', 'success');
                     setTotalAmount(data.final_amount || baseAmount);
                 } else {
                     referralState = 'invalid';
-                    setReferralMessage(data.message || 'Invalid referral code.', 'error');
+                    setReferralMessage(data.message || 'Kode referral tidak valid.', 'error');
                     setTotalAmount(baseAmount);
                 }
 
@@ -688,7 +688,7 @@
                 }
 
                 referralState = 'checking';
-                setReferralMessage('Checking the referral code...', 'info');
+                setReferralMessage('Memeriksa kode referral...', 'info');
                 setTotalAmount(getBaseAmount());
                 updatePayButtonState();
 
@@ -704,13 +704,13 @@
             function showPaymentValidationAlert() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 if ((!isFreeCourse) && wa.length < 8) {
-                    alert('Invalid WhatsApp number. Minimum 8 digits.');
+                    alert('Nomor WhatsApp tidak valid. Minimal 8 digit angka.');
                     try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
                     return;
                 }
 
                 if (referralInput && getReferralCode() !== '' && referralState !== 'valid') {
-                    alert('The referral code is invalid. Please check your referral code again.');
+                    alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
                     try { referralInput.focus(); } catch (_e) {}
                 }
             }

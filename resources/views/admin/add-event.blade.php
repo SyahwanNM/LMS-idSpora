@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
@@ -99,7 +99,6 @@
                                 <th>Date</th>
                                 <th>Location</th>
                                 <th>Link</th>
-                                <th>Reseller</th>
                                 <th>Documents Completion</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -163,13 +162,7 @@
                                         —
                                     @endif
                                 </td>
-                                <td>
-                                    @if((bool) ($event->is_reseller_event ?? false))
-                                        <span class="badge bg-success">Yes</span>
-                                    @else
-                                        <span class="badge bg-secondary">No</span>
-                                    @endif
-                                </td>
+                               
                                 <td>
                                     @php 
                                         $pct = $event->documents_completion_percent; 
@@ -231,6 +224,12 @@
                                         <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit">
                                             <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
                                         </a>
+                                        <button type="button" class="btn btn-outline-secondary btn-action-icon duplicate-event-btn"
+                                            data-id="{{ $event->id }}"
+                                            data-title="{{ $event->title }}"
+                                            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Duplicate">
+                                            <i class="bi bi-copy"></i><span class="visually-hidden">Duplicate</span>
+                                        </button>
                                         <button type="button" class="btn btn-outline-danger btn-action-icon"
                                             data-bs-toggle="modal" data-bs-target="#deleteEventModal"
                                             title="Delete"
@@ -818,7 +817,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="deskripsi" class="form-label fw-semibold">Description Event <span class="text-danger">*</span></label>
-                                    <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{{ old('description') }}</textarea>
+                                    <textarea name="description" id="deskripsi" class="form-control" rows="6" required>{!! old('description') !!}</textarea>
                                     <div class="form-text">Describe the event details: topic, target participants, brief agenda, and benefits.</div>
                                 </div>
                                 <div class="mb-3">
@@ -830,9 +829,9 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Start & End Time <span class="text-danger">*</span></label>
                                     <div class="d-flex align-items-center gap-2">
-                                        <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time') }}">
+                                        <input type="time" name="event_time" id="masuk1" class="form-control" required value="{{ old('event_time') }}" placeholder="00:00">
                                         <span>s/d</span>
-                                        <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}">
+                                        <input type="time" name="event_time_end" id="masuk2" class="form-control" value="{{ old('event_time_end') }}" placeholder="00:00">
                                     </div>
                                     <div class="form-text">Fill in the start time (required). End time is optional.</div>
                                 </div>
@@ -863,9 +862,28 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="hargaDisplay" class="form-label fw-semibold">Harga (Rp) <span class="text-danger">*</span></label>
-                                    <input type="text" id="hargaDisplay" class="form-control currency-input" required inputmode="numeric" placeholder="0" autocomplete="off" value="{{ number_format((int)old('price',0),0,',','.') }}">
-                                    <input type="hidden" name="price" id="harga" value="{{ (int)old('price',0) }}">
-                                    <small class="text-muted">Use only numbers. Automatically formatted.</small>
+                                    {{-- Single price (offline / online) --}}
+                                    <div id="price-single-wrap">
+                                        <input type="text" id="hargaDisplay" class="form-control currency-input" inputmode="numeric" placeholder="0" autocomplete="off" value="{{ number_format((int)old('price',0),0,',','.') }}">
+                                        <input type="hidden" name="price" id="harga" value="{{ (int)old('price',0) }}">
+                                    </div>
+                                    {{-- Hybrid: separate offline & online prices --}}
+                                    <div id="price-hybrid-wrap" class="d-none">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Offline Price (Rp)</label>
+                                                <input type="text" id="hargaOfflineDisplay" class="form-control currency-input" inputmode="numeric" placeholder="0" autocomplete="off" value="{{ number_format((int)old('price_offline',0),0,',','.') }}">
+                                                <input type="hidden" name="price_offline" id="hargaOffline" value="{{ (int)old('price_offline',0) }}">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small fw-semibold mb-1">Online Price (Rp)</label>
+                                                <input type="text" id="hargaOnlineDisplay" class="form-control currency-input" inputmode="numeric" placeholder="0" autocomplete="off" value="{{ number_format((int)old('price_online',0),0,',','.') }}">
+                                                <input type="hidden" name="price_online" id="hargaOnline" value="{{ (int)old('price_online',0) }}">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Set 0 for free. The lower price will be used as the base price.</small>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block" id="price-single-hint">Use only numbers. Automatically formatted.</small>
                                 </div>
                                 <div class="mb-3">
                                     <label for="diskon" class="form-label fw-semibold">Discount (%)</label>
@@ -917,7 +935,7 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="terms" class="form-label fw-semibold">Terms & Condition</label>
-                                    <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{{ old('terms_and_conditions') }}</textarea>
+                                    <textarea name="terms_and_conditions" id="terms" class="form-control" rows="6">{!! old('terms_and_conditions') !!}</textarea>
                                     <div class="form-text">Optional. Write rules/requirements for participants (refund, certificate terms, etc.).</div>
                                 </div>
                                 <div class="mb-3">
@@ -1033,17 +1051,19 @@
 
                     if (pct >= 100) {
                         if (body) body.innerHTML = '<p>Are you sure you want to publish this event? All documents are complete and the event will be displayed to the public shortly.</p>';
+                        if (confirmBtn) confirmBtn.style.display = '';
                     } else {
                         if (body) {
-                            var html = '<p>The document completeness for this event is not yet complete:</p><ul>';
+                            var html = '<div class="alert alert-warning"><p class="mb-2 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Document completion is not yet 100%:</p><ul class="mb-2">';
                             if (Array.isArray(missing) && missing.length) {
                                 missing.forEach(function(it){ html += '<li>' + it + '</li>'; });
                             } else {
-                                html += '<li>Some documents are not yet complete</li>';
+                                html += '<li>Some documents are still missing</li>';
                             }
-                            html += '</ul><p>Are you sure you want to publish this event?</p>';
+                            html += '</ul><p class="mb-0 small">Please complete all documents before publishing.</p></div>';
                             body.innerHTML = html;
                         }
+                        if (confirmBtn) confirmBtn.style.display = 'none';
                     }
                     pendingPublishForm = form;
                     if (publishModal) publishModal.show();
@@ -1063,6 +1083,7 @@
                         confirmBtn.classList.add('btn-danger');
                     }
                     if (body) body.innerHTML = '<p>Are you sure you want to unpublish this event? The event will no longer be visible to the public.</p>';
+                    if (confirmBtn) confirmBtn.style.display = '';
                     
                     pendingPublishForm = form;
                     if (publishModal) publishModal.show();
@@ -1297,6 +1318,20 @@
             tTriggers.forEach(el => { try { new bootstrap.Tooltip(el); } catch(_){} });
         }
 
+        // Initialize Timepicker (Flatpickr 24h)
+        window.initTimePicker = function(selector) {
+            if (!window.flatpickr) return;
+            flatpickr(selector, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                allowInput: true,
+                disableMobile: true
+            });
+        }
+        initTimePicker('.js-timepicker');
+
         // Materi autocomplete (show after 2 chars) + validation
         function setupGenericAutocomplete(inputEl, boxEl, options, invalidEl) {
             if(!inputEl || !boxEl) return;
@@ -1526,8 +1561,8 @@
             if(!placeNameGroup || !placeNameInput) return;
             const mode = String(locationModeEl?.value || '').toLowerCase();
             const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
-            const hasValue = String(placeNameInput.value || '').trim() !== '';
-            const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+            // Always show place name for offline/hybrid so user can fill it even without maps
+            const shouldShow = isOfflineHybrid;
             placeNameGroup.classList.toggle('d-none', !shouldShow);
             placeNameInput.required = shouldShow;
             if (placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
@@ -1542,15 +1577,33 @@
             if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
             if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
 
-            if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+            // Make maps_url optional, but zoom_link required if online/hybrid
+            if(mapsInput) mapsInput.required = false; 
             if(zoomInput) zoomInput.required = (isOnline || isHybrid);
 
             // Visual '*' must match the required logic.
-            if (mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+            if (mapsRequiredStar) mapsRequiredStar.style.display = 'none';
             if (zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
 
             // Hide place name by default; shown after Deteksi or if already filled
             showPlaceNameIfNeeded(false);
+
+            // Toggle hybrid price fields
+            const priceSingle = document.getElementById('price-single-wrap');
+            const priceHybrid = document.getElementById('price-hybrid-wrap');
+            const priceSingleHint = document.getElementById('price-single-hint');
+            const hargaDisplayEl = document.getElementById('hargaDisplay');
+            if (isHybrid) {
+                priceSingle?.classList.add('d-none');
+                priceHybrid?.classList.remove('d-none');
+                priceSingleHint?.classList.add('d-none');
+                if (hargaDisplayEl) hargaDisplayEl.required = false;
+            } else {
+                priceSingle?.classList.remove('d-none');
+                priceHybrid?.classList.add('d-none');
+                priceSingleHint?.classList.remove('d-none');
+                if (hargaDisplayEl) hargaDisplayEl.required = true;
+            }
 
             // If switching to Online, clear maps + coords + preview
             if(isOnline){
@@ -1864,7 +1917,6 @@
                 hargaDisplay.value = formatThousands(val); // ensure formatting
                 statusHarga.textContent = val === 0 ? 'Free' : 'Paid';
                 statusHarga.className = 'badge ' + (val === 0 ? 'bg-success' : 'bg-primary');
-
                 // Disable discount fields when price is 0
                 const diskonInput = document.getElementById('diskon');
                 const discountUntilInput = document.getElementById('discount_until');
@@ -1908,6 +1960,31 @@
             });
             updateStatus();
         }
+
+        // Hybrid price inputs: currency formatting
+        (function initHybridPriceInputs() {
+            const pairs = [
+                { display: 'hargaOfflineDisplay', hidden: 'hargaOffline' },
+                { display: 'hargaOnlineDisplay',  hidden: 'hargaOnline'  },
+            ];
+            pairs.forEach(function(p) {
+                const disp = document.getElementById(p.display);
+                const hidn = document.getElementById(p.hidden);
+                if (!disp || !hidn) return;
+                const sync = function() {
+                    const raw = unformatNumber(disp.value);
+                    disp.value = formatThousands(raw);
+                    hidn.value = raw;
+                };
+                disp.addEventListener('keydown', function(e) {
+                    const allowed = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
+                    if (allowed.includes(e.key)) return;
+                    if (!/\d/.test(e.key)) e.preventDefault();
+                });
+                disp.addEventListener('input', sync);
+                sync();
+            });
+        })();
 
         // Enable/disable discount_until based on diskon value
         const diskonInput = document.getElementById('diskon');
@@ -1994,8 +2071,8 @@
         function createScheduleRow(idx) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" /></td>
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" /></td>
+                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="00:00" /></td>
+                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="00:00" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
                 <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">
@@ -2008,6 +2085,10 @@
         function addScheduleRow() {
             const row = createScheduleRow(scheduleIndex++);
             scheduleTableBody.appendChild(row);
+            // Initialize timepicker for new row
+            if (typeof initTimePicker === 'function') {
+                initTimePicker(row.querySelectorAll('.js-timepicker'));
+            }
         }
         if (addScheduleBtn && scheduleTableBody) {
             addScheduleBtn.addEventListener('click', addScheduleRow);
@@ -2818,8 +2899,8 @@ function initEditEventLocationAndBenefits(modalEl){
         if(!placeNameGroup || !placeNameInput) return;
         const mode = String(locationModeEl?.value || '').toLowerCase();
         const isOfflineHybrid = (mode === 'offline' || mode === 'hybrid');
-        const hasValue = String(placeNameInput.value || '').trim() !== '';
-        const shouldShow = isOfflineHybrid && (forceShow || hasValue);
+        // Always show place name for offline/hybrid
+        const shouldShow = isOfflineHybrid;
         placeNameGroup.classList.toggle('d-none', !shouldShow);
         placeNameInput.required = shouldShow;
         if(placeNameRequiredStar) placeNameRequiredStar.style.display = shouldShow ? '' : 'none';
@@ -2834,12 +2915,30 @@ function initEditEventLocationAndBenefits(modalEl){
         if(mapsGroup) mapsGroup.classList.toggle('d-none', isOnline);
         if(zoomGroup) zoomGroup.classList.toggle('d-none', isOffline);
 
-        if(mapsInput) mapsInput.required = (isOffline || isHybrid);
+        // Make maps_url optional, zoom_link required if online/hybrid
+        if(mapsInput) mapsInput.required = false; 
         if(zoomInput) zoomInput.required = (isOnline || isHybrid);
-        if(mapsRequiredStar) mapsRequiredStar.style.display = (isOffline || isHybrid) ? '' : 'none';
+        if(mapsRequiredStar) mapsRequiredStar.style.display = 'none';
         if(zoomRequiredStar) zoomRequiredStar.style.display = (isOnline || isHybrid) ? '' : 'none';
 
         showPlaceNameIfNeeded(false);
+
+        // Toggle hybrid price fields
+        const priceSingle = document.getElementById('price-single-wrap');
+        const priceHybrid = document.getElementById('price-hybrid-wrap');
+        const priceSingleHint = document.getElementById('price-single-hint');
+        const hargaDisplayEl = document.getElementById('hargaDisplay');
+        if (isHybrid) {
+            priceSingle?.classList.add('d-none');
+            priceHybrid?.classList.remove('d-none');
+            priceSingleHint?.classList.add('d-none');
+            if (hargaDisplayEl) hargaDisplayEl.required = false;
+        } else {
+            priceSingle?.classList.remove('d-none');
+            priceHybrid?.classList.add('d-none');
+            priceSingleHint?.classList.remove('d-none');
+            if (hargaDisplayEl) hargaDisplayEl.required = true;
+        }
 
         if(isOnline){
             if(mapsInput) mapsInput.value = '';
@@ -3298,7 +3397,135 @@ document.addEventListener('click', async function(e){
 });
 </script>
 
+<script>
+// Duplicate event button handler — opens confirmation modal
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.duplicate-event-btn');
+    if (!btn) return;
+    e.preventDefault();
 
+    const eventId    = btn.getAttribute('data-id');
+    const eventTitle = btn.getAttribute('data-title') || 'this event';
 
+    // Populate modal
+    const titleEl = document.getElementById('duplicateEventTitle');
+    if (titleEl) titleEl.textContent = '"' + eventTitle + '"';
 
+    // Store pending data on confirm button
+    const confirmBtn = document.getElementById('duplicateConfirmBtn');
+    if (confirmBtn) {
+        confirmBtn.dataset.eventId = eventId;
+        confirmBtn.dataset.sourceBtnId = '';
+    }
 
+    // Store reference to source button for spinner restore
+    window._duplicateSourceBtn = btn;
+
+    const modalEl = document.getElementById('duplicateEventModal');
+    if (modalEl && window.bootstrap) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+});
+
+// Confirm button inside modal
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmBtn = document.getElementById('duplicateConfirmBtn');
+    if (!confirmBtn) return;
+
+    confirmBtn.addEventListener('click', function() {
+        const eventId = confirmBtn.dataset.eventId;
+        if (!eventId) return;
+
+        const modalEl = document.getElementById('duplicateEventModal');
+        if (modalEl && window.bootstrap) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+        }
+
+        const sourceBtn = window._duplicateSourceBtn;
+        if (sourceBtn) {
+            sourceBtn.disabled = true;
+            sourceBtn._originalHtml = sourceBtn.innerHTML;
+            sourceBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        }
+
+        fetch('/admin/events/' + eventId + '/duplicate', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin',
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.status === 'success') {
+                window.location.reload();
+            } else {
+                if (sourceBtn) {
+                    sourceBtn.disabled = false;
+                    sourceBtn.innerHTML = sourceBtn._originalHtml || '<i class="bi bi-copy"></i>';
+                }
+                // Show error in modal
+                const errEl = document.getElementById('duplicateErrorMsg');
+                if (errEl) {
+                    errEl.textContent = data.message || 'Failed to duplicate event. Please try again.';
+                    errEl.classList.remove('d-none');
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('duplicateEventModal')).show();
+                }
+            }
+        })
+        .catch(function() {
+            if (sourceBtn) {
+                sourceBtn.disabled = false;
+                sourceBtn.innerHTML = sourceBtn._originalHtml || '<i class="bi bi-copy"></i>';
+            }
+            const errEl = document.getElementById('duplicateErrorMsg');
+            if (errEl) {
+                errEl.textContent = 'Connection error. Please check your network and try again.';
+                errEl.classList.remove('d-none');
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('duplicateEventModal')).show();
+            }
+        });
+    });
+
+    // Clear error when modal is hidden
+    const modalEl = document.getElementById('duplicateEventModal');
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            const errEl = document.getElementById('duplicateErrorMsg');
+            if (errEl) errEl.classList.add('d-none');
+        });
+    }
+});
+</script>
+
+<!-- Duplicate Event Confirmation Modal -->
+<div class="modal fade" id="duplicateEventModal" tabindex="-1" aria-labelledby="duplicateEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-semibold" id="duplicateEventModalLabel">
+                    <i class="bi bi-copy me-2 text-secondary"></i>Duplicate Event
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="mb-1">You are about to duplicate <strong id="duplicateEventTitle"></strong>.</p>
+                <p class="text-muted small mb-3">A new event will be created with:</p>
+                <ul class="text-muted small mb-3">
+                    <li>Status set to <strong>Unpublished</strong></li>
+                    <li>No registered participants</li>
+                    <li>Operational documents reset (incomplete)</li>
+                </ul>
+                <div id="duplicateErrorMsg" class="alert alert-danger py-2 small d-none" role="alert"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="duplicateConfirmBtn">
+                    <i class="bi bi-copy me-1"></i>Duplicate
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

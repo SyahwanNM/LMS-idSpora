@@ -145,13 +145,13 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Revenue per Course Level</h4>
+                    <h4>Total Expenses</h4>
                     <h3 class="total_kenaikan" id="topLevelRevenue">
-                        Rp. {{ number_format((float)(($revenueReport['revenue_by_level'][0]['revenue_total'] ?? 0)), 0, ',', '.') }}
+                        Rp. {{ number_format((float)($revenueReport['totals']['total_expenses'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="topLevelRevenueChange">
                         @php
-                        $chg = $revenueReport['changes']['top_level_revenue'] ?? ['percent' => 0, 'direction' => 'up'];
+                        $chg = $revenueReport['changes']['total_expenses'] ?? ['percent' => 0, 'direction' => 'up'];
                         $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
@@ -170,18 +170,13 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Revenue per Module</h4>
+                    <h4>Total Profit</h4>
                     <h3 class="total_kenaikan" id="totalTransactions">
-                        @php
-                        $totalRevenue = (float)($revenueReport['totals']['total_revenue'] ?? 0);
-                        $totalTransactions = (int)($revenueReport['totals']['total_transactions'] ?? 0);
-                        $revenuePerModule = $totalTransactions > 0 ? (float) round($totalRevenue / $totalTransactions) : 0;
-                        @endphp
-                        Rp. {{ number_format($revenuePerModule, 0, ',', '.') }}
+                        Rp. {{ number_format((float)($revenueReport['totals']['total_profit'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="revenuePerModuleChange">
                         @php
-                        $chg = $revenueReport['changes']['revenue_per_module'] ?? ['percent' => 0, 'direction' => 'up'];
+                        $chg = $revenueReport['changes']['total_profit'] ?? ['percent' => 0, 'direction' => 'up'];
                         $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
@@ -318,7 +313,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Overall Rating</h6>
+                                <h6>Rating Course</h6>
                                 <h3 id="courseRating">{{ number_format((float)(data_get($growthReport, 'summary.rating_avg', 0)), 1) }} ⭐</h3>
                             </div>
                         </div>
@@ -346,6 +341,18 @@
                             </svg>
                             <input class="cari_course" id="growthSearch" type="text" placeholder="Search Courses" value="{{ $growthQuery ?? '' }}">
                         </div>
+                    </div>
+                    <div class="filter-group">
+                    <label for="filter-kelola-pertumbuhan" class="filter-label" style="margin-left: -300px;">Action Type</label>
+                    <div>
+                    <select id="filter-kelola-pertumbuhan" class="filter-input" style="min-width:130px; margin-left:-300px;">
+                        <option value="">All Type</option>
+                        <option value="high-part">High to Low Participants</option>
+                        <option value="low-part">Low to High Participants</option>
+                        <option value="high-rate">High to Low Rating</option>
+                        <option value="low-rate">Low to High Rating</option>
+                    </select>
+                    </div>
                     </div>
                     <div class="box_filter">
                         <p class="mulai_course">Month</p>
@@ -627,60 +634,74 @@
             const seriesWatch = Array.isArray(dbSeries.watch_minutes) ? dbSeries.watch_minutes : [];
             const seriesRating = Array.isArray(dbSeries.rating) ? dbSeries.rating : [];
 
+            // Initial selected month from server (1-indexed, 0 = no filter)
+            const initialMonth = @json(isset($growthMonth) && $growthMonth ? (int) explode('-', $growthMonth)[1] : 0);
+
+            const DATASET_COLORS = [
+                { border: '#4e73df', bg: 'rgba(78,115,223,0.1)',   dimBorder: 'rgba(78,115,223,0.15)',   dimBg: 'rgba(78,115,223,0.03)' },
+                { border: '#1cc88a', bg: 'rgba(28,200,138,0.1)',   dimBorder: 'rgba(28,200,138,0.15)',   dimBg: 'rgba(28,200,138,0.03)' },
+                { border: '#f6c23e', bg: 'rgba(246,194,62,0.1)',   dimBorder: 'rgba(246,194,62,0.15)',   dimBg: 'rgba(246,194,62,0.03)' },
+                { border: '#e74a3b', bg: 'rgba(231,74,59,0.1)',    dimBorder: 'rgba(231,74,59,0.15)',    dimBg: 'rgba(231,74,59,0.03)' },
+            ];
+
+            /**
+             * Build per-point colors for a dataset.
+             * highlightIdx: 0-based month index to highlight, or -1 for no highlight (all normal).
+             */
+            function buildPointColors(colorSet, highlightIdx) {
+                if (highlightIdx < 0) {
+                    // No filter — all points use normal color
+                    return { point: Array(12).fill(colorSet.border), pointBorder: Array(12).fill(colorSet.border) };
+                }
+                return {
+                    point: Array.from({ length: 12 }, (_, i) => i === highlightIdx ? colorSet.border : colorSet.dimBorder),
+                    pointBorder: Array.from({ length: 12 }, (_, i) => i === highlightIdx ? colorSet.border : colorSet.dimBorder),
+                };
+            }
+
+            function buildPointRadius(highlightIdx) {
+                if (highlightIdx < 0) return 3;
+                return Array.from({ length: 12 }, (_, i) => i === highlightIdx ? 7 : 2);
+            }
+
+            function makeDataset(label, data, colorSet, highlightIdx) {
+                const pc = buildPointColors(colorSet, highlightIdx);
+                return {
+                    label,
+                    data,
+                    borderColor: highlightIdx < 0 ? colorSet.border : colorSet.dimBorder,
+                    backgroundColor: highlightIdx < 0 ? colorSet.bg : colorSet.dimBg,
+                    pointBackgroundColor: pc.point,
+                    pointBorderColor: pc.pointBorder,
+                    pointRadius: buildPointRadius(highlightIdx),
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                };
+            }
+
+            const hlIdx = initialMonth > 0 ? initialMonth - 1 : -1;
+
             const growthChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [
-                        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-                        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-                    ],
-                    datasets: [{
-                            label: 'Total View',
-                            data: (seriesViews.length === 12 ? seriesViews : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#4e73df',
-                            backgroundColor: 'rgba(78,115,223,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Peserta',
-                            data: (seriesParticipants.length === 12 ? seriesParticipants : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#1cc88a',
-                            backgroundColor: 'rgba(28,200,138,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Waktu Tonton (Menit)',
-                            data: (seriesWatch.length === 12 ? seriesWatch : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#f6c23e',
-                            backgroundColor: 'rgba(246,194,62,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Rating Course',
-                            data: (seriesRating.length === 12 ? seriesRating : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#e74a3b',
-                            backgroundColor: 'rgba(231,74,59,0.1)',
-                            tension: 0.4
-                        }
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                    datasets: [
+                        makeDataset('Total View',           seriesViews.length === 12 ? seriesViews : Array(12).fill(0),        DATASET_COLORS[0], hlIdx),
+                        makeDataset('Peserta',              seriesParticipants.length === 12 ? seriesParticipants : Array(12).fill(0), DATASET_COLORS[1], hlIdx),
+                        makeDataset('Waktu Tonton (Menit)', seriesWatch.length === 12 ? seriesWatch : Array(12).fill(0),         DATASET_COLORS[2], hlIdx),
+                        makeDataset('Rating Course',        seriesRating.length === 12 ? seriesRating : Array(12).fill(0),       DATASET_COLORS[3], hlIdx),
                     ]
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
 
-            // Expose for the filter script (keeps style/config identical; only data changes).
+            // Expose helpers for the filter script.
             window.__growthChart = growthChart;
+            window.__growthChartHelpers = { makeDataset, buildPointColors, buildPointRadius, DATASET_COLORS };
 
         });
     </script>
@@ -1019,7 +1040,7 @@
 
             const renderRows = (rows) => {
                 if (!Array.isArray(rows) || rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Belum ada data.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No data has been entered yet.</td></tr>';
                     return;
                 }
 
@@ -1075,14 +1096,33 @@
                 const watch = Array.isArray(s.watch_minutes) ? s.watch_minutes : [];
                 const rating = Array.isArray(s.rating) ? s.rating : [];
 
-                if (views.length === 12) ch.data.datasets[0].data = views;
-                if (participants.length === 12) ch.data.datasets[1].data = participants;
-                if (watch.length === 12) ch.data.datasets[2].data = watch;
-                if (rating.length === 12) ch.data.datasets[3].data = rating;
+                // Determine which month to highlight based on the current filter input
+                const monthVal = (monthInput?.value || '').trim(); // YYYY-MM
+                let hlIdx = -1;
+                if (monthVal && /^\d{4}-\d{2}$/.test(monthVal)) {
+                    hlIdx = parseInt(monthVal.split('-')[1], 10) - 1; // 0-based
+                }
+
+                const helpers = window.__growthChartHelpers;
+                if (helpers) {
+                    const { makeDataset, DATASET_COLORS } = helpers;
+                    const newDatasets = [
+                        makeDataset('Total View',           views.length === 12 ? views : Array(12).fill(0),        DATASET_COLORS[0], hlIdx),
+                        makeDataset('Peserta',              participants.length === 12 ? participants : Array(12).fill(0), DATASET_COLORS[1], hlIdx),
+                        makeDataset('Waktu Tonton (Menit)', watch.length === 12 ? watch : Array(12).fill(0),         DATASET_COLORS[2], hlIdx),
+                        makeDataset('Rating Course',        rating.length === 12 ? rating : Array(12).fill(0),       DATASET_COLORS[3], hlIdx),
+                    ];
+                    ch.data.datasets = newDatasets;
+                } else {
+                    if (views.length === 12) ch.data.datasets[0].data = views;
+                    if (participants.length === 12) ch.data.datasets[1].data = participants;
+                    if (watch.length === 12) ch.data.datasets[2].data = watch;
+                    if (rating.length === 12) ch.data.datasets[3].data = rating;
+                }
                 ch.update();
             };
 
-            const fetchAndRender = async (period) => {
+            let fetchAndRender = async (period) => {
                 const url = new URL(apiUrl, window.location.origin);
                 url.searchParams.set('period', period);
 
@@ -1146,6 +1186,47 @@
                         console.warn(err);
                     }
                 });
+            }
+            // ── Action Type sorting filter ──────────────────────────────
+            const actionFilter = document.getElementById('filter-kelola-pertumbuhan');
+            if (actionFilter) {
+                function sortGrowthTable() {
+                    const sortVal = actionFilter.value;
+                    if (!sortVal || !tbody) return;
+
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    // Don't sort if it's the "no data" placeholder row
+                    if (rows.length <= 1 && rows[0]?.querySelectorAll('td').length <= 1) return;
+
+                    rows.sort((a, b) => {
+                        const cellsA = a.querySelectorAll('td');
+                        const cellsB = b.querySelectorAll('td');
+                        if (sortVal === 'high-part' || sortVal === 'low-part') {
+                            // Participants column is index 5
+                            const valA = parseInt(cellsA[5]?.textContent || '0', 10);
+                            const valB = parseInt(cellsB[5]?.textContent || '0', 10);
+                            return sortVal === 'high-part' ? valB - valA : valA - valB;
+                        }
+                        if (sortVal === 'high-rate' || sortVal === 'low-rate') {
+                            // Rating column is index 6
+                            const valA = parseFloat(cellsA[6]?.textContent || '0');
+                            const valB = parseFloat(cellsB[6]?.textContent || '0');
+                            return sortVal === 'high-rate' ? valB - valA : valA - valB;
+                        }
+                        return 0;
+                    });
+
+                    rows.forEach(r => tbody.appendChild(r));
+                }
+
+                actionFilter.addEventListener('change', sortGrowthTable);
+
+                // Also re-sort after data is fetched from API
+                const origFetchAndRender = fetchAndRender;
+                fetchAndRender = async (period) => {
+                    await origFetchAndRender(period);
+                    sortGrowthTable();
+                };
             }
         })();
     </script>

@@ -573,8 +573,25 @@ class PaymentController extends Controller
 
         $forceNew = (bool) $request->boolean('force_new');
 
-        $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
-        $baseAmount = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+        // Resolve base amount — for hybrid events use attendance_type to pick the right price
+        $attendanceType = strtolower(trim((string) $request->query('attendance_type', $request->input('attendance_type', 'offline'))));
+        $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link)
+                          && ($event->price_offline > 0 || $event->price_online > 0);
+
+        if ($isHybridEvent) {
+            $rawHybridPrice = $attendanceType === 'online'
+                              ? (float) ($event->price_online ?? 0)
+                              : (float) ($event->price_offline ?? 0);
+            $discountPct    = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
+                              ? (float) ($event->discount_percentage ?? 0) : 0.0;
+            $baseAmount     = $discountPct > 0
+                              ? round($rawHybridPrice * (1 - $discountPct / 100), 2)
+                              : $rawHybridPrice;
+        } else {
+            $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
+            $baseAmount  = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+        }
+
         if ($baseAmount <= 0) {
             return response()->json(['message' => 'Event gratis, tidak perlu Midtrans.'], 400);
         }
@@ -676,6 +693,7 @@ class PaymentController extends Controller
                     'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
                     'event_id' => $event->id,
                     'event_title' => $event->title,
+                    'attendance_type' => $attendanceType,
                 ]),
             ]);
             $payment->save();
@@ -697,7 +715,14 @@ class PaymentController extends Controller
                 ]
             );
 
+            Log::info('Midtrans snapParams(event)', ['params' => $snapParams]);
+
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
+            
+            Log::info('Midtrans snapToken(event) created', [
+                'order_id' => $payment->order_id,
+                'snap_token' => $snapToken
+            ]);
 
             // Persist token so user can continue when still pending
             $this->storeSnapTokenToPayment($payment, $snapToken);
@@ -803,8 +828,13 @@ class PaymentController extends Controller
                 }
             }
 
-            Log::error('Midtrans snapToken(event) failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans.'], 500);
+            Log::error('Midtrans snapToken(event) failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'event_id' => $event->id
+            ]);
+            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans: ' . $e->getMessage()], 500);
         }
     }
 
@@ -815,7 +845,7 @@ class PaymentController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return response()->json(['status' => 'error', 'code' => 401, 'message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $this->configureMidtrans();
@@ -825,7 +855,7 @@ class PaymentController extends Controller
         $hasDiscount = method_exists($course, 'hasDiscount') ? (bool) $course->hasDiscount() : false;
         $baseAmount = (float) ($hasDiscount ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
         if ($baseAmount <= 0) {
-            return response()->json(['status' => 'error', 'code' => 400, 'message' => 'Course gratis, tidak perlu Midtrans.'], 400);
+            return response()->json(['message' => 'Course gratis, tidak perlu Midtrans.'], 400);
         }
 
         $rawReferralCode = trim((string) $request->query('referral_code', $request->input('referral_code')));
@@ -836,8 +866,6 @@ class PaymentController extends Controller
             && strcasecmp($rawReferralCode, (string) $user->referral_code) === 0
         ) {
             return response()->json([
-                'status' => 'error',
-                'code' => 422,
                 'message' => 'Kode referral tidak boleh menggunakan kode milik sendiri.',
             ], 422);
         }
@@ -847,8 +875,6 @@ class PaymentController extends Controller
             : null;
         if ($rawReferralCode !== '' && (bool) ($course->is_reseller_course ?? false) && !$referrer) {
             return response()->json([
-                'status' => 'error',
-                'code' => 422,
                 'message' => 'Kode referral tidak valid.',
             ], 422);
         }
@@ -884,9 +910,6 @@ class PaymentController extends Controller
                 if ($existingToken) {
                     DB::commit();
                     return response()->json([
-                        'status' => 'success',
-                        'code' => 200,
-                        'message' => 'Token pembayaran yang sedang berjalan ditemukan.',
                         'snap_token' => $existingToken,
                         'order_id' => $payment->order_id,
                         'amount' => (int) round((float) $payment->amount),
@@ -946,15 +969,19 @@ class PaymentController extends Controller
                 ]
             );
 
+            Log::info('Midtrans snapParams(course)', ['params' => $snapParams]);
+            
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
 
+            Log::info('Midtrans courseSnapToken created', [
+                'order_id' => $payment->order_id,
+                'snap_token' => $snapToken
+            ]);
+            
             $this->storeSnapTokenToPayment($payment, $snapToken);
             DB::commit();
 
             return response()->json([
-                'status' => 'success',
-                'code' => 201,
-                'message' => 'Token pembayaran Midtrans berhasil dibuat.',
                 'snap_token' => $snapToken,
                 'order_id' => $payment->order_id,
                 'amount' => $grossAmount,
@@ -1035,9 +1062,6 @@ class PaymentController extends Controller
 
                     DB::commit();
                     return response()->json([
-                        'status' => 'success',
-                        'code' => 201,
-                        'message' => 'Token pembayaran Midtrans berhasil dibuat (retry).',
                         'snap_token' => $snapToken,
                         'order_id' => $newPayment->order_id,
                         'amount' => $grossAmount,
@@ -1050,8 +1074,13 @@ class PaymentController extends Controller
                 }
             }
 
-            Log::error('Midtrans courseSnapToken failed', ['error' => $e->getMessage()]);
-            return response()->json(['status' => 'error', 'code' => 500, 'message' => 'Gagal membuat pembayaran Midtrans.'], 500);
+            Log::error('Midtrans courseSnapToken failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'course_id' => $course->id
+            ]);
+            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans: ' . $e->getMessage()], 500);
         }
     }
 
@@ -1392,7 +1421,7 @@ class PaymentController extends Controller
     {
         $user = $request->user();
         if (!$user) {
-            return response()->json(['status' => 'error', 'code' => 401, 'message' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         $payment = ManualPayment::query()
@@ -1414,7 +1443,6 @@ class PaymentController extends Controller
                 );
 
                 if ($actualStatus !== 'pending') {
-                    // Immediately update DB — no grace period
                     $payment->status = $actualStatus;
                     $payment->save();
 
@@ -1426,18 +1454,19 @@ class PaymentController extends Controller
                         }
                     }
 
-                    $payment = null;
+                    $payment = null; // treat as no pending payment
                 }
             } catch (\Throwable $e) {
-                // 404 = order not yet charged (user hasn't opened Snap popup yet).
-                // Only expire if token is older than 24 hours.
+                // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
+                // Only expire if snap token is older than 24 hours (Midtrans token TTL).
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
                     $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours = $tokenCreatedAt
+                    $tokenAgeHours  = $tokenCreatedAt
                         ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
-                        : 25;
+                        : 0;
 
                     if ($tokenAgeHours >= 24) {
+                        // Token truly expired — mark as expired
                         $payment->status = 'expired';
                         $payment->save();
                         $reg = EventRegistration::find($payment->event_registration_id);
@@ -1447,7 +1476,7 @@ class PaymentController extends Controller
                         }
                         $payment = null;
                     }
-                    // else: token still valid (user hasn't opened popup yet), keep as pending
+                    // else: token still valid, keep as pending — do nothing
                 }
                 // Other errors: keep as pending, don't block the user
             }
@@ -1460,9 +1489,11 @@ class PaymentController extends Controller
             ->latest('id')
             ->first();
 
+        // Only treat registration as expired if Midtrans confirmed it — not just because
+        // the snap token hasn't been used yet.
         $registrationExpired = $registration && in_array($registration->status, ['expired', 'rejected'], true);
 
-        // If registration is expired, treat any pending payment as stale too
+        // If registration is truly expired and there's still a pending payment, expire it too
         if ($registrationExpired && $payment) {
             $payment->status = 'expired';
             $payment->save();
@@ -1472,9 +1503,6 @@ class PaymentController extends Controller
         $hasExpiredRegistration = $registrationExpired && !$payment;
 
         return response()->json([
-            'status' => 'success',
-            'code' => 200,
-            'message' => $payment ? 'Terdapat pending order.' : 'Tidak ada pending order.',
             'pending' => (bool) $payment,
             'order_id' => $payment?->order_id,
             'amount' => $payment ? (int) round((float) $payment->amount) : null,
@@ -1514,7 +1542,6 @@ class PaymentController extends Controller
                 );
 
                 if ($actualStatus !== 'pending') {
-                    // Immediately update DB — no grace period here
                     $payment->status = $actualStatus;
                     $payment->save();
 
@@ -1530,12 +1557,12 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    // 404 = order not yet charged (user hasn't opened Snap popup yet).
-                    // Only expire if token is older than 24 hours.
+                    // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
+                    // Only expire if snap token is older than 24 hours.
                     $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours = $tokenCreatedAt
+                    $tokenAgeHours  = $tokenCreatedAt
                         ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
-                        : 25;
+                        : 0;
 
                     if ($tokenAgeHours >= 24) {
                         $payment->status = 'expired';
@@ -1549,7 +1576,7 @@ class PaymentController extends Controller
                         }
                         $payment = null;
                     }
-                    // else: token still valid (user hasn't opened popup yet), keep as pending
+                    // else: token still valid, keep as pending
                 }
                 // Other errors: keep as pending, don't block the user
             }
@@ -1566,9 +1593,6 @@ class PaymentController extends Controller
         }
 
         return response()->json([
-            'status' => 'success',
-            'code' => 200,
-            'message' => $payment ? 'Terdapat pending order.' : 'Tidak ada pending order.',
             'pending' => (bool) $payment,
             'order_id' => $payment?->order_id,
             'amount' => $payment ? (int) round((float) $payment->amount) : null,
@@ -1643,16 +1667,14 @@ class PaymentController extends Controller
             DB::commit();
 
             return response()->json([
-                'status' => 'success',
-                'code' => 200,
-                'message' => 'Status pembayaran berhasil diperbarui.',
+                'message' => 'OK',
                 'order_id' => $orderId,
-                'payment_status' => $payment->status,
+                'status' => $payment->status,
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Midtrans refreshCoursePayment failed', ['order_id' => $orderId, 'error' => $e->getMessage()]);
-            return response()->json(['status' => 'error', 'code' => 500, 'message' => 'Gagal memeriksa status pembayaran.'], 500);
+            return response()->json(['message' => 'Gagal memeriksa status pembayaran.'], 500);
         }
     }
 

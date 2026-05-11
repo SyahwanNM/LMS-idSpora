@@ -116,7 +116,13 @@
         foreach($enrollments as $enr) {
             $course = $enr->course;
             if(!$course) continue;
-            $isCompleted = ($enr->status === 'completed') || !empty($enr->certificate_issued_at);
+            
+            // Strictly check for 100% progress
+            $isFullyCompleted = $enr->isFullyCompleted();
+            $hasCertificate = !empty($enr->certificate_issued_at);
+            
+            $isHistory = $isFullyCompleted || $hasCertificate || ($enr->status === 'completed');
+            
             $allActivities->push([
                 'type' => 'COURSE',
                 'id' => $course->id,
@@ -124,9 +130,9 @@
                 'image' => $course->card_thumbnail_url ?? 'https://via.placeholder.com/400x250',
                 'date' => $enr->enrolled_at ? $enr->enrolled_at->format('d-m-Y') : '-',
                 'description' => $course->short_description,
-                'status' => $isCompleted ? 'history' : 'ongoing',
+                'status' => $isHistory ? 'history' : 'ongoing',
                 'is_saved' => in_array($course->id, $savedCourseIds),
-                'certificate_route' => $isCompleted ? route('course.certificates.download', [$course->id, $enr->id]) : null,
+                'certificate_route' => ($isFullyCompleted || $hasCertificate) ? route('course.certificates.download', [$course->id, $enr->id]) : null,
                 'detail_route' => route('course.detail', $course->id),
                 'save_route' => route('courses.save', $course->id)
             ]);
