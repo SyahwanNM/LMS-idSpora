@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
@@ -1910,42 +1910,54 @@
             const n = Math.max(0, parseInt(num||0,10));
             return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
         }
+
+        // Helper: returns true if any active price field has value > 0
+        function hasAnyPrice() {
+            const isHybridMode = document.getElementById('price-hybrid-wrap') &&
+                                 !document.getElementById('price-hybrid-wrap').classList.contains('d-none');
+            if (isHybridMode) {
+                const offline = unformatNumber(document.getElementById('hargaOfflineDisplay')?.value || '0');
+                const online  = unformatNumber(document.getElementById('hargaOnlineDisplay')?.value  || '0');
+                return offline > 0 || online > 0;
+            }
+            return unformatNumber(document.getElementById('hargaDisplay')?.value || '0') > 0;
+        }
+
+        // Enable/disable discount input — callable from anywhere
+        function syncDiscountEnabled() {
+            const diskonInput = document.getElementById('diskon');
+            const discountUntilInput = document.getElementById('discount_until');
+            const priceExists = hasAnyPrice();
+            if (diskonInput) {
+                if (!priceExists) {
+                    diskonInput.value = 0;
+                    diskonInput.disabled = true;
+                } else {
+                    diskonInput.disabled = false;
+                }
+            }
+            if (discountUntilInput) {
+                const fpInst = discountUntilInput._flatpickr;
+                if (!priceExists) {
+                    discountUntilInput.disabled = true;
+                    discountUntilInput.value = '';
+                    if (fpInst) { fpInst.clear(); if (fpInst.altInput) fpInst.altInput.disabled = true; }
+                } else {
+                    const perc = parseInt((diskonInput?.value) || '0', 10);
+                    discountUntilInput.disabled = perc === 0;
+                    if (fpInst && fpInst.altInput) fpInst.altInput.disabled = perc === 0;
+                }
+            }
+        }
+
         if (hargaDisplay && hargaHidden && statusHarga) {
             const updateStatus = () => {
                 const val = unformatNumber(hargaDisplay.value);
-                hargaHidden.value = val; // keep hidden in sync
-                hargaDisplay.value = formatThousands(val); // ensure formatting
+                hargaHidden.value = val;
+                hargaDisplay.value = formatThousands(val);
                 statusHarga.textContent = val === 0 ? 'Free' : 'Paid';
                 statusHarga.className = 'badge ' + (val === 0 ? 'bg-success' : 'bg-primary');
-                // Disable discount fields when price is 0
-                const diskonInput = document.getElementById('diskon');
-                const discountUntilInput = document.getElementById('discount_until');
-                if(diskonInput){
-                    if(val === 0){
-                        diskonInput.value = 0;
-                        diskonInput.disabled = true;
-                    } else {
-                        diskonInput.disabled = false; // re-enable; further logic handled by its own toggle
-                    }
-                }
-                if(discountUntilInput){
-                    const fpInst = discountUntilInput._flatpickr;
-                    if(val === 0){
-                        discountUntilInput.disabled = true;
-                        discountUntilInput.value = '';
-                        if(fpInst){
-                            fpInst.clear();
-                            if(fpInst.altInput) fpInst.altInput.disabled = true;
-                        }
-                    } else {
-                        // Re-enable base input; actual enable depends on diskon > 0
-                        if(fpInst && fpInst.altInput){
-                            // altInput stays disabled until diskon > 0; will be toggled elsewhere
-                            fpInst.altInput.disabled = parseInt((diskonInput?.value)||'0',10) === 0;
-                        }
-                        discountUntilInput.disabled = parseInt((diskonInput?.value)||'0',10) === 0;
-                    }
-                }
+                syncDiscountEnabled();
             };
             // Block non digit (except control keys) and live format
             hargaDisplay.addEventListener('keydown', (e) => {
@@ -1982,8 +1994,11 @@
                     if (!/\d/.test(e.key)) e.preventDefault();
                 });
                 disp.addEventListener('input', sync);
-                sync();
-            });
+                // Trigger discount enable/disable check when hybrid price changes
+                disp.addEventListener('input', function() {
+                    syncDiscountEnabled();
+                });
+                sync();            });
         })();
 
         // Enable/disable discount_until based on diskon value
