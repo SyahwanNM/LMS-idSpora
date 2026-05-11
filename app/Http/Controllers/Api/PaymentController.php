@@ -1457,16 +1457,26 @@ class PaymentController extends Controller
                     $payment = null; // treat as no pending payment
                 }
             } catch (\Throwable $e) {
-                // 404 = never charged → expired
+                // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
+                // Only expire if snap token is older than 24 hours (Midtrans token TTL).
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
-                    $reg = EventRegistration::find($payment->event_registration_id);
-                    if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
-                        $reg->status = 'expired';
-                        $reg->save();
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours  = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 0;
+
+                    if ($tokenAgeHours >= 24) {
+                        // Token truly expired — mark as expired
+                        $payment->status = 'expired';
+                        $payment->save();
+                        $reg = EventRegistration::find($payment->event_registration_id);
+                        if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                            $reg->status = 'expired';
+                            $reg->save();
+                        }
+                        $payment = null;
                     }
-                    $payment = null;
+                    // else: token still valid, keep as pending — do nothing
                 }
                 // Other errors: keep as pending, don't block the user
             }
@@ -1479,9 +1489,11 @@ class PaymentController extends Controller
             ->latest('id')
             ->first();
 
+        // Only treat registration as expired if Midtrans confirmed it — not just because
+        // the snap token hasn't been used yet.
         $registrationExpired = $registration && in_array($registration->status, ['expired', 'rejected'], true);
 
-        // If registration is expired, treat any pending payment as stale too
+        // If registration is truly expired and there's still a pending payment, expire it too
         if ($registrationExpired && $payment) {
             $payment->status = 'expired';
             $payment->save();
@@ -1545,16 +1557,26 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
-                    if ($payment->enrollment_id) {
-                        $enr = Enrollment::find($payment->enrollment_id);
-                        if ($enr && $enr->status !== 'active') {
-                            $enr->status = 'expired';
-                            $enr->save();
+                    // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
+                    // Only expire if snap token is older than 24 hours.
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours  = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 0;
+
+                    if ($tokenAgeHours >= 24) {
+                        $payment->status = 'expired';
+                        $payment->save();
+                        if ($payment->enrollment_id) {
+                            $enr = Enrollment::find($payment->enrollment_id);
+                            if ($enr && $enr->status !== 'active') {
+                                $enr->status = 'expired';
+                                $enr->save();
+                            }
                         }
+                        $payment = null;
                     }
-                    $payment = null;
+                    // else: token still valid, keep as pending
                 }
                 // Other errors: keep as pending, don't block the user
             }

@@ -576,17 +576,34 @@
                                         <div
                                             class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
                                             <div class="d-flex flex-column">
-                                                @if($event->price == 0)
-                                                <span
-                                                    style="color: #198754; font-weight:700; font-size:16px;">Free</span>
+                                                @php
+                                                    $isHybridCard = !empty($event->maps_url) && !empty($event->zoom_link)
+                                                                    && ($event->price_offline > 0 || $event->price_online > 0);
+                                                    $discountPctCard = ($event->discount_percentage > 0 && $event->hasDiscount())
+                                                                       ? (float) $event->discount_percentage : 0.0;
+                                                @endphp
+                                                @if($isHybridCard)
+                                                    @php
+                                                        $offFinal = $discountPctCard > 0 ? round((float)$event->price_offline * (1 - $discountPctCard/100)) : (float)$event->price_offline;
+                                                        $onFinal  = $discountPctCard > 0 ? round((float)$event->price_online  * (1 - $discountPctCard/100)) : (float)$event->price_online;
+                                                    @endphp
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <span style="font-size:0.65rem;font-weight:600;padding:1px 6px;border-radius:20px;background:#e8f4fd;color:#1565c0;border:1px solid #90caf9;white-space:nowrap;">Offline</span>
+                                                            <span style="color:var(--navy);font-weight:700;font-size:14px;">{{ $offFinal > 0 ? 'Rp '.number_format($offFinal,0,',','.') : 'Free' }}</span>
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <span style="font-size:0.65rem;font-weight:600;padding:1px 6px;border-radius:20px;background:#fce4ec;color:#c62828;border:1px solid #f48fb1;white-space:nowrap;">Online</span>
+                                                            <span style="color:var(--navy);font-weight:700;font-size:14px;">{{ $onFinal > 0 ? 'Rp '.number_format($onFinal,0,',','.') : 'Free' }}</span>
+                                                        </div>
+                                                    </div>
+                                                @elseif($event->price == 0)
+                                                    <span style="color: #198754; font-weight:700; font-size:16px;">Free</span>
                                                 @else
-                                                @if($event->original_price && $event->original_price > $event->price)
-                                                <span
-                                                    style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
-                                                    {{ number_format($event->original_price, 0, ',', '.') }}</span>
-                                                @endif
-                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
-                                                    {{ number_format($event->price, 0, ',', '.') }}</span>
+                                                    @if($event->original_price && $event->original_price > $event->price)
+                                                        <span style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp {{ number_format($event->original_price, 0, ',', '.') }}</span>
+                                                    @endif
+                                                    <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp {{ number_format($event->price, 0, ',', '.') }}</span>
                                                 @endif
                                             </div>
                                             <a href="{{ route('events.show', $event->id) }}"

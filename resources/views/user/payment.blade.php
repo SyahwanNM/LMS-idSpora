@@ -937,6 +937,7 @@
 
                 window.snap.pay(data.snap_token, {
                     onSuccess: async function(){
+                        clearInterval(window._snapPollTimer);
                         try {
                             await postFinalize(data.order_id);
                         } catch(_e) {}
@@ -947,6 +948,7 @@
                         }, 1400);
                     },
                     onPending: async function(){
+                        clearInterval(window._snapPollTimer);
                         // keep as pending; user can retry later
                         try { await postFinalize(data.order_id); } catch(_e) {}
                         showAppNotify('Payment pending. Please complete the paybayaran di Midtrans.', 'info');
@@ -955,9 +957,11 @@
                         if(midtransPayBtn) midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
                     },
                     onError: function(){
+                        clearInterval(window._snapPollTimer);
                         showAppNotify('Payment failed. Please try again.', 'error');
                     },
                     onClose: async function(){
+                        clearInterval(window._snapPollTimer);
                         // Always check status when popup closes (handles timer expiry, close button, etc.)
                         midtransPayBtn.disabled = true;
                         midtransPayBtn.textContent = 'Memeriksa status...';
@@ -982,6 +986,30 @@
                         validate();
                     }
                 });
+
+                // Poll status every 5 seconds while Snap popup is open
+                // so expired/settled status is detected even if user doesn't close popup
+                clearInterval(window._snapPollTimer);
+                window._snapPollTimer = setInterval(async function() {
+                    try {
+                        const result = await postFinalize(data.order_id);
+                        if (!result) return;
+                        if (result.status === 'settled') {
+                            clearInterval(window._snapPollTimer);
+                            // Payment done — close snap and redirect
+                            if (window.snap && typeof window.snap.hide === 'function') window.snap.hide();
+                            showMidtransSuccessModal();
+                            setTimeout(function(){
+                                window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                            }, 1400);
+                        } else if (result.status === 'expired' || result.status === 'rejected') {
+                            clearInterval(window._snapPollTimer);
+                            cachedPending = null;
+                            if (window.snap && typeof window.snap.hide === 'function') window.snap.hide();
+                            window.location.href = window.location.pathname + '?force_new=1';
+                        }
+                    } catch(_e) { /* ignore poll errors */ }
+                }, 5000);
             } catch(e){
                 showAppNotify(String(e && e.message ? e.message : e), 'error');
             } finally {
