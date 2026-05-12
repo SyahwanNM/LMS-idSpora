@@ -81,6 +81,30 @@ class CRMController extends Controller
         ->limit(5)
         ->get();
 
+        // Satisfaction Data for Chart
+        $avgEventRating = Feedback::avg('rating') ?: 0;
+        $avgCourseRating = Review::avg('rating') ?: 0;
+        
+        $eventRatingDist = Feedback::select('rating', DB::raw('count(*) as count'))
+            ->groupBy('rating')
+            ->orderBy('rating', 'asc')
+            ->pluck('count', 'rating')
+            ->all();
+            
+        $courseRatingDist = Review::select('rating', DB::raw('count(*) as count'))
+            ->groupBy('rating')
+            ->orderBy('rating', 'asc')
+            ->pluck('count', 'rating')
+            ->all();
+
+        // Fill missing ratings (1-5) with 0
+        $eventRatingData = [];
+        $courseRatingData = [];
+        for($i = 1; $i <= 5; $i++) {
+            $eventRatingData[] = $eventRatingDist[$i] ?? 0;
+            $courseRatingData[] = $courseRatingDist[$i] ?? 0;
+        }
+
         return view('admin.crm.dashboard', compact(
             'totalCustomers',
             'totalResellers',
@@ -93,7 +117,11 @@ class CRMController extends Controller
             'topCustomers',
             'topEvents',
             'totalBroadcasts',
-            'totalCerts'
+            'totalCerts',
+            'avgEventRating',
+            'avgCourseRating',
+            'eventRatingData',
+            'courseRatingData'
         ));
     }
 
