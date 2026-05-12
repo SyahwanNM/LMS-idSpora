@@ -98,7 +98,9 @@ class Event extends Model
         // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
         // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
         $hasVbg = !empty($this->vbg_path);
-        $hasModule = !empty($this->module_path);
+        // Module: cek module_path ATAU approved trainer modules
+        $hasModule     = !empty($this->module_path)
+                         || $this->approvedTrainerModules()->exists();
         $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
 
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));

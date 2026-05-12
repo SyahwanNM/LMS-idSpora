@@ -897,21 +897,26 @@ class EventController extends Controller
         }
 
         // Prevent publishing if operational documents are incomplete
-        $pct = (int) $event->documents_completion_percent;
-        if ($pct < 100) {
-            // Recompute missing items similarly to admin view logic
-            $hasMapsLink = !empty($event->maps_url);
-            $hasZoomLink = !empty($event->zoom_link);
-            $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-            $hasVbg = !empty($event->vbg_path);
-            $hasModule = !empty($event->module_path);
-            $hasAbsFile = !empty($event->attendance_path);
-            $hasAbsQrImg = !empty($event->attendance_qr_image);
-            $hasAbsQrToken = !empty($event->attendance_qr_token);
-            $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+        $hasMapsLink   = !empty($event->maps_url);
+        $hasZoomLink   = !empty($event->zoom_link);
+        $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+        $requiresVbg   = !$isOfflineOnly;
+        $hasVbg        = !empty($event->vbg_path);
+        // Module: cek module_path ATAU approved trainer modules
+        $hasModule     = !empty($event->module_path)
+                         || $event->approvedTrainerModules()->exists();
+        $hasAbsFile    = !empty($event->attendance_path);
+        $hasAbsQrImg   = !empty($event->attendance_qr_image);
+        $hasAbsQrToken = !empty($event->attendance_qr_token);
+        $hasAbs        = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
 
+        $totalDocs     = $requiresVbg ? 3 : 2;
+        $doneDocs      = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+        $pct           = $totalDocs > 0 ? ($doneDocs >= $totalDocs ? 100 : (int) floor(($doneDocs / $totalDocs) * 100)) : 0;
+
+        if ($pct < 100) {
             $missing = [];
-            if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+            if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
             if (!$hasModule) $missing[] = 'Module (Trainer)';
             if (!$hasAbs) $missing[] = 'Absensi';
 

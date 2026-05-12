@@ -107,6 +107,17 @@
                             @foreach($events as $event)
                             @php $rowPct = $event->documents_completion_percent; @endphp
                             @php
+                                // Hitung rowPct konsisten dengan logika blade
+                                $rowHasMaps = !empty($event->maps_url);
+                                $rowHasZoom = !empty($event->zoom_link);
+                                $rowRequiresVbg = !($rowHasMaps && !$rowHasZoom); // VBG wajib kecuali offline-only
+                                $rowTotal = $rowRequiresVbg ? 3 : 2;
+                                $rowDone  = ($rowRequiresVbg ? (!empty($event->vbg_path) ? 1 : 0) : 0)
+                                          + (!empty($event->module_path) ? 1 : 0)
+                                          + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token)) ? 1 : 0);
+                                $rowPct = $rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 0;
+                            @endphp
+                            @php
                                 // Tentukan status event: upcoming, ongoing, finished berdasarkan tanggal mulai/selesai
                                 $start = !empty($event->start_date) ? \Carbon\Carbon::parse($event->start_date) : (!empty($event->event_date) ? \Carbon\Carbon::parse($event->event_date) : null);
                                 $end = !empty($event->end_date) ? \Carbon\Carbon::parse($event->end_date) : $start;
@@ -165,29 +176,28 @@
                                
                                 <td>
                                     @php 
-                                        $pct = $event->documents_completion_percent; 
                                         $hasMapsLink = !empty($event->maps_url);
                                         $hasZoomLink = !empty($event->zoom_link);
                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                                        $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                         $hasVbg = !empty($event->vbg_path);
                                         $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
                                         $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
-                                        // Absensi dianggap selesai jika ada file atau QR sudah aktif
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                        // Tooltip ringkas
-                                        $tooltip = $isOfflineOnly
-                                            ? 'Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
-                                            : 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
+                                        $totalDisplay = $requiresVbg ? 3 : 2;
+                                        $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        $pct = $totalDisplay > 0
+                                            ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                            : 0;
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        $totalDisplay = $isOfflineOnly ? 2 : 3;
-                                        // Tampilkan count UI (offline: tanpa VBG)
-                                        $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                        // Determine missing items for publish confirmation
+                                        $tooltip = $requiresVbg
+                                            ? 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
+                                            : 'Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $missing = [];
-                                        if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+                                        if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
                                         if (!$hasModule) $missing[] = 'Module (Trainer)';
                                         if (!$hasAbs) $missing[] = 'Absensi';
                                     @endphp
@@ -546,18 +556,19 @@
                                     $hasMapsLink = !empty($event->maps_url);
                                     $hasZoomLink = !empty($event->zoom_link);
                                     $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-                                    $requiresVbg = !$isOfflineOnly;
+                                    $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                     $hasVbg = !empty($event->vbg_path);
                                     $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
                                     $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
-                                    // Absensi: selesai jika file atau QR aktif
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
                                     $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                    $totalDisplay = $isOfflineOnly ? 2 : 3;
-                                    $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                    $pct = $event->documents_completion_percent;
+                                    $totalDisplay = $requiresVbg ? 3 : 2;
+                                    $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $pct = $totalDisplay > 0
+                                        ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                        : 0;
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
