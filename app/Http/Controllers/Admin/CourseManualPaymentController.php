@@ -122,6 +122,26 @@ class CourseManualPaymentController extends Controller
                     }
                 }
             }
+
+            // Process Trainer Revenue Share
+            if ($course->trainer_id && $course->trainer_revenue_percent > 0) {
+                $trainer = \App\Models\User::find($course->trainer_id);
+                if ($trainer) {
+                    $trainerShare = ($manualPayment->amount * $course->trainer_revenue_percent) / 100;
+                    if ($trainerShare > 0) {
+                        $trainer->increment('wallet_balance', $trainerShare);
+                        
+                        // Optional: Create a log or notification for the trainer
+                        \App\Models\TrainerNotification::create([
+                            'trainer_id' => $trainer->id,
+                            'type' => 'revenue_share',
+                            'title' => 'Pendapatan Course Baru',
+                            'message' => 'Anda menerima bagi hasil sebesar Rp ' . number_format($trainerShare, 0, ',', '.') . ' dari penjualan course: ' . $course->name,
+                            'data' => ['amount' => $trainerShare, 'course_id' => $course->id]
+                        ]);
+                    }
+                }
+            }
         }
 
         if ($manualPayment->enrollment) {

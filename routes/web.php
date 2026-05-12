@@ -479,12 +479,32 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/admin/finance', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('admin.finance.index');
+        Route::get('/admin/finance/incomes', [\App\Http\Controllers\Admin\FinanceController::class, 'incomes'])->name('admin.finance.incomes');
+        Route::post('/admin/finance/store-income', [\App\Http\Controllers\Admin\FinanceController::class, 'storeIncome'])->name('admin.finance.store-income');
+        Route::get('/admin/finance/expenses', [\App\Http\Controllers\Admin\FinanceController::class, 'expenses'])->name('admin.finance.expenses');
         Route::post('/admin/finance/expense', [\App\Http\Controllers\Admin\FinanceController::class, 'storeExpense'])->name('admin.finance.store-expense');
+        
+        // Expense Approvals
+        Route::post('/admin/finance/event-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventExpense'])->name('admin.finance.event-expense.approve');
+        Route::post('/admin/finance/event-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventExpense'])->name('admin.finance.event-expense.reject');
+        
+        Route::post('/admin/finance/trainer-payments/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveTrainerPayment'])->name('admin.finance.trainer-payment.approve');
+        Route::post('/admin/finance/trainer-payments/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectTrainerPayment'])->name('admin.finance.trainer-payment.reject');
+        
+        Route::post('/admin/finance/manual-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveExpense'])->name('admin.finance.manual-expense.approve');
+        Route::post('/admin/finance/manual-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectExpense'])->name('admin.finance.manual-expense.reject');
+        
         Route::post('/admin/finance/trainer-payment', [\App\Http\Controllers\Admin\FinanceController::class, 'storeTrainerPayment'])->name('admin.finance.store-trainer-payment');
         Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
         Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
         Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
+        Route::get('/admin/finance/trainers', [\App\Http\Controllers\Admin\FinanceController::class, 'trainers'])->name('admin.finance.trainers');
+        Route::post('/admin/finance/trainers/{id}/disburse', [\App\Http\Controllers\Admin\FinanceController::class, 'disburseCourseBalance'])->name('admin.finance.trainers.disburse');
+        Route::post('/admin/finance/events/{id}/fee-request', [\App\Http\Controllers\Admin\FinanceController::class, 'createEventFeeRequest'])->name('admin.finance.events.fee-request');
+        Route::post('/admin/finance/event-fees/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventFeePayment'])->name('admin.finance.event-fee.approve');
+        Route::post('/admin/finance/event-fees/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventFeePayment'])->name('admin.finance.event-fee.reject');
+        
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');

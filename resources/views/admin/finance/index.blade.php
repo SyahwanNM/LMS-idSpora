@@ -7,106 +7,8 @@
 @endsection
 
 @section('styles')
-<!-- Google Fonts: Inter/Roboto Style -->
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+    @include('partials.finance-styles')
 <style>
-    :root {
-        --ids-primary: #FFB703;
-        --ids-secondary: #FB8500;
-        --ids-bg: #F8F9FA;
-        --ids-card-bg: #FFFFFF;
-        --ids-text-main: #1A1D1F;
-        --ids-text-muted: #6F767E;
-        --ids-border: #EFEFEF;
-    }
-
-    body {
-        background-color: var(--ids-bg) !important;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    /* Override standard container to allow sidebar feel */
-    .finance-wrapper {
-        display: flex;
-        min-height: calc(100vh - 100px);
-        margin: 0 -12px; /* Pull out of standard container padding */
-    }
-
-    /* Sidebar-like Nav */
-    .finance-sidebar {
-        width: 240px;
-        background: #fff;
-        padding: 24px;
-        border-right: 1px solid var(--ids-border);
-        display: none; /* Hide on small screens */
-    }
-
-    @media (min-width: 992px) {
-        .finance-sidebar { display: block; }
-    }
-
-    .nav-menu-label {
-        font-size: 11px;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: var(--ids-text-muted);
-        letter-spacing: 1px;
-        margin-bottom: 16px;
-        display: block;
-    }
-
-    .sidebar-link {
-        display: flex;
-        align-items: center;
-        padding: 12px 16px;
-        color: var(--ids-text-main);
-        text-decoration: none;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin-bottom: 4px;
-        transition: all 0.2s;
-    }
-
-    .sidebar-link i {
-        font-size: 1.2rem;
-        margin-right: 12px;
-        color: var(--ids-text-muted);
-    }
-
-    .sidebar-link:hover {
-        background: #F4F4F4;
-        color: var(--ids-text-main);
-    }
-
-    .sidebar-link.active {
-        background: #FEF6E6;
-        color: var(--ids-text-main);
-    }
-
-    .sidebar-link.active i {
-        color: var(--ids-secondary);
-    }
-
-    .badge-notif {
-        background: #D93F3F;
-        color: #fff;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        margin-left: auto;
-    }
-
-    /* Main Content */
-    .finance-main {
-        flex: 1;
-        padding: 24px;
-    }
 
     /* Cards Styling */
     .stat-card {
@@ -335,45 +237,52 @@
                 <p class="hero-subtitle">Kelola seluruh arus kas platform, pendapatan kotor, hingga verifikasi komisi reseller dalam satu dashboard terpadu.</p>
             </div>
             <div class="z-2 mt-4 mt-md-0">
-                <div class="calendar-badge shadow-lg">
-                    <div class="calendar-icon">
-                        <i class="bi bi-calendar-check-fill fs-5"></i>
+                <div class="d-flex flex-column gap-2">
+                    <div class="calendar-badge shadow-lg">
+                        <div class="calendar-icon">
+                            <i class="bi bi-calendar-check-fill fs-5"></i>
+                        </div>
+                        <div class="calendar-text">
+                            <span class="date-label">Laporan Per Hari Ini</span>
+                            <span class="date-value">{{ now()->format('l, d F Y') }}</span>
+                        </div>
                     </div>
-                    <div class="calendar-text">
-                        <span class="date-label">Laporan Per Hari Ini</span>
-                        <span class="date-value">{{ now()->format('l, d F Y') }}</span>
-                    </div>
+                    <button type="button" class="btn btn-warning rounded-pill fw-bold shadow-sm py-2 px-4" data-bs-toggle="modal" data-bs-target="#exportModal">
+                        <i class="bi bi-file-earmark-arrow-down me-2"></i> Ekspor Laporan
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Top Stat Cards -->
+        <!-- Top Stat Cards: 3 key financial KPIs -->
         <div class="row g-4 mb-4">
-            <!-- Payout Requests -->
+            <!-- Saldo Kas Saat Ini -->
             <div class="col-md-4">
-                <div class="stat-card urgent">
+                <div class="stat-card" style="border-left: 4px solid #16a34a;">
                     <div class="d-flex justify-content-between align-items-start">
-                        <div class="icon-square">
-                            <i class="bi bi-hourglass-split fs-4"></i>
+                        <div class="icon-square" style="background:#dcfce7; color:#16a34a; border:none;">
+                            <i class="bi bi-safe2-fill fs-4"></i>
                         </div>
-                        @if($pendingWithdrawals > 0)
-                            <span class="urgent-badge">Urgent</span>
-                        @endif
+                        <span class="badge rounded-pill" style="background:#dcfce7; color:#15803d; font-size:10px; font-weight:700;">SALDO KAS</span>
                     </div>
-                    <div class="stat-value">{{ $pendingWithdrawals }} Request</div>
-                    <div class="stat-label">Permintaan penarikan pending.</div>
-                    <a href="{{ route('admin.withdrawals.index') }}" class="btn btn-action">Proses Sekarang</a>
+                    <div class="stat-value" style="color: {{ $salDoKas >= 0 ? '#16a34a' : '#dc2626' }};">
+                        Rp {{ number_format($salDoKas / 1000000, 2, ',', '.') }}jt
+                    </div>
+                    <div class="stat-label">Saldo bersih setelah semua pengeluaran & komisi.</div>
+                    <div class="mt-2 small text-muted">
+                        <i class="bi bi-arrow-up text-success me-1"></i>Bulan ini: <strong>Rp {{ number_format($revenueThisMonth / 1000, 0, ',', '.') }}rb</strong> masuk
+                    </div>
                 </div>
             </div>
 
-            <!-- Revenue Card -->
+            <!-- Total Omzet Bruto -->
             <div class="col-md-4">
                 <div class="stat-card">
                     <div class="icon-square">
                         <i class="bi bi-cash-stack fs-4 text-success"></i>
                     </div>
                     <div class="stat-value">Rp {{ number_format($totalOmzet / 1000000, 1, ',', '.') }}jt</div>
-                    <div class="stat-label">Total omzet bruto platform.</div>
+                    <div class="stat-label">Total omzet bruto platform (all-time).</div>
                     <div class="mt-3 p-2 bg-light rounded-3">
                         <div class="d-flex justify-content-between small mb-1">
                             <span class="text-muted">Event:</span>
@@ -387,22 +296,28 @@
                 </div>
             </div>
 
-            <!-- Net Profit Card -->
+            <!-- Pendapatan Bersih -->
             <div class="col-md-4">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="icon-square">
                             <i class="bi bi-piggy-bank fs-4 text-primary"></i>
                         </div>
+                        @if($pendingExpensesCount > 0)
+                            <span class="urgent-badge">{{ $pendingExpensesCount }} Pending</span>
+                        @endif
                     </div>
                     <div class="stat-value">Rp {{ number_format($pendapatanBersih / 1000000, 1, ',', '.') }}jt</div>
                     <div class="stat-label">Estimasi pendapatan bersih platform.</div>
-                    <div class="mt-3 small text-muted">Setelah dikurangi komisi reseller.</div>
+                    <div class="mt-2 small text-muted">Setelah komisi, gaji trainer & biaya operasional.</div>
+                    @if($pendingExpensesCount > 0)
+                        <a href="{{ route('admin.finance.expenses') }}" class="btn btn-action mt-2">Lihat Pending</a>
+                    @endif
                 </div>
             </div>
         </div>
 
-        <!-- Activity Overview (Event & Course tracking) -->
+        <!-- Activity Overview (Financial Metrics) -->
         <div class="row g-4 mb-4">
             <div class="col-md-3">
                 <div class="stat-card" style="padding: 16px; border-style: dashed;">
@@ -433,25 +348,25 @@
             <div class="col-md-3">
                 <div class="stat-card" style="padding: 16px; border-style: dashed;">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="icon-square mb-0" style="width: 40px; height: 40px; background: #E6FFFA; color: #00BFA5; border: none;">
-                            <i class="bi bi-gift fs-5"></i>
+                        <div class="icon-square mb-0" style="width: 40px; height: 40px; background: #FEF3C7; color: #D97706; border: none;">
+                            <i class="bi bi-arrow-up-circle fs-5"></i>
                         </div>
                         <div>
-                            <div class="stat-label mb-0" style="font-size: 11px;">Free Access</div>
-                            <div class="fw-bold" style="font-size: 16px;">{{ $freeCount }} user</div>
+                            <div class="stat-label mb-0" style="font-size: 11px;">Pengeluaran Bulan Ini</div>
+                            <div class="fw-bold" style="font-size: 14px;">Rp {{ number_format($totalExpenseThisMonth / 1000, 0, ',', '.') }}rb</div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="stat-card" style="padding: 16px; border-style: dashed;">
+                <div class="stat-card" style="padding: 16px; border-style: dashed; {{ $pendingWithdrawalsCount > 0 ? 'border-color: #ef4444;' : '' }}">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="icon-square mb-0" style="width: 40px; height: 40px; background: #F3E5F5; color: #9C27B0; border: none;">
-                            <i class="bi bi-credit-card fs-5"></i>
+                        <div class="icon-square mb-0" style="width: 40px; height: 40px; background: {{ $pendingWithdrawalsCount > 0 ? '#FEE2E2' : '#F1F3F5' }}; color: {{ $pendingWithdrawalsCount > 0 ? '#DC2626' : '#6B7280' }}; border: none;">
+                            <i class="bi bi-hourglass-split fs-5"></i>
                         </div>
                         <div>
-                            <div class="stat-label mb-0" style="font-size: 11px;">Paid Access</div>
-                            <div class="fw-bold" style="font-size: 16px;">{{ $paidCount }} user</div>
+                            <div class="stat-label mb-0" style="font-size: 11px;">Payout Pending</div>
+                            <div class="fw-bold" style="font-size: 16px; color: {{ $pendingWithdrawalsCount > 0 ? '#DC2626' : 'inherit' }};">{{ $pendingWithdrawalsCount }} request</div>
                         </div>
                     </div>
                 </div>
@@ -459,68 +374,42 @@
         </div>
 
         <div class="row g-4">
-            <!-- Revenue Trend Chart -->
-            <div class="col-lg-6">
+            <!-- Revenue Trend Chart — expanded -->
+            <div class="col-lg-8">
                 <div class="stat-card">
-                    <h5 class="card-title">Tren Pendapatan Bulanan</h5>
-                    <div style="height: 250px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Tren Pendapatan Bulanan</h5>
+                        <a href="{{ route('admin.finance.incomes') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="font-size:11px;">
+                            <i class="bi bi-arrow-right me-1"></i>Detail Pemasukan
+                        </a>
+                    </div>
+                    <div style="height: 280px;">
                         <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- Category Distribution Plate -->
-            <div class="col-lg-3">
-                <div class="stat-card text-center d-flex flex-column justify-content-center">
+            <!-- Category Distribution -->
+            <div class="col-lg-4">
+                <div class="stat-card text-center d-flex flex-column justify-content-center" style="height:100%;">
                     <h5 class="card-title mb-4">Proporsi Revenue</h5>
-                    <div style="height: 180px; position: relative;">
+                    <div style="height: 200px; position: relative;">
                         <canvas id="categoryChart"></canvas>
                     </div>
-                    <div class="mt-3 small text-muted">
-                        Split Pendapatan Event vs Course
-                    </div>
-                </div>
-            </div>
-
-            <!-- Expenses Section -->
-            <div class="col-lg-3">
-                <div class="stat-card">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Daftar Pengeluaran</h5>
-                        <button class="btn btn-sm btn-outline-primary rounded-circle" data-bs-toggle="modal" data-bs-target="#expenseModal">
-                            <i class="bi bi-plus"></i>
-                        </button>
-                    </div>
-                    <div class="performer-list mt-3">
-                        @php
-                            $recentExpenses = \App\Models\Expense::latest('expense_date')->limit(4)->get();
-                        @endphp
-                        @forelse($recentExpenses as $expense)
-                            <div class="performer-item" style="padding: 8px 0;">
-                                <div class="avatar-circle-sm" style="width: 32px; height: 32px; font-size: 11px; background: #FFF0F0; color: #D93F3F;">
-                                    <i class="bi bi-arrow-down-right"></i>
-                                </div>
-                                <div style="flex: 1;">
-                                    <div class="fw-bold" style="font-size: 11px;">{{ $expense->description }}</div>
-                                    <div class="text-muted" style="font-size: 9px;">{{ $expense->expense_date->format('d M Y') }}</div>
-                                </div>
-                                <div class="text-danger fw-bold" style="font-size: 10px;">-Rp {{ number_format($expense->amount / 1000, 0, ',', '.') }}k</div>
-                            </div>
-                        @empty
-                            <p class="text-muted small italic">Belum ada pengeluaran.</p>
-                        @endforelse
-                    </div>
-                    <div class="mt-3 d-grid gap-2">
-                        <button type="button" class="btn btn-primary rounded-pill small fw-bold py-2" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#expenseModal">
-                            <i class="bi bi-plus-circle me-1"></i> Catat Pengeluaran
-                        </button>
-                        <button type="button" class="btn btn-outline-dark rounded-pill small fw-bold py-2" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#trainerPaymentModal">
-                            <i class="bi bi-person-check me-1"></i> Input Gaji Trainer
-                        </button>
+                    <div class="mt-4 d-flex justify-content-center gap-4 small">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#0066FF;display:inline-block;"></span>
+                            <span class="text-muted">Event <strong class="text-dark">Rp {{ number_format($eventRevenue/1000, 0, ',', '.') }}rb</strong></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#FF6600;display:inline-block;"></span>
+                            <span class="text-muted">Course <strong class="text-dark">Rp {{ number_format($courseRevenue/1000, 0, ',', '.') }}rb</strong></span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <!-- Expense Modal -->
         <div class="modal fade" id="expenseModal" tabindex="-1" aria-hidden="true">
@@ -781,8 +670,9 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Periode Laporan</label>
                         <select name="period" id="periodSelect" class="form-select rounded-3 border-light-subtle py-2">
-                            <option value="this_week">Minggu Ini</option>
-                            <option value="this_month" selected>Bulan Ini</option>
+                            <option value="this_month" selected>Per Bulan (Bulan Ini)</option>
+                            <option value="per_6_months">Per 6 Bulan Terakhir</option>
+                            <option value="per_year">Per Tahun (Tahun Ini)</option>
                             <option value="custom">Custom Range</option>
                         </select>
                     </div>

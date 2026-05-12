@@ -280,7 +280,7 @@
             });
             resetIdle();
         } catch(e){ /* noop */ }
-        });
+    });
     </script>
     <style>
     .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
@@ -460,6 +460,6 @@
     </script>
 
     @yield('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmFXFMrWCU3FA0e6bMkHHenwl3i" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
