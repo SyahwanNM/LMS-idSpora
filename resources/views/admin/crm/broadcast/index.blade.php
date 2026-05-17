@@ -1,195 +1,187 @@
 @extends('layouts.crm')
 
-@section('title', 'Riwayat Broadcast')
+@section('title', 'Blast Broadcast')
 
 @section('styles')
 <style>
-    /* Hero Header */
-    .crm-hero {
-        background: linear-gradient(135deg, #1A1D1F 0%, #2A2F34 100%);
-        border-radius: 24px;
-        padding: 32px;
-        color: #fff;
-        margin-bottom: 32px;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    .page-eyebrow {
+        font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 1.2px; color: var(--crm-primary);
+        display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px;
     }
-
-    .hero-label {
-        background: rgba(109, 40, 217, 0.2);
-        color: #a78bfa;
-        padding: 6px 16px;
-        border-radius: 100px;
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        display: inline-block;
-        margin-bottom: 16px;
-        border: 1px solid rgba(139, 92, 246, 0.3);
+    .page-eyebrow::before { content: ''; display: inline-block; width: 16px; height: 2px; background: var(--crm-primary); border-radius: 2px; }
+    .page-title { font-size: 1.5rem; font-weight: 800; color: var(--crm-navy); letter-spacing: -0.8px; margin: 0; }
+    .page-subtitle { font-size: 0.8rem; color: var(--crm-text-subtle); margin: 5px 0 0; }
+    .platform-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.68rem; font-weight: 700; padding: 3px 8px;
+        border-radius: 6px;
     }
-
-    .hero-title {
-        font-size: 2rem;
-        font-weight: 800;
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
+    .platform-chip.email { background: rgba(124,58,237,0.08); color: var(--crm-primary); }
+    .platform-chip.wa    { background: rgba(16,185,129,0.08); color: #059669; }
+    .seg-pill {
+        font-size: 0.65rem; font-weight: 700; padding: 3px 9px;
+        border-radius: 100px; display: inline-block;
     }
-
-    .ls-wide { letter-spacing: 0.5px; }
-    .smaller { font-size: 0.85rem; }
 </style>
 @endsection
 
 @section('content')
-<div class="crm-hero d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+{{-- Page Header --}}
+<div class="crm-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
     <div>
-        <span class="hero-label">Broadcasting Module</span>
-        <h1 class="hero-title">Blast Broadcast</h1>
-        <p class="hero-subtitle mb-0">Kelola riwayat pengiriman pesan massal dan optimasi strategi jangkauan pengguna.</p>
+        <div class="page-eyebrow">Broadcasting Module</div>
+        <h1 class="page-title">Blast Broadcast</h1>
+        <p class="page-subtitle">Riwayat pengiriman pesan massal dan manajemen strategi jangkauan.</p>
     </div>
-    <div class="mt-4 mt-md-0">
-        <a href="{{ route('admin.crm.broadcast.create') }}" class="btn btn-primary shadow-lg border-0 px-4 py-2 rounded-3 fw-600">
-            <i class="bi bi-plus-lg me-1"></i> Buat Blast Baru
-        </a>
+    <a href="{{ route('admin.crm.broadcast.create') }}" class="btn btn-sm fw-700 px-4 mt-3 mt-md-0 hover-scale"
+       style="background:var(--crm-primary);color:#fff;border-radius:9px;font-size:0.82rem;padding-top:0.55rem;padding-bottom:0.55rem;">
+        <i class="bi bi-plus-lg me-1"></i> Buat Broadcast Baru
+    </a>
+</div>
+
+@if(session('success'))
+@endif
+
+{{-- Table --}}
+<div class="card-minimal">
+    <div class="table-responsive">
+        <table class="crm-table">
+            <thead>
+                <tr>
+                    <th style="padding-left:1.25rem;">Tanggal</th>
+                    <th>Judul & Pesan</th>
+                    <th>Segmen</th>
+                    <th>Platform</th>
+                    <th style="text-align:center;">Target</th>
+                    <th style="text-align:center;">Status</th>
+                    <th style="padding-right:1.25rem;text-align:center;">Detail</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($broadcasts as $item)
+                @php
+                    $segMap = ['all'=>['bg:var(--crm-border-soft);color:var(--crm-text-muted);','Semua User'],'reseller'=>['background:rgba(245,158,11,0.1);color:#d97706;','Reseller'],'trainer'=>['background:rgba(6,182,212,0.1);color:#0891b2;','Trainer'],'no_event'=>['background:rgba(239,68,68,0.1);color:#dc2626;','Belum Ikut Event']];
+                    $seg = $segMap[$item->segment] ?? ['background:var(--crm-border-soft);color:var(--crm-text-muted);','Lainnya'];
+                @endphp
+                <tr>
+                    <td style="padding-left:1.25rem;">
+                        <div style="font-weight:700;font-size:0.82rem;color:var(--crm-navy);">{{ $item->created_at->translatedFormat('d M Y') }}</div>
+                        <div style="font-size:0.72rem;color:var(--crm-text-subtle);">{{ $item->created_at->format('H:i') }} WIB</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:700;font-size:0.82rem;color:var(--crm-navy);" class="text-truncate" style="max-width:220px;">{{ $item->title }}</div>
+                        <div style="font-size:0.72rem;color:var(--crm-text-subtle);">{{ Str::limit($item->message, 50) }}</div>
+                    </td>
+                    <td>
+                        <span class="seg-pill" style="{{ $seg[0] }}">{{ $seg[1] }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1 flex-wrap">
+                            @if(in_array($item->platform, ['email','both']))
+                                <span class="platform-chip email"><i class="bi bi-envelope-fill"></i> Email</span>
+                            @endif
+                            @if(in_array($item->platform, ['whatsapp','both']))
+                                <span class="platform-chip wa"><i class="bi bi-whatsapp"></i> WhatsApp</span>
+                            @endif
+                        </div>
+                    </td>
+                    <td style="text-align:center;">
+                        <div style="font-weight:800;font-size:0.9rem;color:var(--crm-navy);">{{ $item->target_count }}</div>
+                        <div style="font-size:0.65rem;color:var(--crm-text-subtle);font-weight:600;">User</div>
+                    </td>
+                    <td style="text-align:center;">
+                        <span style="font-size:0.65rem;font-weight:700;padding:3px 9px;border-radius:100px;background:rgba(16,185,129,0.1);color:#059669;">
+                            {{ strtoupper($item->status) }}
+                        </span>
+                    </td>
+                    <td style="padding-right:1.25rem;text-align:center;">
+                        <button class="action-icon hover-scale" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $item->id }}" title="Lihat Detail">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state-wrapper">
+                            <div class="empty-state-icon hover-scale">
+                                <i class="bi bi-megaphone"></i>
+                            </div>
+                            <h6 class="fw-800 text-navy mb-1">Belum Ada Broadcast</h6>
+                            <p class="text-muted smaller mb-3">Mulai jangkau customer Anda dengan mengirimkan pesan massal pertama.</p>
+                            <a href="{{ route('admin.crm.broadcast.create') }}" class="btn btn-sm px-4 fw-700" style="background:var(--crm-primary);color:#fff;border-radius:8px;">Kirim Sekarang</a>
+                        </div>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 
-        @if(session('success'))
-            <div class="alert alert-success border-0 shadow-sm mb-4" style="border-radius: 12px;">
-                <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
+{{-- Modals --}}
+@foreach($broadcasts as $item)
+@php
+    $segMap = ['all'=>'Semua User','reseller'=>'Reseller','trainer'=>'Trainer','no_event'=>'Belum Ikut Event'];
+    $segLabel = $segMap[$item->segment] ?? 'Lainnya';
+@endphp
+<div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:20px;">
+            <div class="modal-header border-0 p-4" style="background:var(--crm-navy);">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-megaphone-fill text-white"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-800 text-white">Detail Broadcast</h6>
+                        <span style="font-size:0.7rem;color:rgba(255,255,255,0.6);">{{ $item->created_at->translatedFormat('d F Y, H:i') }} WIB</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-        @endif
-
-        <div class="card-minimal overflow-hidden shadow-sm border-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead style="background: #f8fafc;">
-                        <tr style="font-size: 13px; color: #64748b; font-weight: 700;">
-                            <th class="ps-4 py-3">TANGGAL</th>
-                            <th class="py-3">JUDUL / SUBJEK</th>
-                            <th class="py-3">SEGMEN</th>
-                            <th class="py-3">PLATFORM</th>
-                            <th class="py-3 text-center">TARGET</th>
-                            <th class="py-3 text-center">STATUS</th>
-                            <th class="py-3 text-center pe-4">AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($broadcasts as $item)
-                        <tr>
-                            <td class="ps-4">
-                                <div class="fw-bold text-navy small">{{ $item->created_at->format('d M Y') }}</div>
-                                <div class="text-muted smaller" style="font-size: 0.7rem;">{{ $item->created_at->format('H:i') }} WIB</div>
-                            </td>
-                            <td>
-                                <div class="fw-bold small text-truncate" style="max-width: 250px;">{{ $item->title }}</div>
-                                <div class="text-muted smaller" style="font-size: 0.75rem;">{{ Str::limit($item->message, 50) }}</div>
-                            </td>
-                            <td>
-                                @php
-                                    $segments = [
-                                        'all' => ['bg-light text-dark', 'Semua'],
-                                        'reseller' => ['bg-warning-subtle text-warning', 'Reseller'],
-                                        'trainer' => ['bg-info-subtle text-info', 'Trainer'],
-                                        'no_event' => ['bg-danger-subtle text-danger', 'Belum Ikut Event']
-                                    ];
-                                    $seg = $segments[$item->segment] ?? ['bg-secondary-subtle', 'Lainnya'];
-                                @endphp
-                                <span class="badge rounded-pill {{ $seg[0] }}" style="font-size: 0.7rem;">{{ $seg[1] }}</span>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-1">
-                                    @if(in_array($item->platform, ['email', 'both']))
-                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10" title="Email"><i class="bi bi-envelope"></i></span>
-                                    @endif
-                                    @if(in_array($item->platform, ['whatsapp', 'both']))
-                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10" title="WhatsApp"><i class="bi bi-whatsapp"></i></span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="text-center">
-                                <div class="fw-bold">{{ $item->target_count }}</div>
-                                <div class="smaller text-muted" style="font-size: 0.65rem;">User</div>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge rounded-pill" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.7rem;">
-                                    {{ strtoupper($item->status) }}
-                                </span>
-                            </td>
-                            <td class="text-center pe-4">
-                                <button class="btn btn-sm btn-light rounded-circle shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDetail{{ $item->id }}">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-
-
-                        @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <div class="py-4">
-                                    <i class="bi bi-megaphone text-muted opacity-25" style="font-size: 3rem;"></i>
-                                    <p class="text-muted small mt-2">Belum ada riwayat broadcast pengiriman.</p>
-                                    <a href="{{ route('admin.crm.broadcast.create') }}" class="btn btn-link btn-sm text-decoration-none">Kirim Broadcast Pertama</a>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        @foreach($broadcasts as $item)
-            @php
-                $segments = [
-                    'all' => ['bg-light text-dark', 'Semua'],
-                    'reseller' => ['bg-warning-subtle text-warning', 'Reseller'],
-                    'trainer' => ['bg-info-subtle text-info', 'Trainer'],
-                    'no_event' => ['bg-danger-subtle text-danger', 'Belum Ikut Event']
-                ];
-                $seg = $segments[$item->segment] ?? ['bg-secondary-subtle', 'Lainnya'];
-            @endphp
-            <!-- Modal Detail -->
-            <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-                        <div class="modal-header border-0 pb-0">
-                            <h5 class="modal-title fw-bold">Detail Broadcast</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-body p-4" style="background:var(--crm-border-soft);">
+                <div class="card-minimal p-3 mb-3">
+                    <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Judul / Subjek</div>
+                    <div style="font-weight:700;font-size:0.9rem;color:var(--crm-navy);">{{ $item->title }}</div>
+                </div>
+                <div class="card-minimal p-3 mb-3">
+                    <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Isi Pesan</div>
+                    <div style="font-size:0.85rem;color:var(--crm-navy-soft);line-height:1.7;white-space:pre-wrap;">{{ $item->message }}</div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="card-minimal p-3">
+                            <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Segmen</div>
+                            <div style="font-weight:700;font-size:0.85rem;color:var(--crm-navy);">{{ $segLabel }}</div>
                         </div>
-                        <div class="modal-body p-4">
-                            <div class="mb-4">
-                                <label class="text-muted smaller fw-bold text-uppercase ls-wide mb-1">Judul / Subjek</label>
-                                <div class="p-3 border rounded-3 bg-light fw-bold">{{ $item->title }}</div>
-                            </div>
-                            <div class="mb-4">
-                                <label class="text-muted smaller fw-bold text-uppercase ls-wide mb-1">Pesan</label>
-                                <div class="p-3 border rounded-3 bg-white" style="white-space: pre-wrap; font-size: 0.9rem;">{{ $item->message }}</div>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <div class="p-3 bg-light rounded-4">
-                                        <div class="text-muted smaller fw-bold text-uppercase mb-1">Segmen</div>
-                                        <div class="fw-bold">{{ $seg[1] }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="p-3 bg-light rounded-4">
-                                        <div class="text-muted smaller fw-bold text-uppercase mb-1">Platform</div>
-                                        <div class="fw-bold">{{ ucfirst($item->platform) }}</div>
-                                    </div>
-                                </div>
-                            </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card-minimal p-3">
+                            <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Platform</div>
+                            <div style="font-weight:700;font-size:0.85rem;color:var(--crm-navy);">{{ ucfirst($item->platform) }}</div>
                         </div>
-                        <div class="modal-footer border-0">
-                            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                    </div>
+                    <div class="col-6">
+                        <div class="card-minimal p-3">
+                            <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Total Target</div>
+                            <div style="font-weight:800;font-size:1.2rem;color:var(--crm-navy);">{{ $item->target_count }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card-minimal p-3">
+                            <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Status</div>
+                            <span style="font-size:0.72rem;font-weight:700;padding:3px 9px;border-radius:100px;background:rgba(16,185,129,0.1);color:#059669;">{{ strtoupper($item->status) }}</span>
                         </div>
                     </div>
                 </div>
             </div>
-        @endforeach
+            <div class="modal-footer border-0 p-3 bg-white" style="border-radius:0 0 20px 20px;">
+                <button type="button" class="btn btn-sm fw-700 px-4" style="background:var(--crm-navy);color:#fff;border-radius:8px;" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
 @endsection

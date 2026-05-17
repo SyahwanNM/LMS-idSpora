@@ -21,13 +21,13 @@
         <!-- Right Side: User & Quick Actions -->
         <div class="d-flex align-items-center gap-3">
             <!-- Payout Counter (Mini) -->
-            @if(isset($pendingWithdrawals) && $pendingWithdrawals > 0)
-            <a href="{{ route('admin.withdrawals.index') }}" class="d-none d-sm-flex align-items-center gap-2 text-decoration-none bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill transition-all hover-scale" style="font-size: 0.85rem; font-weight: 700;">
+            @if(isset($pendingWithdrawalsCount) && $pendingWithdrawalsCount > 0)
+            <a href="{{ route('admin.finance.expenses') }}" class="d-none d-sm-flex align-items-center gap-2 text-decoration-none bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill transition-all hover-scale" style="font-size: 0.85rem; font-weight: 700;">
                 <span class="position-relative d-flex">
                     <i class="bi bi-bell-fill"></i>
                     <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle anim-pulse"></span>
                 </span>
-                {{ $pendingWithdrawals }} Payout Orders
+                {{ $pendingWithdrawalsCount }} Payout Orders
             </a>
             @endif
 

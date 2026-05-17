@@ -62,8 +62,7 @@
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
+                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
                                 <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                             </span>
@@ -81,7 +80,10 @@
                             <li>
                                 <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="m-0">
                                     @csrf
-                                    <button type="button" id="logoutTrigger" class="dropdown-item small text-danger">
+                                    <button type="button" id="logoutTrigger"
+                                        class="dropdown-item small text-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmLogoutModal">
                                         <i class="bi bi-box-arrow-right me-1"></i>Logout
                                     </button>
                                 </form>
@@ -115,7 +117,8 @@
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                             <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
+                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn"
+                                onclick="document.getElementById('logoutForm').submit();">
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                             </button>
@@ -277,7 +280,7 @@
             });
             resetIdle();
         } catch(e){ /* noop */ }
-        });
+    });
     </script>
     <style>
     .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
@@ -457,5 +460,6 @@
     </script>
 
     @yield('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

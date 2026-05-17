@@ -16,13 +16,7 @@ class WithdrawalController extends Controller
      */
     public function index(Request $request)
     {
-        $status = $request->get('status', 'pending');
-        $withdrawals = Withdrawal::with('user')
-            ->where('status', $status)
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-
-        return view('admin.finance.withdrawals.index', compact('withdrawals', 'status'));
+        return redirect()->route('admin.finance.expenses');
     }
 
     /**
