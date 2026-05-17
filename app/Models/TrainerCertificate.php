@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrainerCertificate extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_READY = 'ready';
+    public const STATUS_PUBLISHED = 'published';
+    public const STATUS_REVOKED = 'revoked';
+
     protected $fillable = [
         'trainer_id',
         'certifiable_type',
@@ -37,6 +42,43 @@ class TrainerCertificate extends Model
     public function certifiable()
     {
         return $this->morphTo();
+    }
+
+    public function scopeDraft($query) {
+        return $query->where('status', self::STATUS_DRAFT);
+    }
+
+    public function scopeReady($query) {
+        return $query->where('status', self::STATUS_READY);
+    }
+
+    public function scopePublished($query) {
+        return $query->where('status', self::STATUS_PUBLISHED);
+    }
+
+     public function scopeRevoked($query)
+    {
+        return $query->where('status', self::STATUS_REVOKED);
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === self::STATUS_DRAFT;
+    }
+
+    public function isReady(): bool
+    {
+        return $this->status === self::STATUS_READY;
+    }
+
+    public function isPublished(): bool
+    {
+        return $this->status === self::STATUS_PUBLISHED;
+    }
+
+    public function isRevoked(): bool
+    {
+        return $this->status === self::STATUS_REVOKED;
     }
 }
 
