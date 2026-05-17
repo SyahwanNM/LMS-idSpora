@@ -529,7 +529,10 @@ class TrainerManagementController extends Controller
     {
         if ($trainer->role !== 'trainer')
             abort(404);
-        return view('admin.trainer.edit', compact('trainer'));
+        return redirect()->route('admin.trainer.show', [
+            'trainer' => $trainer->id,
+            'edit' => 'personal',
+        ]);
     }
 
     // [UPDATED] UPDATE TRAINER (YANG ANDA CARI)
@@ -538,21 +541,43 @@ class TrainerManagementController extends Controller
         if ($trainer->role !== 'trainer')
             abort(404);
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($trainer->id)],
-            'password' => ['nullable', 'string', 'min:6', 'confirmed'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'profession' => ['nullable', 'string', 'max:100'],
-            'institution' => ['nullable', 'string', 'max:255'],
-            'website' => ['nullable', 'string', 'max:255'],
-            'bio' => ['nullable', 'string'],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+        $editBox = (string) $request->input('edit_box', 'all');
+        $data = [];
 
-        // Cek apakah password diisi (jika kosong, jangan update password)
+        if ($editBox === 'personal') {
+            $data = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($trainer->id)],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'profession' => ['nullable', 'string', 'max:100'],
+                'institution' => ['nullable', 'string', 'max:255'],
+                'website' => ['nullable', 'string', 'max:255'],
+            ]);
+        } elseif ($editBox === 'bio') {
+            $data = $request->validate([
+                'bio' => ['nullable', 'string'],
+            ]);
+        } elseif ($editBox === 'account') {
+            $data = $request->validate([
+                'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+                'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            ]);
+        } else {
+            $data = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($trainer->id)],
+                'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'profession' => ['nullable', 'string', 'max:100'],
+                'institution' => ['nullable', 'string', 'max:255'],
+                'website' => ['nullable', 'string', 'max:255'],
+                'bio' => ['nullable', 'string'],
+                'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            ]);
+        }
+
         if ($request->filled('password')) {
-            $data['password'] = Hash::make($data['password']);
+            $data['password'] = Hash::make((string) $request->input('password'));
         } else {
             unset($data['password']);
         }
@@ -561,14 +586,16 @@ class TrainerManagementController extends Controller
             if ($trainer->avatar && !str_starts_with($trainer->avatar, 'http')) {
                 Storage::disk('public')->delete($trainer->avatar);
             }
-            // Simpan yang baru
             $path = $request->file('avatar')->store('avatars', 'public');
             $data['avatar'] = $path;
         }
 
         $trainer->update($data);
 
-        return redirect()->route('admin.trainer.index')->with('success', 'Data trainer berhasil diperbarui!');
+        return redirect()->route('admin.trainer.show', [
+            'trainer' => $trainer->id,
+            'edit' => $editBox,
+        ])->with('success', 'Data trainer berhasil diperbarui!');
     }
 
     public function destroy(User $trainer)

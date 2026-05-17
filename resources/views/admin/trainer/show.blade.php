@@ -51,6 +51,22 @@
             gap: 12px;
         }
 
+        .detail-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .detail-card-header h5 {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
         .detail-row {
             display: flex;
             padding: 12px 0;
@@ -278,6 +294,8 @@
         @include('admin.trainer._sidebar')
 
         <main class="trainer-main">
+            @php $editBox = request('edit'); @endphp
+
             <!-- Hero Header with Trainer Info -->
             <div class="trainer-hero">
                 <div class="d-flex align-items-center gap-4 position-relative" style="z-index: 2;">
@@ -308,7 +326,7 @@
                             class="btn btn-primary btn-action-large mb-2">
                             <i class="bi bi-award-fill me-2"></i>Kirim Sertifikat
                         </a>
-                        <a href="{{ route('admin.trainer.edit', $trainer) }}" class="btn btn-light btn-action-large">
+                        <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'personal']) }}" class="btn btn-light btn-action-large">
                             <i class="bi bi-pencil-square me-2"></i>Edit Data
                         </a>
                         <form action="{{ route('admin.trainer.destroy', $trainer) }}" method="POST"
@@ -358,58 +376,122 @@
                 <div class="col-lg-6">
                     <!-- Personal Information -->
                     <div class="detail-card">
-                        <h5>
-                            <i class="bi bi-person-circle" style="color: #3949ab;"></i>
-                            Informasi Pribadi
-                        </h5>
-                        <div class="detail-row">
-                            <div class="detail-label">Nama Lengkap</div>
-                            <div class="detail-value"><strong>{{ $trainer->name }}</strong></div>
+                        <div class="detail-card-header">
+                            <h5>
+                                <i class="bi bi-person-circle" style="color: #3949ab;"></i>
+                                Informasi Pribadi
+                            </h5>
+                            <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'personal']) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
+                            </a>
                         </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Email</div>
-                            <div class="detail-value">{{ $trainer->email }}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">No. WhatsApp</div>
-                            <div class="detail-value">{{ $trainer->phone ?? '—' }}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Profesi</div>
-                            <div class="detail-value">{{ $trainer->profession ?? '—' }}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Institusi</div>
-                            <div class="detail-value">{{ $trainer->institution ?? '—' }}</div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Website</div>
-                            <div class="detail-value">
-                                @if(!empty($trainer->website))
-                                    <a href="{{ $trainer->website }}" target="_blank"
-                                        rel="noopener noreferrer">{{ $trainer->website }}</a>
-                                @else
-                                    —
-                                @endif
+
+                        @if($editBox === 'personal')
+                            <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST" class="row g-3">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="edit_box" value="personal">
+
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Nama Lengkap</label>
+                                    <input type="text" name="name" value="{{ old('name', $trainer->name) }}" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Email</label>
+                                    <input type="email" name="email" value="{{ old('email', $trainer->email) }}" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">No. WhatsApp</label>
+                                    <input type="text" name="phone" value="{{ old('phone', $trainer->phone) }}" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Profesi</label>
+                                    <input type="text" name="profession" value="{{ old('profession', $trainer->profession) }}" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Institusi</label>
+                                    <input type="text" name="institution" value="{{ old('institution', $trainer->institution) }}" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Website</label>
+                                    <input type="text" name="website" value="{{ old('website', $trainer->website) }}" class="form-control">
+                                </div>
+                                <div class="col-12 d-flex justify-content-end gap-2">
+                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+                                    <button type="submit" class="btn btn-primary btn-sm">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        @else
+                            <div class="detail-row">
+                                <div class="detail-label">Nama Lengkap</div>
+                                <div class="detail-value"><strong>{{ $trainer->name }}</strong></div>
                             </div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Role</div>
-                            <div class="detail-value">
-                                <span class="badge" style="background: #3949ab; padding: 6px 12px;">
-                                    <i class="bi bi-person-badge me-1"></i>Trainer
-                                </span>
+                            <div class="detail-row">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">{{ $trainer->email }}</div>
                             </div>
-                        </div>
+                            <div class="detail-row">
+                                <div class="detail-label">No. WhatsApp</div>
+                                <div class="detail-value">{{ $trainer->phone ?? '—' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Profesi</div>
+                                <div class="detail-value">{{ $trainer->profession ?? '—' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Institusi</div>
+                                <div class="detail-value">{{ $trainer->institution ?? '—' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Website</div>
+                                <div class="detail-value">
+                                    @if(!empty($trainer->website))
+                                        <a href="{{ $trainer->website }}" target="_blank"
+                                            rel="noopener noreferrer">{{ $trainer->website }}</a>
+                                    @else
+                                        —
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Role</div>
+                                <div class="detail-value">
+                                    <span class="badge" style="background: #3949ab; padding: 6px 12px;">
+                                        <i class="bi bi-person-badge me-1"></i>Trainer
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Bio / Skills -->
                     <div class="detail-card">
-                        <h5>
-                            <i class="bi bi-file-text-fill" style="color: #3949ab;"></i>
-                            Bio & Keahlian
-                        </h5>
-                        @if($trainer->bio)
+                        <div class="detail-card-header">
+                            <h5>
+                                <i class="bi bi-file-text-fill" style="color: #3949ab;"></i>
+                                Bio & Keahlian
+                            </h5>
+                            <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'bio']) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
+                            </a>
+                        </div>
+                        @if($editBox === 'bio')
+                            <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="edit_box" value="bio">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Bio</label>
+                                    <textarea name="bio" rows="6" class="form-control">{{ old('bio', $trainer->bio) }}</textarea>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+                                    <button type="submit" class="btn btn-primary btn-sm">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        @elseif($trainer->bio)
                             <p class="mb-0" style="color: #424242; line-height: 1.7;">
                                 {{ $trainer->bio }}
                             </p>
@@ -424,37 +506,68 @@
                 <div class="col-lg-6">
                     <!-- Account Information -->
                     <div class="detail-card">
-                        <h5>
-                            <i class="bi bi-shield-check" style="color: #3949ab;"></i>
-                            Informasi Akun
-                        </h5>
-                        <div class="detail-row">
-                            <div class="detail-label">Bergabung Pada</div>
-                            <div class="detail-value">
-                                <strong>{{ $trainer->created_at->format('d F Y') }}</strong>
-                                <small class="text-muted ms-2">
-                                    ({{ $trainer->created_at->diffForHumans() }})
-                                </small>
-                            </div>
+                        <div class="detail-card-header">
+                            <h5>
+                                <i class="bi bi-shield-check" style="color: #3949ab;"></i>
+                                Informasi Akun
+                            </h5>
+                            <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'account']) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
+                            </a>
                         </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Status Akun</div>
-                            <div class="detail-value">
-                                @php
-                                    $isActive = $trainer->created_at >= now()->subDays(30);
-                                @endphp
-                                <span class="badge"
-                                    style="background: {{ $isActive ? '#2e7d32' : '#c62828' }}; padding: 6px 12px;">
-                                    {!! $isActive ? '<i class="bi bi-check-circle-fill me-1"></i> Aktif' : '<i class="bi bi-x-circle-fill me-1"></i> Nonaktif' !!}
-                                </span>
+                        @if($editBox === 'account')
+                            <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="edit_box" value="account">
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Avatar Baru</label>
+                                    <input type="file" name="avatar" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Password Baru</label>
+                                    <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak diubah">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">Konfirmasi Password</label>
+                                    <input type="password" name="password_confirmation" class="form-control">
+                                </div>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+                                    <button type="submit" class="btn btn-primary btn-sm">Simpan Perubahan</button>
+                                </div>
+                            </form>
+                        @else
+                            <div class="detail-row">
+                                <div class="detail-label">Bergabung Pada</div>
+                                <div class="detail-value">
+                                    <strong>{{ $trainer->created_at->format('d F Y') }}</strong>
+                                    <small class="text-muted ms-2">
+                                        ({{ $trainer->created_at->diffForHumans() }})
+                                    </small>
+                                </div>
                             </div>
-                        </div>
-                        <div class="detail-row">
-                            <div class="detail-label">Last Update</div>
-                            <div class="detail-value">
-                                {{ $trainer->updated_at->format('d F Y, H:i') }}
+                            <div class="detail-row">
+                                <div class="detail-label">Status Akun</div>
+                                <div class="detail-value">
+                                    @php
+                                        $isActive = $trainer->created_at >= now()->subDays(30);
+                                    @endphp
+                                    <span class="badge"
+                                        style="background: {{ $isActive ? '#2e7d32' : '#c62828' }}; padding: 6px 12px;">
+                                        {!! $isActive ? '<i class="bi bi-check-circle-fill me-1"></i> Aktif' : '<i class="bi bi-x-circle-fill me-1"></i> Nonaktif' !!}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Last Update</div>
+                                <div class="detail-value">
+                                    {{ $trainer->updated_at->format('d F Y, H:i') }}
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Quick Actions -->
@@ -464,7 +577,7 @@
                             Aksi Cepat
                         </h5>
                         <div class="d-grid gap-2">
-                            <a href="{{ route('admin.trainer.edit', $trainer) }}" class="btn btn-edit-large">
+                            <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'personal']) }}" class="btn btn-edit-large">
                                 <i class="bi bi-pencil-square me-2"></i>Edit Data Trainer
                             </a>
                             <a href="{{ route('admin.trainer.index') }}" class="btn btn-outline-secondary btn-action-large">

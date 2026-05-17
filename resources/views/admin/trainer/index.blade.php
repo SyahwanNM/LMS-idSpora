@@ -584,7 +584,6 @@
                                 <th style="min-width: 180px;">Keahlian</th>
                                 <th class="text-center" style="width: 100px;">Status</th>
                                 <th class="text-center" style="width: 100px;">Kelas</th>
-                                <th class="text-center" style="width: 100px;">Sesi</th>
                                 <th style="width: 130px;">Bergabung</th>
                                 <th class="text-center pe-4" style="width: 160px;">Aksi</th>
                             </tr>
@@ -634,11 +633,7 @@
                                             {{ $trainer->courses_as_trainer_count ?? 0 }}
                                         </span>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="badge-event">
-                                            {{ $trainer->events_as_trainer_count ?? 0 }}
-                                        </span>
-                                    </td>
+                                    
                                     <td>
                                         <small class="text-muted">
                                             {{ $trainer->created_at->format('d M Y') }}
@@ -646,10 +641,6 @@
                                     </td>
                                     <td class="text-center pe-4">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{{ route('admin.trainer-profile.show', $trainer) }}"
-                                                class="btn btn-action btn-action-view" title="Preview Public Profile" target="_blank">
-                                                <i class="bi bi-person-bounding-box"></i>
-                                            </a>
                                             <a href="{{ route('admin.trainer.show', $trainer) }}"
                                                 class="btn btn-action btn-action-view" title="Lihat Detail Management">
                                                 <i class="bi bi-eye-fill"></i>
