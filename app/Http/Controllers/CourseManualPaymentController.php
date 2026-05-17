@@ -31,15 +31,16 @@ class CourseManualPaymentController extends Controller
 
         // --- LOGIKA DISKON REFERRAL ---
         $reseller = null;
-        $finalPrice = (float) ($course->price ?? 0);
+        $originalPrice = (float) ($course->price ?? 0); // Harga asli selalu dari course
+        $finalPrice = $originalPrice;
 
         if ($referralCode) {
             $reseller = \App\Models\User::where('referral_code', $referralCode)->first();
             
             // Mastiin reseller ada dan bukan mendaftarkan dirinya sendiri
             if ($reseller && $reseller->id !== $user->id) {
-                $discount = $finalPrice * 0.10;
-                $finalPrice = max(0, $finalPrice - $discount);
+                $discount = $originalPrice * 0.10;
+                $finalPrice = max(0, $originalPrice - $discount);
             } else {
                 // Reset jika kode tidak valid atau dipakai sendiri
                 $referralCode = null; 
@@ -107,8 +108,9 @@ class CourseManualPaymentController extends Controller
                     $persentaseKomisi = 0.12; // Silver (12%)
                 }
                 
-                // Kalikan harga transaksi dengan persentase tier-nya
-                $komisiFix = $manualPayment->amount * $persentaseKomisi;
+                // Kalikan HARGA ASLI (sebelum diskon) dengan persentase tier
+                // Komisi tidak berkurang karena pembeli dapat diskon
+                $komisiFix = $originalPrice * $persentaseKomisi;
 
                 Referral::create([
                     'user_id' => $reseller->id,
@@ -160,7 +162,8 @@ class CourseManualPaymentController extends Controller
                         if ($totalReferrals >= 151) $persentaseKomisi = 0.15; // Gold
                         elseif ($totalReferrals >= 51) $persentaseKomisi = 0.12; // Silver
                         
-                        $commissionAmount = $manualPayment->amount * $persentaseKomisi;
+                        // Hitung komisi dari HARGA ASLI course (bukan harga setelah diskon)
+                        $commissionAmount = $course->price * $persentaseKomisi;
 
                         if ($commissionAmount > 0) {
                             Referral::create([

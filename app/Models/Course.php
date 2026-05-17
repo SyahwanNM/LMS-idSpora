@@ -21,6 +21,7 @@ class Course extends Model
         'discount_percent',
         'discount_start',
         'discount_end',
+        'is_reseller_course',
     ];
 
     public function category()

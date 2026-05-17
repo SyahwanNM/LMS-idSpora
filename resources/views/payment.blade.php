@@ -360,10 +360,27 @@
                             <div class="order-info">
                                 <h5>{{ isset($event)? $event->title : 'Event Title' }}</h5>
                                 <p>IdSpora</p>
-                                <div class="price-text" id="totalPriceDisplay" data-original-price="{{ $finalPrice }}">
+                                <div class="price-text" id="originalPriceLabel">
                                     @if($isFree) FREE @else Rp{{ number_format($finalPrice,0,',','.') }} @endif
                                 </div>
                             </div>
+                        </div>
+
+                        {{-- Price Breakdown: hanya muncul saat referral valid --}}
+                        <div id="priceBreakdown" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #FCD34D; display:none;">
+                            <div class="price-row">
+                                <span>Harga Normal</span>
+                                <span>@if($isFree) FREE @else Rp{{ number_format($finalPrice,0,',','.') }} @endif</span>
+                            </div>
+                            <div id="discountRow" class="price-row" style="color:#16A34A;">
+                                <span><i class="bi bi-tag-fill" style="font-size:11px;"></i> Diskon Referral</span>
+                                <span id="discountLabel">-Rp 0</span>
+                            </div>
+                        </div>
+                        {{-- Total selalu tampil --}}
+                        <div class="total-row">
+                            <span>Total</span>
+                            <span id="totalPriceDisplay" data-original-price="{{ $finalPrice }}">@if($isFree) FREE @else Rp{{ number_format($finalPrice,0,',','.') }} @endif</span>
                         </div>
                         <div class="mt-3 text-center">
                             <img src="{{ asset('aset/qr-payment-idSpora.png') }}" alt="QRIS"
@@ -467,18 +484,24 @@
                             if (data.valid) {
                                 messageBox.innerHTML = `<span style="color:green;">${data.message}</span>`;
 
-                                // Hitung diskon persentase (misal 10%)
-                                let discountAmount = originalPrice * (data.discount_percentage / 100);
-                                let newPrice = originalPrice - discountAmount;
+                                // Hitung diskon
+                                let discountAmount = Math.round(originalPrice * (data.discount_percentage / 100));
+                                let newPrice = Math.max(0, originalPrice - discountAmount);
 
-                                if (newPrice < 0) newPrice = 0;
+                                // Tampilkan breakdown
+                                const breakdown = document.getElementById('priceBreakdown');
+                                const discountLabel = document.getElementById('discountLabel');
+                                if (breakdown) breakdown.style.display = 'block';
+                                if (discountLabel) discountLabel.textContent = '-Rp ' + discountAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-                                // Format angka ke format Rupiah (titik)
-                                priceDisplay.innerHTML = 'Rp' + newPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                                // Update total
+                                priceDisplay.textContent = 'Rp' + newPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                             } else {
                                 messageBox.innerHTML = `<span style="color:red;">${data.message}</span>`;
-                                // Kembalikan ke harga asli kalau gagal
-                                priceDisplay.innerHTML = 'Rp' + originalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                                // Sembunyikan baris diskon & kembalikan harga asli
+                                const breakdown = document.getElementById('priceBreakdown');
+                                if (breakdown) breakdown.style.display = 'none';
+                                priceDisplay.textContent = 'Rp' + originalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                             }
                         })
                         .catch(error => {

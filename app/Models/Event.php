@@ -44,6 +44,7 @@ class Event extends Model
         'schedule_json',
         'expenses_json',
         'manage_action',
+        'is_reseller_event',
     ];
 
     protected $casts = [

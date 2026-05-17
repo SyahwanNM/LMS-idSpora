@@ -142,7 +142,9 @@
                     <div class="card h-100  shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="card-title text-body-secondary">Total Earnings (All Time)</h6>
+                                <h6 class="card-title text-body-secondary d-flex align-items-center gap-1">Total Earnings (All Time)
+                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Total keseluruhan komisi yang sudah Anda dapatkan." style="font-size: 0.85rem; cursor: help;"></i>
+                                </h6>
                                 <h3 class="card-title">Rp {{ number_format($totalEarnings, 0, ',', '.') }}</h3>
                                 <p class="card-text text-success mb-0">+Rp {{ number_format($earningsThisMonth/1000, 0)
                                     }}k bulan ini</p>
@@ -160,7 +162,9 @@
                     <div class="card h-100 shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="card-title text-body-secondary mb-1">Total Referrals</h6>
+                                <h6 class="card-title text-body-secondary mb-1 d-flex align-items-center gap-1">Total Referrals
+                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Jumlah total orang yang telah membeli menggunakan kode referral Anda." style="font-size: 0.85rem; cursor: help;"></i>
+                                </h6>
 
                                 {{-- Angka Total Referrals Dinamis --}}
                                 <h3 class="card-title mb-1">{{ number_format($totalReferrals, 0, ',', '.') }}</h3>
@@ -194,7 +198,9 @@
                     <div class="card h-100 shadow-sm">
                         <div class="card-body d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="card-title text-body-secondary">Conversion Rate</h6>
+                                <h6 class="card-title text-body-secondary d-flex align-items-center gap-1">Conversion Rate
+                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Persentase orang yang daftar setelah membuka link referralmu." style="font-size: 0.85rem; cursor: help;"></i>
+                                </h6>
                                 {{-- Angka Dinamis --}}
                                 <h3 class="card-title">{{ number_format($conversionRate, 1) }}%</h3>
                                 <p class="card-text text-success mb-0">Berdasarkan data transaksi</p>
@@ -298,9 +304,17 @@
                             <i class="bi bi-grid-fill text-warning me-2"></i>
                             Produk Komisi Reseller
                         </h5>
-                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle px-3 py-2">
-                            Komisi {{ number_format($commissionRate * 100, 0) }}%
-                        </span>
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <form action="{{ route('reseller.index') }}" method="GET" class="d-flex m-0">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="search" class="form-control" placeholder="Cari program..." value="{{ request('search') }}">
+                                    <button class="btn btn-outline-secondary bg-white" type="submit"><i class="bi bi-search"></i></button>
+                                </div>
+                            </form>
+                            <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle px-3 py-2">
+                                Komisi {{ number_format($commissionRate * 100, 0) }}%
+                            </span>
+                        </div>
                     </div>
 
                     <div class="table-responsive">
@@ -351,6 +365,11 @@
                             </tbody>
                         </table>
                     </div>
+                    @if(method_exists($commissionProducts, 'hasPages') && $commissionProducts->hasPages())
+                    <div class="mt-4 d-flex justify-content-center">
+                        {{ $commissionProducts->appends(['search' => request('search')])->links('pagination::bootstrap-5') }}
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -365,13 +384,33 @@
                             {{-- Bagian Avatar & Badge Utama --}}
                             <div class="text-center mb-4">
                                 <div class="position-relative d-inline-block mb-3">
-                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-sm"
-                                        style="width: 80px; height: 80px; background: linear-gradient(135deg, #8B4513 0%, #CD853F 100%); color: white;">
-                                        <i class="bi bi-person-fill fs-1"></i>
+                                    @php
+                                        $badgeStyle = '';
+                                        $badgeIcon = '';
+                                        $frameStyle = '';
+                                        if($level == 'Bronze') {
+                                            $badgeStyle = 'background-color: #cd7f32; color: white; border: 1px solid #cd7f32;';
+                                            $badgeIcon = 'bi-shield-fill';
+                                            $frameStyle = 'border: 3px solid #cd7f32;';
+                                        } elseif($level == 'Silver') {
+                                            $badgeStyle = 'background-color: #f8f9fa; color: #495057; border: 1px solid #c0c0c0; box-shadow: 0 0 10px rgba(192,192,192,0.6);';
+                                            $badgeIcon = 'bi-shield-fill text-secondary';
+                                            $frameStyle = 'border: 3px solid #c0c0c0; box-shadow: 0 0 10px rgba(192,192,192,0.4);';
+                                        } else {
+                                            $badgeStyle = 'background: linear-gradient(135deg, #FFD700 0%, #FDB931 100%); color: #422800; border: 1px solid #FFD700; box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);';
+                                            $badgeIcon = 'bi-award-fill';
+                                            $frameStyle = 'border: 3px solid #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);';
+                                        }
+                                    @endphp
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                                        style="width: 86px; height: 86px; {{ $frameStyle }}">
+                                        <div class="rounded-circle overflow-hidden w-100 h-100">
+                                            <img src="{{ Auth::user()->avatar_url }}" alt="Profile Picture" class="w-100 h-100" style="object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6b7280&color=ffffff';">
+                                        </div>
                                     </div>
                                     <span
-                                        class="position-absolute bottom-0 start-50 translate-middle-x badge bg-white text-dark border shadow-sm rounded-pill px-3 py-1 mt-2">
-                                        {{ $level }}
+                                        class="position-absolute bottom-0 start-50 translate-middle-x badge rounded-pill px-3 py-1 mt-2 d-flex align-items-center gap-1" style="{{ $badgeStyle }}">
+                                        <i class="bi {{ $badgeIcon }}"></i> {{ $level }}
                                     </span>
                                 </div>
                                 <h5 class="fw-bold mb-0">{{ $user->name }}</h5>
@@ -408,7 +447,7 @@
                                     class="p-2 rounded-3 border d-flex justify-content-between align-items-center
                                 {{ $level == 'Bronze' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 50 ? 'border-success bg-success bg-opacity-10' : 'opacity-75') }}">
                                     <div class="d-flex align-items-center">
-                                        <i class="bi bi-star text-warning me-2"></i>
+                                        <i class="bi bi-shield-fill me-2" style="color: #cd7f32; font-size: 1.1rem;"></i>
                                         <div class="lh-1">
                                             <span class="d-block fw-bold small text-dark">Bronze (0-50)</span>
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 10%</span>
@@ -427,7 +466,7 @@
                                     class="p-2 rounded-3 border d-flex justify-content-between align-items-center 
                                 {{ $level == 'Silver' ? 'border-warning bg-warning bg-opacity-10' : ($totalReferrals > 150 ? 'border-success bg-success bg-opacity-10' : 'opacity-50') }}">
                                     <div class="d-flex align-items-center">
-                                        <i class="bi bi-star-half text-secondary me-2"></i>
+                                        <i class="bi bi-shield-fill text-secondary me-2" style="filter: drop-shadow(0 0 3px rgba(192,192,192,0.8)); font-size: 1.1rem;"></i>
                                         <div class="lh-1">
                                             <span class="d-block fw-bold small text-dark">Silver (51-150)</span>
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 12%</span>
@@ -446,7 +485,7 @@
                                 <div class="p-2 rounded-3 border d-flex justify-content-between align-items-center 
                                 {{ $level == 'Gold' ? 'border-warning bg-warning bg-opacity-10' : 'opacity-50' }}">
                                     <div class="d-flex align-items-center">
-                                        <i class="bi bi-star-fill text-secondary me-2"></i>
+                                        <i class="bi bi-award-fill me-2" style="color: #FFD700; filter: drop-shadow(0 0 5px rgba(255,215,0,0.7)); font-size: 1.2rem;"></i>
                                         <div class="lh-1">
                                             <span class="d-block fw-bold small text-dark">Gold (151+)</span>
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 15%</span>
@@ -470,7 +509,7 @@
                     <div class="card h-100 shadow-sm rounded-3">
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold mb-0">Top Resellers</h5>
+                                <h5 class="fw-bold mb-0">Top Resellers (Monthly)</h5>
                                 <i class="bi bi-trophy-fill text-warning fs-5"></i>
                             </div>
 

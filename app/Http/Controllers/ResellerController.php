@@ -72,7 +72,7 @@ class ResellerController extends Controller
         return view('admin.reseller.data', compact('resellers'));
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         if (empty($user->referral_code)) {
@@ -137,6 +137,8 @@ class ResellerController extends Controller
         };
 
         $courseProducts = Course::query()
+            ->where('status', 'active')
+            ->where('is_reseller_course', 1)
             ->with('category:id,name')
             ->select('id', 'name', 'category_id', 'price', 'card_thumbnail')
             ->latest()
@@ -164,6 +166,8 @@ class ResellerController extends Controller
             });
 
         $eventProducts = Event::query()
+            ->where('is_published', 1)
+            ->where('is_reseller_event', 1)
             ->select('id', 'title', 'jenis', 'price', 'image')
             ->latest()
             ->get()
@@ -193,6 +197,25 @@ class ResellerController extends Controller
             ->concat($eventProducts)
             ->sortByDesc('price')
             ->values();
+
+        $search = $request->input('search');
+        if ($search) {
+            $commissionProducts = $commissionProducts->filter(function ($item) use ($search) {
+                return stripos($item['program'], $search) !== false || stripos($item['category'], $search) !== false;
+            })->values();
+        }
+
+        $perPage = 6;
+        $page = $request->input('page', 1);
+        $offset = ($page - 1) * $perPage;
+        
+        $commissionProducts = new \Illuminate\Pagination\LengthAwarePaginator(
+            $commissionProducts->slice($offset, $perPage)->values(),
+            $commissionProducts->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         // --- 4. Data Tabel Riwayat ---
         // Ngambil 5 data terakhir beserta nama user yang diajak (referredUser)
@@ -242,7 +265,8 @@ class ResellerController extends Controller
             'userRank',
             'registrations',
             'commissionRate',
-            'commissionProducts'
+            'commissionProducts',
+            'search'
         ));
     }
 

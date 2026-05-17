@@ -430,14 +430,25 @@
                     <div class="ticket-divider"></div>
 
                     <div class="harga_teks_payment">
-                        <div class="teks_payment">
-                            <p>Total</p>
-                            <h4 id="totalPriceDisplay" data-original-price="{{ $course->price ?? 0 }}">Rp {{
-                                number_format($course->price ?? 0, 0, ',', '.') }}</h4>
+                        <div class="teks_payment" style="width:100%;">
+                            {{-- Breakdown: hanya muncul saat referral valid --}}
+                            <div id="priceBreakdown" style="display:none;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <p style="margin:0;">Harga Normal</p>
+                                    <p style="margin:0; font-weight:500;">Rp {{ number_format($course->price ?? 0, 0, ',', '.') }}</p>
+                                </div>
+                                <div id="discountRow" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <p style="margin:0; color:#27ae60;"><i class="bi bi-tag-fill me-1"></i>Diskon Referral</p>
+                                    <p style="margin:0; color:#27ae60; font-weight:500;" id="discountLabel">-Rp 0</p>
+                                </div>
+                                <div style="border-top: 1px dashed #bacddf; margin: 8px 0;"></div>
+                            </div>
+                            {{-- Total selalu tampil --}}
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <p style="margin:0; font-weight:700; font-size:14px;">Total</p>
+                                <h4 id="totalPriceDisplay" data-original-price="{{ $course->price ?? 0 }}" style="margin:0; font-size:20px; font-weight:700;">Rp {{ number_format($course->price ?? 0, 0, ',', '.') }}</h4>
+                            </div>
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor"
-                            class="bi bi-file-text icon-invoice" viewBox="0 0 16 16">
-                        </svg>
                     </div>
                 </div>
 
@@ -777,17 +788,23 @@
                             if (data.valid) {
                                 messageBox.innerHTML = `<span style="color:green;">${data.message}</span>`;
 
-                                // Hitung diskon persentase (misal 10%)
-                                var discountAmount = originalPrice * (data.discount_percentage / 100);
-                                var newPrice = originalPrice - discountAmount;
+                                // Hitung diskon
+                                var discountAmount = Math.round(originalPrice * (data.discount_percentage / 100));
+                                var newPrice = Math.max(0, originalPrice - discountAmount);
 
-                                if (newPrice < 0) newPrice = 0;
+                                // Tampilkan breakdown
+                                var breakdown = document.getElementById('priceBreakdown');
+                                var discountLabel = document.getElementById('discountLabel');
+                                if (breakdown) breakdown.style.display = 'block';
+                                if (discountLabel) discountLabel.textContent = '-Rp ' + discountAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-                                // Format angka ke format Rupiah (titik)
+                                // Update total
                                 priceDisplay.innerHTML = 'Rp ' + newPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                             } else {
                                 messageBox.innerHTML = `<span style="color:red;">${data.message}</span>`;
-                                // Kembalikan ke harga asli kalau gagal
+                                // Sembunyikan breakdown & kembalikan harga asli
+                                var breakdown = document.getElementById('priceBreakdown');
+                                if (breakdown) breakdown.style.display = 'none';
                                 priceDisplay.innerHTML = 'Rp ' + originalPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                             }
                         })
