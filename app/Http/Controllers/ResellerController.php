@@ -201,7 +201,9 @@ class ResellerController extends Controller
         $search = $request->input('search');
         if ($search) {
             $commissionProducts = $commissionProducts->filter(function ($item) use ($search) {
-                return stripos($item['program'], $search) !== false || stripos($item['category'], $search) !== false;
+                return stripos($item['program'], $search) !== false
+                    || stripos($item['category'], $search) !== false
+                    || stripos($item['type'], $search) !== false;
             })->values();
         }
 
