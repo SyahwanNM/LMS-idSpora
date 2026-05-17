@@ -28,7 +28,7 @@ use App\Http\Controllers\User\UserModuleController;
 use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Public\SocialAuthController;
-use App\Http\Controllers\TrainerApiController;
+use App\Http\Controllers\Trainer\TrainerApiController;
 use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
 use App\Http\Controllers\User\NotificationsController;
@@ -39,8 +39,8 @@ use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Http\Controllers\User\ResellerController;
-use App\Http\Controllers\TrainerController;
-use App\Http\Controllers\TrainerNotificationsController;
+use App\Http\Controllers\Trainer\TrainerController;
+use App\Http\Controllers\Trainer\TrainerNotificationsController;
 use App\Http\Controllers\Api\PaymentController;
 
 Route::get('/admin/detail-event', function () {

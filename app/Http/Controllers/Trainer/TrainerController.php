@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Trainer;
 
+use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\Feedback;
@@ -452,7 +453,6 @@ class TrainerController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $this->ensureTrainerCertificatesSynced($user);
         $activityService = app(TrainerActivityService::class);
         $trainerActivity = $activityService->refresh($user);
         $availableContributionSchemes = $activityService->availableContributionSchemes($user);
