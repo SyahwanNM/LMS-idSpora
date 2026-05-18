@@ -309,7 +309,7 @@
                     </div>
                     <div class="stat-value">Rp {{ number_format($pendapatanBersih / 1000000, 1, ',', '.') }}jt</div>
                     <div class="stat-label">Estimasi pendapatan bersih platform.</div>
-                    <div class="mt-2 small text-muted">Setelah komisi, gaji trainer & biaya operasional.</div>
+                    <div class="mt-2 small text-muted">Setelah komisi, payout trainer & biaya operasional.</div>
                     @if($pendingExpensesCount > 0)
                         <a href="{{ route('admin.finance.expenses') }}" class="btn btn-action mt-2">Lihat Pending</a>
                     @endif
@@ -455,72 +455,15 @@
             </div>
         </div>
 
-        <!-- Trainer Payment Modal -->
-        <div class="modal fade" id="trainerPaymentModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content border-0 rounded-4 shadow">
-                    <form action="{{ route('admin.finance.store-trainer-payment') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="modal-header border-0 pb-0">
-                            <h5 class="modal-title fw-bold">Kirim Gaji & Nota Trainer</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body p-4">
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Pilih Trainer</label>
-                                <select name="trainer_id" class="form-select rounded-3" required>
-                                    @foreach(\App\Models\User::where('role', 'trainer')->get() as $trainer)
-                                        <option value="{{ $trainer->id }}">{{ $trainer->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-bold">Bulan</label>
-                                    <select name="month" class="form-select rounded-3">
-                                        @foreach(range(1, 12) as $m)
-                                            <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label small fw-bold">Tahun</label>
-                                    <input type="number" name="year" class="form-control rounded-3" value="{{ date('Y') }}" required>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Nominal Gaji (Rp)</label>
-                                <input type="number" name="amount" class="form-control rounded-3" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Upload Nota Gaji (PDF/Image)</label>
-                                <input type="file" name="salary_slip" class="form-control rounded-3">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Upload Bukti Transfer (Image)</label>
-                                <input type="file" name="proof_of_payment" class="form-control rounded-3">
-                            </div>
-                            <div class="mb-0">
-                                <label class="form-label small fw-bold">Catatan Pendek</label>
-                                <textarea name="note" class="form-control rounded-3" rows="2"></textarea>
-                            </div>
-                        </div>
-                        <div class="modal-footer border-0 pt-0 pb-4 px-4">
-                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-warning rounded-pill px-4 fw-bold">Kirim Gaji</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
-        <!-- Recent Transactions -->
-        <div class="row g-4 mt-2">
-            <div class="col-12">
+        <!-- Recent Transactions & Trainer Balances -->
+        <div class="row g-4 mt-2 mb-5">
+            <!-- Left: Transactions -->
+            <div class="col-lg-7">
                 <div class="stat-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="card-title mb-0">Transaksi Terakhir</h5>
-                        <a href="#" class="text-decoration-none small fw-bold text-primary">Lihat Semua</a>
+                        <a href="{{ route('admin.finance.incomes') }}" class="text-decoration-none small fw-bold text-primary">Lihat Semua</a>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle border-top">
@@ -528,7 +471,6 @@
                                 <tr class="text-muted small">
                                     <th class="py-3 border-0">ID Order</th>
                                     <th class="py-3 border-0">Pelanggan</th>
-                                    <th class="py-3 border-0">Metode</th>
                                     <th class="py-3 border-0">Nominal</th>
                                     <th class="py-3 border-0 text-center">Invoice</th>
                                 </tr>
@@ -541,13 +483,7 @@
                                     </td>
                                     <td>
                                         <div class="fw-semibold">{{ $tx['user'] }}</div>
-                                        <div class="small text-muted">{{ $tx['date']->format('d M Y, H:i') }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="small text-muted">{{ $tx['source'] ?? 'General' }}</div>
-                                        <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 mt-1">
-                                            Transfer {{ $tx['type'] }}
-                                        </span>
+                                        <div class="small text-muted">{{ $tx['date']->format('d M Y') }}</div>
                                     </td>
                                     <td class="fw-bold">Rp {{ number_format($tx['amount'], 0, ',', '.') }}</td>
                                     <td class="text-center">
@@ -558,12 +494,51 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted small">Belum ada transaksi sukses.</td>
+                                    <td colspan="4" class="text-center py-5 text-muted small">Belum ada transaksi sukses.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <!-- Right: Trainers Balance -->
+            <div class="col-lg-5">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Saldo Trainer</h5>
+                        <a href="{{ route('admin.finance.trainers') }}" class="text-decoration-none small fw-bold text-primary">Detail</a>
+                    </div>
+                    <div class="trainer-balance-list">
+                        @forelse($trainers as $trainer)
+                        <div class="performer-item px-1">
+                            <div class="avatar-circle-sm" style="background: #FFF7E6; color: #FB8500;">
+                                {{ strtoupper(substr($trainer->name, 0, 1)) }}
+                            </div>
+                            <div>
+                                <div class="fw-bold small">{{ $trainer->name }}</div>
+                                <div class="text-muted" style="font-size: 10px;">{{ $trainer->email }}</div>
+                            </div>
+                            <div class="ms-auto text-end">
+                                <div class="fw-800 text-success small">Rp {{ number_format($trainer->wallet_balance ?? 0, 0, ',', '.') }}</div>
+                                <div class="text-muted" style="font-size: 10px;">Saldo Course</div>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="text-center py-5">
+                            <i class="bi bi-person-x text-muted display-6"></i>
+                            <p class="text-muted small mt-2">Belum ada trainer terdaftar.</p>
+                        </div>
+                        @endforelse
+                    </div>
+                    @if($trainers->count() > 0)
+                    <div class="mt-3 text-center">
+                        <a href="{{ route('admin.finance.trainers') }}" class="btn btn-light btn-sm w-100 rounded-pill fw-bold py-2" style="font-size: 11px;">
+                            Kelola Semua Trainer & Fee Event
+                        </a>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>

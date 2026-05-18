@@ -2,34 +2,138 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - @yield('title', 'Event')</title>
+    <title>Admin - Kelola Trainer &amp; Saldo</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @yield('styles')
+    <link rel="icon" type="image/x-icon" href="http://127.0.0.1:8000/favicon.ico">
+    <meta name="csrf-token" content="">
+    <script type="module" src="http://[::1]:5173/@vite/client"></script><link rel="stylesheet" href="http://[::1]:5173/resources/css/app.css" /><script type="module" src="http://[::1]:5173/resources/js/app.js"></script>        <!-- Google Fonts: Inter/Roboto Style -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --ids-primary: #FFB703;
+        --ids-secondary: #FB8500;
+        --ids-bg: #F8F9FA;
+        --ids-card-bg: #FFFFFF;
+        --ids-text-main: #1A1D1F;
+        --ids-text-muted: #6F767E;
+        --ids-border: #EFEFEF;
+    }
+
+    body {
+        background-color: var(--ids-bg) !important;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Override standard container to allow sidebar feel */
+    .finance-wrapper {
+        display: flex;
+        min-height: calc(100vh - 100px);
+        margin: 0 -12px; /* Pull out of standard container padding */
+    }
+
+    /* Sidebar-like Nav */
+    .finance-sidebar {
+        width: 240px;
+        background: #fff;
+        padding: 24px;
+        border-right: 1px solid var(--ids-border);
+        display: none; /* Hide on small screens */
+    }
+
+    @media (min-width: 992px) {
+        .finance-sidebar { display: block; }
+    }
+
+    .nav-menu-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--ids-text-muted);
+        letter-spacing: 1px;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        color: var(--ids-text-main);
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 4px;
+        transition: all 0.2s;
+    }
+
+    .sidebar-link i {
+        font-size: 1.2rem;
+        margin-right: 12px;
+        color: var(--ids-text-muted);
+    }
+
+    .sidebar-link:hover {
+        background: #F4F4F4;
+        color: var(--ids-text-main);
+    }
+
+    .sidebar-link.active {
+        background: #FEF6E6;
+        color: var(--ids-text-main);
+    }
+
+    .sidebar-link.active i {
+        color: var(--ids-secondary);
+    }
+
+    .badge-notif {
+        background: #D93F3F;
+        color: #fff;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        margin-left: auto;
+    }
+
+    /* Main Content */
+    .finance-main {
+        flex: 1;
+        padding: 24px;
+    }
+</style>
+    <style>
+        .trainer-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid var(--ids-border);
+            transition: all 0.2s ease;
+        }
+        .trainer-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+        .balance-value { font-size: 1.4rem; font-weight: 800; color: #16a34a; }
+        .section-header { border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px; font-weight: 800; color: #1e293b; }
+        .nav-pills-custom .nav-link { border-radius: 10px; font-weight: 600; padding: 10px 20px; color: #64748b; }
+        .nav-pills-custom .nav-link.active { background-color: var(--ids-primary); color: #000; }
+        .badge-pill { padding: 4px 12px; border-radius: 50px; font-size: 11px; font-weight: 700; }
+    </style>
     <style>
         /* Ensure toast notifications appear above fixed navbar and profile dropdown */
         .toast-container.position-fixed { z-index: 11050 !important; }
     </style>
 </head>
 <body>
-    @php 
-        $user = auth()->user();
-        $isSpecialPage = request()->routeIs('admin.finance.*') || 
-                         request()->routeIs('admin.withdrawals.*') || 
-                         request()->routeIs('admin.crm.*') || 
-                         request()->routeIs('admin.trainer.*') ||
-                         request()->routeIs('admin.material.*');
-    @endphp
-
-    @unless($isSpecialPage)
-    <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
+    
+        <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
         <div class="container-fluid px-4">
-            <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
-                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:22px;">
+            <a class="navbar-brand d-flex align-items-center" href="http://127.0.0.1:8000/admin/dashboard">
+                <img src="http://127.0.0.1:8000/aset/logo.png" alt="logo" class="me-2" style="height:22px;">
                 <span class="fw-semibold">Admin</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,50 +141,35 @@
             </button>
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @unless(request()->routeIs('admin.dashboard') || request()->routeIs('admin.users.*') || request()->routeIs('admin.carousels.*'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ (request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a>
+                                        <li class="nav-item">
+                        <a class="nav-link " href="http://127.0.0.1:8000/admin/add-event">Manage Event</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}" href="{{ route('admin.reports') }}">Report</a>
+                        <a class="nav-link " href="http://127.0.0.1:8000/admin/reports">Report</a>
                     </li>
-                    @endunless
-                    {{-- Certificate management moved to CRM --}}
-                    @if(request()->routeIs('admin.dashboard'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admin</a>
+                                        
+                                                            <li class="nav-item">
+                        <a class="nav-link " href="http://127.0.0.1:8000/admin/crm/dashboard">CRM</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
-                    </li>
-                    @endif
-                    @unless(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*') || request()->routeIs('admin.reports'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
-                    </li>
-                    @endunless
-                </ul>
+                                    </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item dropdown">
                         <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
-                                <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
+                                <img src="https://ui-avatars.com/api/?name=Admin+idSpora&amp;background=6b7280&amp;color=ffffff&amp;format=png" alt="avatar" referrerpolicy="no-referrer">
                             </span>
-                            <span class="d-none d-lg-inline user-name small fw-semibold">{{ $user?->name ?? 'Admin' }}</span>
+                            <span class="d-none d-lg-inline user-name small fw-semibold">Admin idSpora</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow profile-dropdown" aria-labelledby="adminProfileDropdown">
                             <li class="d-flex justify-content-end align-items-center pt-2 px-2">
                                 <button type="button" class="btn-close dropdown-close" aria-label="Close"></button>
                             </li>
                             <li><h6 class="dropdown-header small text-muted">Akun</h6></li>
-                            @if($user && $user->role === 'admin')
-                                <li><a class="dropdown-item" href="{{ route('admin.settings') }}"><i class="bi bi-sliders me-1"></i> Sistem</a></li>
+                                                            <li><a class="dropdown-item" href="http://127.0.0.1:8000/admin/settings"><i class="bi bi-sliders me-1"></i> Sistem</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                            @endif
-                            <li>
-                                <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="m-0">
-                                    @csrf
-                                    <button type="button" id="logoutTrigger"
+                                                        <li>
+                                <form id="logoutForm" action="http://127.0.0.1:8000/logout" method="POST" class="m-0">
+                                    <input type="hidden" name="_token" value="" autocomplete="off">                                    <button type="button" id="logoutTrigger"
                                         class="dropdown-item small text-danger"
                                         data-bs-toggle="modal"
                                         data-bs-target="#confirmLogoutModal">
@@ -94,8 +183,7 @@
             </div>
         </div>
     </nav>
-    @endunless
-        <!-- Logout Confirmation Modal -->
+            <!-- Logout Confirmation Modal -->
         <div class="modal fade logout-modal" id="confirmLogoutModal" tabindex="-1" aria-labelledby="confirmLogoutLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-md">
                 <div class="modal-content border-0 shadow-lg">
@@ -127,20 +215,227 @@
                 </div>
             </div>
         </div>
-    {{-- Quick Actions Scrollable Bar (override with @section('admin_quick_actions') if needed) --}}
-    {{-- Quick actions bar removed per request: New Course/Event/User, All Courses/Events/Users, Reports --}}
-    @yield('navbar')
+    
+    
+        <nav class="navbar navbar-expand-lg border-bottom sticky-top shadow-sm" style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); z-index: 1050; height: 72px;">
+    <div class="container-fluid px-4">
+        <!-- Brand / Identity -->
+        <a class="navbar-brand d-flex align-items-center gap-2" href="http://127.0.0.1:8000/admin/finance">
+            <div class="bg-warning rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
+                <i class="bi bi-wallet2 text-dark fs-5"></i>
+            </div>
+            <span class="fw-800 text-dark tracking-tighter" style="font-size: 1.25rem; font-family: 'Plus Jakarta Sans', sans-serif;">FINANCE<span class="text-warning">HUB</span></span>
+        </a>
 
-    <div class="@if($isSpecialPage) container-fluid p-0 @else container-fluid px-4 @endif">
-        @yield('content')
+        <!-- Divider -->
+        <div class="vr mx-3 d-none d-lg-block text-muted opacity-25" style="height: 24px;"></div>
+
+        <!-- Role Badge -->
+        <div class="d-none d-md-flex align-items-center me-auto">
+            <span class="badge bg-dark-subtle text-dark border rounded-pill px-3 py-2 small fw-bold">
+                <i class="bi bi-shield-lock-fill me-1 text-warning"></i> Admin Financial Access
+            </span>
+        </div>
+
+        <!-- Right Side: User & Quick Actions -->
+        <div class="d-flex align-items-center gap-3">
+            <!-- Payout Counter (Mini) -->
+            
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+                <button class="btn border-0 p-1 d-flex align-items-center gap-3 dropdown-toggle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="text-end d-none d-sm-block">
+                        <div class="fw-bold text-dark mb-0 small">Admin idSpora</div>
+                        <div class="text-muted" style="font-size: 10px;">Chief Financial Officer</div>
+                    </div>
+                    <div class="avatar-sm bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 40px; height: 40px; font-size: 0.9rem;">
+                        AD
+                    </div>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 mt-2" style="min-width: 200px;">
+                    <li><h6 class="dropdown-header small text-muted uppercase tracking-wider">Session Settings</h6></li>
+                    <li><a class="dropdown-item rounded-3 py-2" href="http://127.0.0.1:8000/admin/dashboard"><i class="bi bi-grid-1x2 me-2"></i> Main Dashboard</a></li>
+                    <li><hr class="dropdown-divider opacity-50"></li>
+                    <li>
+                        <form action="http://127.0.0.1:8000/logout" method="POST">
+                            <input type="hidden" name="_token" value="" autocomplete="off">                            <button type="submit" class="dropdown-item text-danger rounded-3 py-2"><i class="bi bi-box-arrow-right me-2"></i> End Session</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .hover-scale:hover { transform: scale(1.05); }
+    .anim-pulse { animation: pulse-red 2s infinite; }
+    @keyframes pulse-red {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+    .fw-800 { font-weight: 800; }
+    .tracking-tighter { letter-spacing: -0.5px; }
+</style>
+
+    <div class=" container-fluid px-4 ">
+        <div class="alert alert-info">DEBUG: Content Section Loaded</div>
+<div class="finance-wrapper" style="margin-top: 0;">
+    <aside class="finance-sidebar" style="position: sticky; top: 72px; height: calc(100vh - 72px);">
+    <span class="nav-menu-label">Menu Utama</span>
+    <a href="http://127.0.0.1:8000/admin/finance" class="sidebar-link ">
+        <i class="bi bi-wallet2"></i> Keuangan & Payout
+    </a>
+    <span class="nav-menu-label mt-4">Menu Transaksi</span>
+    <a href="http://127.0.0.1:8000/admin/finance/incomes" class="sidebar-link ">
+        <i class="bi bi-arrow-down-circle"></i> Pemasukan
+    </a>
+    <a href="http://127.0.0.1:8000/admin/finance/expenses" class="sidebar-link ">
+        <i class="bi bi-arrow-up-circle"></i> Pengeluaran
+            </a>
+    <a href="http://127.0.0.1:8000/admin/finance/trainers" class="sidebar-link ">
+        <i class="bi bi-person-check"></i> Kelola Trainer
+    </a>
+
+    <span class="nav-menu-label mt-4">Laporan Aktivitas</span>
+    <a href="http://127.0.0.1:8000/admin/finance/events" class="sidebar-link ">
+        <i class="bi bi-calendar-event"></i> Laporan Event
+    </a>
+    <a href="http://127.0.0.1:8000/admin/finance/courses" class="sidebar-link ">
+        <i class="bi bi-book"></i> Laporan Course
+    </a>
+</aside>
+
+    <main class="finance-main">
+        <div class="crm-page-header d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <div class="page-eyebrow">Finance Dashboard</div>
+                <h1 class="hero-title" style="font-size: 1.8rem; font-weight: 700; margin-bottom: 5px;">Kelola Trainer & Saldo</h1>
+                <p class="hero-subtitle text-muted">Kelola pencairan saldo course & fee event untuk para pengajar.</p>
+                <div class="badge bg-dark">DEBUG: Trainer Count = 2</div>
+            </div>
+        </div>
+
+                
+        <ul class="nav nav-pills nav-pills-custom mb-4 gap-2" id="trainerTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="course-tab" data-bs-toggle="pill" data-bs-target="#course-payout" type="button">
+                    <i class="bi bi-wallet2 me-2"></i>Saldo Course
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="event-tab" data-bs-toggle="pill" data-bs-target="#event-fee" type="button">
+                    <i class="bi bi-calendar-check me-2"></i>Fee Event
+                                    </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#history" type="button">
+                    <i class="bi bi-clock-history me-2"></i>Riwayat
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="trainerTabContent">
+            <!-- Course Payouts Section -->
+            <div class="tab-pane fade show active" id="course-payout" role="tabpanel">
+                <div class="row g-4">
+                                        <div class="col-md-6 col-lg-4">
+                        <div class="trainer-card p-4 h-100 d-flex flex-column">
+                            <h6 class="fw-bold">TEST: alang</h6>
+                            <p>Saldo: 0.00</p>
+                        </div>
+                    </div>
+                                        <div class="col-md-6 col-lg-4">
+                        <div class="trainer-card p-4 h-100 d-flex flex-column">
+                            <h6 class="fw-bold">TEST: Leny</h6>
+                            <p>Saldo: 0.00</p>
+                        </div>
+                    </div>
+                                    </div>
+            </div>
+
+            <!-- Event Fee Section -->
+            <div class="tab-pane fade" id="event-fee" role="tabpanel">
+                <!-- Section 1: Ended Events Needing Fee Request -->
+                <div class="crm-card mb-5">
+                    <div class="crm-card-header bg-light-subtle">
+                        <h5 class="crm-card-title"><i class="bi bi-calendar-check me-2 text-primary"></i>Event Selesai (Butuh Input Fee)</h5>
+                        <p class="small text-muted mb-0">Event yang sudah selesai namun fee trainer belum diinput.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="crm-table">
+                            <thead>
+                                <tr>
+                                    <th>EVENT</th>
+                                    <th>TRAINER</th>
+                                    <th>TANGGAL SELESAI</th>
+                                    <th class="text-end">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">Tidak ada event selesai yang menunggu input fee.</td>
+                                </tr>
+                                                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 2: Pending Event Fee Requests -->
+                <div class="crm-card">
+                    <div class="crm-card-header" style="background-color: #fff9f0;">
+                        <h5 class="crm-card-title"><i class="bi bi-hourglass-split me-2 text-warning"></i>Permintaan Fee Event (Menunggu Pembayaran)</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="crm-table">
+                            <thead>
+                                <tr>
+                                    <th>TRAINER</th>
+                                    <th>EVENT / KETERANGAN</th>
+                                    <th>JUMLAH</th>
+                                    <th class="text-end">AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">Tidak ada permintaan fee event pending.</td>
+                                </tr>
+                                                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="crm-card">
+                    <div class="crm-card-header">
+                        <h5 class="crm-card-title">Riwayat Pencairan & Fee (10 Terakhir)</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="crm-table">
+                            <thead>
+                                <tr>
+                                    <th>TANGGAL</th>
+                                    <th>TRAINER</th>
+                                    <th>JENIS / REF</th>
+                                    <th>JUMLAH</th>
+                                    <th>BUKTI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
     </div>
 
-    @if($isSpecialPage)
-    <style>
-        body { padding-top: 0 !important; }
-    </style>
-    @endif
-    
+        
     
     <script>
     document.addEventListener('DOMContentLoaded', function(){
@@ -376,28 +671,7 @@
     @keyframes draw-check { to { stroke-dashoffset:0; } }
     </style>
 
-    @if(session('success') || session('login_success') || session('error'))
-        <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
-            @if(session('login_success'))
-                <div class="notification success" role="status" data-timeout="4200">
-                    <div class="notif-message"><i class="bi bi-check-circle-fill me-2"></i>{{ session('login_success') }}</div>
-                    <button class="notif-close" aria-label="Close">&times;</button>
-                </div>
-            @elseif(session('success'))
-                <div class="notification success" role="status" data-timeout="3800">
-                    <div class="notif-message"><i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}</div>
-                    <button class="notif-close" aria-label="Close">&times;</button>
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="notification error" role="status" data-timeout="6000">
-                    <div class="notif-message"><i class="bi bi-x-circle-fill me-2"></i>{{ session('error') }}</div>
-                    <button class="notif-close" aria-label="Close">&times;</button>
-                </div>
-            @endif
-        </div>
-    @endif
-
+    
     <script>
     document.addEventListener('DOMContentLoaded', function(){
         try {
@@ -459,7 +733,6 @@
     };
     </script>
 
-    @yield('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
