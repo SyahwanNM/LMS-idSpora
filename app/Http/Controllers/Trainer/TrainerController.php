@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Trainer;
 
+use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\CourseModule;
 use App\Models\Feedback;

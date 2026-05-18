@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class TrainerCertificate extends Model
 {
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PUBLISHED = 'published';
+    public const STATUS_REVOKED = 'revoked';
+
+    public const TYPE_CODE_TRAINER = 'TRN';
+
     protected $fillable = [
         'trainer_id',
         'certifiable_type',
@@ -39,4 +45,3 @@ class TrainerCertificate extends Model
         return $this->morphTo();
     }
 }
-

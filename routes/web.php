@@ -28,7 +28,7 @@ use App\Http\Controllers\User\UserModuleController;
 use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Public\SocialAuthController;
-use App\Http\Controllers\TrainerApiController;
+use App\Http\Controllers\Trainer\TrainerApiController;
 use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
 use App\Http\Controllers\User\NotificationsController;
@@ -39,8 +39,8 @@ use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Http\Controllers\User\ResellerController;
-use App\Http\Controllers\TrainerController;
-use App\Http\Controllers\TrainerNotificationsController;
+use App\Http\Controllers\Trainer\TrainerController;
+use App\Http\Controllers\Trainer\TrainerNotificationsController;
 use App\Http\Controllers\Api\PaymentController;
 
 Route::get('/admin/detail-event', function () {
@@ -683,19 +683,22 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'index'])->name('admin.trainer.index');
     Route::get('/admin/trainer/create', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'create'])->name('admin.trainer.create');
     Route::post('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'store'])->name('admin.trainer.store');
+
+    // Trainer Certificates
+    Route::get('/admin/trainer/certificates', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'index'])->name('admin.trainer.certificates.index');
+    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'queue'])->name('admin.trainer.certificates.queue');
+    Route::get('/admin/trainer/certificates/{trainer}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'show'])->name('admin.trainer.certificates.show');
+    Route::get(
+    '/admin/trainer/certificates/{trainer}/{context}/{id}/edit',
+    [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'edit'])->name('admin.trainer.certificates.edit');
+    Route::post(
+    '/admin/trainer/certificates/{trainer}/{context}/{id}/edit',
+    [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'update'])->name('admin.trainer.certificates.update');
+
     Route::get('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'show'])->name('admin.trainer.show');
     Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
-    Route::post('/admin/trainer/{trainer}/certificates', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
-    // Allow admin to upload/manual-send a certificate file to a trainer
-    Route::post('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendCertificate'])->name('admin.trainer.certificates.send');
-    // Show form to upload/send certificate (GET)
-    Route::get('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'showSendCertificateForm'])->name('admin.trainer.certificates.send.form');
-    // Certificates queue for trainers (admin)
-    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'certificatesQueue'])->name('admin.trainer.certificates.queue');
-    Route::post('/admin/trainer/certificates/preview', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'previewCertificate'])->name('admin.trainer.certificates.preview');
-    Route::delete('/admin/trainer/certificates/{trainerCertificate}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'revokeCertificate'])->name('admin.trainer.certificates.revoke');
 
     // Material Approval Routes
     Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.material.approvals');

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Models\TrainerCertificateAssets;
 use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
@@ -127,8 +128,10 @@ class Event extends Model
         $total = $isOfflineOnly ? 2 : 3;
         $done = (int) $this->documents_completed_count;
         $done = max(0, min($total, $done));
-        if ($total === 0) return 0;
-        if ($done === $total) return 100;
+        if ($total === 0)
+            return 0;
+        if ($done === $total)
+            return 100;
         return (int) floor(($done / $total) * 100);
     }
 
@@ -415,5 +418,13 @@ class Event extends Model
             return (float) array_sum(array_map(fn($row) => (float) ($row['total'] ?? 0), $this->expenses_json));
         }
         return (float) $this->expenses()->sum('total');
+    }
+
+    public function trainerCertificateAssets()
+    {
+        return $this->morphMany(
+            TrainerCertificateAsset::class,
+            'certifiable'
+        )->orderBy('order_no');
     }
 }
