@@ -26,47 +26,34 @@
     @endphp
 
     @unless($isSpecialPage)
-    <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom fixed-top" style="height: 64px;">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
-                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:22px;">
-                <span class="fw-semibold">Admin</span>
+                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:26px;">
+                <span class="fw-bold text-dark fs-5" style="letter-spacing: -0.5px;">Admin</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @unless(request()->routeIs('admin.dashboard') || request()->routeIs('admin.users.*') || request()->routeIs('admin.carousels.*'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ (request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}" href="{{ route('admin.reports') }}">Report</a>
-                    </li>
-                    @endunless
-                    {{-- Certificate management moved to CRM --}}
-                    @if(request()->routeIs('admin.dashboard'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admin</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
-                    </li>
+                    @if(!request()->routeIs('admin.dashboard'))
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-medium text-primary d-flex align-items-center" href="{{ route('admin.dashboard') }}">
+                                <i class="bi bi-grid-1x2-fill me-2"></i> Module Hub
+                            </a>
+                        </li>
                     @endif
-                    @unless(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*') || request()->routeIs('admin.reports'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
-                    </li>
-                    @endunless
                 </ul>
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
                     <li class="nav-item dropdown">
                         <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
                                 <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                             </span>
-                            <span class="d-none d-lg-inline user-name small fw-semibold">{{ $user?->name ?? 'Admin' }}</span>
+                            <span class="d-none d-lg-inline user-name small fw-semibold text-dark">{{ $user?->name ?? 'Admin' }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow profile-dropdown" aria-labelledby="adminProfileDropdown">
                             <li class="d-flex justify-content-end align-items-center pt-2 px-2">
@@ -135,11 +122,13 @@
         @yield('content')
     </div>
 
-    @if($isSpecialPage)
     <style>
-        body { padding-top: 0 !important; }
+        body { padding-top: 64px !important; }
+        @if($isSpecialPage)
+            /* Special pages might handle their own padding if needed, but for now we enforce the top offset for the fixed navbar */
+            .container-fluid.p-0 { padding-top: 0 !important; } 
+        @endif
     </style>
-    @endif
     
     
     <script>

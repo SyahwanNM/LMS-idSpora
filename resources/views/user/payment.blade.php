@@ -1,4 +1,4 @@
-﻿@include("partials.navbar-after-login")
+@include("partials.navbar-after-login")
 <!DOCTYPE html>
 <html lang="en">
 
@@ -256,23 +256,8 @@
                         </div>
 
                             @if(!$isFree)
-                                <div class="mt-3">
-                                    <div class="form-label-custom" style="margin-bottom:6px;">Payment Gateway</div>
-                                   <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                                        @if(!$midtransClientKey)
-                                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                                <input type="radio" name="payment_method" value="manual" checked>
-                                                Manual (QRIS + upload bukti)
-                                            </label>
-                                        @endif
-                                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                            <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif @if($midtransClientKey) checked @endif>
-                                            Midtrans
-                                        </label>
-                                   </div>
-                                    @if(!$midtransClientKey)
-                                        <div class="small text-muted" style="margin-top:6px;">Midtrans belum dikonfigurasi.</div>
-                                    @endif
+                                <div class="mt-3" style="display: none;">
+                                    <input type="radio" name="payment_method" value="midtrans" checked>
                                 </div>
                             @endif
 
@@ -283,13 +268,7 @@
                             <button type="submit" class="btn-pay" id="freeRegBtn">Register Now!</button>
                         </div>
                     @else
-                        @if(!$midtransClientKey)
-                            <div class="mt-3" id="manualPaySection">
-                                <button type="button" id="showQrisBtn" class="btn-pay" disabled>Pay Now!</button>
-                            </div>
-                        @else
-                            <div class="mt-3" id="manualPaySection" style="display:none;"></div>
-                        @endif
+                        <div class="mt-3" id="manualPaySection" style="display:none;"></div>
                     @endif
 
                     @if(!$isFree)
@@ -304,30 +283,7 @@
     </form>
 
     <!-- QRIS Modal (manual) - mirip Course payment -->
-    @if((!isset($event) || !(isset($event) && $isFree)) && !$midtransClientKey)
-    <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
-
-                    <img id="qrisImage" class="qris-image" src="{{ asset('aset/qr-payment-idSpora.png') }}" alt="QRIS Payment" style="max-width: 260px; width: 100%; height: auto; border-radius: 10px; border: 1px solid #e5e7eb;">
-
-                    <div class="d-grid gap-2 mt-3">
-                        <a href="{{ asset('aset/qr-payment-idSpora.png') }}" class="btn btn-outline-primary" download>
-                            Download QR
-                        </a>
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
+    <!-- QRIS Modal (manual) removed -->
 
     <!-- Midtrans Success Modal (Checklist hijau) -->
     <div class="modal fade" id="midtransSuccessModal" tabindex="-1" aria-hidden="true">
@@ -544,8 +500,7 @@
         let pendingProofSubmit = false;
 
         function getSelectedMethod(){
-            const checked = form.querySelector('input[name="payment_method"]:checked');
-            return checked ? checked.value : 'manual';
+            return 'midtrans';
         }
 
         function toggleMethodUI(){
