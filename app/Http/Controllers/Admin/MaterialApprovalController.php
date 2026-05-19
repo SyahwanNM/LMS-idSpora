@@ -346,12 +346,32 @@ class MaterialApprovalController extends Controller
             ->paginate(10);
 
         return view('admin.trainer.material.approvals', compact(
+        $totalTrainers = User::whereIn('role', ['trainer', 'Trainer'])->count();
+        $activeTrainers = User::whereIn('role', ['trainer', 'Trainer'])
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        $teachingTrainers = User::whereIn('role', ['trainer', 'Trainer'])
+            ->where(function ($q) {
+                $q->whereHas('coursesAsTrainer')->orWhereHas('eventsAsTrainer');
+            })->count();
+
+        $trainers = User::whereIn('role', ['trainer', 'Trainer'])
+            ->withCount(['coursesAsTrainer', 'eventsAsTrainer'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('admin.trainer.material.approvals', compact(
             'pendingMaterials',
             'pendingEventModules',
             'totalPending',
             'totalApproved',
             'totalRejected',
             'deadlineMonitoring',
+            'deadlineFilter',
+            'totalTrainers',
+            'activeTrainers',
+            'teachingTrainers',
+            'trainers'
             'deadlineFilter',
             'totalTrainers',
             'activeTrainers',
@@ -503,6 +523,7 @@ class MaterialApprovalController extends Controller
 
         return redirect()
             ->route('admin.trainer.material.show', $material)
+            ->route('admin.trainer.material.show', $material)
             ->with('success', 'Modul "' . $module->title . '" berhasil disetujui.');
     }
 
@@ -582,6 +603,7 @@ class MaterialApprovalController extends Controller
 
         return redirect()
             ->route('admin.trainer.material.show', $material)
+            ->route('admin.trainer.material.show', $material)
             ->with('success', "Seluruh materi pada Bab {$unitNo} yang tersedia telah disetujui.");
     }
     public function rejectModule(Request $request, Course $material, CourseModule $module)
@@ -628,6 +650,7 @@ class MaterialApprovalController extends Controller
 
         return redirect()
             ->route('admin.trainer.material.show', $material)
+            ->route('admin.trainer.material.show', $material)
             ->with('success', 'Modul "' . $module->title . '" ditolak dan catatan revisi telah dikirim ke trainer.');
     }
 
@@ -652,6 +675,7 @@ class MaterialApprovalController extends Controller
         $unitModules = $chunks->get($unitIndex, collect());
 
         if ($unitModules->isEmpty()) {
+            return redirect()->route('admin.trainer.material.show', $material)
             return redirect()->route('admin.trainer.material.show', $material)
                 ->with('error', 'Unit (bab) tidak ditemukan.');
         }
@@ -695,6 +719,7 @@ class MaterialApprovalController extends Controller
         }
 
         return redirect()
+            ->route('admin.trainer.material.show', $material)
             ->route('admin.trainer.material.show', $material)
             ->with('success', 'Bab ' . ($unitIndex + 1) . ': ' . $rejectedCount . ' modul ditolak. Notifikasi revisi dikirim ke trainer.');
     }
@@ -756,6 +781,7 @@ class MaterialApprovalController extends Controller
         if ($material->modules->isEmpty()) {
             return redirect()
                 ->route('admin.trainer.material.show', $material)
+                ->route('admin.trainer.material.show', $material)
                 ->with('error', 'Belum ada materi yang diupload trainer. Approval hanya bisa dilakukan untuk materi yang sudah ada.');
         }
 
@@ -809,6 +835,7 @@ class MaterialApprovalController extends Controller
 
         return redirect()
             ->route('admin.trainer.material.approvals')
+            ->route('admin.trainer.material.approvals')
             ->with('success', "Materi yang sudah diupload pada \"{$material->name}\" berhasil disetujui!");
     }
 
@@ -852,6 +879,7 @@ class MaterialApprovalController extends Controller
         }
 
         return redirect()
+            ->route('admin.trainer.material.approvals')
             ->route('admin.trainer.material.approvals')
             ->with('success', "Materi \"{$material->name}\" ditolak dan catatan revisi telah dikirim ke trainer.");
     }
@@ -926,6 +954,30 @@ class MaterialApprovalController extends Controller
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
 
+        $totalTrainers = User::whereIn('role', ['trainer', 'Trainer'])->count();
+        $activeTrainers = User::whereIn('role', ['trainer', 'Trainer'])
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        $teachingTrainers = User::whereIn('role', ['trainer', 'Trainer'])
+            ->where(function ($q) {
+                $q->whereHas('coursesAsTrainer')->orWhereHas('eventsAsTrainer');
+            })->count();
+
+        $trainers = User::whereIn('role', ['trainer', 'Trainer'])
+            ->withCount(['coursesAsTrainer', 'eventsAsTrainer'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('admin.trainer.material.approved', compact(
+            'approvedMaterials',
+            'approvedEventModules',
+            'deadlineMonitoring',
+            'deadlineFilter',
+            'totalTrainers',
+            'activeTrainers',
+            'teachingTrainers',
+            'trainers'
+        ));
         $totalTrainers = User::whereIn('role', ['trainer', 'Trainer'])->count();
         $activeTrainers = User::whereIn('role', ['trainer', 'Trainer'])
             ->where('created_at', '>=', now()->subDays(30))

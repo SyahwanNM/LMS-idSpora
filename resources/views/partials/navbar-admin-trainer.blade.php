@@ -1,7 +1,6 @@
 <nav class="navbar navbar-expand-lg border-bottom fixed-top shadow-sm"
     style="background: rgba(255,255,255,.95); backdrop-filter: blur(15px); z-index:1050; height:72px;">
     <div class="container-fluid px-4">
-
         <a class="navbar-brand d-flex align-items-center gap-2" href="{{ route('admin.trainer.index') }}">
             <img src="{{ asset('images/logo-idspora-nobg-dark.png') }}" alt="idSpora"
                 style="height:32px;width:auto;object-fit:contain;"

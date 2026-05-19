@@ -727,6 +727,7 @@
                                         <img src="{{ asset('storage/' . $logo->image_path) }}" alt="Logo">
                                     </div>
                                 @endforeach
+<<<<<<< HEAD
 
                                 @for($i = $logos->count(); $i < 3; $i++)
                                     <label class="add-card">
@@ -880,3 +881,161 @@
     }
 </script>
 @endpush
+=======
+                            </div>
+
+                            <div class="smaller text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Gunakan PNG transparan untuk hasil terbaik. Maksimal 3 tanda tangan.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3">
+                <button type="submit"
+                        class="btn btn-navy px-5"
+                        style="background: var(--crm-navy); color: white;">
+                    Simpan Konfigurasi
+                </button>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card-minimal h-100 p-4">
+                <h6 class="fw-bold text-navy mb-3">Panduan & Syarat Aset</h6>
+
+                <div class="d-flex align-items-start mb-3">
+                    <div class="me-3 text-primary"><i class="bi bi-info-circle fs-4"></i></div>
+                    <div class="smaller text-muted">
+                        <b>Format File:</b> Mendukung JPG, JPEG, PNG, WEBP, dan SVG.
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-start mb-3">
+                    <div class="me-3 text-danger"><i class="bi bi-hdd fs-4"></i></div>
+                    <div class="smaller text-muted">
+                        <b>Ukuran Maksimal:</b> 2MB per file.
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-start mb-3">
+                    <div class="me-3 text-warning"><i class="bi bi-layers fs-4"></i></div>
+                    <div class="smaller text-muted">
+                        <b>Jumlah Maksimal:</b> Maksimal 3 Logo Partner dan 3 Tanda Tangan.
+                    </div>
+                </div>
+
+                <div class="alert alert-warning border-0 smaller py-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Konfigurasi ini khusus sertifikat trainer pada kegiatan ini.
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+@endsection
+
+@section('scripts')
+<script>
+    function selectTemplate(id, element) {
+        document.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        document.getElementById('selected_template').value = id;
+    }
+
+    function previewNewAsset(input) {
+        const file = input.files[0];
+
+        if (file) {
+            let preview = input.parentElement.querySelector('.new-asset-preview');
+
+            if (!preview) {
+                preview = document.createElement('img');
+                preview.className = 'new-asset-preview mt-2';
+                preview.style.cssText = 'height:40px; border-radius:4px; border:1px solid #e2e8f0; object-fit:contain; background:white; padding:2px;';
+                input.parentElement.appendChild(preview);
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+            }
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function addLogoField() {
+        const container = document.getElementById('logoUploadContainer');
+        const currentInputs = container.querySelectorAll('input[type="file"]').length;
+        const existingLogos = document.querySelectorAll('.logo-item-wrapper').length;
+
+        if ((currentInputs + existingLogos) >= 3) {
+            alert('Maksimal 3 logo.');
+            return;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'd-flex gap-2 mb-2';
+
+        div.innerHTML = `
+            <div class="d-flex flex-column gap-1 w-100">
+                <input type="file" name="certificate_logo[]" class="form-control form-control-sm" accept="image/*" onchange="previewNewAsset(this)">
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.remove();">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+
+        container.appendChild(div);
+    }
+
+    let sigIndex = {{ $sigs->count() }};
+
+    function addSignatureField() {
+        const container = document.getElementById('signaturesContainer');
+        const existing = container.querySelectorAll('.sig-entry').length;
+
+        if (existing >= 3) {
+            alert('Maksimal 3 tanda tangan.');
+            return;
+        }
+
+        const idx = sigIndex++;
+
+        const div = document.createElement('div');
+        div.className = 'sig-entry card border mb-3 p-3';
+        div.style.cssText = 'background:#f8fafc;border-radius:10px;';
+
+        div.innerHTML = `
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <label class="form-label smaller text-muted mb-1">Gambar TTD</label>
+                    <input type="file" name="certificate_signature_file[${idx}]" class="form-control form-control-sm" accept="image/*" onchange="previewNewAsset(this)">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label smaller text-muted mb-1">Nama Penandatangan</label>
+                    <input type="text" name="signature_name[${idx}]" class="form-control form-control-sm" placeholder="cth: Dr. Ahmad Fauzi">
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label smaller text-muted mb-1">Jabatan</label>
+                    <input type="text" name="signature_position[${idx}]" class="form-control form-control-sm" placeholder="cth: Direktur Utama">
+                </div>
+
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('.sig-entry').remove()">
+                        <i class="bi bi-trash"></i> Hapus
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(div);
+    }
+</script>
+@endsection
+>>>>>>> 227a9f6 (revisi layout trainer)

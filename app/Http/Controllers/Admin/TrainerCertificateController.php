@@ -178,9 +178,17 @@ class TrainerCertificateController extends Controller
         $assets = TrainerCertificateAsset::query()
             ->where('certifiable_type', get_class($model))
             ->where('certifiable_id', $model->id)
+            ->where('certifiable_type', get_class($model))
+            ->where('certifiable_id', $model->id)
             ->orderBy('order_no')
             ->get();
 
+        return view('admin.trainer.certificates.edit', compact(
+            'trainer',
+            'context',
+            'model',
+            'assets'
+        ));
         return view('admin.trainer.certificates.edit', compact(
             'trainer',
             'context',
@@ -197,7 +205,10 @@ class TrainerCertificateController extends Controller
 
         $request->validate([
             'certificate_template' => ['required', 'in:template_1,template_2,template_3'],
+            'certificate_template' => ['required', 'in:template_1,template_2,template_3'],
 
+            'certificate_logo' => ['nullable', 'array', 'max:3'],
+            'certificate_logo.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
             'certificate_logo' => ['nullable', 'array', 'max:3'],
             'certificate_logo.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
 
@@ -262,11 +273,14 @@ class TrainerCertificateController extends Controller
                 'type' => TrainerCertificateAsset::TYPE_LOGO,
                 'name' => null,
                 'position' => null,
+                'name' => null,
+                'position' => null,
                 'image_path' => $path,
                 'order_no' => $this->nextAssetOrder($model, TrainerCertificateAsset::TYPE_LOGO),
             ]);
         }
 
+        foreach (($request->file('certificate_signature_file') ?? []) as $index => $file) {
         foreach (($request->file('certificate_signature_file') ?? []) as $index => $file) {
             if (!$file) {
                 continue;
@@ -281,6 +295,8 @@ class TrainerCertificateController extends Controller
                 'certifiable_type' => get_class($model),
                 'certifiable_id' => $model->id,
                 'type' => TrainerCertificateAsset::TYPE_SIGNATURE,
+                'name' => $request->input("signature_name.$index"),
+                'position' => $request->input("signature_position.$index"),
                 'name' => $request->input("signature_name.$index"),
                 'position' => $request->input("signature_position.$index"),
                 'image_path' => $path,
