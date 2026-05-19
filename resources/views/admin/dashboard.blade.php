@@ -498,7 +498,7 @@
                                         {{ $material->trainer->name ?? 'Anonim' }}
                                     </div>
                                 </div>
-                                <a href="{{ route('admin.material.show', $material->id) }}" class="btn btn-sm btn-success">
+                                <a href="{{ route('admin.trainer.material.show', $material->id) }}" class="btn btn-sm btn-success">
                                     Detail
                                 </a>
                             </div>
@@ -510,7 +510,7 @@
                         <small>No material has been approved yet.</small>
                     </div>
                 @endif
-                <a href="{{ route('admin.material.approved') }}" class="btn btn-outline-success w-100 fw-semibold mt-2">
+                <a href="{{ route('admin.trainer.material.approved') }}" class="btn btn-outline-success w-100 fw-semibold mt-2">
                     View All Approved Materials
                 </a>
             </div>

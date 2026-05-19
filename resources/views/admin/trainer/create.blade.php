@@ -343,8 +343,7 @@
 @section('content')
     <div class="trainer-wrapper">
         <!-- Sidebar Navigation -->
-        @include('admin.trainer._sidebar')
-        @include('admin.trainer._top-text-color')
+        @include('admin.trainer.partials.sidebar')
 
         <!-- Main Content -->
         <main class="trainer-main">

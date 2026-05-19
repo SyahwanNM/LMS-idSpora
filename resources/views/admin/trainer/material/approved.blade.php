@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Rejected Materials')
+@section('title', 'Approved Materials')
 
 @section('navbar')
     @include('partials.navbar-admin-trainer')
@@ -8,7 +8,6 @@
 
 @section('styles')
     <style>
-        /* === GLOBAL ADMIN STYLES === */
         :root {
             --admin-primary: #1e1b4b;
             --admin-secondary: #4338ca;
@@ -32,7 +31,6 @@
             min-height: calc(100vh - 72px);
         }
 
-        /* --- SIDEBAR --- */
         .trainer-sidebar {
             width: 260px;
             background: #fff;
@@ -43,6 +41,12 @@
             top: 72px;
             height: calc(100vh - 72px);
             overflow-y: auto;
+        }
+
+        .trainer-main {
+            flex-grow: 1;
+            padding: 32px;
+            background-color: #F8F9FA;
         }
 
         .nav-menu-label {
@@ -245,10 +249,10 @@
         }
 
         .search-box input:focus {
-            border-color: #991b1b;
+            border-color: #166534;
             outline: none;
             background: #fff;
-            box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
+            box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
         }
 
         .filter-select {
@@ -263,9 +267,9 @@
         }
 
         .filter-select:focus {
-            border-color: #991b1b;
+            border-color: #166534;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
+            box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
         }
 
         .toolbar-right {
@@ -373,26 +377,14 @@
             border-radius: 50%;
         }
 
-        /* Status khusus Rejected */
-        .badge-rejected-status {
-            background: #fee2e2;
-            color: #991b1b;
+        /* Status khusus Approved */
+        .badge-approved-status {
+            background: #dcfce7;
+            color: #166534;
         }
 
-        .badge-rejected-status::before {
-            background: #991b1b;
-        }
-
-        /* Catatan Revisi */
-        .rejection-note {
-            background: #fff5f5;
-            border-left: 3px solid #ef4444;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            color: #7f1d1d;
-            margin-top: 8px;
-            display: inline-block;
+        .badge-approved-status::before {
+            background: #166534;
         }
 
         .btn-action {
@@ -417,6 +409,18 @@
             border-color: var(--admin-secondary);
             color: var(--admin-secondary);
             background: #f8fafc;
+        }
+
+        .table td .btn-action {
+            height: 34px;
+            padding: 0 10px;
+            border-radius: 7px;
+            font-size: 0.78rem;
+            gap: 4px;
+        }
+
+        .table td .btn-action i {
+            font-size: 0.9rem;
         }
 
         .btn-back-header {
@@ -453,7 +457,7 @@
         }
 
         @media (max-width: 992px) {
-            .trainer-sidebar {
+            .material-sidebar {
                 display: none;
             }
 
@@ -495,15 +499,15 @@
 
 @section('content')
     <div class="material-wrapper">
-        @include('admin.partials.trainer-sidebar')
+        @include('admin.trainer.partials.sidebar')
 
         <main class="material-main">
             <div class="page-header mb-4">
                 <div>
-                    <h1 class="page-title"><i class="bi bi-exclamation-octagon-fill me-2"></i>Perlu Revisi</h1>
-                    <p class="page-subtitle">Materi yang dikembalikan ke trainer karena tidak sesuai standar.</p>
+                    <h1 class="page-title"><i class="bi bi-check-circle-fill me-2"></i>Materi Disetujui</h1>
+                    <p class="page-subtitle">Daftar kelas yang sudah tervalidasi dan aktif di platform.</p>
                 </div>
-                <a href="{{ route('admin.material.approvals') }}" class="btn-back-header">
+                <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-back-header">
                     <i class="bi bi-arrow-left"></i> Kembali ke Antrean
                 </a>
             </div>
@@ -512,20 +516,12 @@
                 <div class="toolbar">
                     @php
                         $activeDeadlineFilter = $deadlineFilter ?? 'all';
-                        $activeSearch = trim((string) request('search', ''));
-                        $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
-                        $deadlineLabelMap = [
-                            'all' => 'Semua Deadline',
-                            'overdue' => 'Overdue',
-                            'on_time' => 'Tepat Waktu',
-                            'no_deadline' => 'Tanpa Deadline',
-                        ];
                     @endphp
                     <div class="toolbar-left">
                         <form method="GET" class="toolbar-form">
                             <div class="search-box">
                                 <i class="bi bi-search"></i>
-                                <input type="text" name="search" placeholder="Cari materi yang direvisi..."
+                                <input type="text" name="search" placeholder="Cari materi yang disetujui..."
                                     value="{{ request('search') }}">
                             </div>
                             <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
@@ -544,19 +540,9 @@
                     </div>
 
                     <div class="toolbar-right">
-                        @if($hasActiveFilter)
-                            <span class="btn-action"
-                                style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
-                                Filter:
-                                {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
-                            </span>
-                            <a href="{{ route('admin.material.rejected') }}" class="btn-action">
-                                <i class="bi bi-x-circle"></i> Reset
-                            </a>
-                        @endif
-                        <a href="{{ route('admin.material.approved') }}" class="btn-action"
-                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
-                            Lihat Disetujui <i class="bi bi-arrow-right"></i>
+                        <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-action"
+                            style="color: #991b1b; border-color:#fecaca; background:#fef2f2;">
+                            Lihat Revisi <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                 </div>
@@ -567,20 +553,18 @@
                             <tr>
                                 <th>Materi (Course)</th>
                                 <th>Trainer</th>
-                                <th>Alasan Penolakan</th>
-                                <th>Tanggal Ditolak</th>
+                                <th>Isi Modul</th>
+                                <th>Tanggal Disetujui</th>
                                 <th>Status</th>
-                                <th>Monitoring Deadline</th>
+                                <th>Tenggat</th>
                                 <th class="text-end">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($rejectedMaterials as $material)
+                            @forelse($approvedMaterials as $material)
                                 <tr>
                                     <td>
                                         <div class="course-info">
-                                            <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
-                                                class="course-thumb" alt="Cover">
                                             <div>
                                                 <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>
                                                 <span class="badge-cat"><i
@@ -594,27 +578,23 @@
                                                 class="trainer-avatar">
                                             <div>
                                                 <div class="trainer-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
-                                                <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}
-                                                </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="max-width: 250px;">
-                                        <div class="rejection-note">
-                                            <i class="bi bi-chat-text-fill me-1"></i>
-                                            {{ Str::limit($material->rejection_reason, 60) }}
+                                    <td>
+                                        <div style="font-weight: 600; color: #334155;">{{ $material->modules_count }} File/Kuis
                                         </div>
                                     </td>
                                     <td>
                                         <div style="font-weight: 600; color: #334155;">
-                                            {{ $material->rejected_at ? $material->rejected_at->format('d M Y') : '-' }}
+                                            {{ $material->approved_at ? $material->approved_at->format('d M Y') : '-' }}
                                         </div>
                                         <div style="font-size: 0.75rem; color:#64748b;">
-                                            {{ $material->rejected_at ? $material->rejected_at->diffForHumans() : '' }}
+                                            {{ $material->approved_at ? $material->approved_at->diffForHumans() : '' }}
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge-status badge-rejected-status">Revisi</span>
+                                        <span class="badge-status badge-approved-status">Live</span>
                                     </td>
                                     <td>
                                         @php $monitor = $deadlineMonitoring[$material->id] ?? null; @endphp
@@ -627,8 +607,9 @@
                                         </div>
                                     </td>
                                     <td class="text-end">
-                                        <a href="{{ route('admin.material.show', $material->id) }}" class="btn-action">
-                                            Cek <i class="bi bi-arrow-right"></i>
+                                        <a href="{{ route('admin.trainer.material.show', $material->id) }}" class="btn-action"
+                                            style="color:#166534; border-color:#bbf7d0; background:#f0fdf4;">
+                                            <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -637,9 +618,8 @@
                                     <td colspan="7">
                                         <div class="empty-state">
                                             <i class="bi bi-inbox"></i>
-                                            <h5 class="fw-bold text-dark">Tidak Ada Revisi</h5>
-                                            <p class="text-muted mb-0">Semua materi sudah disetujui atau sedang dalam antrean
-                                                review.</p>
+                                            <h5 class="fw-bold text-dark">Belum ada materi</h5>
+                                            <p class="text-muted mb-0">Belum ada materi kelas yang disetujui saat ini.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -648,9 +628,9 @@
                     </table>
                 </div>
 
-                @if($rejectedMaterials->hasPages())
+                @if($approvedMaterials->hasPages())
                     <div class="p-3 border-top">
-                        {{ $rejectedMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+                        {{ $approvedMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
                     </div>
                 @endif
             </div>
@@ -661,7 +641,7 @@
                         <form method="GET" class="toolbar-form">
                             <div class="search-box">
                                 <i class="bi bi-search"></i>
-                                <input type="text" name="search" placeholder="Cari modul event yang direvisi..."
+                                <input type="text" name="search" placeholder="Cari modul event yang disetujui..."
                                     value="{{ request('search') }}">
                             </div>
                             <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
@@ -680,9 +660,9 @@
                     </div>
 
                     <div class="toolbar-right">
-                        <a href="{{ route('admin.material.approved') }}" class="btn-action"
-                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
-                            Lihat Disetujui <i class="bi bi-arrow-right"></i>
+                        <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-action"
+                            style="color: #991b1b; border-color:#fecaca; background:#fef2f2;">
+                            Lihat Revisi <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                 </div>
@@ -691,16 +671,17 @@
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Event</th>
+                                <th>Materi (Event)</th>
                                 <th>Trainer</th>
-                                <th>Alasan Penolakan</th>
-                                <th>Tanggal Ditolak</th>
+                                <th>Isi Modul</th>
+                                <th>Tanggal Disetujui</th>
                                 <th>Status</th>
+                                <th>Tenggat</th>
                                 <th class="text-end">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse(($rejectedEventModules ?? collect()) as $event)
+                            @forelse(($approvedEventModules ?? collect()) as $event)
                                 <tr>
                                     <td>
                                         <div>
@@ -720,46 +701,47 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="max-width: 250px;">
-                                        <div class="rejection-note">
-                                            <i class="bi bi-chat-text-fill me-1"></i>
-                                            {{ Str::limit($event->module_rejection_reason, 60) }}
-                                        </div>
+                                    <td>
+                                        <div style="font-weight: 600; color: #334155;">1 Dokumen Modul</div>
                                     </td>
                                     <td>
                                         <div style="font-weight: 600; color: #334155;">
-                                            {{ $event->module_rejected_at?->format('d M Y') ?? '-' }}
+                                            {{ $event->module_verified_at?->format('d M Y') ?? '-' }}
                                         </div>
                                         <div style="font-size: 0.72rem; color:#64748b;">
-                                            {{ $event->module_rejected_at?->diffForHumans() ?? '' }}
+                                            {{ $event->module_verified_at?->diffForHumans() ?? '' }}
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge-status badge-rejected-status">Revisi</span>
+                                        <span class="badge-status badge-approved-status">Live</span>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $eventDeadline = $event->material_deadline;
+                                            $eventLate = $eventDeadline ? now()->gt($eventDeadline) : false;
+                                        @endphp
+                                        <div style="font-weight: 600; color: #334155;">{{ $eventDeadline ? $eventDeadline->format('d M Y H:i') : 'Belum ditentukan' }}</div>
+                                        <div style="font-size: 0.72rem; color: {{ $eventLate ? '#b91c1c' : '#64748b' }};">{{ $eventLate ? 'Melewati deadline' : 'Tanpa deadline' }}</div>
                                     </td>
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                            <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
-                                                Lihat <i class="bi bi-eye"></i>
+                                            <a href="{{ $event->module_file_url }}" target="_blank" class="btn-action"
+                                                style="color:#166534; border-color:#bbf7d0; background:#f0fdf4;">
+                                                <i class="bi bi-eye"></i>
                                             </a>
-                                            <form action="{{ route('admin.event-material.approve', $event) }}" method="POST"
-                                                class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn-action"
-                                                    style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
-                                                    Approve <i class="bi bi-check2-circle"></i>
-                                                </button>
-                                            </form>
+                                            <a href="{{ route('admin.events.show', $event) }}" class="btn-action">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="7">
                                         <div class="empty-state" style="padding: 36px 20px;">
                                             <i class="bi bi-folder2-open"></i>
-                                            <h6 class="fw-bold mt-2 mb-1" style="color:#334155;">Belum ada materi event revisi</h6>
-                                            <p class="text-muted mb-0">Saat ini tidak ada modul event yang ditolak.</p>
+                                            <h6 class="fw-bold mt-2 mb-1" style="color:#334155;">Belum ada materi event approved</h6>
+                                            <p class="text-muted mb-0">Saat ini belum ada modul event yang disetujui.</p>
                                         </div>
                                     </td>
                                 </tr>

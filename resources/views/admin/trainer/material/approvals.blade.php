@@ -74,7 +74,7 @@
         transform: translateY(-4px);
     }
 
-    .stat-card .stat-icon {
+    .stat-icon {
         width: 56px;
         height: 56px;
         border-radius: 14px;
@@ -143,13 +143,6 @@
         border-radius: 20px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         overflow: hidden;
-        max-width: 100%;
-    }
-
-    .trainer-table-card .table-responsive {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
     }
 
     .table-header-row th {
@@ -168,10 +161,6 @@
         vertical-align: middle;
         border-color: #eef2f7;
         white-space: nowrap;
-    }
-
-    .trainer-table-card tbody tr {
-        transition: all 0.2s ease;
     }
 
     .trainer-table-card tbody tr:hover {
@@ -245,11 +234,6 @@
         border: 1.5px solid transparent;
     }
 
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
-    }
-
     .btn-action-view {
         color: #1976d2;
         background-color: #e3f2fd;
@@ -265,21 +249,6 @@
         background-color: #ffebee;
     }
 
-    .btn-action-view:hover {
-        background-color: #1976d2;
-        color: #fff;
-    }
-
-    .btn-action-edit:hover {
-        background-color: #3949ab;
-        color: #fff;
-    }
-
-    .btn-action-delete:hover {
-        background-color: #ef5350;
-        color: #fff;
-    }
-
     .empty-state {
         padding: 60px 20px;
         text-align: center;
@@ -291,111 +260,52 @@
         margin-bottom: 20px;
     }
 
-    @media (max-width: 991.98px) {
-        .trainer-hero {
-            padding: 28px 24px;
-        }
-
-        .hero-title {
-            font-size: 1.75rem;
-        }
-
-        .toolbar-card .row > div {
-            width: 100%;
-        }
-
-        .toolbar-actions {
-            justify-content: flex-start !important;
-        }
-    }
-
     @media (max-width: 576px) {
         .trainer-hero {
-            border-radius: 18px;
             padding: 24px;
+            border-radius: 18px;
         }
 
         .hero-title {
             font-size: 1.45rem;
-            align-items: flex-start;
         }
 
-        .hero-title i {
-            font-size: 1.35rem;
-        }
-
-        .hero-subtitle {
-            font-size: 14px;
-        }
-
-        .stat-card {
-            padding: 16px;
-        }
-
-        .stat-card .stat-icon {
-            width: 48px;
-            height: 48px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-        }
-
-        .toolbar-search-form {
-            flex-direction: column;
-        }
-
-        .toolbar-search-form button {
-            width: 100%;
-        }
-
+        .toolbar-search-form,
         .toolbar-actions {
             flex-direction: column;
         }
 
+        .toolbar-search-form button,
         .toolbar-actions a {
             width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
     }
 </style>
 @endpush
 
 @section('admin-trainer-content')
-    <div class="trainer-hero">
-        <div>
-            <h1 class="hero-title">
-                <i class="bi bi-person-badge-fill me-3"></i>
-                Trainer Management
-            </h1>
-
-            <p class="hero-subtitle">
-                Kelola akun instruktur, monitor penugasan kelas, dan track performa trainer secara real-time.
-            </p>
-        </div>
+    <div class="trainer-hero" style="margin-left:0;">
+        <h1 class="hero-title">
+            <i class="bi bi-person-badge-fill me-3"></i>
+            Trainer Management
+        </h1>
+        <p class="hero-subtitle">
+            Kelola akun instruktur, monitor penugasan kelas, dan track performa trainer secara real-time.
+        </p>
     </div>
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
             <i class="bi bi-check-circle-fill me-2"></i>
             <strong>Berhasil!</strong> {{ session('success') }}
-
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="alert"
-                    aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     <div class="row g-3 mb-4">
         <div class="col-12 col-md-4">
             <div class="stat-card stat-primary">
-                <div class="stat-icon">
-                    <i class="bi bi-people-fill"></i>
-                </div>
-
+                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
                 <div>
                     <div class="stat-value">{{ $totalTrainers }}</div>
                     <div class="stat-label">Total Trainer</div>
@@ -405,10 +315,7 @@
 
         <div class="col-12 col-md-4">
             <div class="stat-card stat-success">
-                <div class="stat-icon">
-                    <i class="bi bi-person-check-fill"></i>
-                </div>
-
+                <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
                 <div>
                     <div class="stat-value">{{ $activeTrainers }}</div>
                     <div class="stat-label">Trainer Aktif (30 Hari)</div>
@@ -418,10 +325,7 @@
 
         <div class="col-12 col-md-4">
             <div class="stat-card stat-info">
-                <div class="stat-icon">
-                    <i class="bi bi-easel-fill"></i>
-                </div>
-
+                <div class="stat-icon"><i class="bi bi-easel-fill"></i></div>
                 <div>
                     <div class="stat-value">{{ $teachingTrainers }}</div>
                     <div class="stat-label">Sedang Mengajar</div>
@@ -442,8 +346,7 @@
                            placeholder="Cari nama, email, atau nomor HP..."
                            value="{{ request('search') }}">
 
-                    <button type="submit"
-                            class="btn btn-primary rounded-3 px-4"
+                    <button type="submit" class="btn btn-primary rounded-3 px-4"
                             style="background:#3949ab;border:none;font-weight:700;height:44px;">
                         <i class="bi bi-search"></i>
                         <span class="d-sm-none ms-1">Cari</span>
@@ -455,22 +358,12 @@
                 <form action="{{ route('admin.trainer.index') }}" method="GET">
                     <input type="hidden" name="search" value="{{ request('search') }}">
 
-                    <select name="sort"
-                            class="form-select filter-select"
-                            onchange="this.form.submit()">
+                    <select name="sort" class="form-select filter-select" onchange="this.form.submit()">
                         <option value="">Urutkan Berdasarkan...</option>
-                        <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>
-                            Terbaru Bergabung
-                        </option>
-                        <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>
-                            Terlama Bergabung
-                        </option>
-                        <option value="name_asc" {{ request('sort') == 'name_asc' ? 'selected' : '' }}>
-                            Nama (A-Z)
-                        </option>
-                        <option value="name_desc" {{ request('sort') == 'name_desc' ? 'selected' : '' }}>
-                            Nama (Z-A)
-                        </option>
+                        <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Terbaru Bergabung</option>
+                        <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Terlama Bergabung</option>
+                        <option value="name_asc" {{ request('sort') == 'name_asc' ? 'selected' : '' }}>Nama (A-Z)</option>
+                        <option value="name_desc" {{ request('sort') == 'name_desc' ? 'selected' : '' }}>Nama (Z-A)</option>
                     </select>
                 </form>
             </div>
@@ -478,19 +371,14 @@
             <div class="col-12 col-lg-3">
                 <div class="d-flex justify-content-lg-end gap-2 toolbar-actions">
                     @if(request('search') || request('sort'))
-                        <a href="{{ route('admin.trainer.index') }}"
-                           class="btn btn-outline-secondary rounded-3"
-                           style="height:44px;">
-                            <i class="bi bi-x-circle me-1"></i>
-                            Reset
+                        <a href="{{ route('admin.trainer.index') }}" class="btn btn-outline-secondary rounded-3" style="height:44px;">
+                            <i class="bi bi-x-circle me-1"></i>Reset
                         </a>
                     @endif
 
-                    <a href="{{ route('admin.trainer.create') }}"
-                       class="btn btn-primary rounded-3"
+                    <a href="{{ route('admin.trainer.create') }}" class="btn btn-primary rounded-3"
                        style="background:#3949ab;border:none;font-weight:700;height:44px;">
-                        <i class="bi bi-person-plus me-1"></i>
-                        Tambah
+                        <i class="bi bi-person-plus me-1"></i>Tambah
                     </a>
                 </div>
             </div>
@@ -522,12 +410,8 @@
                                          alt="{{ $trainer->name }}">
 
                                     <div>
-                                        <h6 class="mb-0 fw-bold" style="color:#1a237e;">
-                                            {{ $trainer->name }}
-                                        </h6>
-                                        <small class="text-muted">
-                                            {{ $trainer->profession ?? 'Instruktur' }}
-                                        </small>
+                                        <h6 class="mb-0 fw-bold" style="color:#1a237e;">{{ $trainer->name }}</h6>
+                                        <small class="text-muted">{{ $trainer->profession ?? 'Instruktur' }}</small>
                                     </div>
                                 </div>
                             </td>
@@ -611,15 +495,10 @@
                             <td colspan="7">
                                 <div class="empty-state">
                                     <i class="bi bi-inbox"></i>
-
-                                    <h6 class="fw-bold mt-3" style="color:#1a237e;">
-                                        Belum Ada Data Trainer
-                                    </h6>
-
+                                    <h6 class="fw-bold mt-3" style="color:#1a237e;">Belum Ada Data Trainer</h6>
                                     <p class="text-muted mb-0">
                                         Silakan
-                                        <a href="{{ route('admin.trainer.create') }}"
-                                           style="color:#3949ab;font-weight:700;">
+                                        <a href="{{ route('admin.trainer.create') }}" style="color:#3949ab;font-weight:700;">
                                             tambah trainer baru
                                         </a>
                                         untuk mulai menugaskan kelas.
@@ -653,9 +532,7 @@
 @push('admin-trainer-scripts')
 <script>
     setTimeout(function () {
-        const alerts = document.querySelectorAll('.alert');
-
-        alerts.forEach(alert => {
+        document.querySelectorAll('.alert').forEach(alert => {
             const bsAlert = new bootstrap.Alert(alert);
             bsAlert.close();
         });

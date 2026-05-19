@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-trainer')
 
 @section('title', 'Review Material - ' . $material->name)
 
@@ -989,7 +989,7 @@
 @endsection
 
 
-@section('content')
+@section('admin-trainer-content')
     <div class="material-wrapper">
         @include('admin.partials.trainer-sidebar')
 
@@ -1011,7 +1011,7 @@
 
             {{-- Page Header --}}
             <div class="page-header mb-4">
-                <a href="{{ route('admin.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
+                <a href="{{ route('admin.trainer.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
                     class="btn-back"><i class="bi bi-arrow-left me-2"></i>Kembali</a>
                 @if($material->status === 'approved')
                     <span class="status-chip" style="border-color:#bbf7d0; background:#dcfce7; color:#166534;">
@@ -1124,7 +1124,7 @@
                                         {{ $unit['uploaded'] }}/{{ $unit['total'] }} modul
                                     </span>
                                     @if($material->status === 'pending_review' && $unit['any_pending'])
-                                        <form method="POST" action="{{ route('admin.material.unit.approve', $material) }}"
+                                        <form method="POST" action="{{ route('admin.trainer.material.unit.approve', $material) }}"
                                             style="margin:0;margin-left:auto;">
                                             @csrf
                                             <input type="hidden" name="unit_no" value="{{ $unit['unit_no'] }}">
@@ -1162,9 +1162,9 @@
                                             if ($isHttp) {
                                                 $contentUrl = $rawContent;
                                             } elseif ($normalizedContent !== '' && $rawContent !== 'quiz_submitted') {
-                                                $contentUrl = route('admin.material.module.stream', [$material, $module], false);
+                                                $contentUrl = route('admin.trainer.material.module.stream', [$material, $module], false);
                                             } elseif ($hasTextContent) {
-                                                $contentUrl = route('admin.material.module.stream', [$material, $module], false);
+                                                $contentUrl = route('admin.trainer.material.module.stream', [$material, $module], false);
                                             }
 
                                             $canOpenFile = !$module->isQuiz() && !empty($contentUrl) && !$hasTextContent;
@@ -1222,7 +1222,7 @@
                                                             </button>
                                                         @endif
                                                         @if($canOpenFile)
-                                                            <a href="{{ route('admin.material.module.stream', [$material, $module], false) }}?download=1"
+                                                            <a href="{{ route('admin.trainer.material.module.stream', [$material, $module], false) }}?download=1"
                                                                 class="module-icon-btn download" title="Unduh">
                                                                 <i class="bi bi-download"></i>
                                                             </a>
@@ -1273,7 +1273,7 @@
                                                     @if($material->status === 'pending_review' && $hasAnyContent && $reviewStatus !== 'approved')
                                                         <div class="module-decision-stack">
                                                             <form method="POST"
-                                                                action="{{ route('admin.material.module.approve', [$material, $module]) }}"
+                                                                action="{{ route('admin.trainer.material.module.approve', [$material, $module]) }}"
                                                                 class="module-action-form">
                                                                 @csrf
                                                                 <button type="submit" class="module-btn-approve">
@@ -1289,7 +1289,7 @@
                                                         <div class="collapse module-reject-form"
                                                             id="rejectModuleForm-{{ $module->id }}">
                                                             <form method="POST"
-                                                                action="{{ route('admin.material.module.reject', [$material, $module]) }}">
+                                                                action="{{ route('admin.trainer.material.module.reject', [$material, $module]) }}">
                                                                 @csrf
                                                                 <textarea name="rejection_reason" required minlength="10"
                                                                     placeholder="Tulis catatan revisi untuk modul ini..."></textarea>
@@ -1391,7 +1391,7 @@
                         @if($material->status === 'pending_review')
                             <div class="card-custom side-card" style="padding:16px; margin-top:14px;">
                                 <div class="side-card-title">Keputusan Akhir</div>
-                                <form method="POST" action="{{ route('admin.material.approve', $material) }}"
+                                <form method="POST" action="{{ route('admin.trainer.material.approve', $material) }}"
                                     style="margin-bottom:10px;">
                                     @csrf
                                     <button type="submit" class="btn-approve"

@@ -285,13 +285,12 @@
             }
         }
     </style>
-    @include('admin.trainer._top-text-color')
 @endsection
 
 @section('content')
     <div class="trainer-wrapper">
         <!-- Sidebar Navigation (local partial to avoid missing named route) -->
-        @include('admin.trainer._sidebar')
+        @include('admin.trainer.partials.sidebar')
 
         <main class="trainer-main">
             @php $editBox = request('edit'); @endphp
@@ -320,23 +319,6 @@
                                 <i class="bi bi-telephone-fill me-2"></i>{{ $trainer->phone }}
                             </p>
                         @endif
-                    </div>
-                    <div class="d-flex flex-column gap-2">
-                        <a href="{{ route('admin.trainer.certificates.send.form', $trainer) }}"
-                            class="btn btn-primary btn-action-large mb-2">
-                            <i class="bi bi-award-fill me-2"></i>Kirim Sertifikat
-                        </a>
-                        <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'personal']) }}" class="btn btn-light btn-action-large">
-                            <i class="bi bi-pencil-square me-2"></i>Edit Data
-                        </a>
-                        <form action="{{ route('admin.trainer.destroy', $trainer) }}" method="POST"
-                            onsubmit="return confirm('Apakah Anda yakin ingin menghapus trainer {{ $trainer->name }}?\n\nData yang terhapus tidak dapat dikembalikan!')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-outline-light w-100 btn-action-large">
-                                <i class="bi bi-trash-fill me-2"></i>Hapus
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -612,78 +594,6 @@
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
                             </div>
                         @endif
-
-                        <form action="{{ route('admin.trainer.certificates.issue', $trainer) }}" method="POST" class="mb-4">
-                            @csrf
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-muted">Konteks</label>
-                                    <select name="context" class="form-select form-select-sm" required>
-                                        <option value="event">Event</option>
-                                        <option value="course">Course</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-8">
-                                    <label class="form-label small fw-bold text-muted">Pilih Event / Course</label>
-                                    <select name="context_id" class="form-select form-select-sm" required>
-                                        <optgroup label="Event">
-                                            @foreach(($trainerEvents ?? collect()) as $e)
-                                                <option value="{{ $e->id }}">[EVENT]
-                                                    {{ $e->title }}{{ $e->event_date ? ' • ' . $e->event_date->format('d M Y') : '' }}
-                                                </option>
-                                            @endforeach
-                                        </optgroup>
-                                        <optgroup label="Course">
-                                            @foreach(($trainerCourses ?? collect()) as $c)
-                                                <option value="{{ $c->id }}">[COURSE]
-                                                    {{ $c->name }}{{ $c->approved_at ? ' • ' . $c->approved_at->format('d M Y') : '' }}
-                                                </option>
-                                            @endforeach
-                                        </optgroup>
-                                    </select>
-                                    <small class="text-muted">Catatan: pastikan pilih sesuai “Konteks” di sebelah
-                                        kiri.</small>
-                                </div>
-
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold text-muted">Kode Kegiatan</label>
-                                    <select name="activity_code" class="form-select form-select-sm" required>
-                                        <option value="WBN">WBN (Webinar)</option>
-                                        <option value="SMN">SMN (Seminar)</option>
-                                        <option value="WRT">WRT (Workshop & Training)</option>
-                                        <option value="VDP">VDP (Video Production)</option>
-                                        <option value="ELR">ELR (E-Learning)</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold text-muted">Kode Jenis</label>
-                                    <select name="type_code" class="form-select form-select-sm" required>
-                                        <option value="TRN">TRN (Narasumber)</option>
-                                        <option value="MOD">MOD (Moderator)</option>
-                                        <option value="MC">MC</option>
-                                        <option value="PNT">PNT (Panitia)</option>
-                                        <option value="CLB">CLB (Kolaborator)</option>
-                                        <option value="SRT">SRT (Peserta)</option>
-                                        <option value="GRD">GRD (Kelulusan)</option>
-                                        <option value="SPV">SPV (Supervisor)</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold text-muted">Nomor Urut</label>
-                                    <input name="sequence" class="form-control form-control-sm" value="001" required />
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label small fw-bold text-muted">Tanggal Terbit</label>
-                                    <input name="issued_at" type="date" class="form-control form-control-sm" />
-                                </div>
-
-                                <div class="col-12 d-flex justify-content-end">
-                                    <button type="submit" class="btn btn-primary btn-sm px-4">
-                                        <i class="bi bi-send-check-fill me-2"></i>Terbitkan & Kirim ke Trainer
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
 
                         <div class="table-responsive">
                             <table class="table table-sm align-middle">
