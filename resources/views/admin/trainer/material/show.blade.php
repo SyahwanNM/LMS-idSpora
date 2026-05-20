@@ -1112,11 +1112,11 @@
                                 <div
                                     style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:{{ $loop->first ? '0' : '24px' }};">
                                     <span style="
-                                            display:inline-flex;align-items:center;gap:6px;
-                                            background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
-                                            color:{{ $unitColor['text'] }};border-radius:8px;
-                                            padding:4px 12px;font-size:0.78rem;font-weight:700;
-                                        ">
+                                                    display:inline-flex;align-items:center;gap:6px;
+                                                    background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
+                                                    color:{{ $unitColor['text'] }};border-radius:8px;
+                                                    padding:4px 12px;font-size:0.78rem;font-weight:700;
+                                                ">
                                         <i class="bi {{ $unitColor['icon'] }}" style="font-size:0.75rem;"></i>
                                         {{ $unit['unit_label'] }}
                                     </span>
@@ -1335,7 +1335,8 @@
                                     style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                                 <div>
                                     <div style="font-weight:700;color:#1e293b;font-size:0.85rem;">
-                                        {{ $material->trainer?->name ?? 'Anonim' }}</div>
+                                        {{ $material->trainer?->name ?? 'Anonim' }}
+                                    </div>
                                     <div style="font-size:0.73rem;color:#64748b;">Instruktur</div>
                                     @if($material->trainer?->email)
                                         <div style="font-size:0.7rem;color:#94a3b8;">{{ $material->trainer->email }}</div>
@@ -1372,7 +1373,8 @@
                                     style="background:{{ $totalRejectedM > 0 ? '#fff1f2' : '#f8fafc' }};border-radius:10px;padding:10px 12px;text-align:center;">
                                     <div
                                         style="font-size:1.3rem;font-weight:800;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};">
-                                        {{ $totalRejectedM }}</div>
+                                        {{ $totalRejectedM }}
+                                    </div>
                                     <div
                                         style="font-size:0.7rem;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};margin-top:2px;">
                                         Ditolak</div>
@@ -1394,8 +1396,7 @@
                                 <form method="POST" action="{{ route('admin.trainer.material.approve', $material) }}"
                                     style="margin-bottom:10px;">
                                     @csrf
-                                    <button type="submit" class="btn-approve"
-                                        {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
+                                    <button type="submit" class="btn-approve" {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
                                         <i class="bi bi-check-circle-fill"></i> Setujui Seluruh Materi
                                     </button>
                                     @if(!$structureCompleteness['is_complete'])
@@ -1539,9 +1540,9 @@
                         `<div class="quiz-preview-answer ${a.is_correct ? 'is-correct' : ''}">${escapeHtml(a.text || '-')}</div>`
                     ).join('');
                     return `<div class="quiz-preview-item">
-                            <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
-                            <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
-                        </div>`;
+                                <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
+                                <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
+                            </div>`;
                 }).join('');
                 return `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
             }

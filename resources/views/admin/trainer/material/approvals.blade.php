@@ -3,284 +3,284 @@
 @section('title', 'Manage Trainers')
 
 @push('admin-trainer-styles')
-<style>
-    .trainer-hero {
-        background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
-        border-radius: 24px;
-        padding: 32px 36px;
-        color: #fff;
-        margin-bottom: 28px;
-        position: relative;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    }
-
-    .trainer-hero::after {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 400px;
-        height: 400px;
-        background: radial-gradient(circle, rgba(138, 43, 226, 0.25) 0%, rgba(138, 43, 226, 0) 70%);
-        border-radius: 50%;
-        z-index: 1;
-    }
-
-    .trainer-hero > * {
-        position: relative;
-        z-index: 2;
-    }
-
-    .hero-title {
-        font-size: 2.15rem;
-        font-weight: 800;
-        margin-bottom: 6px;
-        letter-spacing: -0.6px;
-        display: flex;
-        align-items: center;
-        line-height: 1.1;
-    }
-
-    .hero-title i {
-        font-size: 1.6rem;
-        flex-shrink: 0;
-    }
-
-    .hero-subtitle {
-        color: rgba(255, 255, 255, 0.85);
-        font-size: 16px;
-        margin-bottom: 0;
-        line-height: 1.5;
-        max-width: 720px;
-    }
-
-    .stat-card {
-        display: flex;
-        align-items: center;
-        background: #fff;
-        border-radius: 16px;
-        padding: 20px;
-        border: 1px solid #e9ecef;
-        transition: all 0.3s ease;
-        gap: 16px;
-        height: 100%;
-    }
-
-    .stat-card:hover {
-        border-color: #3949ab;
-        box-shadow: 0 8px 24px rgba(57, 73, 171, 0.12);
-        transform: translateY(-4px);
-    }
-
-    .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        flex-shrink: 0;
-    }
-
-    .stat-primary .stat-icon {
-        background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
-        color: #fff;
-    }
-
-    .stat-success .stat-icon {
-        background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
-        color: #fff;
-    }
-
-    .stat-info .stat-icon {
-        background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
-        color: #fff;
-    }
-
-    .stat-value {
-        font-size: 28px;
-        font-weight: 800;
-        color: #1a237e;
-        line-height: 1.1;
-        margin-bottom: 4px;
-    }
-
-    .stat-label {
-        font-size: 14px;
-        color: #64748b;
-        font-weight: 600;
-        line-height: 1.2;
-    }
-
-    .toolbar-card {
-        background: #fff;
-        border: 1px solid #e9ecef;
-        border-radius: 18px;
-        padding: 18px;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-    }
-
-    .search-input,
-    .filter-select {
-        border-radius: 12px;
-        border: 1.5px solid #e9ecef;
-        font-size: 14px;
-        height: 44px;
-    }
-
-    .search-input:focus,
-    .filter-select:focus {
-        border-color: #3949ab;
-        box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
-        background-color: #f8f9ff;
-    }
-
-    .trainer-table-card {
-        border: 0;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-    }
-
-    .table-header-row th {
-        color: #1a237e;
-        font-weight: 700;
-        font-size: 13px;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        padding: 16px;
-        background: #f8f9ff;
-        white-space: nowrap;
-    }
-
-    .trainer-table-card tbody td {
-        padding: 16px;
-        vertical-align: middle;
-        border-color: #eef2f7;
-        white-space: nowrap;
-    }
-
-    .trainer-table-card tbody tr:hover {
-        background-color: #f8f9ff;
-    }
-
-    .trainer-avatar {
-        width: 44px;
-        height: 44px;
-        object-fit: cover;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-
-    .trainer-skill-cell {
-        white-space: normal !important;
-        min-width: 180px;
-        max-width: 260px;
-    }
-
-    .status-badge {
-        padding: 6px 12px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        white-space: nowrap;
-    }
-
-    .status-badge::before {
-        content: '';
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-    }
-
-    .status-active {
-        background: #e8f5e9;
-        color: #2e7d32;
-    }
-
-    .status-active::before {
-        background: #2e7d32;
-    }
-
-    .status-inactive {
-        background: #ffebee;
-        color: #c62828;
-    }
-
-    .status-inactive::before {
-        background: #c62828;
-    }
-
-    .badge-course {
-        background: #e3f2fd;
-        color: #1a237e;
-        border: 1.5px solid #bbdefb;
-        font-weight: 700;
-        padding: 8px 14px;
-        border-radius: 999px;
-    }
-
-    .btn-action {
-        border-radius: 10px;
-        padding: 7px 11px;
-        font-size: 14px;
-        transition: all 0.2s ease;
-        border: 1.5px solid transparent;
-    }
-
-    .btn-action-view {
-        color: #1976d2;
-        background-color: #e3f2fd;
-    }
-
-    .btn-action-edit {
-        color: #1a237e;
-        background-color: #e8eaf6;
-    }
-
-    .btn-action-delete {
-        color: #c62828;
-        background-color: #ffebee;
-    }
-
-    .empty-state {
-        padding: 60px 20px;
-        text-align: center;
-    }
-
-    .empty-state i {
-        font-size: 64px;
-        color: #cbd5e1;
-        margin-bottom: 20px;
-    }
-
-    @media (max-width: 576px) {
+    <style>
         .trainer-hero {
-            padding: 24px;
-            border-radius: 18px;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
+            border-radius: 24px;
+            padding: 32px 36px;
+            color: #fff;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .trainer-hero::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.25) 0%, rgba(138, 43, 226, 0) 70%);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .trainer-hero>* {
+            position: relative;
+            z-index: 2;
         }
 
         .hero-title {
-            font-size: 1.45rem;
+            font-size: 2.15rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            letter-spacing: -0.6px;
+            display: flex;
+            align-items: center;
+            line-height: 1.1;
         }
 
-        .toolbar-search-form,
-        .toolbar-actions {
-            flex-direction: column;
+        .hero-title i {
+            font-size: 1.6rem;
+            flex-shrink: 0;
         }
 
-        .toolbar-search-form button,
-        .toolbar-actions a {
-            width: 100%;
+        .hero-subtitle {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 16px;
+            margin-bottom: 0;
+            line-height: 1.5;
+            max-width: 720px;
         }
-    }
-</style>
+
+        .stat-card {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            gap: 16px;
+            height: 100%;
+        }
+
+        .stat-card:hover {
+            border-color: #3949ab;
+            box-shadow: 0 8px 24px rgba(57, 73, 171, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .stat-primary .stat-icon {
+            background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
+            color: #fff;
+        }
+
+        .stat-success .stat-icon {
+            background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+            color: #fff;
+        }
+
+        .stat-info .stat-icon {
+            background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
+            color: #fff;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #1a237e;
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .toolbar-card {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .search-input,
+        .filter-select {
+            border-radius: 12px;
+            border: 1.5px solid #e9ecef;
+            font-size: 14px;
+            height: 44px;
+        }
+
+        .search-input:focus,
+        .filter-select:focus {
+            border-color: #3949ab;
+            box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
+            background-color: #f8f9ff;
+        }
+
+        .trainer-table-card {
+            border: 0;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .table-header-row th {
+            color: #1a237e;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 16px;
+            background: #f8f9ff;
+            white-space: nowrap;
+        }
+
+        .trainer-table-card tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-color: #eef2f7;
+            white-space: nowrap;
+        }
+
+        .trainer-table-card tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .trainer-avatar {
+            width: 44px;
+            height: 44px;
+            object-fit: cover;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .trainer-skill-cell {
+            white-space: normal !important;
+            min-width: 180px;
+            max-width: 260px;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-active::before {
+            background: #2e7d32;
+        }
+
+        .status-inactive {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .status-inactive::before {
+            background: #c62828;
+        }
+
+        .badge-course {
+            background: #e3f2fd;
+            color: #1a237e;
+            border: 1.5px solid #bbdefb;
+            font-weight: 700;
+            padding: 8px 14px;
+            border-radius: 999px;
+        }
+
+        .btn-action {
+            border-radius: 10px;
+            padding: 7px 11px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            border: 1.5px solid transparent;
+        }
+
+        .btn-action-view {
+            color: #1976d2;
+            background-color: #e3f2fd;
+        }
+
+        .btn-action-edit {
+            color: #1a237e;
+            background-color: #e8eaf6;
+        }
+
+        .btn-action-delete {
+            color: #c62828;
+            background-color: #ffebee;
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #cbd5e1;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 576px) {
+            .trainer-hero {
+                padding: 24px;
+                border-radius: 18px;
+            }
+
+            .hero-title {
+                font-size: 1.45rem;
+            }
+
+            .toolbar-search-form,
+            .toolbar-actions {
+                flex-direction: column;
+            }
+
+            .toolbar-search-form button,
+            .toolbar-actions a {
+                width: 100%;
+            }
+        }
+    </style>
 @endpush
 
 @section('admin-trainer-content')
@@ -340,14 +340,11 @@
                 <form action="{{ route('admin.trainer.index') }}" method="GET" class="d-flex gap-2 toolbar-search-form">
                     <input type="hidden" name="sort" value="{{ request('sort') }}">
 
-                    <input type="text"
-                           name="search"
-                           class="form-control search-input"
-                           placeholder="Cari nama, email, atau nomor HP..."
-                           value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control search-input"
+                        placeholder="Cari nama, email, atau nomor HP..." value="{{ request('search') }}">
 
                     <button type="submit" class="btn btn-primary rounded-3 px-4"
-                            style="background:#3949ab;border:none;font-weight:700;height:44px;">
+                        style="background:#3949ab;border:none;font-weight:700;height:44px;">
                         <i class="bi bi-search"></i>
                         <span class="d-sm-none ms-1">Cari</span>
                     </button>
@@ -371,13 +368,14 @@
             <div class="col-12 col-lg-3">
                 <div class="d-flex justify-content-lg-end gap-2 toolbar-actions">
                     @if(request('search') || request('sort'))
-                        <a href="{{ route('admin.trainer.index') }}" class="btn btn-outline-secondary rounded-3" style="height:44px;">
+                        <a href="{{ route('admin.trainer.index') }}" class="btn btn-outline-secondary rounded-3"
+                            style="height:44px;">
                             <i class="bi bi-x-circle me-1"></i>Reset
                         </a>
                     @endif
 
                     <a href="{{ route('admin.trainer.create') }}" class="btn btn-primary rounded-3"
-                       style="background:#3949ab;border:none;font-weight:700;height:44px;">
+                        style="background:#3949ab;border:none;font-weight:700;height:44px;">
                         <i class="bi bi-person-plus me-1"></i>Tambah
                     </a>
                 </div>
@@ -406,8 +404,7 @@
                             <td class="ps-4">
                                 <div class="d-flex align-items-center gap-3">
                                     <img src="https://ui-avatars.com/api/?name={{ urlencode($trainer->name) }}&background=3949ab&color=fff&bold=true"
-                                         class="trainer-avatar"
-                                         alt="{{ $trainer->name }}">
+                                        class="trainer-avatar" alt="{{ $trainer->name }}">
 
                                     <div>
                                         <h6 class="mb-0 fw-bold" style="color:#1a237e;">{{ $trainer->name }}</h6>
@@ -462,28 +459,22 @@
 
                             <td class="text-center pe-4">
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{{ route('admin.trainer.show', $trainer) }}"
-                                       class="btn btn-action btn-action-view"
-                                       title="Lihat Detail">
+                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-action btn-action-view"
+                                        title="Lihat Detail">
                                         <i class="bi bi-eye-fill"></i>
                                     </a>
 
-                                    <a href="{{ route('admin.trainer.edit', $trainer) }}"
-                                       class="btn btn-action btn-action-edit"
-                                       title="Edit Trainer">
+                                    <a href="{{ route('admin.trainer.edit', $trainer) }}" class="btn btn-action btn-action-edit"
+                                        title="Edit Trainer">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
 
-                                    <form action="{{ route('admin.trainer.destroy', $trainer) }}"
-                                          method="POST"
-                                          class="d-inline"
-                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus trainer {{ $trainer->name }}?')">
+                                    <form action="{{ route('admin.trainer.destroy', $trainer) }}" method="POST" class="d-inline"
+                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus trainer {{ $trainer->name }}?')">
                                         @csrf
                                         @method('DELETE')
 
-                                        <button type="submit"
-                                                class="btn btn-action btn-action-delete"
-                                                title="Hapus Trainer">
+                                        <button type="submit" class="btn btn-action btn-action-delete" title="Hapus Trainer">
                                             <i class="bi bi-trash-fill"></i>
                                         </button>
                                     </form>
@@ -530,12 +521,12 @@
 @endsection
 
 @push('admin-trainer-scripts')
-<script>
-    setTimeout(function () {
-        document.querySelectorAll('.alert').forEach(alert => {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        });
-    }, 5000);
-</script>
+    <script>
+        setTimeout(function () {
+            document.querySelectorAll('.alert').forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
 @endpush
