@@ -3,6 +3,7 @@
 @section('title', 'Rejected Materials')
 
 @push('admin-trainer-styles')
+@push('admin-trainer-styles')
     <style>
         :root {
             --admin-primary: #1e1b4b;
@@ -14,6 +15,7 @@
             --admin-text-muted: #64748b;
         }
 
+        /* --- COMPONENT STYLES (page-specific) --- */
         /* --- COMPONENT STYLES (page-specific) --- */
 
         /* --- HEADER --- */
@@ -373,6 +375,7 @@
             }
         }
     </style>
+@endpush
 @endpush
 
 @section('admin-trainer-content')
