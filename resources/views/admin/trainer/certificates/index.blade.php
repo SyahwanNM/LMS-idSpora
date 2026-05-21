@@ -1,325 +1,918 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Sertifikat Trainer')
+@section('title', 'Sertifikat & Penghargaan')
+
+@php
+    $tab = $tab ?? request('tab', 'pendingItems');
+
+    $pendingItems = $pendingItems ?? collect();
+    $certificates = $certificates ?? collect();
+
+    $totalProgram = $pendingItems->count() + $certificates->count();
+    $totalPublished = $certificates->count();
+    $readyCount = $pendingItems->count();
+    $notConfiguredCount = $pendingItems->filter(function ($item) {
+        return empty($item->certificate_logo) && empty($item->certificate_signature);
+    })->count();
+@endphp
 
 @push('admin-trainer-styles')
-<style>
-    .certificate-hero {
-        background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
-        padding: 32px;
-        border-radius: 24px;
-        color: white;
-        margin-bottom: 24px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 18px 36px rgba(26, 35, 126, 0.18);
-    }
+    <style>
+        :root {
+            --cert-primary: #2f3fcb;
+            --cert-primary-dark: #1a237e;
+            --cert-soft: #eef1ff;
+            --cert-border: #e6eaf2;
+            --cert-muted: #6b7a99;
+            --cert-bg: #f8fafc;
+            --cert-warning: #f59e0b;
+            --cert-danger: #ef4444;
+            --cert-success: #059669;
+        }
 
-    .certificate-hero::after {
-        content: '';
-        position: absolute;
-        top: -80px;
-        right: -80px;
-        width: 260px;
-        height: 260px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 70%);
-    }
+        .cert-dashboard {
+            width: 100%;
+        }
 
-    .certificate-hero > * {
-        position: relative;
-        z-index: 2;
-    }
+        .cert-hero {
+            background: linear-gradient(135deg, #2734b8 0%, #4b5be4 55%, #dfe4ff 100%);
+            border-radius: 22px;
+            padding: 38px 42px;
+            color: #fff;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 18px 40px rgba(47, 63, 203, 0.16);
+        }
 
-    .certificate-title {
-        font-size: 2rem;
-        font-weight: 800;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+        .cert-hero::after {
+            content: '';
+            position: absolute;
+            right: 70px;
+            top: 28px;
+            width: 260px;
+            height: 150px;
+            background: rgba(255, 255, 255, .18);
+            border-radius: 28px;
+            transform: rotate(-2deg);
+        }
 
-    .certificate-subtitle {
-        margin: 0;
-        color: rgba(255,255,255,.86);
-    }
+        .cert-hero::before {
+            content: '✦';
+            position: absolute;
+            right: 105px;
+            top: 86px;
+            color: rgba(255, 255, 255, .7);
+            font-size: 52px;
+            z-index: 2;
+        }
 
-    .stat-card {
-        background: #fff;
-        border-radius: 18px;
-        padding: 20px;
-        border: 1px solid #e2e8f0;
-        height: 100%;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-    }
+        .cert-hero-content {
+            position: relative;
+            z-index: 4;
+            max-width: 620px;
+        }
 
-    .stat-value {
-        font-size: 30px;
-        font-weight: 800;
-        color: #1a237e;
-        line-height: 1;
-        margin-bottom: 8px;
-    }
+        .page-eyebrow {
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            color: rgba(255, 255, 255, .88);
+        }
 
-    .stat-label {
-        color: #64748b;
-        font-size: 14px;
-        font-weight: 600;
-    }
+        .page-eyebrow::before {
+            content: '';
+            width: 22px;
+            height: 2px;
+            background: rgba(255, 255, 255, .9);
+            border-radius: 4px;
+        }
 
-    .filter-card {
-        background: #fff;
-        border-radius: 18px;
-        padding: 18px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-        margin-bottom: 24px;
-    }
+        .cert-hero h1 {
+            font-size: 2.35rem;
+            font-weight: 900;
+            margin: 0 0 12px;
+            letter-spacing: -1px;
+        }
 
-    .certificate-table-card {
-        background: #fff;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
-    }
+        .cert-hero p {
+            color: rgba(255, 255, 255, .9);
+            font-size: 1rem;
+            line-height: 1.65;
+            margin: 0;
+        }
 
-    .certificate-table th {
-        background: #f8f9ff;
-        color: #1a237e;
-        font-size: 13px;
-        font-weight: 800;
-        padding: 16px;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
+        .metric-card {
+            background: #fff;
+            border: 1px solid var(--cert-border);
+            border-radius: 20px;
+            padding: 22px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            min-height: 118px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        }
 
-    .certificate-table td {
-        padding: 16px;
-        vertical-align: middle;
-        border-color: #eef2f7;
-    }
+        .metric-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
 
-    .trainer-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
+        .metric-icon.blue {
+            background: #eef1ff;
+            color: var(--cert-primary);
+        }
 
-    .pending-badge {
-        background: #fff7ed;
-        color: #c2410c;
-        border: 1px solid #fed7aa;
-        padding: 6px 12px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
+        .metric-icon.purple {
+            background: #f1e8ff;
+            color: #7c3aed;
+        }
 
-    .published-badge {
-        background: #ecfdf5;
-        color: #047857;
-        border: 1px solid #bbf7d0;
-        padding: 6px 12px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 700;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
+        .metric-icon.green {
+            background: #dff8ed;
+            color: var(--cert-success);
+        }
 
-    .btn-manage {
-        background: #3949ab;
-        color: #fff;
-        border: 0;
-        border-radius: 10px;
-        padding: 8px 14px;
-        font-weight: 700;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
+        .metric-icon.yellow {
+            background: #fff2cc;
+            color: var(--cert-warning);
+        }
 
-    .btn-manage:hover {
-        background: #283593;
-        color: #fff;
-    }
+        .metric-label {
+            font-size: 0.86rem;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
 
-    .empty-state {
-        padding: 60px 20px;
-        text-align: center;
-        color: #64748b;
-    }
+        .metric-value {
+            font-size: 1.85rem;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1;
+        }
 
-    .empty-state i {
-        font-size: 48px;
-        color: #cbd5e1;
-        display: block;
-        margin-bottom: 12px;
-    }
+        .metric-desc {
+            margin-top: 6px;
+            color: var(--cert-muted);
+            font-size: 0.86rem;
+        }
 
-    @media (max-width: 768px) {
-        .certificate-hero {
-            padding: 24px;
+        .cert-tab-wrapper {
+            display: flex;
+            gap: 6px;
+            margin-top: 26px;
+            margin-bottom: 0;
+        }
+
+        .cert-tab-btn {
+            border: 1px solid var(--cert-border);
+            border-bottom: 0;
+            background: #fff;
+            color: #475569;
+            padding: 14px 28px;
+            border-radius: 14px 14px 0 0;
+            font-weight: 800;
+            min-width: 220px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .cert-tab-btn.active {
+            color: var(--cert-primary);
+            border-top: 3px solid var(--cert-primary);
+            background: #fff;
+        }
+
+        .tab-count {
+            background: #eef1ff;
+            color: var(--cert-primary);
+            font-size: 0.75rem;
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-weight: 900;
+        }
+
+        .filter-card {
+            background: #fff;
+            border: 1px solid var(--cert-border);
+            border-radius: 0 20px 20px 20px;
+            padding: 22px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+            margin-bottom: 18px;
+        }
+
+        .filter-input {
+            width: 100%;
+            height: 48px;
+            border: 1px solid #dbe3ef;
+            border-radius: 12px;
+            background: #fff;
+            padding: 0 16px;
+            font-size: 0.92rem;
+            outline: none;
+        }
+
+        .filter-input:focus {
+            border-color: var(--cert-primary);
+            box-shadow: 0 0 0 4px rgba(47, 63, 203, .08);
+        }
+
+        .search-wrap {
+            position: relative;
+        }
+
+        .search-wrap i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-wrap .filter-input {
+            padding-left: 48px;
+        }
+
+        .btn-reset-filter {
+            height: 48px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ef;
+            background: #fff;
+            font-weight: 700;
+            color: #334155;
+            width: 100%;
+        }
+
+        .custom-tab-pane {
+            display: none;
+        }
+
+        .custom-tab-pane.active {
+            display: block;
+        }
+
+        .certificate-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(280px, 1fr));
+            gap: 22px;
+        }
+
+        .certificate-card {
+            background: #fff;
+            border: 1px solid #e6eaf2;
+            border-radius: 22px;
+            padding: 22px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+            min-height: 340px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .type-badge {
+            background: #eef1ff;
+            color: #2f3fcb;
+            font-size: 0.72rem;
+            font-weight: 900;
+            border-radius: 8px;
+            padding: 6px 10px;
+        }
+
+        .status-badge {
+            font-size: 0.68rem;
+            font-weight: 900;
+            border-radius: 999px;
+            padding: 6px 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .status-badge.ready {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-badge.configured {
+            background: #e8edff;
+            color: #2f3fcb;
+        }
+
+        .status-badge.missing {
+            background: #ffe4e6;
+            color: #e11d48;
+        }
+
+        .program-main {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+
+        .program-icon {
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            background: #eef1ff;
+            color: #2f3fcb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .program-icon.purple {
+            background: #f1e8ff;
+            color: #7c3aed;
+        }
+
+        .program-icon.red {
+            background: #ffe4e6;
+            color: #ef4444;
+        }
+
+        .program-title {
+            font-size: 1rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0 0 8px;
+            line-height: 1.35;
+        }
+
+        .program-date,
+        .program-meta {
+            font-size: 0.82rem;
+            color: #6b7a99;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 6px;
+        }
+
+        .program-meta strong {
+            color: #2f3fcb;
+        }
+
+        .asset-section {
+            border-top: 1px solid #e6eaf2;
+            padding-top: 16px;
+            margin-top: auto;
+        }
+
+        .asset-title {
+            font-size: 0.82rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        .asset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .asset-item {
+            background: #f8fafc;
+            border: 1px solid #eef2f7;
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .asset-label {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .asset-status {
+            font-size: 0.76rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .asset-status.ok {
+            color: #059669;
+        }
+
+        .asset-status.no {
+            color: #ef4444;
+        }
+
+        .btn-manage-template {
+            margin-top: 18px;
+            width: 100%;
+            height: 46px;
+            border-radius: 14px;
+            border: 0;
+            background: linear-gradient(135deg, #2f3fcb, #2636bd);
+            color: #fff;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-manage-template:hover {
+            color: #fff;
+            filter: brightness(.95);
+        }
+
+        .btn-manage-template.warning {
+            background: #ffe4e6;
+            color: #e11d48;
+        }
+
+        .btn-manage-template.soft {
+            background: #eef1ff;
+            color: #2f3fcb;
+        }
+
+        @media (max-width: 1200px) {
+            .certificate-grid {
+                grid-template-columns: repeat(2, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .certificate-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .empty-card {
+            background: #fff;
+            border: 1px solid var(--cert-border);
             border-radius: 18px;
+            padding: 60px 20px;
+            text-align: center;
+            grid-column: 1 / -1;
+            color: var(--cert-muted);
         }
 
-        .certificate-title {
-            font-size: 1.5rem;
+        @media (max-width: 1200px) {
+            .certificate-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
-    }
-</style>
+
+        @media (max-width: 768px) {
+            .cert-hero {
+                padding: 28px;
+            }
+
+            .cert-hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .certificate-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cert-tab-wrapper {
+                flex-direction: column;
+            }
+
+            .cert-tab-btn {
+                width: 100%;
+                border-radius: 14px;
+                border: 1px solid var(--cert-border);
+            }
+
+            .filter-card {
+                border-radius: 20px;
+            }
+        }
+    </style>
 @endpush
 
 @section('admin-trainer-content')
-@php
-    $trainers = $trainers ?? collect();
-    $totalTrainers = $totalTrainers ?? 0;
-    $totalCertificates = $totalCertificates ?? 0;
-    $totalPending = $totalPending ?? 0;
-@endphp
+    <div class="cert-dashboard">
 
-<div class="certificate-hero">
-    <h1 class="certificate-title">
-        <i class="bi bi-award-fill"></i>
-        Sertifikat Trainer
-    </h1>
+        <section class="cert-hero">
+            <div class="cert-hero-content">
+                <div class="page-eyebrow">Recognition System</div>
+                <h1>Sertifikat & Penghargaan</h1>
+                <p>
+                    Kelola aset sertifikat untuk event dan kursus yang sudah dibuat.
+                </p>
+            </div>
+        </section>
 
-    <p class="certificate-subtitle">
-        Kelola konfigurasi, penerbitan, dan monitoring sertifikat trainer.
-    </p>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="stat-value">{{ $totalTrainers }}</div>
-            <div class="stat-label">Total Trainer</div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="stat-value">{{ $totalCertificates }}</div>
-            <div class="stat-label">Sertifikat Terbit</div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="stat-card">
-            <div class="stat-value">{{ $totalPending }}</div>
-            <div class="stat-label">Menunggu Sertifikat</div>
-        </div>
-    </div>
-</div>
-
-<div class="filter-card">
-    <form method="GET">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-9">
-                <input type="text"
-                       name="search"
-                       class="form-control"
-                       placeholder="Cari nama, email, atau nomor HP trainer..."
-                       value="{{ request('search') }}">
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-xl-3">
+                <div class="metric-card">
+                    <div class="metric-icon blue">
+                        <i class="bi bi-calendar4-week"></i>
+                    </div>
+                    <div>
+                        <div class="metric-label">Event / Course</div>
+                        <div class="metric-value">{{ $totalProgram }}</div>
+                        <div class="metric-desc">Total program</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="col-md-3">
-                <button class="btn btn-primary w-100" style="background:#3949ab;border:none;font-weight:700;">
-                    <i class="bi bi-search me-1"></i>
-                    Cari
-                </button>
+            <div class="col-md-6 col-xl-3">
+                <div class="metric-card">
+                    <div class="metric-icon purple">
+                        <i class="bi bi-award"></i>
+                    </div>
+                    <div>
+                        <div class="metric-label">Sertifikat Terbit</div>
+                        <div class="metric-value">{{ $totalPublished }}</div>
+                        <div class="metric-desc">Sertifikat sudah diterbitkan</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-3">
+                <div class="metric-card">
+                    <div class="metric-icon green">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <div>
+                        <div class="metric-label">Siap Terbit</div>
+                        <div class="metric-value">{{ $readyCount }}</div>
+                        <div class="metric-desc">Event / Course siap terbit</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-3">
+                <div class="metric-card">
+                    <div class="metric-icon yellow">
+                        <i class="bi bi-clock"></i>
+                    </div>
+                    <div>
+                        <div class="metric-label">Belum Konfigurasi</div>
+                        <div class="metric-value">{{ $notConfiguredCount }}</div>
+                        <div class="metric-desc">Perlu pengaturan aset</div>
+                    </div>
+                </div>
             </div>
         </div>
-    </form>
-</div>
 
-<div class="certificate-table-card">
-    <div class="table-responsive">
-        <table class="table certificate-table mb-0">
-            <thead>
-                <tr>
-                    <th>Trainer</th>
-                    <th>Email</th>
-                    <th class="text-center">Pending</th>
-                    <th class="text-center">Terbit</th>
-                    <th class="text-end">Aksi</th>
-                </tr>
-            </thead>
+        <div class="cert-tab-wrapper">
+            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'pendingItems' ? 'active' : '' }}"
+                data-target="pendingItems-pane">
+                <i class="bi bi-calendar-event"></i>
+                Sertifikat Event
+                <span class="tab-count">{{ $pendingItems->count() }}</span>
+            </button>
 
-            <tbody>
-                @forelse($trainers as $trainer)
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center gap-3">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode($trainer->name) }}&background=3949ab&color=fff&bold=true"
-                                     class="trainer-avatar"
-                                     alt="{{ $trainer->name }}">
+            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'certificates' ? 'active' : '' }}"
+                data-target="certificates-pane">
+                <i class="bi bi-mortarboard"></i>
+                Sertifikat Kursus
+                <span class="tab-count">{{ $certificates->count() }}</span>
+            </button>
+        </div>
 
-                                <div>
-                                    <div class="fw-bold" style="color:#1a237e;">
-                                        {{ $trainer->name }}
+        <div class="filter-card">
+            <div class="row g-3 align-items-center">
+                <div class="col-lg-5">
+                    <div class="search-wrap">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="certSearch" class="filter-input"
+                            placeholder="Cari berdasarkan nama program...">
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <select id="certStatus" class="filter-input">
+                        <option value="all">Semua Status Kesiapan</option>
+                        <option value="ready">Siap Terbit</option>
+                        <option value="configured">Dikonfigurasi</option>
+                        <option value="not-configured">Belum Dikonfigurasi</option>
+                    </select>
+                </div>
+
+                <div class="col-lg-3">
+                    <button type="button" id="certReset" class="btn-reset-filter">
+                        <i class="bi bi-arrow-counterclockwise me-2"></i>
+                        Reset Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content-container">
+            <div class="custom-tab-pane {{ $tab === 'pendingItems' ? 'active' : '' }}" id="pendingItems-pane">
+                <div class="certificate-grid">
+                    @forelse($pendingItems as $event)
+                                    @php
+                                        $isConfigured = !empty($event->certificate_logo) || !empty($event->certificate_signature);
+                                        $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+                                        $isFinished = $eventDate ? ($eventDate->isPast() || $eventDate->isToday()) : false;
+                                        $status = $isConfigured ? ($isFinished ? 'ready' : 'configured') : 'not-configured';
+                                    @endphp
+
+                                    <div class="certificate-card cert-row" data-title="{{ strtolower($event->title) }}"
+                                        data-status="{{ $status }}">
+
+                                        <div class="card-top">
+                                            <span class="type-badge">EVENT</span>
+
+                                            @if($status === 'ready')
+                                                <span class="status-badge ready">
+                                                    <i class="bi bi-check-circle-fill"></i>
+                                                    Siap Terbit
+                                                </span>
+                                            @elseif($status === 'configured')
+                                                <span class="status-badge configured">
+                                                    <i class="bi bi-circle-fill"></i>
+                                                    Dikonfigurasi
+                                                </span>
+                                            @else
+                                                <span class="status-badge missing">
+                                                    <i class="bi bi-exclamation-lg"></i>
+                                                    Belum Konfigurasi
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <div class="program-main">
+                                            <div
+                                                class="program-icon {{ $status === 'configured' ? 'purple' : ($status === 'not-configured' ? 'red' : '') }}">
+                                                <i class="bi bi-calendar-event"></i>
+                                            </div>
+
+                                            <div>
+                                                <h5 class="program-title">{{ $event->title }}</h5>
+
+                                                <div class="program-date">
+                                                    <i class="bi bi-calendar2-week"></i>
+                                                    {{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}
+                                                </div>
+
+                                                <div class="program-meta">
+                                                    <i class="bi bi-people"></i>
+                                                    Peserta:
+                                                    <strong>{{ $event->registrations_count ?? 0 }}</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="asset-section">
+                                            <div class="asset-title">Aset Sertifikat</div>
+
+                                            <div class="asset-list">
+                                                <div class="asset-item">
+                                                    <div class="asset-label">
+                                                        <i class="bi bi-file-earmark-text"></i>
+                                                        Template
+                                                    </div>
+                                                    <div class="asset-status {{ $isConfigured ? 'ok' : 'no' }}">
+                                                        <i
+                                                            class="bi {{ $isConfigured ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                        {{ $isConfigured ? 'Tersedia' : 'Belum Ada' }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="asset-item">
+                                                    <div class="asset-label">
+                                                        <i class="bi bi-image"></i>
+                                                        Logo
+                                                    </div>
+                                                    <div class="asset-status {{ !empty($event->certificate_logo) ? 'ok' : 'no' }}">
+                                                        <i
+                                                            class="bi {{ !empty($event->certificate_logo) ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                        {{ !empty($event->certificate_logo) ? 'Tersedia' : 'Belum Ada' }}
+                                                    </div>
+                                                </div>
+
+                                                <div class="asset-item">
+                                                    <div class="asset-label">
+                                                        <i class="bi bi-pen"></i>
+                                                        Tanda Tangan
+                                                    </div>
+                                                    <div class="asset-status {{ !empty($event->certificate_signature) ? 'ok' : 'no' }}">
+                                                        <i
+                                                            class="bi {{ !empty($event->certificate_signature) ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                        {{ !empty($event->certificate_signature) ? 'Tersedia' : 'Belum Ada' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <a href="{{ route('admin.trainer.certificates.edit', [
+                            'trainer' => $event->trainer_id,
+                            'context' => 'event',
+                            'id' => $event->id,
+                        ]) }}" class="btn-manage-template {{ $status === 'not-configured' ? 'warning' : ($status === 'configured' ? 'soft' : '') }}">
+                                            <i class="bi bi-gear"></i>
+                                            Kelola Template
+                                            <i class="bi bi-chevron-right ms-auto"></i>
+                                        </a>
                                     </div>
-                                    <small class="text-muted">
-                                        {{ $trainer->profession ?? 'Trainer' }}
-                                    </small>
-                                </div>
-                            </div>
-                        </td>
+                    @empty
+                        <div class="empty-card">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            Data event tidak ditemukan.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
 
-                        <td>
-                            {{ $trainer->email }}
-                        </td>
+            <div class="custom-tab-pane {{ $tab === 'certificates' ? 'active' : '' }}" id="certificates-pane">
+                <div class="certificate-grid">
+                    @forelse($certificates as $course)
+                                    @php
+                                        $isConfigured = !empty($course->certificate_logo) || !empty($course->certificate_signature);
+                                        $status = $isConfigured ? 'ready' : 'not-configured';
+                                    @endphp
 
-                        <td class="text-center">
-                            <span class="pending-badge">
-                                <i class="bi bi-hourglass-split"></i>
-                                {{ $trainer->pending_certificates_count ?? 0 }}
-                            </span>
-                        </td>
+                                    <div class="certificate-card cert-row" data-title="{{ strtolower($course->name) }}"
+                                        data-status="{{ $status }}">
 
-                        <td class="text-center">
-                            <span class="published-badge">
-                                <i class="bi bi-check-circle-fill"></i>
-                                {{ $trainer->published_certificates_count ?? 0 }}
-                            </span>
-                        </td>
+                                        <div>
+                                            <div class="card-top">
+                                                <span class="type-badge">Course</span>
 
-                        <td class="text-end">
-                            <a href="{{ route('admin.trainer.certificates.show', $trainer) }}"
-                               class="btn-manage">
-                                <i class="bi bi-gear-fill"></i>
-                                Kelola
-                            </a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5">
-                            <div class="empty-state">
-                                <i class="bi bi-inbox"></i>
-                                <div class="fw-bold mb-1">Belum ada trainer</div>
-                                <div>Data trainer akan muncul di halaman ini.</div>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                                                @if($isConfigured)
+                                                    <span class="status-badge ready">
+                                                        <i class="bi bi-check-circle-fill"></i>
+                                                        Siap Terbit
+                                                    </span>
+                                                @else
+                                                    <span class="status-badge missing">
+                                                        <i class="bi bi-exclamation-lg"></i>
+                                                        Belum Konfigurasi
+                                                    </span>
+                                                @endif
+                                            </div>
 
-    @if(method_exists($trainers, 'links') && $trainers->hasPages())
-        <div class="p-4 border-top">
-            {{ $trainers->links('pagination::bootstrap-5') }}
+                                            <div class="program-icon {{ $isConfigured ? '' : 'red' }}">
+                                                <i class="bi bi-mortarboard"></i>
+                                            </div>
+
+                                            <h5 class="program-title">{{ $course->name }}</h5>
+
+                                            <div class="program-date">
+                                                <i class="bi bi-folder2-open"></i>
+                                                {{ $course->category->name ?? 'General' }}
+                                            </div>
+
+                                            <div class="program-meta">
+                                                <span>Siswa Terdaftar</span>
+                                                <strong>
+                                                    <i class="bi bi-people me-1"></i>
+                                                    {{ $course->enrollments_count ?? 0 }}
+                                                </strong>
+                                            </div>
+
+                                            <div class="asset-section">
+                                                <div class="asset-title">Aset Sertifikat</div>
+
+                                                <div class="asset-list">
+                                                    <div class="asset-item">
+                                                        <div class="asset-label">
+                                                            <i class="bi bi-file-earmark-text"></i>
+                                                            Template
+                                                        </div>
+                                                        <div class="asset-status {{ $isConfigured ? 'ok' : 'no' }}">
+                                                            <i
+                                                                class="bi {{ $isConfigured ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                            {{ $isConfigured ? 'Tersedia' : 'Belum Ada' }}
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="asset-item">
+                                                        <div class="asset-label">
+                                                            <i class="bi bi-image"></i>
+                                                            Logo
+                                                        </div>
+                                                        <div class="asset-status {{ !empty($course->certificate_logo) ? 'ok' : 'no' }}">
+                                                            <i
+                                                                class="bi {{ !empty($course->certificate_logo) ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                            {{ !empty($course->certificate_logo) ? 'Tersedia' : 'Belum Ada' }}
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="asset-item">
+                                                        <div class="asset-label">
+                                                            <i class="bi bi-pen"></i>
+                                                            Tanda Tangan
+                                                        </div>
+                                                        <div
+                                                            class="asset-status {{ !empty($course->certificate_signature) ? 'ok' : 'no' }}">
+                                                            <i
+                                                                class="bi {{ !empty($course->certificate_signature) ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                            {{ !empty($course->certificate_signature) ? 'Tersedia' : 'Belum Ada' }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <a href="{{ route('admin.trainer.certificates.edit', [
+                            'trainer' => $course->trainer_id,
+                            'context' => 'course',
+                            'id' => $course->id,
+                        ]) }}" class="btn-manage-template {{ !$isConfigured ? 'warning' : '' }}">
+                                            <i class="bi bi-gear"></i>
+                                            Kelola Template
+                                            <i class="bi bi-chevron-right ms-auto"></i>
+                                        </a>
+                                    </div>
+                    @empty
+                        <div class="empty-card">
+                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                            Data kursus tidak ditemukan.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
         </div>
-    @endif
-</div>
+    </div>
 @endsection
+
+@push('admin-trainer-scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabBtns = document.querySelectorAll('.custom-tab-btn');
+            const tabPanes = document.querySelectorAll('.custom-tab-pane');
+
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    tabPanes.forEach(p => p.classList.remove('active'));
+
+                    this.classList.add('active');
+
+                    const targetId = this.getAttribute('data-target');
+                    document.getElementById(targetId)?.classList.add('active');
+
+                    const tabName = targetId.replace('-pane', '');
+                    const url = new URL(window.location);
+                    url.searchParams.set('tab', tabName);
+                    window.history.pushState({}, '', url);
+                });
+            });
+
+            const searchInput = document.getElementById('certSearch');
+            const statusFilter = document.getElementById('certStatus');
+            const resetBtn = document.getElementById('certReset');
+
+            function runFilter() {
+                const term = (searchInput?.value || '').toLowerCase().trim();
+                const status = statusFilter?.value || 'all';
+
+                document.querySelectorAll('.cert-row').forEach(row => {
+                    const title = row.getAttribute('data-title') || '';
+                    const rowStatus = row.getAttribute('data-status') || '';
+                    const matchSearch = term === '' || title.includes(term);
+                    const matchStatus = status === 'all' || rowStatus === status;
+
+                    row.style.display = matchSearch && matchStatus ? '' : 'none';
+                });
+            }
+
+            searchInput?.addEventListener('input', runFilter);
+            statusFilter?.addEventListener('change', runFilter);
+
+            resetBtn?.addEventListener('click', () => {
+                if (searchInput) searchInput.value = '';
+                if (statusFilter) statusFilter.value = 'all';
+                runFilter();
+            });
+        });
+    </script>
+@endpush

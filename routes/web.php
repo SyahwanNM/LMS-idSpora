@@ -2,6 +2,16 @@
 // Payment page for course
 Route::middleware(['auth'])->get('/courses/{course}/payment', [App\Http\Controllers\Admin\CourseController::class, 'payment'])->name('course.payment');
 
+Route::get('/debug-finance', function() {
+    $controller = new App\Http\Controllers\Admin\FinanceController();
+    $request = request();
+    $admin = \App\Models\User::where('email', 'admin@idspora.com')->first();
+    if ($admin) {
+        auth()->login($admin);
+    }
+    return $controller->trainers($request);
+});
+
 // Learn course modules (requires purchase/enrollment)
 Route::middleware(['auth'])->get('/courses/{course}/learn', [App\Http\Controllers\Admin\CourseController::class, 'learn'])->name('course.learn');
 
@@ -479,12 +489,30 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
         Route::get('/admin/finance', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('admin.finance.index');
+        Route::get('/admin/finance/incomes', [\App\Http\Controllers\Admin\FinanceController::class, 'incomes'])->name('admin.finance.incomes');
+        Route::post('/admin/finance/store-income', [\App\Http\Controllers\Admin\FinanceController::class, 'storeIncome'])->name('admin.finance.store-income');
+        Route::get('/admin/finance/expenses', [\App\Http\Controllers\Admin\FinanceController::class, 'expenses'])->name('admin.finance.expenses');
         Route::post('/admin/finance/expense', [\App\Http\Controllers\Admin\FinanceController::class, 'storeExpense'])->name('admin.finance.store-expense');
-        Route::post('/admin/finance/trainer-payment', [\App\Http\Controllers\Admin\FinanceController::class, 'storeTrainerPayment'])->name('admin.finance.store-trainer-payment');
+        
+        // Expense Approvals
+        Route::post('/admin/finance/event-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventExpense'])->name('admin.finance.event-expense.approve');
+        Route::post('/admin/finance/event-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventExpense'])->name('admin.finance.event-expense.reject');
+        
+        
+        Route::post('/admin/finance/manual-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveExpense'])->name('admin.finance.manual-expense.approve');
+        Route::post('/admin/finance/manual-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectExpense'])->name('admin.finance.manual-expense.reject');
+        
         Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
         Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
         Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
+        Route::get('/admin/finance/trainers', [\App\Http\Controllers\Admin\FinanceController::class, 'trainers'])->name('admin.finance.trainers');
+        Route::post('/admin/finance/trainers/{id}/disburse', [\App\Http\Controllers\Admin\FinanceController::class, 'disburseCourseBalance'])->name('admin.finance.trainers.disburse');
+        Route::post('/admin/finance/events/{id}/fee-request', [\App\Http\Controllers\Admin\FinanceController::class, 'createEventFeeRequest'])->name('admin.finance.events.fee-request');
+        Route::post('/admin/finance/event-fees/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventFeePayment'])->name('admin.finance.event-fee.approve');
+        Route::post('/admin/finance/event-fees/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventFeePayment'])->name('admin.finance.event-fee.reject');
+        Route::get('/admin/finance/payouts/{id}/invoice', [\App\Http\Controllers\Admin\FinanceController::class, 'downloadPayoutInvoice'])->name('admin.finance.payouts.invoice');
+        
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
@@ -637,6 +665,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/courses', [TrainerController::class, 'courses'])->name('courses');
     Route::get('/courses/{id}', [TrainerController::class, 'courseDetail'])->name('detail-course');
     Route::get('/finance', [TrainerController::class, 'finance'])->name('finance');
+    Route::get('/finance/payouts/{id}/invoice', [TrainerController::class, 'downloadPayoutInvoice'])->name('finance.payouts.invoice');
     Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [TrainerController::class, 'editProfile'])->name('profile.edit');
     Route::put('/profile', [TrainerController::class, 'updateProfile'])->name('profile.update');

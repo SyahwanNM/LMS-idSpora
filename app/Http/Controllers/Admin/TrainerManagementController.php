@@ -21,20 +21,24 @@ class TrainerManagementController extends Controller
     // Menampilkan daftar trainer
     public function index(Request $request)
     {
-        $totalTrainers = User::where('role', 'trainer')->count();
-        $activeTrainers = User::where('role', 'trainer')
+        $totalTrainers = User::whereIn('role', ['trainer', 'Trainer'])->count();
+        $activeTrainers = User::whereIn('role', ['trainer', 'Trainer'])
             ->where('created_at', '>=', now()->subDays(30))
             ->count();
-        $teachingTrainers = User::where('role', 'trainer')
+        $teachingTrainers = User::whereIn('role', ['trainer', 'Trainer'])
             ->where(function ($query) {
                 $query->whereHas('coursesAsTrainer')
                     ->orWhereHas('eventsAsTrainer');
             })
             ->count();
 
-        $query = User::where('role', 'trainer')
-            ->withCount(['coursesAsTrainer', 'eventsAsTrainer'])
-            ->orderBy('created_at', 'desc');
+        // Ambil data trainer dengan filter & search
+        $query = User::query()
+            ->where(function($q) {
+                $q->where('role', 'trainer')
+                  ->orWhere('role', 'Trainer');
+            })
+            ->withCount(['coursesAsTrainer', 'eventsAsTrainer']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -60,10 +64,15 @@ class TrainerManagementController extends Controller
                 case 'oldest':
                     $query->orderBy('created_at', 'asc');
                     break;
+                default:
+                    $query->orderBy('created_at', 'desc');
+                    break;
             }
+        } else {
+            $query->orderBy('created_at', 'desc');
         }
 
-        $trainers = $query->paginate(10);
+        $trainers = $query->paginate(10)->withQueryString();
 
         return view('admin.trainer.index', compact('trainers', 'totalTrainers', 'activeTrainers', 'teachingTrainers'));
     }

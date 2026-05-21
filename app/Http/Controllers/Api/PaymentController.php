@@ -1156,6 +1156,7 @@ class PaymentController extends Controller
                     $course = $payment->course_id ? Course::find($payment->course_id) : null;
                     if ($course) {
                         $this->processCourseReferralCommission($course, $payment);
+                        $this->processCourseTrainerRevenue($course, $payment);
                     }
                 }
             }
@@ -1687,5 +1688,26 @@ class PaymentController extends Controller
         return response()->json([
             'message' => 'QRIS Core API belum diaktifkan. Gunakan QRIS statis/manual upload.',
         ], 501);
+    }
+
+    private function processCourseTrainerRevenue(Course $course, ManualPayment $payment): void
+    {
+        if ($course->trainer_id && $course->trainer_revenue_percent > 0) {
+            $trainer = User::find($course->trainer_id);
+            if ($trainer) {
+                $trainerShare = ($payment->amount * $course->trainer_revenue_percent) / 100;
+                if ($trainerShare > 0) {
+                    $trainer->increment('wallet_balance', $trainerShare);
+                    
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $trainer->id,
+                        'type' => 'revenue_share',
+                        'title' => 'Pendapatan Course Baru',
+                        'message' => 'Anda menerima bagi hasil sebesar Rp ' . number_format($trainerShare, 0, ',', '.') . ' dari penjualan course: ' . $course->name,
+                        'data' => ['amount' => $trainerShare, 'course_id' => $course->id]
+                    ]);
+                }
+            }
+        }
     }
 }

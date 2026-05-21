@@ -83,17 +83,30 @@ class TrainerCertificateController extends Controller
             return $trainer;
         });
 
-        $totalPending = $trainers
-            ->getCollection()
-            ->sum('pending_certificates_count');
+        $totalPending = $trainers->getCollection()->sum('pending_certificates_count');
+
+        $pendingItems = \App\Models\Event::query()
+            ->whereIn('trainer_id', $trainerIds)
+            ->whereNotNull('event_date')
+            ->whereDate('event_date', '<=', now()->toDateString())
+            ->withCount('registrations')
+            ->orderByDesc('event_date')
+            ->get();
+
+        $certificates = \App\Models\Course::query()
+            ->whereIn('trainer_id', $trainerIds)
+            ->whereIn('status', ['published', 'approved', 'active'])
+            ->with('category')
+            ->withCount('enrollments')
+            ->get();
 
         return view('admin.trainer.certificates.index', compact(
             'trainers',
-            'search',
+            'pendingItems',
+            'certificates',
             'totalTrainers',
-            'totalCertificates',
             'totalPending'
-        ));
+        ) + ['tab' => $request->query('tab', 'pendingItems')]);
     }
 
     public function queue(Request $request)

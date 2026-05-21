@@ -402,7 +402,28 @@
 
                             <div class="price-row">
                                 <div class="price-col">
-                                    @if(method_exists($event,'hasDiscount') && $event->hasDiscount())
+                                    @php
+                                        $isHybridCard = !empty($event->maps_url) && !empty($event->zoom_link)
+                                                        && ($event->price_offline > 0 || $event->price_online > 0);
+                                        $discountPctCard = ($event->discount_percentage > 0 && method_exists($event,'hasDiscount') && $event->hasDiscount())
+                                                           ? (float) $event->discount_percentage : 0.0;
+                                    @endphp
+                                    @if($isHybridCard)
+                                        @php
+                                            $offFinal = $discountPctCard > 0 ? round((float)$event->price_offline * (1 - $discountPctCard/100)) : (float)$event->price_offline;
+                                            $onFinal  = $discountPctCard > 0 ? round((float)$event->price_online  * (1 - $discountPctCard/100)) : (float)$event->price_online;
+                                        @endphp
+                                        <div class="d-flex flex-column gap-1">
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span style="font-size:0.65rem;font-weight:600;padding:1px 7px;border-radius:20px;background:#e8f4fd;color:#1565c0;border:1px solid #90caf9;text-decoration:none;white-space:nowrap;">Offline</span>
+                                                <span class="price-now" style="font-size:0.95rem;">{{ $offFinal > 0 ? 'Rp'.number_format($offFinal,0,',','.') : 'Free' }}</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span style="font-size:0.65rem;font-weight:600;padding:1px 7px;border-radius:20px;background:#fce4ec;color:#c62828;border:1px solid #f48fb1;text-decoration:none;white-space:nowrap;">Online</span>
+                                                <span class="price-now" style="font-size:0.95rem;">{{ $onFinal > 0 ? 'Rp'.number_format($onFinal,0,',','.') : 'Free' }}</span>
+                                            </div>
+                                        </div>
+                                    @elseif(method_exists($event,'hasDiscount') && $event->hasDiscount())
                                         <span class="price-old">Rp{{ number_format($event->price,0,',','.') }}</span>
                                         <span class="price-now">Rp{{ number_format($event->discounted_price,0,',','.') }}</span>
                                     @else

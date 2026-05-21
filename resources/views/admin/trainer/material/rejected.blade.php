@@ -376,274 +376,273 @@
 @endpush
 
 @section('admin-trainer-content')
-            <div class="page-header mb-4">
-                <div>
-                    <h1 class="page-title"><i class="bi bi-exclamation-octagon-fill me-2"></i>Perlu Revisi</h1>
-                    <p class="page-subtitle">Materi yang dikembalikan ke trainer karena tidak sesuai standar.</p>
-                </div>
-                <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-back-header">
-                    <i class="bi bi-arrow-left"></i> Kembali ke Antrean
+    <div class="page-header mb-4">
+        <div>
+            <h1 class="page-title"><i class="bi bi-exclamation-octagon-fill me-2"></i>Perlu Revisi</h1>
+            <p class="page-subtitle">Materi yang dikembalikan ke trainer karena tidak sesuai standar.</p>
+        </div>
+        <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-back-header">
+            <i class="bi bi-arrow-left"></i> Kembali ke Antrean
+        </a>
+    </div>
+
+    <div class="content-card">
+        <div class="toolbar">
+            @php
+                $activeDeadlineFilter = $deadlineFilter ?? 'all';
+                $activeSearch = trim((string) request('search', ''));
+                $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
+                $deadlineLabelMap = [
+                    'all' => 'Semua Deadline',
+                    'overdue' => 'Overdue',
+                    'on_time' => 'Tepat Waktu',
+                    'no_deadline' => 'Tanpa Deadline',
+                ];
+            @endphp
+            <div class="toolbar-left">
+                <form method="GET" class="toolbar-form">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" placeholder="Cari materi yang direvisi..."
+                            value="{{ request('search') }}">
+                    </div>
+                    <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
+                        <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
+                            Deadline
+                        </option>
+                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
+                            Overdue
+                        </option>
+                        <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
+                            Waktu</option>
+                        <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
+                            Tanpa Deadline</option>
+                    </select>
+                </form>
+            </div>
+
+            <div class="toolbar-right">
+                @if($hasActiveFilter)
+                    <span class="btn-action" style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
+                        Filter:
+                        {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
+                    </span>
+                    <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-action">
+                        <i class="bi bi-x-circle"></i> Reset
+                    </a>
+                @endif
+                <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
+                    style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
+                    Lihat Disetujui <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
+        </div>
 
-            <div class="content-card">
-                <div class="toolbar">
-                    @php
-                        $activeDeadlineFilter = $deadlineFilter ?? 'all';
-                        $activeSearch = trim((string) request('search', ''));
-                        $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
-                        $deadlineLabelMap = [
-                            'all' => 'Semua Deadline',
-                            'overdue' => 'Overdue',
-                            'on_time' => 'Tepat Waktu',
-                            'no_deadline' => 'Tanpa Deadline',
-                        ];
-                    @endphp
-                    <div class="toolbar-left">
-                        <form method="GET" class="toolbar-form">
-                            <div class="search-box">
-                                <i class="bi bi-search"></i>
-                                <input type="text" name="search" placeholder="Cari materi yang direvisi..."
-                                    value="{{ request('search') }}">
-                            </div>
-                            <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
-                                <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
-                                    Deadline
-                                </option>
-                                <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                                    Overdue
-                                </option>
-                                <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
-                                    Waktu</option>
-                                <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
-                                    Tanpa Deadline</option>
-                            </select>
-                        </form>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Materi (Course)</th>
+                        <th>Trainer</th>
+                        <th>Alasan Penolakan</th>
+                        <th>Tanggal Ditolak</th>
+                        <th>Status</th>
+                        <th>Monitoring Deadline</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($rejectedMaterials as $material)
+                        <tr>
+                            <td>
+                                <div class="course-info">
+                                    <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
+                                        class="course-thumb" alt="Cover">
+                                    <div>
+                                        <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>
+                                        <span class="badge-cat"><i
+                                                class="bi bi-folder2 me-1"></i>{{ $material->category->name ?? 'Umum' }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="trainer-info">
+                                    <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                        class="trainer-avatar">
+                                    <div>
+                                        <div class="trainer-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
+                                        <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="max-width: 250px;">
+                                <div class="rejection-note">
+                                    <i class="bi bi-chat-text-fill me-1"></i>
+                                    {{ Str::limit($material->rejection_reason, 60) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: #334155;">
+                                    {{ $material->rejected_at ? $material->rejected_at->format('d M Y') : '-' }}
+                                </div>
+                                <div style="font-size: 0.75rem; color:#64748b;">
+                                    {{ $material->rejected_at ? $material->rejected_at->diffForHumans() : '' }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-status badge-rejected-status">Revisi</span>
+                            </td>
+                            <td>
+                                @php $monitor = $deadlineMonitoring[$material->id] ?? null; @endphp
+                                <div style="font-weight: 600; color: #334155;">
+                                    {{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}
+                                </div>
+                                <div
+                                    style="font-size: 0.75rem; color: {{ ($monitor['status'] ?? '') === 'late' ? '#b91c1c' : '#64748b' }};">
+                                    {{ $monitor['status_text'] ?? 'Tanpa deadline' }}
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ route('admin.trainer.material.show', $material->id) }}" class="btn-action">
+                                    Cek <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <h5 class="fw-bold text-dark">Tidak Ada Revisi</h5>
+                                    <p class="text-muted mb-0">Semua materi sudah disetujui atau sedang dalam antrean
+                                        review.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($rejectedMaterials->hasPages())
+            <div class="p-3 border-top">
+                {{ $rejectedMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+            </div>
+        @endif
+    </div>
+
+    <div class="content-card mt-4">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <form method="GET" class="toolbar-form">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" name="search" placeholder="Cari modul event yang direvisi..."
+                            value="{{ request('search') }}">
                     </div>
-
-                    <div class="toolbar-right">
-                        @if($hasActiveFilter)
-                            <span class="btn-action"
-                                style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
-                                Filter:
-                                {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
-                            </span>
-                            <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-action">
-                                <i class="bi bi-x-circle"></i> Reset
-                            </a>
-                        @endif
-                        <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
-                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
-                            Lihat Disetujui <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Materi (Course)</th>
-                                <th>Trainer</th>
-                                <th>Alasan Penolakan</th>
-                                <th>Tanggal Ditolak</th>
-                                <th>Status</th>
-                                <th>Monitoring Deadline</th>
-                                <th class="text-end">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($rejectedMaterials as $material)
-                                <tr>
-                                    <td>
-                                        <div class="course-info">
-                                            <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
-                                                class="course-thumb" alt="Cover">
-                                            <div>
-                                                <h6 class="course-title">{{ Str::limit($material->name, 40) }}</h6>
-                                                <span class="badge-cat"><i
-                                                        class="bi bi-folder2 me-1"></i>{{ $material->category->name ?? 'Umum' }}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="trainer-info">
-                                            <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
-                                                class="trainer-avatar">
-                                            <div>
-                                                <div class="trainer-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
-                                                <div style="font-size: 0.75rem; color:#64748b;">{{ $material->trainer?->email }}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="max-width: 250px;">
-                                        <div class="rejection-note">
-                                            <i class="bi bi-chat-text-fill me-1"></i>
-                                            {{ Str::limit($material->rejection_reason, 60) }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style="font-weight: 600; color: #334155;">
-                                            {{ $material->rejected_at ? $material->rejected_at->format('d M Y') : '-' }}
-                                        </div>
-                                        <div style="font-size: 0.75rem; color:#64748b;">
-                                            {{ $material->rejected_at ? $material->rejected_at->diffForHumans() : '' }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge-status badge-rejected-status">Revisi</span>
-                                    </td>
-                                    <td>
-                                        @php $monitor = $deadlineMonitoring[$material->id] ?? null; @endphp
-                                        <div style="font-weight: 600; color: #334155;">
-                                            {{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}
-                                        </div>
-                                        <div
-                                            style="font-size: 0.75rem; color: {{ ($monitor['status'] ?? '') === 'late' ? '#b91c1c' : '#64748b' }};">
-                                            {{ $monitor['status_text'] ?? 'Tanpa deadline' }}
-                                        </div>
-                                    </td>
-                                    <td class="text-end">
-                                        <a href="{{ route('admin.trainer.material.show', $material->id) }}" class="btn-action">
-                                            Cek <i class="bi bi-arrow-right"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7">
-                                        <div class="empty-state">
-                                            <i class="bi bi-inbox"></i>
-                                            <h5 class="fw-bold text-dark">Tidak Ada Revisi</h5>
-                                            <p class="text-muted mb-0">Semua materi sudah disetujui atau sedang dalam antrean
-                                                review.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                @if($rejectedMaterials->hasPages())
-                    <div class="p-3 border-top">
-                        {{ $rejectedMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
-                    </div>
-                @endif
+                    <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
+                        <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
+                            Deadline
+                        </option>
+                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
+                            Overdue
+                        </option>
+                        <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
+                            Waktu</option>
+                        <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
+                            Tanpa Deadline</option>
+                    </select>
+                </form>
             </div>
 
-            <div class="content-card mt-4">
-                <div class="toolbar">
-                    <div class="toolbar-left">
-                        <form method="GET" class="toolbar-form">
-                            <div class="search-box">
-                                <i class="bi bi-search"></i>
-                                <input type="text" name="search" placeholder="Cari modul event yang direvisi..."
-                                    value="{{ request('search') }}">
-                            </div>
-                            <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
-                                <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
-                                    Deadline
-                                </option>
-                                <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                                    Overdue
-                                </option>
-                                <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
-                                    Waktu</option>
-                                <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
-                                    Tanpa Deadline</option>
-                            </select>
-                        </form>
-                    </div>
-
-                    <div class="toolbar-right">
-                        <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
-                            style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
-                            Lihat Disetujui <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Event</th>
-                                <th>Trainer</th>
-                                <th>Alasan Penolakan</th>
-                                <th>Tanggal Ditolak</th>
-                                <th>Status</th>
-                                <th class="text-end">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse(($rejectedEventModules ?? collect()) as $event)
-                                <tr>
-                                    <td>
-                                        <div>
-                                            <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
-                                            <div class="text-muted" style="font-size:0.72rem;">
-                                                {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="trainer-info">
-                                            <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
-                                                class="trainer-avatar">
-                                            <div>
-                                                <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
-                                                <div style="font-size: 0.72rem; color:#64748b;">{{ $event->trainer?->email }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="max-width: 250px;">
-                                        <div class="rejection-note">
-                                            <i class="bi bi-chat-text-fill me-1"></i>
-                                            {{ Str::limit($event->module_rejection_reason, 60) }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style="font-weight: 600; color: #334155;">
-                                            {{ $event->module_rejected_at?->format('d M Y') ?? '-' }}
-                                        </div>
-                                        <div style="font-size: 0.72rem; color:#64748b;">
-                                            {{ $event->module_rejected_at?->diffForHumans() ?? '' }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge-status badge-rejected-status">Revisi</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                            <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
-                                                Lihat <i class="bi bi-eye"></i>
-                                            </a>
-                                            <form action="{{ route('admin.event-material.approve', $event) }}" method="POST"
-                                                class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn-action"
-                                                    style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
-                                                    Approve <i class="bi bi-check2-circle"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6">
-                                        <div class="empty-state" style="padding: 36px 20px;">
-                                            <i class="bi bi-folder2-open"></i>
-                                            <h6 class="fw-bold mt-2 mb-1" style="color:#334155;">Belum ada materi event revisi</h6>
-                                            <p class="text-muted mb-0">Saat ini tidak ada modul event yang ditolak.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+            <div class="toolbar-right">
+                <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
+                    style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
+                    Lihat Disetujui <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Trainer</th>
+                        <th>Alasan Penolakan</th>
+                        <th>Tanggal Ditolak</th>
+                        <th>Status</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse(($rejectedEventModules ?? collect()) as $event)
+                        <tr>
+                            <td>
+                                <div>
+                                    <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
+                                    <div class="text-muted" style="font-size:0.72rem;">
+                                        {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="trainer-info">
+                                    <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
+                                        class="trainer-avatar">
+                                    <div>
+                                        <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
+                                        <div style="font-size: 0.72rem; color:#64748b;">{{ $event->trainer?->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="max-width: 250px;">
+                                <div class="rejection-note">
+                                    <i class="bi bi-chat-text-fill me-1"></i>
+                                    {{ Str::limit($event->module_rejection_reason, 60) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; color: #334155;">
+                                    {{ $event->module_rejected_at?->format('d M Y') ?? '-' }}
+                                </div>
+                                <div style="font-size: 0.72rem; color:#64748b;">
+                                    {{ $event->module_rejected_at?->diffForHumans() ?? '' }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-status badge-rejected-status">Revisi</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                    <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
+                                        Lihat <i class="bi bi-eye"></i>
+                                    </a>
+                                    <form action="{{ route('admin.event-material.approve', $event) }}" method="POST"
+                                        class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn-action"
+                                            style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
+                                            Approve <i class="bi bi-check2-circle"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state" style="padding: 36px 20px;">
+                                    <i class="bi bi-folder2-open"></i>
+                                    <h6 class="fw-bold mt-2 mb-1" style="color:#334155;">Belum ada materi event revisi</h6>
+                                    <p class="text-muted mb-0">Saat ini tidak ada modul event yang ditolak.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 @endsection
