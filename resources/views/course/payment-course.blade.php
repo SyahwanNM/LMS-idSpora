@@ -418,31 +418,16 @@
                     <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', '') }}">
 
                     @if(!$isFreeCourse)
-                        <div style="margin-top:20px;">
-                            <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:#333;">Payment Method</div>
-                           <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                                @if(!$midtransClientKey)
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                        <input type="radio" name="payment_method" value="manual" checked>
-                                        Manual (QRIS + upload bukti)
-                                    </label>
-                                @endif
-                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                    <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif @if($midtransClientKey) checked @endif>
-                                    Midtrans
-                                </label>
-                           </div>
-                            @if(!$midtransClientKey)
-                                <div style="font-size:12px; color:#888; margin-top:6px;">Midtrans belum dikonfigurasi.</div>
-                            @endif
+                        <div style="margin-top:20px; display:none;">
+                            <input type="radio" name="payment_method" value="midtrans" checked>
                         </div>
                     @endif
 
-                    @if($isFreeCourse || !$midtransClientKey)
+                    @if($isFreeCourse)
                         <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Study Now!</button>
                     @endif
                     @if(!$isFreeCourse)
-                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Pay Now</button>
+                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" disabled>Pay Now</button>
                     @endif
                 </form>
             </div>
@@ -452,31 +437,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    @if(!$isFreeCourse && !$midtransClientKey)
-        <!-- QRIS Modal -->
-        <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
-
-                        <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
-
-                        <div class="d-grid gap-2 mt-3">
-                            <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
-                                Download QR
-                            </a>
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+    <!-- QRIS Modal removed -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -517,8 +478,7 @@
             }
 
             function getSelectedMethod(){
-                var checked = document.querySelector('input[name="payment_method"]:checked');
-                return checked ? checked.value : 'manual';
+                return 'midtrans';
             }
 
             function togglePayButtons(){

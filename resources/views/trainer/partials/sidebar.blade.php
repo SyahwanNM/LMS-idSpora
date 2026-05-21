@@ -52,6 +52,12 @@
                 <span>Sertifikat</span>
             </a>
         </li>
+        <li class="{{ request()->routeIs('trainer.finance', 'trainer.finance.*') ? 'active' : '' }}">
+            <a href="{{ route('trainer.finance') }}">
+                <i class="bi bi-wallet2" style="font-size: 20px;"></i>
+                <span>Keuangan</span>
+            </a>
+        </li>
     </ul>
     <div class="profile">
         <form action="{{ route('logout') }}" method="POST">

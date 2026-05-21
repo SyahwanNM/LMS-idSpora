@@ -32,8 +32,8 @@
             @endif
 
             <!-- User Profile Dropdown -->
-            <div class="dropdown">
-                <button class="btn border-0 p-1 d-flex align-items-center gap-3 dropdown-toggle shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="dropdown position-relative">
+                <button id="financeProfileDropdown" class="btn border-0 p-1 d-flex align-items-center gap-3 dropdown-toggle shadow-none" type="button" aria-expanded="false">
                     <div class="text-end d-none d-sm-block">
                         <div class="fw-bold text-dark mb-0 small">{{ Auth::user()->name }}</div>
                         <div class="text-muted" style="font-size: 10px;">Chief Financial Officer</div>
@@ -42,7 +42,7 @@
                         {{ strtoupper(substr(Auth::user()->name, 0, 2)) }}
                     </div>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 mt-2" style="min-width: 200px;">
+                <ul id="financeProfileMenu" class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 p-2 mt-2" style="min-width: 200px; display: none; position: absolute; top: 100%; right: 0; left: auto; z-index: 1060;">
                     <li><h6 class="dropdown-header small text-muted uppercase tracking-wider">Session Settings</h6></li>
                     <li><a class="dropdown-item rounded-3 py-2" href="{{ route('admin.dashboard') }}"><i class="bi bi-grid-1x2 me-2"></i> Main Dashboard</a></li>
                     <li><hr class="dropdown-divider opacity-50"></li>
@@ -69,3 +69,26 @@
     .fw-800 { font-weight: 800; }
     .tracking-tighter { letter-spacing: -0.5px; }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdownBtn = document.getElementById('financeProfileDropdown');
+    const dropdownMenu = document.getElementById('financeProfileMenu');
+
+    if (dropdownBtn && dropdownMenu) {
+        dropdownBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const isVisible = dropdownMenu.style.display === 'block';
+            dropdownMenu.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close on clicking outside
+        document.addEventListener('click', function(e) {
+            if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.style.display = 'none';
+            }
+        });
+    }
+});
+</script>

@@ -202,7 +202,6 @@
     <div class="d-flex align-items-center mb-4">
         <ul class="crm-tab-switcher" id="expenseTabSwitcher">
             <li><button type="button" class="custom-tab-btn active" data-target="tab-reseller">Payout Reseller @if($pendingWithdrawalsCount > 0)<span class="badge bg-danger ms-1">{{ $pendingWithdrawalsCount }}</span>@endif</button></li>
-            <li><button type="button" class="custom-tab-btn" data-target="tab-trainer">Gaji Trainer</button></li>
             <li><button type="button" class="custom-tab-btn" data-target="tab-event">Cost Event</button></li>
             <li><button type="button" class="custom-tab-btn" data-target="tab-manual">Manual</button></li>
         </ul>
@@ -315,102 +314,6 @@
         </div>
     </div>
     
-    <!-- Gaji Trainer Tab -->
-    <div id="tab-trainer" class="custom-tab-pane">
-        <div class="crm-card">
-            <div class="crm-card-header">
-                <h2 class="crm-card-title">Riwayat Gaji Trainer</h2>
-            </div>
-            <div class="table-responsive">
-                <table class="crm-table">
-                    <thead>
-                        <tr>
-                            <th>TANGGAL</th>
-                            <th>TRAINER</th>
-                            <th>PERIODE/KETERANGAN</th>
-                            <th>JUMLAH</th>
-                            <th>STATUS</th>
-                            <th>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($trainerPayments as $tp)
-                            <tr>
-                                <td>{{ $tp->created_at->format('d M Y') }}</td>
-                                <td>{{ $tp->trainer->name ?? 'Unknown' }}</td>
-                                <td>{{ $tp->title ?? $tp->notes }}</td>
-                                <td style="font-weight: 600;">Rp {{ number_format($tp->amount, 0, ',', '.') }}</td>
-                                <td><span class="badge-status {{ strtolower($tp->status ?? 'approved') }}">{{ $tp->status ?? 'APPROVED' }}</span></td>
-                                <td>
-                                    @if($tp->status == 'pending')
-                                        <button class="btn btn-sm btn-success btn-action-sm mb-1" data-bs-toggle="modal" data-bs-target="#approveTrainerModal{{ $tp->id }}">Setujui</button>
-                                        <button class="btn btn-sm btn-danger btn-action-sm" data-bs-toggle="modal" data-bs-target="#rejectTrainerModal{{ $tp->id }}">Tolak</button>
-                                    @elseif($tp->proof_file)
-                                        <a href="{{ asset('storage/' . $tp->proof_file) }}" target="_blank" class="btn btn-sm btn-outline-primary btn-action-sm">Bukti</a>
-                                    @endif
-                                </td>
-                            </tr>
-                            
-                            <!-- Modal Approve Trainer Payment -->
-                            @if($tp->status == 'pending')
-                            <div class="modal fade" id="approveTrainerModal{{ $tp->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content" style="border-radius: 16px; border: none;">
-                                        <form action="{{ route('admin.finance.trainer-payment.approve', $tp->id) }}" method="POST" enctype="multipart/form-data">
-                                            @csrf
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Setujui Gaji Trainer</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>Upload bukti pembayaran gaji trainer <strong>{{ $tp->trainer->name ?? '' }}</strong> sejumlah <strong>Rp {{ number_format($tp->amount, 0, ',', '.') }}</strong>.</p>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Bukti Pembayaran (Wajib)</label>
-                                                    <input type="file" name="proof_of_payment" class="form-control" accept="image/*" required>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-success">Setujui & Simpan</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Modal Reject Trainer Payment -->
-                            <div class="modal fade" id="rejectTrainerModal{{ $tp->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content" style="border-radius: 16px; border: none;">
-                                        <form action="{{ route('admin.finance.trainer-payment.reject', $tp->id) }}" method="POST">
-                                            @csrf
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Tolak Gaji Trainer</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label class="form-label">Alasan Penolakan (Wajib)</label>
-                                                    <textarea name="rejected_reason" class="form-control" rows="3" required></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                                                <button type="submit" class="btn btn-danger">Tolak</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            @endif
-                        @empty
-                            <tr><td colspan="6" class="text-center py-4">Belum ada data gaji trainer.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
     
     <!-- Cost Event Tab -->
     <div id="tab-event" class="custom-tab-pane">

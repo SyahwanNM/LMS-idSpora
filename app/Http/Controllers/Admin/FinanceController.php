@@ -11,6 +11,8 @@ use App\Models\Withdrawal;
 use App\Models\Expense;
 use App\Models\TrainerPayment;
 use App\Models\User;
+use App\Models\Event;
+use App\Models\Course;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -124,6 +126,14 @@ class FinanceController extends Controller
         );
         $recentAllExpenses = $recentAllExpenses->sortByDesc('date')->take(5)->values();
 
+        // 12. Trainers and their balances
+        $trainers = User::where(function($q) {
+                $q->where('role', 'trainer')
+                  ->orWhere('role', 'Trainer');
+            })
+            ->orderByDesc('wallet_balance')
+            ->get();
+
         return view('admin.finance.index', compact(
             'totalOmzet',
             'pendapatanBersih',
@@ -142,7 +152,8 @@ class FinanceController extends Controller
             'pendingWithdrawalsCount',
             'topPerformers',
             'recentTransactions',
-            'recentAllExpenses'
+            'recentAllExpenses',
+            'trainers'
         ));
     }
 
@@ -476,45 +487,6 @@ class FinanceController extends Controller
         return back()->with('success', 'Pengeluaran berhasil dicatat.');
     }
 
-    public function storeTrainerPayment(Request $request)
-    {
-        $request->validate([
-            'trainer_id' => 'required|exists:users,id',
-            'amount' => 'required|numeric|min:0',
-            'month' => 'required|integer|between:1,12',
-            'year' => 'required|integer',
-            'salary_slip' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'proof_of_payment' => 'nullable|image|max:5120',
-        ]);
-
-        $data = $request->only(['trainer_id', 'amount', 'month', 'year', 'note']);
-
-        if ($request->hasFile('salary_slip')) {
-            $data['salary_slip'] = $request->file('salary_slip')->store('finance/salary_slips', 'public');
-        }
-
-        if ($request->hasFile('proof_of_payment')) {
-            $data['proof_of_payment'] = $request->file('proof_of_payment')->store('finance/proof_payments', 'public');
-        }
-
-        $payment = TrainerPayment::create($data);
-
-        // Notify Trainer
-        \App\Models\TrainerNotification::create([
-            'trainer_id' => $request->trainer_id,
-            'type' => 'payout_processed',
-            'title' => 'Gaji & Nota Baru Tersedia',
-            'message' => 'Admin telah mengirimkan gaji Anda untuk periode ' . date('F', mktime(0, 0, 0, $request->month, 1)) . ' ' . $request->year . '.',
-            'data' => [
-                'payment_id' => $payment->id,
-                'amount' => $payment->amount,
-                'url' => route('trainer.finance')
-            ]
-        ]);
-
-        return back()->with('success', 'Gaji trainer berhasil dikirim dan notifikasi telah dikirim.');
-    }
-
     /* ═══════════════════════════════════════════
      *  TRAINER MANAGEMENT (Finance)
      * ═══════════════════════════════════════════ */
@@ -524,44 +496,46 @@ class FinanceController extends Controller
      */
     public function trainers(Request $request)
     {
-        $minDisburse = 500000; // Minimum saldo pencairan course
+        $minDisburse = 200000; // Minimum saldo pencairan course Rp 200.000
 
-        // All trainers with their accumulated earnings
-        $trainers = \App\Models\User::query()
-            ->where('role', 'trainer')
+        // 1. Ambil semua trainer
+        $trainers = User::where(function($q) {
+                $q->where('role', 'trainer')
+                  ->orWhere('role', 'Trainer');
+            })
             ->orderByDesc('wallet_balance')
             ->get();
 
-        $trainers = $trainers->map(function ($t) use ($minDisburse) {
-            $t->total_paid = \App\Models\TrainerPayment::where('user_id', $t->id)
-                ->where('status', 'approved')->sum('amount');
-            $t->pending_payout = \App\Models\TrainerPayment::where('user_id', $t->id)
-                ->where('status', 'pending')->where('type', 'course_payout')->exists();
-            $t->can_disburse = ($t->wallet_balance ?? 0) >= $minDisburse && !$t->pending_payout;
-            return $t;
-        });
+        // 2. Map data tambahan untuk list trainer (Saldo Course)
+        foreach ($trainers as $t) {
+            $t->total_paid = 0;
+            $t->pending_payout = false;
+            $t->can_disburse = ($t->wallet_balance ?? 0) >= $minDisburse;
+        }
 
-        // Event fee requests: events that have ended with a trainer, not yet paid
-        $endedEvents = \App\Models\Event::whereNotNull('trainer_id')
+        // 3. Ambil event yang sudah selesai (untuk tab Fee Event)
+        // Kriteria: ada trainer, ada ended_at, ended_at sudah lewat
+        $endedEvents = Event::whereNotNull('trainer_id')
             ->whereNotNull('ended_at')
             ->where('ended_at', '<', now())
             ->with('trainer')
             ->get()
             ->filter(function ($event) {
-                // Not already have an approved/pending event_fee payment
+                // Filter event yang BELUM memiliki record TrainerPayment (fee event)
                 return !TrainerPayment::where('event_id', $event->id)
                     ->whereIn('status', ['pending', 'approved'])
+                    ->where('type', 'event_fee')
                     ->exists();
             });
 
-        // Pending event fee payout requests (already created, waiting approval)
+        // 4. Permintaan fee event yang sedang pending
         $pendingEventFees = TrainerPayment::with(['trainer', 'event'])
             ->where('type', 'event_fee')
             ->where('status', 'pending')
             ->latest()
             ->get();
 
-        // History of approved trainer payouts (last 10)
+        // 5. Riwayat payout yang sudah disetujui
         $payoutHistory = TrainerPayment::with(['trainer', 'event', 'course'])
             ->where('status', 'approved')
             ->latest()
@@ -569,7 +543,11 @@ class FinanceController extends Controller
             ->get();
 
         return view('admin.finance.trainers.index', compact(
-            'trainers', 'endedEvents', 'pendingEventFees', 'payoutHistory', 'minDisburse'
+            'trainers', 
+            'endedEvents', 
+            'pendingEventFees', 
+            'payoutHistory', 
+            'minDisburse'
         ));
     }
 
@@ -580,7 +558,7 @@ class FinanceController extends Controller
     public function disburseCourseBalance(Request $request, $trainerId)
     {
         $trainer = User::findOrFail($trainerId);
-        $minDisburse = 500000;
+        $minDisburse = 200000;
 
         if ($trainer->wallet_balance < $minDisburse) {
             return back()->with('error', 'Saldo trainer belum mencapai minimum pencairan Rp ' . number_format($minDisburse, 0, ',', '.'));
@@ -809,25 +787,6 @@ class FinanceController extends Controller
         return back()->with('success', 'Cost event ditolak.');
     }
 
-    public function approveTrainerPayment(Request $request, $id)
-    {
-        $request->validate(['proof_of_payment' => 'required|image|max:5120']);
-        $tp = \App\Models\TrainerPayment::findOrFail($id);
-        
-        $path = $request->file('proof_of_payment')->store('finance/proofs/trainers', 'public');
-        $tp->update(['status' => 'approved', 'proof_file' => $path]);
-
-        return back()->with('success', 'Gaji trainer berhasil disetujui.');
-    }
-
-    public function rejectTrainerPayment(Request $request, $id)
-    {
-        $request->validate(['rejected_reason' => 'required|string']);
-        $tp = \App\Models\TrainerPayment::findOrFail($id);
-        $tp->update(['status' => 'rejected', 'rejected_reason' => $request->rejected_reason]);
-
-        return back()->with('success', 'Gaji trainer ditolak.');
-    }
 
     public function approveExpense(Request $request, $id)
     {
@@ -847,5 +806,12 @@ class FinanceController extends Controller
         $exp->update(['status' => 'rejected', 'rejected_reason' => $request->rejected_reason]);
 
         return back()->with('success', 'Pengeluaran manual ditolak.');
+    }
+
+    public function downloadPayoutInvoice($id)
+    {
+        $payment = TrainerPayment::with('trainer', 'event')->findOrFail($id);
+
+        return view('admin.finance.trainers.invoice', compact('payment'));
     }
 }

@@ -1565,7 +1565,26 @@ class TrainerController extends Controller
             ->latest('created_at')
             ->paginate(10);
 
-        return view('trainer.finance', compact('totalEarned', 'payments'));
+        // Fetch disburse payouts for this trainer
+        $payouts = \App\Models\TrainerPayment::with(['event', 'course'])
+            ->where('user_id', $trainerId)
+            ->latest()
+            ->get();
+
+        return view('trainer.finance', compact('totalEarned', 'payments', 'payouts'));
+    }
+
+    /**
+     * Download or view payout invoice for the trainer
+     */
+    public function downloadPayoutInvoice($id)
+    {
+        $trainerId = Auth::id();
+        $payment = \App\Models\TrainerPayment::with('trainer', 'event')
+            ->where('user_id', $trainerId)
+            ->findOrFail($id);
+
+        return view('admin.finance.trainers.invoice', compact('payment'));
     }
 
     public function show()
