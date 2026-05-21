@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.admin-trainer')
 
 @section('title', 'Review Material - ' . $material->name)
 
@@ -989,7 +989,7 @@
 @endsection
 
 
-@section('content')
+@section('admin-trainer-content')
     <div class="material-wrapper">
         @include('admin.partials.trainer-sidebar')
 
@@ -1011,7 +1011,7 @@
 
             {{-- Page Header --}}
             <div class="page-header mb-4">
-                <a href="{{ route('admin.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
+                <a href="{{ route('admin.trainer.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
                     class="btn-back"><i class="bi bi-arrow-left me-2"></i>Kembali</a>
                 @if($material->status === 'approved')
                     <span class="status-chip" style="border-color:#bbf7d0; background:#dcfce7; color:#166534;">
@@ -1112,11 +1112,11 @@
                                 <div
                                     style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:{{ $loop->first ? '0' : '24px' }};">
                                     <span style="
-                                            display:inline-flex;align-items:center;gap:6px;
-                                            background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
-                                            color:{{ $unitColor['text'] }};border-radius:8px;
-                                            padding:4px 12px;font-size:0.78rem;font-weight:700;
-                                        ">
+                                                    display:inline-flex;align-items:center;gap:6px;
+                                                    background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
+                                                    color:{{ $unitColor['text'] }};border-radius:8px;
+                                                    padding:4px 12px;font-size:0.78rem;font-weight:700;
+                                                ">
                                         <i class="bi {{ $unitColor['icon'] }}" style="font-size:0.75rem;"></i>
                                         {{ $unit['unit_label'] }}
                                     </span>
@@ -1124,7 +1124,7 @@
                                         {{ $unit['uploaded'] }}/{{ $unit['total'] }} modul
                                     </span>
                                     @if($material->status === 'pending_review' && $unit['any_pending'])
-                                        <form method="POST" action="{{ route('admin.material.unit.approve', $material) }}"
+                                        <form method="POST" action="{{ route('admin.trainer.material.unit.approve', $material) }}"
                                             style="margin:0;margin-left:auto;">
                                             @csrf
                                             <input type="hidden" name="unit_no" value="{{ $unit['unit_no'] }}">
@@ -1162,9 +1162,9 @@
                                             if ($isHttp) {
                                                 $contentUrl = $rawContent;
                                             } elseif ($normalizedContent !== '' && $rawContent !== 'quiz_submitted') {
-                                                $contentUrl = route('admin.material.module.stream', [$material, $module], false);
+                                                $contentUrl = route('admin.trainer.material.module.stream', [$material, $module], false);
                                             } elseif ($hasTextContent) {
-                                                $contentUrl = route('admin.material.module.stream', [$material, $module], false);
+                                                $contentUrl = route('admin.trainer.material.module.stream', [$material, $module], false);
                                             }
 
                                             $canOpenFile = !$module->isQuiz() && !empty($contentUrl) && !$hasTextContent;
@@ -1222,7 +1222,7 @@
                                                             </button>
                                                         @endif
                                                         @if($canOpenFile)
-                                                            <a href="{{ route('admin.material.module.stream', [$material, $module], false) }}?download=1"
+                                                            <a href="{{ route('admin.trainer.material.module.stream', [$material, $module], false) }}?download=1"
                                                                 class="module-icon-btn download" title="Unduh">
                                                                 <i class="bi bi-download"></i>
                                                             </a>
@@ -1273,7 +1273,7 @@
                                                     @if($material->status === 'pending_review' && $hasAnyContent && $reviewStatus !== 'approved')
                                                         <div class="module-decision-stack">
                                                             <form method="POST"
-                                                                action="{{ route('admin.material.module.approve', [$material, $module]) }}"
+                                                                action="{{ route('admin.trainer.material.module.approve', [$material, $module]) }}"
                                                                 class="module-action-form">
                                                                 @csrf
                                                                 <button type="submit" class="module-btn-approve">
@@ -1289,7 +1289,7 @@
                                                         <div class="collapse module-reject-form"
                                                             id="rejectModuleForm-{{ $module->id }}">
                                                             <form method="POST"
-                                                                action="{{ route('admin.material.module.reject', [$material, $module]) }}">
+                                                                action="{{ route('admin.trainer.material.module.reject', [$material, $module]) }}">
                                                                 @csrf
                                                                 <textarea name="rejection_reason" required minlength="10"
                                                                     placeholder="Tulis catatan revisi untuk modul ini..."></textarea>
@@ -1335,7 +1335,8 @@
                                     style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
                                 <div>
                                     <div style="font-weight:700;color:#1e293b;font-size:0.85rem;">
-                                        {{ $material->trainer?->name ?? 'Anonim' }}</div>
+                                        {{ $material->trainer?->name ?? 'Anonim' }}
+                                    </div>
                                     <div style="font-size:0.73rem;color:#64748b;">Instruktur</div>
                                     @if($material->trainer?->email)
                                         <div style="font-size:0.7rem;color:#94a3b8;">{{ $material->trainer->email }}</div>
@@ -1372,7 +1373,8 @@
                                     style="background:{{ $totalRejectedM > 0 ? '#fff1f2' : '#f8fafc' }};border-radius:10px;padding:10px 12px;text-align:center;">
                                     <div
                                         style="font-size:1.3rem;font-weight:800;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};">
-                                        {{ $totalRejectedM }}</div>
+                                        {{ $totalRejectedM }}
+                                    </div>
                                     <div
                                         style="font-size:0.7rem;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};margin-top:2px;">
                                         Ditolak</div>
@@ -1391,11 +1393,10 @@
                         @if($material->status === 'pending_review')
                             <div class="card-custom side-card" style="padding:16px; margin-top:14px;">
                                 <div class="side-card-title">Keputusan Akhir</div>
-                                <form method="POST" action="{{ route('admin.material.approve', $material) }}"
+                                <form method="POST" action="{{ route('admin.trainer.material.approve', $material) }}"
                                     style="margin-bottom:10px;">
                                     @csrf
-                                    <button type="submit" class="btn-approve"
-                                        {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
+                                    <button type="submit" class="btn-approve" {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
                                         <i class="bi bi-check-circle-fill"></i> Setujui Seluruh Materi
                                     </button>
                                     @if(!$structureCompleteness['is_complete'])
@@ -1539,9 +1540,9 @@
                         `<div class="quiz-preview-answer ${a.is_correct ? 'is-correct' : ''}">${escapeHtml(a.text || '-')}</div>`
                     ).join('');
                     return `<div class="quiz-preview-item">
-                            <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
-                            <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
-                        </div>`;
+                                <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
+                                <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
+                            </div>`;
                 }).join('');
                 return `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
             }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\TrainerCertificateAsset;
 use Illuminate\Support\Facades\Storage;
 
 class Course extends Model
@@ -155,11 +156,11 @@ class Course extends Model
         }
 
         $now = now();
-        
+
         if ($this->discount_start && $now->lt($this->discount_start)) {
             return false;
         }
-        
+
         if ($this->discount_end && $now->gt($this->discount_end)) {
             return false;
         }
@@ -184,5 +185,13 @@ class Course extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function trainerCertificateAssets()
+    {
+        return $this->morphMany(
+            TrainerCertificateAsset::class,
+            'certifiable'
+        )->orderBy('order_no');
     }
 }

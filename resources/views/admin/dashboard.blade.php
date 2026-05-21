@@ -413,19 +413,23 @@
                                         Trainer: {{ $material->trainer->name ?? 'Anonim' }} • Diunggah: {{ optional($material->created_at)->diffForHumans() }}
                                     </div>
                                 </div>
-                                <a href="{{ route('admin.courses.edit', $material->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                    Review
+                                <a href="{{ route('admin.trainer.material.show', $material->id) }}" class="btn btn-sm btn-success">
+                                    Detail
                                 </a>
                             </div>
                         @endforeach
-                    @else
-                        <div class="text-center py-5 text-muted">
-                            <i class="bi bi-check2-circle fs-1 d-block mb-2 text-success opacity-50"></i>
-                            <small>No pending material approvals.</small>
-                        </div>
-                    @endif
-                </div>
+                    </div>
+                @else
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox fs-2 d-block mb-2 text-success"></i>
+                        <small>No material has been approved yet.</small>
+                    </div>
+                @endif
+                <a href="{{ route('admin.trainer.material.approved') }}" class="btn btn-outline-success w-100 fw-semibold mt-2">
+                    View All Approved Materials
+                </a>
             </div>
+        </div>
         </div>
 
         <!-- Overdue Assignments -->
