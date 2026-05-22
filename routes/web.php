@@ -319,6 +319,8 @@ Route::post('/midtrans/notify', [PaymentController::class, 'notify'])->name('mid
 // Optional finish redirect target from Snap callbacks to avoid 404 after payment
 Route::get('/payment/finish', [PaymentController::class, 'finishRedirect'])->name('payment.finish');
 
+Route::middleware('auth')->get('/payment/invoice/{orderId}/download', [PaymentController::class, 'downloadInvoice'])->name('payment.invoice.download');
+
 // Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
 Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');
 

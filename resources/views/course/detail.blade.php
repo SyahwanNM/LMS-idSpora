@@ -1666,8 +1666,20 @@
             $hasPreview = (string) ($course->free_access_mode ?? 'limit_2') === 'limit_2';
           @endphp
           @if($canLearn)
+            @php
+              $coursePayment = \App\Models\ManualPayment::where('user_id', auth()->id())
+                ->where('course_id', $course->id)
+                ->where('status', 'settled')
+                ->first();
+            @endphp
             <a href="{{ route('course.learn', $course->id) }}" class="enroll"
               style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">Start Learn</a>
+            @if($coursePayment)
+              <a href="{{ route('payment.invoice.download', $coursePayment->order_id) }}" class="enroll"
+                style="display:block;text-align:center;text-decoration:none;color:#fff;background:#0f172a;margin-top:10px;font-weight:600;">
+                <i class="bi bi-download me-2"></i>Download Invoice
+              </a>
+            @endif
           @elseif($paymentUnderReview)
             <button type="button" class="enroll" disabled
               style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran

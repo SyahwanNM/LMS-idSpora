@@ -911,53 +911,6 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
-    // Generic action modal
-    var actionModalEl = document.getElementById('registrationActionModal');
-    var actionModal = (actionModalEl && window.bootstrap && bootstrap.Modal) ? new bootstrap.Modal(actionModalEl) : null;
-    var actionForm = document.getElementById('registrationActionForm');
-    var actionMessage = document.getElementById('registrationActionMessage');
-    var actionLabel = document.getElementById('registrationActionLabel');
-
-    // Reject reason modal
-    var rejectModalEl = document.getElementById('rejectRegistrationModal');
-    var rejectModal = (rejectModalEl && window.bootstrap && bootstrap.Modal) ? new bootstrap.Modal(rejectModalEl) : null;
-    var rejectForm = document.getElementById('rejectRegistrationForm');
-    var rejectReasonHtml = document.getElementById('rejectionReason');
-
-    document.querySelectorAll('.btn-action').forEach(function(btn){
-        btn.addEventListener('click', function(){
-            var variant = btn.getAttribute('data-variant'); // 'approve' or 'reject'
-            var action = btn.getAttribute('data-action');
-
-            if(variant === 'reject') {
-                // Open rejection modal
-                if(rejectForm) rejectForm.setAttribute('action', action);
-                if(rejectReasonHtml) rejectReasonHtml.value = ''; // clear previous selection
-                if(rejectModal) rejectModal.show();
-            } else {
-                // Open standard confirmation modal
-                var title = btn.getAttribute('data-title') || 'Confirmation';
-                var message = btn.getAttribute('data-message') || 'Are you sure you want to continue?';
-                
-                if(actionForm) {
-                    actionForm.setAttribute('action', action);
-                    // Clear existing method spoofing
-                    var oldMethod = actionForm.querySelector('input[name="_method"]');
-                    if(oldMethod) oldMethod.remove();
-
-                    if(variant === 'delete') {
-                        var m = document.createElement('input');
-                        m.type = 'hidden'; m.name = '_method'; m.value = 'DELETE';
-                        actionForm.appendChild(m);
-                    }
-                }
-                if(actionLabel) actionLabel.textContent = title;
-                if(actionMessage) actionMessage.textContent = message;
-                if(actionModal) actionModal.show();
-            }
-        });
-    });
-
     // Delete event modal: ensure submit works even if data-api is flaky
     var deleteModalEl = document.getElementById('deleteEventModal');
     var deleteForm = document.getElementById('deleteEventFormShow');
@@ -1071,62 +1024,7 @@ document.addEventListener('DOMContentLoaded', function(){
         @method('DELETE')
     </form>
 </div>
-    <!-- Approve/Reject confirmation modal (reusable) -->
-    <div class="modal fade" id="registrationActionModal" tabindex="-1" aria-labelledby="registrationActionLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="registrationActionLabel">Confirm</h5>
-                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="registrationActionMessage">Are you sure?</p>
-                </div>
-                <div class="modal-footer d-flex justify-content-end gap-2 registration-action-footer">
-                    <button type="button" class="btn btn-secondary btn-sm flex-grow-0" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-0" id="registrationActionConfirmBtn" form="registrationActionForm">Konfirmasi</button>
-                </div>
-                <form id="registrationActionForm" method="POST" class="d-none">
-                    @csrf
-                </form>
-            </div>
-        </div>
-    </div>
 
-    <!-- Rejection Reason Modal -->
-    <div class="modal fade" id="rejectRegistrationModal" tabindex="-1" aria-labelledby="rejectRegistrationLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="rejectRegistrationLabel">Tolak Pendaftaran</h5>
-                    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="rejectRegistrationForm" method="POST">
-                    @csrf
-                    <div class="modal-body">
-                        <p>Apakah Anda yakin ingin menolak pendaftaran ini?</p>
-                        <div class="mb-3">
-                            <label for="rejectionReason" class="form-label text-danger">Alasan Penolakan <span class="text-danger">*</span></label>
-                            <select class="form-select" id="rejectionReason" name="reason" required>
-                                <option value="" selected disabled>Pilih alasan penolakan</option>
-                                <option value="Nominal pembayaran kurang">Nominal pembayaran kurang</option>
-                                <option value="Nominal pembayaran lebih">Nominal pembayaran lebih</option>
-                                <option value="Gambar bukti pembayaran blur/buram. Silahkan kirim ulang">Gambar bukti pembayaran blur/buram. Silahkan kirim ulang</option>
-                                <option value="Pembayaran dinyatakan tidak valid">Pembayaran dinyatakan tidak valid</option>
-                            </select>
-                            <div class="form-text">Alasan ini akan dikirimkan kepada pendaftar melalui notifikasi dan email.</div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="w-100 d-flex justify-content-end gap-2 reject-registration-footer">
-                            <button type="button" class="btn btn-secondary btn-sm flex-grow-0" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-danger btn-sm flex-grow-0">Tolak Pendaftaran</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
     <!-- Publish/Unpublish Confirmation Modal (Global for this page) -->
     <div class="modal fade" id="publishEventModalShow" tabindex="-1" aria-labelledby="publishEventModalShowLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

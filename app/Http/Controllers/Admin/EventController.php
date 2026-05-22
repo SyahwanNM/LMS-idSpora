@@ -11,6 +11,7 @@ use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\EventPaymentRejectedMail;
+use App\Mail\PaymentInvoiceMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -1428,71 +1429,9 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Gagal memproses link.'], 422);
         }
-    }
-
-    /**
-     * Admin: Approve a pending event registration (manual proof verification).
-     */
-    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
+    }    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
     {
-        if ($registration->event_id !== $event->id) {
-            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
-        }
-        $registration->status = 'active';
-        $registration->payment_verified_at = now();
-        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
-        $registration->save();
-
-        // mark any related manual payments as settled
-        try {
-            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
-            foreach ($manuals as $m) {
-                if ($m->status !== 'settled') {
-                    $m->status = 'settled';
-                    $m->save();
-
-                    // Process Referral Commission (10%)
-                    if (!empty($m->referral_code)) {
-                        $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
-                        if ($referrer && $referrer->id !== $m->user_id) {
-                            $commissionAmount = $m->amount * 0.10; // 10% commission
-
-                            $existingReferral = \App\Models\Referral::where('user_id', $referrer->id)
-                                ->where('referred_user_id', $m->user_id)
-                                ->where('description', 'Komisi Event: ' . $event->title)
-                                ->first();
-
-                            if (!$existingReferral && $commissionAmount > 0) {
-                                \App\Models\Referral::create([
-                                    'user_id' => $referrer->id,
-                                    'referred_user_id' => $m->user_id,
-                                    'amount' => $commissionAmount,
-                                    'status' => 'paid',
-                                    'description' => 'Komisi Event: ' . $event->title
-                                ]);
-
-                                $referrer->increment('wallet_balance', $commissionAmount);
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (\Throwable $e) { /* ignore */
-        }
-
-        try {
-            UserNotification::create([
-                'user_id' => $registration->user_id,
-                'type' => 'event_registration_verified',
-                'title' => 'Pembayaran Diterima',
-                'message' => 'Your payment for event "' . $event->title . '" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
-                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
-                'expires_at' => now()->addDays(14),
-            ]);
-        } catch (\Throwable $e) { /* ignore notification errors */
-        }
-
-        return back()->with('success', 'Registration verified and actktifkan.');
+        abort(403, 'Persetujuan pendaftaran manual dinonaktifkan. Gunakan Midtrans.');
     }
 
     /**
@@ -1500,79 +1439,7 @@ class EventController extends Controller
      */
     public function rejectRegistration(Request $request, Event $event, EventRegistration $registration)
     {
-        if ($registration->event_id !== $event->id) {
-            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
-        }
-
-        $adminContactNumber = '+62 898-9260-731';
-        $allowedReasons = [
-            'Nominal pembayaran kurang',
-            'Nominal pembayaran lebih',
-            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang',
-            'Pembayaran dinyatakan tidak valid',
-        ];
-
-        $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500', Rule::in($allowedReasons)],
-        ]);
-
-        $reason = $validated['reason'];
-
-        $userFacingMessage = match ($reason) {
-            'Nominal pembayaran kurang' => 'Nominal pembayaran Anda kurang dari yang seharusnya. Silahkan lakukan pembayaran tambahan (top up) dan kirim ulang bukti pembayaran. Anda dapat melakukan registrasi lagi sekarang.',
-            'Nominal pembayaran lebih' => 'Nominal pembayaran Anda lebih dari yang seharusnya. Admin akan menghubungi Anda untuk meminta nomor rekening agar selisih dapat dikembalikan. Anda dapat melakukan registrasi lagi sekarang.',
-            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang' => 'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang bukti pembayaran yang lebih jelas. Anda dapat melakukan registrasi lagi sekarang.',
-            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor ' . $adminContactNumber . '. Anda dapat melakukan registrasi lagi sekarang.',
-            default => 'Pendaftaran Anda ditolak. Anda dapat melakukan registrasi lagi sekarang.',
-        };
-
-        $registration->status = 'rejected';
-        $registration->rejection_reason = $reason;
-        $registration->payment_verified_at = now();
-        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
-        $registration->save();
-
-        // mark any related manual payments as rejected
-        try {
-            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
-            foreach ($manuals as $m) {
-                $m->status = 'rejected';
-                $m->note = $reason; // Save reason to manual payment note as well if applicable
-                $m->save();
-            }
-        } catch (\Throwable $e) { /* ignore */
-        }
-
-        try {
-            UserNotification::create([
-                'user_id' => $registration->user_id,
-                'type' => 'event_registration_rejected',
-                'title' => 'Pendaftaran Ditolak',
-                'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. Alasan: ' . $reason,
-                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
-                'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. ' . $userFacingMessage,
-                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id, 'reason' => $reason],
-                'expires_at' => now()->addDays(14),
-            ]);
-        } catch (\Throwable $e) { /* ignore notification errors */
-        }
-
-        // Send email to user (best-effort)
-        try {
-            $user = $registration->user;
-            if ($user && !empty($user->email)) {
-                Mail::to($user->email)->send(new EventPaymentRejectedMail(
-                    userName: (string) ($user->name ?? 'User'),
-                    eventTitle: (string) ($event->title ?? 'Event'),
-                    reason: (string) $reason,
-                    messageText: (string) $userFacingMessage,
-                    adminContactNumber: (string) $adminContactNumber,
-                ));
-            }
-        } catch (\Throwable $e) { /* ignore mail errors */
-        }
-
-        return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
+        abort(403, 'Penolakan pendaftaran manual dinonaktifkan. Gunakan Midtrans.');
     }
 
     /**
