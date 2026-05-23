@@ -2629,16 +2629,18 @@ class TrainerController extends Controller
             ->where('trainer_id', $trainer->id)
             ->whereNotNull('event_date')
             ->whereDate('event_date', '<', now()->toDateString())
+            ->withCount('registrations')
             ->orderByDesc('event_date')
-            ->get(['id', 'title', 'jenis', 'event_date']);
+            ->get(['id', 'title', 'jenis', 'event_date', 'certificate_logo', 'certificate_signature', 'certificate_template']);
 
         $finishedCourses = Course::query()
             ->where('trainer_id', $trainer->id)
             ->where('status', 'approved')
             ->whereNotNull('approved_at')
             ->where('approved_at', '<', now())
+            ->withCount('enrollments')
             ->orderByDesc('approved_at')
-            ->get(['id', 'name', 'approved_at', 'status']);
+            ->get(['id', 'name', 'approved_at', 'status', 'certificate_logo', 'certificate_signature', 'certificate_template']);
 
         $certificates = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
@@ -2656,30 +2658,44 @@ class TrainerController extends Controller
         foreach ($finishedEvents as $event) {
             $key = Event::class . ':' . (int) $event->id;
             $cert = $certMap[$key] ?? null;
+            $hasLogo      = !empty($event->certificate_logo);
+            $hasSignature = !empty($event->certificate_signature);
+            $hasTemplate  = !empty($event->certificate_template);
             $historyItems->push([
-                'type' => 'event',
-                'id' => (int) $event->id,
-                'title' => $event->title,
-                'date' => $event->event_date,
-                'statusLabel' => 'Selesai',
-                'certificate' => $cert,
-                'downloadUrl' => $cert ? route('trainer.certificates.events.download', $event) : null,
-                'highlight' => $context === 'event' && $targetId === (int) $event->id,
+                'type'               => 'event',
+                'id'                 => (int) $event->id,
+                'title'              => $event->title,
+                'date'               => $event->event_date,
+                'statusLabel'        => 'Selesai',
+                'certificate'        => $cert,
+                'downloadUrl'        => $cert ? route('trainer.certificates.events.download', $event) : null,
+                'highlight'          => $context === 'event' && $targetId === (int) $event->id,
+                'registrations_count' => (int) ($event->registrations_count ?? 0),
+                'has_logo'           => $hasLogo,
+                'has_signature'      => $hasSignature,
+                'has_template'       => $hasTemplate,
             ]);
         }
 
         foreach ($finishedCourses as $course) {
             $key = Course::class . ':' . (int) $course->id;
             $cert = $certMap[$key] ?? null;
+            $hasLogo      = !empty($course->certificate_logo);
+            $hasSig       = !empty($course->certificate_signature);
+            $hasTemplate  = !empty($course->certificate_template);
             $historyItems->push([
-                'type' => 'course',
-                'id' => (int) $course->id,
-                'title' => $course->name,
-                'date' => $course->approved_at,
-                'statusLabel' => 'Selesai',
-                'certificate' => $cert,
-                'downloadUrl' => $cert ? route('trainer.certificates.courses.download', $course) : null,
-                'highlight' => $context === 'course' && $targetId === (int) $course->id,
+                'type'               => 'course',
+                'id'                 => (int) $course->id,
+                'title'              => $course->name,
+                'date'               => $course->approved_at,
+                'statusLabel'        => 'Selesai',
+                'certificate'        => $cert,
+                'downloadUrl'        => $cert ? route('trainer.certificates.courses.download', $course) : null,
+                'highlight'          => $context === 'course' && $targetId === (int) $course->id,
+                'registrations_count' => (int) ($course->enrollments_count ?? 0),
+                'has_logo'           => $hasLogo,
+                'has_signature'      => $hasSig,
+                'has_template'       => $hasTemplate,
             ]);
         }
 

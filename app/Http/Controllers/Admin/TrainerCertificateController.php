@@ -245,20 +245,61 @@ class TrainerCertificateController extends Controller
             'signature_position.*' => ['nullable', 'string', 'max:255'],
         ]);
 
-        TrainerCertificateAsset::query()
+        // Determine removals and validate presence of assets (template already validated)
+        $removeIds = array_filter((array) $request->input('remove_assets', []));
+
+        // Count existing assets that will remain after removals
+        $existingLogosCount = TrainerCertificateAsset::query()
             ->where('certifiable_type', get_class($model))
             ->where('certifiable_id', $model->id)
-            ->delete();
+            ->where('type', TrainerCertificateAsset::TYPE_LOGO)
+            ->when($removeIds, function ($q) use ($removeIds) {
+                $q->whereNotIn('id', $removeIds);
+            })
+            ->count();
 
-        foreach (($request->file('certificate_logo') ?? []) as $index => $logo) {
+        $existingSignaturesCount = TrainerCertificateAsset::query()
+            ->where('certifiable_type', get_class($model))
+            ->where('certifiable_id', $model->id)
+            ->where('type', TrainerCertificateAsset::TYPE_SIGNATURE)
+            ->when($removeIds, function ($q) use ($removeIds) {
+                $q->whereNotIn('id', $removeIds);
+            })
+            ->count();
+
+        $uploadedLogos = array_filter((array) ($request->file('certificate_logo') ?? []));
+        $uploadedSignatures = array_filter((array) ($request->file('certificate_signature_file') ?? []));
+
+        if (($existingLogosCount + count($uploadedLogos)) < 1) {
+            return redirect()->back()->withErrors(['certificate_logo' => 'Harap upload minimal 1 logo.'])->withInput();
+        }
+
+        if (($existingSignaturesCount + count($uploadedSignatures)) < 1) {
+            return redirect()->back()->withErrors(['certificate_signature_file' => 'Harap upload minimal 1 tanda tangan.'])->withInput();
+        }
+
+        // delete only assets explicitly removed by the user
+        if (!empty($removeIds)) {
+            TrainerCertificateAsset::query()->whereIn('id', $removeIds)->delete();
+        }
+
+        // determine next order numbers for logos and signatures
+        $nextLogoOrder = (int) TrainerCertificateAsset::query()
+            ->where('certifiable_type', get_class($model))
+            ->where('certifiable_id', $model->id)
+            ->where('type', TrainerCertificateAsset::TYPE_LOGO)
+            ->max('order_no') ?? 0;
+
+        foreach ($uploadedLogos as $index => $logo) {
             if (!$logo) {
                 continue;
             }
-
             $path = $logo->store(
                 'trainer_certificate_assets/' . class_basename($model) . '/' . $model->id . '/logos',
                 'public'
             );
+
+            $nextLogoOrder++;
 
             TrainerCertificateAsset::create([
                 'certifiable_type' => get_class($model),
@@ -267,11 +308,17 @@ class TrainerCertificateController extends Controller
                 'name' => null,
                 'position' => null,
                 'image_path' => $path,
-                'order_no' => $index + 1,
+                'order_no' => $nextLogoOrder,
             ]);
         }
 
-        foreach (($request->file('certificate_signature_file') ?? []) as $index => $file) {
+        $nextSignatureOrder = (int) TrainerCertificateAsset::query()
+            ->where('certifiable_type', get_class($model))
+            ->where('certifiable_id', $model->id)
+            ->where('type', TrainerCertificateAsset::TYPE_SIGNATURE)
+            ->max('order_no') ?? 0;
+
+        foreach ($uploadedSignatures as $index => $file) {
             if (!$file) {
                 continue;
             }
@@ -281,6 +328,8 @@ class TrainerCertificateController extends Controller
                 'public'
             );
 
+            $nextSignatureOrder++;
+
             TrainerCertificateAsset::create([
                 'certifiable_type' => get_class($model),
                 'certifiable_id' => $model->id,
@@ -288,15 +337,13 @@ class TrainerCertificateController extends Controller
                 'name' => $request->input("signature_name.$index"),
                 'position' => $request->input("signature_position.$index"),
                 'image_path' => $path,
-                'order_no' => $index + 1,
+                'order_no' => $nextSignatureOrder,
             ]);
         }
 
         return redirect()
-            ->route('admin.trainer.certificates.edit', [
+            ->route('admin.trainer.certificates.show', [
                 'trainer' => $trainer->id,
-                'context' => $context,
-                'id' => $model->id,
             ])
             ->with('success', 'Konfigurasi sertifikat berhasil disimpan.');
     }
