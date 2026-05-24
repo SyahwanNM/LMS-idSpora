@@ -581,7 +581,7 @@
                         <tr>
                             <td>
                                 <div>
-                                    <h6 class="course-title">{{ Str::limit($event->title, 48) }}</h6>
+                                    <h6 class="course-title">{{ \Illuminate\Support\Str::limit($eventModule->event?->title ?? '-', 48) }}</h6>
                                     <div class="text-muted" style="font-size:0.72rem;">
                                         {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
                                     </div>

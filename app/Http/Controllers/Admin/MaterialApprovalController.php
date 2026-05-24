@@ -274,6 +274,50 @@ class MaterialApprovalController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        // Compute a display title for each pending event module to avoid showing raw filenames
+        foreach ($pendingEventModules as $module) {
+            $titleText = null;
+
+            if (!empty($module->event?->title)) {
+                $evTitle = (string) $module->event->title;
+                if (!preg_match('/sertifikat/i', $evTitle) && trim($evTitle) !== '-') {
+                    $titleText = $evTitle;
+                }
+            }
+
+            if (empty($titleText) && !empty($module->original_name)) {
+                $filename = pathinfo($module->original_name, PATHINFO_FILENAME);
+                $candidate = preg_replace(['/^sertifikat[_\-\s]*/i', '/^certificate[_\-\s]*/i', '/^course[_\-\s]*/i', '/^event[_\-\s]*/i'], ['', '', '', ''], $filename);
+                $candidate = preg_replace(['/\(.+\)$/', '/_[^_]{1,50}$/'], ['', ''], $candidate);
+                $candidate = preg_replace(['/[_\-]+/', '/\s+/'], [' ', ' '], $candidate);
+                $candidate = trim($candidate);
+
+                if ($candidate !== '') {
+                    try {
+                        $found = Event::where('title', 'like', "%{$candidate}%")->first();
+                        if ($found && !empty($found->title)) {
+                            $titleText = $found->title;
+                        }
+                    } catch (\Throwable $e) {
+                        // ignore DB errors and fallback to cleaned filename
+                    }
+                }
+
+                if (empty($titleText)) {
+                    $clean = preg_replace(['/[_\-]+/', '/\s+/'], [' ', ' '], $filename);
+                    $titleText = \Illuminate\Support\Str::title(trim($clean));
+                }
+            }
+
+            if (empty($titleText)) {
+                $titleText = 'Untitled Event';
+            }
+
+            // Attach for view usage
+            $module->display_title = $titleText;
+            $module->display_source = empty($module->event) ? ($module->original_name ?? '') : '';
+        }
+
         // Statistics
         $totalPending = Course::where(function ($q) {
             $q->where('status', 'pending_review')
@@ -967,19 +1011,13 @@ class MaterialApprovalController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(function ($module) {
-                $module->title = $module->event?->title;
-                $module->jenis = $module->event?->jenis;
-                $module->event_date = $module->event?->event_date;
-                $module->material_deadline = $module->event?->material_deadline;
-
-                $module->module_rejected_at = $module->updated_at;
-                $module->module_rejection_reason = $module->rejection_reason
-                    ?? $module->material_rejection_reason
-                    ?? $module->notes
-                    ?? '-';
-
-                $module->module_submission_url = !empty($module->module_path)
-                    ? asset('storage/' . $module->module_path)
+                $module->display_title = $module->event?->title ?? '-';
+                $module->display_type = $module->event?->jenis ?? 'Event';
+                $module->display_date = $module->event?->event_date;
+                $module->module_rejected_at = $module->reviewed_at ?? $module->updated_at;
+                $module->module_rejection_reason = $module->rejection_reason ?? '-';
+                $module->module_submission_url = !empty($module->path)
+                    ? asset('storage/' . $module->path)
                     : '#';
 
                 return $module;

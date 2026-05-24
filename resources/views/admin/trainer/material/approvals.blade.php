@@ -1,282 +1,473 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Manage Trainers')
+@section('title', 'Material Approvals - Pending')
 
 @push('admin-trainer-styles')
     <style>
-        .trainer-hero {
-            background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
+        :root {
+            --admin-primary: #1a237e;
+            --admin-secondary: #3949ab;
+            --admin-bg: #f8fafc;
+            --admin-card-bg: #ffffff;
+            --admin-border: #e2e8f0;
+            --admin-text-main: #0f172a;
+            --admin-text-muted: #64748b;
+            --status-pending-bg: #fffbeb;
+            --status-pending-text: #b45309;
+        }
+
+        .material-page {
+            width: 100%;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 55%, #3949ab 100%);
             border-radius: 24px;
-            padding: 32px 36px;
+            padding: 30px 34px;
             color: #fff;
-            margin-bottom: 28px;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, .12);
+            box-shadow: 0 16px 34px rgba(26, 35, 126, .18);
         }
 
-        .trainer-hero::after {
+        .page-header::after {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(138, 43, 226, 0.25) 0%, rgba(138, 43, 226, 0) 70%);
+            right: -80px;
+            top: -80px;
+            width: 260px;
+            height: 260px;
             border-radius: 50%;
-            z-index: 1;
+            background: radial-gradient(circle, rgba(255, 255, 255, .22) 0%, rgba(255, 255, 255, 0) 70%);
+            pointer-events: none;
         }
 
-        .trainer-hero>* {
+        .page-header>* {
             position: relative;
             z-index: 2;
         }
 
-        .hero-title {
-            font-size: 2.15rem;
-            font-weight: 800;
-            margin-bottom: 6px;
+        .page-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 8px;
             letter-spacing: -0.6px;
             display: flex;
             align-items: center;
-            line-height: 1.1;
+            gap: 12px;
         }
 
-        .hero-title i {
-            font-size: 1.6rem;
-            flex-shrink: 0;
+        .page-subtitle {
+            margin: 0;
+            color: rgba(255, 255, 255, .86);
+            font-size: .95rem;
+            line-height: 1.6;
         }
 
-        .hero-subtitle {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 16px;
-            margin-bottom: 0;
-            line-height: 1.5;
-            max-width: 720px;
+        .btn-header-action {
+            background: rgba(255, 255, 255, .18);
+            border: 1px solid rgba(255, 255, 255, .34);
+            color: #fff;
+            height: 44px;
+            padding: 0 18px;
+            border-radius: 12px;
+            font-size: .86rem;
+            font-weight: 800;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(2px);
+        }
+
+        .btn-header-action:hover {
+            background: rgba(255, 255, 255, .28);
+            color: #fff;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
         }
 
         .stat-card {
+            background: var(--admin-card-bg);
+            border-radius: 18px;
+            padding: 20px;
+            border: 1px solid var(--admin-border);
             display: flex;
             align-items: center;
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
             gap: 16px;
-            height: 100%;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+            transition: .2s;
         }
 
         .stat-card:hover {
-            border-color: #3949ab;
-            box-shadow: 0 8px 24px rgba(57, 73, 171, 0.12);
-            transform: translateY(-4px);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, .08);
         }
 
         .stat-icon {
-            width: 56px;
-            height: 56px;
+            width: 54px;
+            height: 54px;
             border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 1.35rem;
             flex-shrink: 0;
         }
 
-        .stat-primary .stat-icon {
-            background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
-            color: #fff;
+        .stat-card.pending {
+            border-color: #fde68a;
+            background: linear-gradient(180deg, #fffdf5 0%, #fff 100%);
         }
 
-        .stat-success .stat-icon {
-            background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
-            color: #fff;
+        .stat-card.pending .stat-icon {
+            background: #fff7e6;
+            color: #b45309;
         }
 
-        .stat-info .stat-icon {
-            background: linear-gradient(135deg, #0288d1 0%, #039be5 100%);
-            color: #fff;
+        .stat-card.approved {
+            border-color: #bbf7d0;
+            background: linear-gradient(180deg, #f8fff9 0%, #fff 100%);
         }
 
-        .stat-value {
-            font-size: 28px;
+        .stat-card.approved .stat-icon {
+            background: #ecfdf3;
+            color: #166534;
+        }
+
+        .stat-card.rejected {
+            border-color: #fecdd3;
+            background: linear-gradient(180deg, #fff8f9 0%, #fff 100%);
+        }
+
+        .stat-card.rejected .stat-icon {
+            background: #fff1f2;
+            color: #be123c;
+        }
+
+        .stat-info h3 {
+            font-size: 1.6rem;
+            font-weight: 900;
+            margin: 0 0 4px;
+            color: var(--admin-text-main);
+            line-height: 1;
+        }
+
+        .stat-info p {
+            margin: 0;
+            color: var(--admin-text-muted);
+            font-size: .78rem;
             font-weight: 800;
-            color: #1a237e;
-            line-height: 1.1;
-            margin-bottom: 4px;
+            letter-spacing: .3px;
+            text-transform: uppercase;
         }
 
-        .stat-label {
-            font-size: 14px;
-            color: #64748b;
-            font-weight: 600;
-            line-height: 1.2;
-        }
-
-        .toolbar-card {
-            background: #fff;
-            border: 1px solid #e9ecef;
-            border-radius: 18px;
-            padding: 18px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-        }
-
-        .search-input,
-        .filter-select {
-            border-radius: 12px;
-            border: 1.5px solid #e9ecef;
-            font-size: 14px;
-            height: 44px;
-        }
-
-        .search-input:focus,
-        .filter-select:focus {
-            border-color: #3949ab;
-            box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
-            background-color: #f8f9ff;
-        }
-
-        .trainer-table-card {
-            border: 0;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        .content-card {
+            background: var(--admin-card-bg);
+            border-radius: 22px;
+            border: 1px solid var(--admin-border);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
             overflow: hidden;
         }
 
-        .table-header-row th {
-            color: #1a237e;
-            font-weight: 700;
-            font-size: 13px;
-            letter-spacing: 0.5px;
+        .toolbar {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--admin-border);
+            background: #fff;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left {
+            flex: 1 1 560px;
+            min-width: 280px;
+        }
+
+        .toolbar-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1 1 340px;
+            min-width: 220px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 42px;
+            height: 44px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: .9rem;
+            background: #f8fafc;
+            line-height: 1.2;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-box input:focus {
+            border-color: var(--admin-secondary);
+            outline: none;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(57, 73, 171, .12);
+        }
+
+        .filter-select {
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 0 12px;
+            height: 44px;
+            font-size: .88rem;
+            min-width: 180px;
+            background: #fff;
+            color: #334155;
+        }
+
+        .filter-select:focus {
+            border-color: var(--admin-secondary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(57, 73, 171, .12);
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+
+        .table {
+            margin-bottom: 0;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: #f8fafc;
+            color: var(--admin-text-muted);
+            font-size: .75rem;
+            font-weight: 800;
             text-transform: uppercase;
-            padding: 16px;
-            background: #f8f9ff;
+            letter-spacing: .5px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--admin-border);
             white-space: nowrap;
         }
 
-        .trainer-table-card tbody td {
-            padding: 16px;
+        .table td {
+            padding: 16px 24px;
             vertical-align: middle;
-            border-color: #eef2f7;
-            white-space: nowrap;
+            border-bottom: 1px solid var(--admin-border);
+            font-size: .84rem;
         }
 
-        .trainer-table-card tbody tr:hover {
-            background-color: #f8f9ff;
+        .table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .course-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .course-title {
+            font-weight: 800;
+            color: var(--admin-text-main);
+            margin: 0 0 5px;
+            font-size: .9rem;
+            line-height: 1.35;
+        }
+
+        .badge-cat {
+            background: #e8eaf6;
+            color: #3949ab;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: .7rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .trainer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .trainer-avatar {
-            width: 44px;
-            height: 44px;
-            object-fit: cover;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            flex-shrink: 0;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, .12);
         }
 
-        .trainer-skill-cell {
-            white-space: normal !important;
-            min-width: 180px;
-            max-width: 260px;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 13px;
+        .trainer-name {
             font-weight: 700;
+            color: var(--admin-text-main);
+            font-size: .85rem;
+        }
+
+        .badge-status {
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-size: .7rem;
+            font-weight: 800;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            line-height: 1.1;
             white-space: nowrap;
         }
 
-        .status-badge::before {
+        .badge-status::before {
             content: '';
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
         }
 
-        .status-active {
-            background: #e8f5e9;
-            color: #2e7d32;
+        .badge-pending {
+            background: var(--status-pending-bg);
+            color: var(--status-pending-text);
         }
 
-        .status-active::before {
-            background: #2e7d32;
-        }
-
-        .status-inactive {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .status-inactive::before {
-            background: #c62828;
-        }
-
-        .badge-course {
-            background: #e3f2fd;
-            color: #1a237e;
-            border: 1.5px solid #bbdefb;
-            font-weight: 700;
-            padding: 8px 14px;
-            border-radius: 999px;
+        .badge-pending::before {
+            background: var(--status-pending-text);
         }
 
         .btn-action {
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            color: var(--admin-text-main);
+            height: 42px;
+            padding: 0 16px;
             border-radius: 10px;
-            padding: 7px 11px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            border: 1.5px solid transparent;
+            font-size: .85rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: .2s;
+            white-space: nowrap;
         }
 
-        .btn-action-view {
-            color: #1976d2;
-            background-color: #e3f2fd;
+        .btn-action:hover {
+            border-color: var(--admin-secondary);
+            color: var(--admin-secondary);
+            background: #f8fafc;
         }
 
-        .btn-action-edit {
-            color: #1a237e;
-            background-color: #e8eaf6;
+        .btn-primary-action {
+            background: var(--admin-secondary);
+            color: #fff;
+            border: none;
         }
 
-        .btn-action-delete {
-            color: #c62828;
-            background-color: #ffebee;
+        .btn-primary-action:hover {
+            background: #283593;
+            color: #fff;
+        }
+
+        .btn-icon-action {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            justify-content: center;
+            border-radius: 10px;
+        }
+
+        .event-action-group {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        .event-action-group form {
+            margin: 0;
         }
 
         .empty-state {
-            padding: 60px 20px;
             text-align: center;
+            padding: 56px 20px;
         }
 
         .empty-state i {
-            font-size: 64px;
+            font-size: 3rem;
             color: #cbd5e1;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
-        @media (max-width: 576px) {
-            .trainer-hero {
-                padding: 24px;
-                border-radius: 18px;
+        @media (max-width: 1200px) {
+            .stat-grid {
+                grid-template-columns: 1fr;
             }
 
-            .hero-title {
-                font-size: 1.45rem;
-            }
-
-            .toolbar-search-form,
-            .toolbar-actions {
+            .toolbar {
                 flex-direction: column;
+                align-items: stretch;
             }
 
-            .toolbar-search-form button,
-            .toolbar-actions a {
+            .toolbar-left,
+            .toolbar-right,
+            .toolbar-form,
+            .search-box,
+            .filter-select {
+                width: 100%;
+            }
+
+            .toolbar-right {
+                justify-content: flex-start;
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 26px;
+            }
+
+            .page-title {
+                font-size: 1.6rem;
+            }
+
+            .btn-header-action {
                 width: 100%;
             }
         }
@@ -284,249 +475,404 @@
 @endpush
 
 @section('admin-trainer-content')
-    <div class="trainer-hero" style="margin-left:0;">
-        <h1 class="hero-title">
-            <i class="bi bi-person-badge-fill me-3"></i>
-            Trainer Management
-        </h1>
-        <p class="hero-subtitle">
-            Kelola akun instruktur, monitor penugasan kelas, dan track performa trainer secara real-time.
-        </p>
-    </div>
+    <div class="material-page">
 
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            <strong>Berhasil!</strong> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">
+                    <i class="bi bi-hourglass-split"></i>
+                    Material Approvals
+                </h1>
+                <p class="page-subtitle">
+                    Review materi course dan event dari trainer sebelum ditayangkan ke publik.
+                </p>
+            </div>
+
+            <button class="btn-header-action" onclick="window.location.reload();">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+            </button>
         </div>
-    @endif
 
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-md-4">
-            <div class="stat-card stat-primary">
-                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ $totalTrainers }}</div>
-                    <div class="stat-label">Total Trainer</div>
+        @if(session('success'))
+            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center">
+                <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                <div>{{ session('success') }}</div>
+            </div>
+        @endif
+
+        <div class="stat-grid">
+            <div class="stat-card pending">
+                <div class="stat-icon">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ $totalPending ?? 0 }}</h3>
+                    <p>Menunggu Review</p>
+                </div>
+            </div>
+
+            <div class="stat-card approved">
+                <div class="stat-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ $totalApproved ?? 0 }}</h3>
+                    <p>Total Disetujui</p>
+                </div>
+            </div>
+
+            <div class="stat-card rejected">
+                <div class="stat-icon">
+                    <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ $totalRejected ?? 0 }}</h3>
+                    <p>Perlu Revisi</p>
                 </div>
             </div>
         </div>
 
-        <div class="col-12 col-md-4">
-            <div class="stat-card stat-success">
-                <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ $activeTrainers }}</div>
-                    <div class="stat-label">Trainer Aktif (30 Hari)</div>
+        <div class="content-card">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <form method="GET" class="toolbar-form">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" name="search" placeholder="Cari course atau nama trainer..."
+                                value="{{ request('search') }}">
+                        </div>
+
+                        <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
+                            <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>
+                                Semua Deadline
+                            </option>
+                            <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
+                                Overdue
+                            </option>
+                            <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>
+                                Tepat Waktu
+                            </option>
+                            <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
+                                Tanpa Deadline
+                            </option>
+                        </select>
+                    </form>
                 </div>
-            </div>
-        </div>
 
-        <div class="col-12 col-md-4">
-            <div class="stat-card stat-info">
-                <div class="stat-icon"><i class="bi bi-easel-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ $teachingTrainers }}</div>
-                    <div class="stat-label">Sedang Mengajar</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="toolbar-card mb-4">
-        <div class="row g-3 align-items-center">
-            <div class="col-12 col-lg-5">
-                <form action="{{ route('admin.trainer.index') }}" method="GET" class="d-flex gap-2 toolbar-search-form">
-                    <input type="hidden" name="sort" value="{{ request('sort') }}">
-
-                    <input type="text" name="search" class="form-control search-input"
-                        placeholder="Cari nama, email, atau nomor HP..." value="{{ request('search') }}">
-
-                    <button type="submit" class="btn btn-primary rounded-3 px-4"
-                        style="background:#3949ab;border:none;font-weight:700;height:44px;">
-                        <i class="bi bi-search"></i>
-                        <span class="d-sm-none ms-1">Cari</span>
-                    </button>
-                </form>
-            </div>
-
-            <div class="col-12 col-lg-4">
-                <form action="{{ route('admin.trainer.index') }}" method="GET">
-                    <input type="hidden" name="search" value="{{ request('search') }}">
-
-                    <select name="sort" class="form-select filter-select" onchange="this.form.submit()">
-                        <option value="">Urutkan Berdasarkan...</option>
-                        <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Terbaru Bergabung</option>
-                        <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Terlama Bergabung</option>
-                        <option value="name_asc" {{ request('sort') == 'name_asc' ? 'selected' : '' }}>Nama (A-Z)</option>
-                        <option value="name_desc" {{ request('sort') == 'name_desc' ? 'selected' : '' }}>Nama (Z-A)</option>
-                    </select>
-                </form>
-            </div>
-
-            <div class="col-12 col-lg-3">
-                <div class="d-flex justify-content-lg-end gap-2 toolbar-actions">
-                    @if(request('search') || request('sort'))
-                        <a href="{{ route('admin.trainer.index') }}" class="btn btn-outline-secondary rounded-3"
-                            style="height:44px;">
-                            <i class="bi bi-x-circle me-1"></i>Reset
-                        </a>
-                    @endif
-
-                    <a href="{{ route('admin.trainer.create') }}" class="btn btn-primary rounded-3"
-                        style="background:#3949ab;border:none;font-weight:700;height:44px;">
-                        <i class="bi bi-person-plus me-1"></i>Tambah
+                <div class="toolbar-right">
+                    <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
+                        style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
+                        Lihat Disetujui
+                        <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="card trainer-table-card">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-header-row">
-                    <tr>
-                        <th class="ps-4" style="min-width:220px;">Trainer</th>
-                        <th style="min-width:200px;">Kontak</th>
-                        <th style="min-width:180px;">Keahlian</th>
-                        <th class="text-center" style="width:110px;">Status</th>
-                        <th class="text-center" style="width:100px;">Kelas</th>
-                        <th style="width:130px;">Bergabung</th>
-                        <th class="text-center pe-4" style="width:160px;">Aksi</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @forelse($trainers as $trainer)
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
                         <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($trainer->name) }}&background=3949ab&color=fff&bold=true"
-                                        class="trainer-avatar" alt="{{ $trainer->name }}">
+                            <th>Materi Course</th>
+                            <th>Trainer</th>
+                            <th>Isi Modul</th>
+                            <th>Tanggal Submit</th>
+                            <th>Status</th>
+                            <th>Tenggat</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
 
-                                    <div>
-                                        <h6 class="mb-0 fw-bold" style="color:#1a237e;">{{ $trainer->name }}</h6>
-                                        <small class="text-muted">{{ $trainer->profession ?? 'Instruktur' }}</small>
+                    <tbody>
+                        @forelse($pendingMaterials as $material)
+                            <tr>
+                                <td>
+                                    <div class="course-info">
+                                        <div>
+                                            <h6 class="course-title">
+                                                {{ \Illuminate\Support\Str::limit($material->name, 40) }}
+                                            </h6>
+                                            <span class="badge-cat">
+                                                <i class="bi bi-folder2 me-1"></i>
+                                                {{ $material->category->name ?? 'Umum' }}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
+                                </td>
 
-                            <td>
-                                <div class="small mb-1">
-                                    <i class="bi bi-envelope text-muted me-1"></i>
-                                    <span style="color:#424242;">{{ $trainer->email }}</span>
-                                </div>
+                                <td>
+                                    <div class="trainer-info">
+                                        <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($material->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
+                                            class="trainer-avatar" alt="Trainer">
 
-                                <div class="small text-muted">
-                                    <i class="bi bi-telephone text-muted me-1"></i>
-                                    {{ $trainer->phone ?? '—' }}
-                                </div>
-                            </td>
+                                        <div>
+                                            <div class="trainer-name">
+                                                {{ $material->trainer?->name ?? 'Anonim' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
 
-                            <td class="trainer-skill-cell">
-                                <div class="small" style="color:#424242;">
-                                    @if($trainer->bio)
-                                        {{ \Illuminate\Support\Str::limit($trainer->bio, 50) }}
-                                    @else
-                                        <span class="text-muted">Belum ada keahlian</span>
-                                    @endif
-                                </div>
-                            </td>
+                                <td>
+                                    <div style="font-weight:700;color:#334155;">
+                                        {{ $material->modules_count ?? 0 }} File/Kuis
+                                    </div>
+                                </td>
 
-                            <td class="text-center">
-                                @php
-                                    $isActive = $trainer->created_at >= now()->subDays(30);
-                                @endphp
+                                <td>
+                                    <div style="font-weight:700;color:#334155;">
+                                        {{ $material->updated_at?->format('d M Y') ?? $material->created_at?->format('d M Y') }}
+                                    </div>
+                                    <div style="font-size:.75rem;color:#64748b;">
+                                        {{ $material->updated_at?->diffForHumans() ?? $material->created_at?->diffForHumans() }}
+                                    </div>
+                                </td>
 
-                                <span class="status-badge {{ $isActive ? 'status-active' : 'status-inactive' }}">
-                                    {{ $isActive ? 'Aktif' : 'Nonaktif' }}
-                                </span>
-                            </td>
+                                <td>
+                                    <span class="badge-status badge-pending">
+                                        Review Pending
+                                    </span>
+                                </td>
 
-                            <td class="text-center">
-                                <span class="badge-course">
-                                    {{ $trainer->courses_as_trainer_count ?? 0 }}
-                                </span>
-                            </td>
+                                <td>
+                                    @php $monitor = $deadlineMonitoring[$material->id] ?? null; @endphp
 
-                            <td>
-                                <small class="text-muted">
-                                    {{ $trainer->created_at?->format('d M Y') }}
-                                </small>
-                            </td>
+                                    <div style="font-weight:700;color:#334155;">
+                                        {{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}
+                                    </div>
 
-                            <td class="text-center pe-4">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-action btn-action-view"
-                                        title="Lihat Detail">
-                                        <i class="bi bi-eye-fill"></i>
+                                    <div
+                                        style="font-size:.75rem;color:{{ ($monitor['status'] ?? '') === 'late' ? '#b91c1c' : '#64748b' }};">
+                                        {{ $monitor['status_text'] ?? 'Tanpa deadline' }}
+                                    </div>
+                                </td>
+
+                                <td class="text-end">
+                                    <a href="{{ route('admin.trainer.material.show', $material->id) }}"
+                                        class="btn-action btn-primary-action">
+                                        Review
+                                        <i class="bi bi-play-fill"></i>
                                     </a>
+                                </td>
+                            </tr>
+                        @empty
+                            @if(($pendingEventModules ?? collect())->isEmpty())
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <h5 class="fw-bold text-dark">Antrean Kosong</h5>
+                                            <p class="text-muted mb-0">
+                                                Hore! Tidak ada materi yang perlu di-review saat ini.
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endif
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
 
-                                    <a href="{{ route('admin.trainer.edit', $trainer) }}" class="btn btn-action btn-action-edit"
-                                        title="Edit Trainer">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </a>
-
-                                    <form action="{{ route('admin.trainer.destroy', $trainer) }}" method="POST" class="d-inline"
-                                        onsubmit="return confirm('Apakah Anda yakin ingin menghapus trainer {{ $trainer->name }}?')">
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit" class="btn btn-action btn-action-delete" title="Hapus Trainer">
-                                            <i class="bi bi-trash-fill"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state">
-                                    <i class="bi bi-inbox"></i>
-                                    <h6 class="fw-bold mt-3" style="color:#1a237e;">Belum Ada Data Trainer</h6>
-                                    <p class="text-muted mb-0">
-                                        Silakan
-                                        <a href="{{ route('admin.trainer.create') }}" style="color:#3949ab;font-weight:700;">
-                                            tambah trainer baru
-                                        </a>
-                                        untuk mulai menugaskan kelas.
-                                    </p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+            @if(method_exists($pendingMaterials, 'hasPages') && $pendingMaterials->hasPages())
+                <div class="p-3 border-top">
+                    {{ $pendingMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
         </div>
 
-        @if($trainers->hasPages())
-            <div class="card-footer bg-light border-top p-4">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <small class="text-muted">
-                        Menampilkan <strong>{{ $trainers->firstItem() }}</strong> sampai
-                        <strong>{{ $trainers->lastItem() }}</strong> dari
-                        <strong>{{ $trainers->total() }}</strong> trainer
-                    </small>
+        <div class="content-card mt-4">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <form method="GET" class="toolbar-form">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" name="search" placeholder="Cari modul event yang menunggu review..."
+                                value="{{ request('search') }}">
+                        </div>
 
-                    <div>
-                        {{ $trainers->links('pagination::bootstrap-5') }}
-                    </div>
+                        <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
+                            <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>
+                                Semua Deadline
+                            </option>
+                            <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
+                                Overdue
+                            </option>
+                            <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>
+                                Tepat Waktu
+                            </option>
+                            <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
+                                Tanpa Deadline
+                            </option>
+                        </select>
+                    </form>
+                </div>
+
+                <div class="toolbar-right">
+                    <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
+                        style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
+                        Lihat Disetujui
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
             </div>
-        @endif
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Materi Event</th>
+                            <th>Trainer</th>
+                            <th>Isi Modul</th>
+                            <th>Tanggal Submit</th>
+                            <th>Status</th>
+                            <th>Tenggat</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @forelse(($pendingEventModules ?? collect()) as $eventModule)
+                            <tr>
+                                <td>
+                                    <div class="course-info">
+                                        <div>
+                                            <h6 class="course-title">
+                                                {{ \Illuminate\Support\Str::limit($eventModule->display_title ?? $eventModule->event?->title ?? '-', 48) }}
+                                            </h6>
+                                            <div class="text-muted" style="font-size:.75rem;">
+                                                {{ $eventModule->event?->jenis ?? '' }}
+                                                @if($eventModule->event?->event_date)
+                                                    • {{ $eventModule->event->event_date->format('d M Y') }}
+                                                @endif
+                                                @if(empty($eventModule->event))
+                                                    <div class="text-muted" style="font-size:.75rem;">Sumber:
+                                                        {{ \Illuminate\Support\Str::limit($eventModule->original_name ?? '—', 40) }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="trainer-info">
+                                        <img src="{{ $eventModule->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($eventModule->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
+                                            class="trainer-avatar" alt="Trainer">
+
+                                        <div>
+                                            <div class="trainer-name">
+                                                {{ $eventModule->trainer?->name ?? 'Anonim' }}
+                                            </div>
+                                            <div style="font-size:.75rem;color:#64748b;">
+                                                {{ $eventModule->trainer?->email }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div style="font-weight:700;color:#334155;">
+                                        1 Dokumen Modul
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div style="font-weight:700;color:#334155;">
+                                        {{ $eventModule->material_submitted_at?->format('d M Y') ?? ($eventModule->created_at?->format('d M Y') ?? '-') }}
+                                    </div>
+                                    <div style="font-size:.75rem;color:#64748b;">
+                                        {{ $eventModule->material_submitted_at?->diffForHumans() ?? '' }}
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="badge-status badge-pending">
+                                        Review Pending
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @php
+                                        $eventDeadline = $eventModule->event?->material_deadline;
+                                        $eventLate = $eventDeadline ? now()->gt($eventDeadline) : false;
+                                    @endphp
+
+                                    <div style="font-weight:700;color:#334155;">
+                                        {{ $eventDeadline ? \Carbon\Carbon::parse($eventDeadline)->format('d M Y H:i') : 'Belum ditentukan' }}
+                                    </div>
+
+                                    <div style="font-size:.75rem;color:{{ $eventLate ? '#b91c1c' : '#64748b' }};">
+                                        {{ $eventLate ? 'Melewati deadline' : 'Tanpa deadline' }}
+                                    </div>
+                                </td>
+
+                                <td class="text-end">
+                                    <div class="event-action-group">
+                                        <a href="{{ route('admin.event-material.stream', $eventModule->event_id) }}?assignment_id={{ $eventModule->id }}"
+                                            target="_blank" class="btn-action btn-icon-action" title="Lihat modul"
+                                            aria-label="Lihat modul">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+
+                                        <form action="{{ route('admin.event-material.approve', $eventModule->event_id) }}"
+                                            method="POST">
+                                            @csrf
+                                            <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
+
+                                            <button type="submit" class="btn-action btn-icon-action"
+                                                style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Approve"
+                                                aria-label="Approve">
+                                                <i class="bi bi-check2-circle"></i>
+                                            </button>
+                                        </form>
+
+                                        <button class="btn-action btn-icon-action" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#rejectEventModule-{{ $eventModule->id }}" aria-expanded="false"
+                                            aria-controls="rejectEventModule-{{ $eventModule->id }}"
+                                            style="color:#991b1b;border-color:#fecaca;background:#fef2f2;" title="Tolak"
+                                            aria-label="Tolak">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="collapse mt-2" id="rejectEventModule-{{ $eventModule->id }}">
+                                        <form action="{{ route('admin.event-material.reject', $eventModule->event_id) }}"
+                                            method="POST" class="d-flex flex-column gap-2">
+                                            @csrf
+                                            <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
+
+                                            <textarea name="rejection_reason" rows="2" class="form-control"
+                                                placeholder="Alasan penolakan (wajib)" required></textarea>
+
+                                            <div class="d-flex justify-content-end">
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="bi bi-send me-1"></i>
+                                                    Kirim Penolakan
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state" style="padding:36px 20px;">
+                                        <i class="bi bi-folder2-open"></i>
+                                        <h6 class="fw-bold mt-2 mb-1" style="color:#334155;">
+                                            Belum ada materi event pending
+                                        </h6>
+                                        <p class="text-muted mb-0">
+                                            Saat ini tidak ada modul event yang menunggu verifikasi.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 @endsection
-
-@push('admin-trainer-scripts')
-    <script>
-        setTimeout(function () {
-            document.querySelectorAll('.alert').forEach(alert => {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-    </script>
-@endpush

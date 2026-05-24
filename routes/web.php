@@ -2,7 +2,7 @@
 // Payment page for course
 Route::middleware(['auth'])->get('/courses/{course}/payment', [App\Http\Controllers\Admin\CourseController::class, 'payment'])->name('course.payment');
 
-Route::get('/debug-finance', function() {
+Route::get('/debug-finance', function () {
     $controller = new App\Http\Controllers\Admin\FinanceController();
     $request = request();
     $admin = \App\Models\User::where('email', 'admin@idspora.com')->first();
@@ -376,7 +376,8 @@ Route::middleware('auth')->group(function () {
     // User profile
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
-    Route::get('/profile/events', function() { return redirect()->route('profile.history'); }); // Redirect legacy route
+    Route::get('/profile/events', function () {
+        return redirect()->route('profile.history'); }); // Redirect legacy route
     Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
@@ -493,15 +494,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/finance/store-income', [\App\Http\Controllers\Admin\FinanceController::class, 'storeIncome'])->name('admin.finance.store-income');
         Route::get('/admin/finance/expenses', [\App\Http\Controllers\Admin\FinanceController::class, 'expenses'])->name('admin.finance.expenses');
         Route::post('/admin/finance/expense', [\App\Http\Controllers\Admin\FinanceController::class, 'storeExpense'])->name('admin.finance.store-expense');
-        
+
         // Expense Approvals
         Route::post('/admin/finance/event-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventExpense'])->name('admin.finance.event-expense.approve');
         Route::post('/admin/finance/event-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventExpense'])->name('admin.finance.event-expense.reject');
-        
-        
+
+
         Route::post('/admin/finance/manual-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveExpense'])->name('admin.finance.manual-expense.approve');
         Route::post('/admin/finance/manual-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectExpense'])->name('admin.finance.manual-expense.reject');
-        
+
         Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
         Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
@@ -512,7 +513,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/finance/event-fees/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventFeePayment'])->name('admin.finance.event-fee.approve');
         Route::post('/admin/finance/event-fees/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventFeePayment'])->name('admin.finance.event-fee.reject');
         Route::get('/admin/finance/payouts/{id}/invoice', [\App\Http\Controllers\Admin\FinanceController::class, 'downloadPayoutInvoice'])->name('admin.finance.payouts.invoice');
-        
+
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
@@ -716,13 +717,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // Trainer Certificates
     Route::get('/admin/trainer/certificates', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'index'])->name('admin.trainer.certificates.index');
     Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'queue'])->name('admin.trainer.certificates.queue');
+    Route::get('/admin/trainer/certificates/detail/{certificate}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'detail'])->name('admin.trainer.certificates.detail');
     Route::get('/admin/trainer/certificates/{trainer}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'show'])->name('admin.trainer.certificates.show');
-    Route::get(
-    '/admin/trainer/certificates/{trainer}/{context}/{id}/edit',
-    [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'edit'])->name('admin.trainer.certificates.edit');
-    Route::post(
-    '/admin/trainer/certificates/{trainer}/{context}/{id}/edit',
-    [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'update'])->name('admin.trainer.certificates.update');
+    Route::get('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'edit'])->name('admin.trainer.certificates.edit');
+    Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'update'])->name('admin.trainer.certificates.update');
+    Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/publish', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'publish'])->name('admin.trainer.certificates.publish');
 
     Route::get('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'show'])->name('admin.trainer.show');
     Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
