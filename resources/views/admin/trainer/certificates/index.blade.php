@@ -180,22 +180,22 @@
 
     .metric-icon.blue {
         background: #eef1ff;
-        color: var(--cert-primary);
+        color: #2f3fcb;
     }
 
     .metric-icon.purple {
-        background: #f1e8ff;
-        color: #7c3aed;
+        background: #dde4ff;
+        color: #3730a3;
     }
 
     .metric-icon.green {
-        background: #dff8ed;
-        color: var(--cert-success);
+        background: #e0e7ff;
+        color: #4338ca;
     }
 
     .metric-icon.yellow {
-        background: #fff2cc;
-        color: var(--cert-warning);
+        background: #c7d2fe;
+        color: #1e1b8e;
     }
 
     .metric-label {
@@ -323,82 +323,109 @@
         display: block;
     }
 
+    /* ── Certificate Grid ── */
     .certificate-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(300px, 1fr));
         gap: 20px;
     }
 
+    /* ── Certificate Card ── */
     .certificate-card {
         background: #fff;
-        border: 1px solid #f1f5f9;
-        border-radius: 14px;
-        padding: 20px;
-        box-shadow: 0 18px 36px rgba(15, 23, 42, .06);
-        min-height: 300px;
+        border: 1px solid #dde4f5;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(47, 63, 203, .07);
         display: flex;
         flex-direction: column;
+        overflow: hidden;
+        transition: transform .22s ease, box-shadow .22s ease;
     }
 
+    .certificate-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 28px rgba(47, 63, 203, .14);
+    }
+
+    /* Card inner padding wrapper */
+    .card-inner {
+        padding: 20px 20px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+    }
+
+    /* Card top row: type badge + status badge */
     .card-top {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 18px;
+        gap: 8px;
     }
 
+    /* Type badge — indigo muda ringan (sesuai foto) */
     .type-badge {
-        background: #eef4ff;
-        color: var(--cert-primary);
-        font-size: .78rem;
-        font-weight: 900;
-        border-radius: 10px;
-        padding: 6px 12px;
+        font-size: .7rem;
+        font-weight: 800;
+        border-radius: 8px;
+        padding: 5px 13px;
         text-transform: uppercase;
-        letter-spacing: .6px;
+        letter-spacing: .7px;
+        flex-shrink: 0;
+        background: #e8eaf6;
+        color: #3949ab;
+        border: 1px solid #c5cae9;
     }
 
+    /* Status badge */
     .status-badge {
-        font-size: .78rem;
-        font-weight: 900;
+        font-size: .75rem;
+        font-weight: 800;
         border-radius: 999px;
-        padding: 8px 14px;
+        padding: 5px 14px;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         white-space: nowrap;
-        text-transform: uppercase;
+        flex-shrink: 0;
     }
 
+    /* ready → outline putih bertepi biru (persis foto) */
     .status-badge.ready {
-        background: var(--cert-ready-bg);
-        color: var(--cert-ready-color);
+        background: #ffffff;
+        color: #3949ab;
+        border: 1.5px solid #7986cb;
     }
 
+    /* configured → biru medium filled */
     .status-badge.configured {
-        background: var(--cert-configured-bg);
-        color: var(--cert-configured-color);
+        background: #e8eaf6;
+        color: #3949ab;
+        border: 1.5px solid #9fa8da;
     }
 
+    /* missing → biru tua gelap */
     .status-badge.missing {
-        background: var(--cert-missing-bg);
-        color: var(--cert-missing-color);
+        background: #e8eaf6;
+        color: #1a237e;
+        border: 1.5px solid #7986cb;
     }
 
+    /* Program info block */
     .program-main {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 14px;
-        margin-bottom: 12px;
     }
 
+    /* Icon indigo muda (sesuai foto) */
     .program-icon {
-        width: 52px;
-        height: 52px;
+        width: 48px;
+        height: 48px;
         border-radius: 12px;
-        background: var(--btn-warning-bg);
-        color: var(--cert-missing-color);
+        background: #e8eaf6;
+        color: #3949ab;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -406,159 +433,195 @@
         flex-shrink: 0;
     }
 
-    .program-icon.ready {
-        background: #ecfdf5;
-        color: var(--cert-success);
-    }
+    .program-icon.ready      { background: #e8eaf6; color: #3949ab; }
+    .program-icon.configured { background: #e8eaf6; color: #3949ab; }
+    .program-icon.missing    { background: #c5cae9; color: #1a237e; }
 
-    .program-icon.purple {
-        background: #f6f3ff;
-        color: #7c3aed;
-    }
-
-    .program-icon.red {
-        background: var(--btn-warning-bg);
-        color: var(--cert-missing-color);
+    .program-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
     }
 
     .program-title {
-        font-size: 1.02rem;
-        font-weight: 900;
-        color: #0b1220;
-        margin: 0 0 6px;
-        line-height: 1.25;
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+        line-height: 1.35;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .program-date {
-        font-size: .86rem;
-        color: #607089;
+        font-size: .8rem;
+        color: #94a3b8;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
     }
 
-    .program-meta {
-        margin-top: 6px;
-        margin-bottom: 14px;
-        color: var(--cert-muted);
-        font-size: .86rem;
+    /* Peserta Terdaftar — vertikal */
+    .program-meta-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
     }
 
-    .program-meta strong {
-        color: var(--cert-primary);
+    .program-meta-label {
+        font-size: .8rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .program-meta-count {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 1.1rem;
         font-weight: 900;
-        margin-left: 6px;
-        display: inline-block;
+        color: #3949ab;
     }
 
+    .program-meta-count i {
+        font-size: 1.1rem;
+    }
+
+    /* Asset section — flat */
     .asset-section {
-        border-top: 1px solid #eef6ff;
+        border-top: 1px solid #e8eeff;
         padding-top: 14px;
-        margin-top: auto;
     }
 
     .asset-title {
         font-size: .9rem;
-        font-weight: 900;
+        font-weight: 800;
         color: #0f172a;
         margin-bottom: 12px;
     }
 
-    .asset-list {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        flex-wrap: wrap;
+    .asset-flat-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0;
     }
 
-    .asset-item {
+    .asset-flat-item {
         display: flex;
-        gap: 8px;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .asset-flat-label {
+        display: flex;
         align-items: center;
-        color: var(--cert-muted);
-        font-weight: 800;
+        gap: 6px;
         font-size: .82rem;
+        font-weight: 600;
+        color: #334155;
     }
 
-    .asset-item + .asset-item {
-        padding-left: 8px;
-        border-left: 1px solid #eef6ff;
+    .asset-flat-label i {
+        color: #7986cb;
+        font-size: .9rem;
     }
 
-    .asset-label i {
-        color: #94a3b8;
-    }
-
-    .asset-status {
-        font-size: .8rem;
-        font-weight: 800;
-        display: inline-flex;
+    .asset-flat-status {
+        display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
+        font-size: .82rem;
+        font-weight: 700;
     }
 
-    .asset-status.ok {
-        color: var(--cert-success);
-    }
+    /* ok → biru cerah sesuai foto */
+    .asset-flat-status.ok      { color: #3949ab; }
+    /* no → biru tua */
+    .asset-flat-status.no      { color: #1a237e; }
+    /* neutral → biru abu */
+    .asset-flat-status.neutral { color: #90a4c8; }
 
-    .asset-status.no {
-        color: var(--cert-danger);
-    }
-
-    .asset-status.neutral {
-        color: #94a3b8;
-    }
-
+    /* Manage button — full width */
     .btn-manage-template {
-        margin-top: 12px;
-        width: 100%;
+        margin: 0 20px 20px;
         height: 48px;
         border-radius: 12px;
-        border: 0;
-        background: linear-gradient(90deg, var(--btn-start), var(--btn-end));
-        color: #fff;
-        font-weight: 900;
+        border: none;
+        font-weight: 800;
+        font-size: .9rem;
         display: flex;
         align-items: center;
-        justify-content: flex-start;
-        gap: 12px;
+        justify-content: center;
+        gap: 10px;
         padding: 0 18px;
         text-decoration: none;
-        box-shadow: 0 10px 24px rgba(72, 88, 219, .14);
-    }
-
-    .btn-manage-template:hover {
-        color: #fff;
-        filter: brightness(.97);
+        transition: all .2s ease;
+        flex-shrink: 0;
     }
 
     .btn-manage-template .bi-chevron-right {
         margin-left: auto;
+        font-size: .85rem;
     }
 
+    /* default → indigo-violet gradien (sesuai foto) */
+    .btn-manage-template:not(.soft):not(.warning) {
+        background: linear-gradient(90deg, #3949ab 0%, #5c6bc0 100%);
+        color: #fff;
+        box-shadow: 0 6px 20px rgba(57, 73, 171, .30);
+    }
+
+    .btn-manage-template:not(.soft):not(.warning):hover {
+        color: #fff;
+        box-shadow: 0 8px 26px rgba(57, 73, 171, .42);
+        filter: brightness(1.07);
+    }
+
+    /* configured → biru muda */
     .btn-manage-template.soft {
-        background: var(--btn-soft-bg);
-        color: var(--cert-primary);
-        box-shadow: none;
+        background: #eef1ff;
+        color: #2f3fcb;
+        border: 1px solid #c7d2fe;
     }
 
+    .btn-manage-template.soft:hover {
+        background: #e0e7ff;
+        color: #1e1b8e;
+    }
+
+    /* missing → biru navy transparan */
     .btn-manage-template.warning {
-        background: var(--btn-warning-bg);
-        color: var(--cert-missing-color);
-        border: 1px solid #ffdce0;
-        box-shadow: none;
+        background: #dde4ff;
+        color: #1e1b8e;
+        border: 1px solid #a5b4fc;
     }
 
+    .btn-manage-template.warning:hover {
+        background: #c7d2fe;
+        color: #1e1b8e;
+    }
+
+    /* Empty state */
     .empty-card {
         background: #fff;
-        border: 1px solid var(--cert-border);
+        border: 1.5px dashed #c7d2fe;
         border-radius: 18px;
         padding: 60px 20px;
         text-align: center;
         grid-column: 1 / -1;
-        color: var(--cert-muted);
+        color: #64748b;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
     }
 
+    .empty-card i { font-size: 2.5rem; color: #a5b4fc; }
+
+    /* ── Responsive ── */
     @media (max-width: 1400px) {
         .certificate-grid {
             grid-template-columns: repeat(2, minmax(300px, 1fr));
@@ -566,41 +629,12 @@
     }
 
     @media (max-width: 768px) {
-        .cert-hero {
-            padding: 28px;
-        }
-
-        .cert-hero h1 {
-            font-size: 1.8rem;
-        }
-
-        .certificate-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .cert-tab-wrapper {
-            flex-direction: column;
-        }
-
-        .cert-tab-btn {
-            width: 100%;
-            border-radius: 14px;
-            border: 1px solid var(--cert-border);
-        }
-
-        .filter-card {
-            border-radius: 20px;
-        }
-
-        .asset-list {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .asset-item + .asset-item {
-            padding-left: 0;
-            border-left: 0;
-        }
+        .cert-hero { padding: 28px; }
+        .cert-hero h1 { font-size: 1.8rem; }
+        .certificate-grid { grid-template-columns: 1fr; }
+        .cert-tab-wrapper { flex-direction: column; }
+        .cert-tab-btn { width: 100%; border-radius: 14px; border: 1px solid var(--cert-border); }
+        .filter-card { border-radius: 20px; }
     }
 </style>
 @endpush
@@ -737,98 +771,94 @@
                         data-title="{{ strtolower($event->title ?? '') }}"
                         data-status="{{ $status }}">
 
-                        <div class="card-top">
-                            <span class="type-badge">Event</span>
+                        <div class="card-inner">
+                            {{-- Top: type badge + status badge --}}
+                            <div class="card-top">
+                                <span class="type-badge">EVENT</span>
 
-                            @if($status === 'ready')
-                                <span class="status-badge ready">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Siap Terbit
-                                </span>
-                            @elseif($status === 'configured')
-                                <span class="status-badge configured">
-                                    <i class="bi bi-circle-fill"></i>
-                                    Dikonfigurasi
-                                </span>
-                            @else
-                                <span class="status-badge missing">
-                                    <i class="bi bi-exclamation-lg"></i>
-                                    Belum Konfigurasi
-                                </span>
-                            @endif
-                        </div>
-
-                        <div class="program-main">
-                            <div class="program-icon {{ $status === 'ready' ? 'ready' : ($status === 'configured' ? 'purple' : 'red') }}">
-                                <i class="bi bi-calendar-event"></i>
+                                @if($status === 'ready')
+                                    <span class="status-badge ready">
+                                        <i class="bi bi-check-circle-fill"></i> Siap Terbit
+                                    </span>
+                                @elseif($status === 'configured')
+                                    <span class="status-badge configured">
+                                        <i class="bi bi-circle-half"></i> Dikonfigurasi
+                                    </span>
+                                @else
+                                    <span class="status-badge missing">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Belum Konfigurasi
+                                    </span>
+                                @endif
                             </div>
 
-                            <div>
-                                <h5 class="program-title">{{ $event->title ?? '-' }}</h5>
-
-                                <div class="program-date">
-                                    <i class="bi bi-calendar2-week"></i>
-                                    {{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}
+                            {{-- Program info --}}
+                            <div class="program-main">
+                                <div class="program-icon {{ $status === 'ready' ? 'ready' : ($status === 'configured' ? 'configured' : 'missing') }}">
+                                    <i class="bi bi-calendar-event"></i>
+                                </div>
+                                <div class="program-info">
+                                    <h5 class="program-title">{{ $event->title ?? '-' }}</h5>
+                                    <div class="program-date">
+                                        <i class="bi bi-calendar3"></i>
+                                        {{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="program-meta">
-                            Peserta Terdaftar
-                            <strong>
-                                <i class="bi bi-people me-1"></i>
-                                {{ $event->registrations_count ?? 0 }}
-                            </strong>
-                        </div>
+                            {{-- Peserta Terdaftar — vertikal --}}
+                            <div class="program-meta-wrap">
+                                <span class="program-meta-label">Peserta Terdaftar</span>
+                                <span class="program-meta-count">
+                                    <i class="bi bi-people-fill"></i>
+                                    {{ $event->registrations_count ?? 0 }}
+                                </span>
+                            </div>
 
-                        <div class="asset-section">
-                            <div class="asset-title">Aset Sertifikat</div>
-
-                            <div class="asset-list">
-                                <div class="asset-item">
-                                    <div class="asset-label">
-                                        <i class="bi bi-file-earmark-text"></i>
-                                        Template
+                            {{-- Aset Sertifikat — flat row --}}
+                            <div class="asset-section">
+                                <div class="asset-title">Aset Sertifikat</div>
+                                <div class="asset-flat-row">
+                                    <div class="asset-flat-item">
+                                        <div class="asset-flat-label">
+                                            <i class="bi bi-file-earmark-text"></i> Template
+                                        </div>
+                                        <div class="asset-flat-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
+                                            <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                            {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
+                                        </div>
                                     </div>
-                                    <div class="asset-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
-                                        <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                        {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
+                                    <div class="asset-flat-item">
+                                        <div class="asset-flat-label">
+                                            <i class="bi bi-image"></i> Logo
+                                        </div>
+                                        <div class="asset-flat-status {{ $hasLogo ? 'ok' : 'no' }}">
+                                            <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                            {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div class="asset-item">
-                                    <div class="asset-label">
-                                        <i class="bi bi-image"></i>
-                                        Logo
-                                    </div>
-                                    <div class="asset-status {{ $hasLogo ? 'ok' : 'no' }}">
-                                        <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                        {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
-                                    </div>
-                                </div>
-
-                                <div class="asset-item">
-                                    <div class="asset-label">
-                                        <i class="bi bi-pen"></i>
-                                        Tanda Tangan
-                                    </div>
-                                    <div class="asset-status {{ $hasSignature ? 'ok' : 'no' }}">
-                                        <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                        {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
+                                    <div class="asset-flat-item">
+                                        <div class="asset-flat-label">
+                                            <i class="bi bi-pencil"></i> Tanda Tangan
+                                        </div>
+                                        <div class="asset-flat-status {{ $hasSignature ? 'ok' : 'no' }}">
+                                            <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                            {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {{-- Tombol Kelola Template — full width --}}
                         <a href="{{ route('admin.trainer.certificates.edit', [
                             'trainer' => $event->trainer_id,
                             'context' => 'event',
                             'id' => $event->id,
                         ]) }}"
                         class="btn-manage-template {{ $status === 'not-configured' ? 'warning' : ($status === 'configured' ? 'soft' : '') }}">
-                            <i class="bi bi-gear"></i>
+                            <i class="bi bi-gear-fill"></i>
                             Kelola Template
-                            <i class="bi bi-chevron-right"></i>
+                            <i class="bi bi-chevron-right ms-auto"></i>
                         </a>
                     </div>
                 @empty
@@ -856,98 +886,94 @@
                         data-title="{{ strtolower($course->name ?? '') }}"
                         data-status="{{ $status }}">
 
-                        <div class="card-top">
-                            <span class="type-badge">Course</span>
+                        <div class="card-inner">
+                            {{-- Top: type badge + status badge --}}
+                            <div class="card-top">
+                                <span class="type-badge">COURSE</span>
 
-                            @if($status === 'ready')
-                                <span class="status-badge ready">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                    Siap Terbit
-                                </span>
-                            @elseif($status === 'configured')
-                                <span class="status-badge configured">
-                                    <i class="bi bi-circle-fill"></i>
-                                    Dikonfigurasi
-                                </span>
-                            @else
-                                <span class="status-badge missing">
-                                    <i class="bi bi-exclamation-lg"></i>
-                                    Belum Konfigurasi
-                                </span>
-                            @endif
-                        </div>
-
-                        <div class="program-main">
-                            <div class="program-icon {{ $status === 'ready' ? 'ready' : ($status === 'configured' ? 'purple' : 'red') }}">
-                                <i class="bi bi-mortarboard"></i>
+                                @if($status === 'ready')
+                                    <span class="status-badge ready">
+                                        <i class="bi bi-check-circle-fill"></i> Siap Terbit
+                                    </span>
+                                @elseif($status === 'configured')
+                                    <span class="status-badge configured">
+                                        <i class="bi bi-circle-half"></i> Dikonfigurasi
+                                    </span>
+                                @else
+                                    <span class="status-badge missing">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Belum Konfigurasi
+                                    </span>
+                                @endif
                             </div>
 
-                            <div>
-                                <h5 class="program-title">{{ $course->name ?? '-' }}</h5>
-
-                                <div class="program-date">
-                                    <i class="bi bi-folder2-open"></i>
-                                    {{ $course->category->name ?? 'General' }}
+                            {{-- Program info --}}
+                            <div class="program-main">
+                                <div class="program-icon {{ $status === 'ready' ? 'ready' : ($status === 'configured' ? 'configured' : 'missing') }}">
+                                    <i class="bi bi-mortarboard"></i>
+                                </div>
+                                <div class="program-info">
+                                    <h5 class="program-title">{{ $course->name ?? '-' }}</h5>
+                                    <div class="program-date">
+                                        <i class="bi bi-folder2-open"></i>
+                                        {{ $course->category->name ?? 'General' }}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="program-meta">
-                            Siswa Terdaftar
-                            <strong>
-                                <i class="bi bi-people me-1"></i>
-                                {{ $course->enrollments_count ?? 0 }}
-                            </strong>
-                        </div>
+                            {{-- Siswa Terdaftar — vertikal --}}
+                            <div class="program-meta-wrap">
+                                <span class="program-meta-label">Siswa Terdaftar</span>
+                                <span class="program-meta-count">
+                                    <i class="bi bi-people-fill"></i>
+                                    {{ $course->enrollments_count ?? 0 }}
+                                </span>
+                            </div>
 
-                        <div class="asset-section">
-                            <div class="asset-title">Aset Sertifikat</div>
-
-                            <div class="asset-list">
-                                <div class="asset-item">
-                                    <div class="asset-label">
-                                        <i class="bi bi-file-earmark-text"></i>
-                                        Template
+                            {{-- Aset Sertifikat — flat row --}}
+                            <div class="asset-section">
+                                <div class="asset-title">Aset Sertifikat</div>
+                                <div class="asset-flat-row">
+                                    <div class="asset-flat-item">
+                                        <div class="asset-flat-label">
+                                            <i class="bi bi-file-earmark-text"></i> Template
+                                        </div>
+                                        <div class="asset-flat-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
+                                            <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                            {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
+                                        </div>
                                     </div>
-                                    <div class="asset-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
-                                        <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                        {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
+                                    <div class="asset-flat-item">
+                                        <div class="asset-flat-label">
+                                            <i class="bi bi-image"></i> Logo
+                                        </div>
+                                        <div class="asset-flat-status {{ $hasLogo ? 'ok' : 'no' }}">
+                                            <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                            {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div class="asset-item">
-                                    <div class="asset-label">
-                                        <i class="bi bi-image"></i>
-                                        Logo
-                                    </div>
-                                    <div class="asset-status {{ $hasLogo ? 'ok' : 'no' }}">
-                                        <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                        {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
-                                    </div>
-                                </div>
-
-                                <div class="asset-item">
-                                    <div class="asset-label">
-                                        <i class="bi bi-pen"></i>
-                                        Tanda Tangan
-                                    </div>
-                                    <div class="asset-status {{ $hasSignature ? 'ok' : 'no' }}">
-                                        <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                        {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
+                                    <div class="asset-flat-item">
+                                        <div class="asset-flat-label">
+                                            <i class="bi bi-pencil"></i> Tanda Tangan
+                                        </div>
+                                        <div class="asset-flat-status {{ $hasSignature ? 'ok' : 'no' }}">
+                                            <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                            {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {{-- Tombol Kelola Template — full width --}}
                         <a href="{{ route('admin.trainer.certificates.edit', [
                             'trainer' => $course->trainer_id,
                             'context' => 'course',
                             'id' => $course->id,
                         ]) }}"
                         class="btn-manage-template {{ $status === 'not-configured' ? 'warning' : ($status === 'configured' ? 'soft' : '') }}">
-                            <i class="bi bi-gear"></i>
+                            <i class="bi bi-gear-fill"></i>
                             Kelola Template
-                            <i class="bi bi-chevron-right"></i>
+                            <i class="bi bi-chevron-right ms-auto"></i>
                         </a>
                     </div>
                 @empty
