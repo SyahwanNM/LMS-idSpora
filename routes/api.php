@@ -56,6 +56,9 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
         ]);
     });
 
+    // Update Profil Sendiri (Sisi User)
+    Route::put('/user', [AuthController::class, 'updateProfile']);
+
     Route::post('/events/{id}/register', [EventController::class, 'register']);
 
     // Event endpoints
@@ -199,4 +202,46 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->
 
     // Reports
     Route::get('reports/events/growth', AdminEventGrowthReportController::class);
+
+    // Finance Module APIs
+    Route::prefix('finance')->group(function () {
+        Route::get('overview', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'overview']);
+        Route::get('events', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'events']);
+        Route::get('events/{id}', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'eventDetail'])->where('id', '[0-9]+');
+        Route::get('courses', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'courses']);
+        Route::get('courses/{id}', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'courseDetail'])->where('id', '[0-9]+');
+        Route::get('expenses', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'expenses']);
+        Route::post('expenses', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'storeExpense']);
+        Route::post('expenses/{id}/approve', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'approveExpense'])->where('id', '[0-9]+');
+        Route::post('expenses/{id}/reject', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'rejectExpense'])->where('id', '[0-9]+');
+        Route::post('event-expenses/{id}/approve', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'approveEventExpense'])->where('id', '[0-9]+');
+        Route::post('event-expenses/{id}/reject', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'rejectEventExpense'])->where('id', '[0-9]+');
+        Route::get('incomes', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'incomes']);
+        Route::post('incomes', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'storeIncome']);
+        Route::get('trainers', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'trainers']);
+        Route::post('trainers/{id}/disburse', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'disburseCourseBalance'])->where('id', '[0-9]+');
+        Route::post('events/{id}/fee-request', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'createEventFeeRequest'])->where('id', '[0-9]+');
+        Route::post('trainer-payments/{id}/approve', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'approveEventFeePayment'])->where('id', '[0-9]+');
+        Route::post('trainer-payments/{id}/reject', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'rejectEventFeePayment'])->where('id', '[0-9]+');
+        Route::get('export', [\App\Http\Controllers\Api\Admin\FinanceController::class, 'exportData']);
+    });
+
+    // CRM Module APIs
+    Route::prefix('crm')->group(function () {
+        // Customers
+        Route::get('customers', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'getCustomers']);
+        Route::get('customers/{id}', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'getCustomerDetail']);
+        Route::put('customers/{id}', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'updateCustomer']);
+
+        // Support Messages
+        Route::get('support-messages', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'getSupportMessages']);
+        Route::put('support-messages/{id}/status', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'updateSupportStatus']);
+
+        // Feedbacks
+        Route::get('feedbacks', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'getFeedbacks']);
+
+        // Broadcasts
+        Route::get('broadcasts', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'getBroadcasts']);
+        Route::post('broadcasts', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'sendBroadcast']);
+    });
 });

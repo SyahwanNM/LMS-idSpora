@@ -267,12 +267,10 @@
                         <div class="mt-3" id="manualPaySection">
                             <button type="submit" class="btn-pay" id="freeRegBtn">Register Now!</button>
                         </div>
-                    @else
-                        <div class="mt-3" id="manualPaySection" style="display:none;"></div>
                     @endif
 
                     @if(!$isFree)
-                        <div id="midtransSection" style="display:none;">
+                        <div id="midtransSection">
                             <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay with Midtrans</button>
                             <div class="small text-muted mt-2">Payment will be verified automatically after success.</div>
                         </div>
@@ -503,14 +501,6 @@
             return 'midtrans';
         }
 
-        function toggleMethodUI(){
-            if(isFree) return;
-            const method = getSelectedMethod();
-            const isManual = method === 'manual';
-            if(manualPaySection) manualPaySection.style.display = isManual ? '' : 'none';
-            if(midtransSection) midtransSection.style.display = isManual ? 'none' : '';
-        }
-
         function isValidPhone(val){ return /^[0-9]{8,15}$/.test(String(val || '').trim()); }
 
         function validate(){
@@ -530,37 +520,18 @@
 
             const method = getSelectedMethod();
             const okMidtrans = allOk;
-            const okManualBase = allOk;
-            if(showQrisBtn){
-                showQrisBtn.disabled = !(method === 'manual' && okManualBase);
-                showQrisBtn.style.opacity = (method === 'manual' && okManualBase) ? '1' : '0.5';
-            }
             if(midtransPayBtn){
                 midtransPayBtn.disabled = !(method === 'midtrans' && okMidtrans);
                 midtransPayBtn.style.opacity = (method === 'midtrans' && okMidtrans) ? '1' : '0.5';
             }
-            // payNow button depends on proof selected
-            if(payNowBtn){
-                const proofOk = paymentProofInput && paymentProofInput.files && paymentProofInput.files.length > 0;
-                payNowBtn.disabled = !(method === 'manual' && okManualBase && proofOk);
-                payNowBtn.style.opacity = (method === 'manual' && okManualBase && proofOk) ? '1' : '0.5';
-            }
-            return (method === 'midtrans') ? okMidtrans : okManualBase;
+            return okMidtrans;
         }
 
         ['input','change','keyup','blur'].forEach(evt => {
             if(fullName) fullName.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
-            if(paymentProofInput) paymentProofInput.addEventListener(evt, validate);
             if(referralInput) referralInput.addEventListener(evt, updateReferralUI);
         });
-
-        if(methodRadios && methodRadios.length){
-            methodRadios.forEach(r => r.addEventListener('change', function(){
-                toggleMethodUI();
-                validate();
-            }));
-        }
 
         form.addEventListener('submit', function(e){
             if(isFree){
@@ -604,121 +575,13 @@
                 });
                 return;
             }
-            if(!isFree && getSelectedMethod() === 'midtrans'){
-                e.preventDefault();
-                return;
-            }
-            if(!isFree && getSelectedMethod() === 'manual'){
-                // Require proof for manual submit
-                const proofOk = paymentProofInput && paymentProofInput.files && paymentProofInput.files.length > 0;
-                if(!proofOk){
-                    e.preventDefault();
-                    showAppNotify('Please upload your payment proof first.', 'error');
-                    return;
-                }
-
-                if(pendingProofSubmit){
-                    return;
-                }
-
-                e.preventDefault();
-                const confirmModalEl = document.getElementById('confirmProofModal');
-                if(confirmModalEl && window.bootstrap){
-                    const m = window.bootstrap.Modal.getOrCreateInstance(confirmModalEl);
-                    m.show();
-                } else {
-                    // If bootstrap modal is unavailable, submit directly
-                    pendingProofSubmit = true;
-                    form.submit();
-                }
-                return;
-            }
-
-            if(!validate()){
-                e.preventDefault();
-                showAppNotify('Please complete your details before paying.', 'error');
-            }
+            
+            e.preventDefault();
         });
 
         // initial
-        toggleMethodUI();
         updateReferralUI();
         validate();
-
-        // Manual QRIS modal open
-        if(showQrisBtn){
-            showQrisBtn.addEventListener('click', function(e){
-                e.preventDefault();
-                validate();
-                if(showQrisBtn.disabled){
-                    showAppNotify('Please complete your details first.', 'error');
-                    return;
-                }
-
-                const qrisEl = document.getElementById('qrisModal');
-                if(qrisEl && window.bootstrap){
-                    try {
-                        const collapseEl = document.getElementById('uploadProofCollapse');
-                        if(collapseEl && window.bootstrap.Collapse){
-                            const collapse = window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-                            collapse.hide();
-                        }
-                        const proofPreviewEl = document.getElementById('proofPreview');
-                        if(paymentProofInput) paymentProofInput.value = '';
-                        if(proofPreviewEl) proofPreviewEl.style.display = 'none';
-                        if(payNowBtn) payNowBtn.disabled = true;
-                    } catch(_e) {}
-
-                    const modal = window.bootstrap.Modal.getOrCreateInstance(qrisEl);
-                    modal.show();
-                }
-            });
-        }
-
-        // Proof preview + size validation
-        if(paymentProofInput){
-            paymentProofInput.addEventListener('change', function(){
-                const file = paymentProofInput.files && paymentProofInput.files[0];
-                const proofPreviewEl = document.getElementById('proofPreview');
-                const proofPreviewImg = document.getElementById('proofPreviewImg');
-                if(!file){
-                    if(proofPreviewEl) proofPreviewEl.style.display = 'none';
-                    validate();
-                    return;
-                }
-                if(file.size > 5 * 1024 * 1024){
-                    showAppNotify('File too large. Maximum 5MB.', 'error');
-                    paymentProofInput.value = '';
-                    if(proofPreviewEl) proofPreviewEl.style.display = 'none';
-                    validate();
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(evt){
-                    if(proofPreviewImg) proofPreviewImg.src = evt.target.result;
-                    if(proofPreviewEl) proofPreviewEl.style.display = 'block';
-                    validate();
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        // Confirm modal submit
-        const confirmProofModalEl = document.getElementById('confirmProofModal');
-        const confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
-        if(confirmProofModalEl && confirmProofSubmitBtn){
-            confirmProofSubmitBtn.addEventListener('click', function(){
-                if(pendingProofSubmit) return;
-                pendingProofSubmit = true;
-                try { confirmProofSubmitBtn.disabled = true; } catch(_e) {}
-                form.submit();
-            });
-
-            confirmProofModalEl.addEventListener('hidden.bs.modal', function(){
-                pendingProofSubmit = false;
-                try { confirmProofSubmitBtn.disabled = false; } catch(_e) {}
-            });
-        }
 
         // Midtrans flow
         const snapTokenUrl = @json(isset($event) ? route('payment.snap-token', $event->id) : '');
@@ -781,19 +644,6 @@
                     }
                 }
 
-                // Auto select Midtrans and disable Manual option while pending
-                const midtransRadio = form.querySelector('input[name="payment_method"][value="midtrans"]');
-                const manualRadio = form.querySelector('input[name="payment_method"][value="manual"]');
-                if (midtransRadio && !midtransRadio.disabled) {
-                    midtransRadio.checked = true;
-                }
-                if (manualRadio) {
-                    manualRadio.disabled = true;
-                }
-                if (paymentProofInput) paymentProofInput.disabled = true;
-                if (showQrisBtn) showQrisBtn.disabled = true;
-
-                toggleMethodUI();
                 validate();
             } else if (pending && pending.needs_force_new) {
                 // Previous order expired/rejected — reset to fresh payment state
