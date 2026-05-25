@@ -1,22 +1,20 @@
-<nav class="navbar navbar-expand-lg border-bottom sticky-top shadow-sm" style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(15px); z-index: 1050; height: 72px;">
+<nav class="navbar navbar-expand-lg border-bottom sticky-top shadow-sm" style="background: #1A1D1F; backdrop-filter: blur(15px); z-index: 1050; height: 72px;">
     <div class="container-fluid px-4">
         <!-- Brand / Identity -->
         <a class="navbar-brand d-flex align-items-center gap-2" href="{{ route('admin.finance.index') }}">
-            <div class="bg-warning rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 32px; height: 32px;">
-                <i class="bi bi-wallet2 text-dark fs-5"></i>
-            </div>
-            <span class="fw-800 text-dark tracking-tighter" style="font-size: 1.25rem; font-family: 'Plus Jakarta Sans', sans-serif;">FINANCE<span class="text-warning">HUB</span></span>
+            <img src="{{ asset('logo-idspora.png') }}" alt="" class="me-2" style="height: 24px;">
+            <span class="fw-800 text-warning tracking-tighter" style="font-size: 1.25rem; font-family: 'Plus Jakarta Sans', sans-serif;">Financial Management System</span>
         </a>
 
         <!-- Divider -->
         <div class="vr mx-3 d-none d-lg-block text-muted opacity-25" style="height: 24px;"></div>
 
-        <!-- Role Badge -->
+        <!-- Role Badge
         <div class="d-none d-md-flex align-items-center me-auto">
             <span class="badge bg-dark-subtle text-dark border rounded-pill px-3 py-2 small fw-bold">
                 <i class="bi bi-shield-lock-fill me-1 text-warning"></i> Admin Financial Access
             </span>
-        </div>
+        </div> -->
 
         <!-- Right Side: User & Quick Actions -->
         <div class="d-flex align-items-center gap-3">
