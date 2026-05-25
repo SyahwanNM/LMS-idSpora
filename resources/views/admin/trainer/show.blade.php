@@ -377,30 +377,37 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Nama Lengkap</label>
-                                    <input type="text" name="name" value="{{ old('name', $trainer->name) }}" class="form-control" required>
+                                    <input type="text" name="name" value="{{ old('name', $trainer->name) }}"
+                                        class="form-control" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Email</label>
-                                    <input type="email" name="email" value="{{ old('email', $trainer->email) }}" class="form-control" required>
+                                    <input type="email" name="email" value="{{ old('email', $trainer->email) }}"
+                                        class="form-control" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">No. WhatsApp</label>
-                                    <input type="text" name="phone" value="{{ old('phone', $trainer->phone) }}" class="form-control">
+                                    <input type="text" name="phone" value="{{ old('phone', $trainer->phone) }}"
+                                        class="form-control">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Profesi</label>
-                                    <input type="text" name="profession" value="{{ old('profession', $trainer->profession) }}" class="form-control">
+                                    <input type="text" name="profession" value="{{ old('profession', $trainer->profession) }}"
+                                        class="form-control">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Institusi</label>
-                                    <input type="text" name="institution" value="{{ old('institution', $trainer->institution) }}" class="form-control">
+                                    <input type="text" name="institution"
+                                        value="{{ old('institution', $trainer->institution) }}" class="form-control">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Website</label>
-                                    <input type="text" name="website" value="{{ old('website', $trainer->website) }}" class="form-control">
+                                    <input type="text" name="website" value="{{ old('website', $trainer->website) }}"
+                                        class="form-control">
                                 </div>
                                 <div class="col-12 d-flex justify-content-end gap-2">
-                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+                                    <a href="{{ route('admin.trainer.show', $trainer) }}"
+                                        class="btn btn-outline-secondary btn-sm">Batal</a>
                                     <button type="submit" class="btn btn-primary btn-sm">Simpan Perubahan</button>
                                 </div>
                             </form>
@@ -466,10 +473,12 @@
                                 <input type="hidden" name="edit_box" value="bio">
                                 <div class="mb-3">
                                     <label class="form-label small fw-semibold">Bio</label>
-                                    <textarea name="bio" rows="6" class="form-control">{{ old('bio', $trainer->bio) }}</textarea>
+                                    <textarea name="bio" rows="6"
+                                        class="form-control">{{ old('bio', $trainer->bio) }}</textarea>
                                 </div>
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+                                    <a href="{{ route('admin.trainer.show', $trainer) }}"
+                                        class="btn btn-outline-secondary btn-sm">Batal</a>
                                     <button type="submit" class="btn btn-primary btn-sm">Simpan Perubahan</button>
                                 </div>
                             </form>
@@ -499,7 +508,8 @@
                             </a>
                         </div>
                         @if($editBox === 'account')
-                            <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST" enctype="multipart/form-data">
+                            <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST"
+                                enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
                                 <input type="hidden" name="edit_box" value="account">
@@ -510,14 +520,16 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label small fw-semibold">Password Baru</label>
-                                    <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak diubah">
+                                    <input type="password" name="password" class="form-control"
+                                        placeholder="Kosongkan jika tidak diubah">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label small fw-semibold">Konfirmasi Password</label>
                                     <input type="password" name="password_confirmation" class="form-control">
                                 </div>
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('admin.trainer.show', $trainer) }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+                                    <a href="{{ route('admin.trainer.show', $trainer) }}"
+                                        class="btn btn-outline-secondary btn-sm">Batal</a>
                                     <button type="submit" class="btn btn-primary btn-sm">Simpan Perubahan</button>
                                 </div>
                             </form>
@@ -559,7 +571,8 @@
                             Aksi Cepat
                         </h5>
                         <div class="d-grid gap-2">
-                            <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'personal']) }}" class="btn btn-edit-large">
+                            <a href="{{ route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'personal']) }}"
+                                class="btn btn-edit-large">
                                 <i class="bi bi-pencil-square me-2"></i>Edit Data Trainer
                             </a>
                             <a href="{{ route('admin.trainer.index') }}" class="btn btn-outline-secondary btn-action-large">
@@ -583,17 +596,6 @@
                             <i class="bi bi-award-fill" style="color: #3949ab;"></i>
                             Sertifikat Trainer (Diterbitkan Admin)
                         </h5>
-
-                        @if(session('success'))
-                            <div class="alert alert-success border-0 shadow-sm">
-                                <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
-                            </div>
-                        @endif
-                        @if(session('error'))
-                            <div class="alert alert-danger border-0 shadow-sm">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
-                            </div>
-                        @endif
 
                         <div class="table-responsive">
                             <table class="table table-sm align-middle">

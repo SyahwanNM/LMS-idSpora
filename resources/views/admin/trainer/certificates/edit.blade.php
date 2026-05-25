@@ -14,22 +14,48 @@
 
     $logos = $assets->where('type', 'logo')->values();
     $signatures = $assets->where('type', 'signature')->values();
+
+    $isCrmSource = !empty($model->certificate_template)
+        || !empty($model->certificate_logo)
+        || !empty($model->certificate_signature);
+
+    $assetUrl = function ($path) {
+        if (!$path) return null;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) return $path;
+
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+        $path = preg_replace('~^public/~i', '', $path) ?? $path;
+        $path = preg_replace('~^storage/app/public/~i', '', $path) ?? $path;
+
+        if (str_starts_with($path, 'storage/')) return asset($path);
+        if (str_starts_with($path, 'uploads/')) return asset($path);
+
+        $storageUrl = Storage::disk('public')->url($path);
+        if (file_exists(public_path('storage/' . $path))) return $storageUrl;
+
+        if (file_exists(public_path('uploads/' . $path))) return asset('uploads/' . $path);
+        if (file_exists(public_path($path))) return asset($path);
+
+        return $storageUrl;
+    };
 @endphp
 
 @push('admin-trainer-styles')
 <style>
     :root {
         --cert-primary: #2f3fcb;
+        --cert-primary-soft: #eef1ff;
         --cert-navy: #1a237e;
-        --cert-soft: #eef1ff;
         --cert-border: #e6eaf2;
         --cert-muted: #6b7a99;
-        --cert-bg: #f8fafc;
-        --cert-danger: #e11d48;
+        --cert-danger: #ef4444;
+        --cert-danger-soft: #fff1f2;
     }
 
-    .cert-edit-page { width: 100%; }
-    .cert-edit-page * { box-sizing: border-box; }
+    .cert-edit-page,
+    .cert-edit-page * {
+        box-sizing: border-box;
+    }
 
     .cert-breadcrumb {
         display: flex;
@@ -38,6 +64,7 @@
         margin-bottom: 18px;
         font-size: 13px;
         color: #718096;
+        flex-wrap: wrap;
     }
 
     .back-btn {
@@ -51,7 +78,6 @@
         align-items: center;
         justify-content: center;
         text-decoration: none;
-        flex-shrink: 0;
     }
 
     .cert-hero {
@@ -116,7 +142,21 @@
         color: rgba(255,255,255,.95);
     }
 
-    .config-card {
+    .crm-source-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.18);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        margin-top: 14px;
+    }
+
+    .config-card,
+    .side-panel {
         background: #fff;
         border: 1px solid var(--cert-border);
         border-radius: 22px;
@@ -127,19 +167,17 @@
     .config-section {
         padding: 28px 30px;
         border-bottom: 1px solid var(--cert-border);
-        text-align: left !important;
     }
 
-    .config-section:last-child { border-bottom: 0; }
+    .config-section:last-child {
+        border-bottom: 0;
+    }
 
     .cert-step-header {
-        display: flex !important;
-        justify-content: flex-start !important;
-        align-items: flex-start !important;
-        gap: 16px !important;
-        width: 100% !important;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
         margin-bottom: 22px;
-        text-align: left !important;
     }
 
     .cert-step-badge {
@@ -154,13 +192,6 @@
         align-items: center;
         justify-content: center;
         box-shadow: 0 8px 18px rgba(47,63,203,.25);
-        flex-shrink: 0;
-    }
-
-    .cert-step-text {
-        flex: 1;
-        min-width: 0;
-        text-align: left !important;
     }
 
     .cert-section-title {
@@ -168,9 +199,6 @@
         font-weight: 900;
         color: #0f172a;
         margin: 0 0 4px;
-        text-transform: none;
-        letter-spacing: 0;
-        text-align: left !important;
         line-height: 1.3;
     }
 
@@ -178,11 +206,12 @@
         font-size: 13px;
         color: var(--cert-muted);
         margin: 0;
-        text-align: left !important;
         line-height: 1.45;
     }
 
-    .section-content { padding-left: 54px; }
+    .section-content {
+        padding-left: 54px;
+    }
 
     .template-grid {
         display: grid;
@@ -195,7 +224,9 @@
         display: block;
     }
 
-    .template-option input { display: none; }
+    .template-option input {
+        display: none;
+    }
 
     .template-card {
         border: 1px solid var(--cert-border);
@@ -346,9 +377,7 @@
         gap: 16px;
     }
 
-    .logo-card,
-    .add-card {
-        min-height: 92px;
+    .upload-box {
         border-radius: 14px;
         border: 1px dashed #cbd5e1;
         background: #fff;
@@ -358,15 +387,70 @@
         align-items: center;
         justify-content: center;
         text-align: center;
+        cursor: pointer;
+        overflow: hidden;
+        transition: .2s ease;
     }
 
-    .logo-card img {
+    .upload-box:hover {
+        border-color: var(--cert-primary);
+        background: #fbfcff;
+    }
+
+    .upload-box.has-preview {
+        border-style: solid;
+        border-color: #dbe3ef;
+        background: #fff;
+    }
+
+    .logo-card {
+        min-height: 92px;
+    }
+
+    .signature-upload-area {
+        height: 76px;
+        min-height: 76px;
+        margin-bottom: 10px;
+    }
+
+    .upload-preview {
         max-width: 100%;
-        max-height: 48px;
+        max-height: 58px;
         object-fit: contain;
+        display: block;
+        pointer-events: none;
     }
 
-    .remove-btn {
+    .logo-card .upload-preview {
+        max-height: 52px;
+    }
+
+    .preview-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: var(--cert-primary);
+        pointer-events: none;
+    }
+
+    .preview-placeholder i {
+        font-size: 24px;
+    }
+
+    .preview-placeholder span {
+        font-size: 12px;
+        font-weight: 900;
+        color: #0f172a;
+    }
+
+    .preview-placeholder small {
+        font-size: 11px;
+        color: var(--cert-muted);
+    }
+
+    .preview-close {
         position: absolute;
         top: 8px;
         right: 8px;
@@ -377,45 +461,21 @@
         padding: 0;
         border: 0;
         border-radius: 50%;
-        background: #fff1f2;
+        background: var(--cert-danger-soft);
         color: var(--cert-danger);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         line-height: 1;
-        font-size: 14px;
-        box-shadow: 0 4px 10px rgba(225, 29, 72, 0.12);
+        font-size: 12px;
+        box-shadow: 0 4px 10px rgba(239, 68, 68, .14);
         cursor: pointer;
         z-index: 5;
     }
 
-    .remove-btn:hover {
+    .preview-close:hover {
         background: var(--cert-danger);
         color: #fff;
-    }
-
-    .add-card {
-        cursor: pointer;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .add-card input { display: none; }
-
-    .add-card i {
-        font-size: 24px;
-        color: var(--cert-primary);
-    }
-
-    .add-card span {
-        font-size: 12px;
-        font-weight: 900;
-        color: #0f172a;
-    }
-
-    .add-card small {
-        font-size: 11px;
-        color: var(--cert-muted);
     }
 
     .signature-grid {
@@ -430,54 +490,7 @@
         background: #fff;
         padding: 14px;
         position: relative;
-        min-height: 170px;
-    }
-
-    .signature-preview {
-        height: 64px;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .signature-preview img {
-        max-height: 58px;
-        max-width: 100%;
-        object-fit: contain;
-    }
-
-    .signature-add-box {
-        width: 100%;
-        height: 64px;
-        border: 1px dashed #cbd5e1;
-        border-radius: 12px;
-        background: #f8fafc;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 2px;
-        cursor: pointer;
-        text-align: center;
-    }
-
-    .signature-add-box input { display: none; }
-
-    .signature-add-box i {
-        font-size: 18px;
-        color: var(--cert-primary);
-    }
-
-    .signature-add-box span {
-        font-size: 12px;
-        font-weight: 900;
-        color: #0f172a;
-    }
-
-    .signature-add-box small {
-        font-size: 10px;
-        color: var(--cert-muted);
+        min-height: 190px;
     }
 
     .signature-input {
@@ -491,16 +504,13 @@
     }
 
     .side-panel {
-        background: #fff;
-        border: 1px solid var(--cert-border);
-        border-radius: 22px;
-        overflow: hidden;
-        box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
         position: sticky;
         top: 96px;
     }
 
-    .side-content { padding: 24px; }
+    .side-content {
+        padding: 24px;
+    }
 
     .guide-title {
         font-size: 16px;
@@ -527,7 +537,7 @@
         width: 34px;
         height: 34px;
         border-radius: 10px;
-        background: #eef1ff;
+        background: var(--cert-primary-soft);
         color: var(--cert-primary);
         display: flex;
         align-items: center;
@@ -572,11 +582,6 @@
         margin: 14px 0 0;
     }
 
-    .marked-remove {
-        opacity: .35;
-        pointer-events: none;
-    }
-
     @media (max-width: 1200px) {
         .template-grid,
         .logo-grid,
@@ -586,8 +591,9 @@
     }
 
     @media (max-width: 768px) {
-        .section-content { padding-left: 0; }
-        .cert-step-header { gap: 12px !important; }
+        .section-content {
+            padding-left: 0;
+        }
 
         .template-grid,
         .logo-grid,
@@ -595,7 +601,13 @@
             grid-template-columns: 1fr;
         }
 
-        .cert-hero { padding: 26px; }
+        .cert-hero {
+            padding: 26px;
+        }
+
+        .cert-hero h1 {
+            font-size: 24px;
+        }
     }
 </style>
 @endpush
@@ -611,31 +623,13 @@
         <strong class="text-primary">Kelola Template</strong>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4">
-            <strong>Gagal menyimpan konfigurasi:</strong>
-            <ul class="mb-0 mt-2">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     <form method="POST"
-        action="{{ route('admin.trainer.certificates.update', [
-            'trainer' => $trainer->id,
-            'context' => $context,
-            'id' => $model->id,
-        ]) }}"
-        enctype="multipart/form-data">
+          action="{{ route('admin.trainer.certificates.update', [
+              'trainer' => $trainer->id,
+              'context' => $context,
+              'id' => $model->id,
+          ]) }}"
+          enctype="multipart/form-data">
         @csrf
 
         <div id="removeAssetsContainer"></div>
@@ -650,6 +644,13 @@
                             {{ strtoupper($context) }}: {{ $modelTitle }}<br>
                             Trainer: {{ $trainer->name }}
                         </p>
+
+                        @if($isCrmSource)
+                            <div class="crm-source-badge">
+                                <i class="bi bi-shield-check"></i>
+                                Aset sertifikat mengikuti data CRM
+                            </div>
+                        @endif
                     </div>
                 </section>
 
@@ -657,12 +658,9 @@
                     <section class="config-section">
                         <div class="cert-step-header">
                             <div class="cert-step-badge">1</div>
-
-                            <div class="cert-step-text">
+                            <div>
                                 <h5 class="cert-section-title">Pilih Template Desain</h5>
-                                <p class="cert-section-subtitle">
-                                    Pilih desain template sertifikat yang akan digunakan
-                                </p>
+                                <p class="cert-section-subtitle">Pilih desain template sertifikat yang akan digunakan</p>
                             </div>
                         </div>
 
@@ -675,9 +673,9 @@
                                 ] as $value => $data)
                                     <label class="template-option">
                                         <input type="radio"
-                                            name="certificate_template"
-                                            value="{{ $value }}"
-                                            {{ $selectedTemplate === $value ? 'checked' : '' }}>
+                                               name="certificate_template"
+                                               value="{{ $value }}"
+                                               {{ $selectedTemplate === $value ? 'checked' : '' }}>
 
                                         <div class="template-card">
                                             <div class="template-check">
@@ -692,9 +690,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="template-name">
-                                                {{ $data[0] }}
-                                            </div>
+                                            <div class="template-name">{{ $data[0] }}</div>
                                         </div>
                                     </label>
                                 @endforeach
@@ -705,8 +701,7 @@
                     <section class="config-section">
                         <div class="cert-step-header">
                             <div class="cert-step-badge">2</div>
-
-                            <div class="cert-step-text">
+                            <div>
                                 <h5 class="cert-section-title">Upload Logo Partner</h5>
                                 <p class="cert-section-subtitle">
                                     Upload logo partner atau sponsor yang akan ditampilkan di sertifikat
@@ -717,27 +712,37 @@
                         <div class="section-content">
                             <div class="logo-grid">
                                 @foreach($logos as $logo)
-                                    <div class="logo-card">
+                                    <div class="logo-card upload-box has-preview" data-asset-id="{{ $logo->id }}">
                                         <button type="button"
-                                            class="remove-btn"
-                                            onclick="markRemoveAsset(this, '{{ $logo->id }}')">
-                                            <i class="bi bi-x"></i>
+                                                class="preview-close"
+                                                data-asset-id="{{ $logo->id }}">
+                                            <i class="bi bi-x-lg"></i>
                                         </button>
 
-                                        <img src="{{ asset('storage/' . $logo->image_path) }}" alt="Logo">
+                                        <img src="{{ $assetUrl($logo->image_path) }}"
+                                             alt="Logo"
+                                             class="upload-preview">
+
+                                        <input type="file"
+                                               name="certificate_logo[]"
+                                               accept=".jpg,.jpeg,.png,.webp,.svg"
+                                               hidden>
                                     </div>
                                 @endforeach
-<<<<<<< HEAD
 
                                 @for($i = $logos->count(); $i < 3; $i++)
-                                    <label class="add-card">
+                                    <div class="logo-card upload-box">
                                         <input type="file"
-                                            name="certificate_logo[]"
-                                            accept=".jpg,.jpeg,.png,.webp,.svg">
-                                        <i class="bi bi-plus-lg"></i>
-                                        <span>Tambah Logo</span>
-                                        <small>Maks. 3 logo</small>
-                                    </label>
+                                               name="certificate_logo[]"
+                                               accept=".jpg,.jpeg,.png,.webp,.svg"
+                                               hidden>
+
+                                        <div class="preview-placeholder">
+                                            <i class="bi bi-plus-lg"></i>
+                                            <span>Tambah Logo</span>
+                                            <small>Maks. 3 logo</small>
+                                        </div>
+                                    </div>
                                 @endfor
                             </div>
                         </div>
@@ -746,8 +751,7 @@
                     <section class="config-section">
                         <div class="cert-step-header">
                             <div class="cert-step-badge">3</div>
-
-                            <div class="cert-step-text">
+                            <div>
                                 <h5 class="cert-section-title">Upload Tanda Tangan</h5>
                                 <p class="cert-section-subtitle">
                                     Upload tanda tangan dan isi nama serta jabatan penandatangan
@@ -762,41 +766,44 @@
                                         $signature = $signatures->get($i);
                                     @endphp
 
-                                    <div class="signature-card">
-                                        @if($signature)
-                                            <button type="button"
-                                                class="remove-btn"
-                                                onclick="markRemoveAsset(this, '{{ $signature->id }}')">
-                                                <i class="bi bi-x"></i>
-                                            </button>
-                                        @endif
-
-                                        <div class="signature-preview">
+                                    <div class="signature-card" data-index="{{ $i }}">
+                                        <div class="signature-upload-area upload-box {{ $signature ? 'has-preview' : '' }}"
+                                             @if($signature) data-asset-id="{{ $signature->id }}" @endif>
                                             @if($signature)
-                                                <img src="{{ asset('storage/' . $signature->image_path) }}" alt="Signature">
+                                                <button type="button"
+                                                        class="preview-close"
+                                                        data-asset-id="{{ $signature->id }}">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+
+                                                <img src="{{ $assetUrl($signature->image_path) }}"
+                                                     alt="Signature"
+                                                     class="upload-preview">
                                             @else
-                                                <label class="signature-add-box">
-                                                    <input type="file"
-                                                        name="certificate_signature_file[{{ $i }}]"
-                                                        accept=".jpg,.jpeg,.png,.webp,.svg">
+                                                <div class="preview-placeholder">
                                                     <i class="bi bi-plus-lg"></i>
                                                     <span>Tambah TTD</span>
                                                     <small>Maks. 3</small>
-                                                </label>
+                                                </div>
                                             @endif
+
+                                            <input type="file"
+                                                   name="certificate_signature_file[{{ $i }}]"
+                                                   accept=".jpg,.jpeg,.png,.webp,.svg"
+                                                   hidden>
                                         </div>
 
                                         <input type="text"
-                                            name="signature_name[{{ $i }}]"
-                                            class="signature-input"
-                                            placeholder="Nama Lengkap"
-                                            value="{{ old("signature_name.$i", $signature?->name) }}">
+                                               name="signature_name[{{ $i }}]"
+                                               class="signature-input"
+                                               placeholder="Nama Lengkap"
+                                               value="{{ old("signature_name.$i", $signature?->name) }}">
 
                                         <input type="text"
-                                            name="signature_position[{{ $i }}]"
-                                            class="signature-input"
-                                            placeholder="Jabatan"
-                                            value="{{ old("signature_position.$i", $signature?->position) }}">
+                                               name="signature_position[{{ $i }}]"
+                                               class="signature-input"
+                                               placeholder="Jabatan"
+                                               value="{{ old("signature_position.$i", $signature?->position) }}">
                                     </div>
                                 @endfor
                             </div>
@@ -814,7 +821,9 @@
                         </p>
 
                         <div class="guide-item">
-                            <div class="guide-icon"><i class="bi bi-file-earmark-text"></i></div>
+                            <div class="guide-icon">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
                             <div>
                                 <h6>Template Desain</h6>
                                 <p>Pilih salah satu template sertifikat yang tersedia.</p>
@@ -822,7 +831,9 @@
                         </div>
 
                         <div class="guide-item">
-                            <div class="guide-icon"><i class="bi bi-image"></i></div>
+                            <div class="guide-icon">
+                                <i class="bi bi-image"></i>
+                            </div>
                             <div>
                                 <h6>Logo Partner</h6>
                                 <p>Format PNG/JPG/SVG, ukuran maksimal 2MB, maksimal 3 logo.</p>
@@ -830,7 +841,9 @@
                         </div>
 
                         <div class="guide-item">
-                            <div class="guide-icon"><i class="bi bi-pen"></i></div>
+                            <div class="guide-icon">
+                                <i class="bi bi-pen"></i>
+                            </div>
                             <div>
                                 <h6>Tanda Tangan</h6>
                                 <p>Gunakan PNG transparan agar hasil sertifikat terlihat rapi.</p>
@@ -857,185 +870,142 @@
 
 @push('admin-trainer-scripts')
 <script>
-    function markRemoveAsset(button, assetId) {
-        if (!assetId) return;
+document.addEventListener('DOMContentLoaded', function () {
+    const removeAssetsContainer = document.getElementById('removeAssetsContainer');
 
-        if (!confirm('Hapus aset ini?')) {
-            return;
-        }
+    function addRemoveAssetInput(assetId) {
+        if (!assetId || !removeAssetsContainer) return;
 
-        const container = document.getElementById('removeAssetsContainer');
+        const exists = removeAssetsContainer.querySelector(`input[name="remove_assets[]"][value="${assetId}"]`);
+        if (exists) return;
+
         const input = document.createElement('input');
-
         input.type = 'hidden';
         input.name = 'remove_assets[]';
         input.value = assetId;
 
-        container.appendChild(input);
-
-        const card = button.closest('.logo-card') || button.closest('.signature-card');
-
-        if (card) {
-            card.classList.add('marked-remove');
-        }
+        removeAssetsContainer.appendChild(input);
     }
+
+    function getBoxType(box) {
+        return box.classList.contains('logo-card') ? 'logo' : 'signature';
+    }
+
+    function makePlaceholder(box) {
+        const type = getBoxType(box);
+
+        const placeholder = document.createElement('div');
+        placeholder.className = 'preview-placeholder';
+        placeholder.innerHTML = `
+            <i class="bi bi-plus-lg"></i>
+            <span>${type === 'logo' ? 'Tambah Logo' : 'Tambah TTD'}</span>
+            <small>${type === 'logo' ? 'Maks. 3 logo' : 'Maks. 3'}</small>
+        `;
+
+        box.appendChild(placeholder);
+    }
+
+    function clearBox(box, assetId = null) {
+        if (assetId) {
+            addRemoveAssetInput(assetId);
+        }
+
+        const preview = box.querySelector('.upload-preview');
+        const closeBtn = box.querySelector('.preview-close');
+        const placeholder = box.querySelector('.preview-placeholder');
+        const input = box.querySelector('input[type="file"]');
+
+        if (preview) preview.remove();
+        if (closeBtn) closeBtn.remove();
+        if (placeholder) placeholder.remove();
+
+        if (input) {
+            input.value = '';
+        }
+
+        box.classList.remove('has-preview');
+        makePlaceholder(box);
+    }
+
+    function setPreview(input) {
+        if (!input.files || !input.files[0]) return;
+
+        const box = input.closest('.upload-box');
+        if (!box) return;
+
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+            const oldPreview = box.querySelector('.upload-preview');
+            const oldPlaceholder = box.querySelector('.preview-placeholder');
+            const oldClose = box.querySelector('.preview-close');
+
+            if (oldPreview) oldPreview.remove();
+            if (oldPlaceholder) oldPlaceholder.remove();
+            if (oldClose) oldClose.remove();
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'preview-close';
+            closeBtn.innerHTML = '<i class="bi bi-x-lg"></i>';
+
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            img.className = 'upload-preview';
+            img.alt = 'Preview';
+
+            box.prepend(img);
+            box.prepend(closeBtn);
+            box.classList.add('has-preview');
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    document.addEventListener('click', function (event) {
+        const closeBtn = event.target.closest('.preview-close');
+
+        if (closeBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const box = closeBtn.closest('.upload-box');
+            const assetId = closeBtn.dataset.assetId;
+
+            if (box) {
+                clearBox(box, assetId);
+            }
+
+            return;
+        }
+
+        const box = event.target.closest('.upload-box');
+
+        if (!box) return;
+
+        if (
+            event.target.closest('button') ||
+            event.target.closest('input') ||
+            event.target.closest('textarea')
+        ) {
+            return;
+        }
+
+        const input = box.querySelector('input[type="file"]');
+
+        if (input) {
+            input.click();
+        }
+    });
+
+    document.addEventListener('change', function (event) {
+        const input = event.target;
+
+        if (!input.matches('input[type="file"]')) return;
+
+        setPreview(input);
+    });
+});
 </script>
 @endpush
-=======
-                            </div>
-
-                            <div class="smaller text-muted">
-                                <i class="bi bi-info-circle me-1"></i>Gunakan PNG transparan untuk hasil terbaik. Maksimal 3 tanda tangan.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex justify-content-end gap-3">
-                <button type="submit"
-                        class="btn btn-navy px-5"
-                        style="background: var(--crm-navy); color: white;">
-                    Simpan Konfigurasi
-                </button>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card-minimal h-100 p-4">
-                <h6 class="fw-bold text-navy mb-3">Panduan & Syarat Aset</h6>
-
-                <div class="d-flex align-items-start mb-3">
-                    <div class="me-3 text-primary"><i class="bi bi-info-circle fs-4"></i></div>
-                    <div class="smaller text-muted">
-                        <b>Format File:</b> Mendukung JPG, JPEG, PNG, WEBP, dan SVG.
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-start mb-3">
-                    <div class="me-3 text-danger"><i class="bi bi-hdd fs-4"></i></div>
-                    <div class="smaller text-muted">
-                        <b>Ukuran Maksimal:</b> 2MB per file.
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-start mb-3">
-                    <div class="me-3 text-warning"><i class="bi bi-layers fs-4"></i></div>
-                    <div class="smaller text-muted">
-                        <b>Jumlah Maksimal:</b> Maksimal 3 Logo Partner dan 3 Tanda Tangan.
-                    </div>
-                </div>
-
-                <div class="alert alert-warning border-0 smaller py-3">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Konfigurasi ini khusus sertifikat trainer pada kegiatan ini.
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
-@endsection
-
-@section('scripts')
-<script>
-    function selectTemplate(id, element) {
-        document.querySelectorAll('.template-card').forEach(el => el.classList.remove('active'));
-        element.classList.add('active');
-        document.getElementById('selected_template').value = id;
-    }
-
-    function previewNewAsset(input) {
-        const file = input.files[0];
-
-        if (file) {
-            let preview = input.parentElement.querySelector('.new-asset-preview');
-
-            if (!preview) {
-                preview = document.createElement('img');
-                preview.className = 'new-asset-preview mt-2';
-                preview.style.cssText = 'height:40px; border-radius:4px; border:1px solid #e2e8f0; object-fit:contain; background:white; padding:2px;';
-                input.parentElement.appendChild(preview);
-            }
-
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-            }
-
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function addLogoField() {
-        const container = document.getElementById('logoUploadContainer');
-        const currentInputs = container.querySelectorAll('input[type="file"]').length;
-        const existingLogos = document.querySelectorAll('.logo-item-wrapper').length;
-
-        if ((currentInputs + existingLogos) >= 3) {
-            alert('Maksimal 3 logo.');
-            return;
-        }
-
-        const div = document.createElement('div');
-        div.className = 'd-flex gap-2 mb-2';
-
-        div.innerHTML = `
-            <div class="d-flex flex-column gap-1 w-100">
-                <input type="file" name="certificate_logo[]" class="form-control form-control-sm" accept="image/*" onchange="previewNewAsset(this)">
-            </div>
-            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.remove();">
-                <i class="bi bi-trash"></i>
-            </button>
-        `;
-
-        container.appendChild(div);
-    }
-
-    let sigIndex = {{ $sigs->count() }};
-
-    function addSignatureField() {
-        const container = document.getElementById('signaturesContainer');
-        const existing = container.querySelectorAll('.sig-entry').length;
-
-        if (existing >= 3) {
-            alert('Maksimal 3 tanda tangan.');
-            return;
-        }
-
-        const idx = sigIndex++;
-
-        const div = document.createElement('div');
-        div.className = 'sig-entry card border mb-3 p-3';
-        div.style.cssText = 'background:#f8fafc;border-radius:10px;';
-
-        div.innerHTML = `
-            <div class="row g-3 align-items-center">
-                <div class="col-md-4">
-                    <label class="form-label smaller text-muted mb-1">Gambar TTD</label>
-                    <input type="file" name="certificate_signature_file[${idx}]" class="form-control form-control-sm" accept="image/*" onchange="previewNewAsset(this)">
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label smaller text-muted mb-1">Nama Penandatangan</label>
-                    <input type="text" name="signature_name[${idx}]" class="form-control form-control-sm" placeholder="cth: Dr. Ahmad Fauzi">
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label smaller text-muted mb-1">Jabatan</label>
-                    <input type="text" name="signature_position[${idx}]" class="form-control form-control-sm" placeholder="cth: Direktur Utama">
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="this.closest('.sig-entry').remove()">
-                        <i class="bi bi-trash"></i> Hapus
-                    </button>
-                </div>
-            </div>
-        `;
-
-        container.appendChild(div);
-    }
-</script>
-@endsection
->>>>>>> 227a9f6 (revisi layout trainer)

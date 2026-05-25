@@ -221,22 +221,6 @@
                 </div>
             </div>
 
-            @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm">
-                    <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
-                </div>
-            @endif
-            @if(session('info'))
-                <div class="alert alert-info border-0 shadow-sm">
-                    <i class="bi bi-info-circle-fill me-2"></i>{{ session('info') }}
-                </div>
-            @endif
-
             <div class="row g-4">
                 <div class="col-12">
                     <div class="card panel-card">

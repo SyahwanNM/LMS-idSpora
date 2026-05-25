@@ -205,6 +205,85 @@
             border-color: #eef2f7;
         }
 
+        .admin-trainer-toast-container {
+            position: fixed;
+            top: 90px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 360px;
+        }
+
+        .admin-trainer-toast {
+            background: #fff;
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            animation: trainerToastIn 0.2s ease-out;
+        }
+
+        .admin-trainer-toast.success {
+            border-left: 4px solid #22c55e;
+        }
+
+        .admin-trainer-toast.error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .admin-trainer-toast.info {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .admin-trainer-toast .toast-icon {
+            font-size: 18px;
+            margin-top: 2px;
+        }
+
+        .admin-trainer-toast .toast-body {
+            flex: 1;
+        }
+
+        .admin-trainer-toast .toast-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .admin-trainer-toast .toast-message {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .admin-trainer-toast .toast-close {
+            border: 0;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 12px;
+            padding: 2px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        @keyframes trainerToastIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         @media (max-width: 991.98px) {
             .admin-trainer-wrapper {
                 display: block;
@@ -264,6 +343,58 @@
                 Menu Admin Trainer
             </button>
 
+            <div class="admin-trainer-toast-container" id="adminTrainerToastContainer">
+                @if(session('success'))
+                    <div class="admin-trainer-toast success">
+                        <div class="toast-icon text-success"><i class="bi bi-check-circle-fill"></i></div>
+                        <div class="toast-body">
+                            <div class="toast-title">Berhasil</div>
+                            <div class="toast-message">{{ session('success') }}</div>
+                        </div>
+                        <button class="toast-close" type="button" aria-label="Close">&times;</button>
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div class="admin-trainer-toast error">
+                        <div class="toast-icon text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                        <div class="toast-body">
+                            <div class="toast-title">Gagal</div>
+                            <div class="toast-message">{{ session('error') }}</div>
+                        </div>
+                        <button class="toast-close" type="button" aria-label="Close">&times;</button>
+                    </div>
+                @endif
+
+                @if(session('info'))
+                    <div class="admin-trainer-toast info">
+                        <div class="toast-icon text-primary"><i class="bi bi-info-circle-fill"></i></div>
+                        <div class="toast-body">
+                            <div class="toast-title">Informasi</div>
+                            <div class="toast-message">{{ session('info') }}</div>
+                        </div>
+                        <button class="toast-close" type="button" aria-label="Close">&times;</button>
+                    </div>
+                @endif
+
+                @if($errors->any())
+                    <div class="admin-trainer-toast error">
+                        <div class="toast-icon text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                        <div class="toast-body">
+                            <div class="toast-title">Terdapat kesalahan</div>
+                            <div class="toast-message">
+                                <ul class="mb-0 ps-3">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                        <button class="toast-close" type="button" aria-label="Close">&times;</button>
+                    </div>
+                @endif
+            </div>
+
             @yield('admin-trainer-content')
         </main>
     </div>
@@ -272,5 +403,25 @@
 @endsection
 
 @section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const container = document.getElementById('adminTrainerToastContainer');
+            if (!container) return;
+
+            const toasts = Array.from(container.querySelectorAll('.admin-trainer-toast'));
+            toasts.forEach((toast) => {
+                const closeBtn = toast.querySelector('.toast-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => toast.remove());
+                }
+
+                setTimeout(() => {
+                    if (toast && toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 4500);
+            });
+        });
+    </script>
     @stack('admin-trainer-scripts')
 @endsection

@@ -995,20 +995,6 @@
 
         <main class="material-main">
 
-            {{-- Flash Messages --}}
-            @if(session('error'))
-                <div class="alert alert-danger border-0 rounded-3 mb-4 d-flex align-items-center gap-2 py-3">
-                    <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-                    <div>{{ session('error') }}</div>
-                </div>
-            @endif
-            @if(session('success'))
-                <div class="alert alert-success border-0 rounded-3 mb-4 d-flex align-items-center gap-2 py-3">
-                    <i class="bi bi-check-circle-fill text-success"></i>
-                    <div>{{ session('success') }}</div>
-                </div>
-            @endif
-
             {{-- Page Header --}}
             <div class="page-header mb-4">
                 <a href="{{ route('admin.trainer.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
@@ -1112,11 +1098,11 @@
                                 <div
                                     style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:{{ $loop->first ? '0' : '24px' }};">
                                     <span style="
-                                                    display:inline-flex;align-items:center;gap:6px;
-                                                    background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
-                                                    color:{{ $unitColor['text'] }};border-radius:8px;
-                                                    padding:4px 12px;font-size:0.78rem;font-weight:700;
-                                                ">
+                                                            display:inline-flex;align-items:center;gap:6px;
+                                                            background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
+                                                            color:{{ $unitColor['text'] }};border-radius:8px;
+                                                            padding:4px 12px;font-size:0.78rem;font-weight:700;
+                                                        ">
                                         <i class="bi {{ $unitColor['icon'] }}" style="font-size:0.75rem;"></i>
                                         {{ $unit['unit_label'] }}
                                     </span>
@@ -1540,9 +1526,9 @@
                         `<div class="quiz-preview-answer ${a.is_correct ? 'is-correct' : ''}">${escapeHtml(a.text || '-')}</div>`
                     ).join('');
                     return `<div class="quiz-preview-item">
-                                <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
-                                <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
-                            </div>`;
+                                    <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
+                                    <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
+                                </div>`;
                 }).join('');
                 return `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
             }
