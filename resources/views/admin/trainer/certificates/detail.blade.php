@@ -12,6 +12,7 @@
     $trainerName = $trainer?->name ?? '-';
     $issuedDate = $certificate?->issued_at ?? $certificate?->created_at;
     $programType = $model ? class_basename(get_class($model)) : '-';
+    $context = $model && strtolower(class_basename(get_class($model))) === 'course' ? 'course' : 'event';
 
     $templateAsset = $assets->where('type', 'template')->first();
     $templateName = $templateAsset?->name
@@ -20,6 +21,21 @@
 
     $logos = $assets->where('type', 'logo')->values();
     $signatures = $assets->where('type', 'signature')->values();
+
+    if ($model && \Route::has('certificates.events.download') && \Route::has('certificates.courses.download')) {
+        $downloadUrl = $context === 'course'
+            ? route('certificates.courses.download', $model)
+            : route('certificates.events.download', $model);
+    } else {
+        $downloadUrl = route('admin.trainer.certificates.detail', [
+            'certificate' => $certificate->id,
+        ]);
+    }
+
+    $fullPreviewUrl = route('admin.trainer.certificates.detail', [
+        'certificate' => $certificate->id,
+        'full' => 1,
+    ]);
 
     $assetUrl = function (?string $path): ?string {
         if (!$path) {
@@ -58,6 +74,8 @@
 
 @push('admin-trainer-styles')
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
         :root {
             --cert-primary: #2f3fcb;
             --cert-primary-2: #4858db;
@@ -70,6 +88,8 @@
 
         .detail-page {
             width: 100%;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
         }
 
         .detail-breadcrumb {
@@ -155,7 +175,7 @@
 
         .detail-hero h1 {
             font-size: 32px;
-            font-weight: 900;
+            font-weight: 700;
             margin: 0 0 12px;
             letter-spacing: -.6px;
         }
@@ -183,9 +203,10 @@
 
         .section-title {
             font-size: 17px;
-            font-weight: 900;
+            font-weight: 700;
             color: #0f172a;
-            margin-bottom: 18px;
+            margin: 5px;
+            padding-top: 0px;
         }
 
         .certificate-preview-wrap {
@@ -243,6 +264,7 @@
             letter-spacing: 4px;
             margin: 6px 0 8px;
             text-transform: uppercase;
+            font-weight: 700;
         }
 
         .tpl-subtitle {
@@ -250,13 +272,13 @@
             text-transform: uppercase;
             letter-spacing: 3px;
             color: #fbbf24;
-            font-weight: 800;
+            font-weight: 600;
             margin-bottom: 8px;
         }
 
         .tpl-name {
             font-size: 34px;
-            font-weight: 800;
+            font-weight: 700;
             margin: 8px 0;
             font-family: 'Times New Roman', serif;
         }
@@ -388,7 +410,7 @@
             border: 1px solid #dbe3ef;
             background: #fff;
             color: #334155;
-            font-weight: 800;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -422,7 +444,7 @@
             background: #f8fafc;
             color: #6b7a99;
             font-size: 11px;
-            font-weight: 900;
+            font-weight: 700;
             text-transform: uppercase;
             padding: 13px 16px;
         }
@@ -443,7 +465,7 @@
             border-radius: 999px;
             padding: 5px 10px;
             font-size: 11px;
-            font-weight: 900;
+            font-weight: 600;
         }
 
         .action-eye {
@@ -469,15 +491,20 @@
 
         .side-title {
             font-size: 17px;
-            font-weight: 900;
+            font-weight: 700;
             color: var(--cert-primary);
             margin-bottom: 18px;
         }
 
-        .info-item,
+        .info-item {
+            flex-direction: row;
+            justify-content: flex-start;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
         .asset-item {
             display: flex;
-            align-items: flex-start;
             gap: 14px;
             margin-bottom: 20px;
         }
@@ -489,8 +516,10 @@
 
         .info-icon,
         .asset-icon {
-            width: 34px;
-            height: 34px;
+            width: 40px;
+            height: auto;
+            align-self: stretch;
+            min-height: 34px;
             border-radius: 10px;
             background: #eef1ff;
             color: var(--cert-primary);
@@ -503,7 +532,7 @@
         .info-label,
         .asset-label {
             font-size: 13px;
-            font-weight: 900;
+            font-weight: 600;
             color: #0f172a;
             margin-bottom: 5px;
         }
@@ -513,6 +542,7 @@
             font-size: 13px;
             color: #64748b;
             line-height: 1.4;
+            font-weight: 500;
         }
 
         .asset-row {
@@ -529,7 +559,7 @@
             border-radius: 999px;
             padding: 4px 9px;
             font-size: 10px;
-            font-weight: 900;
+            font-weight: 600;
             white-space: nowrap;
         }
 
@@ -546,7 +576,7 @@
             background: linear-gradient(135deg, #2f3fcb, #2636bd);
             color: #fff;
             text-decoration: none;
-            font-weight: 900;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -635,7 +665,7 @@
                 </section>
 
                 <section class="preview-card">
-                    <h5 class="section-title">Preview Sertifikat</h5>
+                    <h5 class="section-title mb-3">Preview Sertifikat</h5>
 
                     <div class="certificate-preview-wrap">
                         <div class="certificate-preview {{ $templateName }}">
@@ -767,18 +797,6 @@
                             @endif
                         </div>
                     </div>
-
-                    <div class="preview-actions">
-                        <a href="#" class="btn-preview-action">
-                            <i class="bi bi-download"></i>
-                            Download Sertifikat
-                        </a>
-
-                        <a href="#" class="btn-preview-action primary-soft">
-                            <i class="bi bi-arrows-fullscreen"></i>
-                            Pratinjau Penuh
-                        </a>
-                    </div>
                 </section>
 
                 <section class="history-card">
@@ -810,9 +828,9 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="action-eye">
+                                        <a href="{{ $fullPreviewUrl }}" class="action-eye">
                                             <i class="bi bi-eye"></i>
-                                        </button>
+                                        </a>
                                     </td>
                                 </tr>
                             </tbody>

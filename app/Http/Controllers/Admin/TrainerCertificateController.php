@@ -334,12 +334,16 @@ class TrainerCertificateController extends Controller
             DB::commit();
 
             $certificate = $this->ensureCertificate($trainer, $model, $context);
+            $certificate->update([
+                'status' => 'published',
+                'issued_at' => now(),
+            ]);
 
             return redirect()
                 ->route('admin.trainer.certificates.detail', [
                     'certificate' => $certificate->id,
                 ])
-                ->with('success', 'Konfigurasi sertifikat berhasil disimpan.');
+                ->with('success', 'Sertifikat berhasil diterbitkan.');
         } catch (\Throwable $e) {
             DB::rollBack();
 
@@ -358,6 +362,10 @@ class TrainerCertificateController extends Controller
         $model = $this->getCertifiableModel($context, $id);
 
         $certificate = $this->ensureCertificate($trainer, $model, $context);
+        $certificate->update([
+            'status' => 'published',
+            'issued_at' => now(),
+        ]);
 
         return redirect()
             ->route('admin.trainer.certificates.detail', [
