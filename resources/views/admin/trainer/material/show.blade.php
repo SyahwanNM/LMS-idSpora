@@ -2,134 +2,8 @@
 
 @section('title', 'Review Material - ' . $material->name)
 
-@section('navbar')
-    @include('partials.navbar-admin-trainer')
-@endsection
-
-@section('styles')
+@push('admin-trainer-styles')
     <style>
-        :root {
-            --admin-primary: #1e1b4b;
-            --admin-secondary: #4338ca;
-            --admin-bg: #f8fafc;
-            --admin-card-bg: #ffffff;
-            --admin-border: #e2e8f0;
-            --admin-text-main: #0f172a;
-            --admin-text-muted: #64748b;
-        }
-
-        body {
-            background-color: var(--admin-bg);
-        }
-
-        html {
-            scrollbar-gutter: stable;
-        }
-
-        .material-wrapper {
-            display: flex;
-            min-height: calc(100vh - 72px);
-        }
-
-        .trainer-sidebar {
-            width: 260px;
-            background: var(--admin-card-bg);
-            padding: 24px 16px;
-            border-right: 1px solid #eee;
-            flex-shrink: 0;
-            position: sticky;
-            top: 72px;
-            height: calc(100vh - 72px);
-            overflow-y: auto;
-        }
-
-        .nav-menu-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: var(--admin-text-muted);
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            margin-top: 24px;
-            display: block;
-            padding-left: 16px;
-        }
-
-        .nav-menu-label:first-child {
-            margin-top: 0;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            padding: 11px 16px;
-            color: #1e293b;
-            text-decoration: none;
-            border-radius: 10px;
-            margin-bottom: 4px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            gap: 12px;
-        }
-
-        .sidebar-link i {
-            font-size: 18px;
-            color: #64748b;
-            transition: color 0.2s ease;
-        }
-
-        .sidebar-link:hover {
-            background-color: #f8fafc;
-            color: #3949ab;
-        }
-
-        .sidebar-link:hover i {
-            color: #3949ab;
-        }
-
-        .sidebar-link.active {
-            background-color: #3949ab;
-            color: #fff;
-        }
-
-        .sidebar-link.active i {
-            color: #fff;
-        }
-
-        .sidebar-parent {
-            justify-content: space-between;
-        }
-
-        .sidebar-parent .sidebar-chevron {
-            font-size: 0.8rem;
-            transition: transform 0.2s ease;
-        }
-
-        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
-            transform: rotate(180deg);
-        }
-
-        .sidebar-submenu {
-            margin: 4px 0 8px;
-        }
-
-        .sidebar-submenu .sidebar-link {
-            margin-left: 14px;
-            padding: 7px 10px;
-            font-size: 0.82rem;
-            border-radius: 8px;
-        }
-
-        .sidebar-submenu .sidebar-link i {
-            font-size: 0.95rem;
-        }
-
-        .material-main {
-            flex-grow: 1;
-            padding: 32px;
-            overflow-x: hidden;
-        }
 
         .page-header {
             display: flex;
@@ -986,15 +860,10 @@
             }
         }
     </style>
-@endsection
+@endpush
 
 
 @section('admin-trainer-content')
-    <div class="material-wrapper">
-        @include('admin.partials.trainer-sidebar')
-
-        <main class="material-main">
-
             {{-- Page Header --}}
             <div class="page-header mb-4">
                 <a href="{{ route('admin.trainer.material.' . ($material->status === 'approved' ? 'approved' : 'approvals')) }}"
@@ -1412,9 +1281,37 @@
                 </div>{{-- end col-xl-4 --}}
 
             </div>{{-- end row --}}
-        </main>
-    </div>
 
+            <!-- Reject Course Modal -->
+            <div class="modal fade reject-modal" id="rejectCourseModal" tabindex="-1" aria-labelledby="rejectCourseModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-header-title modal-title" id="rejectCourseModalLabel">
+                                <i class="bi bi-x-circle-fill text-danger"></i> Tolak Seluruh Course
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ route('admin.trainer.material.reject', $material) }}" method="POST">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="rejection_reason" class="form-label font-semibold text-slate-700">Catatan Revisi / Alasan Penolakan</label>
+                                    <textarea class="form-control" id="rejection_reason" name="rejection_reason" required minlength="10" placeholder="Tulis alasan penolakan atau catatan revisi untuk seluruh course ini..."></textarea>
+                                    <span class="help-text">Alasan ini akan dikirimkan kepada trainer agar mereka dapat melakukan perbaikan. Minimal 10 karakter.</span>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn-submit-reject">Tolak Course</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+@endsection
+
+@push('admin-trainer-scripts')
     @php
         $quizMapForJs = collect($uploadedModules ?? [])
             ->filter(fn($m) => $m->isQuiz())
@@ -1567,4 +1464,4 @@
 
         })();
     </script>
-@endsection
+@endpush

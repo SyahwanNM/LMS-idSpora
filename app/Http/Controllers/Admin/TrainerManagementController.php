@@ -395,6 +395,95 @@ class TrainerManagementController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
+        // 1. Pending Course Modules & Event Modules list
+        $pendingCourseModules = CourseModule::with(['course', 'course.trainer'])
+            ->where('review_status', 'pending_review')
+            ->whereNotNull('content_url')
+            ->where('content_url', '!=', '')
+            ->latest('updated_at')
+            ->get()
+            ->map(function ($module) {
+                return [
+                    'type' => 'course',
+                    'title' => $module->title,
+                    'source' => $module->course?->name ?? 'Course',
+                    'trainer' => $module->course?->trainer?->name ?? 'Trainer',
+                    'date' => $module->updated_at,
+                    'url' => route('admin.trainer.material.show', $module->course_id),
+                ];
+            });
+
+        $pendingEventModulesList = EventTrainerModule::with(['event', 'trainer'])
+            ->where('status', 'pending_review')
+            ->latest('created_at')
+            ->get()
+            ->map(function ($module) {
+                return [
+                    'type' => 'event',
+                    'title' => $module->original_name ?? 'Materi Event',
+                    'source' => $module->event?->title ?? 'Event',
+                    'trainer' => $module->trainer?->name ?? 'Trainer',
+                    'date' => $module->created_at,
+                    'url' => route('admin.event-material.show', $module->event_id),
+                ];
+            });
+
+        $pendingMaterialsQueue = $pendingCourseModules->concat($pendingEventModulesList)
+            ->sortByDesc('date')
+            ->take(5)
+            ->values();
+
+        // 2. Unsent Certificates list (completed events/courses without certificates)
+        $publishedCertKeys = TrainerCertificate::query()
+            ->whereIn('status', ['sent', 'published', 'revoked'])
+            ->get(['certifiable_type', 'certifiable_id'])
+            ->mapWithKeys(function ($cert) {
+                return [$cert->certifiable_type . ':' . $cert->certifiable_id => true];
+            });
+
+        $unsentEvents = Event::query()
+            ->whereNotNull('trainer_id')
+            ->whereNotNull('event_date')
+            ->whereDate('event_date', '<=', now()->toDateString())
+            ->with('trainer:id,name')
+            ->get()
+            ->filter(fn($event) => !$publishedCertKeys->has(Event::class . ':' . $event->id));
+
+        $unsentCourses = Course::query()
+            ->whereNotNull('trainer_id')
+            ->whereIn('status', ['published', 'approved', 'active'])
+            ->with('trainer:id,name')
+            ->get()
+            ->filter(fn($course) => !$publishedCertKeys->has(Course::class . ':' . $course->id));
+
+        $pendingCertificatesQueue = $unsentEvents->map(function ($event) {
+            return [
+                'type' => 'event',
+                'id' => $event->id,
+                'title' => $event->title,
+                'trainer' => $event->trainer?->name ?? 'Trainer',
+                'date' => $event->event_date,
+                'url' => route('admin.trainer.certificates.edit', [
+                    'trainer' => $event->trainer_id,
+                    'context' => 'event',
+                    'id' => $event->id,
+                ]),
+            ];
+        })->concat($unsentCourses->map(function ($course) {
+            return [
+                'type' => 'course',
+                'id' => $course->id,
+                'title' => $course->name,
+                'trainer' => $course->trainer?->name ?? 'Trainer',
+                'date' => $course->updated_at,
+                'url' => route('admin.trainer.certificates.edit', [
+                    'trainer' => $course->trainer_id,
+                    'context' => 'course',
+                    'id' => $course->id,
+                ]),
+            ];
+        }))->sortByDesc('date')->take(5)->values();
+
         $trainers = $query->paginate(10)->withQueryString();
 
         return view('admin.trainer.index', compact(
@@ -414,7 +503,9 @@ class TrainerManagementController extends Controller
             'chartPoints',
             'chartData',
             'categoryStats',
-            'categoryGradient'
+            'categoryGradient',
+            'pendingMaterialsQueue',
+            'pendingCertificatesQueue'
         ));
     }
 
@@ -724,7 +815,7 @@ class TrainerManagementController extends Controller
 
             $issuedEventIds = TrainerCertificate::query()
                 ->where('trainer_id', $trainerId)
-                ->where('status', 'sent')
+                ->whereIn('status', ['sent', 'published'])
                 ->where('certifiable_type', Event::class)
                 ->pluck('certifiable_id')
                 ->map(fn($id) => (int) $id)
@@ -732,7 +823,7 @@ class TrainerManagementController extends Controller
 
             $issuedCourseIds = TrainerCertificate::query()
                 ->where('trainer_id', $trainerId)
-                ->where('status', 'sent')
+                ->whereIn('status', ['sent', 'published'])
                 ->where('certifiable_type', Course::class)
                 ->pluck('certifiable_id')
                 ->map(fn($id) => (int) $id)

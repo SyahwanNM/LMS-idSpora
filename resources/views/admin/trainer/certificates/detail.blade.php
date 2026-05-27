@@ -22,6 +22,10 @@
     $logos = $assets->where('type', 'logo')->values();
     $signatures = $assets->where('type', 'signature')->values();
 
+    $isPublished = in_array($certificate?->status ?? '', ['sent', 'published']);
+    $publishBtnText = $isPublished ? 'Terbitkan Ulang' : 'Terbitkan Sertifikat';
+    $publishBtnIcon = $isPublished ? 'bi-arrow-counterclockwise' : 'bi-send-check';
+
     if ($model && \Route::has('certificates.events.download') && \Route::has('certificates.courses.download')) {
         $downloadUrl = $context === 'course'
             ? route('certificates.courses.download', $model)
@@ -241,6 +245,7 @@
             padding: 36px 56px;
             text-align: center;
             color: #1e1b4b;
+            box-sizing: border-box;
         }
 
         .tpl-logo-row {
@@ -324,6 +329,9 @@
         .template_1 .tpl-inner {
             border: 2px double #fbbf24;
             margin: 10px;
+            height: calc(100% - 20px);
+            width: calc(100% - 20px);
+            box-sizing: border-box;
         }
 
         .template_1 .tpl-name {
@@ -394,6 +402,8 @@
         .template_3 .tpl-inner {
             text-align: left;
             padding: 24px 56px;
+            height: calc(100% - 72px);
+            box-sizing: border-box;
         }
 
         .preview-actions {
@@ -587,6 +597,22 @@
             color: #fff;
         }
 
+        .btn-template.btn-outline {
+            border: 1.5px solid var(--cert-primary);
+            background: transparent;
+            color: var(--cert-primary);
+        }
+
+        .btn-template.btn-outline:hover {
+            background: #eef1ff;
+            color: var(--cert-primary-2);
+        }
+
+        .status-pill.draft {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
         .template-note {
             font-size: 12px;
             color: #64748b;
@@ -643,7 +669,7 @@
     <div class="detail-page">
 
         <div class="detail-breadcrumb">
-            <a href="{{ route('admin.trainer.certificates.show', $trainer->id) }}" class="back-btn">
+            <a href="{{ route('admin.trainer.certificates.index')}}" class="back-btn">
                 <i class="bi bi-chevron-left"></i>
             </a>
 
@@ -672,16 +698,15 @@
                             @if($templateName === 'template_1')
                                 <div class="template_1">
                                     <div class="tpl-inner">
-                                        @if($logos->isNotEmpty())
-                                            <div class="tpl-logo-row">
-                                                @foreach($logos as $logo)
-                                                    @php $logoUrl = $assetUrl($logo->image_path); @endphp
-                                                    @if($logoUrl)
-                                                        <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
-                                                    @endif
-                                                @endforeach
-                                            </div>
-                                        @endif
+                                        <div class="tpl-logo-row">
+                                            <img class="tpl-logo" src="{{ asset('aset/logo-idspora.png') }}" alt="Logo idSpora">
+                                            @foreach($logos as $logo)
+                                                @php $logoUrl = $assetUrl($logo->image_path); @endphp
+                                                @if($logoUrl)
+                                                    <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
+                                                @endif
+                                            @endforeach
+                                        </div>
 
                                         <div class="tpl-title">Sertifikat Penghargaan</div>
                                         <div class="tpl-subtitle">Narasumber</div>
@@ -713,16 +738,15 @@
                             @elseif($templateName === 'template_2')
                                 <div class="template_2">
                                     <div class="tpl-inner">
-                                        @if($logos->isNotEmpty())
-                                            <div class="tpl-logo-row">
-                                                @foreach($logos as $logo)
-                                                    @php $logoUrl = $assetUrl($logo->image_path); @endphp
-                                                    @if($logoUrl)
-                                                        <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
-                                                    @endif
-                                                @endforeach
-                                            </div>
-                                        @endif
+                                        <div class="tpl-logo-row">
+                                            <img class="tpl-logo" src="{{ asset('aset/logo-idspora.png') }}" alt="Logo idSpora">
+                                            @foreach($logos as $logo)
+                                                @php $logoUrl = $assetUrl($logo->image_path); @endphp
+                                                @if($logoUrl)
+                                                    <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
+                                                @endif
+                                            @endforeach
+                                        </div>
 
                                         <div class="tpl-title">Sertifikat Penghargaan</div>
                                         <div class="tpl-subtitle">Narasumber</div>
@@ -815,24 +839,32 @@
                             </thead>
 
                             <tbody>
-                                <tr>
-                                    <td>
-                                        {{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d M Y, H:i') . ' WIB' : '-' }}
-                                    </td>
-                                    <td>{{ $certificate->issuer?->name ?? 'Admin idSpora' }}</td>
-                                    <td>{{ $certificate->certificate_number ?? '-' }}</td>
-                                    <td>
-                                        <span class="status-pill">
-                                            <i class="bi bi-circle-fill" style="font-size:7px;"></i>
-                                            Diterbitkan
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <a href="{{ $fullPreviewUrl }}" class="action-eye">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
+                                @if($isPublished)
+                                    <tr>
+                                        <td>
+                                            {{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d M Y, H:i') . ' WIB' : '-' }}
+                                        </td>
+                                        <td>{{ $certificate->issuer?->name ?? 'Admin idSpora' }}</td>
+                                        <td>{{ $certificate->certificate_number ?? '-' }}</td>
+                                        <td>
+                                            <span class="status-pill">
+                                                <i class="bi bi-circle-fill" style="font-size:7px;"></i>
+                                                Diterbitkan
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="{{ $fullPreviewUrl }}" class="action-eye">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @else
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">
+                                            Sertifikat belum diterbitkan. Silakan klik tombol <strong>Terbitkan Sertifikat</strong> di menu sebelah kanan.
+                                        </td>
+                                    </tr>
+                                @endif
                             </tbody>
                         </table>
                     </div>
@@ -892,9 +924,9 @@
                             </div>
                             <div>
                                 <div class="info-label">Status Sertifikat</div>
-                                <span class="status-pill">
+                                <span class="status-pill {{ $isPublished ? '' : 'draft' }}">
                                     <i class="bi bi-circle-fill" style="font-size:7px;"></i>
-                                    Diterbitkan
+                                    {{ $isPublished ? 'Diterbitkan' : 'Draft' }}
                                 </span>
                             </div>
                         </div>
@@ -949,14 +981,26 @@
                 <aside class="side-card">
                     <div class="template-card-footer">
                         @if($model)
-                                            <a href="{{ route('admin.trainer.certificates.edit', [
+                            <form method="POST" action="{{ route('admin.trainer.certificates.publish', [
                                 'trainer' => $trainer->id,
                                 'context' => strtolower($programType) === 'course' ? 'course' : 'event',
                                 'id' => $model->id,
-                            ]) }}" class="btn-template">
-                                                <i class="bi bi-gear"></i>
-                                                Kelola Template
-                                            </a>
+                            ]) }}" class="mb-3">
+                                @csrf
+                                <button type="submit" class="btn-template">
+                                    <i class="bi {{ $publishBtnIcon }}"></i>
+                                    {{ $publishBtnText }}
+                                </button>
+                            </form>
+
+                            <a href="{{ route('admin.trainer.certificates.edit', [
+                                'trainer' => $trainer->id,
+                                'context' => strtolower($programType) === 'course' ? 'course' : 'event',
+                                'id' => $model->id,
+                            ]) }}" class="btn-template btn-outline">
+                                <i class="bi bi-gear"></i>
+                                Kelola Template
+                            </a>
                         @else
                             <a href="{{ route('admin.trainer.certificates.index') }}" class="btn-template">
                                 <i class="bi bi-gear"></i>
@@ -965,7 +1009,7 @@
                         @endif
 
                         <p class="template-note">
-                            Ubah template, logo, atau tanda tangan jika diperlukan.
+                            Ubah template, logo, atau tanda tangan jika diperlukan sebelum menerbitkan.
                         </p>
                     </div>
                 </aside>

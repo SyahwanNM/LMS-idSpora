@@ -1,5 +1,4 @@
 @extends('layouts.admin-trainer')
-@extends('layouts.admin-trainer')
 
 @section('title', 'Dashboard Admin Trainer')
 
@@ -233,6 +232,113 @@
         .metric-sparkline {
             width: 96px;
             height: 44px;
+        }
+
+        .queue-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .queue-item-card {
+            border: 1px solid var(--dash-border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+            transition: all 0.22s ease-in-out;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, .01);
+        }
+
+        .queue-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+            border-color: #cbd5e1;
+        }
+
+        .queue-item-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+            flex-grow: 1;
+        }
+
+        .queue-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .queue-icon-wrapper.course,
+        .queue-icon-wrapper.event {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .queue-item-details {
+            min-width: 0;
+        }
+
+        .queue-item-title {
+            font-weight: 800;
+            font-size: 14px;
+            color: var(--dash-navy);
+            line-height: 1.4;
+            margin-bottom: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .queue-item-meta {
+            font-size: 12px;
+            color: var(--dash-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .meta-dot {
+            color: #cbd5e1;
+        }
+
+        .btn-queue-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 800;
+            border-radius: 8px;
+            padding: 8px 14px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .btn-queue-action.course,
+        .btn-queue-action.event,
+        .btn-queue-action.publish {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .btn-queue-action.course:hover,
+        .btn-queue-action.event:hover,
+        .btn-queue-action.publish:hover {
+            background: #2563eb;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
         }
 
         .main-grid {
@@ -976,6 +1082,105 @@
                         {{ $metricChanges['approved']['text'] ?? '0 dari bulan lalu' }}
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Antrean Kerja Admin Section -->
+        <h4 style="font-weight: 800; font-size: 18px; color: var(--dash-navy); margin: 28px 0 14px; letter-spacing: -.4px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-list-task text-primary"></i> Antrean Kerja Admin
+        </h4>
+        
+        <div class="queue-grid">
+            <!-- 1. Materi Menunggu Persetujuan -->
+            <div class="dash-card">
+                <div class="card-header-clean">
+                    <h5 class="card-title-clean">Materi Menunggu Persetujuan</h5>
+                    <span style="background: rgba(39, 69, 232, 0.1); color: var(--dash-primary); font-weight: 800; font-size: 11px; border-radius: 6px; padding: 4px 8px;">
+                        {{ $pendingMaterialsQueue->count() }} Antrean
+                    </span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px;">
+                    @forelse($pendingMaterialsQueue as $item)
+                        <div class="queue-item-card">
+                            <div class="queue-item-left">
+                                <div class="queue-icon-wrapper {{ $item['type'] }}">
+                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-mortarboard' : 'bi-calendar-event' }}"></i>
+                                </div>
+                                <div class="queue-item-details">
+                                    <div class="queue-item-title">{{ $item['title'] }}</div>
+                                    <div class="queue-item-meta">
+                                        <span>Trainer: <strong>{{ $item['trainer'] }}</strong></span>
+                                        <span class="meta-dot">&bull;</span>
+                                        <span>{{ $item['type'] === 'course' ? 'Course: ' : 'Event: ' }}{{ $item['source'] }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="queue-item-right">
+                                <a href="{{ $item['url'] }}" class="btn-queue-action {{ $item['type'] }}">
+                                    <span>Review</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-muted text-center py-4" style="font-size: 13px;">
+                            <i class="bi bi-check2-circle" style="font-size: 24px; color: #19bd6b; display: block; margin-bottom: 6px;"></i>
+                            Semua materi sudah diperiksa!
+                        </div>
+                    @endforelse
+                </div>
+
+                <a href="{{ route('admin.trainer.material.approvals') }}" class="card-link mt-auto">
+                    Buka Halaman Approval Materi
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- 2. Sertifikat Belum Diterbitkan -->
+            <div class="dash-card">
+                <div class="card-header-clean">
+                    <h5 class="card-title-clean">Sertifikat Perlu Diterbitkan</h5>
+                    <span style="background: rgba(255, 151, 15, 0.1); color: var(--dash-orange); font-weight: 800; font-size: 11px; border-radius: 6px; padding: 4px 8px;">
+                        {{ $pendingCertificatesQueue->count() }} Antrean
+                    </span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px;">
+                    @forelse($pendingCertificatesQueue as $item)
+                        <div class="queue-item-card">
+                            <div class="queue-item-left">
+                                <div class="queue-icon-wrapper {{ $item['type'] }}">
+                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-patch-check' : 'bi-award' }}"></i>
+                                </div>
+                                <div class="queue-item-details">
+                                    <div class="queue-item-title">{{ $item['title'] }}</div>
+                                    <div class="queue-item-meta">
+                                        <span>Trainer: <strong>{{ $item['trainer'] }}</strong></span>
+                                        <span class="meta-dot">&bull;</span>
+                                        <span>Selesai: {{ \Carbon\Carbon::parse($item['date'])->translatedFormat('d M Y') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="queue-item-right">
+                                <a href="{{ $item['url'] }}" class="btn-queue-action publish">
+                                    <span>Terbitkan</span>
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-muted text-center py-4" style="font-size: 13px;">
+                            <i class="bi bi-check2-circle" style="font-size: 24px; color: #19bd6b; display: block; margin-bottom: 6px;"></i>
+                            Semua sertifikat selesai diterbitkan!
+                        </div>
+                    @endforelse
+                </div>
+
+                <a href="{{ route('admin.trainer.certificates.index') }}" class="card-link mt-auto">
+                    Buka Halaman Sertifikat
+                    <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
         </div>
 

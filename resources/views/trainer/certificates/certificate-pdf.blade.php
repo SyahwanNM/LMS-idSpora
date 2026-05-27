@@ -294,7 +294,7 @@
     @endif
 
     @php
-        $template = ($context === 'event' ? ($event->certificate_template ?? 'template_1') : 'template_1');
+        $template = $template ?? ($context === 'event' ? ($event->certificate_template ?? 'template_1') : 'template_1');
         $title = $context === 'event' ? ($event->title ?? 'EVENT') : ($course->name ?? 'COURSE');
         $issuedDateText = ($issuedAt ?? now())->format('d F Y');
         $subtitle = $context === 'event' ? 'of Appreciation' : 'of Recognition';
@@ -383,12 +383,19 @@
         @endif
 
         <div class="cert-footer" style="{{ $template == 'template_2' ? 'padding: 0 80px 0 120px;' : '' }}">
-            @php $sigs = $signaturesBase64 ?? []; @endphp
-            @foreach($sigs as $sig)
+            @php $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64'=>$b,'name'=>'','position'=>''], $signaturesBase64 ?? []); @endphp
+            @foreach($sigsToRender as $sig)
                 <div class="sig-box">
-                    <img src="{{ $sig }}" style="height: 60px; width: auto; display: block; margin: 0 auto 6px;">
+                    <img src="{{ $sig['base64'] }}" style="height: 60px; width: auto; display: block; margin: 0 auto 6px;">
                     <div class="sig-line"></div>
-                    <div style="font-size: 10pt; color: #334155;">Authorized Sign</div>
+                    @if(!empty($sig['name']))
+                        <div style="font-weight: bold; font-size: 10pt; color: #1e1b4b;">{{ $sig['name'] }}</div>
+                        @if(!empty($sig['position']))
+                            <div style="font-size: 9pt; color: #64748b; font-style: italic;">{{ $sig['position'] }}</div>
+                        @endif
+                    @else
+                        <div style="font-size: 10pt; color: #334155;">Authorized Sign</div>
+                    @endif
                 </div>
             @endforeach
         </div>

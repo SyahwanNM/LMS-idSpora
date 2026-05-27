@@ -326,6 +326,8 @@
     .notification.show { transform: translateY(0) scale(1); opacity:1; }
     .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
     .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+    .notification.info { background: linear-gradient(90deg,#2563eb,#60a5fa); }
+    .notification.warning { background: linear-gradient(90deg,#d97706,#fbbf24); }
     .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; line-height:1.4; }
     .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); flex-shrink:0; padding:0; line-height:1; }
     /* Body padding to prevent content from hiding under fixed navbar */
@@ -365,7 +367,7 @@
     @keyframes draw-check { to { stroke-dashoffset:0; } }
     </style>
 
-    @if(session('success') || session('login_success') || session('error'))
+    @if(session('success') || session('login_success') || session('error') || session('info') || session('warning') || $errors->any())
         <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
             @if(session('login_success'))
                 <div class="notification success" role="status" data-timeout="4200">
@@ -381,6 +383,31 @@
             @if(session('error'))
                 <div class="notification error" role="status" data-timeout="6000">
                     <div class="notif-message"><i class="bi bi-x-circle-fill me-2"></i>{{ session('error') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="notification info" role="status" data-timeout="4500">
+                    <div class="notif-message"><i class="bi bi-info-circle-fill me-2"></i>{{ session('info') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if(session('warning'))
+                <div class="notification warning" role="status" data-timeout="5000">
+                    <div class="notif-message"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('warning') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if($errors->any())
+                <div class="notification error" role="status" data-timeout="7000">
+                    <div class="notif-message">
+                        <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Terdapat kesalahan:</div>
+                        <ul class="mb-0 ps-3 small">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
                     <button class="notif-close" aria-label="Close">&times;</button>
                 </div>
             @endif
@@ -407,7 +434,11 @@
     // Programmatic API for the new notification banner (replaces legacy Bootstrap toasts)
     window.adminNotify = function(type, message, timeout){
         try {
-            const kind = (type === 'error') ? 'error' : 'success';
+            let kind = 'success';
+            if (type === 'error') kind = 'error';
+            else if (type === 'info') kind = 'info';
+            else if (type === 'warning') kind = 'warning';
+
             const text = (message == null) ? '' : String(message);
             const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
 
@@ -428,7 +459,16 @@
 
             const msg = document.createElement('div');
             msg.className = 'notif-message';
-            msg.textContent = text;
+            
+            let iconHtml = '<i class="bi bi-check-circle-fill me-2"></i>';
+            if (kind === 'error') {
+                iconHtml = '<i class="bi bi-x-circle-fill me-2"></i>';
+            } else if (kind === 'info') {
+                iconHtml = '<i class="bi bi-info-circle-fill me-2"></i>';
+            } else if (kind === 'warning') {
+                iconHtml = '<i class="bi bi-exclamation-triangle-fill me-2"></i>';
+            }
+            msg.innerHTML = iconHtml + text;
 
             const close = document.createElement('button');
             close.className = 'notif-close';

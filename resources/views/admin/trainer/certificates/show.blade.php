@@ -466,19 +466,6 @@
         <strong class="text-primary">Penerbitan Sertifikat</strong>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if(session('warning'))
-        <div class="alert alert-warning border-0 shadow-sm rounded-4 mb-4">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            {{ session('warning') }}
-        </div>
-    @endif
 
     <div class="row g-4">
         <div class="col-xl-9">

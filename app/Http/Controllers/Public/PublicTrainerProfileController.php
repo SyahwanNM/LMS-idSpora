@@ -130,7 +130,7 @@ class PublicTrainerProfileController extends Controller
         $certificates = TrainerCertificate::query()
             ->with('certifiable')
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->latest('issued_at')
             ->latest('created_at')
             ->take(6)

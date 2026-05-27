@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
+use App\Models\TrainerCertificateAsset;
 use App\Services\CourseTemplateCloneService;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
@@ -190,7 +191,7 @@ class TrainerController extends Controller
 
         $existing = TrainerCertificate::query()
             ->where('trainer_id', $trainerId)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where(function ($q) {
                 $q->where('certifiable_type', Event::class)
                     ->orWhere('certifiable_type', Course::class);
@@ -232,7 +233,7 @@ class TrainerController extends Controller
 
         $alreadyExists = TrainerCertificate::query()
             ->where('trainer_id', $trainerId)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', $certifiableType)
             ->where('certifiable_id', $certifiableId)
             ->exists();
@@ -296,11 +297,7 @@ class TrainerController extends Controller
             'status' => 'sent',
         ]);
 
-        $logosBase64 = [];
-        $signaturesBase64 = [];
-        if ($context === 'event' && $certifiable instanceof Event) {
-            [$logosBase64, $signaturesBase64] = $this->extractEventAssetsBase64($certifiable);
-        }
+        [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($certifiable);
 
         $pdfData = [
             'context' => $context,
@@ -311,6 +308,8 @@ class TrainerController extends Controller
             'certificateNumber' => $certificateNumber,
             'logosBase64' => $logosBase64,
             'signaturesBase64' => $signaturesBase64,
+            'signaturesData' => $signaturesData,
+            'template' => $template,
             'roleLabel' => $this->certificateTypeLabel($typeCode),
         ];
 
@@ -596,7 +595,7 @@ class TrainerController extends Controller
 
         $teachingHistory = TrainerCertificate::query()
             ->where('trainer_id', $user->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->whereNotNull('file_path')
             ->with('certifiable')
             ->latest('issued_at')
@@ -713,7 +712,7 @@ class TrainerController extends Controller
 
         $totalCertificates = (clone TrainerCertificate::query())
             ->where('trainer_id', $user->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->whereNotNull('file_path')
             ->count();
 
@@ -797,7 +796,7 @@ class TrainerController extends Controller
 
         $certifiedCourseIds = \App\Models\TrainerCertificate::query()
             ->where('trainer_id', $user->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', \App\Models\Course::class)
             ->whereNotNull('file_path')
             ->pluck('certifiable_id')
@@ -989,7 +988,7 @@ class TrainerController extends Controller
 
         $certifiedEventIds = \App\Models\TrainerCertificate::query()
             ->where('trainer_id', $user->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', \App\Models\Event::class)
             ->whereNotNull('file_path')
             ->pluck('certifiable_id')
@@ -1665,7 +1664,7 @@ class TrainerController extends Controller
         $trainerCertificates = TrainerCertificate::query()
             ->with('certifiable')
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->latest('issued_at')
             ->latest('created_at')
             ->take(3)
@@ -1673,7 +1672,7 @@ class TrainerController extends Controller
 
         $totalCertificates = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->count();
 
         $expertiseTags = $courses
@@ -2644,7 +2643,7 @@ class TrainerController extends Controller
 
         $certificates = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->get(['certifiable_type', 'certifiable_id', 'certificate_number', 'issued_at', 'file_path', 'type_code']);
 
         $certMap = [];
@@ -2711,7 +2710,7 @@ class TrainerController extends Controller
         $trainer = Auth::user();
         $trainerCert = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', Event::class)
             ->where('certifiable_id', $event->id)
             ->latest('issued_at')
@@ -2730,11 +2729,16 @@ class TrainerController extends Controller
         $trainer = Auth::user();
         $trainerCert = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', Event::class)
             ->where('certifiable_id', $event->id)
             ->latest('issued_at')
             ->firstOrFail();
+
+        if (empty($trainerCert->file_path) || !is_file(storage_path('app/' . $trainerCert->file_path))) {
+            $this->generateTrainerCertificatePdf($trainerCert);
+            $trainerCert = $trainerCert->fresh();
+        }
 
         if (!empty($trainerCert->file_path)) {
             $absolutePath = storage_path('app/' . $trainerCert->file_path);
@@ -2754,7 +2758,7 @@ class TrainerController extends Controller
         $trainer = Auth::user();
         $trainerCert = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', Course::class)
             ->where('certifiable_id', $course->id)
             ->latest('issued_at')
@@ -2773,11 +2777,16 @@ class TrainerController extends Controller
         $trainer = Auth::user();
         $trainerCert = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'sent')
+            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', Course::class)
             ->where('certifiable_id', $course->id)
             ->latest('issued_at')
             ->firstOrFail();
+
+        if (empty($trainerCert->file_path) || !is_file(storage_path('app/' . $trainerCert->file_path))) {
+            $this->generateTrainerCertificatePdf($trainerCert);
+            $trainerCert = $trainerCert->fresh();
+        }
 
         if (!empty($trainerCert->file_path)) {
             $absolutePath = storage_path('app/' . $trainerCert->file_path);
@@ -2904,9 +2913,171 @@ class TrainerController extends Controller
         return [$logos, $sigs];
     }
 
+    private function extractTrainerAssetsBase64($certifiable): array
+    {
+        $logosBase64 = [];
+        $signaturesBase64 = [];
+        $signaturesData = [];
+        $template = 'template_1';
+
+        $certifiableType = get_class($certifiable);
+        $certifiableId = (int) $certifiable->id;
+
+        $assets = TrainerCertificateAsset::query()
+            ->where('certifiable_type', $certifiableType)
+            ->where('certifiable_id', $certifiableId)
+            ->orderBy('order_no')
+            ->get();
+
+        if ($assets->isNotEmpty()) {
+            $templateAsset = $assets->where('type', 'template')->first();
+            $template = $templateAsset?->name ?? 'template_1';
+
+            foreach ($assets as $asset) {
+                $path = $asset->image_path;
+                if (!$path || $path === '-') {
+                    continue;
+                }
+
+                $normalized = ltrim(str_replace('\\', '/', $path), '/');
+                $normalized = preg_replace('~^public/~i', '', $normalized) ?? $normalized;
+                $normalized = preg_replace('~^storage/app/public/~i', '', $normalized) ?? $normalized;
+                if (str_starts_with($normalized, 'storage/')) {
+                    $normalized = substr($normalized, 8);
+                }
+
+                $content = null;
+                $mime = null;
+
+                if (Storage::disk('public')->exists($normalized)) {
+                    $content = Storage::disk('public')->get($normalized);
+                    $mime = Storage::disk('public')->mimeType($normalized);
+                } else {
+                    $possiblePaths = [
+                        public_path($path),
+                        public_path('storage/' . $normalized),
+                        public_path('uploads/' . $normalized),
+                        storage_path('app/public/' . $normalized),
+                    ];
+                    foreach ($possiblePaths as $p) {
+                        if (is_file($p)) {
+                            $content = file_get_contents($p);
+                            $mime = mime_content_type($p);
+                            break;
+                        }
+                    }
+                }
+
+                if ($content) {
+                    $base64 = 'data:' . ($mime ?: 'image/png') . ';base64,' . base64_encode($content);
+                    if ($asset->type === 'logo') {
+                        $logosBase64[] = $base64;
+                    } elseif ($asset->type === 'signature') {
+                        $signaturesBase64[] = $base64;
+                        $signaturesData[] = [
+                            'base64' => $base64,
+                            'name' => $asset->name,
+                            'position' => $asset->position,
+                        ];
+                    }
+                }
+            }
+        } else {
+            $template = $certifiable->certificate_template ?? 'template_1';
+
+            $logosRaw = is_array($certifiable->certificate_logo) 
+                ? $certifiable->certificate_logo 
+                : ($certifiable->certificate_logo ? [$certifiable->certificate_logo] : []);
+
+            foreach ($logosRaw as $l) {
+                $path = str_replace('storage/', '', (string) $l);
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    $absolutePath = Storage::disk('public')->path($path);
+                    $mime = (is_string($absolutePath) && is_file($absolutePath)) 
+                        ? (mime_content_type($absolutePath) ?: 'image/png') 
+                        : 'image/png';
+                    $logosBase64[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+                }
+            }
+
+            $sigsRaw = is_array($certifiable->certificate_signature) 
+                ? $certifiable->certificate_signature 
+                : ($certifiable->certificate_signature ? [$certifiable->certificate_signature] : []);
+
+            foreach ($sigsRaw as $s) {
+                $isObj = is_array($s);
+                $imgPath = $isObj ? ($s['image'] ?? '') : $s;
+                $sigName = $isObj ? ($s['name'] ?? '') : '';
+                $sigPos = $isObj ? ($s['position'] ?? '') : '';
+
+                $path = str_replace('storage/', '', (string) $imgPath);
+                if ($path !== '' && Storage::disk('public')->exists($path)) {
+                    $absolutePath = Storage::disk('public')->path($path);
+                    $mime = (is_string($absolutePath) && is_file($absolutePath)) 
+                        ? (mime_content_type($absolutePath) ?: 'image/png') 
+                        : 'image/png';
+                    $b64 = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
+                    $signaturesBase64[] = $b64;
+                    $signaturesData[] = [
+                        'base64' => $b64,
+                        'name' => $sigName,
+                        'position' => $sigPos,
+                    ];
+                }
+            }
+        }
+
+        return [$logosBase64, $signaturesBase64, $signaturesData, $template];
+    }
+
+    public function generateTrainerCertificatePdf(TrainerCertificate $trainerCertificate): void
+    {
+        $trainer = $trainerCertificate->trainer;
+        $certifiable = $trainerCertificate->certifiable;
+
+        if (!$trainer || !$certifiable) {
+            return;
+        }
+
+        $context = strtolower(class_basename(get_class($certifiable))) === 'course' ? 'course' : 'event';
+        $issuedAt = $trainerCertificate->issued_at ?? $trainerCertificate->created_at ?? now();
+
+        if ($context === 'event') {
+            $pdfData = $this->buildTrainerCertificateDataFromEvent(request(), $certifiable, $trainer, $issuedAt);
+        } else {
+            $pdfData = $this->buildTrainerCertificateDataFromCourse(request(), $certifiable, $trainer, $issuedAt);
+        }
+
+        $pdfData['certificateNumber'] = $trainerCertificate->certificate_number;
+        $pdfData['roleLabel'] = $this->certificateTypeLabel((string) $trainerCertificate->type_code);
+
+        $dompdf = new Dompdf();
+        $options = $dompdf->getOptions();
+        $options->setIsRemoteEnabled(true);
+        $options->setIsHtml5ParserEnabled(true);
+        $dompdf->setOptions($options);
+
+        $html = view('trainer.certificates.certificate-pdf', $pdfData)->render();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $relativeDir = 'trainer_certificates/' . $trainer->id . '/' . $context . '/' . $certifiable->id;
+        $filename = Str::slug($trainerCertificate->certificate_number, '_') . '.pdf';
+        $relativePath = $relativeDir . '/' . $filename;
+        $absolutePath = storage_path('app/' . $relativePath);
+
+        if (!is_dir(dirname($absolutePath))) {
+            mkdir(dirname($absolutePath), 0755, true);
+        }
+        file_put_contents($absolutePath, $dompdf->output());
+
+        $trainerCertificate->update(['file_path' => $relativePath]);
+    }
+
     private function buildTrainerCertificateDataFromEvent(Request $request, Event $event, $trainer, \Carbon\CarbonInterface $issuedAt): array
     {
-        [$logosBase64, $signaturesBase64] = $this->extractEventAssetsBase64($event);
+        [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($event);
 
         $activityCodeMap = [
             'webinar' => 'WBN',
@@ -2935,12 +3106,16 @@ class TrainerController extends Controller
             'certificateNumber' => $certificateNumber,
             'logosBase64' => $logosBase64,
             'signaturesBase64' => $signaturesBase64,
+            'signaturesData' => $signaturesData,
+            'template' => $template,
             'roleLabel' => $this->certificateTypeLabel($typeCode),
         ];
     }
 
     private function buildTrainerCertificateDataFromCourse(Request $request, Course $course, $trainer, \Carbon\CarbonInterface $issuedAt): array
     {
+        [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($course);
+
         $activityCode = (string) $request->query('activity', 'ELR');
         $typeCode = (string) $request->query('type', 'TRN');
         $sequence = (string) $request->query('seq', '001');
@@ -2954,8 +3129,10 @@ class TrainerController extends Controller
             'user' => $trainer,
             'issuedAt' => $issuedAt,
             'certificateNumber' => $certificateNumber,
-            'logosBase64' => [],
-            'signaturesBase64' => [],
+            'logosBase64' => $logosBase64,
+            'signaturesBase64' => $signaturesBase64,
+            'signaturesData' => $signaturesData,
+            'template' => $template,
             'roleLabel' => $this->certificateTypeLabel($typeCode),
         ];
     }

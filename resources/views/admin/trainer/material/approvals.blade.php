@@ -494,12 +494,7 @@
             </button>
         </div>
 
-        @if(session('success'))
-            <div class="alert alert-success border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center">
-                <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
-                <div>{{ session('success') }}</div>
-            </div>
-        @endif
+
 
         <div class="stat-grid">
             <div class="stat-card pending">

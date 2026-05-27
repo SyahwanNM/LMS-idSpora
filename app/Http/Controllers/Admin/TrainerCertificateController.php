@@ -65,21 +65,51 @@ class TrainerCertificateController extends Controller
             return $trainer;
         });
 
-        $pendingItems = Event::query()
+        $publishedKeys = TrainerCertificate::query()
+            ->whereIn('trainer_id', $trainerIds)
+            ->whereIn('status', ['sent', 'published', 'revoked'])
+            ->get()
+            ->groupBy(function ($cert) {
+                return $cert->certifiable_type . ':' . $cert->certifiable_id;
+            });
+
+        $events = Event::query()
             ->whereIn('trainer_id', $trainerIds)
             ->whereNotNull('event_date')
             ->whereDate('event_date', '<=', now()->toDateString())
             ->withCount('registrations')
-            ->orderByDesc('event_date')
-            ->get();
+            ->get()
+            ->each(function ($item) {
+                $item->context = 'event';
+                $item->sort_date = $item->event_date;
+            });
 
-        $certificates = Course::query()
+        $courses = Course::query()
             ->whereIn('trainer_id', $trainerIds)
             ->whereIn('status', ['published', 'approved', 'active'])
             ->with('category')
             ->withCount('enrollments')
-            ->orderByDesc('updated_at')
-            ->get();
+            ->get()
+            ->each(function ($item) {
+                $item->context = 'course';
+                $item->sort_date = $item->updated_at;
+            });
+
+        $allPrograms = $events->concat($courses);
+
+        $unsentItems = $allPrograms->filter(function ($item) use ($publishedKeys) {
+            $key = get_class($item) . ':' . $item->id;
+            return !$publishedKeys->has($key);
+        })->sortByDesc('sort_date')->values();
+
+        $sentItems = $allPrograms->filter(function ($item) use ($publishedKeys) {
+            $key = get_class($item) . ':' . $item->id;
+            return $publishedKeys->has($key);
+        })->sortByDesc(function ($item) use ($publishedKeys) {
+            $key = get_class($item) . ':' . $item->id;
+            $cert = $publishedKeys->get($key)->first();
+            return $cert ? ($cert->issued_at ?? $cert->created_at) : $item->sort_date;
+        })->values();
 
         $totalTrainers = User::query()
             ->where('role', 'trainer')
@@ -89,12 +119,13 @@ class TrainerCertificateController extends Controller
 
         return view('admin.trainer.certificates.index', compact(
             'trainers',
-            'pendingItems',
-            'certificates',
+            'unsentItems',
+            'sentItems',
             'totalTrainers',
-            'totalPending'
+            'totalPending',
+            'publishedKeys'
         ) + [
-            'tab' => $request->query('tab', 'pendingItems'),
+            'tab' => $request->query('tab', 'unsentItems'),
         ]);
     }
 
@@ -334,16 +365,20 @@ class TrainerCertificateController extends Controller
             DB::commit();
 
             $certificate = $this->ensureCertificate($trainer, $model, $context);
-            $certificate->update([
-                'status' => 'published',
-                'issued_at' => now(),
-            ]);
+
+            if (!empty($certificate->file_path)) {
+                $absolute = storage_path('app/' . $certificate->file_path);
+                if (is_file($absolute)) {
+                    @unlink($absolute);
+                }
+                $certificate->update(['file_path' => null]);
+            }
 
             return redirect()
                 ->route('admin.trainer.certificates.detail', [
                     'certificate' => $certificate->id,
                 ])
-                ->with('success', 'Sertifikat berhasil diterbitkan.');
+                ->with('success', 'Konfigurasi sertifikat berhasil disimpan.');
         } catch (\Throwable $e) {
             DB::rollBack();
 
@@ -362,15 +397,22 @@ class TrainerCertificateController extends Controller
         $model = $this->getCertifiableModel($context, $id);
 
         $certificate = $this->ensureCertificate($trainer, $model, $context);
+
+        if (!empty($certificate->file_path)) {
+            $absolute = storage_path('app/' . $certificate->file_path);
+            if (is_file($absolute)) {
+                @unlink($absolute);
+            }
+        }
+
         $certificate->update([
             'status' => 'published',
             'issued_at' => now(),
+            'file_path' => null,
         ]);
 
         return redirect()
-            ->route('admin.trainer.certificates.detail', [
-                'certificate' => $certificate->id,
-            ])
+            ->route('admin.trainer.certificates.index')
             ->with('success', 'Sertifikat berhasil diterbitkan.');
     }
 
@@ -401,9 +443,9 @@ class TrainerCertificateController extends Controller
                 'type_code' => $context === 'event' ? 'EVT' : 'CRS',
                 'sequence' => $sequence,
                 'certificate_number' => $certificateNumber,
-                'issued_at' => now(),
+                'issued_at' => $existing?->issued_at,
                 'issued_by' => Auth::id(),
-                'status' => 'sent',
+                'status' => $existing?->status ?: TrainerCertificate::STATUS_DRAFT,
                 'file_path' => null,
             ]
         );
@@ -543,6 +585,15 @@ class TrainerCertificateController extends Controller
     {
         $certifiableType = get_class($model);
         $certifiableId = (int) $model->id;
+
+        // Skip sync if assets already exist for this certifiable
+        $exists = TrainerCertificateAsset::query()
+            ->where('certifiable_type', $certifiableType)
+            ->where('certifiable_id', $certifiableId)
+            ->exists();
+        if ($exists) {
+            return;
+        }
 
         $rawTemplate = $model->getAttribute('certificate_template');
         $hasCrmTemplate = is_string($rawTemplate) && trim($rawTemplate) !== '';

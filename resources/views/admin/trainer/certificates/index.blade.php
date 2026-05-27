@@ -7,10 +7,10 @@
     use App\Models\Course;
     use App\Models\TrainerCertificateAsset;
 
-    $tab = $tab ?? request('tab', 'pendingItems');
+    $tab = $tab ?? request('tab', 'unsentItems');
 
-    $pendingItems = $pendingItems ?? collect();
-    $certificates = $certificates ?? collect();
+    $unsentItems = $unsentItems ?? collect();
+    $sentItems = $sentItems ?? collect();
     $trainers = $trainers ?? collect();
 
     function certAssets($model)
@@ -44,7 +44,7 @@
         return 'not-configured';
     }
 
-    $allPrograms = $pendingItems->concat($certificates);
+    $allPrograms = $unsentItems->concat($sentItems);
 
     $totalProgram = $allPrograms->count();
 
@@ -632,6 +632,30 @@
             flex-shrink: 0;
         }
 
+        .card-actions-row {
+            display: flex;
+            gap: 10px;
+            padding: 0 20px 20px;
+        }
+
+        .card-actions-row .btn-manage-template {
+            margin: 0;
+            flex: 1;
+            height: 44px;
+            font-size: .85rem;
+        }
+
+        .btn-manage-template.btn-outline {
+            border: 1.5px solid var(--cert-primary);
+            background: transparent;
+            color: var(--cert-primary);
+        }
+
+        .btn-manage-template.btn-outline:hover {
+            background: var(--cert-soft);
+            color: var(--cert-primary-2);
+        }
+
         .btn-manage-template .bi-chevron-right {
             margin-left: auto;
             font-size: .85rem;
@@ -803,18 +827,18 @@
         </div>
 
         <div class="cert-tab-wrapper">
-            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'pendingItems' ? 'active' : '' }}"
-                data-target="pendingItems-pane">
-                <i class="bi bi-calendar-event"></i>
-                Sertifikat Event
-                <span class="tab-count">{{ $pendingItems->count() }}</span>
+            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'unsentItems' ? 'active' : '' }}"
+                data-target="unsentItems-pane">
+                <i class="bi bi-clock"></i>
+                Belum Terkirim
+                <span class="tab-count">{{ $unsentItems->count() }}</span>
             </button>
 
-            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'certificates' ? 'active' : '' }}"
-                data-target="certificates-pane">
-                <i class="bi bi-mortarboard"></i>
-                Sertifikat Kursus
-                <span class="tab-count">{{ $certificates->count() }}</span>
+            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'sentItems' ? 'active' : '' }}"
+                data-target="sentItems-pane">
+                <i class="bi bi-send-check"></i>
+                Sudah Terkirim
+                <span class="tab-count">{{ $sentItems->count() }}</span>
             </button>
         </div>
 
@@ -847,237 +871,281 @@
         </div>
 
         <div class="tab-content-container">
-            <div class="custom-tab-pane {{ $tab === 'pendingItems' ? 'active' : '' }}" id="pendingItems-pane">
+            <div class="custom-tab-pane {{ $tab === 'unsentItems' ? 'active' : '' }}" id="unsentItems-pane">
                 <div class="certificate-grid">
-                    @forelse($pendingItems as $event)
-                                    @php
-                                        $assets = certAssets($event);
-                                        $status = certStatus($event);
+                    @forelse($unsentItems as $item)
+                        @php
+                            $assets = certAssets($item);
+                            $status = certStatus($item);
 
-                                        $hasTemplate = $assets->where('type', 'template')->isNotEmpty();
-                                        $hasLogo = $assets->where('type', 'logo')->isNotEmpty();
-                                        $hasSignature = $assets->where('type', 'signature')->isNotEmpty();
+                            $hasTemplate = $assets->where('type', 'template')->isNotEmpty();
+                            $hasLogo = $assets->where('type', 'logo')->isNotEmpty();
+                            $hasSignature = $assets->where('type', 'signature')->isNotEmpty();
 
-                                        $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
-                                    @endphp
+                            $isEvent = $item instanceof \App\Models\Event;
+                            $title = $isEvent ? ($item->title ?? '-') : ($item->name ?? '-');
+                            $context = $isEvent ? 'event' : 'course';
+                            $typeBadge = $isEvent ? 'EVENT' : 'COURSE';
+                            $iconClass = $isEvent ? 'bi-calendar-event' : 'bi-mortarboard';
+                            
+                            $metaLabel = $isEvent ? 'Peserta Terdaftar' : 'Siswa Terdaftar';
+                            $metaCount = $isEvent ? ($item->registrations_count ?? 0) : ($item->enrollments_count ?? 0);
+                        @endphp
 
-                                    <div class="certificate-card cert-row" data-title="{{ strtolower($event->title ?? '') }}"
-                                        data-status="{{ $status }}">
+                        <div class="certificate-card cert-row" data-title="{{ strtolower($title) }}"
+                            data-status="{{ $status }}">
 
-                                        <div class="card-inner">
-                                            {{-- Top: type badge + status badge --}}
-                                            <div class="card-top">
-                                                <span class="type-badge">EVENT</span>
+                            <div class="card-inner">
+                                {{-- Top: type badge + status badge --}}
+                                <div class="card-top">
+                                    <span class="type-badge">{{ $typeBadge }}</span>
 
-                                                @if($status === 'ready')
-                                                    <span class="status-badge ready">
-                                                        <i class="bi bi-send-check-fill"></i> Siap Dikirim
-                                                    </span>
-                                                @elseif($status === 'configured')
-                                                    <span class="status-badge configured">
-                                                        <i class="bi bi-gear-wide-connected"></i> Perlu Dilengkapi
-                                                    </span>
-                                                @else
-                                                    <span class="status-badge missing">
-                                                        <i class="bi bi-exclamation-triangle-fill"></i> Belum Siap
-                                                    </span>
-                                                @endif
+                                    @if($status === 'ready')
+                                        <span class="status-badge ready">
+                                            <i class="bi bi-send-check-fill"></i> Siap Dikirim
+                                        </span>
+                                    @elseif($status === 'configured')
+                                        <span class="status-badge configured">
+                                            <i class="bi bi-gear-wide-connected"></i> Perlu Dilengkapi
+                                        </span>
+                                    @else
+                                        <span class="status-badge missing">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> Belum Siap
+                                        </span>
+                                    @endif
+                                </div>
+
+                                {{-- Program info --}}
+                                <div class="program-main">
+                                    <div
+                                        class="program-icon {{ $status === 'ready' ? 'ready' : ($status === 'configured' ? 'configured' : 'missing') }}">
+                                        <i class="bi {{ $iconClass }}"></i>
+                                    </div>
+                                    <div class="program-info">
+                                        <h5 class="program-title">{{ $title }}</h5>
+                                        <div class="program-date">
+                                            @if($isEvent)
+                                                @php
+                                                    $eventDate = $item->event_date ? \Carbon\Carbon::parse($item->event_date) : null;
+                                                @endphp
+                                                <i class="bi bi-calendar3"></i>
+                                                {{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}
+                                            @else
+                                                <i class="bi bi-folder2-open"></i>
+                                                {{ $item->category->name ?? 'General' }}
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Peserta Terdaftar --}}
+                                <div class="program-meta-wrap">
+                                    <span class="program-meta-label">{{ $metaLabel }}</span>
+                                    <span class="program-meta-count">
+                                        <i class="bi bi-people-fill"></i>
+                                        {{ $metaCount }}
+                                    </span>
+                                </div>
+
+                                {{-- Aset Sertifikat — flat row --}}
+                                <div class="asset-section">
+                                    <div class="asset-title">Aset Sertifikat</div>
+                                    <div class="asset-flat-row">
+                                        <div class="asset-flat-item">
+                                            <div class="asset-flat-label">
+                                                <i class="bi bi-file-earmark-text"></i> Template
                                             </div>
-
-                                            {{-- Program info --}}
-                                            <div class="program-main">
-                                                <div
-                                                    class="program-icon {{ $status === 'ready' ? 'ready' : ($status === 'configured' ? 'configured' : 'missing') }}">
-                                                    <i class="bi bi-calendar-event"></i>
-                                                </div>
-                                                <div class="program-info">
-                                                    <h5 class="program-title">{{ $event->title ?? '-' }}</h5>
-                                                    <div class="program-date">
-                                                        <i class="bi bi-calendar3"></i>
-                                                        {{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Peserta Terdaftar — vertikal --}}
-                                            <div class="program-meta-wrap">
-                                                <span class="program-meta-label">Peserta Terdaftar</span>
-                                                <span class="program-meta-count">
-                                                    <i class="bi bi-people-fill"></i>
-                                                    {{ $event->registrations_count ?? 0 }}
-                                                </span>
-                                            </div>
-
-                                            {{-- Aset Sertifikat — flat row --}}
-                                            <div class="asset-section">
-                                                <div class="asset-title">Aset Sertifikat</div>
-                                                <div class="asset-flat-row">
-                                                    <div class="asset-flat-item">
-                                                        <div class="asset-flat-label">
-                                                            <i class="bi bi-file-earmark-text"></i> Template
-                                                        </div>
-                                                        <div class="asset-flat-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
-                                                            <i
-                                                                class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                                            {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
-                                                        </div>
-                                                    </div>
-                                                    <div class="asset-flat-item">
-                                                        <div class="asset-flat-label">
-                                                            <i class="bi bi-image"></i> Logo
-                                                        </div>
-                                                        <div class="asset-flat-status {{ $hasLogo ? 'ok' : 'no' }}">
-                                                            <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                            {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
-                                                        </div>
-                                                    </div>
-                                                    <div class="asset-flat-item">
-                                                        <div class="asset-flat-label">
-                                                            <i class="bi bi-pencil"></i> Tanda Tangan
-                                                        </div>
-                                                        <div class="asset-flat-status {{ $hasSignature ? 'ok' : 'no' }}">
-                                                            <i
-                                                                class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                            {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                            <div class="asset-flat-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
+                                                <i
+                                                    class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
                                             </div>
                                         </div>
-
-                                        {{-- Tombol Kelola Template — full width --}}
-                                        <a href="{{ route('admin.trainer.certificates.edit', [
-                            'trainer' => $event->trainer_id,
-                            'context' => 'event',
-                            'id' => $event->id,
-                        ]) }}"
-                                            class="btn-manage-template {{ $status === 'not-configured' ? 'warning' : ($status === 'configured' ? 'soft' : '') }}">
-                                            <i class="bi bi-gear-fill"></i>
-                                            Kelola Template
-                                            <i class="bi bi-chevron-right ms-auto"></i>
-                                        </a>
+                                        <div class="asset-flat-item">
+                                            <div class="asset-flat-label">
+                                                <i class="bi bi-image"></i> Logo
+                                            </div>
+                                            <div class="asset-flat-status {{ $hasLogo ? 'ok' : 'no' }}">
+                                                <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                                {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
+                                            </div>
+                                        </div>
+                                        <div class="asset-flat-item">
+                                            <div class="asset-flat-label">
+                                                <i class="bi bi-pencil"></i> Tanda Tangan
+                                            </div>
+                                            <div class="asset-flat-status {{ $hasSignature ? 'ok' : 'no' }}">
+                                                <i
+                                                    class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                                {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
+                                            </div>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {{-- Tombol Kelola Template — full width --}}
+                            <a href="{{ route('admin.trainer.certificates.edit', [
+                                'trainer' => $item->trainer_id,
+                                'context' => $context,
+                                'id' => $item->id,
+                            ]) }}"
+                                class="btn-manage-template {{ $status === 'not-configured' ? 'warning' : ($status === 'configured' ? 'soft' : '') }}">
+                                <i class="bi bi-gear-fill"></i>
+                                Kelola Template
+                                <i class="bi bi-chevron-right ms-auto"></i>
+                            </a>
+                        </div>
                     @empty
                         <div class="empty-card">
                             <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                            Data event tidak ditemukan.
+                            Data program belum terkirim tidak ditemukan.
                         </div>
                     @endforelse
                 </div>
             </div>
 
-            <div class="custom-tab-pane {{ $tab === 'certificates' ? 'active' : '' }}" id="certificates-pane">
+            <div class="custom-tab-pane {{ $tab === 'sentItems' ? 'active' : '' }}" id="sentItems-pane">
                 <div class="certificate-grid">
-                    @forelse($certificates as $course)
-                                    @php
-                                        $assets = certAssets($course);
-                                        $status = certStatus($course);
+                    @forelse($sentItems as $item)
+                        @php
+                            $assets = certAssets($item);
+                            $status = certStatus($item);
 
-                                        $hasTemplate = $assets->where('type', 'template')->isNotEmpty();
-                                        $hasLogo = $assets->where('type', 'logo')->isNotEmpty();
-                                        $hasSignature = $assets->where('type', 'signature')->isNotEmpty();
-                                    @endphp
+                            $hasTemplate = $assets->where('type', 'template')->isNotEmpty();
+                            $hasLogo = $assets->where('type', 'logo')->isNotEmpty();
+                            $hasSignature = $assets->where('type', 'signature')->isNotEmpty();
 
-                                    <div class="certificate-card cert-row" data-title="{{ strtolower($course->name ?? '') }}"
-                                        data-status="{{ $status }}">
+                            $isEvent = $item instanceof \App\Models\Event;
+                            $title = $isEvent ? ($item->title ?? '-') : ($item->name ?? '-');
+                            $context = $isEvent ? 'event' : 'course';
+                            $typeBadge = $isEvent ? 'EVENT' : 'COURSE';
+                            $iconClass = $isEvent ? 'bi-calendar-event' : 'bi-mortarboard';
+                            
+                            $metaLabel = $isEvent ? 'Peserta Terdaftar' : 'Siswa Terdaftar';
+                            $metaCount = $isEvent ? ($item->registrations_count ?? 0) : ($item->enrollments_count ?? 0);
 
-                                        <div class="card-inner">
-                                            {{-- Top: type badge + status badge --}}
-                                            <div class="card-top">
-                                                <span class="type-badge">COURSE</span>
+                            $key = get_class($item) . ':' . $item->id;
+                            $cert = $publishedKeys->has($key) ? $publishedKeys->get($key)->first() : null;
+                            $certificateId = $cert ? $cert->id : null;
+                        @endphp
 
-                                                @if($status === 'ready')
-                                                    <span class="status-badge ready">
-                                                        <i class="bi bi-send-check-fill"></i> Siap Dikirim
-                                                    </span>
-                                                @elseif($status === 'configured')
-                                                    <span class="status-badge configured">
-                                                        <i class="bi bi-gear-wide-connected"></i> Perlu Dilengkapi
-                                                    </span>
-                                                @else
-                                                    <span class="status-badge missing">
-                                                        <i class="bi bi-exclamation-triangle-fill"></i> Belum Siap
-                                                    </span>
-                                                @endif
+                        <div class="certificate-card cert-row" data-title="{{ strtolower($title) }}"
+                            data-status="{{ $status }}">
+
+                            <div class="card-inner">
+                                {{-- Top: type badge + status badge --}}
+                                <div class="card-top">
+                                    <span class="type-badge">{{ $typeBadge }}</span>
+
+                                    <span class="status-badge ready">
+                                        <i class="bi bi-send-check-fill"></i> Sudah Terkirim
+                                    </span>
+                                </div>
+
+                                {{-- Program info --}}
+                                <div class="program-main">
+                                    <div class="program-icon ready">
+                                        <i class="bi {{ $iconClass }}"></i>
+                                    </div>
+                                    <div class="program-info">
+                                        <h5 class="program-title">{{ $title }}</h5>
+                                        <div class="program-date">
+                                            @if($isEvent)
+                                                @php
+                                                    $eventDate = $item->event_date ? \Carbon\Carbon::parse($item->event_date) : null;
+                                                @endphp
+                                                <i class="bi bi-calendar3"></i>
+                                                {{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}
+                                            @else
+                                                <i class="bi bi-folder2-open"></i>
+                                                {{ $item->category->name ?? 'General' }}
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Peserta Terdaftar --}}
+                                <div class="program-meta-wrap">
+                                    <span class="program-meta-label">{{ $metaLabel }}</span>
+                                    <span class="program-meta-count">
+                                        <i class="bi bi-people-fill"></i>
+                                        {{ $metaCount }}
+                                    </span>
+                                </div>
+
+                                {{-- Aset Sertifikat — flat row --}}
+                                <div class="asset-section">
+                                    <div class="asset-title">Aset Sertifikat</div>
+                                    <div class="asset-flat-row">
+                                        <div class="asset-flat-item">
+                                            <div class="asset-flat-label">
+                                                <i class="bi bi-file-earmark-text"></i> Template
                                             </div>
-
-                                            {{-- Program info --}}
-                                            <div class="program-main">
-                                                <div
-                                                    class="program-icon {{ $status === 'ready' ? 'ready' : ($status === 'configured' ? 'configured' : 'missing') }}">
-                                                    <i class="bi bi-mortarboard"></i>
-                                                </div>
-                                                <div class="program-info">
-                                                    <h5 class="program-title">{{ $course->name ?? '-' }}</h5>
-                                                    <div class="program-date">
-                                                        <i class="bi bi-folder2-open"></i>
-                                                        {{ $course->category->name ?? 'General' }}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Siswa Terdaftar — vertikal --}}
-                                            <div class="program-meta-wrap">
-                                                <span class="program-meta-label">Siswa Terdaftar</span>
-                                                <span class="program-meta-count">
-                                                    <i class="bi bi-people-fill"></i>
-                                                    {{ $course->enrollments_count ?? 0 }}
-                                                </span>
-                                            </div>
-
-                                            {{-- Aset Sertifikat — flat row --}}
-                                            <div class="asset-section">
-                                                <div class="asset-title">Aset Sertifikat</div>
-                                                <div class="asset-flat-row">
-                                                    <div class="asset-flat-item">
-                                                        <div class="asset-flat-label">
-                                                            <i class="bi bi-file-earmark-text"></i> Template
-                                                        </div>
-                                                        <div class="asset-flat-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
-                                                            <i
-                                                                class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
-                                                            {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
-                                                        </div>
-                                                    </div>
-                                                    <div class="asset-flat-item">
-                                                        <div class="asset-flat-label">
-                                                            <i class="bi bi-image"></i> Logo
-                                                        </div>
-                                                        <div class="asset-flat-status {{ $hasLogo ? 'ok' : 'no' }}">
-                                                            <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                            {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
-                                                        </div>
-                                                    </div>
-                                                    <div class="asset-flat-item">
-                                                        <div class="asset-flat-label">
-                                                            <i class="bi bi-pencil"></i> Tanda Tangan
-                                                        </div>
-                                                        <div class="asset-flat-status {{ $hasSignature ? 'ok' : 'no' }}">
-                                                            <i
-                                                                class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                            {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                            <div class="asset-flat-status {{ $hasTemplate ? 'ok' : 'neutral' }}">
+                                                <i
+                                                    class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-dash-circle-fill' }}"></i>
+                                                {{ $hasTemplate ? 'Tersedia' : 'Belum Ada' }}
                                             </div>
                                         </div>
-
-                                        {{-- Tombol Kelola Template — full width --}}
-                                        <a href="{{ route('admin.trainer.certificates.edit', [
-                            'trainer' => $course->trainer_id,
-                            'context' => 'course',
-                            'id' => $course->id,
-                        ]) }}"
-                                            class="btn-manage-template {{ $status === 'not-configured' ? 'warning' : ($status === 'configured' ? 'soft' : '') }}">
-                                            <i class="bi bi-gear-fill"></i>
-                                            Kelola Template
-                                            <i class="bi bi-chevron-right ms-auto"></i>
-                                        </a>
+                                        <div class="asset-flat-item">
+                                            <div class="asset-flat-label">
+                                                <i class="bi bi-image"></i> Logo
+                                            </div>
+                                            <div class="asset-flat-status {{ $hasLogo ? 'ok' : 'no' }}">
+                                                <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                                {{ $hasLogo ? 'Tersedia' : 'Belum Ada' }}
+                                            </div>
+                                        </div>
+                                        <div class="asset-flat-item">
+                                            <div class="asset-flat-label">
+                                                <i class="bi bi-pencil"></i> Tanda Tangan
+                                            </div>
+                                            <div class="asset-flat-status {{ $hasSignature ? 'ok' : 'no' }}">
+                                                <i
+                                                    class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
+                                                {{ $hasSignature ? 'Tersedia' : 'Belum Ada' }}
+                                            </div>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            @if($certificateId)
+                                <div class="card-actions-row">
+                                    <a href="{{ route('admin.trainer.certificates.detail', ['certificate' => $certificateId]) }}"
+                                        class="btn-manage-template">
+                                        <i class="bi bi-eye-fill"></i>
+                                        Lihat
+                                    </a>
+                                    <a href="{{ route('admin.trainer.certificates.edit', [
+                                        'trainer' => $item->trainer_id,
+                                        'context' => $context,
+                                        'id' => $item->id,
+                                    ]) }}"
+                                        class="btn-manage-template btn-outline"
+                                        title="Kelola & Kirim Ulang">
+                                        <i class="bi bi-pencil-square"></i>
+                                        Kelola
+                                    </a>
+                                </div>
+                            @else
+                                <a href="{{ route('admin.trainer.certificates.edit', [
+                                    'trainer' => $item->trainer_id,
+                                    'context' => $context,
+                                    'id' => $item->id,
+                                ]) }}"
+                                    class="btn-manage-template soft">
+                                    <i class="bi bi-gear-fill"></i>
+                                    Kelola Template
+                                    <i class="bi bi-chevron-right ms-auto"></i>
+                                </a>
+                            @endif
+                        </div>
                     @empty
                         <div class="empty-card">
                             <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                            Data kursus tidak ditemukan.
+                            Data program terkirim tidak ditemukan.
                         </div>
                     @endforelse
                 </div>
