@@ -184,10 +184,8 @@ class TrainerController extends Controller
 
         $finishedCourses = Course::query()
             ->where('trainer_id', $trainerId)
-            ->where('status', 'approved')
-            ->whereNotNull('approved_at')
-            ->where('approved_at', '<', now())
-            ->get(['id', 'name', 'approved_at']);
+            ->whereIn('status', ['published', 'approved', 'active'])
+            ->get(['id', 'name', 'approved_at', 'status']);
 
         $existing = TrainerCertificate::query()
             ->where('trainer_id', $trainerId)
@@ -1334,27 +1332,34 @@ class TrainerController extends Controller
         $courseInvitationStatus = $courseInvitation?->effectiveInvitationStatus() ?? '';
         $courseMaterialLocked = $this->isCourseMaterialLockedForTrainer((int) $course->id, $trainerId);
 
+        $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
+        if ($invitationSchemeType === 0) {
+            $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
+            $invitationSchemeType = match ($contribScheme) {
+                'e2e' => 1,
+                'module_video' => 2,
+                'video_only' => 3, // Note: video_only means scheme 3 (10%)
+                default => 0,
+            };
+        }
+
         $requestedSchemeType = (int) $request->query('scheme', 0);
         $sessionSchemeType = (int) session('trainer_active_scheme_type', 0);
-        $activeSchemeType = in_array($requestedSchemeType, [1, 2, 3], true)
-            ? $requestedSchemeType
-            : (in_array($sessionSchemeType, [1, 2, 3], true) ? $sessionSchemeType : 1);
+        
+        $activeSchemeType = in_array($invitationSchemeType, [1, 2, 3], true)
+            ? $invitationSchemeType
+            : (in_array($requestedSchemeType, [1, 2, 3], true)
+                ? $requestedSchemeType
+                : (in_array($sessionSchemeType, [1, 2, 3], true) ? $sessionSchemeType : 1));
 
         $schemePermissions = [
             1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
             2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
-            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
+            3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
         ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
 
-        if ($courseMaterialLocked) {
-            $schemePermissions = [
-                'can_module' => false,
-                'can_video' => false,
-                'can_quiz' => false,
-            ];
-        }
 
-        $allowedTabs = array_values(array_filter([
+        $allowedTabs = array_keys(array_filter([
             'module' => $schemePermissions['can_module'] ?? false,
             'video' => $schemePermissions['can_video'] ?? false,
             'quiz' => $schemePermissions['can_quiz'] ?? false,
@@ -2634,17 +2639,15 @@ class TrainerController extends Controller
 
         $finishedCourses = Course::query()
             ->where('trainer_id', $trainer->id)
-            ->where('status', 'approved')
-            ->whereNotNull('approved_at')
-            ->where('approved_at', '<', now())
+            ->whereIn('status', ['published', 'approved', 'active'])
             ->withCount('enrollments')
-            ->orderByDesc('approved_at')
+            ->orderByDesc('updated_at')
             ->get(['id', 'name', 'approved_at', 'status', 'certificate_logo', 'certificate_signature', 'certificate_template']);
 
         $certificates = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
             ->whereIn('status', ['sent', 'published'])
-            ->get(['certifiable_type', 'certifiable_id', 'certificate_number', 'issued_at', 'file_path', 'type_code']);
+            ->get(['certifiable_type', 'certifiable_id', 'certificate_number', 'issued_at', 'file_path', 'type_code', 'status']);
 
         $certMap = [];
         foreach ($certificates as $cert) {
@@ -2657,6 +2660,7 @@ class TrainerController extends Controller
         foreach ($finishedEvents as $event) {
             $key = Event::class . ':' . (int) $event->id;
             $cert = $certMap[$key] ?? null;
+            [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($event);
             $hasLogo      = !empty($event->certificate_logo);
             $hasSignature = !empty($event->certificate_signature);
             $hasTemplate  = !empty($event->certificate_template);
@@ -2668,17 +2672,24 @@ class TrainerController extends Controller
                 'statusLabel'        => 'Selesai',
                 'certificate'        => $cert,
                 'downloadUrl'        => $cert ? route('trainer.certificates.events.download', $event) : null,
+                'showUrl'            => $cert ? route('trainer.certificates.events.show', $event) : null,
                 'highlight'          => $context === 'event' && $targetId === (int) $event->id,
                 'registrations_count' => (int) ($event->registrations_count ?? 0),
                 'has_logo'           => $hasLogo,
                 'has_signature'      => $hasSignature,
                 'has_template'       => $hasTemplate,
+                'logosBase64'        => $logosBase64,
+                'signaturesBase64'   => $signaturesBase64,
+                'signaturesData'     => $signaturesData,
+                'template'           => $template,
+                'model'              => $event,
             ]);
         }
 
         foreach ($finishedCourses as $course) {
             $key = Course::class . ':' . (int) $course->id;
             $cert = $certMap[$key] ?? null;
+            [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($course);
             $hasLogo      = !empty($course->certificate_logo);
             $hasSig       = !empty($course->certificate_signature);
             $hasTemplate  = !empty($course->certificate_template);
@@ -2690,11 +2701,17 @@ class TrainerController extends Controller
                 'statusLabel'        => 'Selesai',
                 'certificate'        => $cert,
                 'downloadUrl'        => $cert ? route('trainer.certificates.courses.download', $course) : null,
+                'showUrl'            => $cert ? route('trainer.certificates.courses.show', $course) : null,
                 'highlight'          => $context === 'course' && $targetId === (int) $course->id,
                 'registrations_count' => (int) ($course->enrollments_count ?? 0),
                 'has_logo'           => $hasLogo,
                 'has_signature'      => $hasSig,
                 'has_template'       => $hasTemplate,
+                'logosBase64'        => $logosBase64,
+                'signaturesBase64'   => $signaturesBase64,
+                'signaturesData'     => $signaturesData,
+                'template'           => $template,
+                'model'              => $course,
             ]);
         }
 

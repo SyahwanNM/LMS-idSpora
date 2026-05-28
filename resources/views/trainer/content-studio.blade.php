@@ -147,6 +147,7 @@
         .studio-tab.is-locked {
             opacity: 0.5;
             cursor: not-allowed;
+            pointer-events: none;
         }
 
         .revision-alert {
@@ -1208,7 +1209,7 @@
         @endif
 
         <section class="studio-layout">
-            <div class="studio-left">
+            <div class="studio-panels">
                 <section class="panel panel-module {{ $activeTab === 'module' ? 'active' : '' }}" data-panel="module">
                     <form id="moduleForm" class="module-form"
                         action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST"
@@ -1266,8 +1267,8 @@
                             <button type="button" class="secondary-btn" id="previewModuleBtn">
                                 <i class="bi bi-eye"></i> PREVIEW MODUL
                             </button>
-                            <button type="submit" class="primary-btn" id="uploadSubmitBtn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
-                                <i class="bi bi-send"></i> SUBMIT FOR REVIEW
+                            <button type="submit" id="uploadSubmitBtn" class="primary-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_module']) ? 'disabled' : '' }}>
+                                <i class="bi bi-cloud-arrow-up-fill"></i> SIMPAN MATERI TEKS
                             </button>
                         </div>
                     </form>
@@ -1384,8 +1385,8 @@
                         </div>
 
                         <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
-                                <i class="bi bi-send"></i> SUBMIT VIDEO
+                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn" {{ ($courseMaterialLocked || !$schemePermissions['can_video']) ? 'disabled' : '' }}>
+                                <i class="bi bi-send"></i> SUBMIT FOR REVIEW
                             </button>
                         </div>
                     </form>
@@ -1538,10 +1539,10 @@
                         </div>
 
                         <div class="quiz-actions" style="margin-top: 24px;">
-                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
+                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_quiz']) ? 'disabled' : '' }}>
                                 <i class="bi bi-plus-lg"></i> TAMBAH SOAL
                             </button>
-                            <button type="submit" class="primary-btn quiz-save-btn" {{ $courseMaterialLocked ? 'disabled' : '' }}>
+                            <button type="submit" class="primary-btn quiz-save-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_quiz']) ? 'disabled' : '' }}>
                                 <i class="bi bi-check-lg"></i> SIMPAN QUIZ
                             </button>
                         </div>

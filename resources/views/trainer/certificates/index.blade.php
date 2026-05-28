@@ -12,110 +12,458 @@
 
 @push('styles')
 <style>
-  /* ─── Certificate Page ─── */
+  /* Import cursive fonts for certificate preview name */
+  @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Great+Vibes&display=swap');
+
   .cert-page {
     margin: 0;
     padding: 0;
   }
 
-  /* ─── Stats Strip ─── */
-  .cert-stats-strip {
+  /* ─── Tabs & Filters Container ─── */
+  .cert-tabs-filter-container {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 0;
+    margin-top: 16px;
+    margin-bottom: 32px;
     gap: 16px;
-    margin-bottom: 28px;
     flex-wrap: wrap;
   }
 
-  .cert-stat-card {
-    flex: 1;
-    min-width: 150px;
-    background: #fff;
-    border: 1px solid #eef2f7;
-    border-radius: 16px;
-    padding: 20px 24px;
+  .cert-nav-tabs {
+    display: flex;
+    gap: 28px;
+  }
+
+  .cert-tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 4px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #94a3b8;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+
+  .cert-tab-btn:hover {
+    color: #1b1763;
+  }
+
+  .cert-tab-btn.active {
+    color: #1b1763;
+  }
+
+  .cert-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1.5px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #1b1763;
+    border-radius: 99px;
+  }
+
+  .cert-filter-widgets {
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: 0 2px 8px rgba(27, 23, 99, 0.06);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
-  .cert-stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(27, 23, 99, 0.1);
+  .cert-search-wrapper {
+    position: relative;
+    min-width: 220px;
   }
 
-  .cert-stat-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 12px;
-    display: flex;
+  .cert-search-input {
+    width: 100%;
+    padding: 9px 36px 9px 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #334155;
+    outline: none;
+    transition: all 0.2s ease;
+    background-color: #fff;
+  }
+
+  .cert-search-input:focus {
+    border-color: #cbd5e1;
+    box-shadow: 0 0 0 3px rgba(27, 23, 99, 0.08);
+  }
+
+  .cert-search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+  }
+
+  .cert-select-wrapper {
+    position: relative;
+  }
+
+  .cert-select {
+    padding: 9px 36px 9px 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    background-color: #fff;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: all 0.2s ease;
+  }
+
+  .cert-select:focus {
+    border-color: #cbd5e1;
+    box-shadow: 0 0 0 3px rgba(27, 23, 99, 0.08);
+  }
+
+  .cert-select-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 11px;
+    pointer-events: none;
+  }
+
+  .cert-toggle-filter-btn {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background-color: #fff;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cert-toggle-filter-btn:hover, .cert-toggle-filter-btn.active {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
+    color: #1b1763;
+  }
+
+  /* ─── Cards Grid ─── */
+  .cert-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  /* ─── Certificate Card ─── */
+  .certificate-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #eef2f7;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .certificate-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(27, 23, 99, 0.08);
+  }
+
+  /* ─── Mini Certificate Preview Box ─── */
+  .mini-cert-preview {
+    position: relative;
+    aspect-ratio: 1.414 / 1;
+    width: 100%;
+    overflow: hidden;
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .mini-cert-scaled {
+    width: 29.7cm;
+    height: 21cm;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    pointer-events: none;
+    background: #fff;
+  }
+
+  .cert-locked-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    gap: 8px;
+    z-index: 10;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .cert-locked-overlay i {
+    font-size: 24px;
+    color: #fff;
+  }
+
+  .cert-locked-overlay span {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #fff;
+  }
+
+  .cert-type-pill {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 11;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 99px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cert-type-pill.event {
+    background-color: #6366f1;
+  }
+
+  .cert-type-pill.course {
+    background-color: #10b981;
+  }
+
+  /* ─── Card Body ─── */
+  .cert-card-body {
+    padding: 16px 20px 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .cert-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.4;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 42px;
+  }
+
+  .cert-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .cert-card-meta i {
+    font-size: 13px;
+    color: #94a3b8;
+  }
+
+  /* ─── Card Footer Buttons ─── */
+  .cert-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px 20px;
+    background: transparent;
+    border-top: none;
+    gap: 12px;
+  }
+
+  .btn-cert-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    flex-grow: 1;
+    background: #fff;
+  }
+
+  .btn-cert-view-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
     flex-shrink: 0;
   }
 
-  .cert-stat-icon.yellow { background: rgba(251, 176, 52, 0.12); }
-  .cert-stat-icon.green  { background: rgba(32, 179, 134, 0.12); }
-  .cert-stat-icon.indigo { background: rgba(99, 102, 241, 0.12); }
-
-  .cert-stat-icon i {
-    font-size: 20px;
+  /* Purple Theme Buttons */
+  .certificate-card.theme-purple .btn-cert-download {
+    border: 1.5px solid #6366f1;
+    color: #6366f1;
+  }
+  .certificate-card.theme-purple .btn-cert-download:hover {
+    background: #6366f1;
+    color: #fff;
+  }
+  .certificate-card.theme-purple .btn-cert-view-circle {
+    background: #f5f3ff;
+    color: #6366f1;
+  }
+  .certificate-card.theme-purple .btn-cert-view-circle:hover {
+    background: #ddd6fe;
   }
 
-  .cert-stat-icon.yellow i { color: #fbb034; }
-  .cert-stat-icon.green  i { color: #20b386; }
-  .cert-stat-icon.indigo i { color: #6366f1; }
-
-  .cert-stat-info { display: flex; flex-direction: column; gap: 2px; }
-
-  .cert-stat-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #9aa8bd;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
+  /* Green Theme Buttons */
+  .certificate-card.theme-green .btn-cert-download {
+    border: 1.5px solid #10b981;
+    color: #10b981;
+  }
+  .certificate-card.theme-green .btn-cert-download:hover {
+    background: #10b981;
+    color: #fff;
+  }
+  .certificate-card.theme-green .btn-cert-view-circle {
+    background: #ecfdf5;
+    color: #10b981;
+  }
+  .certificate-card.theme-green .btn-cert-view-circle:hover {
+    background: #a7f3d0;
   }
 
-  .cert-stat-value {
-    font-size: 22px;
-    font-weight: 900;
-    color: #1b1763;
-    line-height: 1;
+  /* Blue Theme Buttons */
+  .certificate-card.theme-blue .btn-cert-download {
+    border: 1.5px solid #3b82f6;
+    color: #3b82f6;
+  }
+  .certificate-card.theme-blue .btn-cert-download:hover {
+    background: #3b82f6;
+    color: #fff;
+  }
+  .certificate-card.theme-blue .btn-cert-view-circle {
+    background: #eff6ff;
+    color: #3b82f6;
+  }
+  .certificate-card.theme-blue .btn-cert-view-circle:hover {
+    background: #bfdbfe;
   }
 
-  /* ─── Filter Bar ─── */
-  .cert-filter-bar {
+  /* Gold Theme Buttons */
+  .certificate-card.theme-gold .btn-cert-download {
+    border: 1.5px solid #d97706;
+    color: #d97706;
+  }
+  .certificate-card.theme-gold .btn-cert-download:hover {
+    background: #d97706;
+    color: #fff;
+  }
+  .certificate-card.theme-gold .btn-cert-view-circle {
+    background: #fffbeb;
+    color: #d97706;
+  }
+  .certificate-card.theme-gold .btn-cert-view-circle:hover {
+    background: #fde68a;
+  }
+
+  /* Disabled State Buttons */
+  .btn-cert-download.disabled, .btn-cert-download:disabled {
+    border: 1.5px solid #e2e8f0 !important;
+    background: #f8fafc !important;
+    color: #cbd5e1 !important;
+    cursor: not-allowed;
+  }
+
+  .btn-cert-view-circle.disabled, .btn-cert-view-circle:disabled {
+    background: #f8fafc !important;
+    color: #cbd5e1 !important;
+    cursor: not-allowed;
+  }
+
+  /* ─── Client Pagination ─── */
+  .cert-pagination-container {
     display: flex;
+    justify-content: center;
+    align-items: center;
     gap: 8px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
+    margin-top: 40px;
+    margin-bottom: 20px;
   }
 
-  .cert-filter-pill {
-    padding: 8px 18px;
-    border-radius: 999px;
-    border: 1px solid #dbe3ea;
-    background: #fff;
-    color: #5f6f85;
+  .cert-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background-color: #fff;
+    color: #64748b;
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
+    text-decoration: none;
   }
 
-  .cert-filter-pill:hover {
-    border-color: #b0bec8;
+  .cert-page-btn:hover {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
     color: #1b1763;
-    background: #f4f6fb;
   }
 
-  .cert-filter-pill.active {
-    background: #1b1763;
+  .cert-page-btn.active {
+    background-color: #1b1763;
     border-color: #1b1763;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(27, 23, 99, 0.22);
+    box-shadow: 0 4px 10px rgba(27, 23, 99, 0.3);
+  }
+
+  .cert-page-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f8fafc;
+    color: #cbd5e1;
+    border-color: #e2e8f0;
   }
 
   /* ─── Empty State ─── */
@@ -161,267 +509,6 @@
     max-width: 320px;
     line-height: 1.6;
   }
-
-  /* ─── Cards Grid ─── */
-  .cert-cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-  }
-
-  /* ─── Certificate Card ─── */
-  .certificate-card {
-    background: #fff;
-    border-radius: 20px;
-    border: 1px solid #eef2f7;
-    box-shadow: 0 4px 16px rgba(27, 23, 99, 0.07);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    position: relative;
-  }
-
-  .certificate-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(27, 23, 99, 0.13);
-  }
-
-  .certificate-card.is-highlight {
-    border-color: #fbb034;
-    box-shadow: 0 4px 16px rgba(251, 176, 52, 0.18);
-  }
-
-  /* Card accent bar */
-  .cert-card-accent {
-    height: 5px;
-    width: 100%;
-    background: linear-gradient(90deg, #1b1763 0%, #6366f1 100%);
-    flex-shrink: 0;
-  }
-
-  .cert-card-accent.event {
-    background: linear-gradient(90deg, #d59a10 0%, #fbb034 100%);
-  }
-
-  /* Card body */
-  .cert-card-body {
-    padding: 20px 22px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    flex: 1;
-  }
-
-  /* Card header row */
-  .cert-card-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .cert-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    flex-shrink: 0;
-  }
-
-  .cert-type-badge.course {
-    background: rgba(99, 102, 241, 0.10);
-    color: #4f46e5;
-    border: 1px solid rgba(99, 102, 241, 0.18);
-  }
-
-  .cert-type-badge.event {
-    background: rgba(251, 176, 52, 0.12);
-    color: #b45309;
-    border: 1px solid rgba(251, 176, 52, 0.25);
-  }
-
-  .cert-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-
-  .cert-status-badge.done {
-    background: rgba(32, 179, 134, 0.10);
-    color: #199a5b;
-    border: 1px solid rgba(32, 179, 134, 0.22);
-  }
-
-  .cert-status-badge.pending {
-    background: rgba(251, 176, 52, 0.10);
-    color: #b45309;
-    border: 1px solid rgba(251, 176, 52, 0.22);
-  }
-
-  /* Card title */
-  .cert-card-title {
-    font-size: 15px;
-    font-weight: 800;
-    color: #1a1335;
-    line-height: 1.4;
-    margin: 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  /* Card meta */
-  .cert-card-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #7d98b3;
-    font-weight: 500;
-  }
-
-  .cert-card-meta i {
-    font-size: 13px;
-    color: #9aa8bd;
-  }
-
-  /* New label */
-  .cert-new-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    font-weight: 800;
-    color: #b45309;
-    background: rgba(251, 176, 52, 0.13);
-    border: 1px solid rgba(251, 176, 52, 0.28);
-    border-radius: 999px;
-    padding: 2px 9px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
-
-  /* Card footer */
-  .cert-card-footer {
-    padding: 14px 22px 18px;
-    border-top: 1px solid #eef2f7;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    background: #fafbff;
-  }
-
-  .cert-number {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .cert-number-label {
-    font-size: 9px;
-    font-weight: 800;
-    color: #9aa8bd;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-
-  .cert-number-code {
-    font-size: 11px;
-    font-weight: 700;
-    color: #4f46e5;
-    font-family: 'Fira Code', monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 180px;
-  }
-
-  /* Download Button */
-  .btn-cert-download {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 18px;
-    border-radius: 12px;
-    background: #1b1763;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 800;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    border: none;
-    cursor: pointer;
-    flex-shrink: 0;
-    letter-spacing: 0.2px;
-    box-shadow: 0 4px 12px rgba(27, 23, 99, 0.20);
-  }
-
-  .btn-cert-download:hover {
-    background: #252590;
-    color: #fff;
-    box-shadow: 0 6px 18px rgba(27, 23, 99, 0.30);
-    transform: translateY(-1px);
-  }
-
-  .btn-cert-download i {
-    font-size: 13px;
-  }
-
-  /* Unavailable button */
-  .btn-cert-unavailable {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 16px;
-    border-radius: 12px;
-    background: #f1f5f9;
-    color: #b0b3c1;
-    font-size: 12px;
-    font-weight: 700;
-    border: none;
-    cursor: default;
-    flex-shrink: 0;
-  }
-
-  .btn-cert-unavailable i {
-    font-size: 13px;
-  }
-
-  /* ─── Responsive ─── */
-  @media (max-width: 768px) {
-    .cert-cards-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .cert-stats-strip {
-      gap: 12px;
-    }
-
-    .cert-stat-card {
-      min-width: 120px;
-      padding: 16px 18px;
-    }
-  }
-
-  @media (max-width: 500px) {
-    .cert-stats-strip {
-      flex-direction: column;
-    }
-  }
 </style>
 @endpush
 
@@ -447,12 +534,15 @@
           </div>
         </div>
 
-        {{-- Stats di hero --}}
+        {{-- Stats di hero ─── --}}
         @php
-          $allItems    = $historyItems ?? collect();
-          $totalItems  = $allItems->count();
-          $totalDone   = $allItems->where('statusLabel', 'Selesai')->count();
-          $totalCerts  = $allItems->filter(fn($i) => !empty($i['certificate']) && !empty($i['certificate']->file_path))->count();
+          $allItems = $historyItems ?? collect();
+          $totalItems = $allItems->count();
+          $totalDone = $allItems->where('statusLabel', 'Selesai')->count();
+          $totalCerts = $allItems->filter(fn($i) => !empty($i['certificate']) && !empty($i['certificate']->certificate_number))->count();
+          $years = $allItems->map(function($item) {
+              return $item['date'] ? \Carbon\Carbon::parse($item['date'])->year : null;
+          })->filter()->unique()->sortDesc();
         @endphp
         <div style="display:flex; flex-direction:column; gap:12px; flex-shrink:0;">
           <div class="upcoming-card">
@@ -485,25 +575,45 @@
       </div>
     </section>
 
-    {{-- ─── Filter Pills ─── --}}
+    {{-- ─── Tabs & Filters Header ─── --}}
     @if(!$allItems->isEmpty())
-    <div class="cert-filter-bar" id="certFilterBar">
-      <button class="cert-filter-pill active" data-filter="all">Semua</button>
-      @if($allItems->where('type','course')->count() > 0)
-        <button class="cert-filter-pill" data-filter="course">
-          <i class="bi bi-journal-richtext" style="margin-right:4px;"></i>Kursus
+    <div class="cert-tabs-filter-container">
+      <!-- Left Side: Tabs Navigation -->
+      <div class="cert-nav-tabs">
+        <button class="cert-tab-btn active" data-filter="all">Semua Sertifikat</button>
+        <button class="cert-tab-btn" data-filter="event">Event</button>
+        <button class="cert-tab-btn" data-filter="course">Course</button>
+      </div>
+
+      <!-- Right Side: Filters & Search -->
+      <div class="cert-filter-widgets">
+        <div class="cert-search-wrapper">
+          <input type="text" id="certSearchInput" placeholder="Cari sertifikat..." class="cert-search-input">
+          <i class="bi bi-search cert-search-icon"></i>
+        </div>
+
+        <div class="cert-select-wrapper">
+          <select id="certYearSelect" class="cert-select">
+            <option value="all">Semua Tahun</option>
+            @foreach($years as $y)
+              <option value="{{ $y }}">{{ $y }}</option>
+            @endforeach
+          </select>
+          <i class="bi bi-chevron-down cert-select-icon"></i>
+        </div>
+
+        <div class="cert-select-wrapper">
+          <select id="certSortSelect" class="cert-select">
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+          </select>
+          <i class="bi bi-chevron-down cert-select-icon"></i>
+        </div>
+
+        <button class="cert-toggle-filter-btn" id="certToggleHasCert" title="Tampilkan Hanya yang Memiliki Sertifikat">
+          <i class="bi bi-sliders"></i>
         </button>
-      @endif
-      @if($allItems->where('type','event')->count() > 0)
-        <button class="cert-filter-pill" data-filter="event">
-          <i class="bi bi-calendar-event" style="margin-right:4px;"></i>Event
-        </button>
-      @endif
-      @if($totalCerts > 0)
-        <button class="cert-filter-pill" data-filter="has-cert">
-          <i class="bi bi-award" style="margin-right:4px;"></i>Punya Sertifikat
-        </button>
-      @endif
+      </div>
     </div>
     @endif
 
@@ -517,74 +627,94 @@
         <p>Anda belum memiliki riwayat kegiatan yang selesai. Kegiatan yang telah diselesaikan akan muncul di sini.</p>
       </div>
     @else
+      @php
+        $eventIndex = 0;
+        $courseIndex = 0;
+      @endphp
       <div class="cert-cards-grid" id="certCardsGrid">
-        @foreach($allItems as $item)
+        @foreach($allItems as $index => $item)
           @php
             $cert       = $item['certificate'] ?? null;
-            $hasCert    = !empty($cert) && !empty($cert->certificate_number) && !empty($cert->file_path);
+            $hasCert    = !empty($cert) && !empty($cert->certificate_number);
+            $certIssued = $hasCert && in_array($cert->status ?? '', ['sent', 'published']);
             $isHighlight = !empty($item['highlight']);
-            $dateText   = $item['date'] ? \Carbon\Carbon::parse($item['date'])->format('d M Y') : '-';
+            $dateText   = $item['date'] ? \Carbon\Carbon::parse($item['date'])->translatedFormat('d M Y') : '-';
             $type       = strtolower($item['type'] ?? 'course');
-            $isDone     = ($item['statusLabel'] ?? '') === 'Selesai';
+            
+            // Cycle colors for variety exactly mimicking the mockup screenshot
+            if ($type === 'event') {
+                $theme = ($eventIndex % 2 === 0) ? 'purple' : 'blue';
+                $eventIndex++;
+            } else {
+                $theme = ($courseIndex % 2 === 0) ? 'green' : 'gold';
+                $courseIndex++;
+            }
+
+            // Role label map
+            $roleMap = [
+                'SRT' => 'Peserta',
+                'MC' => 'MC',
+                'TRN' => 'Narasumber',
+                'PNT' => 'Panitia',
+                'CLB' => 'Kolaborator',
+                'MOD' => 'Moderator',
+                'GRD' => 'Kelulusan',
+                'SPV' => 'Supervisor/penilai',
+            ];
+            $roleCode = $cert ? strtoupper(trim($cert->type_code)) : 'TRN';
+            $roleLabel = $roleMap[$roleCode] ?? 'Instruktur';
           @endphp
 
-          <div class="certificate-card {{ $isHighlight ? 'is-highlight' : '' }}"
+          <div class="certificate-card {{ $isHighlight ? 'is-highlight' : '' }} theme-{{ $theme }}"
                data-type="{{ $type }}"
-               data-has-cert="{{ $hasCert ? 'yes' : 'no' }}">
+               data-has-cert="{{ $hasCert ? 'yes' : 'no' }}"
+               data-year="{{ $item['date'] ? \Carbon\Carbon::parse($item['date'])->year : '' }}"
+               data-timestamp="{{ $item['date'] ? \Carbon\Carbon::parse($item['date'])->timestamp : 0 }}"
+               data-title="{{ strtolower($item['title'] ?? '') }}">
 
-            {{-- Accent bar --}}
-            <div class="cert-card-accent {{ $type === 'event' ? 'event' : '' }}"></div>
+            {{-- 1. Mini Certificate Preview Box --}}
+            <div class="mini-cert-preview">
+              <span class="cert-type-pill {{ $type }}">
+                {{ $type }}
+              </span>
 
-            {{-- Card body --}}
-            <div class="cert-card-body">
-
-              {{-- Header: type badge + status badge --}}
-              <div class="cert-card-header">
-                <span class="cert-type-badge {{ $type }}">
-                  @if($type === 'event')
-                    <i class="bi bi-calendar-event"></i>
-                  @else
-                    <i class="bi bi-journal-richtext"></i>
-                  @endif
-                  {{ strtoupper($type) }}
-                </span>
-
-                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                  @if($isHighlight)
-                    <span class="cert-new-label">
-                      <i class="bi bi-bell-fill"></i> Baru
-                    </span>
-                  @endif
-                  @if($isDone)
-                    <span class="cert-status-badge done">
-                      <i class="bi bi-check-circle-fill"></i> Selesai
-                    </span>
-                  @else
-                    <span class="cert-status-badge pending">
-                      <i class="bi bi-clock-fill"></i> {{ $item['statusLabel'] ?? '-' }}
-                    </span>
-                  @endif
+              @if(!$hasCert)
+                <div class="cert-locked-overlay">
+                  <i class="bi bi-lock-fill"></i>
+                  <span>Belum Diterbitkan</span>
                 </div>
+              @endif
+
+              <div class="mini-cert-scaled">
+                @include('trainer.certificates.certificate-pdf', [
+                    'is_preview' => true,
+                    'template' => $item['template'],
+                    'context' => $type,
+                    'event' => $type === 'event' ? $item['model'] : null,
+                    'course' => $type === 'course' ? $item['model'] : null,
+                    'user' => Auth::user(),
+                    'issuedAt' => $cert?->issued_at ?? now(),
+                    'certificateNumber' => $cert?->certificate_number ?? 'DRAFT-CERT',
+                    'logosBase64' => $item['logosBase64'] ?? [],
+                    'signaturesBase64' => $item['signaturesBase64'] ?? [],
+                    'signaturesData' => $item['signaturesData'] ?? [],
+                    'roleLabel' => $roleLabel
+                ])
               </div>
+            </div>
 
-              {{-- Title --}}
-              <p class="cert-card-title">{{ $item['title'] ?? '-' }}</p>
-
-              {{-- Date meta --}}
+            {{-- 2. Card Content ─── --}}
+            <div class="cert-card-body">
+              <h4 class="cert-card-title">{{ $item['title'] ?? '-' }}</h4>
               <div class="cert-card-meta">
                 <i class="bi bi-calendar3"></i>
                 <span>{{ $dateText }}</span>
               </div>
-
             </div>
 
-            {{-- Card footer --}}
+            {{-- 3. Card Footer ─── --}}
             <div class="cert-card-footer">
               @if($hasCert)
-                <div class="cert-number">
-                  <span class="cert-number-label">No. Sertifikat</span>
-                  <span class="cert-number-code" title="{{ $cert->certificate_number }}">{{ $cert->certificate_number }}</span>
-                </div>
                 <a class="btn-cert-download"
                    href="{{ $item['downloadUrl'] }}"
                    target="_blank"
@@ -592,14 +722,18 @@
                   <i class="bi bi-download"></i>
                   Unduh
                 </a>
+                <a class="btn-cert-view-circle"
+                   href="{{ $item['showUrl'] }}"
+                   title="Lihat Detail Sertifikat">
+                  <i class="bi bi-eye"></i>
+                </a>
               @else
-                <div class="cert-number">
-                  <span class="cert-number-label">Sertifikat</span>
-                  <span style="font-size:12px; color:#b0b3c1; font-weight:600;">Belum tersedia</span>
-                </div>
-                <button class="btn-cert-unavailable" disabled>
+                <button class="btn-cert-download disabled" disabled>
                   <i class="bi bi-hourglass-split"></i>
                   Menunggu
+                </button>
+                <button class="btn-cert-view-circle disabled" disabled>
+                  <i class="bi bi-eye-slash"></i>
                 </button>
               @endif
             </div>
@@ -607,6 +741,9 @@
           </div>
         @endforeach
       </div>
+
+      <!-- Client-side Pagination Container -->
+      <div class="cert-pagination-container" id="certPagination"></div>
     @endif
 
   </div>
@@ -615,29 +752,236 @@
 @push('scripts')
 <script>
   (function () {
-    const pills = document.querySelectorAll('.cert-filter-pill');
-    const cards = document.querySelectorAll('.certificate-card');
+    const cardsGrid = document.getElementById('certCardsGrid');
+    if (!cardsGrid) return;
 
-    pills.forEach(pill => {
-      pill.addEventListener('click', function () {
-        pills.forEach(p => p.classList.remove('active'));
-        this.classList.add('active');
+    const cards = Array.from(document.querySelectorAll('.certificate-card'));
+    const tabBtns = document.querySelectorAll('.cert-tab-btn');
+    const searchInput = document.getElementById('certSearchInput');
+    const yearSelect = document.getElementById('certYearSelect');
+    const sortSelect = document.getElementById('certSortSelect');
+    const toggleHasCertBtn = document.getElementById('certToggleHasCert');
+    const paginationContainer = document.getElementById('certPagination');
 
-        const filter = this.dataset.filter;
+    let currentFilter = 'all';
+    let currentSearch = '';
+    let currentYear = 'all';
+    let currentSort = 'newest';
+    let onlyHasCert = false;
 
-        cards.forEach(card => {
-          let show = false;
-          if (filter === 'all') {
-            show = true;
-          } else if (filter === 'has-cert') {
-            show = card.dataset.hasCert === 'yes';
-          } else {
-            show = card.dataset.type === filter;
-          }
-          card.style.display = show ? '' : 'none';
+    let currentPage = 1;
+    const itemsPerPage = 8;
+    let filteredCards = [];
+
+    // Initialize
+    init();
+
+    function init() {
+      // Event listeners for tabs
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+          tabBtns.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          currentFilter = this.dataset.filter;
+          currentPage = 1;
+          applyFiltersAndRender();
         });
       });
-    });
+
+      // Event listener for search input
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          currentSearch = this.value.trim().toLowerCase();
+          currentPage = 1;
+          applyFiltersAndRender();
+        });
+      }
+
+      // Event listener for year select
+      if (yearSelect) {
+        yearSelect.addEventListener('change', function () {
+          currentYear = this.value;
+          currentPage = 1;
+          applyFiltersAndRender();
+        });
+      }
+
+      // Event listener for sort select
+      if (sortSelect) {
+        sortSelect.addEventListener('change', function () {
+          currentSort = this.value;
+          currentPage = 1;
+          applyFiltersAndRender();
+        });
+      }
+
+      // Event listener for onlyHasCert toggle
+      if (toggleHasCertBtn) {
+        toggleHasCertBtn.addEventListener('click', function () {
+          onlyHasCert = !onlyHasCert;
+          this.classList.toggle('active', onlyHasCert);
+          currentPage = 1;
+          applyFiltersAndRender();
+        });
+      }
+
+      // Initial filter run
+      applyFiltersAndRender();
+    }
+
+    function applyFiltersAndRender() {
+      // 1. Filter
+      filteredCards = cards.filter(card => {
+        // Tab type filter
+        const typeMatch = (currentFilter === 'all') || (card.dataset.type === currentFilter);
+        
+        // Search query filter
+        const searchMatch = (currentSearch === '') || (card.dataset.title.includes(currentSearch));
+        
+        // Year filter
+        const yearMatch = (currentYear === 'all') || (card.dataset.year === currentYear);
+        
+        // Toggle certificate filter
+        const certMatch = !onlyHasCert || (card.dataset.hasCert === 'yes');
+
+        return typeMatch && searchMatch && yearMatch && certMatch;
+      });
+
+      // 2. Sort
+      filteredCards.sort((a, b) => {
+        const timeA = parseInt(a.dataset.timestamp) || 0;
+        const timeB = parseInt(b.dataset.timestamp) || 0;
+        
+        if (currentSort === 'newest') {
+          return timeB - timeA;
+        } else {
+          return timeA - timeB;
+        }
+      });
+
+      // 3. Update DOM order for sorted array
+      filteredCards.forEach(card => cardsGrid.appendChild(card));
+
+      // 4. Render current page & hide others
+      renderPageItems();
+
+      // 5. Render Pagination controls
+      renderPaginationControls();
+
+      // Trigger certificate preview resizing
+      setTimeout(resizeMiniCertificates, 50);
+    }
+
+    function renderPageItems() {
+      // Hide all cards first
+      cards.forEach(card => card.style.display = 'none');
+
+      // Calculate bounds
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const endIdx = startIdx + itemsPerPage;
+
+      // Show matching cards for this page
+      const pageItems = filteredCards.slice(startIdx, endIdx);
+      pageItems.forEach(card => card.style.display = '');
+
+      // Handle empty filtered results
+      let emptyMsg = document.getElementById('certNoResultsMsg');
+      if (filteredCards.length === 0) {
+        if (!emptyMsg) {
+          emptyMsg = document.createElement('div');
+          emptyMsg.id = 'certNoResultsMsg';
+          emptyMsg.className = 'cert-empty';
+          emptyMsg.style.width = '100%';
+          emptyMsg.style.gridColumn = '1 / -1';
+          emptyMsg.innerHTML = `
+            <div class="cert-empty-icon"><i class="bi bi-search"></i></div>
+            <h4>Sertifikat Tidak Ditemukan</h4>
+            <p>Tidak ada sertifikat yang cocok dengan pencarian atau filter Anda.</p>
+          `;
+          cardsGrid.appendChild(emptyMsg);
+        } else {
+          emptyMsg.style.display = '';
+        }
+      } else if (emptyMsg) {
+        emptyMsg.style.display = 'none';
+      }
+    }
+
+    function renderPaginationControls() {
+      if (!paginationContainer) return;
+      paginationContainer.innerHTML = '';
+
+      const totalPages = Math.ceil(filteredCards.length / itemsPerPage);
+      if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+      }
+      paginationContainer.style.display = 'flex';
+
+      // Left Chevron
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'cert-page-btn' + (currentPage === 1 ? ' disabled' : '');
+      prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+      prevBtn.disabled = (currentPage === 1);
+      prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          applyFiltersAndRender();
+          scrollToGrid();
+        }
+      });
+      paginationContainer.appendChild(prevBtn);
+
+      // Page numbers
+      for (let i = 1; i <= totalPages; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = 'cert-page-btn' + (i === currentPage ? ' active' : '');
+        pageBtn.innerText = i;
+        pageBtn.addEventListener('click', () => {
+          currentPage = i;
+          applyFiltersAndRender();
+          scrollToGrid();
+        });
+        paginationContainer.appendChild(pageBtn);
+      }
+
+      // Right Chevron
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'cert-page-btn' + (currentPage === totalPages ? ' disabled' : '');
+      nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+      nextBtn.disabled = (currentPage === totalPages);
+      nextBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          applyFiltersAndRender();
+          scrollToGrid();
+        }
+      });
+      paginationContainer.appendChild(nextBtn);
+    }
+
+    function scrollToGrid() {
+      const rect = cardsGrid.getBoundingClientRect();
+      const elemTop = rect.top + window.scrollY - 100;
+      window.scrollTo({
+        top: elemTop,
+        behavior: 'smooth'
+      });
+    }
+
+    function resizeMiniCertificates() {
+      document.querySelectorAll('.mini-cert-preview').forEach(container => {
+        const rect = container.getBoundingClientRect();
+        if (rect.width === 0) return; // Skip if hidden
+        const scale = rect.width / 1122.5; // A4 standard width is 1122.5px
+        const scaledDiv = container.querySelector('.mini-cert-scaled');
+        if (scaledDiv) {
+          scaledDiv.style.transform = `scale(${scale})`;
+        }
+      });
+    }
+
+    window.addEventListener('resize', resizeMiniCertificates);
   })();
 </script>
 @endpush

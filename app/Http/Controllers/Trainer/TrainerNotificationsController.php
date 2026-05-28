@@ -94,9 +94,12 @@ class TrainerNotificationsController extends Controller
             abort(403);
         }
 
-        $decision = (string) $request->validate([
+        $validated = $request->validate([
             'decision' => 'required|in:accept,reject',
-        ])['decision'];
+            'scheme_type' => 'nullable|integer|in:1,2,3',
+            'contribution_scheme' => 'nullable|string',
+        ]);
+        $decision = $validated['decision'];
 
         $data = is_array($notification->data) ? $notification->data : [];
         $currentStatus = (string) data_get($data, 'invitation_status', 'pending');
@@ -148,6 +151,12 @@ class TrainerNotificationsController extends Controller
         }
 
         $data['invitation_status'] = $decision === 'accept' ? 'accepted' : 'rejected';
+        if (isset($validated['scheme_type'])) {
+            $data['scheme_type'] = $validated['scheme_type'];
+        }
+        if (isset($validated['contribution_scheme'])) {
+            $data['contribution_scheme'] = $validated['contribution_scheme'];
+        }
         $data['responded_at'] = now()->toIso8601String();
         $notification->data = $data;
         if (is_null($notification->read_at)) {
@@ -210,6 +219,10 @@ class TrainerNotificationsController extends Controller
         $message = $decision === 'accept'
             ? 'Undangan berhasil diterima.'
             : 'Undangan berhasil ditolak.';
+
+        if ($decision === 'accept' && $entityType === 'course' && $entityId > 0) {
+            return redirect()->route('trainer.courses.studio', $entityId)->with('success', $message);
+        }
 
         return back()->with('success', $message);
     }

@@ -412,7 +412,7 @@ class TrainerCertificateController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.trainer.certificates.index')
+            ->route('admin.trainer.certificates.detail', ['certificate' => $certificate->id])
             ->with('success', 'Sertifikat berhasil diterbitkan.');
     }
 
@@ -440,7 +440,7 @@ class TrainerCertificateController extends Controller
             ],
             [
                 'activity_code' => $this->activityCode($model),
-                'type_code' => $context === 'event' ? 'EVT' : 'CRS',
+                'type_code' => TrainerCertificate::TYPE_CODE_TRAINER,
                 'sequence' => $sequence,
                 'certificate_number' => $certificateNumber,
                 'issued_at' => $existing?->issued_at,
