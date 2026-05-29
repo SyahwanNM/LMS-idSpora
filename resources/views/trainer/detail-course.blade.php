@@ -157,15 +157,41 @@
                                         $label = $module->type === 'video' ? 'Video Asset' : ($module->type === 'quiz' ? 'Quiz Engine' : 'PDF Material');
                                         $assetTab = $module->type === 'quiz' ? 'quiz' : ($module->type === 'video' ? 'video' : 'module');
 
-                                      @endphp
-                                    <div class="asset-mini"
-                                        data-redirect="{{ route('trainer.courses.studio', $course->id) }}?unit={{ $idx }}&tab={{ $assetTab }}">
+                                        $isLocked = false;
+                                        if ($module->type === 'quiz' && empty($schemePermissions['can_quiz'])) {
+                                            $isLocked = true;
+                                        } elseif ($module->type === 'video' && empty($schemePermissions['can_video'])) {
+                                            $isLocked = true;
+                                        } elseif (($module->type === 'pdf' || $module->type === 'module') && empty($schemePermissions['can_module'])) {
+                                            $isLocked = true;
+                                        }
+
+                                        $isUploaded = false;
+                                        if ($module->type === 'quiz') {
+                                            $isUploaded = isset($module->quizQuestions) && $module->quizQuestions->count() > 0;
+                                        } else {
+                                            $isUploaded = !empty($module->content_url) || !empty(trim(strip_tags((string) $module->description)));
+                                        }
+                                    @endphp
+                                    <div class="asset-mini {{ $isLocked ? 'locked' : '' }}"
+                                        {!! !$isLocked ? 'data-redirect="'.route('trainer.courses.studio', $course->id).'?unit='.$idx.'&tab='.$assetTab.'"' : '' !!}
+                                        style="{{ $isLocked ? 'opacity: 0.6; cursor: not-allowed; background: var(--bg-body, #f9fafb);' : '' }}">
+                                        
                                         <i class="bi {{ $icon }}"></i>
-                                        <div>
+                                        <div style="flex: 1;">
                                             <h4>{{ Str::limit($module->title, 25) }}</h4>
                                             <p>{{ $label }}</p>
-
                                         </div>
+
+                                        @if($isLocked)
+                                            <div class="asset-status" style="position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 50%; color: #94a3b8; font-size: 13px;" title="Locked">
+                                                <i class="bi bi-lock-fill"></i>
+                                            </div>
+                                        @elseif($isUploaded)
+                                            <div class="asset-status" style="position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 50%; color: #10b981; font-size: 13px;" title="Uploaded">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            </div>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>

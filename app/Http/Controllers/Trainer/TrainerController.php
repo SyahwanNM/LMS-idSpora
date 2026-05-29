@@ -911,6 +911,28 @@ class TrainerController extends Controller
             'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
         ];
 
+        $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
+        $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
+        if ($invitationSchemeType === 0) {
+            $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
+            $invitationSchemeType = match ($contribScheme) {
+                'e2e' => 1,
+                'module_video' => 2,
+                'video_only' => 3, // Note: video_only means scheme 3 (10%)
+                default => 0,
+            };
+        }
+
+        $activeSchemeType = in_array($invitationSchemeType, [1, 2, 3], true)
+            ? $invitationSchemeType
+            : 1;
+
+        $schemePermissions = [
+            1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
+            2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
+            3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
+        ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
+
         return view('trainer.detail-course', compact(
             'course',
             'enrollmentCount',
@@ -920,7 +942,8 @@ class TrainerController extends Controller
             'quizAttempts',
             'classAverage',
             'totalSubmissions',
-            'processingSummary'
+            'processingSummary',
+            'schemePermissions'
         ));
     }
     public function events(Request $request)
