@@ -1,12 +1,12 @@
-﻿@extends('layouts.trainer')
+@extends('layouts.trainer')
 
 @section('title', 'Event Studio - ' . $event->title)
 
 @php
     $pageTitle = 'Event Studio';
     $breadcrumbs = [
-        ['label' => 'Home', 'url' => route('trainer.dashboard')],
-        ['label' => 'Events', 'url' => route('trainer.events')],
+        ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
+        ['label' => 'Acara', 'url' => route('trainer.events')],
         ['label' => 'Studio'],
     ];
 
@@ -933,11 +933,11 @@
                                     default        => '📋',
                                 };
                                 $badgeLabel = match ($displayMaterialStatus) {
-                                    'approved' => 'Material Approved',
-                                    'rejected' => 'Revision Needed',
-                                    'pending_review' => 'In Review',
-                                    'not_uploaded' => 'Not Submitted',
-                                    default        => 'Submitted',
+                                    'approved' => 'Materi Disetujui',
+                                    'rejected' => 'Perlu Revisi',
+                                    'pending_review' => 'Sedang Direview',
+                                    'not_uploaded' => 'Belum Dikirim',
+                                    default        => 'Terkirim',
                                 };
                             @endphp
                             <span class="status-badge {{ $badgeClass }}">
@@ -1038,8 +1038,8 @@
                                     <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
                                         style="display: none" />
                                     <i class="bi bi-cloud-arrow-up"></i>
-                                    <h2>Drop Event Assets Here</h2>
-                                    <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
+                                    <h2>Tarik Aset Acara ke Sini</h2>
+                                    <p>DUKUNGAN: PDF, MP4, PPTX, DOCX</p>
                                     <p style="font-size: 12px; color: #999; margin-top: 8px">
                                         atau klik untuk memilih 1 file materi
                                     </p>

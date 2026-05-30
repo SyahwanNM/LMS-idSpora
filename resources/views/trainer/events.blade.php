@@ -1,4 +1,4 @@
-﻿@extends('layouts.trainer')
+@extends('layouts.trainer')
 
 @section('title', 'Events - Trainer')
 
@@ -592,14 +592,15 @@ main {
     }
 }
 
+
 </style>
 @endpush
 
 @php
-  $pageTitle = 'Events';
+  $pageTitle = 'Acara';
   $breadcrumbs = [
-    ['label' => 'Home', 'url' => route('trainer.dashboard')],
-    ['label' => 'Events']
+    ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
+    ['label' => 'Acara']
   ];
 @endphp
 
@@ -619,12 +620,12 @@ main {
               <path
                 d="M12 3l1.912 5.813a2 2 0 001.899 1.374h6.098l-4.931 3.582a2 2 0 00-.728 2.236l1.912 5.813-4.931-3.582a2 2 0 00-2.342 0l-4.931 3.582 1.912-5.813a2 2 0 00-.728-2.236L2.091 10.187h6.098a2 2 0 001.899-1.374L12 3z" />
             </svg>
-            <span>SCHEDULE HUB + ACADEMIC EXCELLENCE</span>
+            <span>PUSAT JADWAL + KEUNGGULAN AKADEMIK</span>
           </span>
-          <h1>Mastering the <br /><span>Session Ledger.</span></h1>
+          <h1>Menguasai <br /><span>Jadwal Sesi.</span></h1>
           <h5>
-            Orchestrate your teaching commitments with precision. Track,
-            manage, and excel in every session.
+            Atur komitmen mengajar Anda dengan presisi. Pantau,
+            kelola, dan unggul di setiap sesi.
           </h5>
         </div>
       </div>
@@ -635,7 +636,7 @@ main {
             <path
               d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
           </svg>
-          <input type="text" placeholder="Lookup Session..." />
+          <input type="text" placeholder="Cari Sesi..." />
         </div>
         <button class="filter-bar">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-funnel"
@@ -677,7 +678,7 @@ main {
             @foreach($status['data'] as $event)
               <a href="{{ route('trainer.events.show', $event->id) }}" class="card-item">
                 <div class="card-media">
-                  <p class="badge-online">{{ strtoupper($event->type ?? 'ONLINE SESSION') }}</p>
+                  <p class="badge-online">{{ strtoupper($event->type ?? 'SESI ONLINE') }}</p>
 
                   @php $posterUrl = $event->image_url; @endphp
                   @if(!empty($posterUrl))
@@ -714,7 +715,7 @@ main {
                           <path
                             d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
                         </svg>
-                        <p>{{ $event->participants_count ?? 0 }} Learners</p>
+                        <p>{{ $event->participants_count ?? 0 }} Siswa</p>
                       </div>
                       <div class="total-fee">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16" fill="none"

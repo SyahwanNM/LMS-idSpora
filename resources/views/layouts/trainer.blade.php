@@ -22,7 +22,6 @@
 
     @vite([
         'resources/css/app.css',
-        'resources/css/trainer/main.css',
     ])
     <style>
         /* Import Bootstrap */
@@ -291,6 +290,7 @@
         .main-wrapper {
             animation: none;
             transform: none;
+            min-width: 0;
         }
 
         .main-wrapper.full-width {

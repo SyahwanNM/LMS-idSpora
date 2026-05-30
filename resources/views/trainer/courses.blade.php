@@ -1,13 +1,13 @@
-﻿@extends('layouts.trainer')
+@extends('layouts.trainer')
 
 @section('title', 'My Courses')
 
 @php
     $pageTitle = 'Courses';
     $breadcrumbs = [
-        ['label' => 'Home', 'url' => route('trainer.dashboard')],
+        ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
         ['label' => 'Dashboard', 'url' => route('trainer.dashboard')],
-        ['label' => 'Courses']
+        ['label' => 'Kursus']
     ];
 @endphp
 
@@ -700,10 +700,10 @@
                                 <path
                                     d="M12 3l1.912 5.813a2 2 0 001.899 1.374h6.098l-4.931 3.582a2 2 0 00-.728 2.236l1.912 5.813-4.931-3.582a2 2 0 00-2.342 0l-4.931 3.582 1.912-5.813a2 2 0 00-.728-2.236L2.091 10.187h6.098a2 2 0 001.899-1.374L12 3z" />
                             </svg>
-                            <span>SCHEDULE HUB + ACADEMIC EXCELLENCE</span>
+                            <span>PUSAT KURSUS + KEUNGGULAN AKADEMIK</span>
                         </span>
-                        <h1>Mastering the <br /><span>Session Ledger.</span></h1>
-                        <h5>Orchestrate your teaching commitments with precision. Track, manage, and excel in every session.
+                        <h1>Menguasai <br /><span>Manajemen Kursus.</span></h1>
+                        <h5>Atur komitmen mengajar Anda dengan presisi. Pantau, kelola, dan unggul di setiap kursus.
                         </h5>
                     </div>
                 </div>
@@ -715,7 +715,7 @@
                             <path
                                 d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                         </svg>
-                        <input type="text" placeholder="Lookup Session..." />
+                        <input type="text" placeholder="Cari Kursus..." />
                     </div>
                     <button class="filter-bar" type="button">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
