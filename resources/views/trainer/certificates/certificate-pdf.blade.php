@@ -65,7 +65,7 @@
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 3px;
-        color: #fbbf24;
+        color: #1b1763;
         font-weight: 600;
         margin-bottom: 8px;
     }
@@ -148,7 +148,7 @@
     }
 
     .template_1 .tpl-inner {
-        border: 2px double #fbbf24;
+        border: 2px double #1b1763;
         margin: 12px;
         height: calc(100% - 24px);
         width: calc(100% - 24px);
@@ -156,7 +156,7 @@
     }
 
     .template_1 .tpl-name {
-        border-bottom: 2px solid #fbbf24;
+        border-bottom: 2px solid #1b1763;
         display: inline-block;
         padding: 4px 32px;
     }
@@ -182,7 +182,7 @@
         position: absolute;
         inset: 0 auto 0 70px;
         width: 7px;
-        background: #fbbf24;
+        background: #1b1763;
     }
 
     .template_2 .tpl-inner {
@@ -195,7 +195,7 @@
     }
 
     .template_2 .tpl-name {
-        border-left: 6px solid #fbbf24;
+        border-left: 6px solid #1b1763;
         padding-left: 14px;
     }
 
@@ -229,7 +229,7 @@
 
     .template_3 .tpl-bar {
         height: 7px;
-        background: #fbbf24;
+        background: #1b1763;
     }
 
     .template_3 .tpl-inner {

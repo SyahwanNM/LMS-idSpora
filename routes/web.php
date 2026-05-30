@@ -673,6 +673,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [TrainerController::class, 'editProfile'])->name('profile.edit');
     Route::put('/profile', [TrainerController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/list', [TrainerController::class, 'updateProfileList'])->name('profile.list.update');
 
     Route::get('/events', [TrainerController::class, 'events'])->name('events');
     Route::get('/events/{event}/vbg/download', [TrainerController::class, 'downloadVbg'])->name('events.vbg.download');

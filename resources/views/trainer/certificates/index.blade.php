@@ -15,12 +15,33 @@
   /* Import cursive fonts for certificate preview name */
   @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Great+Vibes&display=swap');
 
+  .courses-page { margin: 0; padding: 0; }
+  .top-page { background: linear-gradient(135deg, var(--main-navy-clr) 0%, #0f0820 100%); border-radius: var(--radius-2xl); padding: var(--spacing-3xl); position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(27, 23, 99, 0.15); margin-bottom: var(--spacing-2xl); width: 100%; }
+  .glow-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+  .glow-circle-1 { top: -80px; right: -80px; width: 192px; height: 192px; background: rgba(251, 191, 36, 0.1); filter: blur(60px); }
+  .glow-circle-2 { bottom: -40px; left: -40px; width: 128px; height: 128px; background: rgba(99, 102, 241, 0.1); filter: blur(50px); }
+  .top-page-inner { width: 100%; position: relative; display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: var(--spacing-2xl); }
+  .top-page-content { display: flex; flex-direction: column; gap: 24px; flex: 1; }
+  .badge-top { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 100px; color: rgba(255, 255, 255, 0.9); font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; backdrop-filter: blur(10px); width: fit-content; }
+  .badge-top svg { width: 12px; height: 12px; color: var(--yellow-clr); flex-shrink: 0; }
+  .title-page { display: flex; flex-direction: column; gap: 12px; max-width: 600px; }
+  .title-page h1 { margin: 0; color: var(--white-clr); font-size: 40px; font-weight: 800; line-height: 1.2; }
+  .title-page h1 span { color: #fbb034; }
+  .title-page h5 { margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px; font-weight: 500; line-height: 1.6; max-width: 500px; }
+  .upcoming-card { display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; min-width: 200px; backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
+  .upcoming-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; background: #fbb034; border-radius: 14px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(251, 176, 52, 0.3); }
+  .upcoming-icon svg { width: 24px; height: 24px; color: var(--main-navy-clr); }
+  .upcoming-text { display: flex; flex-direction: column; gap: var(--spacing-xs); }
+  .upcoming-label { font-size: 9px; font-weight: 900; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 1.4px; }
+  .upcoming-count { font-size: 18px; font-weight: 900; color: var(--white-clr); line-height: 1; }
+  .search-filter-bar { display: flex; justify-content: flex-end; align-items: center; gap: var(--spacing-sm); flex-wrap: nowrap; align-self: flex-end; width: auto; flex-shrink: 0; }
+
   .cert-page {
     margin: 0;
     padding: 0;
   }
 
-  /* ─── Tabs & Filters Container ─── */
+  /* â”€â”€â”€ Tabs & Filters Container â”€â”€â”€ */
   .cert-tabs-filter-container {
     display: flex;
     justify-content: space-between;
@@ -52,10 +73,12 @@
 
   .cert-tab-btn:hover {
     color: #1b1763;
+    background: transparent !important;
   }
 
   .cert-tab-btn.active {
     color: #1b1763;
+    background: transparent !important;
   }
 
   .cert-tab-btn.active::after {
@@ -161,14 +184,14 @@
     color: #1b1763;
   }
 
-  /* ─── Cards Grid ─── */
+  /* â”€â”€â”€ Cards Grid â”€â”€â”€ */
   .cert-cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 20px;
   }
 
-  /* ─── Certificate Card ─── */
+  /* â”€â”€â”€ Certificate Card â”€â”€â”€ */
   .certificate-card {
     background: #fff;
     border-radius: 20px;
@@ -185,7 +208,7 @@
     box-shadow: 0 12px 32px rgba(27, 23, 99, 0.08);
   }
 
-  /* ─── Mini Certificate Preview Box ─── */
+  /* â”€â”€â”€ Mini Certificate Preview Box â”€â”€â”€ */
   .mini-cert-preview {
     position: relative;
     aspect-ratio: 1.414 / 1;
@@ -257,7 +280,7 @@
     background-color: #10b981;
   }
 
-  /* ─── Card Body ─── */
+  /* â”€â”€â”€ Card Body â”€â”€â”€ */
   .cert-card-body {
     padding: 16px 20px 0 20px;
     display: flex;
@@ -277,7 +300,6 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-height: 42px;
   }
 
   .cert-card-meta {
@@ -294,7 +316,7 @@
     color: #94a3b8;
   }
 
-  /* ─── Card Footer Buttons ─── */
+  /* â”€â”€â”€ Card Footer Buttons â”€â”€â”€ */
   .cert-card-footer {
     display: flex;
     justify-content: space-between;
@@ -335,72 +357,28 @@
     flex-shrink: 0;
   }
 
-  /* Purple Theme Buttons */
-  .certificate-card.theme-purple .btn-cert-download {
-    border: 1.5px solid #6366f1;
-    color: #6366f1;
+  /* Unified Navy Theme Buttons */
+  .certificate-card .btn-cert-download {
+    border: 1.5px solid #1b1763;
+    color: #1b1763;
   }
-  .certificate-card.theme-purple .btn-cert-download:hover {
-    background: #6366f1;
+  .certificate-card .btn-cert-download:hover {
+    background: #1b1763;
     color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(27, 23, 99, 0.15);
   }
-  .certificate-card.theme-purple .btn-cert-view-circle {
-    background: #f5f3ff;
-    color: #6366f1;
+  .certificate-card .btn-cert-view-circle {
+    background: #f8fafc;
+    color: #1b1763;
+    border: 1.5px solid #e2e8f0;
   }
-  .certificate-card.theme-purple .btn-cert-view-circle:hover {
-    background: #ddd6fe;
-  }
-
-  /* Green Theme Buttons */
-  .certificate-card.theme-green .btn-cert-download {
-    border: 1.5px solid #10b981;
-    color: #10b981;
-  }
-  .certificate-card.theme-green .btn-cert-download:hover {
-    background: #10b981;
+  .certificate-card .btn-cert-view-circle:hover {
+    background: #1b1763;
     color: #fff;
-  }
-  .certificate-card.theme-green .btn-cert-view-circle {
-    background: #ecfdf5;
-    color: #10b981;
-  }
-  .certificate-card.theme-green .btn-cert-view-circle:hover {
-    background: #a7f3d0;
-  }
-
-  /* Blue Theme Buttons */
-  .certificate-card.theme-blue .btn-cert-download {
-    border: 1.5px solid #3b82f6;
-    color: #3b82f6;
-  }
-  .certificate-card.theme-blue .btn-cert-download:hover {
-    background: #3b82f6;
-    color: #fff;
-  }
-  .certificate-card.theme-blue .btn-cert-view-circle {
-    background: #eff6ff;
-    color: #3b82f6;
-  }
-  .certificate-card.theme-blue .btn-cert-view-circle:hover {
-    background: #bfdbfe;
-  }
-
-  /* Gold Theme Buttons */
-  .certificate-card.theme-gold .btn-cert-download {
-    border: 1.5px solid #d97706;
-    color: #d97706;
-  }
-  .certificate-card.theme-gold .btn-cert-download:hover {
-    background: #d97706;
-    color: #fff;
-  }
-  .certificate-card.theme-gold .btn-cert-view-circle {
-    background: #fffbeb;
-    color: #d97706;
-  }
-  .certificate-card.theme-gold .btn-cert-view-circle:hover {
-    background: #fde68a;
+    border-color: #1b1763;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(27, 23, 99, 0.15);
   }
 
   /* Disabled State Buttons */
@@ -417,7 +395,7 @@
     cursor: not-allowed;
   }
 
-  /* ─── Client Pagination ─── */
+  /* â”€â”€â”€ Client Pagination â”€â”€â”€ */
   .cert-pagination-container {
     display: flex;
     justify-content: center;
@@ -466,7 +444,7 @@
     border-color: #e2e8f0;
   }
 
-  /* ─── Empty State ─── */
+  /* â”€â”€â”€ Empty State â”€â”€â”€ */
   .cert-empty {
     display: flex;
     flex-direction: column;
@@ -509,13 +487,52 @@
     max-width: 320px;
     line-height: 1.6;
   }
+
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .cert-cards-grid {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .cert-tabs-filter-container {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 20px;
+    }
+    .cert-nav-tabs {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .cert-filter-widgets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .cert-search-wrapper, .cert-select-wrapper {
+      width: 100%;
+    }
+    .cert-toggle-filter-btn {
+      width: 100%;
+      height: 40px;
+    }
+    .cert-cards-grid {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .cert-cards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 @endpush
 
 @section('content')
   <div class="courses-page cert-page">
 
-    {{-- ─── Hero Header ─── --}}
+    {{-- â”€â”€â”€ Hero Header â”€â”€â”€ --}}
     <section class="top-page">
       <div class="glow-circle glow-circle-1"></div>
       <div class="glow-circle glow-circle-2"></div>
@@ -534,7 +551,7 @@
           </div>
         </div>
 
-        {{-- Stats di hero ─── --}}
+        {{-- Stats di hero â”€â”€â”€ --}}
         @php
           $allItems = $historyItems ?? collect();
           $totalItems = $allItems->count();
@@ -575,7 +592,7 @@
       </div>
     </section>
 
-    {{-- ─── Tabs & Filters Header ─── --}}
+    {{-- â”€â”€â”€ Tabs & Filters Header â”€â”€â”€ --}}
     @if(!$allItems->isEmpty())
     <div class="cert-tabs-filter-container">
       <!-- Left Side: Tabs Navigation -->
@@ -617,7 +634,7 @@
     </div>
     @endif
 
-    {{-- ─── Content ─── --}}
+    {{-- â”€â”€â”€ Content â”€â”€â”€ --}}
     @if($allItems->isEmpty())
       <div class="cert-empty">
         <div class="cert-empty-icon">
@@ -640,15 +657,6 @@
             $isHighlight = !empty($item['highlight']);
             $dateText   = $item['date'] ? \Carbon\Carbon::parse($item['date'])->translatedFormat('d M Y') : '-';
             $type       = strtolower($item['type'] ?? 'course');
-            
-            // Cycle colors for variety exactly mimicking the mockup screenshot
-            if ($type === 'event') {
-                $theme = ($eventIndex % 2 === 0) ? 'purple' : 'blue';
-                $eventIndex++;
-            } else {
-                $theme = ($courseIndex % 2 === 0) ? 'green' : 'gold';
-                $courseIndex++;
-            }
 
             // Role label map
             $roleMap = [
@@ -665,7 +673,7 @@
             $roleLabel = $roleMap[$roleCode] ?? 'Instruktur';
           @endphp
 
-          <div class="certificate-card {{ $isHighlight ? 'is-highlight' : '' }} theme-{{ $theme }}"
+          <div class="certificate-card {{ $isHighlight ? 'is-highlight' : '' }}"
                data-type="{{ $type }}"
                data-has-cert="{{ $hasCert ? 'yes' : 'no' }}"
                data-year="{{ $item['date'] ? \Carbon\Carbon::parse($item['date'])->year : '' }}"
@@ -703,7 +711,7 @@
               </div>
             </div>
 
-            {{-- 2. Card Content ─── --}}
+            {{-- 2. Card Content â”€â”€â”€ --}}
             <div class="cert-card-body">
               <h4 class="cert-card-title">{{ $item['title'] ?? '-' }}</h4>
               <div class="cert-card-meta">
@@ -712,7 +720,7 @@
               </div>
             </div>
 
-            {{-- 3. Card Footer ─── --}}
+            {{-- 3. Card Footer â”€â”€â”€ --}}
             <div class="cert-card-footer">
               @if($hasCert)
                 <a class="btn-cert-download"

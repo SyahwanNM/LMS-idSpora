@@ -18,14 +18,21 @@
     .finance-page {
         font-family: 'Outfit', sans-serif;
         color: #334155;
+        max-width: 100%;
+        overflow-x: hidden;
+        white-space: normal !important;
+        word-wrap: break-word;
     }
 
     /* Grid Layouts */
     .stat-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 24px;
         margin-bottom: 24px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     /* Cards */
@@ -116,9 +123,12 @@
     /* Breakdown Section */
     .breakdown-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 24px;
         margin-bottom: 32px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .bd-card {
@@ -128,6 +138,8 @@
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
         border: 1px solid #f1f5f9;
         transition: box-shadow 0.3s ease;
+        max-width: 100%;
+        overflow: hidden;
     }
 
     .bd-card:hover {
@@ -212,6 +224,8 @@
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
         border: 1px solid #f1f5f9;
         margin-bottom: 24px;
+        max-width: 100%;
+        overflow: hidden;
     }
 
     .section-title {
@@ -225,6 +239,8 @@
         overflow-x: auto;
         border-radius: 12px;
         border: 1px solid #f1f5f9;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
     }
 
     .modern-table {
@@ -314,6 +330,50 @@
         background: #f8fafc;
         border-radius: 12px;
         font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stat-grid, .breakdown-grid {
+            grid-template-columns: 1fr;
+        }
+        .stat-card {
+            padding: 24px;
+        }
+        .stat-amount {
+            font-size: 32px;
+        }
+        .bd-card, .table-section {
+            padding: 16px;
+        }
+        .section-title {
+            font-size: 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stat-card {
+            padding: 20px;
+        }
+        .stat-amount {
+            font-size: 28px;
+        }
+        .stat-title {
+            font-size: 12px;
+        }
+        .stat-desc {
+            font-size: 12px;
+        }
+        .bd-item {
+            padding: 12px;
+        }
+        .bd-item-name {
+            font-size: 14px;
+        }
+        .bd-item-meta {
+            font-size: 12px;
+            gap: 8px;
+        }
     }
 </style>
 @endpush

@@ -1,4 +1,4 @@
-@extends('layouts.trainer')
+﻿@extends('layouts.trainer')
 
 @section('title', $event->title . ' - Trainer')
 
@@ -222,7 +222,7 @@
                 <h3>Virtual Background</h3>
                 <p class="vsa-desc">High-Res PNG • Pre-branded</p>
               </div>
-              <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-amber" download>
+              <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-primary" download>
                 DOWNLOAD VBG
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path

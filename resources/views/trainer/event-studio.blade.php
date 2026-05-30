@@ -1,4 +1,4 @@
-@extends('layouts.trainer')
+﻿@extends('layouts.trainer')
 
 @section('title', 'Event Studio - ' . $event->title)
 
@@ -1225,7 +1225,7 @@
                     e.preventDefault();
 
                     if (uploadedFiles.length === 0) {
-                        alert('Silakan pilih file terlebih dahulu sebelum submit.');
+                        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih file terlebih dahulu sebelum submit.' });
                         return;
                     }
 
@@ -1237,7 +1237,7 @@
 
                     if (invalidFiles.length > 0) {
                         const names = invalidFiles.map((f) => f.name).join(', ');
-                        alert('File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.');
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: 'File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.' });
                         return;
                     }
 
@@ -1275,7 +1275,7 @@
                             }, 1200);
                         })
                         .catch(error => {
-                            alert('Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.'));
+                            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.') });
                         })
                         .finally(() => {
                             submitBtn.disabled = false;

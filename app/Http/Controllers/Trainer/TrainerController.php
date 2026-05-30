@@ -1703,23 +1703,22 @@ class TrainerController extends Controller
             ->whereIn('status', ['sent', 'published'])
             ->count();
 
-        $expertiseTags = $courses
-            ->pluck('category.name')
-            ->filter()
-            ->unique()
-            ->values()
-            ->take(6);
-
-        if ($expertiseTags->isEmpty() && !empty($trainer->profession)) {
-            $expertiseTags = collect(explode(' ', strtoupper($trainer->profession)))
-                ->filter()
-                ->take(4)
-                ->values();
+        $expertiseTags = $trainer->trainer_skills ?? [];
+        if (empty($expertiseTags)) {
+            $expertiseTags = $courses->pluck('category.name')->filter()->unique()->values()->take(6);
+            if ($expertiseTags->isEmpty() && !empty($trainer->profession)) {
+                $expertiseTags = collect(explode(' ', strtoupper($trainer->profession)))->filter()->take(4)->values();
+            }
+            if ($expertiseTags->isEmpty()) {
+                $expertiseTags = collect(['TRAINING', 'MENTORING']);
+            }
+        } else {
+            $expertiseTags = collect($expertiseTags);
         }
 
-        if ($expertiseTags->isEmpty()) {
-            $expertiseTags = collect(['TRAINING', 'MENTORING']);
-        }
+        $trainerExperiences = $trainer->trainer_experiences ?? [];
+        $trainerEducations = $trainer->trainer_educations ?? [];
+        $trainerManualCertifications = $trainer->trainer_certifications ?? [];
 
         // Additional stats for enhanced profile
         $totalCourses = $courses->count();
@@ -1744,7 +1743,10 @@ class TrainerController extends Controller
             'completedCoursesCount',
             'totalCertificates',
             'totalFeedbacks',
-            'topCourses'
+            'topCourses',
+            'trainerExperiences',
+            'trainerEducations',
+            'trainerManualCertifications'
         ));
     }
 
@@ -1816,6 +1818,41 @@ class TrainerController extends Controller
         }
 
         return redirect()->route('trainer.profile')->with('success', 'Profil trainer berhasil diperbarui.');
+    }
+
+    public function updateProfileList(Request $request)
+    {
+        $trainer = Auth::user();
+        
+        $type = $request->input('type');
+        $action = $request->input('action'); // add, edit, delete
+        $index = $request->input('index');
+        
+        $validTypes = ['trainer_skills', 'trainer_experiences', 'trainer_educations', 'trainer_certifications'];
+        if (!in_array($type, $validTypes)) {
+            return redirect()->back()->with('error', 'Tipe data profil tidak valid.');
+        }
+
+        $list = $trainer->$type ?? [];
+
+        if ($action === 'add') {
+            $newItem = $request->except(['_token', '_method', 'type', 'action', 'index']);
+            $list[] = $newItem;
+        } elseif ($action === 'edit') {
+            if (isset($list[$index])) {
+                $updatedItem = $request->except(['_token', '_method', 'type', 'action', 'index']);
+                $list[$index] = $updatedItem;
+            }
+        } elseif ($action === 'delete') {
+            if (isset($list[$index])) {
+                array_splice($list, $index, 1);
+            }
+        }
+        
+        $trainer->$type = $list;
+        $trainer->save();
+        
+        return redirect()->route('trainer.profile')->with('success', 'Data profil berhasil diperbarui.');
     }
 
     public function uploadCourseMaterials(Request $request, $id)

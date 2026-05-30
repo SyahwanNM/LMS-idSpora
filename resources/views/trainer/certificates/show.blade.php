@@ -70,7 +70,7 @@
     content: '';
     width: 24px;
     height: 2px;
-    background: #fbbf24;
+    background: #fff;
   }
 
   .cert-title {
@@ -116,8 +116,8 @@
   }
 
   .btn-download {
-    background: #fbbf24;
-    color: #1e1b4b;
+    background: #fff;
+    color: #1b1763;
     padding: 12px 24px;
     border-radius: 12px;
     font-weight: 700;
@@ -130,7 +130,7 @@
   }
 
   .btn-download:hover {
-    background: #f59e0b;
+    background: #f8fafc;
     transform: translateY(-2px);
   }
 
