@@ -16,7 +16,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Great+Vibes&display=swap');
 
   .courses-page { margin: 0; padding: 0; }
-  .top-page { background: linear-gradient(135deg, var(--main-navy-clr) 0%, #0f0820 100%); border-radius: var(--radius-2xl); padding: var(--spacing-3xl); position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(27, 23, 99, 0.15); margin-bottom: var(--spacing-2xl); width: 100%; }
+  .top-page { background: linear-gradient(135deg, #2e2050 0%, #51376c 100%); border-radius: var(--radius-2xl); padding: var(--spacing-3xl); position: relative; overflow: hidden; box-shadow: 0 10px 25px rgba(27, 23, 99, 0.15); margin-bottom: var(--spacing-2xl); width: 100%; }
   .glow-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
   .glow-circle-1 { top: -80px; right: -80px; width: 192px; height: 192px; background: rgba(251, 191, 36, 0.1); filter: blur(60px); }
   .glow-circle-2 { bottom: -40px; left: -40px; width: 128px; height: 128px; background: rgba(99, 102, 241, 0.1); filter: blur(50px); }
@@ -72,12 +72,12 @@
   }
 
   .cert-tab-btn:hover {
-    color: #1b1763;
+    color: #2e2050;
     background: transparent !important;
   }
 
   .cert-tab-btn.active {
-    color: #1b1763;
+    color: #2e2050;
     background: transparent !important;
   }
 
@@ -88,7 +88,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background-color: #1b1763;
+    background-color: #2e2050;
     border-radius: 99px;
   }
 
@@ -181,7 +181,7 @@
   .cert-toggle-filter-btn:hover, .cert-toggle-filter-btn.active {
     border-color: #cbd5e1;
     background-color: #f8fafc;
-    color: #1b1763;
+    color: #2e2050;
   }
 
   /* â”€â”€â”€ Cards Grid â”€â”€â”€ */
@@ -359,24 +359,24 @@
 
   /* Unified Navy Theme Buttons */
   .certificate-card .btn-cert-download {
-    border: 1.5px solid #1b1763;
-    color: #1b1763;
+    border: 1.5px solid #2e2050;
+    color: #2e2050;
   }
   .certificate-card .btn-cert-download:hover {
-    background: #1b1763;
+    background: #2e2050;
     color: #fff;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(27, 23, 99, 0.15);
   }
   .certificate-card .btn-cert-view-circle {
     background: #f8fafc;
-    color: #1b1763;
+    color: #2e2050;
     border: 1.5px solid #e2e8f0;
   }
   .certificate-card .btn-cert-view-circle:hover {
-    background: #1b1763;
+    background: #2e2050;
     color: #fff;
-    border-color: #1b1763;
+    border-color: #2e2050;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(27, 23, 99, 0.15);
   }
@@ -426,12 +426,12 @@
   .cert-page-btn:hover {
     border-color: #cbd5e1;
     background-color: #f8fafc;
-    color: #1b1763;
+    color: #2e2050;
   }
 
   .cert-page-btn.active {
-    background-color: #1b1763;
-    border-color: #1b1763;
+    background-color: #2e2050;
+    border-color: #2e2050;
     color: #fff;
     box-shadow: 0 4px 10px rgba(27, 23, 99, 0.3);
   }
@@ -476,7 +476,7 @@
   .cert-empty h4 {
     font-size: 18px;
     font-weight: 800;
-    color: #1b1763;
+    color: #2e2050;
     margin: 0;
   }
 
@@ -993,3 +993,4 @@
   })();
 </script>
 @endpush
+

@@ -68,7 +68,7 @@
         align-items: center;
         margin: 0 0 32px 0;
         padding: 40px;
-        background: linear-gradient(135deg, #1b1763 0%, #3a32a6 100%);
+        background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
         border-radius: 24px;
         box-shadow: 0 15px 35px rgba(27, 23, 99, 0.15);
         color: white;
@@ -251,17 +251,17 @@
     }
 
     .progress-bar.primary {
-        background: linear-gradient(90deg, #1b1763 0%, #4f46e5 100%);
+        background: linear-gradient(90deg, #2e2050 0%, #51376c 100%);
     }
 
     .progress-bar.secondary {
-        background: linear-gradient(90deg, #1e1b4b 0%, #312e81 100%);
+        background: linear-gradient(90deg, #19102c 0%, #51376c 100%);
     }
 
     .filter-button {
         width: 100%;
         background: #f8fafc;
-        color: #1b1763;
+        color: #2e2050;
         border: 1px solid #e2e8f0;
         padding: 16px;
         border-radius: 12px;
@@ -277,9 +277,9 @@
     }
 
     .filter-button:hover {
-        background: #1b1763;
+        background: #2e2050;
         color: white;
-        border-color: #1b1763;
+        border-color: #2e2050;
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(27, 23, 99, 0.2);
     }
@@ -300,7 +300,7 @@
     }
 
     .title-container i {
-        color: #1b1763;
+        color: #2e2050;
         font-size: 24px;
     }
 
@@ -325,7 +325,7 @@
     }
     
     .search-log:focus-within {
-        border-color: #1b1763;
+        border-color: #2e2050;
         box-shadow: 0 2px 10px rgba(27, 23, 99, 0.1);
     }
 
@@ -367,7 +367,7 @@
         left: 0;
         width: 6px;
         height: 100%;
-        background: linear-gradient(180deg, #1b1763 0%, #4f46e5 100%);
+        background: linear-gradient(180deg, #2e2050 0%, #51376c 100%);
         border-radius: 20px 0 0 20px;
     }
 
@@ -469,7 +469,7 @@
         background: #f8fafc;
         border-radius: 0 24px 24px 24px;
         border: 1px solid #e2e8f0;
-        border-left: 4px solid #1b1763;
+        border-left: 4px solid #2e2050;
         color: #1e293b;
         font-size: 16px;
         line-height: 1.8;
@@ -520,7 +520,7 @@
     }
     
     .reply:hover {
-        background: #1b1763;
+        background: #2e2050;
         color: white;
         transform: translateY(-2px);
     }
@@ -529,7 +529,7 @@
     .interaction-container > div[style*="background: #f3f1f9"] {
         background: #f8fafc !important;
         border-left: none !important;
-        border-top: 4px solid #1b1763 !important;
+        border-top: 4px solid #2e2050 !important;
         border-radius: 20px !important;
         padding: 24px !important;
         margin-top: 32px !important;
@@ -537,7 +537,7 @@
     }
     
     .interaction-container > div[style*="background: #f3f1f9"] > p {
-        color: #1b1763 !important;
+        color: #2e2050 !important;
         font-size: 14px !important;
         font-weight: 800 !important;
         text-transform: uppercase;
@@ -617,7 +617,7 @@
     }
 
     .textarea-wrapper textarea:focus {
-        border-color: #1b1763;
+        border-color: #2e2050;
         box-shadow: 0 0 0 3px rgba(27, 23, 99, 0.1);
     }
 
@@ -647,7 +647,7 @@
     .sync-reply-btn {
         padding: 10px 24px;
         border: none;
-        background: linear-gradient(135deg, #1b1763 0%, #312e81 100%);
+        background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
         color: white;
         font-size: 13px;
         font-weight: 700;
@@ -922,8 +922,8 @@
 
             @if($feedback->replies && $feedback->replies->count() > 0)
               <div
-                style="margin: 12px 0; padding: 12px; background: #f3f1f9; border-radius: 8px; border-left: 3px solid #1b1763;">
-                <p style="margin: 0 0 10px; font-size: 12px; font-weight: 700; color: #1b1763;">Balasan Instruktur
+                style="margin: 12px 0; padding: 12px; background: #f3f1f9; border-radius: 8px; border-left: 3px solid #2e2050;">
+                <p style="margin: 0 0 10px; font-size: 12px; font-weight: 700; color: #2e2050;">Balasan Instruktur
                   ({{ $feedback->replies->count() }})</p>
                 <div style="display: grid; gap: 10px;">
                   @foreach($feedback->replies as $reply)

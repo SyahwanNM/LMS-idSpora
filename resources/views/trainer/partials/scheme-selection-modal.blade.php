@@ -147,7 +147,7 @@
     }
 
     .scheme-modal-header {
-        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        background: linear-gradient(135deg, #19102c 0%, #51376c 100%);
         padding: 24px 32px;
         color: #ffffff;
         position: relative;
@@ -252,7 +252,7 @@
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: #1e1b4b;
+        background: #19102c;
         color: white;
         font-weight: 700;
         display: flex;
@@ -512,7 +512,7 @@
     .scheme-btn-confirm:not(:disabled):hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 16px rgba(245, 158, 11, 0.4);
-        color: var(--main-navy-clr, #1e1b4b) !important;
+        color: var(--main-navy-clr, #19102c) !important;
     }
 
     .scheme-btn-confirm:disabled {

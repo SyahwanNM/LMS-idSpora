@@ -18,11 +18,7 @@ main {
 }
 
 .top-page {
-    background: linear-gradient(
-        135deg,
-        var(--main-navy-clr) 0%,
-        var(--navy-dark) 100%
-    );
+    background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
     border-radius: var(--radius-2xl);
     padding: var(--spacing-3xl);
     position: relative;
@@ -306,8 +302,8 @@ main {
 }
 
 .status-pill.active {
-    background: #1b1763;
-    border-color: #1b1763;
+    background: #2e2050;
+    border-color: #2e2050;
     color: #fff;
     box-shadow: 0 4px 12px rgba(27, 23, 99, 0.2);
 }
@@ -525,7 +521,7 @@ main {
 .btn-detail-course:hover {
     background: #f0f3f8;
     border-color: #c0cce0;
-    color: #1b1763;
+    color: #2e2050;
 }
 
 .btn-detail-course svg {
@@ -775,3 +771,4 @@ main {
     });
   </script>
 @endpush
+

@@ -39,8 +39,8 @@
             --hover-clr: rgba(37, 35, 70, 0.9);
             --main-text-clr: rgb(71 85 105 / 1);
             --text-clr: #64748b;
-            --main-navy-clr: #1b1763;
-            --navy-dark: #0f0820;
+            --main-navy-clr: #2e2050;
+            --navy-dark: #19102c;
             --click-clr: #252346;
             --blue-background-clr: rgb(238 242 255 / 0.3);
             --yellow-background-clr: rgb(254 249 231 / 0.3);
@@ -58,8 +58,8 @@
             --light-border: #eef2f7;
             --gray-light: #9aa8bd;
             --dark-text-clr: #1a1335;
-            --navy-gradient-start: #26206f;
-            --navy-gradient-alt: #241a67;
+            --navy-gradient-start: #51376c;
+            --navy-gradient-alt: #3f2a54;
             --indigo-clr: #4f46e5;
             --indigo-light: #224231255;
             --amber-clr: #d59a10;

@@ -1,4 +1,4 @@
-﻿@extends('layouts.trainer')
+@extends('layouts.trainer')
 
 @section('title', 'Profile - Trainer')
 
@@ -313,7 +313,7 @@
 
 .top-edit-save {
     background: #ffffff;
-    color: #1b1763;
+    color: #2e2050;
 }
 
 .top-edit-cancel {
@@ -338,7 +338,7 @@
 }
 
 .profile-hero {
-    background: linear-gradient(135deg, #1b1763 0%, #27227e 70%, #332fa0 100%);
+    background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
     color: #fff;
     border-radius: 18px;
     padding: 20px;
@@ -459,7 +459,7 @@
     padding: 0 14px;
     background: #f8fafc;
     border: 1px solid #eff2f7;
-    color: #1b1763;
+    color: #2e2050;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
@@ -514,7 +514,7 @@
     font-size: 12px;
     letter-spacing: 4.48px;
     text-transform: uppercase;
-    color: #1b1763;
+    color: #2e2050;
     font-weight: 800;
 }
 
@@ -545,7 +545,7 @@
 .view-all,
 .view-all-reviews,
 .schedule-manage-link {
-    color: #1b1763;
+    color: #2e2050;
     text-decoration: none;
     font-size: 12px;
     font-weight: 700;
@@ -593,7 +593,7 @@
     width: 26px;
     height: 26px;
     border-radius: 999px;
-    background: #1b1763;
+    background: #2e2050;
     color: #fff;
     display: inline-flex;
     align-items: center;
@@ -652,7 +652,7 @@
 
 .pill {
     background: #f3f4f6;
-    color: #1b1763;
+    color: #2e2050;
     font-size: 11px;
     border-radius: 12px;
     padding: 8px 14px;
@@ -744,7 +744,7 @@
 .reward-box button {
     border: none;
     background: #f8fafc;
-    color: #1b1763;
+    color: #2e2050;
     border-radius: 12px;
     padding: 13px 14px;
     font-size: 12px;
@@ -820,7 +820,7 @@
 .pedagogical-statement .btn-share {
     background: #f5f7fc;
     border: 1px solid #e9edf4;
-    color: #1b1763;
+    color: #2e2050;
     width: 38px;
     height: 38px;
 }
@@ -1115,7 +1115,7 @@
 }
 
 .material-link {
-    color: #1b1763;
+    color: #2e2050;
     text-decoration: none;
     font-size: 11px;
     font-weight: 700;
@@ -4356,3 +4356,4 @@
         }
     </script>
 @endsection
+

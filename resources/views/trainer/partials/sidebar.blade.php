@@ -104,7 +104,7 @@ html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
 /*ACTIVE*/
 
 .trainer-page #sidebar ul li.active a {
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #3b2885 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     box-shadow: 0 4px 15px rgba(27, 23, 99, 0.3);
     font-weight: 600;
@@ -118,7 +118,7 @@ html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
     transform: translateY(-50%);
     height: 60%;
     width: 4px;
-    background: #6366f1;
+    background: #8562b3;
     border-radius: 0 4px 4px 0;
 }
 
@@ -264,7 +264,7 @@ html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
 }
 
 .btn-help:hover {
-    background: #3b2885;
+    background: #51376c;
 }
 
 .trainer-page #sidebar.close .sidebar-footer {
@@ -495,7 +495,7 @@ html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
 
     /* Active State in Mobile Nav */
     .trainer-page #sidebar ul li.active a {
-        background: linear-gradient(135deg, var(--main-navy-clr) 0%, #3b2885 100%);
+        background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
         box-shadow: 0 4px 12px rgba(27, 23, 99, 0.3);
         transform: translateY(-2px);
     }
@@ -642,6 +642,7 @@ html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
         </div>
     </div>
 </nav>
+
 
 
 

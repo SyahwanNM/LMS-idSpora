@@ -1,11 +1,11 @@
-﻿@extends('layouts.trainer')
+@extends('layouts.trainer')
 
 @section('title', 'Content Studio - Trainer')
 
 @push('styles')
 <style>
 .course-hero {
-    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--main-navy-clr) 100%);
+    background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-2xl);
@@ -394,7 +394,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -415,7 +415,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -435,7 +435,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -456,7 +456,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -477,7 +477,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -498,7 +498,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1303,7 +1303,7 @@ main.detail-course {
 }
 
 .course-hero {
-    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--main-navy-clr) 100%);
+    background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-2xl);
@@ -1685,7 +1685,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1706,7 +1706,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1726,7 +1726,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1747,7 +1747,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1768,7 +1768,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1789,7 +1789,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -3292,7 +3292,7 @@ main.detail-course {
 
         .primary-btn {
             border: none;
-            background: #231d79;
+            background: #3f2a54;
             color: var(--white-clr);
             padding: var(--spacing-sm) var(--spacing-lg);
             border-radius: 12px;
@@ -3329,7 +3329,7 @@ main.detail-course {
         }
 
         .validation-card {
-            background: #231d79;
+            background: #3f2a54;
             color: var(--white-clr);
             border-radius: 32px;
             padding: var(--spacing-lg);
@@ -3497,7 +3497,7 @@ main.detail-course {
             aspect-ratio: 1 / 1;
             min-width: 40px;
             border-radius: 12px;
-            background: #231d79;
+            background: #3f2a54;
             color: var(--yellow-clr);
             display: flex;
             align-items: center;
@@ -3784,7 +3784,7 @@ main.detail-course {
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div>
-                    <p class="kicker">STUDIO NARASUMBER • PENYUSUNAN MATERI</p>
+                    <p class="kicker">STUDIO NARASUMBER � PENYUSUNAN MATERI</p>
                     <h1>{{ $course->name }}</h1>
                 </div>
             </div>
@@ -4001,7 +4001,7 @@ main.detail-course {
                                                     style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
                                                     {{ $material->file_name ?: basename($material->content_url) }}
                                                 </p>
-                                                <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot
+                                                <p style="margin: 0; font-size: 12px; color: #999;">VIDEO � Slot
                                                     {{ $material->order_no }}
                                                 </p>
                                                 @php
@@ -4114,10 +4114,10 @@ main.detail-course {
                                                         {{ $quizModule->title ?: ('Quiz Unit ' . ($unitIndex + 1)) }}
                                                     </p>
                                                     <p style="margin: 0; font-size: 12px; color: #999;">
-                                                        {{ $questionCount }} Soal • Slot
+                                                        {{ $questionCount }} Soal � Slot
                                                         {{ $quizModule->order_no }}
                                                         @if($quizModule->updated_at)
-                                                            • Update terakhir {{ $quizModule->updated_at->format('d M Y H:i') }}
+                                                            � Update terakhir {{ $quizModule->updated_at->format('d M Y H:i') }}
                                                         @endif
                                                     </p>
                                                 </div>
@@ -4453,7 +4453,7 @@ main.detail-course {
         }
 
         function openReplacementModal(moduleId, fileName, fileType) {
-            console.log('🔵 openReplacementModal CALLED with:', { moduleId, fileName, fileType });
+            console.log('?? openReplacementModal CALLED with:', { moduleId, fileName, fileType });
 
             replacementState = { moduleId, fileName, fileType, selectedFile: null };
 
@@ -4464,7 +4464,7 @@ main.detail-course {
             const confirmBtn = document.getElementById('replacementConfirmBtn');
             const fileInput = document.getElementById('replacementFileInput');
 
-            console.log('🔍 Elements check:', {
+            console.log('?? Elements check:', {
                 modal: !!modal,
                 oldFileName: !!oldFileName,
                 oldFileInfo: !!oldFileInfo,
@@ -4474,7 +4474,7 @@ main.detail-course {
             });
 
             if (!modal || !oldFileName || !oldFileInfo || !preview || !confirmBtn || !fileInput) {
-                console.error('❌ ERROR: One or more modal elements not found!', { modal, oldFileName, oldFileInfo, preview, confirmBtn, fileInput });
+                console.error('? ERROR: One or more modal elements not found!', { modal, oldFileName, oldFileInfo, preview, confirmBtn, fileInput });
                 return;
             }
 
@@ -4486,7 +4486,7 @@ main.detail-course {
             fileInput.value = '';
 
             modal.style.display = 'flex';
-            console.log('✅ Modal displayed successfully!');
+            console.log('? Modal displayed successfully!');
         }
 
         function closeReplacementModal() {
@@ -4933,7 +4933,7 @@ main.detail-course {
                                                                 <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
                                                                 <div>
                                                                     <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
-                                                                    <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot ${slot}</p>
+                                                                    <p style="margin: 0; font-size: 12px; color: #999;">VIDEO � Slot ${slot}</p>
                                                                     ${processingStatus ? `<span class="video-status-pill ${processingClass}"><i class="bi bi-activity"></i>${escapeHtml(processingLabel)}</span>` : ''}
                                                                 </div>
                                                             </div>
@@ -5142,7 +5142,7 @@ main.detail-course {
                                 const typeInfos = Object.entries(data.available_types)
                                     .map(([type, info]) => `${type.toUpperCase()}: ${info.filled}/${info.count} terisi`)
                                     .join(' | ');
-                                errorMsg += '\n\n📊 Slot Tersedia: ' + typeInfos;
+                                errorMsg += '\n\n?? Slot Tersedia: ' + typeInfos;
                             }
 
                             showNotificationModal('Gagal', errorMsg, 'error');
@@ -5176,7 +5176,7 @@ main.detail-course {
                     }
                     videoFileInput.click();
                 });
-                videoDropzone.addEventListener("dragover", (e) => { e.preventDefault(); videoDropzone.style.borderColor = "#1a237e"; videoDropzone.style.background = "#f0f5fc"; });
+                videoDropzone.addEventListener("dragover", (e) => { e.preventDefault(); videoDropzone.style.borderColor = "#3c2957"; videoDropzone.style.background = "#f0f5fc"; });
                 videoDropzone.addEventListener("dragleave", () => { videoDropzone.style.borderColor = "#dfe6f2"; videoDropzone.style.background = "#f8fafc"; });
                 videoDropzone.addEventListener("drop", (e) => {
                     e.preventDefault();
@@ -5426,7 +5426,7 @@ main.detail-course {
                                 const typeInfos = Object.entries(data.available_types)
                                     .map(([type, info]) => `${type.toUpperCase()}: ${info.filled}/${info.count} terisi`)
                                     .join(' | ');
-                                errorMsg += '\n\n📊 Slot Tersedia: ' + typeInfos;
+                                errorMsg += '\n\n?? Slot Tersedia: ' + typeInfos;
                             }
 
                             showNotificationModal('Gagal', errorMsg, 'error');
@@ -5689,3 +5689,4 @@ main.detail-course {
         });
     </script>
 @endsection
+

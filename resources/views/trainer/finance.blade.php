@@ -56,7 +56,7 @@
     }
 
     .stat-card.navy {
-        background: linear-gradient(135deg, #1b1763 0%, #2e269e 100%);
+        background: linear-gradient(135deg, #2e2050 0%, #624388 100%);
     }
 
     .stat-card.amber {
@@ -208,7 +208,7 @@
     }
     
     .bd-item-meta span strong {
-        color: #1b1763;
+        color: #2e2050;
     }
 
     .bd-empty {
@@ -321,7 +321,7 @@
         font-size: 12px;
         font-weight: 700;
         color: white;
-        background: linear-gradient(135deg, #1b1763 0%, #312e81 100%);
+        background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
         border-radius: 8px;
         text-decoration: none;
         box-shadow: 0 4px 10px rgba(27, 23, 99, 0.2);

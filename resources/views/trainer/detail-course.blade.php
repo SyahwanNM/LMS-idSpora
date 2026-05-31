@@ -1,4 +1,4 @@
-﻿@extends('layouts.trainer')
+@extends('layouts.trainer')
 
 @section('title', 'Course Detail - Trainer')
 
@@ -18,7 +18,7 @@
 @push('styles')
 <style>
 .course-hero {
-    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--main-navy-clr) 100%);
+    background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-2xl);
@@ -407,7 +407,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -428,7 +428,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -448,7 +448,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -469,7 +469,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -490,7 +490,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -511,7 +511,7 @@
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1316,7 +1316,7 @@ main.detail-course {
 }
 
 .course-hero {
-    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--main-navy-clr) 100%);
+    background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-2xl);
@@ -1698,7 +1698,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1719,7 +1719,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1739,7 +1739,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1760,7 +1760,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1781,7 +1781,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -1802,7 +1802,7 @@ main.detail-course {
     width: 48px;
     height: 48px;
     border-radius: 14px;
-    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #312e81 100%);
+    background: linear-gradient(135deg, var(--main-navy-clr) 0%, #51376c 100%);
     color: var(--white-clr);
     display: flex;
     align-items: center;
@@ -2703,7 +2703,7 @@ main.detail-course {
             <div class="hero-body">
                 <div class="hero-copy">
                     <p class="hero-kicker">
-                        <i class="bi bi-star-fill kicker-icon"></i>ACADEMIC CURRICULUM • DETAIL
+                        <i class="bi bi-star-fill kicker-icon"></i>ACADEMIC CURRICULUM � DETAIL
                     </p>
                     <h1>{{ Str::limit($course->name, 50) }}</h1>
                     <p class="text-white opacity-75 mt-2 mb-4" style="font-size: 14px; line-height: 1.6;">
@@ -3028,3 +3028,4 @@ main.detail-course {
         });
     </script>
 @endpush
+

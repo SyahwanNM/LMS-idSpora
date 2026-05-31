@@ -28,7 +28,7 @@
   }
 
   .cert-hero {
-    background: linear-gradient(135deg, #1b1763 0%, #2e269e 100%);
+    background: linear-gradient(135deg, #2e2050 0%, #624388 100%);
     border-radius: 20px;
     padding: 36px 40px;
     color: white;
@@ -117,7 +117,7 @@
 
   .btn-download {
     background: #fff;
-    color: #1b1763;
+    color: #2e2050;
     padding: 12px 24px;
     border-radius: 12px;
     font-weight: 700;

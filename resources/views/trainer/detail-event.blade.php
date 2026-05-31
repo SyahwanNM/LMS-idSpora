@@ -30,11 +30,7 @@
         width: 100%;
         margin: 0;
         padding: var(--spacing-3xl) var(--spacing-4xl);
-        background: linear-gradient(
-            135deg,
-            var(--main-navy-clr) 0%,
-            var(--navy-dark) 100%
-        );
+        background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
         border-radius: 20px;
         overflow: hidden;
         box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);

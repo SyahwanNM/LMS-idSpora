@@ -375,12 +375,13 @@ class TrainerController extends Controller
         $template = \App\Models\CourseTemplate::find($course->template_id);
         if (!$template) {
             $template = \App\Models\CourseTemplate::where('level', $course->level)->first();
-            if (!$template) return;
+            if (!$template)
+                return;
         }
 
         // Assign template ke course jika belum ada
         if ((int) ($course->template_id ?? 0) <= 0) {
-            $course->template_id      = $template->id;
+            $course->template_id = $template->id;
             $course->template_version = $template->version;
             $course->saveQuietly();
         }
@@ -594,11 +595,21 @@ class TrainerController extends Controller
         $teachingHistory = TrainerCertificate::query()
             ->where('trainer_id', $user->id)
             ->whereIn('status', ['sent', 'published'])
-            ->whereNotNull('file_path')
             ->with('certifiable')
             ->latest('issued_at')
-            ->limit(6)
+            ->limit(3)
             ->get();
+
+        foreach ($teachingHistory as $cert) {
+            $model = $cert->certifiable;
+            if ($model) {
+                [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($model);
+                $cert->logosBase64 = $logosBase64;
+                $cert->signaturesBase64 = $signaturesBase64;
+                $cert->signaturesData = $signaturesData;
+                $cert->template = $template;
+            }
+        }
 
         $activeAssignmentItems = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
@@ -711,7 +722,6 @@ class TrainerController extends Controller
         $totalCertificates = (clone TrainerCertificate::query())
             ->where('trainer_id', $user->id)
             ->whereIn('status', ['sent', 'published'])
-            ->whereNotNull('file_path')
             ->count();
 
         return view('trainer.dashboard', compact(
@@ -954,11 +964,11 @@ class TrainerController extends Controller
 
         // Include events where trainer is assigned via trainer_id OR speaker name match
         $query = \App\Models\Event::where(function ($q) use ($user, $trainerName) {
-                $q->where('trainer_id', $user->id);
-                if ($trainerName !== '') {
-                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
-                }
-            })
+            $q->where('trainer_id', $user->id);
+            if ($trainerName !== '') {
+                $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+            }
+        })
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
@@ -977,8 +987,10 @@ class TrainerController extends Controller
             ->get()
             ->filter(function ($event) use ($user, $trainerName) {
                 // Exact name match for speaker field to avoid partial false positives
-                if ((int) ($event->trainer_id ?? 0) === (int) $user->id) return true;
-                if ($trainerName === '') return false;
+                if ((int) ($event->trainer_id ?? 0) === (int) $user->id)
+                    return true;
+                if ($trainerName === '')
+                    return false;
                 $names = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
                 return in_array(mb_strtolower($trainerName), $names, true);
             })
@@ -1368,7 +1380,7 @@ class TrainerController extends Controller
 
         $requestedSchemeType = (int) $request->query('scheme', 0);
         $sessionSchemeType = (int) session('trainer_active_scheme_type', 0);
-        
+
         $activeSchemeType = in_array($invitationSchemeType, [1, 2, 3], true)
             ? $invitationSchemeType
             : (in_array($requestedSchemeType, [1, 2, 3], true)
@@ -1823,11 +1835,11 @@ class TrainerController extends Controller
     public function updateProfileList(Request $request)
     {
         $trainer = Auth::user();
-        
+
         $type = $request->input('type');
         $action = $request->input('action'); // add, edit, delete
         $index = $request->input('index');
-        
+
         $validTypes = ['trainer_skills', 'trainer_experiences', 'trainer_educations', 'trainer_certifications'];
         if (!in_array($type, $validTypes)) {
             return redirect()->back()->with('error', 'Tipe data profil tidak valid.');
@@ -1848,10 +1860,10 @@ class TrainerController extends Controller
                 array_splice($list, $index, 1);
             }
         }
-        
+
         $trainer->$type = $list;
         $trainer->save();
-        
+
         return redirect()->route('trainer.profile')->with('success', 'Data profil berhasil diperbarui.');
     }
 
@@ -1897,13 +1909,13 @@ class TrainerController extends Controller
                         // Check PHP upload error code directly
                         if ($value->getError() !== UPLOAD_ERR_OK) {
                             $errorMessages = [
-                                UPLOAD_ERR_INI_SIZE   => 'File melebihi batas upload_max_filesize di server (' . ini_get('upload_max_filesize') . ').',
-                                UPLOAD_ERR_FORM_SIZE  => 'File melebihi batas MAX_FILE_SIZE di form.',
-                                UPLOAD_ERR_PARTIAL    => 'File hanya terupload sebagian. Coba lagi.',
-                                UPLOAD_ERR_NO_FILE    => 'Tidak ada file yang diupload.',
+                                UPLOAD_ERR_INI_SIZE => 'File melebihi batas upload_max_filesize di server (' . ini_get('upload_max_filesize') . ').',
+                                UPLOAD_ERR_FORM_SIZE => 'File melebihi batas MAX_FILE_SIZE di form.',
+                                UPLOAD_ERR_PARTIAL => 'File hanya terupload sebagian. Coba lagi.',
+                                UPLOAD_ERR_NO_FILE => 'Tidak ada file yang diupload.',
                                 UPLOAD_ERR_NO_TMP_DIR => 'Folder temporary server tidak tersedia.',
                                 UPLOAD_ERR_CANT_WRITE => 'Gagal menyimpan file ke disk server.',
-                                UPLOAD_ERR_EXTENSION  => 'Upload dihentikan oleh ekstensi PHP.',
+                                UPLOAD_ERR_EXTENSION => 'Upload dihentikan oleh ekstensi PHP.',
                             ];
                             $fail($errorMessages[$value->getError()] ?? 'Upload gagal dengan error code: ' . $value->getError());
                             return;
@@ -2407,11 +2419,11 @@ class TrainerController extends Controller
         if (!empty($primaryMaterialPath) && $firstFile) {
             // Always save to event_trainer_modules for per-trainer tracking
             \App\Models\EventTrainerModule::create([
-                'event_id'      => $event->id,
-                'trainer_id'    => $trainerId,
+                'event_id' => $event->id,
+                'trainer_id' => $trainerId,
                 'original_name' => $firstFile->getClientOriginalName(),
-                'path'          => $primaryMaterialPath,
-                'status'        => 'pending_review',
+                'path' => $primaryMaterialPath,
+                'status' => 'pending_review',
             ]);
 
             if ($isPrimaryTrainer || !$assignment) {
@@ -2721,28 +2733,28 @@ class TrainerController extends Controller
             $key = Event::class . ':' . (int) $event->id;
             $cert = $certMap[$key] ?? null;
             [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($event);
-            $hasLogo      = !empty($event->certificate_logo);
+            $hasLogo = !empty($event->certificate_logo);
             $hasSignature = !empty($event->certificate_signature);
-            $hasTemplate  = !empty($event->certificate_template);
+            $hasTemplate = !empty($event->certificate_template);
             $historyItems->push([
-                'type'               => 'event',
-                'id'                 => (int) $event->id,
-                'title'              => $event->title,
-                'date'               => $event->event_date,
-                'statusLabel'        => 'Selesai',
-                'certificate'        => $cert,
-                'downloadUrl'        => $cert ? route('trainer.certificates.events.download', $event) : null,
-                'showUrl'            => $cert ? route('trainer.certificates.events.show', $event) : null,
-                'highlight'          => $context === 'event' && $targetId === (int) $event->id,
+                'type' => 'event',
+                'id' => (int) $event->id,
+                'title' => $event->title,
+                'date' => $event->event_date,
+                'statusLabel' => 'Selesai',
+                'certificate' => $cert,
+                'downloadUrl' => $cert ? route('trainer.certificates.events.download', $event) : null,
+                'showUrl' => $cert ? route('trainer.certificates.events.show', $event) : null,
+                'highlight' => $context === 'event' && $targetId === (int) $event->id,
                 'registrations_count' => (int) ($event->registrations_count ?? 0),
-                'has_logo'           => $hasLogo,
-                'has_signature'      => $hasSignature,
-                'has_template'       => $hasTemplate,
-                'logosBase64'        => $logosBase64,
-                'signaturesBase64'   => $signaturesBase64,
-                'signaturesData'     => $signaturesData,
-                'template'           => $template,
-                'model'              => $event,
+                'has_logo' => $hasLogo,
+                'has_signature' => $hasSignature,
+                'has_template' => $hasTemplate,
+                'logosBase64' => $logosBase64,
+                'signaturesBase64' => $signaturesBase64,
+                'signaturesData' => $signaturesData,
+                'template' => $template,
+                'model' => $event,
             ]);
         }
 
@@ -2750,28 +2762,28 @@ class TrainerController extends Controller
             $key = Course::class . ':' . (int) $course->id;
             $cert = $certMap[$key] ?? null;
             [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($course);
-            $hasLogo      = !empty($course->certificate_logo);
-            $hasSig       = !empty($course->certificate_signature);
-            $hasTemplate  = !empty($course->certificate_template);
+            $hasLogo = !empty($course->certificate_logo);
+            $hasSig = !empty($course->certificate_signature);
+            $hasTemplate = !empty($course->certificate_template);
             $historyItems->push([
-                'type'               => 'course',
-                'id'                 => (int) $course->id,
-                'title'              => $course->name,
-                'date'               => $course->approved_at,
-                'statusLabel'        => 'Selesai',
-                'certificate'        => $cert,
-                'downloadUrl'        => $cert ? route('trainer.certificates.courses.download', $course) : null,
-                'showUrl'            => $cert ? route('trainer.certificates.courses.show', $course) : null,
-                'highlight'          => $context === 'course' && $targetId === (int) $course->id,
+                'type' => 'course',
+                'id' => (int) $course->id,
+                'title' => $course->name,
+                'date' => $course->approved_at,
+                'statusLabel' => 'Selesai',
+                'certificate' => $cert,
+                'downloadUrl' => $cert ? route('trainer.certificates.courses.download', $course) : null,
+                'showUrl' => $cert ? route('trainer.certificates.courses.show', $course) : null,
+                'highlight' => $context === 'course' && $targetId === (int) $course->id,
                 'registrations_count' => (int) ($course->enrollments_count ?? 0),
-                'has_logo'           => $hasLogo,
-                'has_signature'      => $hasSig,
-                'has_template'       => $hasTemplate,
-                'logosBase64'        => $logosBase64,
-                'signaturesBase64'   => $signaturesBase64,
-                'signaturesData'     => $signaturesData,
-                'template'           => $template,
-                'model'              => $course,
+                'has_logo' => $hasLogo,
+                'has_signature' => $hasSig,
+                'has_template' => $hasTemplate,
+                'logosBase64' => $logosBase64,
+                'signaturesBase64' => $signaturesBase64,
+                'signaturesData' => $signaturesData,
+                'template' => $template,
+                'model' => $course,
             ]);
         }
 
@@ -3062,23 +3074,23 @@ class TrainerController extends Controller
         } else {
             $template = $certifiable->certificate_template ?? 'template_1';
 
-            $logosRaw = is_array($certifiable->certificate_logo) 
-                ? $certifiable->certificate_logo 
+            $logosRaw = is_array($certifiable->certificate_logo)
+                ? $certifiable->certificate_logo
                 : ($certifiable->certificate_logo ? [$certifiable->certificate_logo] : []);
 
             foreach ($logosRaw as $l) {
                 $path = str_replace('storage/', '', (string) $l);
                 if ($path !== '' && Storage::disk('public')->exists($path)) {
                     $absolutePath = Storage::disk('public')->path($path);
-                    $mime = (is_string($absolutePath) && is_file($absolutePath)) 
-                        ? (mime_content_type($absolutePath) ?: 'image/png') 
+                    $mime = (is_string($absolutePath) && is_file($absolutePath))
+                        ? (mime_content_type($absolutePath) ?: 'image/png')
                         : 'image/png';
                     $logosBase64[] = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
                 }
             }
 
-            $sigsRaw = is_array($certifiable->certificate_signature) 
-                ? $certifiable->certificate_signature 
+            $sigsRaw = is_array($certifiable->certificate_signature)
+                ? $certifiable->certificate_signature
                 : ($certifiable->certificate_signature ? [$certifiable->certificate_signature] : []);
 
             foreach ($sigsRaw as $s) {
@@ -3090,8 +3102,8 @@ class TrainerController extends Controller
                 $path = str_replace('storage/', '', (string) $imgPath);
                 if ($path !== '' && Storage::disk('public')->exists($path)) {
                     $absolutePath = Storage::disk('public')->path($path);
-                    $mime = (is_string($absolutePath) && is_file($absolutePath)) 
-                        ? (mime_content_type($absolutePath) ?: 'image/png') 
+                    $mime = (is_string($absolutePath) && is_file($absolutePath))
+                        ? (mime_content_type($absolutePath) ?: 'image/png')
                         : 'image/png';
                     $b64 = 'data:' . $mime . ';base64,' . base64_encode(Storage::disk('public')->get($path));
                     $signaturesBase64[] = $b64;

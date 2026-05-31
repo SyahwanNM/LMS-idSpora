@@ -18,7 +18,7 @@
         position: relative;
         overflow: hidden;
         background: #fff;
-        color: #1e1b4b;
+        color: #19102c;
         box-sizing: border-box;
         @if(isset($is_preview) && $is_preview)
         transform: scale(var(--cert-scale, 1));
@@ -33,7 +33,7 @@
         width: 100%;
         padding: 36px 56px;
         text-align: center;
-        color: #1e1b4b;
+        color: #19102c;
         box-sizing: border-box;
     }
 
@@ -65,7 +65,7 @@
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 3px;
-        color: #1b1763;
+        color: #2e2050;
         font-weight: 600;
         margin-bottom: 8px;
     }
@@ -103,7 +103,7 @@
         text-align: center;
         min-width: 160px;
         font-size: 11px;
-        color: #1e1b4b;
+        color: #19102c;
     }
 
     .tpl-sig img {
@@ -115,7 +115,7 @@
     }
 
     .tpl-sig-line {
-        border-top: 1px solid #1e1b4b;
+        border-top: 1px solid #19102c;
         margin: 4px 0;
     }
 
@@ -141,14 +141,14 @@
 
     /* ─── Template 1: Royal ─── */
     .template_1 {
-        border: 14px solid #1e1b4b;
+        border: 14px solid #19102c;
         background: #fff;
         height: 21cm;
         position: relative;
     }
 
     .template_1 .tpl-inner {
-        border: 2px double #1b1763;
+        border: 2px double #2e2050;
         margin: 12px;
         height: calc(100% - 24px);
         width: calc(100% - 24px);
@@ -156,7 +156,7 @@
     }
 
     .template_1 .tpl-name {
-        border-bottom: 2px solid #1b1763;
+        border-bottom: 2px solid #2e2050;
         display: inline-block;
         padding: 4px 32px;
     }
@@ -174,7 +174,7 @@
         position: absolute;
         inset: 0 auto 0 0;
         width: 70px;
-        background: #1e1b4b;
+        background: #19102c;
     }
 
     .template_2::after {
@@ -182,7 +182,7 @@
         position: absolute;
         inset: 0 auto 0 70px;
         width: 7px;
-        background: #1b1763;
+        background: #2e2050;
     }
 
     .template_2 .tpl-inner {
@@ -195,7 +195,7 @@
     }
 
     .template_2 .tpl-name {
-        border-left: 6px solid #1b1763;
+        border-left: 6px solid #2e2050;
         padding-left: 14px;
     }
 
@@ -215,7 +215,7 @@
     }
 
     .template_3 .tpl-header {
-        background: #1e1b4b;
+        background: #19102c;
         color: #fff;
         padding: 20px 56px;
     }
@@ -229,7 +229,7 @@
 
     .template_3 .tpl-bar {
         height: 7px;
-        background: #1b1763;
+        background: #2e2050;
     }
 
     .template_3 .tpl-inner {
