@@ -10,6 +10,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('styles')
+    @stack('styles')
     <style>
         /* Ensure toast notifications appear above fixed navbar and profile dropdown */
         .toast-container.position-fixed { z-index: 11050 !important; }
@@ -22,6 +23,7 @@
                          request()->routeIs('admin.withdrawals.*') || 
                          request()->routeIs('admin.crm.*') || 
                          request()->routeIs('admin.trainer.*') ||
+                         request()->routeIs('admin.courses.studio*') ||
                          request()->routeIs('admin.material.*');
     @endphp
 
@@ -489,6 +491,7 @@
     </script>
 
     @yield('scripts')
+    @stack('scripts')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -60,6 +60,12 @@
         <i class="bi bi-award-fill"></i>
         <span>Sertifikat</span>
     </a>
+
+    <a href="{{ route('admin.trainer.studio.list') }}"
+       class="sidebar-link {{ request()->routeIs('admin.trainer.studio.*') ? 'active' : '' }}">
+        <i class="bi bi-collection-play-fill"></i>
+        <span>Course Studio</span>
+    </a>
 </aside>
 
 {{-- Mobile Sidebar --}}
@@ -136,10 +142,16 @@
             </a>
         </div>
 
-        <a href="{{ route('admin.trainer.certificates.queue') }}"
+        <a href="{{ route('admin.trainer.certificates.index') }}"
            class="sidebar-link {{ $isCertificateActive ? 'active' : '' }}">
             <i class="bi bi-award-fill"></i>
             <span>Sertifikat</span>
+        </a>
+
+        <a href="{{ route('admin.trainer.studio.list') }}"
+           class="sidebar-link {{ request()->routeIs('admin.trainer.studio.*') ? 'active' : '' }}">
+            <i class="bi bi-collection-play-fill"></i>
+            <span>Course Studio</span>
         </a>
     </div>
 </div>

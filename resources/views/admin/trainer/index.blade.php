@@ -49,18 +49,68 @@
 @push('admin-trainer-styles')
     <style>
         :root {
-            --dash-navy: #07143d;
-            --dash-primary: #2745e8;
-            --dash-blue: #2f5bff;
-            --dash-green: #19bd6b;
-            --dash-orange: #ff970f;
-            --dash-purple: #8d54df;
-            --dash-red: #ff4d4f;
-            --dash-muted: #697795;
-            --dash-soft: #f7f9fc;
-            --dash-border: #e7edf6;
-            --dash-card-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+            --dash-navy: #0f172a;
+            --dash-primary: #1e3a8a;
+            --dash-blue: #3b82f6;
+            --dash-green: #10b981;
+            --dash-orange: #f59e0b;
+            --dash-purple: #8b5cf6;
+            --dash-red: #ef4444;
+            --dash-muted: #64748b;
+            --dash-soft: #f8fafc;
+            --dash-border: #e2e8f0;
+            --dash-card-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
         }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            background-color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            color: #334155;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .admin-dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Header Section */
+        .header-section {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border: none;
+            border-radius: 24px;
+            padding: 32px 40px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(30, 58, 138, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+        .welcome-greeting { font-size: 32px; font-weight: 800; color: white; margin: 0 0 12px 0; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; }
+        .welcome-subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.8); margin: 0; font-weight: 500; }
+
 
         .admin-dashboard {
             width: 100%;
@@ -137,17 +187,27 @@
 
         .metric-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(210px, 1fr));
-            gap: 16px;
-            margin-bottom: 18px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 8px;
         }
 
         .metric-card {
-            min-height: 108px;
-            background: #fff;
+            background: #ffffff;
             border: 1px solid var(--dash-border);
-            border-radius: 14px;
+            border-radius: 20px;
+            padding: 24px;
             box-shadow: var(--dash-card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
             padding: 14px 16px;
             display: flex;
             gap: 12px;
@@ -156,15 +216,18 @@
         }
 
         .metric-icon {
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             border-radius: 16px;
-            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
-            box-shadow: 0 10px 20px rgba(47, 91, 255, .16);
+            font-size: 24px;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            color: white;
+            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1);
         }
 
         .metric-body {
@@ -184,21 +247,10 @@
             justify-content: center;
         }
 
-        .metric-icon.blue {
-            background: linear-gradient(135deg, #6b8cff, #2745e8);
-        }
-
-        .metric-icon.green {
-            background: linear-gradient(135deg, #72e6a4, #11b86b);
-        }
-
-        .metric-icon.orange {
-            background: linear-gradient(135deg, #ffc04d, #ff970f);
-        }
-
-        .metric-icon.purple {
-            background: linear-gradient(135deg, #b778f0, #8d54df);
-        }
+        .metric-icon.blue { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); }
+        .metric-icon.green { background: linear-gradient(135deg, #34d399 0%, #059669 100%); }
+        .metric-icon.orange { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
+        .metric-icon.purple { background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); }
 
         .metric-label {
             font-size: 12px;
@@ -358,13 +410,13 @@
         .dash-card {
             background: #fff;
             border: 1px solid var(--dash-border);
-            border-radius: 16px;
+            border-radius: 20px;
             box-shadow: var(--dash-card-shadow);
-            padding: 20px;
+            padding: 24px;
             min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
 
         .dash-card .card-link {
@@ -376,28 +428,29 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            margin-bottom: 18px;
+            margin-bottom: 24px;
         }
 
         .card-title-clean {
-            font-size: 15px;
-            font-weight: 900;
-            color: var(--dash-navy);
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
             margin: 0;
         }
 
         .card-link {
-            color: #1747e8;
+            color: #1e3a8a;
             text-decoration: none;
             font-size: 13px;
-            font-weight: 800;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
         }
 
         .card-link:hover {
-            color: #0f32b8;
+            color: #3b82f6;
+            text-decoration: underline;
         }
 
         .chart-select {
@@ -872,8 +925,8 @@
 
         .insight-title {
             font-size: 16px;
-            font-weight: 900;
-            color: #17328f;
+            font-weight: 700;
+            color: #1e3a8a;
             margin-bottom: 6px;
         }
 
@@ -888,22 +941,25 @@
             min-width: 230px;
             padding: 0 20px;
             border: 0;
-            border-radius: 8px;
-            background: #243bbd;
+            border-radius: 12px;
+            background: #1e3a8a;
             color: #fff;
             text-decoration: none;
-            font-weight: 900;
-            font-size: 13px;
+            font-weight: 700;
+            font-size: 14px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            box-shadow: 0 10px 24px rgba(36, 59, 189, .22);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
         }
 
         .btn-report:hover {
             color: #fff;
-            background: #1d319d;
+            background: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
         }
 
         @media (max-width: 1400px) {
@@ -922,8 +978,10 @@
         }
 
         @media (max-width: 992px) {
-            .dashboard-top {
+            .header-section {
                 flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
             }
 
             .date-widget {
@@ -957,7 +1015,7 @@
         }
 
         @media (max-width: 576px) {
-            .dashboard-title {
+            .welcome-greeting {
                 font-size: 24px;
             }
 
@@ -1009,20 +1067,22 @@
 @section('admin-trainer-content')
     <div class="admin-dashboard">
 
-        <div class="dashboard-top">
-            <div>
-                <h1 class="dashboard-title">Dashboard</h1>
-                <p class="dashboard-greeting">Selamat datang kembali, Admin Trainer! 👋</p>
-                <div class="dashboard-note">Berikut ringkasan aktivitas platform hari ini.</div>
+        <!-- Modern Hero Header -->
+        <div class="header-section">
+            <div class="header-content">
+                <h1 class="welcome-greeting">
+                    <i class="bi bi-shield-lock-fill"></i> Admin Trainer Workspace
+                </h1>
+                <p class="welcome-subtitle">Pantau kinerja, materi, dan portofolio seluruh Trainer.</p>
             </div>
-
-            <div class="date-widget">
-                <div class="date-widget-icon">
+            
+            <div class="date-widget" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+                <div class="date-widget-icon" style="background: rgba(255,255,255,0.2); color: white;">
                     <i class="bi bi-calendar3"></i>
                 </div>
                 <div>
-                    <div class="date-main">{{ $todayLabel }}</div>
-                    <div class="date-sub">{{ $timeLabel }}</div>
+                    <div class="date-main" style="color: white;">{{ $todayLabel }}</div>
+                    <div class="date-sub" style="color: rgba(255,255,255,0.8);">{{ $timeLabel }}</div>
                 </div>
             </div>
         </div>
@@ -1030,7 +1090,7 @@
         <div class="metric-grid">
             <div class="metric-card">
                 <div class="metric-icon blue">
-                    <i class="bi bi-mortarboard-fill"></i>
+                    <i class="bi bi-journal-richtext"></i>
                 </div>
 
                 <div>
@@ -1044,7 +1104,7 @@
 
             <div class="metric-card">
                 <div class="metric-icon green">
-                    <i class="bi bi-calendar-event-fill"></i>
+                    <i class="bi bi-calendar-event"></i>
                 </div>
 
                 <div>
@@ -1058,7 +1118,7 @@
 
             <div class="metric-card">
                 <div class="metric-icon orange">
-                    <i class="bi bi-hourglass-split"></i>
+                    <i class="bi bi-clock-history"></i>
                 </div>
 
                 <div>
@@ -1072,7 +1132,7 @@
 
             <div class="metric-card">
                 <div class="metric-icon purple">
-                    <i class="bi bi-check-circle-fill"></i>
+                    <i class="bi bi-check2-circle"></i>
                 </div>
 
                 <div>
@@ -1086,8 +1146,8 @@
         </div>
 
         <!-- Antrean Kerja Admin Section -->
-        <h4 style="font-weight: 800; font-size: 18px; color: var(--dash-navy); margin: 28px 0 14px; letter-spacing: -.4px; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-list-task text-primary"></i> Antrean Kerja Admin
+        <h4 style="font-weight: 700; font-size: 18px; color: var(--dash-navy); margin: 28px 0 14px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-list-task" style="color: #3b82f6;"></i> Antrean Kerja Admin
         </h4>
         
         <div class="queue-grid">
@@ -1105,7 +1165,7 @@
                         <div class="queue-item-card">
                             <div class="queue-item-left">
                                 <div class="queue-icon-wrapper {{ $item['type'] }}">
-                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-mortarboard' : 'bi-calendar-event' }}"></i>
+                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-journal-richtext' : 'bi-calendar-event' }}"></i>
                                 </div>
                                 <div class="queue-item-details">
                                     <div class="queue-item-title">{{ $item['title'] }}</div>
@@ -1151,7 +1211,7 @@
                         <div class="queue-item-card">
                             <div class="queue-item-left">
                                 <div class="queue-icon-wrapper {{ $item['type'] }}">
-                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-patch-check' : 'bi-award' }}"></i>
+                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-patch-check-fill' : 'bi-award-fill' }}"></i>
                                 </div>
                                 <div class="queue-item-details">
                                     <div class="queue-item-title">{{ $item['title'] }}</div>
@@ -1355,7 +1415,11 @@
                                 class="trainer-avatar" alt="{{ $trainer->name ?? 'Trainer' }}">
 
                             <div>
-                                <div class="trainer-name">{{ $trainer->name ?? 'Trainer' }}</div>
+                                <div class="trainer-name">
+                                    <a href="{{ route('admin.trainer.show', $trainer->id ?? 0) }}" class="text-decoration-none text-dark hover-primary">
+                                        {{ $trainer->name ?? 'Trainer' }} <i class="bi bi-box-arrow-up-right ms-1 small text-muted"></i>
+                                    </a>
+                                </div>
                                 <div class="trainer-meta">
                                     {{ $trainer->courses_as_trainer_count ?? 0 }} Course •
                                     {{ $trainer->events_as_trainer_count ?? 0 }} Event
@@ -1449,10 +1513,80 @@
             </div>
         </div>
 
+        <!-- Daftar Seluruh Trainer -->
+        <h4 style="font-weight: 800; font-size: 18px; color: var(--dash-navy); margin: 36px 0 16px; letter-spacing: -.4px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-people-fill text-primary"></i> Daftar Seluruh Trainer
+        </h4>
+        <div class="dash-card mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Trainer</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Bergabung</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($trainers as $trainerItem)
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="{{ $trainerItem->avatar_url ?? ('https://ui-avatars.com/api/?name=' . urlencode($trainerItem->name) . '&background=2745e8&color=fff&bold=true') }}" 
+                                             alt="{{ $trainerItem->name }}" 
+                                             class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ $trainerItem->name }}</div>
+                                            <div class="small text-muted">{{ $trainerItem->phone ?? '-' }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ $trainerItem->email }}</td>
+                                <td>
+                                    @php
+                                        $statusLabel = match($trainerItem->user_status ?? 'active') {
+                                            'active' => 'Aktif',
+                                            'inactive' => 'Tidak Tersedia',
+                                            'suspended' => 'Ditangguhkan',
+                                            default => 'Aktif',
+                                        };
+                                        $statusColor = match($trainerItem->user_status ?? 'active') {
+                                            'active' => 'success',
+                                            'inactive' => 'warning text-dark',
+                                            'suspended' => 'danger',
+                                            default => 'success',
+                                        };
+                                    @endphp
+                                    <span class="badge bg-{{ $statusColor }}">{{ $statusLabel }}</span>
+                                </td>
+                                <td class="small text-muted">{{ $trainerItem->created_at->format('d M Y') }}</td>
+                                <td class="text-end">
+                                    <a href="{{ route('admin.trainer.show', $trainerItem->id) }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
+                                        <i class="bi bi-person-lines-fill me-1"></i> Profil
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">Belum ada trainer terdaftar.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($trainers->hasPages())
+                <div class="d-flex justify-content-end mt-4">
+                    {{ $trainers->links('pagination::bootstrap-5') }}
+                </div>
+            @endif
+        </div>
+
         <div class="insight-card">
             <div class="insight-left">
                 <div class="insight-icon">
-                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <i class="bi bi-lightbulb-fill"></i>
                 </div>
 
                 <div>

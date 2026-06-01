@@ -1,12 +1,12 @@
 @extends('layouts.trainer')
 
-@section('title', 'Feedback - Trainer')
+@section('title', 'Ulasan - Trainer')
 
 @php
-  $pageTitle = 'Feedback';
+  $pageTitle = 'Ulasan';
   $breadcrumbs = [
     ['label' => 'Home', 'url' => route('trainer.dashboard')],
-    ['label' => 'Feedback']
+    ['label' => 'Ulasan']
   ];
 @endphp
 

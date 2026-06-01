@@ -35,6 +35,7 @@ class Course extends Model
         'certificate_logo',
         'certificate_signature',
         'certificate_template',
+        'material_deadline',
     ];
 
     protected $casts = [
@@ -45,6 +46,7 @@ class Course extends Model
         'expenses_json' => 'array',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+        'material_deadline' => 'datetime',
     ];
 
     public function getCardThumbnailUrlAttribute(): ?string

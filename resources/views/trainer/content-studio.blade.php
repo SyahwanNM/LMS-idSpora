@@ -1,9 +1,54 @@
-@extends('layouts.trainer')
+@php
+    $isAdmin = $isAdmin ?? false;
+@endphp
+@extends($isAdmin ? 'layouts.admin-trainer' : 'layouts.trainer')
 
 @section('title', 'Content Studio - Trainer')
 
-@push('styles')
+@push($isAdmin ? 'admin-trainer-styles' : 'styles')
 <style>
+@if($isAdmin)
+:root {
+    --main-navy-clr: #1a1d78;
+    --main-navy-hover: #151761;
+    --base-clr: #f1f5fa;
+    --yellow-clr: #ffcd00;
+    --yellow-hover: #e6b800;
+    --white-clr: #ffffff;
+    --gray-second-clr: #6c757d;
+    --line-clr: #e9ecef;
+    --success-clr: #198754;
+    --success-bg: #d1e7dd;
+    --warning-clr: #ffc107;
+    --warning-bg: #fff3cd;
+
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+    --spacing-3xl: 64px;
+
+    --shadow-sm: 0 2px 8px rgba(26, 29, 120, 0.05);
+    --shadow-md: 0 4px 16px rgba(26, 29, 120, 0.08);
+    --shadow-lg: 0 12px 32px rgba(26, 29, 120, 0.12);
+
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+
+    --font-size-xs: 0.85rem;
+    --font-size-sm: 0.95rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.15rem;
+    --font-size-xl: 1.35rem;
+    --font-size-2xl: 1.75rem;
+    --font-size-3xl: 2.25rem;
+}
+@endif
+
 .course-hero {
     background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
     position: relative;
@@ -2729,7 +2774,7 @@ main.detail-course {
     ];
 @endphp
 
-@push('styles')
+@push($isAdmin ? 'admin-trainer-styles' : 'styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
@@ -3763,7 +3808,7 @@ main.detail-course {
             background: #19164a;
         }
 
-        @media (max-width: 720px) {
+        @media (max-width: 768px) {
             .quiz-actions {
                 flex-direction: column-reverse;
             }
@@ -3772,11 +3817,47 @@ main.detail-course {
                 width: 100%;
                 justify-content: center;
             }
+            
+            .q-head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-md);
+                padding: var(--spacing-md);
+            }
+
+            .q-inputs, .q-score {
+                width: 100%;
+            }
+
+            .delete-question {
+                width: 100%;
+                justify-content: center;
+                margin-top: var(--spacing-sm);
+            }
+
+            .quiz-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .option-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .option-btn {
+                width: 100%;
+                justify-content: center;
+                margin-bottom: var(--spacing-xs);
+            }
         }
     </style>
 @endpush
 
-@section('content')
+@section($isAdmin ? 'admin-trainer-content' : 'content')
     <main class="content-studio-main">
         <header class="studio-header">
             <div class="studio-title-wrap">
@@ -3784,25 +3865,25 @@ main.detail-course {
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div>
-                    <p class="kicker">STUDIO NARASUMBER • PENYUSUNAN MATERI</p>
+                    <p class="kicker">STUDIO NARASUMBER  PENYUSUNAN MATERI</p>
                     <h1>{{ $course->name }}</h1>
                 </div>
             </div>
 
             <div class="studio-tabs" role="tablist">
                 <button
-                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ (!$schemePermissions['can_module'] || $courseMaterialLocked) ? 'is-locked' : '' }}"
-                    data-tab="module" type="button" {{ (!$schemePermissions['can_module'] || $courseMaterialLocked) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
+                    data-tab="module" type="button" {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
                     MODUL
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ (!$schemePermissions['can_video'] || $courseMaterialLocked) ? 'is-locked' : '' }}"
-                    data-tab="video" type="button" {{ (!$schemePermissions['can_video'] || $courseMaterialLocked) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
+                    data-tab="video" type="button" {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
                     VIDEO
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ (!$schemePermissions['can_quiz'] || $courseMaterialLocked) ? 'is-locked' : '' }}"
-                    data-tab="quiz" type="button" {{ (!$schemePermissions['can_quiz'] || $courseMaterialLocked) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
+                    data-tab="quiz" type="button" {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
                     PENYUSUNAN QUIZ
                 </button>
             </div>
@@ -3878,8 +3959,17 @@ main.detail-course {
         <section class="studio-layout">
             <div class="studio-panels">
                 <section class="panel panel-module {{ $activeTab === 'module' ? 'active' : '' }}" data-panel="module">
-                    <form id="moduleForm" class="module-form"
-                        action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST"
+                    @if(isset($isAdmin) && $isAdmin && !$schemePermissions['can_module'])
+                    <div style="background: rgba(245, 197, 66, 0.1); border: 1px solid #f5c542; color: #b8860b; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <i class="bi bi-info-circle-fill" style="font-size: 24px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Mode Pantau (Read-Only)</strong>
+                            <span style="font-size: 14px;">Penyusunan modul pada kelas ini adalah tugas Trainer berdasarkan skema yang dipilih. Anda hanya dapat melihat konten.</span>
+                        </div>
+                    </div>
+                    @endif
+                    <form id="moduleForm" class="upload-form"
+                        action="{{ $isAdmin ? route('admin.courses.studio.upload', $course->id) : route('trainer.courses.studio.upload', $course->id) }}" method="POST"
                         enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="courseId" value="{{ $course->id }}">
@@ -3942,8 +4032,17 @@ main.detail-course {
                 </section>
 
                 <section class="panel panel-video {{ $activeTab === 'video' ? 'active' : '' }}" data-panel="video">
-                    <form id="videoForm" class="module-form"
-                        action="{{ route('trainer.courses.studio.upload', $course->id) }}" method="POST"
+                    @if(isset($isAdmin) && $isAdmin && !$schemePermissions['can_video'])
+                    <div style="background: rgba(245, 197, 66, 0.1); border: 1px solid #f5c542; color: #b8860b; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <i class="bi bi-info-circle-fill" style="font-size: 24px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Mode Pantau (Read-Only)</strong>
+                            <span style="font-size: 14px;">Penyusunan video pada kelas ini adalah tugas Trainer berdasarkan skema yang dipilih. Anda hanya dapat melihat konten.</span>
+                        </div>
+                    </div>
+                    @endif
+                    <form id="videoForm" class="upload-form"
+                        action="{{ $isAdmin ? route('admin.courses.studio.upload', $course->id) : route('trainer.courses.studio.upload', $course->id) }}" method="POST"
                         enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="courseId" value="{{ $course->id }}">
@@ -4001,7 +4100,7 @@ main.detail-course {
                                                     style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">
                                                     {{ $material->file_name ?: basename($material->content_url) }}
                                                 </p>
-                                                <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot
+                                                <p style="margin: 0; font-size: 12px; color: #999;">VIDEO  Slot
                                                     {{ $material->order_no }}
                                                 </p>
                                                 @php
@@ -4030,7 +4129,7 @@ main.detail-course {
                                         </div>
                                         <div style="display: flex; gap: 6px;">
                                             <button type="button" class="preview-material-btn"
-                                                data-view-url="{{ route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
+                                                data-view-url="{{ $isAdmin ? route('admin.courses.studio.material.view', [$course->id, $material->id]) : route('trainer.courses.studio.material.view', [$course->id, $material->id]) }}"
                                                 data-material-type="video"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
                                                 title="Preview File"
@@ -4060,6 +4159,15 @@ main.detail-course {
                 </section>
 
                 <section class="panel panel-quiz {{ $activeTab === 'quiz' ? 'active' : '' }}" data-panel="quiz">
+                    @if(isset($isAdmin) && $isAdmin && !$schemePermissions['can_quiz'])
+                    <div style="background: rgba(245, 197, 66, 0.1); border: 1px solid #f5c542; color: #b8860b; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <i class="bi bi-info-circle-fill" style="font-size: 24px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Mode Pantau (Read-Only)</strong>
+                            <span style="font-size: 14px;">Penyusunan quiz pada kelas ini adalah tugas Trainer berdasarkan skema yang dipilih. Anda hanya dapat melihat konten.</span>
+                        </div>
+                    </div>
+                    @endif
                     @php
                         $existingQuizModules = $activeUnitModules->filter(function ($module) {
                             return $module->type === 'quiz';
@@ -4114,10 +4222,10 @@ main.detail-course {
                                                         {{ $quizModule->title ?: ('Quiz Unit ' . ($unitIndex + 1)) }}
                                                     </p>
                                                     <p style="margin: 0; font-size: 12px; color: #999;">
-                                                        {{ $questionCount }} Soal • Slot
+                                                        {{ $questionCount }} Soal  Slot
                                                         {{ $quizModule->order_no }}
                                                         @if($quizModule->updated_at)
-                                                            • Update terakhir {{ $quizModule->updated_at->format('d M Y H:i') }}
+                                                             Update terakhir {{ $quizModule->updated_at->format('d M Y H:i') }}
                                                         @endif
                                                     </p>
                                                 </div>
@@ -4177,7 +4285,7 @@ main.detail-course {
                         </div>
                     @endif
 
-                    <form id="quizForm" class="quiz-form" action="{{ route('trainer.courses.studio.quiz', $course->id) }}"
+                    <form id="quizForm" class="quiz-form" action="{{ $isAdmin ? route('admin.courses.studio.quiz', $course->id) : route('trainer.courses.studio.quiz', $course->id) }}"
                         method="POST">
                         @csrf
                         <input type="hidden" name="courseId" value="{{ $course->id }}">
@@ -4378,6 +4486,10 @@ main.detail-course {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script>
+        const courseId = @json($course->id);
+        const editorImageUploadUrl = @json($isAdmin ? route('admin.courses.studio.editor-image', $course->id) : route('trainer.courses.studio.editor-image', $course->id));
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
         let replacementState = {
             moduleId: null,
             fileName: null,
@@ -4453,8 +4565,6 @@ main.detail-course {
         }
 
         function openReplacementModal(moduleId, fileName, fileType) {
-            console.log('?? openReplacementModal CALLED with:', { moduleId, fileName, fileType });
-
             replacementState = { moduleId, fileName, fileType, selectedFile: null };
 
             const modal = document.getElementById('replacementModal');
@@ -4464,17 +4574,7 @@ main.detail-course {
             const confirmBtn = document.getElementById('replacementConfirmBtn');
             const fileInput = document.getElementById('replacementFileInput');
 
-            console.log('?? Elements check:', {
-                modal: !!modal,
-                oldFileName: !!oldFileName,
-                oldFileInfo: !!oldFileInfo,
-                preview: !!preview,
-                confirmBtn: !!confirmBtn,
-                fileInput: !!fileInput
-            });
-
             if (!modal || !oldFileName || !oldFileInfo || !preview || !confirmBtn || !fileInput) {
-                console.error('? ERROR: One or more modal elements not found!', { modal, oldFileName, oldFileInfo, preview, confirmBtn, fileInput });
                 return;
             }
 
@@ -4486,7 +4586,6 @@ main.detail-course {
             fileInput.value = '';
 
             modal.style.display = 'flex';
-            console.log('? Modal displayed successfully!');
         }
 
         function closeReplacementModal() {
@@ -4606,7 +4705,6 @@ main.detail-course {
             const moduleEditor = document.getElementById('moduleWysiwygEditor');
             const moduleContentInput = document.getElementById('moduleContentHtml');
             const moduleImageInput = document.getElementById('moduleImageInput');
-            const editorImageUploadUrl = @json(route('trainer.courses.studio.editor-image', $course->id));
             const previewModuleBtn = document.getElementById('previewModuleBtn');
             const modulePreviewModal = document.getElementById('modulePreviewModal');
             const modulePreviewBody = document.getElementById('modulePreviewBody');
@@ -4933,7 +5031,7 @@ main.detail-course {
                                                                 <i class="bi bi-camera-video" style="font-size: 20px; color: var(--main-navy-clr);"></i>
                                                                 <div>
                                                                     <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr);">${fileName}</p>
-                                                                    <p style="margin: 0; font-size: 12px; color: #999;">VIDEO • Slot ${slot}</p>
+                                                                    <p style="margin: 0; font-size: 12px; color: #999;">VIDEO ï¿½ Slot ${slot}</p>
                                                                     ${processingStatus ? `<span class="video-status-pill ${processingClass}"><i class="bi bi-activity"></i>${escapeHtml(processingLabel)}</span>` : ''}
                                                                 </div>
                                                             </div>
@@ -5689,4 +5787,5 @@ main.detail-course {
         });
     </script>
 @endsection
+
 

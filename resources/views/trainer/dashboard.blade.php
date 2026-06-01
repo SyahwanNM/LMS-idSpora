@@ -245,6 +245,7 @@
         'url' => $assignment->event ? route('trainer.events.studio', $assignment->event->id) : route('trainer.events'),
         'icon_class' => 'bi-cloud-arrow-up-fill',
         'days_left' => $daysLeft !== null ? max(0, $daysLeft) : '-',
+        'raw_days_left' => $daysLeft,
         'date_str' => $deadline ? $deadline->format('d M Y') : 'Jadwal menyusul'
       ];
     }
@@ -274,6 +275,7 @@
       'url' => route('trainer.courses.studio', $module->course_id),
       'icon_class' => 'bi-cloud-arrow-up-fill',
       'days_left' => max(0, $daysLeft),
+      'raw_days_left' => $daysLeft,
       'date_str' => $moduleDeadline->format('d M Y')
     ];
   }
@@ -526,7 +528,10 @@ body {
 .deadline-item:hover { background-color: #f8fafc; border-radius: 12px; }
 .deadline-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 12px; }
 .deadline-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; background: linear-gradient(135deg, #624388 0%, #8562b3 100%); flex-shrink: 0; }
-.tag-deadline { background: #f7f5fa; color: #624388; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; margin-bottom: 8px; display: inline-block; }
+.tag-deadline { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; margin-bottom: 8px; display: inline-block; transition: all 0.2s; }
+.tag-deadline-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+.tag-deadline-warning { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; }
+.tag-deadline-normal { background: #f7f5fa; color: #624388; border: 1px solid #e9d5ff; }
 .deadline-title { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0; }
 .deadline-date { font-size: 11px; color: #64748b; font-weight: 600; margin-left: auto; }
 .deadline-desc { font-size: 12px; color: #475569; margin-top: 6px; }
@@ -911,7 +916,26 @@ body {
                 <div class="deadline-item" onclick="window.location.href='{{ $task['url'] }}'">
                     <div class="deadline-icon"><i class="bi {{ $task['icon_class'] }}"></i></div>
                     <div style="flex: 1;">
-                        <span class="tag-deadline">{{ $task['days_left'] }} HARI LAGI</span>
+                        @php
+                            $rdl = $task['raw_days_left'] ?? null;
+                            if ($rdl === null) {
+                                $tagClass = 'tag-deadline-normal';
+                                $tagText = 'TENGGAT BELUM DITENTUKAN';
+                            } elseif ($rdl < 0) {
+                                $tagClass = 'tag-deadline-danger';
+                                $tagText = 'TERLAMBAT ' . abs($rdl) . ' HARI';
+                            } elseif ($rdl == 0) {
+                                $tagClass = 'tag-deadline-danger';
+                                $tagText = 'HARI INI (SEGERA)';
+                            } elseif ($rdl <= 3) {
+                                $tagClass = 'tag-deadline-warning';
+                                $tagText = $rdl . ' HARI LAGI';
+                            } else {
+                                $tagClass = 'tag-deadline-normal';
+                                $tagText = $rdl . ' HARI LAGI';
+                            }
+                        @endphp
+                        <span class="tag-deadline {{ $tagClass }}">{{ $tagText }}</span>
                         <div style="display: flex; justify-content: space-between; align-items: baseline;">
                             <h4 class="deadline-title">{{ Str::limit($task['title'], 25) }}</h4>
                             <span class="deadline-date">{{ $task['date_str'] }}</span>
