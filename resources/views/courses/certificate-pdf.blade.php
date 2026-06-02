@@ -1,4 +1,4 @@
-@if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat Kursus</title>@endif<style>@if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;height:210mm;overflow:hidden;background:white;font-family:'Helvetica','Arial',sans-serif;}@endif
+@if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat Kursus</title>@endif<style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');@if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;height:210mm;overflow:hidden;background:white;font-family:'Helvetica','Arial',sans-serif;}@endif
         
         .certificate-page { 
             width: 270mm; 
@@ -20,233 +20,330 @@
             @endif
         }
 
-        /* Template 1: Premium Royal (Elegant) */
+        /* Template 1: Premium Royal (Elegant Maroon & Gold Waves) */
         .template_1 { 
-            border: 25px solid #1e1b4b; 
+            border: none; 
             height: 170mm; 
             width: 270mm;
             position: relative; 
-            padding: 40px;
+            padding: 35px;
             box-sizing: border-box;
+            background: #ffffff;
+            overflow: hidden;
         }
-        .template_1 .inner-border { 
-            position: absolute; 
-            top: 15px; left: 15px; right: 15px; bottom: 15px; 
-            border: 4px double #fbbf24; 
-            pointer-events: none; 
-        }
-        .template_1 .corner-element {
-            position: absolute;
-            width: 100px;
-            height: 100px;
-            border: 2px solid #fbbf24;
-            border-radius: 50%;
-        }
-        .template_1 .corner-tl { top: -50px; left: -50px; }
-        .template_1 .corner-tr { top: -50px; right: -50px; }
-        .template_1 .corner-bl { bottom: -50px; left: -50px; }
-        .template_1 .corner-br { bottom: -50px; right: -50px; }
-
-        .template_1 .header { text-align: center; }
+        .template_1 .header { text-align: center; position: relative; z-index: 2; padding-top: 20px; }
         .template_1 h1 { 
             font-family: 'Georgia', serif; 
-            font-size: 48pt; 
+            font-size: 36pt; 
             color: #1e1b4b; 
-            margin: 20px 0 10px; 
+            margin: 10px 0 2px; 
             text-transform: uppercase; 
             letter-spacing: 4px;
+            font-weight: 700;
+        }
+        .template_1 .sub-title {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11pt;
+            color: #7f1d1d;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-top: 4px;
+            margin-bottom: 25px;
         }
         .template_1 .recipient-name { 
-            font-size: 42pt; 
-            font-weight: bold; 
-            color: #1e1b4b;
-            border-bottom: 2px solid #fbbf24; 
+            font-size: 38pt; 
+            font-weight: normal; 
+            color: #7f1d1d;
+            border-bottom: none; 
             display: inline-block; 
-            padding: 10px 60px; 
-            margin: 20px 0;
-            font-family: 'Times New Roman', serif;
+            padding: 4px 50px; 
+            margin: 10px 0;
+            font-family: 'Great Vibes', cursive;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 2;
         }
-        .template_1 .content { text-align: center; }
+        .template_1 .content { text-align: center; position: relative; z-index: 2; }
+        .template_1 .sig-box {
+            display: inline-block !important;
+            float: none !important;
+            text-align: center !important;
+            width: 230px !important;
+            margin: 0 30px !important;
+        }
+        .template_1 .sig-line {
+            width: 170px;
+            border-bottom: 1.5px dashed #7f1d1d;
+            margin: 8px auto;
+        }
 
-        /* Template 2: Modern Elegant (Corporate) */
+        /* Template 2: Modern Corporate (Sleek Professional) */
         .template_2 { 
             padding: 0; 
             height: 170mm; 
             width: 270mm;
             box-sizing: border-box; 
             overflow: hidden; 
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-        }
-        .template_2 .sidebar {
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 80px;
-            background: #1e1b4b;
-        }
-        .template_2 .gold-accent {
-            position: absolute;
-            left: 80px; top: 0; bottom: 0;
-            width: 8px;
-            background: #fbbf24;
+            background: #f8fafc;
+            position: relative;
         }
         .template_2 .content-wrap {
-            margin-left: 120px;
-            padding: 80px 80px 80px 60px;
+            padding: 50px 20px 20px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
         }
         .template_2 h1 { 
-            font-size: 56pt; 
-            font-weight: 800; 
-            color: #1e1b4b; 
+            font-family: 'Georgia', serif;
+            font-size: 32pt; 
+            font-weight: bold; 
+            color: #0f172a; 
             margin: 0; 
-            letter-spacing: -2px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
         .template_2 .sub-title {
-            font-size: 18pt;
-            color: #fbbf24;
-            font-weight: 700;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 13pt;
+            color: #475569;
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 4px;
-            margin-bottom: 40px;
+            margin-top: 5px;
+            margin-bottom: 25px;
         }
         .template_2 .recipient-name { 
-            font-size: 48pt; 
-            font-weight: 900; 
-            color: #1e1b4b; 
-            margin: 20px 0;
-            border-left: 10px solid #fbbf24;
-            padding-left: 30px;
+            font-family: 'Great Vibes', 'Georgia', serif;
+            font-size: 38pt; 
+            font-weight: normal; 
+            color: #0f172a; 
+            margin: 15px auto;
+            display: inline-block;
+            font-style: italic;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 5px;
         }
-        .template_2 .watermark {
+        .template_2 .gold-badge {
             position: absolute;
-            right: -50px; bottom: -50px;
-            width: 400px; height: 400px;
-            opacity: 0.03;
-            pointer-events: none;
+            top: 20px;
+            left: 20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid #d4af37;
+            background: #ffffff;
+            z-index: 5;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .template_2 .gold-badge-inner {
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border-radius: 50%;
+            border: 1px solid #d4af37;
+            background: #faf8f5;
+        }
+        .template_2 .cert-footer {
+            padding: 0 !important;
+            left: 50px !important;
+            right: 50px !important;
+            width: calc(100% - 100px) !important;
+            text-align: center !important;
+        }
+        .template_2 .sig-box {
+            display: inline-block !important;
+            float: none !important;
+            text-align: center !important;
+            width: 250px !important;
+            margin: 0 30px !important;
         }
 
-        /* Template 3: Creative Professional (Dynamic) */
+        /* Template 3: Creative Professional (Dynamic Wave & Gradients) */
         .template_3 { 
             padding: 0; 
             height: 170mm; 
             width: 270mm;
             box-sizing: border-box; 
-            background: #f8fafc;
-            border: 20px solid #ffffff;
-            box-shadow: inset 0 0 100px rgba(30, 27, 75, 0.03);
-        }
-        .template_3 .header-bg {
-            height: 150px;
-            background: #1e1b4b;
-            padding: 40px 80px;
-            color: white;
+            background: #fdfdfd;
+            border: 15px solid #ffffff;
             position: relative;
+            overflow: hidden;
         }
-        .template_3 .header-bg::after {
-            content: '';
-            position: absolute;
-            bottom: -20px; right: 80px;
-            width: 150px; height: 10px;
-            background: #fbbf24;
+        .template_3 .content-wrap {
+            padding: 40px 20px 20px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 5;
         }
-        .template_3 h1 { 
-            font-size: 44pt; 
-            font-weight: 800; 
-            margin: 0; 
+        .template_3 h1 {
+            font-family: 'Georgia', serif;
+            font-size: 32pt;
+            font-weight: 900;
+            color: #1e1b4b;
+            margin: 0;
+            letter-spacing: 3px;
             text-transform: uppercase;
         }
-        .template_3 .main-content {
-            padding: 60px 80px;
+        .template_3 .sub-title {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11pt;
+            color: #d97706;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-top: 4px;
+            margin-bottom: 25px;
         }
-        .template_3 .recipient-name { 
-            font-size: 52pt; 
-            font-weight: bold; 
-            color: #1e1b4b; 
-            margin: 15px 0;
-            background: linear-gradient(to right, #1e1b4b, #4338ca);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .template_3 .recipient-name {
+            font-family: 'Great Vibes', 'Georgia', serif;
+            font-size: 38pt;
+            font-weight: normal;
+            color: #4c1d95;
+            margin: 10px auto;
+            display: inline-block;
+            font-style: italic;
+            border-bottom: 2px solid #d97706;
+            padding-bottom: 5px;
         }
-        .template_3 .award-line {
-            width: 120px;
-            height: 4px;
-            background: #fbbf24;
-            margin: 20px 0;
+        .template_3 .cert-footer {
+            padding: 0 !important;
+            left: 50px !important;
+            right: 50px !important;
+            width: calc(100% - 100px) !important;
+            text-align: center !important;
+        }
+        .template_3 .sig-box {
+            display: inline-block !important;
+            float: none !important;
+            text-align: center !important;
+            width: 230px !important;
+            margin: 0 20px !important;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid #f3f4f6;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+        .template_3 .sig-line {
+            width: 170px;
+            border-bottom: 1.5px solid #4c1d95;
+            margin: 8px auto;
         }
 
-        /* Shared */
+        /* Shared / Layout Components */
         .logo-row { text-align: center; margin-bottom: 15px; width: 100%; }
         .logo-container { display: inline-block; vertical-align: middle; }
-        .logo-item { height: 50px; width: auto; margin: 0 10px; vertical-align: middle; }
-        .cert-footer { position: absolute; bottom: 80px; width: 100%; left: 0; padding: 0 80px; box-sizing: border-box; }
-        .sig-box { float: right; text-align: center; margin-left: 40px; }
-        .sig-line { width: 180px; border-bottom: 1px solid #1e1b4b; margin: 10px auto; }
-        .cert-id { position: absolute; bottom: 30px; right: 40px; font-size: 9pt; color: #94a3b8; }
-        .verification-tag { position: absolute; bottom: 30px; left: 40px; font-size: 8pt; color: #94a3b8; font-family: monospace; letter-spacing: 1px; }
-        .template_2 .verification-tag { left: 120px; } /* Offset for sidebar in modern template */
+        .logo-item { height: 48px; width: auto; margin: 0 10px; vertical-align: middle; }
+        
+        .template_2 .logo-row { text-align: left; margin-bottom: 25px; }
+        
+        .cert-footer { position: absolute; bottom: 70px; width: 100%; left: 0; padding: 0 70px; box-sizing: border-box; z-index: 3; }
+        .template_2 .cert-footer { padding: 0 70px 0 160px; } /* Indent footer for sidebar in template 2 */
+        
+        .sig-box { float: right; text-align: center; margin-left: 35px; }
+        .template_3 .sig-box {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+            backdrop-filter: blur(6px);
+        }
+        .sig-line { width: 170px; border-bottom: 1.5px solid #0f172a; margin: 8px auto; }
+        .template_3 .sig-line { border-bottom-color: #4f46e5; }
+        
+        .cert-id { position: absolute; bottom: 25px; right: 40px; font-size: 8.5pt; color: #94a3b8; font-weight: 600; z-index: 3; }
+        .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
+        .template_2 .verification-tag { left: 160px; } /* Offset for sidebar in modern template */
+        .template_3 .verification-tag { left: 70px; bottom: 25px; }
+        .template_3 .cert-id { right: 70px; bottom: 25px; }
     </style>
 @if(!isset($is_preview) || !$is_preview)</head><body>@endif
 
     @php $template = $course->certificate_template ?? 'template_1'; @endphp
     <div class="certificate-page {{ $template }}">
         @if($template == 'template_1') 
-            <div class="inner-border"></div> 
-            <div class="corner-element corner-tl"></div>
-            <div class="corner-element corner-tr"></div>
-            <div class="corner-element corner-bl"></div>
-            <div class="corner-element corner-br"></div>
+            <!-- Top Left Gold Bar -->
+            <div style="position: absolute; top: 15mm; left: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
+            <!-- Bottom Right Gold Bar -->
+            <div style="position: absolute; bottom: 15mm; right: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
+
+            <!-- Top Right Maroon & Gold Waves -->
+            <div style="position: absolute; top: 0; right: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
+                <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                    <path d="M 30,0 C 50,40 70,60 100,80 L 100,0 Z" fill="#7f1d1d" />
+                    <path d="M 40,0 C 58,38 74,54 100,70 L 100,0 Z" fill="#eab308" />
+                    <path d="M 50,0 C 66,34 78,46 100,60 L 100,0 Z" fill="#991b1b" />
+                    <path d="M 65,0 C 78,26 86,34 100,45 L 100,0 Z" fill="#eab308" />
+                    <path d="M 75,0 C 85,20 90,25 100,35 L 100,0 Z" fill="#7f1d1d" />
+                </svg>
+            </div>
+
+            <!-- Bottom Left Maroon & Gold Waves -->
+            <div style="position: absolute; bottom: 0; left: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
+                <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                    <path d="M 0,30 C 40,50 60,70 80,100 L 0,100 Z" fill="#7f1d1d" />
+                    <path d="M 0,40 C 38,58 54,74 70,100 L 0,100 Z" fill="#eab308" />
+                    <path d="M 0,50 C 34,66 46,78 60,100 L 0,100 Z" fill="#991b1b" />
+                    <path d="M 0,65 C 26,78 34,86 45,100 L 0,100 Z" fill="#eab308" />
+                    <path d="M 0,75 C 20,85 25,90 35,100 L 0,100 Z" fill="#7f1d1d" />
+                </svg>
+            </div>
         @elseif($template == 'template_2')
-            <div class="sidebar"></div>
-            <div class="gold-accent"></div>
-            @php 
-                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
-                $mainLogoPath = public_path('aset/' . $logoFileName); 
-                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
-            @endphp
-            @if(isset($is_preview) && $is_preview)
-                <img src="{{ $mainLogoUrl }}" class="watermark">
-            @elseif(file_exists($mainLogoPath))
-                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="watermark">
-            @endif
+            <!-- SVG background decorations -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
+                <svg width="100%" height="100%" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                    <!-- Top-left diagonal gold ribbon -->
+                    <polygon points="0,0 60,0 0,60" fill="#d4af37" />
+                    <polygon points="0,0 55,0 0,55" fill="#fef08a" />
+                    <polygon points="0,0 40,0 0,40" fill="#ca8a04" />
+                    
+                    <!-- Right side navy & gold triangles -->
+                    <polygon points="297,0 215,0 297,125" fill="#0f172a" />
+                    <polygon points="297,210 185,210 297,135" fill="#ca8a04" />
+                    <polygon points="297,210 190,210 297,137" fill="#fbbf24" />
+                </svg>
+            </div>
+            
+            <div class="gold-badge">
+                <div class="gold-badge-inner"></div>
+            </div>
         @endif
 
         @if($template == 'template_3')
-            <div class="header-bg">
-            <div style="float: right;">
+            @php 
+                $bgCreativeUrl = request()->schemeAndHttpHost() . '/aset/bg-creative.png';
+            @endphp
+            <img src="{{ $bgCreativeUrl }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+            
+            <div class="content-wrap">
+                <div class="logo-row">
                     @php 
-                        $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
-                        $mainLogoPath = public_path('aset/' . $logoFileName); 
+                        $logoFileName = 'logo-idspora.png';
                         $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
                     @endphp
-                    @if(isset($is_preview) && $is_preview)
-                        <img src="{{ $mainLogoUrl }}" class="logo-item">
-                    @elseif(file_exists($mainLogoPath))
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
-                    @endif
+                    <img src="{{ $mainLogoUrl }}" class="logo-item" style="height: 50px; width: auto;">
 
                     @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
                     @foreach($logosToRender as $logo)
-                        <img src="{{ $logo }}" class="logo-item">
+                        <img src="{{ $logo }}" class="logo-item" style="height: 50px; width: auto;">
                     @endforeach
                 </div>
-                <h1>Course Certificate</h1>
-                <p style="color: #fbbf24; font-weight: bold; margin: 0;">PROFESSIONAL EDUCATION</p>
-            </div>
-            <div class="main-content">
-                <p style="font-size: 14pt; color: #64748b; margin: 0;">This certificate is proudly awarded to</p>
+                <h1>COURSE CERTIFICATE</h1>
+                <div class="sub-title">PROFESSIONAL EDUCATION</div>
+                
+                <p style="font-size: 14pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This certificate is proudly awarded to</p>
                 <div class="recipient-name">{{ strtoupper($user->name) }}</div>
-                <div class="award-line"></div>
-                <p style="font-size: 15pt; color: #1e293b; margin-top: 20px;">for successful completion and mastery of the online course</p>
-                <h2 style="font-size: 28pt; color: #1e1b4b; margin: 10px 0; font-weight: 800;">{{ strtoupper($course->name) }}</h2>
-                <p style="font-size: 11pt; color: #64748b; margin-top: 20px;">Issued by IdSPora Learning Academy on {{ $issuedAt->format('d F Y') }}</p>
+                <p style="font-size: 12pt; color: #1e293b; margin-top: 10px;">for successful completion and mastery of the online course</p>
+                <h2 style="font-size: 24pt; color: #1e1b4b; margin: 10px 0; font-family: 'Georgia', serif;">"{{ $course->name }}"</h2>
+                <p style="font-size: 11pt; color: #64748b;">Issued by IdSPora Learning Academy on {{ $issuedAt->format('d F Y') }}</p>
             </div>
         @else
-            <div class="header" style="{{ $template == 'template_2' ? 'padding: 80px 80px 0 120px; text-align: left;' : '' }}">
+            <div class="header" style="{{ ($template == 'template_1' || $template == 'template_2') ? 'padding: 40px 10px 0 10px; text-align: center;' : '' }}">
                 @if($template == 'template_1')
                     <div class="logo-row">
                         <div class="logo-container">
                             @php 
-                                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
+                                $logoFileName = 'logo idspora_dark.png';
                                 $mainLogoPath = public_path('aset/' . $logoFileName); 
                                 $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
                             @endphp
@@ -262,9 +359,8 @@
                             @endforeach
                         </div>
                     </div>
-                    <h1 style="margin-top: 15px; font-size: 42pt;">Course Certificate</h1>
-                    <p style="color: #fbbf24; font-weight: bold; letter-spacing: 5px; font-size: 16pt; margin: 5px 0; text-transform: uppercase;">Certificate of Completion</p>
-                    <div style="width: 200px; height: 2px; background: #fbbf24; margin: 15px auto;"></div>
+                    <h1 style="margin-top: 10px; font-size: 38pt; font-family: 'Georgia', serif; color: #1e1b4b;">Course Certificate</h1>
+                    <div class="sub-title">Certificate of Completion</div>
                 @elseif($template == 'template_2')
                     <div class="logo-row">
                         @php 
@@ -287,10 +383,14 @@
                     <div class="sub-title">Completion & Mastery</div>
                 @endif
             </div>
-
-            <div class="content" style="{{ $template == 'template_2' ? 'padding: 20px 80px 0 120px; text-align: left; margin-top: 0;' : 'margin-top: 40px;' }}">
+            <div class="content" style="{{ ($template == 'template_1' || $template == 'template_2') ? 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;' : 'margin-top: 40px;' }}">
                 <p style="font-size: 16pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This is to certify that</p>
-                <div class="recipient-name">{{ strtoupper($user->name) }}</div>
+                @if($template == 'template_1')
+                    <div class="recipient-name">{{ ucwords(strtolower($user->name)) }}</div>
+                    <div style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 15px auto;"></div>
+                @else
+                    <div class="recipient-name">{{ strtoupper($user->name) }}</div>
+                @endif
                 <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;">has successfully completed all requirements of the course</p>
                 <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;">"{{ $course->name }}"</h2>
                 <p style="font-size: 12pt; color: #64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Academy</p>
@@ -298,7 +398,7 @@
         @endif
 
         <div class="cert-footer">
-            <div style="float: right;">
+            <div style="text-align: center; width: 100%;">
                 @php 
                     $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64' => $b, 'name' => '', 'position' => ''], $signaturesBase64);
                 @endphp

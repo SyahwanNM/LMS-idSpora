@@ -55,13 +55,27 @@
         width: 28px; height: 28px; border-radius: 7px; display: inline-flex;
         align-items: center; justify-content: center; font-size: 0.8rem;
         color: var(--crm-text-muted); transition: all 0.2s;
-        text-decoration: none; background: transparent;
+        text-decoration: none; background: transparent; border: none; cursor: pointer;
     }
     .action-icon:hover { background: var(--crm-border-soft); color: var(--crm-primary); }
+    .action-icon.danger:hover { background: rgba(239,68,68,0.1); color: #ef4444; }
 </style>
 @endsection
 
 @section('content')
+
+{{-- Session Alerts --}}
+@if(session('success'))
+<div class="alert d-flex align-items-center gap-2 mb-4" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:0.85rem 1.25rem;color:#065f46;font-size:0.85rem;font-weight:600;">
+    <i class="bi bi-check-circle-fill" style="color:#10b981;"></i> {{ session('success') }}
+</div>
+@endif
+@if(session('error'))
+<div class="alert d-flex align-items-center gap-2 mb-4" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;padding:0.85rem 1.25rem;color:#991b1b;font-size:0.85rem;font-weight:600;">
+    <i class="bi bi-exclamation-triangle-fill" style="color:#ef4444;"></i> {{ session('error') }}
+</div>
+@endif
+
 {{-- Page Header --}}
 <div class="crm-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
     <div>
@@ -168,12 +182,22 @@
                     </td>
                     <td style="padding-right:1.25rem;text-align:right;" onclick="event.stopPropagation()">
                         <div class="d-flex justify-content-end gap-1">
-                            <a href="{{ route('admin.crm.customers.show', $customer) }}" class="action-icon row-action-btn hover-scale" title="Detail">
+                            <a href="{{ route('admin.crm.customers.show', $customer) }}" class="action-icon hover-scale" title="Detail">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{{ route('admin.crm.customers.edit', $customer) }}" class="action-icon row-action-btn hover-scale" title="Edit">
+                            <a href="{{ route('admin.crm.customers.edit', $customer) }}" class="action-icon hover-scale" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </a>
+                            <button type="button"
+                                    class="action-icon danger hover-scale btn-trigger-delete-customer"
+                                    title="Hapus Akun"
+                                    data-customer-id="{{ $customer->id }}"
+                                    data-customer-name="{{ $customer->name }}"
+                                    data-customer-email="{{ $customer->email }}"
+                                    data-customer-role="{{ ucfirst($customer->role) }}"
+                                    data-delete-url="{{ route('admin.crm.customers.destroy', $customer) }}">
+                                <i class="bi bi-trash3"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -200,3 +224,87 @@
     @endif
 </div>
 @endsection
+
+@push('modals')
+{{-- Delete Customer Confirmation Modal --}}
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:20px;">
+            <div class="modal-body p-4">
+
+                {{-- Icon --}}
+                <div class="text-center mb-4">
+                    <div style="width:60px;height:60px;border-radius:50%;background:rgba(239,68,68,0.1);display:inline-flex;align-items:center;justify-content:center;color:#ef4444;font-size:1.75rem;">
+                        <i class="bi bi-person-x-fill"></i>
+                    </div>
+                    <h5 class="fw-800 mt-3 mb-1" style="font-size:1.1rem;color:var(--crm-navy);">Hapus Akun User?</h5>
+                    <p style="font-size:0.8rem;color:var(--crm-text-subtle);margin:0;">Tindakan ini bersifat permanen dan tidak dapat dibatalkan.</p>
+                </div>
+
+                {{-- Customer Info Card --}}
+                <div class="mb-4 p-3" style="background:var(--crm-border-soft);border-radius:12px;border:1px dashed var(--crm-border);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-700 text-muted" style="font-size:0.7rem;text-transform:uppercase;">Nama:</span>
+                        <span id="del-customer-name" class="fw-800" style="font-size:0.82rem;color:var(--crm-navy);">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-700 text-muted" style="font-size:0.7rem;text-transform:uppercase;">Email:</span>
+                        <span id="del-customer-email" class="fw-700" style="font-size:0.78rem;color:var(--crm-primary);">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-700 text-muted" style="font-size:0.7rem;text-transform:uppercase;">Peran:</span>
+                        <span id="del-customer-role" class="fw-700" style="font-size:0.78rem;color:var(--crm-navy);">-</span>
+                    </div>
+                </div>
+
+                {{-- Warning --}}
+                <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.5rem;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-triangle-fill mt-1" style="color:#ef4444;font-size:0.85rem;flex-shrink:0;"></i>
+                        <span style="font-size:0.75rem;color:#dc2626;font-weight:600;line-height:1.5;">Menghapus akun ini akan menghapus semua data terkait user tersebut dari sistem secara permanen.</span>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="button" class="btn btn-sm fw-700 px-4"
+                            style="background:var(--crm-border-soft);color:var(--crm-navy);border-radius:10px;font-size:0.85rem;padding:0.6rem 1.5rem;"
+                            data-bs-dismiss="modal">Batal</button>
+                    <form id="deleteCustomerForm" action="#" method="POST" class="m-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="button" onclick="submitDeleteCustomer(this)" class="btn btn-sm fw-700 px-4"
+                                style="background:#ef4444;color:#fff;border-radius:10px;font-size:0.85rem;padding:0.6rem 1.5rem;">
+                            <i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Permanen
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-trigger-delete-customer').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.getElementById('del-customer-name').textContent  = btn.dataset.customerName  || '-';
+            document.getElementById('del-customer-email').textContent = btn.dataset.customerEmail || '-';
+            document.getElementById('del-customer-role').textContent  = btn.dataset.customerRole  || '-';
+            document.getElementById('deleteCustomerForm').action       = btn.dataset.deleteUrl;
+
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteCustomerModal'));
+            modal.show();
+        });
+    });
+});
+
+function submitDeleteCustomer(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menghapus...';
+    const cancelBtn = btn.closest('.d-flex').querySelector('[data-bs-dismiss="modal"]');
+    if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.classList.add('disabled'); }
+    document.getElementById('deleteCustomerForm').submit();
+}
+</script>
+@endpush

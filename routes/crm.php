@@ -46,6 +46,8 @@ use App\Http\Controllers\User\ResellerController;
             Route::get('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'showCustomer'])->name('customers.show');
             Route::get('/customers/{customer}/edit', [\App\Http\Controllers\CRM\CRMController::class, 'editCustomer'])->name('customers.edit');
             Route::put('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'updateCustomer'])->name('customers.update');
+            Route::delete('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'destroyCustomer'])->name('customers.destroy');
+
 
             // Feedback Analysis
             Route::get('/feedback', [\App\Http\Controllers\CRM\CRMController::class, 'feedbackAnalysis'])->name('feedback.index');

@@ -169,8 +169,8 @@
         animation: fadeSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     @keyframes fadeSlideUp {
-        from { opacity: 0; transform: translateY(12px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     /* ─── PAGE HEADER ─────────────────────────── */
@@ -331,8 +331,8 @@
         animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     .hover-scale { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -536,6 +536,7 @@
     });
     </script>
     @yield('scripts')
+    @stack('modals')
 </body>
 </html>
 

@@ -78,6 +78,16 @@
         <a href="{{ route('admin.crm.customers.edit', $customer) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary);color:#fff;border-radius:8px;box-shadow:0 4px 10px rgba(124,58,237,0.2);">
             <i class="bi bi-pencil-square me-1"></i> Edit Profil
         </a>
+        <button type="button" class="btn btn-sm px-3 fw-700 hover-scale"
+                style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:8px;"
+                data-customer-id="{{ $customer->id }}"
+                data-customer-name="{{ $customer->name }}"
+                data-customer-email="{{ $customer->email }}"
+                data-customer-role="{{ ucfirst($customer->role) }}"
+                data-delete-url="{{ route('admin.crm.customers.destroy', $customer) }}"
+                onclick="openDeleteModalShow(this)">
+            <i class="bi bi-trash3 me-1"></i> Hapus Akun
+        </button>
     </div>
 </div>
 
@@ -287,5 +297,81 @@
         buttons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     }
+
+    function openDeleteModalShow(btn) {
+        document.getElementById('del-show-name').textContent  = btn.dataset.customerName  || '-';
+        document.getElementById('del-show-email').textContent = btn.dataset.customerEmail || '-';
+        document.getElementById('del-show-role').textContent  = btn.dataset.customerRole  || '-';
+        document.getElementById('deleteCustomerShowForm').action = btn.dataset.deleteUrl;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteCustomerShowModal')).show();
+    }
+
+    function submitDeleteShow(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Menghapus...';
+        const cancelBtn = btn.closest('.d-flex').querySelector('[data-bs-dismiss="modal"]');
+        if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.classList.add('disabled'); }
+        document.getElementById('deleteCustomerShowForm').submit();
+    }
 </script>
 @endsection
+
+@push('modals')
+{{-- Delete Customer Confirmation Modal (Show Page) --}}
+<div class="modal fade" id="deleteCustomerShowModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:20px;">
+            <div class="modal-body p-4">
+
+                {{-- Icon --}}
+                <div class="text-center mb-4">
+                    <div style="width:60px;height:60px;border-radius:50%;background:rgba(239,68,68,0.1);display:inline-flex;align-items:center;justify-content:center;color:#ef4444;font-size:1.75rem;">
+                        <i class="bi bi-person-x-fill"></i>
+                    </div>
+                    <h5 class="fw-800 mt-3 mb-1" style="font-size:1.1rem;color:var(--crm-navy);">Hapus Akun User?</h5>
+                    <p style="font-size:0.8rem;color:var(--crm-text-subtle);margin:0;">Tindakan ini bersifat permanen dan tidak dapat dibatalkan.</p>
+                </div>
+
+                {{-- Customer Info --}}
+                <div class="mb-4 p-3" style="background:var(--crm-border-soft);border-radius:12px;border:1px dashed var(--crm-border);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-700 text-muted" style="font-size:0.7rem;text-transform:uppercase;">Nama:</span>
+                        <span id="del-show-name" class="fw-800" style="font-size:0.82rem;color:var(--crm-navy);">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-700 text-muted" style="font-size:0.7rem;text-transform:uppercase;">Email:</span>
+                        <span id="del-show-email" class="fw-700" style="font-size:0.78rem;color:var(--crm-primary);">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-700 text-muted" style="font-size:0.7rem;text-transform:uppercase;">Peran:</span>
+                        <span id="del-show-role" class="fw-700" style="font-size:0.78rem;color:var(--crm-navy);">-</span>
+                    </div>
+                </div>
+
+                {{-- Warning --}}
+                <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.5rem;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-triangle-fill mt-1" style="color:#ef4444;font-size:0.85rem;flex-shrink:0;"></i>
+                        <span style="font-size:0.75rem;color:#dc2626;font-weight:600;line-height:1.5;">Menghapus akun ini akan menghapus semua data terkait user tersebut dari sistem secara permanen.</span>
+                    </div>
+                </div>
+
+                {{-- Actions --}}
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="button" class="btn btn-sm fw-700 px-4"
+                            style="background:var(--crm-border-soft);color:var(--crm-navy);border-radius:10px;font-size:0.85rem;padding:0.6rem 1.5rem;"
+                            data-bs-dismiss="modal">Batal</button>
+                    <form id="deleteCustomerShowForm" action="#" method="POST" class="m-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="button" onclick="submitDeleteShow(this)" class="btn btn-sm fw-700 px-4"
+                                style="background:#ef4444;color:#fff;border-radius:10px;font-size:0.85rem;padding:0.6rem 1.5rem;">
+                            <i class="bi bi-trash3-fill me-1"></i> Ya, Hapus Permanen
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endpush

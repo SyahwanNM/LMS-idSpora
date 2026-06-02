@@ -121,6 +121,7 @@
 </div>
 
 {{-- Modals --}}
+@push('modals')
 @foreach($broadcasts as $item)
 @php
     $segMap = ['all'=>'Semua User','reseller'=>'Reseller','trainer'=>'Trainer','no_event'=>'Belum Ikut Event'];
@@ -150,6 +151,16 @@
                     <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Isi Pesan</div>
                     <div style="font-size:0.85rem;color:var(--crm-navy-soft);line-height:1.7;white-space:pre-wrap;">{{ $item->message }}</div>
                 </div>
+                @if($item->link)
+                <div class="card-minimal p-3 mb-3">
+                    <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Link / URL Tujuan</div>
+                    <div style="font-size:0.8rem;font-weight:700;color:var(--crm-primary);word-break:break-all;">
+                        <a href="{{ $item->link }}" target="_blank" style="color:var(--crm-primary);text-decoration:none;">
+                            {{ $item->link }} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.75rem;"></i>
+                        </a>
+                    </div>
+                </div>
+                @endif
                 <div class="row g-2">
                     <div class="col-6">
                         <div class="card-minimal p-3">
@@ -184,4 +195,5 @@
     </div>
 </div>
 @endforeach
+@endpush
 @endsection
