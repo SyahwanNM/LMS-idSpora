@@ -342,8 +342,7 @@
 
 @section('content')
     <div class="trainer-wrapper">
-        @include('admin.trainer._sidebar')
-        @include('admin.trainer._top-text-color')
+        @include('admin.trainer.partials.sidebar')
 
         <main class="trainer-main">
             <!-- Hero Section -->
@@ -360,19 +359,6 @@
                 <div class="col-lg-8">
                     <div class="card border-0 shadow-sm rounded-4">
                         <div class="card-body p-4 p-md-5">
-                            @if ($errors->any())
-                                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    <strong>Terdapat kesalahan input!</strong>
-                                    <ul class="mb-0 mt-2">
-                                        @foreach ($errors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            @endif
-
                             {{-- PENTING: enctype="multipart/form-data" untuk upload foto --}}
                             <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST"
                                 enctype="multipart/form-data">
@@ -448,10 +434,10 @@
                                     <h5 class="form-section-title">
                                         <i class="bi bi-key text-primary"></i> Update Password
                                     </h5>
-                                    <div class="alert alert-light border border-primary-subtle text-primary small mb-3">
+                                    <p class="text-primary small mb-3">
                                         <i class="bi bi-info-circle me-1"></i> Kosongkan jika tidak ingin mengganti
                                         password.
-                                    </div>
+                                    </p>
                                     <div class="row g-4">
                                         <div class="col-md-6">
                                             <label class="form-label">Password Baru</label>

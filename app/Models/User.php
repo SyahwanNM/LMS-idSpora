@@ -49,6 +49,10 @@ class User extends Authenticatable
         'referral_code',
         'wallet_balance',
         'referrer_id',
+        'trainer_skills',
+        'trainer_experiences',
+        'trainer_educations',
+        'trainer_certifications',
     ];
 
     /**
@@ -80,6 +84,10 @@ class User extends Authenticatable
             'consecutive_expired_invitations' => 'integer',
             'consecutive_late_uploads' => 'integer',
             'last_teaching_at' => 'datetime',
+            'trainer_skills' => 'array',
+            'trainer_experiences' => 'array',
+            'trainer_educations' => 'array',
+            'trainer_certifications' => 'array',
         ];
     }
 

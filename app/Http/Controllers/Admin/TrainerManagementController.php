@@ -15,15 +15,119 @@ use App\Models\TrainerNotification;
 use Illuminate\Support\Facades\Auth;
 use Dompdf\Dompdf;
 use Illuminate\Support\Str;
+use App\Models\CourseModule;
+use App\Models\EventTrainerModule;
+use App\Models\Review;
+use App\Models\Feedback;
+use Carbon\Carbon;
+use App\Models\Category;
 
 class TrainerManagementController extends Controller
 {
+    private function buildChartPoints(\Illuminate\Support\Collection $series, int $xStart, int $xEnd, int $yTop, int $yBottom, int $max): string
+    {
+        $count = max(1, $series->count());
+        $step = $count > 1 ? ($xEnd - $xStart) / ($count - 1) : 0;
+        $range = max(1, $yBottom - $yTop);
+        $points = [];
+
+        foreach ($series->values() as $index => $value) {
+            $ratio = $max > 0 ? ((int) $value / $max) : 0;
+            $y = $yBottom - ($ratio * $range);
+            $x = $xStart + ($step * $index);
+            $points[] = round($x, 1) . ',' . round($y, 1);
+        }
+
+        return implode(' ', $points);
+    }
+
+    private function buildMetricChange(int $current, int $previous): array
+    {
+        $delta = $current - $previous;
+        $direction = $delta >= 0 ? 'up' : 'down';
+        $abs = abs($delta);
+
+        return [
+            'text' => ($delta >= 0 ? '+' : '-') . $abs . ' dari periode sebelumnya',
+            'direction' => $direction,
+        ];
+    }
+
     // Menampilkan daftar trainer
     public function index(Request $request)
     {
+        $totalCourses = Course::count();
+        $totalEvents = Event::count();
+
+        $pendingCourseCount = Course::where(function ($q) {
+            $q->where('status', 'pending_review')
+                ->orWhereHas('modules', function ($mq) {
+                    $mq->where('review_status', 'pending_review')
+                        ->whereNotNull('content_url')
+                        ->where('content_url', '!=', '');
+                });
+        })->count();
+
+        $pendingEventCount = EventTrainerModule::where('status', 'pending_review')->count();
+        $pendingReviews = $pendingCourseCount + $pendingEventCount;
+
+        $approvedMaterials = Course::whereIn('status', ['approved', 'active'])->count()
+            + EventTrainerModule::where('status', 'approved')->count();
+        $rejectedMaterials = Course::where('status', 'rejected')->count()
+            + EventTrainerModule::where('status', 'rejected')->count();
+
+        $approvalTotal = $pendingReviews + $approvedMaterials + $rejectedMaterials;
+        $approvalStats = [
+            'pending' => $pendingReviews,
+            'approved' => $approvedMaterials,
+            'rejected' => $rejectedMaterials,
+            'total' => $approvalTotal,
+            'pending_pct' => $approvalTotal > 0 ? round(($pendingReviews / $approvalTotal) * 100, 1) : 0,
+            'approved_pct' => $approvalTotal > 0 ? round(($approvedMaterials / $approvalTotal) * 100, 1) : 0,
+            'rejected_pct' => $approvalTotal > 0 ? round(($rejectedMaterials / $approvalTotal) * 100, 1) : 0,
+        ];
+
+        $courseLast30 = Course::where('created_at', '>=', now()->subDays(30))->count();
+        $coursePrev30 = Course::whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])->count();
+        $eventLast30 = Event::where('created_at', '>=', now()->subDays(30))->count();
+        $eventPrev30 = Event::whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])->count();
+
+        $pendingLast7 = CourseModule::where('review_status', 'pending_review')
+            ->where('updated_at', '>=', now()->subDays(7))
+            ->count()
+            + EventTrainerModule::where('status', 'pending_review')
+                ->where('created_at', '>=', now()->subDays(7))
+                ->count();
+        $pendingPrev7 = CourseModule::where('review_status', 'pending_review')
+            ->whereBetween('updated_at', [now()->subDays(14), now()->subDays(7)])
+            ->count()
+            + EventTrainerModule::where('status', 'pending_review')
+                ->whereBetween('created_at', [now()->subDays(14), now()->subDays(7)])
+                ->count();
+
+        $approvedLast30 = Course::whereIn('status', ['approved', 'active'])
+            ->where('updated_at', '>=', now()->subDays(30))
+            ->count()
+            + EventTrainerModule::where('status', 'approved')
+                ->where('updated_at', '>=', now()->subDays(30))
+                ->count();
+        $approvedPrev30 = Course::whereIn('status', ['approved', 'active'])
+            ->whereBetween('updated_at', [now()->subDays(60), now()->subDays(30)])
+            ->count()
+            + EventTrainerModule::where('status', 'approved')
+                ->whereBetween('updated_at', [now()->subDays(60), now()->subDays(30)])
+                ->count();
+
+        $metricChanges = [
+            'courses' => $this->buildMetricChange($courseLast30, $coursePrev30),
+            'events' => $this->buildMetricChange($eventLast30, $eventPrev30),
+            'pending' => $this->buildMetricChange($pendingLast7, $pendingPrev7),
+            'approved' => $this->buildMetricChange($approvedLast30, $approvedPrev30),
+        ];
+
         $totalTrainers = User::whereIn('role', ['trainer', 'Trainer'])->count();
         $activeTrainers = User::whereIn('role', ['trainer', 'Trainer'])
-            ->where('created_at', '>=', now()->subDays(30))
+            ->where('user_status', 'active')
             ->count();
         $teachingTrainers = User::whereIn('role', ['trainer', 'Trainer'])
             ->where(function ($query) {
@@ -32,11 +136,230 @@ class TrainerManagementController extends Controller
             })
             ->count();
 
+        $trainerCollection = User::whereIn('role', ['trainer', 'Trainer'])
+            ->withCount(['coursesAsTrainer', 'eventsAsTrainer'])
+            ->get();
+        $topTrainers = $trainerCollection
+            ->map(function (User $trainer) {
+                $courseCount = (int) ($trainer->courses_as_trainer_count ?? 0);
+                $eventCount = (int) ($trainer->events_as_trainer_count ?? 0);
+                $trainer->score = ($courseCount * 4) + ($eventCount * 3);
+                return $trainer;
+            })
+            ->sortByDesc('score')
+            ->take(3)
+            ->values();
+
+        $maxScore = max(1, (int) $topTrainers->max('score'));
+        $topTrainers = $topTrainers->map(function (User $trainer) use ($maxScore) {
+            $trainer->score_pct = (int) round(((int) ($trainer->score ?? 0) / $maxScore) * 100);
+            return $trainer;
+        });
+
+        $deadlineItems = collect();
+        $courseInvites = TrainerNotification::query()
+            ->where('type', 'course_invitation')
+            ->orderByDesc('created_at')
+            ->take(80)
+            ->get();
+        $courseInvites = $courseInvites->filter(fn($invite) => data_get($invite->data, 'entity_type') === 'course'
+            && !empty(data_get($invite->data, 'due_at')));
+
+        $courseIds = $courseInvites
+            ->map(fn($invite) => (int) data_get($invite->data, 'entity_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $courses = Course::with('trainer:id,name')
+            ->whereIn('id', $courseIds)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($courseInvites as $invite) {
+            $courseId = (int) data_get($invite->data, 'entity_id');
+            $course = $courses->get($courseId);
+            $dueRaw = data_get($invite->data, 'due_at');
+            if (!$course || empty($dueRaw)) {
+                continue;
+            }
+            try {
+                $dueAt = Carbon::parse($dueRaw);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            $deadlineItems->push([
+                'type' => 'course',
+                'title' => $course->name ?? 'Course',
+                'trainer' => $course->trainer?->name ?? 'Trainer',
+                'due_at' => $dueAt,
+            ]);
+        }
+
+        $eventDeadlines = Event::query()
+            ->whereNotNull('material_deadline')
+            ->with('trainer:id,name')
+            ->orderBy('material_deadline')
+            ->take(50)
+            ->get();
+
+        foreach ($eventDeadlines as $event) {
+            if (!$event->material_deadline) {
+                continue;
+            }
+            $deadlineItems->push([
+                'type' => 'event',
+                'title' => $event->title ?? 'Event',
+                'trainer' => $event->trainer?->name ?? 'Trainer',
+                'due_at' => Carbon::parse($event->material_deadline),
+            ]);
+        }
+
+        $deadlineItems = $deadlineItems
+            ->sortBy('due_at')
+            ->take(3)
+            ->values()
+            ->map(function (array $item) {
+                $now = Carbon::now();
+                $dueAt = $item['due_at'];
+                $isLate = $dueAt->lt($now);
+                $daysLeft = $isLate ? 0 : $now->diffInDays($dueAt);
+                $badgeClass = $isLate ? 'red' : ($daysLeft <= 2 ? 'yellow' : 'blue');
+                $badgeText = $isLate ? 'Overdue' : ($daysLeft . ' Hari Lagi');
+
+                return array_merge($item, [
+                    'badge_class' => $badgeClass,
+                    'badge_text' => $badgeText,
+                    'date_text' => $dueAt->translatedFormat('d M Y'),
+                ]);
+            });
+
+        $courseReviews = Review::with(['user:id,name', 'course:id,name'])
+            ->latest()
+            ->take(10)
+            ->get();
+        $eventFeedback = Feedback::with(['user:id,name', 'event:id,title'])
+            ->latest()
+            ->take(10)
+            ->get();
+
+        $feedbackItems = $courseReviews
+            ->map(function (Review $review) {
+                $rating = (int) ($review->rating ?? $review->trainer_rating ?? 0);
+                $rating = max(0, min(5, $rating));
+
+                return [
+                    'title' => 'Course: ' . ($review->course?->name ?? 'Course'),
+                    'name' => $review->user?->name ?? 'User',
+                    'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
+                    'time' => $review->created_at?->diffForHumans() ?? '-',
+                    'created_at' => $review->created_at ?? now(),
+                ];
+            })
+            ->merge($eventFeedback->map(function (Feedback $feedback) {
+                $rating = (int) ($feedback->rating ?? $feedback->speaker_rating ?? $feedback->committee_rating ?? 0);
+                $rating = max(0, min(5, $rating));
+
+                return [
+                    'title' => 'Event: ' . ($feedback->event?->title ?? 'Event'),
+                    'name' => $feedback->user?->name ?? 'User',
+                    'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
+                    'time' => $feedback->created_at?->diffForHumans() ?? '-',
+                    'created_at' => $feedback->created_at ?? now(),
+                ];
+            }))
+            ->sortByDesc('created_at')
+            ->take(3)
+            ->values();
+
+        $categoryCounts = Course::query()
+            ->selectRaw('category_id, COUNT(*) as total')
+            ->whereNotNull('category_id')
+            ->groupBy('category_id')
+            ->orderByDesc('total')
+            ->get();
+        $categoryIds = $categoryCounts->pluck('category_id')->filter()->unique()->values();
+        $categories = Category::whereIn('id', $categoryIds)->get()->keyBy('id');
+        $categoryPalette = ['#2f5bff', '#19bd6b', '#ff970f', '#8d54df', '#9ca3af'];
+        $categoryStats = $categoryCounts->take(5)->values()->map(function ($row, $index) use ($categories, $totalCourses, $categoryPalette) {
+            $name = $categories->get($row->category_id)?->name ?? 'Lainnya';
+            $pct = $totalCourses > 0 ? round(($row->total / $totalCourses) * 100, 1) : 0;
+
+            return [
+                'name' => $name,
+                'total' => (int) $row->total,
+                'pct' => $pct,
+                'color' => $categoryPalette[$index] ?? '#9ca3af',
+            ];
+        });
+
+        $categoryGradient = '';
+        $cursor = 0;
+        foreach ($categoryStats as $stat) {
+            $next = min(100, $cursor + $stat['pct']);
+            $categoryGradient .= $stat['color'] . ' ' . $cursor . '% ' . $next . '%, ';
+            $cursor = $next;
+        }
+        if ($cursor < 100) {
+            $categoryGradient .= '#9ca3af ' . $cursor . '% 100%';
+        } else {
+            $categoryGradient = rtrim($categoryGradient, ', ');
+        }
+
+        $chartDays = collect(range(6, 0))
+            ->map(fn($i) => now()->subDays($i)->toDateString());
+        $courseSeries = $chartDays->map(fn($day) => Course::whereDate('created_at', $day)->count());
+        $eventSeries = $chartDays->map(fn($day) => Event::whereDate('created_at', $day)->count());
+        $materialSeries = $chartDays->map(function ($day) {
+            $courseCount = CourseModule::where('review_status', 'pending_review')
+                ->whereDate('updated_at', $day)
+                ->count();
+            $eventCount = EventTrainerModule::where('status', 'pending_review')
+                ->whereDate('created_at', $day)
+                ->count();
+            return $courseCount + $eventCount;
+        });
+        $approvedSeries = $chartDays->map(function ($day) {
+            $courseCount = Course::whereIn('status', ['approved', 'active'])
+                ->whereDate('updated_at', $day)
+                ->count();
+            $eventCount = EventTrainerModule::where('status', 'approved')
+                ->whereDate('updated_at', $day)
+                ->count();
+            return $courseCount + $eventCount;
+        });
+
+        $chartLabels = $chartDays
+            ->map(fn($day) => Carbon::parse($day)->translatedFormat('d M'))
+            ->values();
+        $chartData = [
+            'labels' => $chartLabels,
+            'course' => $courseSeries->values(),
+            'event' => $eventSeries->values(),
+            'material' => $materialSeries->values(),
+        ];
+
+        $chartMax = max(1, (int) $courseSeries->max(), (int) $eventSeries->max(), (int) $materialSeries->max());
+        $sparkMaxCourse = max(1, (int) $courseSeries->max());
+        $sparkMaxEvent = max(1, (int) $eventSeries->max());
+        $sparkMaxMaterial = max(1, (int) $materialSeries->max());
+        $sparkMaxApproved = max(1, (int) $approvedSeries->max());
+
+        $chartPoints = [
+            'course' => $this->buildChartPoints($courseSeries, 15, 665, 35, 215, $chartMax),
+            'event' => $this->buildChartPoints($eventSeries, 15, 665, 35, 215, $chartMax),
+            'material' => $this->buildChartPoints($materialSeries, 15, 665, 35, 215, $chartMax),
+            'spark_course' => $this->buildChartPoints($courseSeries, 0, 120, 10, 45, $sparkMaxCourse),
+            'spark_event' => $this->buildChartPoints($eventSeries, 0, 120, 10, 45, $sparkMaxEvent),
+            'spark_pending' => $this->buildChartPoints($materialSeries, 0, 120, 10, 45, $sparkMaxMaterial),
+            'spark_approved' => $this->buildChartPoints($approvedSeries, 0, 120, 10, 45, $sparkMaxApproved),
+        ];
+
         // Ambil data trainer dengan filter & search
         $query = User::query()
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->where('role', 'trainer')
-                  ->orWhere('role', 'Trainer');
+                    ->orWhere('role', 'Trainer');
             })
             ->withCount(['coursesAsTrainer', 'eventsAsTrainer']);
 
@@ -72,9 +395,118 @@ class TrainerManagementController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
+        // 1. Pending Course Modules & Event Modules list
+        $pendingCourseModules = CourseModule::with(['course', 'course.trainer'])
+            ->where('review_status', 'pending_review')
+            ->whereNotNull('content_url')
+            ->where('content_url', '!=', '')
+            ->latest('updated_at')
+            ->get()
+            ->map(function ($module) {
+                return [
+                    'type' => 'course',
+                    'title' => $module->title,
+                    'source' => $module->course?->name ?? 'Course',
+                    'trainer' => $module->course?->trainer?->name ?? 'Trainer',
+                    'date' => $module->updated_at,
+                    'url' => route('admin.trainer.material.show', $module->course_id),
+                ];
+            });
+
+        $pendingEventModulesList = EventTrainerModule::with(['event', 'trainer'])
+            ->where('status', 'pending_review')
+            ->latest('created_at')
+            ->get()
+            ->map(function ($module) {
+                return [
+                    'type' => 'event',
+                    'title' => $module->original_name ?? 'Materi Event',
+                    'source' => $module->event?->title ?? 'Event',
+                    'trainer' => $module->trainer?->name ?? 'Trainer',
+                    'date' => $module->created_at,
+                    'url' => route('admin.event-material.show', $module->event_id),
+                ];
+            });
+
+        $pendingMaterialsQueue = $pendingCourseModules->concat($pendingEventModulesList)
+            ->sortByDesc('date')
+            ->take(5)
+            ->values();
+
+        // 2. Unsent Certificates list (completed events/courses without certificates)
+        $publishedCertKeys = TrainerCertificate::query()
+            ->whereIn('status', ['sent', 'published', 'revoked'])
+            ->get(['certifiable_type', 'certifiable_id'])
+            ->mapWithKeys(function ($cert) {
+                return [$cert->certifiable_type . ':' . $cert->certifiable_id => true];
+            });
+
+        $unsentEvents = Event::query()
+            ->whereNotNull('trainer_id')
+            ->whereNotNull('event_date')
+            ->whereDate('event_date', '<=', now()->toDateString())
+            ->with('trainer:id,name')
+            ->get()
+            ->filter(fn($event) => !$publishedCertKeys->has(Event::class . ':' . $event->id));
+
+        $unsentCourses = Course::query()
+            ->whereNotNull('trainer_id')
+            ->whereIn('status', ['published', 'approved', 'active'])
+            ->with('trainer:id,name')
+            ->get()
+            ->filter(fn($course) => !$publishedCertKeys->has(Course::class . ':' . $course->id));
+
+        $pendingCertificatesQueue = $unsentEvents->map(function ($event) {
+            return [
+                'type' => 'event',
+                'id' => $event->id,
+                'title' => $event->title,
+                'trainer' => $event->trainer?->name ?? 'Trainer',
+                'date' => $event->event_date,
+                'url' => route('admin.trainer.certificates.edit', [
+                    'trainer' => $event->trainer_id,
+                    'context' => 'event',
+                    'id' => $event->id,
+                ]),
+            ];
+        })->concat($unsentCourses->map(function ($course) {
+            return [
+                'type' => 'course',
+                'id' => $course->id,
+                'title' => $course->name,
+                'trainer' => $course->trainer?->name ?? 'Trainer',
+                'date' => $course->updated_at,
+                'url' => route('admin.trainer.certificates.edit', [
+                    'trainer' => $course->trainer_id,
+                    'context' => 'course',
+                    'id' => $course->id,
+                ]),
+            ];
+        }))->sortByDesc('date')->take(5)->values();
+
         $trainers = $query->paginate(10)->withQueryString();
 
-        return view('admin.trainer.index', compact('trainers', 'totalTrainers', 'activeTrainers', 'teachingTrainers'));
+        return view('admin.trainer.index', compact(
+            'trainers',
+            'totalTrainers',
+            'activeTrainers',
+            'teachingTrainers',
+            'totalCourses',
+            'totalEvents',
+            'pendingReviews',
+            'approvedMaterials',
+            'approvalStats',
+            'metricChanges',
+            'topTrainers',
+            'deadlineItems',
+            'feedbackItems',
+            'chartPoints',
+            'chartData',
+            'categoryStats',
+            'categoryGradient',
+            'pendingMaterialsQueue',
+            'pendingCertificatesQueue'
+        ));
     }
 
     public function create()
@@ -120,12 +552,18 @@ class TrainerManagementController extends Controller
 
         $trainerCourses = Course::query()
             ->where('trainer_id', $trainer->id)
+            ->withCount(['enrollments' => function($q) {
+                $q->where('status', 'active');
+            }])
             ->orderByDesc('approved_at')
             ->orderByDesc('created_at')
             ->get(['id', 'name', 'status', 'approved_at', 'created_at']);
 
         $trainerEvents = Event::query()
             ->where('trainer_id', $trainer->id)
+            ->withCount(['registrations' => function($q) {
+                $q->where('status', 'active');
+            }])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->get(['id', 'title', 'jenis', 'event_date', 'created_at', 'certificate_template']);
@@ -137,7 +575,63 @@ class TrainerManagementController extends Controller
             ->latest('created_at')
             ->get();
 
-        return view('admin.trainer.show', compact('trainer', 'trainerCourses', 'trainerEvents', 'trainerCertificates'));
+        $courseReviews = \App\Models\Review::query()
+            ->whereHas('course', function($q) use ($trainer) {
+                $q->where('trainer_id', $trainer->id);
+            })
+            ->with(['user:id,name', 'course:id,name'])
+            ->latest()
+            ->get();
+
+        $eventFeedback = \App\Models\Feedback::query()
+            ->whereHas('event', function($q) use ($trainer) {
+                $q->where('trainer_id', $trainer->id);
+            })
+            ->with(['user:id,name', 'event:id,title'])
+            ->latest()
+            ->get();
+
+        $trainerPayouts = \App\Models\TrainerPayment::query()
+            ->where('user_id', $trainer->id)
+            ->latest('payment_date')
+            ->get();
+
+        // Compute aggregate rating stats
+        $totalRatings = $courseReviews->count() + $eventFeedback->count();
+        $ratingCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+        foreach($courseReviews as $r) { 
+            $val = (int) round((float) $r->rating);
+            if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
+        }
+        foreach($eventFeedback as $f) { 
+            $val = (int) round((float) $f->rating);
+            if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
+        }
+        
+        $ratingPercentages = [];
+        foreach($ratingCounts as $star => $count) {
+            $ratingPercentages[$star] = $totalRatings > 0 ? round(($count / $totalRatings) * 100) : 0;
+        }
+
+        $trainerActivity = $trainer->trainer_activity_summary;
+        $averageRating = (float) data_get($trainerActivity, 'average_rating', 0);
+        
+        $ratingBadge = 'Cukup';
+        if ($averageRating >= 4.5) {
+            $ratingBadge = 'Sangat Baik';
+        } elseif ($averageRating >= 4.0) {
+            $ratingBadge = 'Baik';
+        }
+
+
+        $totalPaidOut = $trainerPayouts->where('status', 'approved')->sum('amount');
+        $walletBalance = (float) ($trainer->wallet_balance ?? 0);
+
+        return view('admin.trainer.show', compact(
+            'trainer', 'trainerCourses', 'trainerEvents', 'trainerCertificates',
+            'courseReviews', 'eventFeedback', 'trainerPayouts', 'totalPaidOut', 'walletBalance',
+            'trainerActivity', 'averageRating', 'ratingBadge', 'ratingCounts', 'ratingPercentages', 'totalRatings'
+        ));
     }
 
     public function issueCertificate(Request $request, User $trainer)
@@ -383,7 +877,7 @@ class TrainerManagementController extends Controller
 
             $issuedEventIds = TrainerCertificate::query()
                 ->where('trainer_id', $trainerId)
-                ->where('status', 'sent')
+                ->whereIn('status', ['sent', 'published'])
                 ->where('certifiable_type', Event::class)
                 ->pluck('certifiable_id')
                 ->map(fn($id) => (int) $id)
@@ -391,7 +885,7 @@ class TrainerManagementController extends Controller
 
             $issuedCourseIds = TrainerCertificate::query()
                 ->where('trainer_id', $trainerId)
-                ->where('status', 'sent')
+                ->whereIn('status', ['sent', 'published'])
                 ->where('certifiable_type', Course::class)
                 ->pluck('certifiable_id')
                 ->map(fn($id) => (int) $id)
@@ -538,7 +1032,10 @@ class TrainerManagementController extends Controller
     {
         if ($trainer->role !== 'trainer')
             abort(404);
-        return view('admin.trainer.edit', compact('trainer'));
+        return redirect()->route('admin.trainer.show', [
+            'trainer' => $trainer->id,
+            'edit' => 'personal',
+        ]);
     }
 
     // [UPDATED] UPDATE TRAINER (YANG ANDA CARI)
@@ -547,21 +1044,54 @@ class TrainerManagementController extends Controller
         if ($trainer->role !== 'trainer')
             abort(404);
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($trainer->id)],
-            'password' => ['nullable', 'string', 'min:6', 'confirmed'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'profession' => ['nullable', 'string', 'max:100'],
-            'institution' => ['nullable', 'string', 'max:255'],
-            'website' => ['nullable', 'string', 'max:255'],
-            'bio' => ['nullable', 'string'],
-            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
+        $editBox = (string) $request->input('edit_box', 'all');
+        $data = [];
 
-        // Cek apakah password diisi (jika kosong, jangan update password)
+        if ($editBox === 'personal') {
+            $data = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($trainer->id)],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'profession' => ['nullable', 'string', 'max:100'],
+                'institution' => ['nullable', 'string', 'max:255'],
+                'website' => ['nullable', 'string', 'max:255'],
+                'linkedin_url' => ['nullable', 'url', 'max:255'],
+                'user_status' => ['nullable', 'in:active,inactive,suspended'],
+                'trainer_skills' => ['nullable', 'string'],
+                'trainer_experiences' => ['nullable', 'string'],
+                'trainer_educations' => ['nullable', 'string'],
+                'trainer_certifications' => ['nullable', 'string'],
+            ]);
+        } elseif ($editBox === 'bio') {
+            $data = $request->validate([
+                'bio' => ['nullable', 'string'],
+            ]);
+        } elseif ($editBox === 'account') {
+            $data = $request->validate([
+                'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+                'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            ]);
+        } else {
+            $data = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($trainer->id)],
+                'password' => ['nullable', 'string', 'min:6', 'confirmed'],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'profession' => ['nullable', 'string', 'max:100'],
+                'institution' => ['nullable', 'string', 'max:255'],
+                'website' => ['nullable', 'string', 'max:255'],
+                'linkedin_url' => ['nullable', 'url', 'max:255'],
+                'bio' => ['nullable', 'string'],
+                'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+                'trainer_skills' => ['nullable', 'string'],
+                'trainer_experiences' => ['nullable', 'string'],
+                'trainer_educations' => ['nullable', 'string'],
+                'trainer_certifications' => ['nullable', 'string'],
+            ]);
+        }
+
         if ($request->filled('password')) {
-            $data['password'] = Hash::make($data['password']);
+            $data['password'] = Hash::make((string) $request->input('password'));
         } else {
             unset($data['password']);
         }
@@ -570,14 +1100,26 @@ class TrainerManagementController extends Controller
             if ($trainer->avatar && !str_starts_with($trainer->avatar, 'http')) {
                 Storage::disk('public')->delete($trainer->avatar);
             }
-            // Simpan yang baru
             $path = $request->file('avatar')->store('avatars', 'public');
             $data['avatar'] = $path;
         }
 
+        // Process array fields
+        $arrayFields = ['trainer_skills', 'trainer_experiences', 'trainer_educations', 'trainer_certifications'];
+        foreach ($arrayFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = array_values(array_filter(array_map('trim', explode(',', $data[$field]))));
+            } else if ($editBox === 'personal' || $editBox === 'all') {
+                $data[$field] = [];
+            }
+        }
+
         $trainer->update($data);
 
-        return redirect()->route('admin.trainer.index')->with('success', 'Data trainer berhasil diperbarui!');
+        return redirect()->route('admin.trainer.show', [
+            'trainer' => $trainer->id,
+            'edit' => $editBox,
+        ])->with('success', 'Data trainer berhasil diperbarui!');
     }
 
     public function destroy(User $trainer)
@@ -593,5 +1135,39 @@ class TrainerManagementController extends Controller
         $trainer->delete();
 
         return redirect()->route('admin.trainer.index')->with('success', "Trainer {$name} berhasil dihapus!");
+    }
+
+    public function updateCourseDeadline(Request $request, User $trainer, \App\Models\Course $course)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $request->validate([
+            'material_deadline' => 'required|date|after_or_equal:today',
+        ]);
+
+        $deadline = \Carbon\Carbon::parse($request->material_deadline);
+        
+        $course->material_deadline = $deadline;
+        $course->save();
+
+        // Update pending notification if exists
+        $notifications = \App\Models\TrainerNotification::where('user_id', $trainer->id)
+            ->where('type', 'course_invitation')
+            ->where('status', 'pending')
+            ->get();
+            
+        foreach ($notifications as $notif) {
+            $data = $notif->data ?? [];
+            if (isset($data['course_id']) && $data['course_id'] == $course->id) {
+                $notif->due_at = $deadline->toIso8601String();
+                $data['material_deadline'] = $deadline->toIso8601String();
+                $notif->data = $data;
+                $notif->save();
+            }
+        }
+
+        return back()->with('success', 'Batas waktu pengumpulan materi untuk kelas ' . $course->name . ' berhasil diperbarui.');
     }
 }
