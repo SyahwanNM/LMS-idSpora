@@ -2505,7 +2505,6 @@ label {
 .text-danger {
     width: 190px;
     font-size: medium;
-    display: flex;
 }
 
 .diskon {

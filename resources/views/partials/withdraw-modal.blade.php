@@ -1,19 +1,16 @@
 <style>
-    /* Restrict withdraw modal width and keep it responsive on smaller screens */
     .withdraw-modal-dialog {
         max-width: 640px; /* main desktop cap */
         width: 100%;
         margin: 1.5rem auto;
     }
 
-    /* tablet: slightly narrower */
     @media (max-width: 768px) {
         .withdraw-modal-dialog {
             max-width: 540px;
         }
     }
 
-    /* phones: keep modal inset with small margins (not full screen) */
     @media (max-width: 576px) {
         .withdraw-modal-dialog {
             max-width: 90%;
@@ -216,116 +213,114 @@
 </div>
 
 <script>
+    // Menyimpan saldo user di variabel JS agar mudah diakses
+    const maxBalance = {{ auth()->user()->wallet_balance ?? 0 }};
+
     function setWithdrawAll(amount) {
-    const input = document.getElementById('withdrawAmount');
-    if (input) {
-        // Masukkan nilai saldo ke dalam input
-        input.value = amount;
+        const input = document.getElementById('withdrawAmount');
+        if (input) {
+            input.value = amount;
+        }
     }
-}
 
     function showConfirmation() {
-        // Ambil value dari input form
         const amount = document.getElementById('withdrawAmount')?.value;
         const bank = document.getElementById('bank_name')?.value;
         const rekening = document.getElementById('account_number')?.value;
         const name = document.getElementById('account_holder')?.value;
 
-        // Validasi sederhana
+        // 1. Validasi form kosong
         if(!amount || !bank || !rekening || !name) {
             alert("Mohon lengkapi semua data penarikan.");
             return;
         }
         
+        // 2. Validasi minimal penarikan
         if(parseInt(amount) < 50000) {
             alert("Minimal penarikan adalah Rp 50.000");
             return;
         }
 
-        // Format Rupiah untuk tampilan
+        // 3. TAMBAHAN: Validasi saldo cukup atau tidak
+        if(parseInt(amount) > maxBalance) {
+            alert("Maaf, saldo kamu tidak mencukupi untuk penarikan ini. Saldo maksimal: Rp " + new Intl.NumberFormat('id-ID').format(maxBalance));
+            return;
+        }
+
         const formattedAmount = new Intl.NumberFormat('id-ID', { 
             style: 'currency', 
             currency: 'IDR',
             minimumFractionDigits: 0
         }).format(Number(amount));
 
-        // Isi data ke tampilan konfirmasi
         document.getElementById('confirmAmountDisplay').innerText = formattedAmount;
         document.getElementById('confirmBank').innerText = bank;
         document.getElementById('confirmRekening').innerText = rekening;
         document.getElementById('confirmName').innerText = name;
 
-        // Switch tampilan (hide input, show confirm)
         document.getElementById('stepInput').style.display = 'none';
         document.getElementById('stepConfirm').style.display = 'block';
     }
 
     function backToInput() {
-        // Switch tampilan (show input, hide confirm)
         document.getElementById('stepConfirm').style.display = 'none';
         document.getElementById('stepInput').style.display = 'block';
     }
     
-    // Reset modal saat ditutup agar kembali ke step 1
     const withdrawModal = document.getElementById('withdrawModal');
     if (withdrawModal) {
         withdrawModal.addEventListener('hidden.bs.modal', function () {
             backToInput();
             const form = document.getElementById('withdrawForm');
             if (form) form.reset();
-            // ensure success step hidden
             const stepSuccess = document.getElementById('stepSuccess');
             if (stepSuccess) stepSuccess.style.display = 'none';
         });
     }
 
     function submitWithdrawal() {
-    // Ambil data
-    let formData = new FormData(document.getElementById('withdrawForm'));
-    
-    // Kirim AJAX ke Laravel
-    fetch("{{ route('reseller.withdraw') }}", {
-        method: "POST",
-        headers: {
-            "X-CSRF-TOKEN": "{{ csrf_token() }}",
-            "Accept": "application/json"
-        },
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => { throw err; });
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Sukses
-        document.getElementById('stepConfirm').style.display = 'none';
-        document.getElementById('stepInput').style.display = 'none';
-        document.getElementById('stepSuccess').style.display = 'block';
+        let formData = new FormData(document.getElementById('withdrawForm'));
         
-        // Optional: Reload halaman setelah tutup modal agar saldo terupdate
-    })
-    .catch(error => {
-        alert(error.message || "Terjadi kesalahan sistem");
-        backToInput();
-    });
-}
+        // PENTING: Mencegah tombol di-klik 2 kali (Double Submit)
+        const submitBtn = document.querySelector('#stepConfirm .btn-success');
+        const originalText = submitBtn.innerText;
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Memproses...";
+        
+        fetch("{{ route('reseller.withdraw') }}", {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                "Accept": "application/json"
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('stepConfirm').style.display = 'none';
+            document.getElementById('stepInput').style.display = 'none';
+            document.getElementById('stepSuccess').style.display = 'block';
+            
+            // Kembalikan tombol seperti semula setelah berhasil
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+        })
+        .catch(error => {
+            // Tampilkan pesan error dari backend jika saldo tidak cukup (jaga-jaga jika lolos dari frontend)
+            alert(error.message || "Terjadi kesalahan sistem saat memproses penarikan.");
+            backToInput();
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+        });
+    }
 
     function closeAndReset() {
-        // hide modal via Bootstrap API, then reset
-        const modalEl = document.getElementById('withdrawModal');
-        if (modalEl) {
-            const bsModal = (window.bootstrap && window.bootstrap.Modal) ? (window.bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)) : null;
-            if (bsModal) bsModal.hide();
-            else {
-                // fallback: trigger close button click
-                const closeBtn = modalEl.querySelector('.btn-close');
-                if (closeBtn) closeBtn.click();
-            }
-        }
-        backToInput();
-        const form = document.getElementById('withdrawForm');
-        if (form) form.reset();
+        // Refresh halaman agar saldo di dashboard langsung berkurang
+        window.location.reload(); 
     }
 </script>

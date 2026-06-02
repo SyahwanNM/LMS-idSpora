@@ -36,6 +36,7 @@ class Course extends Model
         'certificate_signature',
         'certificate_template',
         'material_deadline',
+        'is_reseller_course',
     ];
 
     protected $casts = [

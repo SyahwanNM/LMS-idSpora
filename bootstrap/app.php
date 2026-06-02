@@ -39,6 +39,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'profile.complete' => \App\Http\Middleware\RequireProfileComplete::class,
         ]);
     })
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckReferralCode::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Ensure API routes always return JSON errors (even when opened via browser).
         $exceptions->render(function (\Throwable $e, Request $request) {

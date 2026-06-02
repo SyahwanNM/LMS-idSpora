@@ -33,6 +33,7 @@ use App\Models\Enrollment;
 
 
 use App\Http\Controllers\Admin\CourseController;
+use App\Http\Controllers\Admin\CourseManualPaymentController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\User\UserModuleController;
 use App\Http\Controllers\Admin\QuizController;
@@ -68,14 +69,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
-    // Pull regular users only (exclude admin and trainer)
-    $users = \App\Models\User::with([
-        'eventRegistrations' => function ($q) {
-            $q->with('event')->orderBy('created_at', 'desc');
-        }
-    ])
+    // Pull non-admin users with event participations for the Manage User table and view modal
+    $users = \App\Models\User::with(['eventRegistrations' => function ($q) {
+        $q->with('event')->orderBy('created_at', 'desc');
+    }])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
-        ->where('role', 'user')
+        ->where('role', '!=', 'admin')
         ->orderBy('name')
         ->get();
     return view('/admin/add-users', compact('users'));
@@ -88,16 +87,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
-    Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
+    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
     Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
-    Route::get('/reseller/withdraw/download', [\App\Http\Controllers\User\ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
+
+    Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
+    Route::get('/reseller/withdraw/download', [ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
+
     // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
     Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
-
-    // Referral check (auto discount 10% if valid)
-    Route::get('/courses/{course}/check-referral', [\App\Http\Controllers\Admin\CourseManualPaymentController::class, 'checkReferral'])->name('courses.check-referral');
-    Route::get('/payment/{event}/check-referral', [\App\Http\Controllers\Admin\ManualPaymentController::class, 'checkReferral'])->name('payment.check-referral');
-
 });
 
 
@@ -159,7 +156,6 @@ Route::get('/admin/add-course2', function () {
 Route::get('/admin/preview-pendapatan', function () {
     return redirect()->route('admin.view-pendapatan', request()->query());
 })->middleware(['auth', 'admin'])->name('preview-pendapatan');
-
 Route::get('/rating-course', function () {
     return view('course.rating-course');
 })->name('rating-course');
@@ -183,7 +179,7 @@ Route::get('/storage/{path}', function ($path) {
     // Normalize separators then ensure no path traversal segments exist
     $pathNormalized = str_replace('\\', '/', $path);
     $segments = array_values(array_filter(explode('/', $pathNormalized), fn($s) => $s !== ''));
-    $segments = array_values(array_filter(explode('/', $pathNormalized), fn($s) => $s !== ''));
+
     foreach ($segments as $seg) {
         if ($seg === '.' || $seg === '..') {
             abort(403, 'Invalid path');
@@ -193,11 +189,8 @@ Route::get('/storage/{path}', function ($path) {
     // Use normalized path for filesystem lookup
     $path = implode('/', $segments);
 
-
     // Get file path in uploads
     $filePath = public_path('uploads/' . $path);
-
-
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
         abort(404, 'File not found: ' . $path);
@@ -292,7 +285,7 @@ Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
     if ($already) {
         return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
     }
-    return view('payment', compact('event'));
+    return view('user.payment', compact('event'));
 })->name('payment');
 
 // Midtrans Snap token endpoint (auth required)
@@ -324,11 +317,15 @@ Route::middleware('auth')->get('/payment/invoice/{orderId}/download', [PaymentCo
 // Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
 Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');
 
-// Event actions (register/feedback/etc.) require authentication
+// Event routes now require authentication to view & register
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
     Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
-    Route::post('/events/{event}/register', [App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
+    Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
+    Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+    // Redirect search to the best-matching event detail (exact title match preferred)
+    Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
+    Route::post('/events/{event}/register', [\App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\User\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
@@ -354,10 +351,8 @@ Route::middleware('auth')->group(function () {
             $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
         } catch (\Throwable $e) {
         }
-        if (!$startTime && $eventDate)
-            $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate)
-            $endTime = $eventDate->copy()->endOfDay();
+        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
@@ -386,6 +381,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
     Route::post('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
+
+    // Profile Reminder API
+    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\User\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
+    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\User\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
 
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\User\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
@@ -486,7 +485,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
-        Route::get('/admin/reseller', [\App\Http\Controllers\User\ResellerController::class, 'admin'])->name('admin.reseller');
+        Route::get('/admin/reseller/dashboard', [\App\Http\Controllers\User\ResellerController::class, 'adminDashboard'])->name('admin.reseller.dashboard');
+        Route::get('/admin/reseller/data', [\App\Http\Controllers\User\ResellerController::class, 'adminData'])->name('admin.reseller.data');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');
@@ -641,8 +641,10 @@ Route::middleware(['auth'])->group(function () {
             ]
         ]);
 
+
         // Duplicate event
         Route::post('/admin/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('admin.events.duplicate');
+
 
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)
         Route::get('/admin/certificates', function () {
@@ -659,8 +661,6 @@ Route::middleware(['auth'])->group(function () {
         })->name('admin.certificates.generate-massal');
     });
 });
-// Include additional manual-payment routes (manual QRIS proof upload)
-require __DIR__ . '/web_manual_payment.php';
 
 
 Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->group(function () {
