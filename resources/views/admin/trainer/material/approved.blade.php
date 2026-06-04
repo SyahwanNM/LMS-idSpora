@@ -1,5 +1,4 @@
 @extends('layouts.admin-trainer')
-@extends('layouts.admin-trainer')
 
 @section('title', 'Approved Materials')
 
