@@ -11,6 +11,7 @@ use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\EventPaymentRejectedMail;
+use App\Mail\PaymentInvoiceMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -217,11 +218,14 @@ class EventController extends Controller
             'price' => 'required|numeric|min:0',
             'price_offline' => 'nullable|numeric|min:0',
             'price_online' => 'nullable|numeric|min:0',
+            'max_participants' => 'nullable|integer|min:1',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'event_until_date' => 'nullable|date|after_or_equal:event_date',
+            'event_until_time' => 'nullable',
             'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
@@ -337,11 +341,14 @@ class EventController extends Controller
             'price' => $request->price,
             'price_offline' => $request->price_offline ?? null,
             'price_online' => $request->price_online ?? null,
+            'max_participants' => $request->max_participants ? (int) $request->max_participants : null,
             'discount_percentage' => $request->discount_percentage ?? 0,
             'discount_until' => $request->discount_until,
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
+            'event_until_date' => $request->event_until_date ?? null,
+            'event_until_time' => $request->event_until_time ?? null,
             'material_deadline' => $request->material_deadline,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
@@ -464,12 +471,23 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        // event_admin can only view their assigned events
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            abort(403, 'You do not have access to this event.');
+        }
+
         $event->load(['trainerModules.trainer', 'approvedTrainerModules.trainer']);
         return view('admin.events.show', compact('event'));
     }
 
     public function edit(Event $event)
     {
+        // event_admin cannot edit events
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot edit events.');
+        }
+
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
@@ -477,6 +495,10 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot edit events.');
+        }
+
         $previousAssignedTrainerIds = $this->resolveAssignedTrainerIds(
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
@@ -566,11 +588,14 @@ class EventController extends Controller
             'price' => 'required|numeric|min:0',
             'price_offline' => 'nullable|numeric|min:0',
             'price_online' => 'nullable|numeric|min:0',
+            'max_participants' => 'nullable|integer|min:1',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'event_until_date' => 'nullable|date|after_or_equal:event_date',
+            'event_until_time' => 'nullable',
             'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
@@ -605,11 +630,14 @@ class EventController extends Controller
             'price',
             'price_offline',
             'price_online',
+            'max_participants',
             'discount_percentage',
             'discount_until',
             'event_date',
             'event_time',
             'event_time_end',
+            'event_until_date',
+            'event_until_time',
             'material_deadline'
         ]);
 
@@ -619,6 +647,8 @@ class EventController extends Controller
         $zoomLink = trim((string) $request->input('zoom_link', ''));
         $data['maps_url'] = $mapsUrl !== '' ? $mapsUrl : null;
         $data['zoom_link'] = $zoomLink !== '' ? $zoomLink : null;
+        // Normalize max_participants: null if empty/zero
+        $data['max_participants'] = !empty($data['max_participants']) ? (int) $data['max_participants'] : null;
         $data['latitude'] = $mapsUrl !== '' ? $request->input('latitude') : null;
         $data['longitude'] = $mapsUrl !== '' ? $request->input('longitude') : null;
 
@@ -767,6 +797,10 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot delete events.');
+        }
+
         $event->delete();
         // Redirect back to history page if the user came from there; otherwise to add-event
         $prev = url()->previous();
@@ -892,26 +926,35 @@ class EventController extends Controller
      */
     public function publish(Request $request, Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot publish events.');
+        }
+
         if ((bool) $event->is_published) {
             return back()->with('success', 'Event is already published.');
         }
 
         // Prevent publishing if operational documents are incomplete
-        $pct = (int) $event->documents_completion_percent;
-        if ($pct < 100) {
-            // Recompute missing items similarly to admin view logic
-            $hasMapsLink = !empty($event->maps_url);
-            $hasZoomLink = !empty($event->zoom_link);
-            $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-            $hasVbg = !empty($event->vbg_path);
-            $hasModule = !empty($event->module_path);
-            $hasAbsFile = !empty($event->attendance_path);
-            $hasAbsQrImg = !empty($event->attendance_qr_image);
-            $hasAbsQrToken = !empty($event->attendance_qr_token);
-            $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+        $hasMapsLink   = !empty($event->maps_url);
+        $hasZoomLink   = !empty($event->zoom_link);
+        $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+        $requiresVbg   = !$isOfflineOnly;
+        $hasVbg        = !empty($event->vbg_path);
+        // Module: cek module_path ATAU approved trainer modules
+        $hasModule     = !empty($event->module_path)
+                         || $event->approvedTrainerModules()->exists();
+        $hasAbsFile    = !empty($event->attendance_path);
+        $hasAbsQrImg   = !empty($event->attendance_qr_image);
+        $hasAbsQrToken = !empty($event->attendance_qr_token);
+        $hasAbs        = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
 
+        $totalDocs     = $requiresVbg ? 3 : 2;
+        $doneDocs      = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+        $pct           = $totalDocs > 0 ? ($doneDocs >= $totalDocs ? 100 : (int) floor(($doneDocs / $totalDocs) * 100)) : 0;
+
+        if ($pct < 100) {
             $missing = [];
-            if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+            if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
             if (!$hasModule) $missing[] = 'Module (Trainer)';
             if (!$hasAbs) $missing[] = 'Absensi';
 
@@ -937,6 +980,10 @@ class EventController extends Controller
      */
     public function unpublish(Request $request, Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot unpublish events.');
+        }
+
         if (!(bool) $event->is_published) {
             return back()->with('success', 'Event has not been published yet.');
         }
@@ -1427,71 +1474,37 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Gagal memproses link.'], 422);
         }
-    }
-
-    /**
-     * Admin: Approve a pending event registration (manual proof verification).
-     */
-    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
+    }    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
     {
         if ($registration->event_id !== $event->id) {
-            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
-        }
-        $registration->status = 'active';
-        $registration->payment_verified_at = now();
-        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
-        $registration->save();
-
-        // mark any related manual payments as settled
-        try {
-            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
-            foreach ($manuals as $m) {
-                if ($m->status !== 'settled') {
-                    $m->status = 'settled';
-                    $m->save();
-
-                    // Process Referral Commission (10%)
-                    if (!empty($m->referral_code)) {
-                        $referrer = \App\Models\User::where('referral_code', $m->referral_code)->first();
-                        if ($referrer && $referrer->id !== $m->user_id) {
-                            $commissionAmount = $m->amount * 0.10; // 10% commission
-
-                            $existingReferral = \App\Models\Referral::where('user_id', $referrer->id)
-                                ->where('referred_user_id', $m->user_id)
-                                ->where('description', 'Komisi Event: ' . $event->title)
-                                ->first();
-
-                            if (!$existingReferral && $commissionAmount > 0) {
-                                \App\Models\Referral::create([
-                                    'user_id' => $referrer->id,
-                                    'referred_user_id' => $m->user_id,
-                                    'amount' => $commissionAmount,
-                                    'status' => 'paid',
-                                    'description' => 'Komisi Event: ' . $event->title
-                                ]);
-
-                                $referrer->increment('wallet_balance', $commissionAmount);
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (\Throwable $e) { /* ignore */
+            return back()->with('error', 'Data tidak valid.');
         }
 
+        $registration->update([
+            'status'               => 'active',
+            'payment_verified_at'  => now(),
+            'payment_verified_by'  => auth()->id(),
+            'rejection_reason'     => null,
+        ]);
+
+        // Update related ManualPayment
+        \App\Models\ManualPayment::where('event_registration_id', $registration->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'settled']);
+
+        // Notify user
         try {
-            UserNotification::create([
-                'user_id' => $registration->user_id,
-                'type' => 'event_registration_verified',
-                'title' => 'Pembayaran Diterima',
-                'message' => 'Your payment for event "' . $event->title . '" telah diverifikasi oleh admin. Pendaftaran Anda aktif.',
-                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
+            \App\Models\UserNotification::create([
+                'user_id'    => $registration->user_id,
+                'type'       => 'event_registration_approved',
+                'title'      => 'Pendaftaran Dikonfirmasi',
+                'message'    => 'Pembayaran transfer Anda untuk event "' . ($event->title ?? 'Event') . '" telah dikonfirmasi.',
+                'data'       => ['event_id' => $event->id, 'url' => route('events.show', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
-        } catch (\Throwable $e) { /* ignore notification errors */
-        }
+        } catch (\Throwable $e) {}
 
-        return back()->with('success', 'Registration verified and actktifkan.');
+        return back()->with('success', 'Pendaftaran berhasil dikonfirmasi.');
     }
 
     /**
@@ -1500,78 +1513,33 @@ class EventController extends Controller
     public function rejectRegistration(Request $request, Event $event, EventRegistration $registration)
     {
         if ($registration->event_id !== $event->id) {
-            return back()->with('error', 'Pendaftaran tidak ditemukan untuk event ini.');
+            return back()->with('error', 'Data tidak valid.');
         }
 
-        $adminContactNumber = '+62 898-9260-731';
-        $allowedReasons = [
-            'Nominal pembayaran kurang',
-            'Nominal pembayaran lebih',
-            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang',
-            'Pembayaran dinyatakan tidak valid',
-        ];
+        $reason = trim((string) $request->input('rejection_reason', 'Bukti pembayaran tidak valid.'));
 
-        $validated = $request->validate([
-            'reason' => ['required', 'string', 'max:500', Rule::in($allowedReasons)],
+        $registration->update([
+            'status'           => 'rejected',
+            'rejection_reason' => $reason,
         ]);
 
-        $reason = $validated['reason'];
+        \App\Models\ManualPayment::where('event_registration_id', $registration->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'rejected', 'rejection_reason' => $reason]);
 
-        $userFacingMessage = match ($reason) {
-            'Nominal pembayaran kurang' => 'Nominal pembayaran Anda kurang dari yang seharusnya. Silahkan lakukan pembayaran tambahan (top up) dan kirim ulang bukti pembayaran. Anda dapat melakukan registrasi lagi sekarang.',
-            'Nominal pembayaran lebih' => 'Nominal pembayaran Anda lebih dari yang seharusnya. Admin akan menghubungi Anda untuk meminta nomor rekening agar selisih dapat dikembalikan. Anda dapat melakukan registrasi lagi sekarang.',
-            'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang' => 'Gambar bukti pembayaran blur/buram. Silahkan kirim ulang bukti pembayaran yang lebih jelas. Anda dapat melakukan registrasi lagi sekarang.',
-            'Pembayaran dinyatakan tidak valid' => 'Pembayaran dinyatakan tidak valid. Silahkan kontak admin IdSpora di nomor ' . $adminContactNumber . '. Anda dapat melakukan registrasi lagi sekarang.',
-            default => 'Pendaftaran Anda ditolak. Anda dapat melakukan registrasi lagi sekarang.',
-        };
-
-        $registration->status = 'rejected';
-        $registration->rejection_reason = $reason;
-        $registration->payment_verified_at = now();
-        $registration->payment_verified_by = $request->user() ? $request->user()->id : null;
-        $registration->save();
-
-        // mark any related manual payments as rejected
+        // Notify user
         try {
-            $manuals = \App\Models\ManualPayment::where('event_registration_id', $registration->id)->get();
-            foreach ($manuals as $m) {
-                $m->status = 'rejected';
-                $m->note = $reason; // Save reason to manual payment note as well if applicable
-                $m->save();
-            }
-        } catch (\Throwable $e) { /* ignore */
-        }
-
-        try {
-            UserNotification::create([
-                'user_id' => $registration->user_id,
-                'type' => 'event_registration_rejected',
-                'title' => 'Pendaftaran Ditolak',
-                'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. Alasan: ' . $reason,
-                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id],
-                'message' => 'Pendaftaran Anda untuk event "' . $event->title . '" ditolak. ' . $userFacingMessage,
-                'data' => ['event_id' => $event->id, 'registration_id' => $registration->id, 'reason' => $reason],
+            \App\Models\UserNotification::create([
+                'user_id'    => $registration->user_id,
+                'type'       => 'event_registration_rejected',
+                'title'      => 'Pendaftaran Ditolak',
+                'message'    => 'Bukti pembayaran untuk event "' . ($event->title ?? 'Event') . '" ditolak. Alasan: ' . $reason,
+                'data'       => ['event_id' => $event->id, 'url' => route('payment', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
-        } catch (\Throwable $e) { /* ignore notification errors */
-        }
+        } catch (\Throwable $e) {}
 
-        // Send email to user (best-effort)
-        try {
-            $user = $registration->user;
-            if ($user && !empty($user->email)) {
-                Mail::to($user->email)->send(new EventPaymentRejectedMail(
-                    userName: (string) ($user->name ?? 'User'),
-                    eventTitle: (string) ($event->title ?? 'Event'),
-                    reason: (string) $reason,
-                    messageText: (string) $userFacingMessage,
-                    adminContactNumber: (string) $adminContactNumber,
-                ));
-            }
-        } catch (\Throwable $e) { /* ignore mail errors */
-        }
-
-        return back()->with('success', 'Pendaftaran ditolak dengan alasan yang diberikan.');
+        return back()->with('success', 'Pendaftaran berhasil ditolak.');
     }
 
     /**

@@ -417,32 +417,10 @@
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
                     <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', '') }}">
 
-                    @if(!$isFreeCourse)
-                        <div style="margin-top:20px;">
-                            <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:#333;">Payment Method</div>
-                           <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                                @if(!$midtransClientKey)
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                        <input type="radio" name="payment_method" value="manual" checked>
-                                        Manual (QRIS + upload bukti)
-                                    </label>
-                                @endif
-                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                    <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif @if($midtransClientKey) checked @endif>
-                                    Midtrans
-                                </label>
-                           </div>
-                            @if(!$midtransClientKey)
-                                <div style="font-size:12px; color:#888; margin-top:6px;">Midtrans belum dikonfigurasi.</div>
-                            @endif
-                        </div>
-                    @endif
-
-                    @if($isFreeCourse || !$midtransClientKey)
-                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Study Now!</button>
-                    @endif
-                    @if(!$isFreeCourse)
-                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Pay Now</button>
+                    @if($isFreeCourse)
+                        <button type="submit" id="freeEnrollBtn" class="btn_bayar_payment" disabled>Study Now!</button>
+                    @else
+                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" disabled>Pay Now</button>
                     @endif
                 </form>
             </div>
@@ -452,31 +430,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    @if(!$isFreeCourse && !$midtransClientKey)
-        <!-- QRIS Modal -->
-        <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
-
-                        <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
-
-                        <div class="d-grid gap-2 mt-3">
-                            <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
-                                Download QR
-                            </a>
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+    <!-- QRIS Modal removed -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -496,44 +450,20 @@
             var formWhatsappInput = document.getElementById('formWhatsappInput');
             var totalAmountText = document.getElementById('totalAmountText');
             var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
-            var showQrisBtn = document.getElementById('showQrisBtn');
+            var freeEnrollBtn = document.getElementById('freeEnrollBtn');
             var midtransPayBtn = document.getElementById('midtransPayBtnCourse');
             var manualPaymentForm = document.getElementById('manualPaymentForm');
             var referralInput = document.getElementById('referralCodeInput');
             var referralMessageEl = document.getElementById('referralMessage');
             var formReferralCodeInput = document.getElementById('formReferralCodeInput');
-            var uploadProofForm = document.getElementById('uploadProofForm');
-            var confirmProofModalEl = document.getElementById('confirmProofModal');
-            var confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
-            var pendingProofSubmit = false;
             var checkReferralUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-referral', $course) : '');
             var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
-            // Declare cachedPending at outer scope so updatePayButtonState can access it
-            var cachedPending = null;
             var referralState = referralInput ? 'idle' : 'disabled';
             var referralTimer = null;
 
             var isFreeCourse = false;
             if (manualPaymentForm) {
                 isFreeCourse = (manualPaymentForm.getAttribute('data-is-free') || '0') === '1';
-            }
-
-            function getSelectedMethod(){
-                var checked = document.querySelector('input[name="payment_method"]:checked');
-                return checked ? checked.value : 'manual';
-            }
-
-            function togglePayButtons(){
-                if (isFreeCourse) {
-                    if (showQrisBtn) showQrisBtn.style.display = '';
-                    if (midtransPayBtn) midtransPayBtn.style.display = 'none';
-                    return;
-                }
-                var method = getSelectedMethod();
-                var isManual = method !== 'midtrans';
-                if (showQrisBtn) showQrisBtn.style.display = isManual ? '' : 'none';
-                if (midtransPayBtn) midtransPayBtn.style.display = isManual ? 'none' : '';
-                updatePayButtonState();
             }
 
             function formatIdrNumber(amount) {
@@ -601,10 +531,8 @@
             }
 
             function updatePayButtonState() {
-                if (!showQrisBtn && !midtransPayBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 var fullName = (fullNameInput ? fullNameInput.value : '').trim();
-                // WhatsApp wajib diisi untuk semua course (gratis maupun berbayar), minimal 8 digit
                 var disable = wa.length < 8 || fullName.length === 0;
                 if (referralInput) {
                     var code = getReferralCode();
@@ -612,12 +540,7 @@
                         disable = true;
                     }
                 }
-                // If there's a pending Midtrans order, always allow Continue Payment button
-                // regardless of WA validation (user already submitted WA when creating the order)
-                if (disable && cachedPending && cachedPending.pending && cachedPending.order_id) {
-                    disable = false;
-                }
-                if (showQrisBtn) showQrisBtn.disabled = disable;
+                if (freeEnrollBtn) freeEnrollBtn.disabled = disable;
                 if (midtransPayBtn) midtransPayBtn.disabled = disable;
             }
 
@@ -703,7 +626,7 @@
 
             function showPaymentValidationAlert() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                if ((!isFreeCourse) && wa.length < 8) {
+                if (wa.length < 8) {
                     alert('Nomor WhatsApp tidak valid. Minimal 8 digit angka.');
                     try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
                     return;
@@ -715,7 +638,7 @@
                 }
             }
 
-            // Enable/disable Bayar button based on required fields
+            // Enable/disable button based on required fields
             updatePayButtonState();
             if (whatsappInput) {
                 whatsappInput.addEventListener('input', updatePayButtonState);
@@ -729,90 +652,35 @@
                 setTotalAmount(getBaseAmount());
             }
 
-            // Method toggle
-            var methodRadios = document.querySelectorAll('input[name="payment_method"]');
-            if (methodRadios && methodRadios.length) {
-                methodRadios.forEach(function(r){
-                    r.addEventListener('change', function(){
-                        togglePayButtons();
-                    });
-                });
-            }
-            togglePayButtons();
-
-            // Show QRIS modal when clicking bayar
-            if (showQrisBtn) {
-                showQrisBtn.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    // guard (in case button enabled state is bypassed)
+            // Handle free registration submit
+            if (manualPaymentForm && isFreeCourse) {
+                manualPaymentForm.addEventListener('submit', function(e) {
                     updatePayButtonState();
-                    if (showQrisBtn.disabled) {
+                    if (freeEnrollBtn && freeEnrollBtn.disabled) {
+                        e.preventDefault();
                         showPaymentValidationAlert();
                         return;
                     }
-                    if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
                     syncReferralInput();
-                    if (formWhatsappFullInput) {
-                        var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
-                        var waRaw = whatsappInput ? whatsappInput.value : '';
-                        formWhatsappFullInput.value = (dial + waRaw).replace(/\s+/g, '');
-                    }
-
-                    // Free course: submit directly to enroll (no QRIS / no admin validation)
-                    if (isFreeCourse) {
-                        try {
-                            if (manualPaymentForm && manualPaymentForm.getAttribute('action') && manualPaymentForm.getAttribute('action') !== '#') {
-                                manualPaymentForm.submit();
-                                return;
-                            }
-                        } catch (_e) {
-                            // fallthrough to default behavior
-                        }
-                    }
-
-                    var qrisEl = document.getElementById('qrisModal');
-                    if (qrisEl && window.bootstrap) {
-                        var qrisModal = new window.bootstrap.Modal(qrisEl);
-                        // keep modal compact on open
-                        try {
-                            var collapseEl = document.getElementById('uploadProofCollapse');
-                            if (collapseEl && window.bootstrap.Collapse) {
-                                var collapse = window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-                                collapse.hide();
-                            }
-                            var paymentProofInputEl = document.getElementById('paymentProofInput');
-                            var proofPreviewEl = document.getElementById('proofPreview');
-                            if (paymentProofInputEl) paymentProofInputEl.value = '';
-                            if (proofPreviewEl) proofPreviewEl.style.display = 'none';
-                        } catch(e) {}
-                        qrisModal.show();
-                    } else if (qrisEl) {
-                        qrisEl.classList.add('show');
-                        qrisEl.style.display = 'block';
-                        document.body.classList.add('modal-open');
-                    }
                 });
             }
 
             // Midtrans pay flow
             if (midtransPayBtn) {
                 var pendingOrderUrl = @json(route('courses.payment.pending-order', $course));
+                var cachedPending = null;
 
                 async function fetchPendingCourseOrder(){
                     if (!pendingOrderUrl) return null;
                     try {
                         var res = await fetch(pendingOrderUrl, {
                             method: 'GET',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            },
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
                             credentials: 'same-origin'
                         });
-                        // Check ok BEFORE parsing JSON to avoid crash on redirect/HTML response
-                        if (!res.ok) return null;
                         var data = await res.json();
+                        if (!res.ok) return null;
                         return data;
                     } catch(_e) {
                         return null;
@@ -837,7 +705,6 @@
                         if (pending.whatsapp_number && whatsappInput && (!whatsappInput.value || whatsappInput.value.trim() === '')) {
                             var raw = String(pending.whatsapp_number || '').trim();
                             if (raw.startsWith('+')) {
-                                // Match +62xxxxxxxx etc
                                 var m = raw.match(/^\+(\d{1,3})(.*)$/);
                                 if (m) {
                                     var rest = String(m[2] || '').replace(/\D/g, '');
@@ -848,22 +715,10 @@
                             }
                         }
 
-                        // Auto select Midtrans and disable manual option while pending
-                        var midtransRadio = document.querySelector('input[name="payment_method"][value="midtrans"]');
-                        var manualRadio = document.querySelector('input[name="payment_method"][value="manual"]');
-                        if (midtransRadio && !midtransRadio.disabled) {
-                            midtransRadio.checked = true;
-                        }
-                        if (manualRadio) {
-                            manualRadio.disabled = true;
-                        }
-
-                        togglePayButtons();
                         updatePayButtonState();
                     } else if (pending && pending.needs_force_new) {
-                        // Previous order expired/rejected — reset to fresh payment state
                         cachedPending = null;
-                        midtransPayBtn.textContent = 'Pay Now!';
+                        midtransPayBtn.textContent = 'Pay Now';
                         updatePayButtonState();
                     }
                 }
@@ -876,40 +731,17 @@
                         return;
                     }
                     if (typeof window.snap === 'undefined') {
-                        // Try to reload Midtrans snap.js dynamically if not loaded yet
-                        var clientKey = @json($midtransClientKey ?? '');
-                        var isProduction = @json($midtransIsProduction ?? false);
-                        if (clientKey) {
-                            var snapSrc = 'https://app' + (isProduction ? '' : '.sandbox') + '.midtrans.com/snap/snap.js';
-                            var script = document.createElement('script');
-                            script.src = snapSrc;
-                            script.setAttribute('data-client-key', clientKey);
-                            script.onload = function() {
-                                midtransPayBtn.click();
-                            };
-                            script.onerror = function() {
-                                alert('Gagal memuat Midtrans. Periksa koneksi internet Anda.');
-                                midtransPayBtn.disabled = false;
-                                midtransPayBtn.textContent = originalText;
-                            };
-                            document.head.appendChild(script);
-                        } else {
-                            alert('Midtrans belum dikonfigurasi. Hubungi admin.');
-                        }
+                        alert('Midtrans belum siap. Pastikan client key sudah diset.');
                         return;
                     }
 
-                    // Ensure latest hidden values
-                    if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
-                    var dialVal = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
+                    var dialVal = '+62';
                     var waVal = whatsappInput ? (whatsappInput.value || '').trim() : '';
                     var referralVal = getReferralCode();
 
                     var snapTokenUrl = @json(route('courses.payment.snap-token', $course));
-                    // Use API route for finalize so it works with Bearer token (mobile/API clients)
-                    // Falls back to web route for session-based auth (browser)
-                    var refreshUrl = '/api/courses/midtrans/finalize/ORDER_ID';
+                    var refreshUrl = @json(route('payment.refresh-course', ['orderId' => 'ORDER_ID']));
                     var csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
                     async function getOrCreateSnapToken(forceNew){
@@ -957,19 +789,8 @@
                             }
                         }
 
-                        // Set cachedPending BEFORE snap.pay() so finally block reads it correctly
-                        // snap.pay() is non-blocking — finally runs immediately after popup opens
-                        cachedPending = {
-                            pending: true,
-                            order_id: data.order_id,
-                            snap_token: data.snap_token,
-                            snap_token_created_at: Date.now()
-                        };
-                        midtransPayBtn.textContent = 'Continue Payment';
-
                         window.snap.pay(data.snap_token, {
                             onSuccess: async function(){
-                                cachedPending = null;
                                 try {
                                     var rUrl = refreshUrl.replace('ORDER_ID', encodeURIComponent(data.order_id));
                                     await fetch(rUrl, {
@@ -986,15 +807,14 @@
                                 window.location.href = @json(route('course.learn', $course));
                             },
                             onPending: function(){
+                                alert('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.');
                                 cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
                                 midtransPayBtn.textContent = 'Continue Payment';
                             },
                             onError: function(){
-                                cachedPending = null;
                                 alert('Pembayaran gagal. Silakan coba lagi.');
                             },
                             onClose: async function(){
-                                // Always check status when popup closes (including when timer expires)
                                 midtransPayBtn.disabled = true;
                                 midtransPayBtn.textContent = 'Memeriksa status...';
                                 try {
@@ -1010,34 +830,25 @@
                                         body: JSON.stringify({})
                                     });
                                     var result = await res.json();
-                                    if (result && (result.payment_status === 'settled' || result.status === 'settled')) {
+                                    if (result && result.status === 'settled') {
                                         window.location.href = @json(route('course.learn', $course));
                                         return;
                                     }
-                                    if (result && (
-                                        result.payment_status === 'expired' || result.payment_status === 'rejected' ||
-                                        result.status === 'expired' || result.status === 'rejected'
-                                    )) {
+                                    if (result && (result.status === 'expired' || result.status === 'rejected')) {
                                         cachedPending = null;
-                                        alert('Waktu pembayaran habis. Silakan buat order baru.');
                                         window.location.href = window.location.pathname + '?force_new=1';
                                         return;
                                     }
                                 } catch(_e) {}
-                                // Status still pending — user closed popup manually before paying
                                 midtransPayBtn.disabled = false;
                                 midtransPayBtn.textContent = 'Continue Payment';
                                 updatePayButtonState();
                             }
                         });
                     } catch(err) {
-                        // Reset cachedPending on error so user can retry fresh
-                        cachedPending = null;
                         alert(String(err && err.message ? err.message : err));
                     } finally {
                         midtransPayBtn.disabled = false;
-                        // cachedPending was set before snap.pay() — if it's still set here,
-                        // snap popup was opened and user hasn't paid yet → show "Continue Payment"
                         if (cachedPending && cachedPending.pending && cachedPending.order_id) {
                             midtransPayBtn.textContent = 'Continue Payment';
                         } else {
@@ -1047,92 +858,12 @@
                     }
                 });
 
-                // If there is a pending Midtrans payment, show "continue" label
                 ensurePendingCourseLabel();
 
-                // If force_new=1 in URL (redirect from expired), clear cached pending
                 if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
                     cachedPending = null;
-                    midtransPayBtn.textContent = 'Continue Payment';
+                    midtransPayBtn.textContent = 'Pay Now';
                 }
-            }
-
-            // Confirm modal before submitting payment proof
-            if (uploadProofForm && confirmProofModalEl && window.bootstrap) {
-                uploadProofForm.addEventListener('submit', async function(e) {
-                    if (pendingProofSubmit) return;
-                    e.preventDefault();
-
-                    // sync latest inputs to hidden fields
-                    if (formWhatsappFullInput) {
-                        var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
-                        var waRaw = whatsappInput ? whatsappInput.value : '';
-                        formWhatsappFullInput.value = (dial + waRaw).replace(/\s+/g, '');
-                    }
-
-                    var m = window.bootstrap.Modal.getOrCreateInstance(confirmProofModalEl);
-                    m.show();
-                });
-
-                if (confirmProofSubmitBtn) {
-                    confirmProofSubmitBtn.addEventListener('click', function() {
-                        if (pendingProofSubmit) return;
-                        pendingProofSubmit = true;
-                        try { confirmProofSubmitBtn.disabled = true; } catch (e) {}
-                        uploadProofForm.submit();
-                    });
-                }
-
-                confirmProofModalEl.addEventListener('hidden.bs.modal', function() {
-                    pendingProofSubmit = false;
-                    if (confirmProofSubmitBtn) {
-                        try { confirmProofSubmitBtn.disabled = false; } catch (e) {}
-                    }
-                });
-            }
-
-            // Preview selected proof image and simple client-side validation
-            var paymentProofInput = document.getElementById('paymentProofInput');
-            var proofPreview = document.getElementById('proofPreview');
-            var proofPreviewImg = document.getElementById('proofPreviewImg');
-            var uploadProofForm = document.getElementById('uploadProofForm');
-            var payNowBtn = document.getElementById('payNowBtn');
-
-            if (paymentProofInput) {
-                paymentProofInput.addEventListener('change', function(e) {
-                    var file = paymentProofInput.files[0];
-                    if (!file) {
-                        proofPreview.style.display = 'none';
-                        return;
-                    }
-                    // size check (5MB)
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('Ukuran file terlalu besar. Maksimal 5MB.');
-                        paymentProofInput.value = '';
-                        proofPreview.style.display = 'none';
-                        return;
-                    }
-                    var reader = new FileReader();
-                    reader.onload = function(evt) {
-                        proofPreviewImg.src = evt.target.result;
-                        proofPreview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            // Optionally handle upload form submit: simple UX feedback
-            if (uploadProofForm) {
-                uploadProofForm.addEventListener('submit', function(e) {
-                    // let normal POST happen; show simple feedback
-                    if (!paymentProofInput || !paymentProofInput.files[0]) {
-                        e.preventDefault();
-                        alert('Silakan pilih file bukti pembayaran terlebih dahulu.');
-                        return;
-                    }
-                    payNowBtn.disabled = true;
-                    payNowBtn.textContent = 'Mengirim...';
-                });
             }
         });
     </script>

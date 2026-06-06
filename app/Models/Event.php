@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Models\TrainerCertificateAssets;
 use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
@@ -41,11 +42,14 @@ class Event extends Model
         'price',
         'price_offline',
         'price_online',
+        'max_participants',
         'discount_percentage',
         'discount_until',
         'event_time',
         'event_time_end',
         'event_date',
+        'event_until_date',
+        'event_until_time',
         'material_deadline',
         'material_revision_deadline',
         'benefit',
@@ -68,6 +72,7 @@ class Event extends Model
 
     protected $casts = [
         'event_date' => 'date',
+        'event_until_date' => 'date',
         'material_deadline' => 'datetime',
         'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
@@ -100,7 +105,9 @@ class Event extends Model
         // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
         // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
         $hasVbg = !empty($this->vbg_path);
-        $hasModule = !empty($this->module_path);
+        // Module: cek module_path ATAU approved trainer modules
+        $hasModule     = !empty($this->module_path)
+                         || $this->approvedTrainerModules()->exists();
         $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
 
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
@@ -129,8 +136,10 @@ class Event extends Model
         $total = $isOfflineOnly ? 2 : 3;
         $done = (int) $this->documents_completed_count;
         $done = max(0, min($total, $done));
-        if ($total === 0) return 0;
-        if ($done === $total) return 100;
+        if ($total === 0)
+            return 0;
+        if ($done === $total)
+            return 100;
         return (int) floor(($done / $total) * 100);
     }
 
@@ -346,6 +355,23 @@ class Event extends Model
 
     public function getEndAtAttribute(): ?Carbon
     {
+        // If event_until_date is set, use it (+ event_until_time or 23:59:59) as the deadline
+        if (!empty($this->event_until_date)) {
+            $dateStr = $this->event_until_date instanceof Carbon
+                ? $this->event_until_date->format('Y-m-d')
+                : (string) $this->event_until_date;
+            $timeStr = '23:59:59';
+            if (!empty($this->event_until_time)) {
+                $timeStr = is_string($this->event_until_time)
+                    ? $this->event_until_time
+                    : ($this->event_until_time instanceof Carbon ? $this->event_until_time->format('H:i:s') : '23:59:59');
+            }
+            try {
+                return Carbon::parse($dateStr . ' ' . $timeStr, config('app.timezone'));
+            } catch (\Throwable $ex) {}
+        }
+
+        // Fallback: event_date + event_time_end (or end of day)
         $start = $this->start_at;
         if (!$start)
             return null;
@@ -365,7 +391,8 @@ class Event extends Model
     }
 
     /**
-     * Determine if event finished (end time < now()).
+     * Determine if event finished (end_at < now).
+     * When event_until_date is set, it acts as the real end deadline.
      */
     public function isFinished(): bool
     {
@@ -374,14 +401,18 @@ class Event extends Model
     }
 
     /**
-     * Scope: active (not finished). Treat events without date as active (legacy drafts).
+     * Scope: active (not finished).
+     * Uses COALESCE(event_until_date, event_date) + COALESCE(event_until_time, event_time_end, event_time)
      */
     public function scopeActive($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
         return $query->where(function ($q) use ($now) {
             $q->whereNull('event_date')
-                ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) >= ?", [$now]);
+                ->orWhereRaw(
+                    "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) >= ?",
+                    [$now]
+                );
         });
     }
 
@@ -392,7 +423,10 @@ class Event extends Model
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
         return $query->whereNotNull('event_date')
-            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) < ?", [$now]);
+            ->whereRaw(
+                "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) < ?",
+                [$now]
+            );
     }
 
     /**
@@ -417,5 +451,13 @@ class Event extends Model
             return (float) array_sum(array_map(fn($row) => (float) ($row['total'] ?? 0), $this->expenses_json));
         }
         return (float) $this->expenses()->sum('total');
+    }
+
+    public function trainerCertificateAssets()
+    {
+        return $this->morphMany(
+            TrainerCertificateAsset::class,
+            'certifiable'
+        )->orderBy('order_no');
     }
 }

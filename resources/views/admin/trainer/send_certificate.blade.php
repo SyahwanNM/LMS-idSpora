@@ -203,12 +203,11 @@
             font-size: 12px;
         }
     </style>
-    @include('admin.trainer._top-text-color')
 @endsection
 
 @section('content')
     <div class="trainer-wrapper">
-        @include('admin.trainer._sidebar')
+        @include('admin.trainer.partials.sidebar')
 
         <main class="trainer-main">
             <div class="send-hero">
@@ -221,22 +220,6 @@
                     </p>
                 </div>
             </div>
-
-            @if(session('success'))
-                <div class="alert alert-success border-0 shadow-sm">
-                    <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
-                </div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-danger border-0 shadow-sm">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
-                </div>
-            @endif
-            @if(session('info'))
-                <div class="alert alert-info border-0 shadow-sm">
-                    <i class="bi bi-info-circle-fill me-2"></i>{{ session('info') }}
-                </div>
-            @endif
 
             <div class="row g-4">
                 <div class="col-12">

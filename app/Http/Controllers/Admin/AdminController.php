@@ -29,6 +29,18 @@ class AdminController extends Controller
 
     public function dashboard()
     {
+        // event_admin: redirect to their assigned event directly
+        $user = auth()->user();
+        if ($user && $user->role === 'event_admin') {
+            $assignedEventId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->value('event_id');
+            if ($assignedEventId) {
+                return redirect()->route('admin.events.show', $assignedEventId);
+            }
+            abort(403, 'No event assigned to your account.');
+        }
+
         // Current totals
         $activeUsers = User::count(); // total accounts
         $totalCourses = Course::count();
@@ -86,30 +98,7 @@ class AdminController extends Controller
         $totalEventsChangePercent = $percentChange($totalEvents, $baselineEvents);
         $totalRevenueChangePercent = $percentChange($totalRevenue, $baselineRevenue);
 
-        // Ambil 8 aktivitas terakhir (jika tabel sudah ada)
-        if (Schema::hasTable('activity_logs')) {
-            try {
-                // Khusus menampilkan aktivitas login terbaru
-                $recentActivities = ActivityLog::with('user')
-                    ->where('action', 'like', 'Login%')
-                    ->latest()
-                    ->limit(8)
-                    ->get()
-                    ->map(function ($log) {
-                        return [
-                            'user' => $log->user?->name ?? 'System',
-                            'action' => $log->action,
-                            'time' => $log->created_at?->diffForHumans(),
-                            'avatar' => $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($log->user?->name ?? 'System') . '&background=6b7280&color=fff',
-                            'description' => $log->description,
-                        ];
-                    });
-            } catch (\Throwable $e) {
-                $recentActivities = collect();
-            }
-        } else {
-            $recentActivities = collect();
-        }
+        $recentActivities = collect();
 
         $overdueAssignments = TrainerNotification::query()
             ->with('trainer:id,name')
@@ -160,12 +149,15 @@ class AdminController extends Controller
         $overdueAssignmentsCount = $overdueAssignments->count();
         $overdueAssignmentsPreview = $overdueAssignments->take(4);
 
-        // Materi yang sudah disetujui trainer (untuk panel dashboard)
-        $recentApprovedMaterials = Course::with(['trainer', 'category'])
-            ->where('status', 'approved')
-            ->orderByDesc('approved_at')
-            ->take(4)
+        // Materi yang menunggu persetujuan (Action Item)
+        $pendingMaterials = Course::with(['trainer', 'category'])
+            ->where('status', 'pending')
+            ->orderBy('created_at')
+            ->take(5)
             ->get();
+
+        // Peringatan Keuangan Kritis (Financial Alerts)
+        $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
 
         return view('admin.dashboard', compact(
             'activeUsers',
@@ -173,15 +165,15 @@ class AdminController extends Controller
             'totalEvents',
             'totalCertificates',
             'totalRevenue',
-            'recentApprovedMaterials',
-            'recentActivities',
+            'pendingMaterials',
             'activeUsersChangePercent',
             'totalCoursesChangePercent',
             'totalEventsChangePercent',
             'totalRevenueChangePercent',
             'usingIntraDayBaseline',
             'overdueAssignmentsCount',
-            'overdueAssignmentsPreview'
+            'overdueAssignmentsPreview',
+            'pendingWithdrawalsCount'
         ));
     }
 

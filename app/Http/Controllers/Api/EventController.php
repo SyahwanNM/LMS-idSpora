@@ -211,6 +211,17 @@ class EventController extends Controller
             return $this->jsonError('Event sudah selesai, pendaftaran ditutup.', 422);
         }
 
+        // 1c. Cek kuota peserta
+        if (!empty($event->max_participants)) {
+            $filledSlots = \App\Models\EventRegistration::query()
+                ->where('event_id', $event->id)
+                ->whereIn('status', ['active', 'pending'])
+                ->count();
+            if ($filledSlots >= (int) $event->max_participants) {
+                return $this->jsonError('Kuota peserta sudah penuh.', 422);
+            }
+        }
+
         // 2. Hitung Harga (jangan treat discounted_price null sebagai gratis)
         $basePrice = $this->resolveFinalEventPrice($event);
         $isFree = (float) $basePrice <= 0;

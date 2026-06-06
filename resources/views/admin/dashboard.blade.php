@@ -4,501 +4,416 @@
 
 @section('content')
 <style>
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    :root {
+        --surface: #ffffff;
+        --background: #f8fafc;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
     }
 
-    .dashboard-card {
+    body {
+        background-color: var(--background);
+    }
+
+    /* Animations */
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-up {
+        animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+
+    /* Welcome Area */
+    .welcome-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .welcome-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        letter-spacing: -0.02em;
+        margin: 0;
+    }
+    .welcome-subtitle {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    /* KPI Cards */
+    .kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+    }
+    .kpi-card:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+        transform: translateY(-2px);
+    }
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .kpi-content {
+        flex-grow: 1;
+    }
+    .kpi-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        margin-bottom: 0.25rem;
+    }
+    .kpi-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1.2;
+    }
+
+    /* KPI Specific Colors */
+    .kpi-users .kpi-icon { background: #e0e7ff; color: #4338ca; }
+    .kpi-courses .kpi-icon { background: #ffedd5; color: #c2410c; }
+    .kpi-events .kpi-icon { background: #e0f2fe; color: #0369a1; }
+    .kpi-revenue .kpi-icon { background: #dcfce7; color: #15803d; }
+
+    /* Module Grid */
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 1rem;
+    }
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    .module-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-decoration: none !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: none;
-        overflow: hidden;
         position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
     }
-
-    .dashboard-card::before {
+    .module-card::after {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+        width: 100%;
+        height: 3px;
+        background: transparent;
         transform: scaleX(0);
+        transform-origin: left;
         transition: transform 0.3s ease;
     }
-
-    .dashboard-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+    .module-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+        border-color: transparent;
     }
-
-    .dashboard-card:hover::before {
+    .module-card:hover::after {
         transform: scaleX(1);
     }
-
-    .kpi-icon {
-        transition: all 0.3s ease;
-    }
-
-    .dashboard-card:hover .kpi-icon {
-        transform: scale(1.1) rotate(5deg);
-    }
-
-    .quick-action-btn {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid transparent !important;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .quick-action-btn::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-    }
-
-    .quick-action-btn:hover::before {
-        width: 300px;
-        height: 300px;
-    }
-
-    .quick-action-btn:hover {
-        transform: translateY(-5px);
-        border-color: transparent !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    .quick-action-btn i {
+    .module-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1.25rem;
         transition: transform 0.3s ease;
     }
-
-    .quick-action-btn:hover i {
-        transform: scale(1.2);
+    .module-card:hover .module-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    .module-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 0.5rem;
+    }
+    .module-desc {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-bottom: 0;
     }
 
-    .activity-item {
-        transition: all 0.3s ease;
-        border-radius: 12px;
-        padding: 12px;
-    }
+    /* Module Specific Colors (Pastel + Deep Core) */
+    .mod-course .module-icon { background: #ffedd5; color: #c2410c; }
+    .mod-course::after { background: #c2410c; }
 
-    .activity-item:hover {
-        background: #f8f9fa;
-        transform: translateX(5px);
-    }
+    .mod-event .module-icon { background: #e0f2fe; color: #0369a1; }
+    .mod-event::after { background: #0369a1; }
 
-    .fade-in {
-        animation: fadeInUp 0.6s ease-out;
-    }
+    .mod-finance .module-icon { background: #dcfce7; color: #15803d; }
+    .mod-finance::after { background: #15803d; }
 
-    .fade-in-delay-1 {
-        animation-delay: 0.1s;
-    }
+    .mod-crm .module-icon { background: #fee2e2; color: #b91c1c; }
+    .mod-crm::after { background: #b91c1c; }
 
-    .fade-in-delay-2 {
-        animation-delay: 0.2s;
-    }
+    .mod-trainer .module-icon { background: #fce7f3; color: #be185d; }
+    .mod-trainer::after { background: #be185d; }
 
-    .fade-in-delay-3 {
-        animation-delay: 0.3s;
-    }
+    .mod-reseller .module-icon { background: #e0e7ff; color: #4338ca; }
+    .mod-reseller::after { background: #4338ca; }
 
-    .fade-in-delay-4 {
-        animation-delay: 0.4s;
-    }
+    .mod-content .module-icon { background: #f3f4f6; color: #475569; }
+    .mod-content::after { background: #475569; }
 
-    .kpi-card-1 {
-        --gradient-start: #fbbf24;
-        --gradient-end: #f59e0b;
-    }
-
-    .kpi-card-2 {
-        --gradient-start: #667eea;
-        --gradient-end: #764ba2;
-    }
-
-    .kpi-card-3 {
-        --gradient-start: #fbbf24;
-        --gradient-end: #f59e0b;
-    }
-
-    .kpi-card-4 {
-        --gradient-start: #667eea;
-        --gradient-end: #764ba2;
-    }
-
-    .kpi-icon-wrapper {
-        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .welcome-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #fbbf24 100%);
+    /* Action Items Panels */
+    .panel-card {
+        background: var(--surface);
         border-radius: 16px;
-        padding: 2rem;
-        color: white;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
-        position: relative;
-        overflow: hidden;
+        border: 1px solid var(--border);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
     }
-
-    .welcome-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(251, 191, 36, 0.2) 0%, transparent 70%);
-        animation: pulse 4s ease-in-out infinite;
+    .panel-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-
-    @keyframes pulse {
-
-        0%,
-        100% {
-            transform: scale(1);
-            opacity: 0.5;
-        }
-
-        50% {
-            transform: scale(1.1);
-            opacity: 0.8;
-        }
+    .panel-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
-
-    .quick-action-btn.btn-outline-warning {
-        border-color: transparent !important;
-        color: #f59e0b;
+    .panel-body {
+        padding: 1.25rem 1.5rem;
+        flex-grow: 1;
+        overflow-y: auto;
     }
-
-    .quick-action-btn.btn-outline-warning:hover {
-        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-        color: white;
-        border-color: transparent !important;
+    
+    /* Action Items Rows */
+    .action-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+        border: 1px solid transparent;
+        transition: all 0.2s;
     }
-
-    .quick-action-btn.btn-outline-primary {
-        border-color: transparent !important;
+    .action-item:hover {
+        border-color: #e2e8f0;
+        background: #ffffff;
+        transform: translateX(4px);
     }
-
-    .quick-action-btn.btn-outline-primary:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: transparent !important;
+    .action-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-main);
     }
-
-    .quick-action-btn.btn-outline-purple {
-        border-color: transparent !important;
-        color: #667eea;
-    }
-
-    .quick-action-btn.btn-outline-purple:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: transparent !important;
-    }
-
-    .quick-action-btn.btn-outline-info,
-    .quick-action-btn.btn-outline-success,
-    .quick-action-btn.btn-outline-danger,
-    .quick-action-btn.btn-outline-secondary {
-        border-color: transparent !important;
-    }
-
-    .quick-action-btn.btn-outline-info:hover,
-    .quick-action-btn.btn-outline-success:hover,
-    .quick-action-btn.btn-outline-danger:hover,
-    .quick-action-btn.btn-outline-secondary:hover {
-        border-color: transparent !important;
-    }
-
-    .overdue-item {
-        border: 1px solid #fee2e2;
-        background: #fff7f7;
-        border-radius: 12px;
-        padding: 10px 12px;
-    }
-
-    .overdue-item-title {
-        font-size: 13px;
-        font-weight: 700;
-        color: #991b1b;
-        margin-bottom: 2px;
-    }
-
-    .overdue-item-meta {
-        font-size: 12px;
-        color: #6b7280;
+    .action-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
     }
 </style>
 
-<div class="container-fluid py-4">
-    <!-- Welcome Header -->
-    <div class="welcome-header fade-in mb-4" style="position: relative; z-index: 1;">
-        <div class="d-flex justify-content-between align-items-center flex-wrap"
-            style="position: relative; z-index: 2;">
-            <div>
-                <h3 class="mb-2 fw-bold">
-                    <i class="bi bi-speedometer2 me-2"></i>Welcome to, {{ auth()->user()->name ?? 'Admin' }}!
-                </h3>
-                <p class="mb-0 opacity-95">Manage and monitor system activities from this dashboard</p>
-            </div>
-            <button id="exportDataBtn" class="btn btn-light btn-lg shadow-lg mt-2 mt-md-0 fw-semibold" type="button"
-                data-export-url="{{ route('admin.export') }}" style="background: rgba(255,255,255,0.95); border: none;">
-                <i class="bi bi-download me-2"></i>Export Data
+<div class="container-fluid py-4 px-xl-4">
+    
+    <!-- Welcome Section -->
+    <div class="welcome-header animate-fade-up">
+        <div>
+            <h1 class="welcome-title">Overview Dashboard</h1>
+            <p class="welcome-subtitle">Welcome back, {{ auth()->user()->name ?? 'Admin' }}. Here's what's happening today.</p>
+        </div>
+        <div>
+            <button id="exportDataBtn" class="btn btn-dark fw-medium px-4 py-2" style="border-radius: 10px;" data-export-url="{{ route('admin.export') }}">
+                <i class="bi bi-cloud-download me-2"></i>Export Data
             </button>
         </div>
     </div>
 
-    <!-- KPI Row -->
-    <div class="row g-4 mb-4">
-        <div class="col-6 col-md-3 fade-in">
-            <div class="card h-100 dashboard-card shadow-sm rounded-4 kpi-card-1">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-start">
-                        <div class="kpi-icon-wrapper rounded-4 p-3 text-white me-3 kpi-icon d-flex align-items-center justify-content-center"
-                            style="width:64px;height:64px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
-                            <i class="bi bi-people-fill fs-3"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="small text-muted fw-semibold mb-2 text-uppercase"
-                                style="letter-spacing: 0.5px;">Active Users</div>
-                            <div class="d-flex align-items-baseline flex-wrap">
-                                <div class="display-6 fs-2 fw-bold text-dark" data-active-users>
-                                    {{ number_format($activeUsers ?? 0) }}
-                                </div>
-                                @php $val = $activeUsersChangePercent; @endphp
-                                <div class="ms-2 small fw-bold @if(is_null($val)) text-secondary @elseif($val > 0) text-success @elseif($val < 0) text-danger @else text-muted @endif"
-                                    title="{{ isset($usingIntraDayBaseline) && $usingIntraDayBaseline && !is_null($val) ? 'Perubahan sejak awal hari ini' : 'Perubahan dibanding kemarin' }}">
-                                    @if(!is_null($val))
-                                        @if($val > 0)<i class="bi bi-arrow-up-short"></i>@elseif($val < 0)<i
-                                        class="bi bi-arrow-down-short"></i>@else <i class="bi bi-dash"></i>@endif
-                                        {{ $val > 0 ? '+' : '' }}{{ $val }}%
-                                    @else — @endif
-                                </div>
-                            </div>
-                        </div>
+    <!-- Financial Critical Alerts -->
+    @if(($pendingWithdrawalsCount ?? 0) > 0)
+        <div class="alert alert-warning border-0 rounded-4 shadow-sm animate-fade-up delay-1 mb-4 d-flex align-items-center justify-content-between p-3" style="background: linear-gradient(to right, #fffbeb, #fef3c7); border-left: 5px solid #f59e0b !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-warning bg-opacity-25 p-2 rounded-circle text-warning fs-4 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1 fw-bold text-dark" style="font-size: 1rem;">Action Required: Pending Trainer Withdrawals</h5>
+                    <p class="mb-0 text-muted" style="font-size: 0.9rem;">
+                        You have <strong class="text-dark">{{ $pendingWithdrawalsCount }} withdrawal requests</strong> waiting for verification and payout.
+                    </p>
+                </div>
+            </div>
+            <a href="{{ route('admin.finance.index') }}" class="btn btn-warning fw-bold shadow-sm px-4 rounded-pill">
+                Review Now
+            </a>
+        </div>
+    @endif
+
+    <!-- KPI Metrics -->
+    <div class="row g-3 mb-5 animate-fade-up delay-1">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-card kpi-users">
+                <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Active Users</div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <div class="kpi-value" data-active-users>{{ number_format($activeUsers ?? 0) }}</div>
+                        @php $val = $activeUsersChangePercent; @endphp
+                        @if(!is_null($val))
+                            <span class="badge {{ $val > 0 ? 'bg-success-subtle text-success' : ($val < 0 ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-secondary') }} rounded-pill" style="font-size: 0.7rem;">
+                                {{ $val > 0 ? '↑' : ($val < 0 ? '↓' : '') }} {{ abs($val) }}%
+                            </span>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3 fade-in fade-in-delay-1">
-            <div class="card h-100 dashboard-card shadow-sm rounded-4 kpi-card-2">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-start">
-                        <div class="kpi-icon-wrapper rounded-4 p-3 text-white me-3 kpi-icon d-flex align-items-center justify-content-center"
-                            style="width:64px;height:64px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <i class="bi bi-journal-bookmark-fill fs-3"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="small text-muted fw-semibold mb-2 text-uppercase"
-                                style="letter-spacing: 0.5px;">Total Courses</div>
-                            <div class="d-flex align-items-baseline flex-wrap">
-                                <div class="display-6 fs-2 fw-bold text-dark">{{ number_format($totalCourses ?? 0) }}
-                                </div>
-                                @php $val = $totalCoursesChangePercent; @endphp
-                                <div class="ms-2 small fw-bold @if(is_null($val)) text-secondary @elseif($val > 0) text-success @elseif($val < 0) text-danger @else text-muted @endif"
-                                    title="{{ isset($usingIntraDayBaseline) && $usingIntraDayBaseline && !is_null($val) ? 'Perubahan sejak awal hari ini' : 'Perubahan dibanding kemarin' }}">
-                                    @if(!is_null($val))
-                                        @if($val > 0)<i class="bi bi-arrow-up-short"></i>@elseif($val < 0)<i
-                                        class="bi bi-arrow-down-short"></i>@else <i class="bi bi-dash"></i>@endif
-                                        {{ $val > 0 ? '+' : '' }}{{ $val }}%
-                                    @else — @endif
-                                </div>
-                            </div>
-                        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-card kpi-courses">
+                <div class="kpi-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Courses</div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <div class="kpi-value">{{ number_format($totalCourses ?? 0) }}</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3 fade-in fade-in-delay-2">
-            <div class="card h-100 dashboard-card shadow-sm rounded-4 kpi-card-3">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-start">
-                        <div class="kpi-icon-wrapper rounded-4 p-3 text-white me-3 kpi-icon d-flex align-items-center justify-content-center"
-                            style="width:64px;height:64px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
-                            <i class="bi bi-calendar-event-fill fs-3"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="small text-muted fw-semibold mb-2 text-uppercase"
-                                style="letter-spacing: 0.5px;">Total Events</div>
-                            <div class="d-flex align-items-baseline flex-wrap">
-                                <div class="display-6 fs-2 fw-bold text-dark">{{ number_format($totalEvents ?? 0) }}
-                                </div>
-                                @php $val = $totalEventsChangePercent; @endphp
-                                <div class="ms-2 small fw-bold @if(is_null($val)) text-secondary @elseif($val > 0) text-success @elseif($val < 0) text-danger @else text-muted @endif"
-                                    title="{{ isset($usingIntraDayBaseline) && $usingIntraDayBaseline && !is_null($val) ? 'Perubahan sejak awal hari ini' : 'Perubahan dibanding kemarin' }}">
-                                    @if(!is_null($val))
-                                        @if($val > 0)<i class="bi bi-arrow-up-short"></i>@elseif($val < 0)<i
-                                        class="bi bi-arrow-down-short"></i>@else <i class="bi bi-dash"></i>@endif
-                                        {{ $val > 0 ? '+' : '' }}{{ $val }}%
-                                    @else — @endif
-                                </div>
-                            </div>
-                        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-card kpi-events">
+                <div class="kpi-icon"><i class="bi bi-calendar2-event-fill"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Events</div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <div class="kpi-value">{{ number_format($totalEvents ?? 0) }}</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3 fade-in fade-in-delay-3">
-            <div class="card h-100 dashboard-card shadow-sm rounded-4 kpi-card-4">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-start">
-                        <div class="kpi-icon-wrapper rounded-4 p-3 text-white me-3 kpi-icon d-flex align-items-center justify-content-center"
-                            style="width:64px;height:64px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <i class="bi bi-currency-dollar fs-3"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="small text-muted fw-semibold mb-2 text-uppercase"
-                                style="letter-spacing: 0.5px;">Total Revenue</div>
-                            <div class="d-flex align-items-baseline flex-wrap">
-                                <div class="display-6 fs-5 fw-bold text-dark">Rp
-                                    {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}
-                                </div>
-                                @php $val = $totalRevenueChangePercent; @endphp
-                                <div class="ms-2 small fw-bold @if(is_null($val)) text-secondary @elseif($val > 0) text-success @elseif($val < 0) text-danger @else text-muted @endif"
-                                    title="{{ isset($usingIntraDayBaseline) && $usingIntraDayBaseline && !is_null($val) ? 'Perubahan sejak awal hari ini' : 'Perubahan dibanding kemarin' }}">
-                                    @if(!is_null($val))
-                                        @if($val > 0)<i class="bi bi-arrow-up-short"></i>@elseif($val < 0)<i
-                                        class="bi bi-arrow-down-short"></i>@else <i class="bi bi-dash"></i>@endif
-                                        {{ $val > 0 ? '+' : '' }}{{ $val }}%
-                                    @else — @endif
-                                </div>
-                            </div>
-                        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="kpi-card kpi-revenue">
+                <div class="kpi-icon"><i class="bi bi-wallet2"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total Revenue</div>
+                    <div class="d-flex align-items-baseline gap-2">
+                        <div class="kpi-value fs-4">Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Baseline Legend -->
-    <div class="text-end mb-4 fade-in fade-in-delay-4">
-        @if(isset($usingIntraDayBaseline) && $usingIntraDayBaseline)
-            <span class="badge bg-warning bg-opacity-20 text-dark border border-warning fw-normal px-3 py-2"
-                style="border-width: 2px !important;">
-                <i class="bi bi-info-circle me-1"></i>Persentase dibanding awal hari ini
-            </span>
-        @else
-            <span class="badge bg-warning bg-opacity-20 text-dark border border-warning fw-normal px-3 py-2"
-                style="border-width: 2px !important;">
-                <i class="bi bi-info-circle me-1"></i>Persentase dibanding kemarin
-            </span>
-        @endif
+    <!-- Core Modules -->
+    <div class="animate-fade-up delay-2">
+        <h2 class="section-title">Core Management Modules</h2>
+        <div class="module-grid">
+            
+            <a href="{{ route('admin.courses.index') }}" class="module-card mod-course">
+                <div class="module-icon"><i class="bi bi-journal-richtext"></i></div>
+                <h3 class="module-title">Courses</h3>
+                <p class="module-desc">Manage e-learning curriculums, classes, and materials.</p>
+            </a>
+
+            <a href="{{ route('admin.add-event') }}" class="module-card mod-event">
+                <div class="module-icon"><i class="bi bi-calendar2-event"></i></div>
+                <h3 class="module-title">Events</h3>
+                <p class="module-desc">Organize webinars, offline training, and participant registrations.</p>
+            </a>
+
+            <a href="{{ route('admin.finance.index') }}" class="module-card mod-finance">
+                <div class="module-icon"><i class="bi bi-piggy-bank"></i></div>
+                <h3 class="module-title">Finance</h3>
+                <p class="module-desc">Monitor revenue, process payouts, and manage operational expenses.</p>
+            </a>
+
+            <a href="{{ route('admin.crm.dashboard') }}" class="module-card mod-crm">
+                <div class="module-icon"><i class="bi bi-headset"></i></div>
+                <h3 class="module-title">CRM & Support</h3>
+                <p class="module-desc">Handle customer relations, support tickets, and broadcasts.</p>
+            </a>
+
+            <a href="{{ route('admin.trainer.index') }}" class="module-card mod-trainer">
+                <div class="module-icon"><i class="bi bi-person-badge"></i></div>
+                <h3 class="module-title">Trainers</h3>
+                <p class="module-desc">Manage instructors, assignments, and teaching performance.</p>
+            </a>
+
+            <a href="{{ route('admin.reseller') }}" class="module-card mod-reseller">
+                <div class="module-icon"><i class="bi bi-diagram-3"></i></div>
+                <h3 class="module-title">Resellers</h3>
+                <p class="module-desc">Manage affiliates, commissions, and partnership networks.</p>
+            </a>
+
+            <a href="{{ route('admin.carousels.index', ['location' => 'dashboard']) }}" class="module-card mod-content">
+                <div class="module-icon"><i class="bi bi-images"></i></div>
+                <h3 class="module-title">Content</h3>
+                <p class="module-desc">Update homepage banners, carousels, and visual assets.</p>
+            </a>
+
+        </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-12 col-xl-8 fade-in fade-in-delay-4">
-            <div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #fbbf24 !important;">
-                <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
-                    <h5 class="card-title mb-0 fw-bold">
-                        <i class="bi bi-lightning-charge-fill text-warning me-2"
-                            style="filter: drop-shadow(0 2px 4px rgba(251, 191, 36, 0.3));"></i>Quick Actions
-                    </h5>
-                    <span class="badge bg-warning bg-opacity-20 text-dark border border-warning px-3 py-2 fw-semibold"
-                        style="border-width: 2px !important;">
-                        <i class="bi bi-star-fill me-1"></i>Quick Actions
-                    </span>
+    <!-- Bottom Panels: Action Items -->
+    <div class="row g-4 animate-fade-up delay-3">
+        <!-- Pending Materials -->
+        <div class="col-12 col-xl-6">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="bi bi-clock-history text-warning"></i> Pending Material Approvals</h3>
+                    <a href="{{ route('admin.courses.index') }}" class="btn btn-sm btn-link text-decoration-none">View All</a>
                 </div>
-                <div class="card-body p-4">
-                    <div class="row g-3">
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button"
-                                class="btn w-100 quick-action-btn btn-outline-primary d-flex flex-column align-items-center py-4 rounded-4"
-                                onclick="location.href='{{ route('admin.reseller') }}'">
-                                <i class="bi bi-people-fill fs-3 mb-2"></i>
-                                <small class="fw-semibold">Manage Reseller</small>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button"
-                                class="btn w-100 quick-action-btn btn-outline-purple d-flex flex-column align-items-center py-4 rounded-4"
-                                onclick="location.href='{{ route('admin.trainer.index') }}'">
-                                <i class="bi bi-person-badge-fill fs-3 mb-2"></i>
-                                <small class="fw-semibold">Manage Trainer</small>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button"
-                                class="btn w-100 quick-action-btn btn-outline-warning d-flex flex-column align-items-center py-4 rounded-4"
-                                onclick="location.href='{{ route('admin.courses.index') }}'">
-                                <i class="bi bi-journal-text fs-3 mb-2"></i>
-                                <small class="fw-semibold">Manage Courses</small>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button"
-                                class="btn w-100 quick-action-btn btn-outline-info d-flex flex-column align-items-center py-4 rounded-4"
-                                onclick="location.href='{{ route('admin.add-event') }}'">
-                                <i class="bi bi-calendar2-event fs-3 mb-2"></i>
-                                <small class="fw-semibold">Manage Events</small>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button"
-                                class="btn w-100 quick-action-btn btn-outline-success d-flex flex-column align-items-center py-4 rounded-4"
-                                onclick="location.href='{{ route('admin.finance.index') }}'">
-                                <i class="bi bi-cash-stack fs-3 mb-2"></i>
-                                <small class="fw-semibold">Manage Finance</small>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button"
-                                class="btn w-100 quick-action-btn btn-outline-danger d-flex flex-column align-items-center py-4 rounded-4"
-                                onclick="location.href='{{ route('admin.crm.dashboard') }}'">
-                                <i class="bi bi-diagram-3 fs-3 mb-2"></i>
-                                <small class="fw-semibold">CRM</small>
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <button type="button"
-                                class="btn w-100 quick-action-btn btn-outline-secondary d-flex flex-column align-items-center py-4 rounded-4"
-                                onclick="location.href='{{ route('admin.carousels.index', ['location' => 'dashboard']) }}'">
-                                <i class="bi bi-images fs-3 mb-2"></i>
-                                <small class="fw-semibold">Manage Carousel</small>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-xl-4 fade-in fade-in-delay-4">
-            <div class="card shadow-sm border-0 rounded-4 mb-4" style="border-top: 4px solid #22c55e !important;">
-            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
-                <h5 class="card-title mb-0 fw-bold">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>Latest Approved Materials
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                @if(($recentApprovedMaterials ?? collect())->count() > 0)
-                    <div class="d-flex flex-column gap-2 mb-3">
-                        @foreach($recentApprovedMaterials as $material)
-                            <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+                <div class="panel-body">
+                    @if(($pendingMaterials ?? collect())->count() > 0)
+                        @foreach($pendingMaterials as $material)
+                            <div class="action-item">
                                 <div>
-                                    <div class="fw-bold">{{ $material->name }}</div>
-                                    <div class="text-muted small">
-                                        {{ $material->category->name ?? 'Umum' }} •
-                                        {{ $material->trainer->name ?? 'Anonim' }}
+                                    <div class="action-title">{{ $material->name }}</div>
+                                    <div class="action-meta">
+                                        Trainer: {{ $material->trainer->name ?? 'Anonim' }} • Diunggah: {{ optional($material->created_at)->diffForHumans() }}
                                     </div>
                                 </div>
-                                <a href="{{ route('admin.material.show', $material->id) }}" class="btn btn-sm btn-success">
+                                <a href="{{ route('admin.trainer.material.show', $material->id) }}" class="btn btn-sm btn-success">
                                     Detail
                                 </a>
                             </div>
@@ -510,58 +425,43 @@
                         <small>No material has been approved yet.</small>
                     </div>
                 @endif
-                <a href="{{ route('admin.material.approved') }}" class="btn btn-outline-success w-100 fw-semibold mt-2">
+                <a href="{{ route('admin.trainer.material.approved') }}" class="btn btn-outline-success w-100 fw-semibold mt-2">
                     View All Approved Materials
                 </a>
             </div>
         </div>
         </div>
 
-            <div class="card shadow-sm border-0 rounded-4" style="border-top: 4px solid #667eea !important;">
-        <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center py-4">
-            <h5 class="card-title mb-0 fw-bold">
-                <i class="bi bi-clock-history text-warning me-2"
-                    style="filter: drop-shadow(0 2px 4px rgba(102, 126, 234, 0.3));"></i>Recent Activity
-            </h5>
-            <button id="refreshRecentBtn" class="btn btn-sm btn-outline-warning rounded-circle" type="button"
-                title="Refresh list" style="width: 36px; height: 36px; border-color: #fbbf24;">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
-        </div>
-        <div class="card-body p-4">
-            <div id="recentActivityList" style="max-height:320px; overflow-y:auto; padding-right: 8px;">
-                @php $list = collect($recentActivities ?? [])->take(4); @endphp
-                @if($list->isNotEmpty())
-                    @foreach($list as $index => $activity)
-                        <div class="activity-item mb-3">
-                            <div class="d-flex">
-                                <img src="{{ $activity['avatar'] }}" alt="{{ $activity['user'] }}"
-                                    class="rounded-circle flex-shrink-0 shadow-sm"
-                                    style="width:48px;height:48px;object-fit:cover; border: 2px solid #e9ecef;">
-                                <div class="ms-3 flex-grow-1">
-                                    <div class="fw-semibold text-dark mb-1">{{ $activity['user'] }}</div>
-                                    <div class="small text-muted mb-1">{{ $activity['action'] }}</div>
-                                    @if(!empty($activity['description']))
-                                        <div class="small text-secondary mb-2">{{ $activity['description'] }}</div>
-                                    @endif
-                                    <div class="small text-muted">
-                                        <i class="bi bi-clock me-1"></i>{{ $activity['time'] }}
+        <!-- Overdue Assignments -->
+        <div class="col-12 col-xl-6">
+            <div class="panel-card">
+                <div class="panel-header">
+                    <h3 class="panel-title"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Pending/Overdue Invitations</h3>
+                    <a href="{{ route('admin.trainer.index') }}" class="btn btn-sm btn-link text-decoration-none">Manage Trainers</a>
+                </div>
+                <div class="panel-body">
+                    @if(($overdueAssignmentsPreview ?? collect())->count() > 0)
+                        @foreach($overdueAssignmentsPreview as $assignment)
+                            <div class="action-item" style="background: #fff5f5; border-color: #fed7d7;">
+                                <div>
+                                    <div class="action-title text-danger">{{ $assignment['trainer'] }}</div>
+                                    <div class="action-meta">
+                                        Undangan: {{ $assignment['title'] }} <br>
+                                        <span class="text-danger fw-medium"><i class="bi bi-alarm"></i> Tenggat: {{ $assignment['due_at_text'] }}</span>
                                     </div>
                                 </div>
+                                <a href="{{ route('admin.trainer.index') }}" class="btn btn-sm btn-danger rounded-pill px-3">
+                                    Tindak Lanjuti
+                                </a>
                             </div>
+                        @endforeach
+                    @else
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-shield-check fs-1 d-block mb-2 text-success opacity-50"></i>
+                            <small>No pending or overdue trainer invitations.</small>
                         </div>
-                        @if($index < $list->count() - 1)
-                        <hr class="my-3 border-light opacity-25">@endif
-                    @endforeach
-                @else
-                    <div class="text-center py-5 text-muted">
-                        <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
-                        <small>No recent activity</small>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -601,9 +501,6 @@
         });
     }
 
-    // Flash messages are handled by the new global notification banner in layouts.admin
-    // (session('login_success'), session('success'), session('error')).
-
     function initExportButton() {
         const btn = document.getElementById('exportDataBtn');
         if (!btn) return;
@@ -612,7 +509,7 @@
             if (!url) return;
             const originalHtml = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Mengunduh...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Exporting...';
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             iframe.src = url;
@@ -625,52 +522,5 @@
         });
     }
 
-    function initRecentActivityRefresh() {
-        const btn = document.getElementById('refreshRecentBtn');
-        const listEl = document.getElementById('recentActivityList');
-        if (!btn || !listEl) return;
-        btn.addEventListener('click', function () {
-            const original = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-            fetch('{{ route("admin.recent-activities") }}?limit=8')
-                .then(r => r.json())
-                .then(json => {
-                    btn.disabled = false;
-                    btn.innerHTML = original;
-                    const data = (json.data || []).slice(0, 4);
-                    if (!data.length) {
-                        listEl.innerHTML = '<div class="text-center py-4 text-muted small">No recent activity</div>';
-                        return;
-                    }
-                    // build HTML
-                    let html = '';
-                    data.forEach((a, idx) => {
-                        html += `<div class="d-flex mb-3">`;
-                        html += `<img src="${a.avatar}" alt="${escapeHtml(a.user)}" class="rounded-circle flex-shrink-0" style="width:48px;height:48px;object-fit:cover;">`;
-                        html += `<div class="ms-3 flex-grow-1"><div class="fw-semibold text-dark">${escapeHtml(a.user)}</div>`;
-                        html += `<div class="small text-muted">${escapeHtml(a.action)}</div>`;
-                        if (a.description) html += `<div class="small text-secondary">${escapeHtml(a.description)}</div>`;
-                        html += `<div class="small text-muted mt-1"><i class="bi bi-clock me-1"></i>${escapeHtml(a.time)}</div></div></div>`;
-                        if (idx < data.length - 1) html += '<hr class="my-2 border-light">';
-                    });
-                    listEl.innerHTML = html;
-                })
-                .catch(() => {
-                    btn.disabled = false;
-                    btn.innerHTML = original;
-                    // keep current list
-                });
-        });
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>"'`]/g, function (s) {
-            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' })[s];
-        });
-    }
-
-    // Legacy createToast() removed (admin uses window.adminNotify / global notifications)
 </script>
 @endsection

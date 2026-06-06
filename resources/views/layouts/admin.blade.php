@@ -10,6 +10,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('styles')
+    @stack('styles')
     <style>
         /* Ensure toast notifications appear above fixed navbar and profile dropdown */
         .toast-container.position-fixed { z-index: 11050 !important; }
@@ -22,52 +23,55 @@
                          request()->routeIs('admin.withdrawals.*') || 
                          request()->routeIs('admin.crm.*') || 
                          request()->routeIs('admin.trainer.*') ||
+                         request()->routeIs('admin.courses.studio*') ||
                          request()->routeIs('admin.material.*');
     @endphp
 
     @unless($isSpecialPage)
-    <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom fixed-top" style="height: 64px;">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
-                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:22px;">
-                <span class="fw-semibold">Admin</span>
+                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:26px;">
+                <span class="fw-bold text-dark fs-5" style="letter-spacing: -0.5px;">Admin</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @unless(request()->routeIs('admin.dashboard') || request()->routeIs('admin.users.*') || request()->routeIs('admin.carousels.*'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ (request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}" href="{{ route('admin.reports') }}">Report</a>
-                    </li>
-                    @endunless
-                    {{-- Certificate management moved to CRM --}}
-                    @if(request()->routeIs('admin.dashboard'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admin</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
-                    </li>
+                    @if(auth()->user()?->role === 'admin' && !request()->routeIs('admin.dashboard'))
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-medium text-primary d-flex align-items-center" href="{{ route('admin.dashboard') }}">
+                                <i class="bi bi-grid-1x2-fill me-2"></i> Module Hub
+                            </a>
+                        </li>
+                    @elseif(auth()->user()?->role === 'event_admin')
+                        @php
+                            $assignedId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                                ->where('user_id', auth()->id())
+                                ->value('event_id');
+                            $assignedEvent = $assignedId ? \App\Models\Event::find($assignedId) : null;
+                        @endphp
+                        @if($assignedEvent)
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-medium text-primary d-flex align-items-center"
+                               href="{{ route('admin.events.show', $assignedEvent) }}">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                {{ \Illuminate\Support\Str::limit($assignedEvent->title, 30) }}
+                            </a>
+                        </li>
+                        @endif
                     @endif
-                    @unless(request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*') || request()->routeIs('admin.reports'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.crm.*') ? 'active' : '' }}" href="{{ route('admin.crm.dashboard') }}">CRM</a>
-                    </li>
-                    @endunless
                 </ul>
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
                     <li class="nav-item dropdown">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
+                        <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
                                 <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                             </span>
-                            <span class="d-none d-lg-inline user-name small fw-semibold">{{ $user?->name ?? 'Admin' }}</span>
+                            <span class="d-none d-lg-inline user-name small fw-semibold text-dark">{{ $user?->name ?? 'Admin' }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow profile-dropdown" aria-labelledby="adminProfileDropdown">
                             <li class="d-flex justify-content-end align-items-center pt-2 px-2">
@@ -81,7 +85,10 @@
                             <li>
                                 <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="m-0">
                                     @csrf
-                                    <button type="button" id="logoutTrigger" class="dropdown-item small text-danger">
+                                    <button type="button" id="logoutTrigger"
+                                        class="dropdown-item small text-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmLogoutModal">
                                         <i class="bi bi-box-arrow-right me-1"></i>Logout
                                     </button>
                                 </form>
@@ -115,7 +122,8 @@
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
                             <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
+                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn"
+                                onclick="document.getElementById('logoutForm').submit();">
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                             </button>
@@ -132,11 +140,13 @@
         @yield('content')
     </div>
 
-    @if($isSpecialPage)
     <style>
-        body { padding-top: 0 !important; }
+        body { padding-top: 64px !important; }
+        @if($isSpecialPage)
+            /* Special pages might handle their own padding if needed, but for now we enforce the top offset for the fixed navbar */
+            .container-fluid.p-0 { padding-top: 0 !important; } 
+        @endif
     </style>
-    @endif
     
     
     <script>
@@ -250,34 +260,78 @@
         }, 100);
 
         window.addEventListener('load', initAdminNavbar);
-    });
+
 
         
         // Inactivity auto-logout (idle timeout)
         try {
-            const logoutFormEl = document.getElementById('logoutForm');
-            // Adjust minutes as needed; defaults to 30 minutes
-            const IDLE_MINUTES = 30;
+            const IDLE_MINUTES = {{ (int) config('session.lifetime', 120) }};
+            const WARN_BEFORE_S = 60;
             const EVENTS = ['click','mousemove','keydown','scroll','touchstart','touchmove'];
-            let idleTimer;
-            const resetIdle = function(){
-                if(idleTimer) clearTimeout(idleTimer);
-                idleTimer = setTimeout(function(){
-                    // Prefer graceful modal if present; otherwise submit directly
-                    if (logoutFormEl) {
-                        try {
-                            // If confirmation modal exists, bypass UI and submit
-                            logoutFormEl.submit();
-                        } catch(e){ /* noop */ }
-                    }
-                }, IDLE_MINUTES * 60 * 1000);
-            };
+            let idleTimer, warnTimer, countdownInterval;
+            let idleWarned = false;
+
+            // Create warning modal dynamically
+            const idleModal = document.createElement('div');
+            idleModal.id = 'adminIdleModal';
+            idleModal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;';
+            idleModal.innerHTML = `
+                <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+                    <div style="font-size:2.5rem;margin-bottom:12px;">⏱️</div>
+                    <h5 style="font-weight:700;margin-bottom:8px;">Session Expiring Soon</h5>
+                    <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">You have been inactive. You will be logged out in <strong id="adminIdleCountdown">60</strong> seconds.</p>
+                    <div style="display:flex;gap:12px;justify-content:center;">
+                        <button id="adminIdleStayBtn" style="flex:1;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Stay Logged In</button>
+                        <button onclick="document.getElementById('logoutForm')?.submit()" style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Logout Now</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(idleModal);
+
+            const cdEl = document.getElementById('adminIdleCountdown');
+            const stayBtn = document.getElementById('adminIdleStayBtn');
+
+            function doAdminLogout(){ document.getElementById('logoutForm')?.submit(); }
+
+            function startAdminCountdown(){
+                let secs = WARN_BEFORE_S;
+                cdEl && (cdEl.textContent = secs);
+                countdownInterval = setInterval(function(){
+                    secs--;
+                    cdEl && (cdEl.textContent = secs);
+                    if (secs <= 0){ clearInterval(countdownInterval); doAdminLogout(); }
+                }, 1000);
+            }
+
+            function showAdminWarning(){
+                idleWarned = true;
+                idleModal.style.display = 'flex';
+                startAdminCountdown();
+            }
+
+            function hideAdminWarning(){
+                idleModal.style.display = 'none';
+                clearInterval(countdownInterval);
+                idleWarned = false;
+            }
+
+            stayBtn && stayBtn.addEventListener('click', function(){ resetAdminIdle(); });
+
+            function resetAdminIdle(){
+                clearTimeout(idleTimer);
+                clearTimeout(warnTimer);
+                hideAdminWarning();
+                const totalMs = IDLE_MINUTES * 60 * 1000;
+                const warnMs  = totalMs - (WARN_BEFORE_S * 1000);
+                warnTimer = setTimeout(showAdminWarning, warnMs > 0 ? warnMs : totalMs);
+                idleTimer = setTimeout(doAdminLogout, totalMs);
+            }
+
             EVENTS.forEach(function(evt){
-                window.addEventListener(evt, resetIdle, { passive: true });
+                window.addEventListener(evt, resetAdminIdle, { passive: true });
             });
-            resetIdle();
+            resetAdminIdle();
         } catch(e){ /* noop */ }
-        });
+    });
     </script>
     <style>
     .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
@@ -334,6 +388,8 @@
     .notification.show { transform: translateY(0) scale(1); opacity:1; }
     .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
     .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+    .notification.info { background: linear-gradient(90deg,#2563eb,#60a5fa); }
+    .notification.warning { background: linear-gradient(90deg,#d97706,#fbbf24); }
     .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; line-height:1.4; }
     .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); flex-shrink:0; padding:0; line-height:1; }
     /* Body padding to prevent content from hiding under fixed navbar */
@@ -373,7 +429,7 @@
     @keyframes draw-check { to { stroke-dashoffset:0; } }
     </style>
 
-    @if(session('success') || session('login_success') || session('error'))
+    @if(session('success') || session('login_success') || session('error') || session('info') || session('warning') || $errors->any())
         <div id="globalNotifications" class="global-notification" aria-live="polite" aria-atomic="true">
             @if(session('login_success'))
                 <div class="notification success" role="status" data-timeout="4200">
@@ -389,6 +445,31 @@
             @if(session('error'))
                 <div class="notification error" role="status" data-timeout="6000">
                     <div class="notif-message"><i class="bi bi-x-circle-fill me-2"></i>{{ session('error') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if(session('info'))
+                <div class="notification info" role="status" data-timeout="4500">
+                    <div class="notif-message"><i class="bi bi-info-circle-fill me-2"></i>{{ session('info') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if(session('warning'))
+                <div class="notification warning" role="status" data-timeout="5000">
+                    <div class="notif-message"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('warning') }}</div>
+                    <button class="notif-close" aria-label="Close">&times;</button>
+                </div>
+            @endif
+            @if($errors->any())
+                <div class="notification error" role="status" data-timeout="7000">
+                    <div class="notif-message">
+                        <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Terdapat kesalahan:</div>
+                        <ul class="mb-0 ps-3 small">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
                     <button class="notif-close" aria-label="Close">&times;</button>
                 </div>
             @endif
@@ -415,7 +496,11 @@
     // Programmatic API for the new notification banner (replaces legacy Bootstrap toasts)
     window.adminNotify = function(type, message, timeout){
         try {
-            const kind = (type === 'error') ? 'error' : 'success';
+            let kind = 'success';
+            if (type === 'error') kind = 'error';
+            else if (type === 'info') kind = 'info';
+            else if (type === 'warning') kind = 'warning';
+
             const text = (message == null) ? '' : String(message);
             const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
 
@@ -436,7 +521,16 @@
 
             const msg = document.createElement('div');
             msg.className = 'notif-message';
-            msg.textContent = text;
+            
+            let iconHtml = '<i class="bi bi-check-circle-fill me-2"></i>';
+            if (kind === 'error') {
+                iconHtml = '<i class="bi bi-x-circle-fill me-2"></i>';
+            } else if (kind === 'info') {
+                iconHtml = '<i class="bi bi-info-circle-fill me-2"></i>';
+            } else if (kind === 'warning') {
+                iconHtml = '<i class="bi bi-exclamation-triangle-fill me-2"></i>';
+            }
+            msg.innerHTML = iconHtml + text;
 
             const close = document.createElement('button');
             close.className = 'notif-close';
@@ -457,5 +551,7 @@
     </script>
 
     @yield('scripts')
+    @stack('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

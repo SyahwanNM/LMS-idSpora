@@ -34,9 +34,17 @@ class CertificateController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $courses = Course::withCount('enrollments')
+        $courses = Course::withCount([
+                'enrollments', 
+                'enrollments as completed_enrollments_count' => function($query) {
+                    $query->where('status', 'completed');
+                }
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        // \Illuminate\Support\Facades\Log::info('CertificateController@index - Events count: ' . $events->count());
+        // \Illuminate\Support\Facades\Log::info('CertificateController@index - Courses count: ' . $courses->count());
 
         return view('admin.certificates.index', compact('events', 'courses', 'tab'));
     }

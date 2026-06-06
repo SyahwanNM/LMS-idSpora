@@ -49,6 +49,10 @@ class User extends Authenticatable
         'referral_code',
         'wallet_balance',
         'referrer_id',
+        'trainer_skills',
+        'trainer_experiences',
+        'trainer_educations',
+        'trainer_certifications',
     ];
 
     /**
@@ -80,12 +84,49 @@ class User extends Authenticatable
             'consecutive_expired_invitations' => 'integer',
             'consecutive_late_uploads' => 'integer',
             'last_teaching_at' => 'datetime',
+            'trainer_skills' => 'array',
+            'trainer_experiences' => 'array',
+            'trainer_educations' => 'array',
+            'trainer_certifications' => 'array',
         ];
     }
 
     public function eventRegistrations()
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    /**
+     * Check if this user is a full admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if this user is an event_admin for a given event.
+     */
+    public function isEventAdmin(int $eventId): bool
+    {
+        if ($this->role === 'admin') return true;
+        if ($this->role !== 'event_admin') return false;
+        return \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+            ->where('user_id', $this->id)
+            ->where('event_id', $eventId)
+            ->exists();
+    }
+
+    /**
+     * Get all event IDs this event_admin is assigned to.
+     */
+    public function assignedEventIds(): array
+    {
+        if ($this->role === 'admin') return []; // admin has access to all
+        return \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+            ->where('user_id', $this->id)
+            ->pluck('event_id')
+            ->toArray();
     }
 
     public function savedEvents()

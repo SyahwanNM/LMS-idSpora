@@ -3,23 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-
 use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\ManualPayment;
 use App\Models\PaymentProof;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class ManualPaymentController extends Controller
 {
     public function register(Request $request, Event $event)
     {
         $user = $request->user();
-        if(!$user){ return redirect()->back()->with('error','Harap login terlebih dahulu.'); }
+        if (!$user) {
+            return redirect()->back()->with('error', 'Harap login terlebih dahulu.');
+        }
 
-        // If event is free, redirect to normal register
-        // Resolve price based on attendance_type for hybrid events
+        $paymentMethod = $request->input('payment_method', 'midtrans');
+
+        // Resolve price
         $attendanceType = strtolower(trim((string) $request->input('attendance_type', 'offline')));
         $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link)
                           && ($event->price_offline > 0 || $event->price_online > 0);
@@ -30,89 +33,115 @@ class ManualPaymentController extends Controller
                            : (float) ($event->price_offline ?? 0);
             $discountPct = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
                            ? (float) ($event->discount_percentage ?? 0) : 0.0;
-            $finalPrice  = $discountPct > 0
-                           ? round($rawPrice * (1 - $discountPct / 100), 2)
-                           : $rawPrice;
+            $finalPrice  = $discountPct > 0 ? round($rawPrice * (1 - $discountPct / 100), 2) : $rawPrice;
         } else {
-            $finalPrice = method_exists($event,'hasDiscount') && $event->hasDiscount()
+            $finalPrice = method_exists($event, 'hasDiscount') && $event->hasDiscount()
                           ? ($event->discounted_price ?? $event->price)
                           : ($event->price ?? 0);
         }
 
-        $isFree = (int)$finalPrice <= 0;
-        // If free, call existing register endpoint behavior
-        if($isFree){
+        $isFree = (int) $finalPrice <= 0;
+
+        // Free event → register immediately
+        if ($isFree) {
             return app(\App\Http\Controllers\Admin\EventController::class)->register($request, $event);
         }
 
-        // Validate upload
-        $request->validate([ 'payment_proof' => 'nullable|image|mimes:jpg,jpeg,png|max:5120' ]);
-
-        // Create or update pending registration
-        $existing = EventRegistration::where('user_id', $user->id)->where('event_id', $event->id)->first();
-
-        if (!$existing) {
-            $existing = EventRegistration::create([
-                'user_id' => $user->id,
-                'event_id' => $event->id,
-                'status' => 'pending',
-                'registration_code' => 'EVT-'.strtoupper(uniqid()),
-                'total_price' => $finalPrice,
-            ]);
-            $msg = 'Pendaftaran terkirim; menunggu verifikasi admin.';
-        } else {
-            $existing->update([
-                'status' => 'pending',
-                'total_price' => $finalPrice,
-            ]);
-            $msg = 'Bukti pembayaran diperbarui; menunggu verifikasi admin.';
+        // Midtrans → not handled here
+        if ($paymentMethod === 'midtrans') {
+            return redirect()->back()->with('error', 'Gunakan tombol Pay with Midtrans untuk pembayaran online.');
         }
 
-        // Find existing pending or rejected manual payment
-        $manual = ManualPayment::where('event_registration_id', $existing->id)
-            ->whereIn('status', ['pending', 'rejected'])
-            ->orderBy('id', 'desc')
-            ->first();
+        // ── Transfer Rekening ──────────────────────────────────────
+        $request->validate([
+            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,webp|max:1024',
+        ], [
+            'payment_proof.required' => 'Bukti transfer wajib diupload.',
+            'payment_proof.max'      => 'Ukuran file maksimal 1 MB.',
+            'payment_proof.mimes'    => 'Format file harus JPG, PNG, atau WebP.',
+        ]);
 
-        if (!$manual) {
-            $manual = new ManualPayment();
-            $manual->order_id = 'MP-' . strtoupper(uniqid());
-        }
+        // Sync profile fields
+        $profileUpdates = [];
+        $fullName = $request->input('full_name') ?: $user->name;
+        $email    = $request->input('email')     ?: $user->email;
+        $phone    = $request->input('whatsapp')  ?: $user->phone;
+        if ($fullName !== $user->name)  $profileUpdates['name']  = $fullName;
+        if ($email    !== $user->email) $profileUpdates['email'] = $email;
+        if ($phone    !== $user->phone) $profileUpdates['phone'] = $phone;
+        if (!empty($profileUpdates)) { $user->update($profileUpdates); $user->refresh(); }
 
-        $manual->fill([
-            'event_id' => $event->id,
-            'event_registration_id' => $existing->id,
-            'user_id' => $user->id,
-            'amount' => $finalPrice,
-            'currency' => 'IDR',
-            'method' => 'qris',
-            'status' => 'pending',
-            'referral_code' => $request->input('referral_code'),
-            'metadata' => array_merge((array) ($manual->metadata ?? []), [
-                'attendance_type' => $attendanceType,
-                'source' => 'event',
-            ]),
-        ])->save();
+        DB::beginTransaction();
+        try {
+            // Create or reset registration
+            $registration = EventRegistration::where('user_id', $user->id)
+                ->where('event_id', $event->id)->first();
 
-        if ($request->hasFile('payment_proof')) {
+            $orderId = 'TRF-' . $user->id . '-' . $event->id . '-' . time();
+
+            if (!$registration) {
+                $registration = EventRegistration::create([
+                    'user_id'           => $user->id,
+                    'event_id'          => $event->id,
+                    'status'            => 'pending',
+                    'registration_code' => $orderId,
+                    'total_price'       => $finalPrice,
+                ]);
+            } else {
+                $registration->update([
+                    'status'      => 'pending',
+                    'total_price' => $finalPrice,
+                    'rejection_reason' => null,
+                ]);
+            }
+
+            // Store proof file
             $file = $request->file('payment_proof');
-            $path = $file->store('payments', 'public');
+            $path = $file->store('payments/transfer', 'public');
 
-            // store proof record
+            $registration->update(['payment_proof' => $path]);
+
+            // ManualPayment trace
+            $manual = ManualPayment::where('event_registration_id', $registration->id)
+                ->whereIn('status', ['pending', 'rejected'])->latest()->first();
+
+            if (!$manual) {
+                $manual = new ManualPayment();
+                $manual->order_id = $orderId;
+            }
+
+            $manual->fill([
+                'event_id'              => $event->id,
+                'event_registration_id' => $registration->id,
+                'user_id'               => $user->id,
+                'amount'                => $finalPrice,
+                'currency'              => 'IDR',
+                'method'                => 'manual_transfer',
+                'status'                => 'pending',
+                'metadata'              => array_merge((array) ($manual->metadata ?? []), [
+                    'source'          => 'event',
+                    'payment_method'  => 'transfer',
+                    'attendance_type' => $attendanceType,
+                ]),
+            ])->save();
+
+            // PaymentProof record
             PaymentProof::create([
-                'manual_payment_id' => $manual->id,
-                'event_registration_id' => $existing->id,
-                'file_path' => $path,
-                'mime_type' => $file->getClientMimeType(),
-                'file_size' => $file->getSize(),
-                'uploaded_by' => $user->id,
+                'manual_payment_id'      => $manual->id,
+                'event_registration_id'  => $registration->id,
+                'file_path'              => $path,
+                'mime_type'              => $file->getClientMimeType(),
+                'file_size'              => $file->getSize(),
+                'uploaded_by'            => $user->id,
             ]);
 
-            // keep legacy field for admin UI convenience
-            $existing->payment_proof = $path;
-            $existing->save();
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal mengirim bukti pembayaran: ' . $e->getMessage());
         }
 
-        return redirect()->route('events.show', $event->id)->with('success', $msg);
+        return redirect()->route('events.show', $event->id)
+            ->with('success', 'Bukti transfer berhasil dikirim. Pendaftaran Anda sedang ditinjau oleh admin.');
     }
 }

@@ -81,6 +81,30 @@ class CRMController extends Controller
         ->limit(5)
         ->get();
 
+        // Satisfaction Data for Chart
+        $avgEventRating = Feedback::avg('rating') ?: 0;
+        $avgCourseRating = Review::avg('rating') ?: 0;
+        
+        $eventRatingDist = Feedback::select('rating', DB::raw('count(*) as count'))
+            ->groupBy('rating')
+            ->orderBy('rating', 'asc')
+            ->pluck('count', 'rating')
+            ->all();
+            
+        $courseRatingDist = Review::select('rating', DB::raw('count(*) as count'))
+            ->groupBy('rating')
+            ->orderBy('rating', 'asc')
+            ->pluck('count', 'rating')
+            ->all();
+
+        // Fill missing ratings (1-5) with 0
+        $eventRatingData = [];
+        $courseRatingData = [];
+        for($i = 1; $i <= 5; $i++) {
+            $eventRatingData[] = $eventRatingDist[$i] ?? 0;
+            $courseRatingData[] = $courseRatingDist[$i] ?? 0;
+        }
+
         return view('admin.crm.dashboard', compact(
             'totalCustomers',
             'totalResellers',
@@ -93,7 +117,11 @@ class CRMController extends Controller
             'topCustomers',
             'topEvents',
             'totalBroadcasts',
-            'totalCerts'
+            'totalCerts',
+            'avgEventRating',
+            'avgCourseRating',
+            'eventRatingData',
+            'courseRatingData'
         ));
     }
 
@@ -214,6 +242,39 @@ class CRMController extends Controller
         return redirect()->route('admin.crm.customers.show', $customer)
             ->with('success', 'Data customer berhasil diperbarui');
     }
+
+    /**
+     * Delete (destroy) a customer account permanently
+     */
+    public function destroyCustomer(User $customer)
+    {
+        // Only admin can access
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        // Prevent deleting admin accounts via this route
+        if($customer->role === 'admin'){
+            abort(403, 'Tidak dapat menghapus akun admin melalui halaman ini');
+        }
+
+        // Clean up local avatar file if it exists and is not an external URL
+        if($customer->avatar && !str_starts_with($customer->avatar, 'http')) {
+            $avatarPath = str_contains($customer->avatar, '/') 
+                ? ltrim($customer->avatar, '/') 
+                : ('avatars/' . $customer->avatar);
+            if(\Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($avatarPath);
+            }
+        }
+
+        $customerName = $customer->name;
+        $customer->delete();
+
+        return redirect()->route('admin.crm.customers.index')
+            ->with('success', "Akun user \"{$customerName}\" berhasil dihapus secara permanen.");
+    }
+
 
     /**
      * Display Feedback Analysis for Events and Courses
@@ -553,6 +614,7 @@ class CRMController extends Controller
             'message' => 'required|string',
             'segment' => 'required|in:all,reseller,trainer,no_event',
             'platform' => 'required|in:email,whatsapp,both',
+            'link' => 'nullable|string|max:255',
         ]);
 
         // Get target users based on segment
@@ -579,6 +641,7 @@ class CRMController extends Controller
             'message' => $request->message,
             'segment' => $request->segment,
             'platform' => $request->platform,
+            'link' => $request->link,
             'sender_id' => Auth::id(),
             'target_count' => $targetCount,
             'status' => 'sent'
@@ -600,7 +663,11 @@ class CRMController extends Controller
             // Send WhatsApp
             if ($request->platform == 'whatsapp' || $request->platform == 'both') {
                 if ($user->phone) {
-                    $this->sendWhatsApp($user->phone, $broadcast->message);
+                    $waMessage = $broadcast->message;
+                    $ctaLink = $broadcast->link ?: config('app.url');
+                    $waMessage .= "\n\n🌐 Kunjungi tautan berikut:\n" . $ctaLink;
+                    
+                    $this->sendWhatsApp($user->phone, $waMessage);
                 }
             }
         }

@@ -5,8 +5,8 @@
 @php
     $pageTitle = 'Event Studio';
     $breadcrumbs = [
-        ['label' => 'Home', 'url' => route('trainer.dashboard')],
-        ['label' => 'Events', 'url' => route('trainer.events')],
+        ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
+        ['label' => 'Acara', 'url' => route('trainer.events')],
         ['label' => 'Studio'],
     ];
 
@@ -52,16 +52,23 @@
         .studio-page {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-xl);
+            gap: 24px;
+        }
+
+        .studio-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 24px;
+            align-items: start;
         }
 
         .studio-hero {
-            background: linear-gradient(135deg, var(--main-navy-clr) 0%, var(--navy-dark) 100%);
-            border-radius: var(--radius-2xl);
-            padding: var(--spacing-3xl);
+            background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
+            border-radius: 24px;
+            padding: 40px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(27, 23, 99, 0.15);
+            /* box-shadow removed */
         }
 
         .studio-hero::before,
@@ -73,21 +80,22 @@
         }
 
         .studio-hero::before {
-            top: -80px;
-            right: -80px;
-            width: 192px;
-            height: 192px;
-            background: rgba(251, 191, 36, 0.1);
-            filter: blur(60px);
+            top: -50%;
+            left: -10%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99,102,241,0.25) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            filter: blur(40px);
         }
 
         .studio-hero::after {
-            bottom: -40px;
-            left: -40px;
-            width: 128px;
-            height: 128px;
-            background: rgba(99, 102, 241, 0.1);
-            filter: blur(50px);
+            bottom: -50%;
+            right: -10%;
+            width: 50%;
+            height: 150%;
+            background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(255,255,255,0) 70%);
+            filter: blur(40px);
         }
 
         .studio-hero-inner {
@@ -175,36 +183,44 @@
         }
 
         .status-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .status-card {
-            background: var(--white-clr);
-            border: 1px solid rgba(227, 233, 242, 0.95);
-            border-radius: 18px;
-            padding: 16px 18px;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(15, 23, 42, 0.08);
         }
 
         .status-card .icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, rgba(35, 29, 121, 0.08), rgba(212, 166, 47, 0.12));
-            color: var(--main-navy-clr);
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            color: #4338ca;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            /* box-shadow removed */
         }
 
         .status-card .icon i {
-            font-size: 18px;
+            font-size: 22px;
         }
 
         .status-card .label {
@@ -309,12 +325,13 @@
             border: 1px solid rgba(227, 233, 242, 0.95);
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.07);
+            /* box-shadow removed */
+            height: fit-content;
         }
 
         .panel-hero {
-            padding: 22px 24px;
-            background: linear-gradient(135deg, rgba(35, 29, 121, 0.98), rgba(42, 36, 140, 0.95));
+            padding: 24px 32px;
+            background: linear-gradient(135deg, #3f2a54, #51376c);
             color: var(--white-clr);
         }
 
@@ -348,7 +365,7 @@
         }
 
         .upload-panel {
-            padding: 22px 24px 24px;
+            padding: 32px;
         }
 
         .module-preview {
@@ -356,11 +373,12 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 16px;
-            padding: 18px 20px;
-            border-radius: 18px;
+            padding: 20px 24px;
+            border-radius: 20px;
             border: 1px solid #e5ebf5;
             background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 100%);
-            margin-bottom: 18px;
+            margin-bottom: 24px;
+            /* box-shadow removed */
         }
 
         .module-preview .meta-label {
@@ -393,7 +411,7 @@
             gap: 8px;
             padding: 12px 16px;
             border-radius: 12px;
-            background: #231d79;
+            background: #3f2a54;
             color: var(--white-clr);
             font-size: 13px;
             font-weight: 700;
@@ -596,29 +614,37 @@
         }
 
         .dropzone {
-            min-height: 280px;
-            border-radius: 20px;
-            border: 2px dashed #dfe6f2;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            min-height: 300px;
+            border-radius: 24px;
+            border: 2px dashed #cbd5e1;
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            gap: var(--spacing-sm);
+            gap: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 40px;
+            margin-top: 8px;
         }
 
         .dropzone:hover {
-            border-color: var(--main-navy-clr);
-            background: #f0f5fc;
+            border-color: #6366f1;
+            background: #eef2ff;
+            transform: scale(1.01);
         }
 
         .dropzone i {
-            font-size: 40px;
-            color: #c8d0de;
+            font-size: 48px;
+            color: #818cf8;
+            transition: transform 0.3s;
+        }
+
+        .dropzone:hover i {
+            transform: translateY(-8px);
         }
 
         .dropzone h2 {
@@ -653,24 +679,31 @@
 
         .primary-btn {
             border: none;
-            background: #231d79;
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: var(--white-clr);
-            padding: var(--spacing-sm) var(--spacing-lg);
-            border-radius: 12px;
-            font-size: var(--font-size-sm);
-            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 700;
             letter-spacing: 0.06em;
             display: inline-flex;
             align-items: center;
-            gap: var(--spacing-sm);
+            gap: 10px;
+            /* box-shadow removed */
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .primary-btn:hover {
+            /* box-shadow removed */
+            transform: translateY(-2px);
         }
 
         .primary-btn i {
-            color: var(--yellow-clr);
+            color: #a5b4fc;
         }
 
         .validation-card {
-            background: linear-gradient(180deg, #231d79 0%, #1c175f 100%);
+            background: linear-gradient(180deg, #3f2a54 0%, #3f2a54 100%);
             color: var(--white-clr);
             border-radius: 24px;
             padding: 22px;
@@ -893,7 +926,7 @@
             </section>
 
             @if($showEventRejectionReason)
-                <section class="status-banner" aria-label="Alasan revisi materi event">
+                <section class="status-banner" aria-label="Alasan revisi materi event" style="margin-bottom: 24px;">
                     <div class="icon"><i class="bi bi-exclamation-triangle"></i></div>
                     <div>
                         <p class="label">Alasan Revisi dari Admin</p>
@@ -902,74 +935,8 @@
                 </section>
             @endif
 
-            <section class="status-grid" aria-label="Ringkasan studio event">
-                <article class="status-card">
-                    <div class="icon"><i class="bi bi-calendar-event"></i></div>
-                    <div>
-                        <p class="label">{{ $deadlineLabel }}</p>
-                        <p class="value">{{ $deadline ? $deadline->format('d M Y H:i') : 'Tidak ada tenggat' }}</p>
-                        <p class="hint">{{ $deadlineHint }}</p>
-                    </div>
-                </article>
-
-                <article class="status-card">
-                    <div class="icon"><i class="bi bi-file-earmark-check"></i></div>
-                    <div>
-                        <p class="label">Status</p>
-                        @if($displayMaterialStatus !== 'draft')
-                            @php
-                                $badgeClass = match ($displayMaterialStatus) {
-                                    'approved' => 'approved',
-                                    'rejected' => 'rejected',
-                                    'pending_review' => 'pending',
-                                    'not_uploaded' => 'not-submitted',
-                                    default        => 'pending',
-                                };
-                                $statusIcon = match ($displayMaterialStatus) {
-                                    'approved' => '✓',
-                                    'rejected' => '✕',
-                                    'pending_review' => '⏳',
-                                    'not_uploaded' => '—',
-                                    default        => '📋',
-                                };
-                                $badgeLabel = match ($displayMaterialStatus) {
-                                    'approved' => 'Material Approved',
-                                    'rejected' => 'Revision Needed',
-                                    'pending_review' => 'In Review',
-                                    'not_uploaded' => 'Not Submitted',
-                                    default        => 'Submitted',
-                                };
-                            @endphp
-                            <span class="status-badge {{ $badgeClass }}">
-                                <span>{{ $statusIcon }}</span>
-                                <span>{{ $badgeLabel }}</span>
-                            </span>
-                        @else
-                            <p class="value">{{ $materialStatusLabel }}</p>
-                        @endif
-                        @if($displayMaterialStatus === 'draft')
-                            <p class="hint">Belum upload materi. Status review akan muncul setelah file berhasil dikirim.</p>
-                        @elseif($displayMaterialStatus === 'approved')
-                            <p class="hint">Materi Anda telah disetujui dan siap ditampilkan di event.</p>
-                        @elseif($displayMaterialStatus === 'rejected')
-                            <p class="hint">Silakan upload ulang dengan revisi yang diperlukan admin.</p>
-                        @elseif($displayMaterialStatus === 'pending_review')
-                            <p class="hint">Admin sedang mereview materi Anda. Harap menunggu notifikasi.</p>
-                        @endif
-                    </div>
-                </article>
-
-                <article class="status-card">
-                    <div class="icon"><i class="bi bi-info-circle"></i></div>
-                    <div>
-                        <p class="label">Format</p>
-                        <p class="value">PDF, MP4, PPTX, DOCX</p>
-                        <p class="hint">Gunakan format ini agar proses audit lebih cepat.</p>
-                    </div>
-                </article>
-            </section>
-
             <section class="studio-layout">
+                <!-- Left Column: Studio Panel -->
                 <div class="studio-panel">
                     <div class="panel-hero">
                         <div>
@@ -1038,8 +1005,8 @@
                                     <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
                                         style="display: none" />
                                     <i class="bi bi-cloud-arrow-up"></i>
-                                    <h2>Drop Event Assets Here</h2>
-                                    <p>SUPPORT: PDF, MP4, PPTX, DOCX</p>
+                                    <h2>Tarik Aset Acara ke Sini</h2>
+                                    <p>DUKUNGAN: PDF, MP4, PPTX, DOCX</p>
                                     <p style="font-size: 12px; color: #999; margin-top: 8px">
                                         atau klik untuk memilih 1 file materi
                                     </p>
@@ -1068,6 +1035,74 @@
                         @endif
                     </div>
                 </div>
+                
+                <!-- Right Column: Status Grid -->
+                <aside class="status-grid" aria-label="Ringkasan studio event">
+                    <article class="status-card">
+                        <div class="icon"><i class="bi bi-calendar-event"></i></div>
+                        <div>
+                            <p class="label">{{ $deadlineLabel }}</p>
+                            <p class="value">{{ $deadline ? $deadline->format('d M Y H:i') : 'Tidak ada tenggat' }}</p>
+                            <p class="hint">{{ $deadlineHint }}</p>
+                        </div>
+                    </article>
+
+                    <article class="status-card">
+                        <div class="icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #b45309;"><i class="bi bi-file-earmark-check"></i></div>
+                        <div>
+                            <p class="label">Status</p>
+                            @if($displayMaterialStatus !== 'draft')
+                                @php
+                                    $badgeClass = match ($displayMaterialStatus) {
+                                        'approved' => 'approved',
+                                        'rejected' => 'rejected',
+                                        'pending_review' => 'pending',
+                                        'not_uploaded' => 'not-submitted',
+                                        default        => 'pending',
+                                    };
+                                    $statusIcon = match ($displayMaterialStatus) {
+                                        'approved' => '✓',
+                                        'rejected' => '✕',
+                                        'pending_review' => '⏳',
+                                        'not_uploaded' => '—',
+                                        default        => '📋',
+                                    };
+                                    $badgeLabel = match ($displayMaterialStatus) {
+                                        'approved' => 'Materi Disetujui',
+                                        'rejected' => 'Perlu Revisi',
+                                        'pending_review' => 'Sedang Direview',
+                                        'not_uploaded' => 'Belum Dikirim',
+                                        default        => 'Terkirim',
+                                    };
+                                @endphp
+                                <span class="status-badge {{ $badgeClass }}">
+                                    <span>{{ $statusIcon }}</span>
+                                    <span>{{ $badgeLabel }}</span>
+                                </span>
+                            @else
+                                <p class="value">{{ $materialStatusLabel }}</p>
+                            @endif
+                            @if($displayMaterialStatus === 'draft')
+                                <p class="hint">Belum upload materi. Status review akan muncul setelah file berhasil dikirim.</p>
+                            @elseif($displayMaterialStatus === 'approved')
+                                <p class="hint">Materi Anda telah disetujui dan siap ditampilkan di event.</p>
+                            @elseif($displayMaterialStatus === 'rejected')
+                                <p class="hint">Silakan upload ulang dengan revisi yang diperlukan admin.</p>
+                            @elseif($displayMaterialStatus === 'pending_review')
+                                <p class="hint">Admin sedang mereview materi Anda. Harap menunggu notifikasi.</p>
+                            @endif
+                        </div>
+                    </article>
+
+                    <article class="status-card">
+                        <div class="icon" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0369a1;"><i class="bi bi-info-circle"></i></div>
+                        <div>
+                            <p class="label">Format</p>
+                            <p class="value">PDF, MP4, PPTX, DOCX</p>
+                            <p class="hint">Gunakan format ini agar proses audit lebih cepat.</p>
+                        </div>
+                    </article>
+                </aside>
             </section>
         </div>
     </main>
@@ -1165,7 +1200,7 @@
 
                 dropzone.addEventListener("dragover", (e) => {
                     e.preventDefault();
-                    dropzone.style.borderColor = "#1a237e";
+                    dropzone.style.borderColor = "#3c2957";
                     dropzone.style.backgroundColor = "#e0e7ff";
                 });
 
@@ -1225,7 +1260,7 @@
                     e.preventDefault();
 
                     if (uploadedFiles.length === 0) {
-                        alert('Silakan pilih file terlebih dahulu sebelum submit.');
+                        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih file terlebih dahulu sebelum submit.' });
                         return;
                     }
 
@@ -1237,7 +1272,7 @@
 
                     if (invalidFiles.length > 0) {
                         const names = invalidFiles.map((f) => f.name).join(', ');
-                        alert('File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.');
+                        Swal.fire({ icon: 'error', title: 'Gagal', text: 'File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.' });
                         return;
                     }
 
@@ -1275,7 +1310,7 @@
                             }, 1200);
                         })
                         .catch(error => {
-                            alert('Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.'));
+                            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.') });
                         })
                         .finally(() => {
                             submitBtn.disabled = false;
@@ -1286,3 +1321,4 @@
         </script>
     @endif
 @endsection
+

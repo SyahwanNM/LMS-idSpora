@@ -10,6 +10,8 @@ use App\Models\Referral;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PaymentInvoiceMail;
 
 class CoursePaymentController extends Controller
 {
@@ -126,10 +128,30 @@ class CoursePaymentController extends Controller
 
             DB::commit();
 
+            // Send invoice email (best-effort)
+            try {
+                $invoiceUser = $coursePayment->user;
+                if ($invoiceUser && !empty($invoiceUser->email)) {
+                    $invoiceNumber = 'INV-CRS-' . strtoupper(substr(md5($coursePayment->id . $course->id . now()), 0, 8));
+                    Mail::to($invoiceUser->email)->send(new PaymentInvoiceMail(
+                        invoiceNumber: $invoiceNumber,
+                        userName:      (string) ($invoiceUser->name ?? 'User'),
+                        userEmail:     (string) ($invoiceUser->email),
+                        itemType:      'course',
+                        itemTitle:     (string) ($course->name ?? 'Course'),
+                        amount:        (float)  ($coursePayment->amount ?? 0),
+                        paymentMethod: (string) ($coursePayment->method ?? 'manual_transfer'),
+                        paidAt:        now()->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
+                        orderId:       (string) ($coursePayment->order_id ?? '-'),
+                    ));
+                }
+            } catch (\Throwable $e) { /* ignore invoice mail errors */
+            }
+
             return response()->json([
-                'status' => 'success',
-                'message' => 'Pembayaran course berhasil di-approve',
-                'data' => $coursePayment->fresh()->load(['user', 'course', 'proofs', 'enrollment']),
+                'status'  => 'success',
+                'message' => 'Pembayaran course berhasil di-approve dan invoice dikirim ke email user',
+                'data'    => $coursePayment->fresh()->load(['user', 'course', 'proofs', 'enrollment']),
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();

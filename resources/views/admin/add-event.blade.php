@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
@@ -107,6 +107,17 @@
                             @foreach($events as $event)
                             @php $rowPct = $event->documents_completion_percent; @endphp
                             @php
+                                // Hitung rowPct konsisten dengan logika blade
+                                $rowHasMaps = !empty($event->maps_url);
+                                $rowHasZoom = !empty($event->zoom_link);
+                                $rowRequiresVbg = !($rowHasMaps && !$rowHasZoom); // VBG wajib kecuali offline-only
+                                $rowTotal = $rowRequiresVbg ? 3 : 2;
+                                $rowDone  = ($rowRequiresVbg ? (!empty($event->vbg_path) ? 1 : 0) : 0)
+                                          + (!empty($event->module_path) ? 1 : 0)
+                                          + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token)) ? 1 : 0);
+                                $rowPct = $rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 0;
+                            @endphp
+                            @php
                                 // Tentukan status event: upcoming, ongoing, finished berdasarkan tanggal mulai/selesai
                                 $start = !empty($event->start_date) ? \Carbon\Carbon::parse($event->start_date) : (!empty($event->event_date) ? \Carbon\Carbon::parse($event->event_date) : null);
                                 $end = !empty($event->end_date) ? \Carbon\Carbon::parse($event->end_date) : $start;
@@ -165,29 +176,28 @@
                                
                                 <td>
                                     @php 
-                                        $pct = $event->documents_completion_percent; 
                                         $hasMapsLink = !empty($event->maps_url);
                                         $hasZoomLink = !empty($event->zoom_link);
                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                                        $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                         $hasVbg = !empty($event->vbg_path);
                                         $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
                                         $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
-                                        // Absensi dianggap selesai jika ada file atau QR sudah aktif
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                        // Tooltip ringkas
-                                        $tooltip = $isOfflineOnly
-                                            ? 'Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
-                                            : 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
+                                        $totalDisplay = $requiresVbg ? 3 : 2;
+                                        $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        $pct = $totalDisplay > 0
+                                            ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                            : 0;
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        $totalDisplay = $isOfflineOnly ? 2 : 3;
-                                        // Tampilkan count UI (offline: tanpa VBG)
-                                        $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                        // Determine missing items for publish confirmation
+                                        $tooltip = $requiresVbg
+                                            ? 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
+                                            : 'Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
                                         $missing = [];
-                                        if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+                                        if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
                                         if (!$hasModule) $missing[] = 'Module (Trainer)';
                                         if (!$hasAbs) $missing[] = 'Absensi';
                                     @endphp
@@ -546,18 +556,19 @@
                                     $hasMapsLink = !empty($event->maps_url);
                                     $hasZoomLink = !empty($event->zoom_link);
                                     $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-                                    $requiresVbg = !$isOfflineOnly;
+                                    $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                     $hasVbg = !empty($event->vbg_path);
                                     $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
                                     $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
-                                    // Absensi: selesai jika file atau QR aktif
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
                                     $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                    $totalDisplay = $isOfflineOnly ? 2 : 3;
-                                    $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0)) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                    $pct = $event->documents_completion_percent;
+                                    $totalDisplay = $requiresVbg ? 3 : 2;
+                                    $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                    $pct = $totalDisplay > 0
+                                        ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                        : 0;
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -836,6 +847,14 @@
                                     <div class="form-text">Fill in the start time (required). End time is optional.</div>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label fw-semibold">Event Until (Custom End Deadline) <span class="text-muted small">(Optional)</span></label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="date" name="event_until_date" class="form-control" value="{{ old('event_until_date') }}" placeholder="YYYY-MM-DD">
+                                        <input type="time" name="event_until_time" class="form-control" value="{{ old('event_until_time') }}" placeholder="00:00">
+                                    </div>
+                                    <div class="form-text">Set a custom deadline after which the event is considered finished. Default: event date + end time. Minimum: one day after event date.</div>
+                                </div>
+                                <div class="mb-3">
                                     <label for="lokasi" class="form-label fw-semibold">Type of Implementation <span class="text-danger">*</span></label>
                                     @php
                                         $oldMode = old('location_mode');
@@ -894,6 +913,11 @@
                                     <label for="discount_until" class="form-label fw-semibold">Discount Period</label>
                                     <input type="date" name="discount_until" id="discount_until" class="form-control js-discount-date" value="{{ old('discount_until') }}" disabled>
                                     <small class="text-muted d-block mt-1">Must be before the event date (excluding the event day).</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="max_participants" class="form-label fw-semibold">Participant Quota</label>
+                                    <input type="number" name="max_participants" id="max_participants" class="form-control" min="1" step="1" value="{{ old('max_participants') }}" placeholder="Leave empty for unlimited">
+                                    <div class="form-text">Maximum number of participants. Leave empty for unlimited seats.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="benefit" class="form-label fw-semibold">Benefit <span class="text-muted">(Optional)</span></label>
@@ -1910,42 +1934,54 @@
             const n = Math.max(0, parseInt(num||0,10));
             return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
         }
+
+        // Helper: returns true if any active price field has value > 0
+        function hasAnyPrice() {
+            const isHybridMode = document.getElementById('price-hybrid-wrap') &&
+                                 !document.getElementById('price-hybrid-wrap').classList.contains('d-none');
+            if (isHybridMode) {
+                const offline = unformatNumber(document.getElementById('hargaOfflineDisplay')?.value || '0');
+                const online  = unformatNumber(document.getElementById('hargaOnlineDisplay')?.value  || '0');
+                return offline > 0 || online > 0;
+            }
+            return unformatNumber(document.getElementById('hargaDisplay')?.value || '0') > 0;
+        }
+
+        // Enable/disable discount input — callable from anywhere
+        function syncDiscountEnabled() {
+            const diskonInput = document.getElementById('diskon');
+            const discountUntilInput = document.getElementById('discount_until');
+            const priceExists = hasAnyPrice();
+            if (diskonInput) {
+                if (!priceExists) {
+                    diskonInput.value = 0;
+                    diskonInput.disabled = true;
+                } else {
+                    diskonInput.disabled = false;
+                }
+            }
+            if (discountUntilInput) {
+                const fpInst = discountUntilInput._flatpickr;
+                if (!priceExists) {
+                    discountUntilInput.disabled = true;
+                    discountUntilInput.value = '';
+                    if (fpInst) { fpInst.clear(); if (fpInst.altInput) fpInst.altInput.disabled = true; }
+                } else {
+                    const perc = parseInt((diskonInput?.value) || '0', 10);
+                    discountUntilInput.disabled = perc === 0;
+                    if (fpInst && fpInst.altInput) fpInst.altInput.disabled = perc === 0;
+                }
+            }
+        }
+
         if (hargaDisplay && hargaHidden && statusHarga) {
             const updateStatus = () => {
                 const val = unformatNumber(hargaDisplay.value);
-                hargaHidden.value = val; // keep hidden in sync
-                hargaDisplay.value = formatThousands(val); // ensure formatting
+                hargaHidden.value = val;
+                hargaDisplay.value = formatThousands(val);
                 statusHarga.textContent = val === 0 ? 'Free' : 'Paid';
                 statusHarga.className = 'badge ' + (val === 0 ? 'bg-success' : 'bg-primary');
-                // Disable discount fields when price is 0
-                const diskonInput = document.getElementById('diskon');
-                const discountUntilInput = document.getElementById('discount_until');
-                if(diskonInput){
-                    if(val === 0){
-                        diskonInput.value = 0;
-                        diskonInput.disabled = true;
-                    } else {
-                        diskonInput.disabled = false; // re-enable; further logic handled by its own toggle
-                    }
-                }
-                if(discountUntilInput){
-                    const fpInst = discountUntilInput._flatpickr;
-                    if(val === 0){
-                        discountUntilInput.disabled = true;
-                        discountUntilInput.value = '';
-                        if(fpInst){
-                            fpInst.clear();
-                            if(fpInst.altInput) fpInst.altInput.disabled = true;
-                        }
-                    } else {
-                        // Re-enable base input; actual enable depends on diskon > 0
-                        if(fpInst && fpInst.altInput){
-                            // altInput stays disabled until diskon > 0; will be toggled elsewhere
-                            fpInst.altInput.disabled = parseInt((diskonInput?.value)||'0',10) === 0;
-                        }
-                        discountUntilInput.disabled = parseInt((diskonInput?.value)||'0',10) === 0;
-                    }
-                }
+                syncDiscountEnabled();
             };
             // Block non digit (except control keys) and live format
             hargaDisplay.addEventListener('keydown', (e) => {
@@ -1982,8 +2018,11 @@
                     if (!/\d/.test(e.key)) e.preventDefault();
                 });
                 disp.addEventListener('input', sync);
-                sync();
-            });
+                // Trigger discount enable/disable check when hybrid price changes
+                disp.addEventListener('input', function() {
+                    syncDiscountEnabled();
+                });
+                sync();            });
         })();
 
         // Enable/disable discount_until based on diskon value

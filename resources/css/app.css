@@ -1,13 +1,5 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
-@import './trainer/main.css';
-@import './trainer/events.css';
-@import './trainer/course.css';
-@import './trainer/detail-course.css';
-@import './trainer/detail-event.css';
-@import './trainer/dashboard.css';
-@import './trainer/feedback.css';
-
 :root {
     /* Brand Colors - Purple & Yellow Theme */
     --primary: #6d28d9;
@@ -2513,7 +2505,6 @@ label {
 .text-danger {
     width: 190px;
     font-size: medium;
-    display: flex;
 }
 
 .diskon {
