@@ -243,7 +243,7 @@
 
             <form action="{{ route('new-password.reset') }}" method="post">
                 @csrf
-                <input type="hidden" name="token" value="{{ session('token') ?? request('token') }}">
+                <input type="hidden" name="token" value="{{ old('token', session('token') ?? request('token')) }}">
                 
                 <div class="mb-3">
                     <h6>Password Baru</h6>

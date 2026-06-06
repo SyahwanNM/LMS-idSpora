@@ -42,6 +42,67 @@ class CourseController extends Controller
     }
 
     /**
+     * Mark a video module as watching (called via AJAX when user clicks play).
+     * Sets video_watched = true but NOT completed yet.
+     */
+    public function markModuleWatching(Request $request, Course $course, CourseModule $module)
+    {
+        $user = $request->user();
+        if (!$user) return response()->json(['ok' => false], 401);
+
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed', 'expired'])
+            ->first();
+
+        if (!$enrollment) return response()->json(['ok' => false], 403);
+
+        if (strtolower(trim((string)($module->type ?? ''))) !== 'video') {
+            return response()->json(['ok' => false], 422);
+        }
+
+        Progress::query()->updateOrCreate(
+            ['enrollment_id' => $enrollment->id, 'course_module_id' => $module->id],
+            ['video_watched' => true, 'completed' => false]
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Mark a video/pdf module as completed (called via AJAX when video ends or PDF is viewed).
+     */
+    public function markModuleComplete(Request $request, Course $course, CourseModule $module)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['ok' => false], 401);
+        }
+
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed', 'expired'])
+            ->first();
+
+        if (!$enrollment) {
+            return response()->json(['ok' => false, 'message' => 'Not enrolled'], 403);
+        }
+
+        // Only allow marking pdf/video modules (quiz completion is handled separately)
+        $moduleType = strtolower(trim((string) ($module->type ?? '')));
+        if (!in_array($moduleType, ['pdf', 'video'], true)) {
+            return response()->json(['ok' => false, 'message' => 'Invalid module type'], 422);
+        }
+
+        Progress::query()->updateOrCreate(
+            ['enrollment_id' => $enrollment->id, 'course_module_id' => $module->id],
+            ['completed' => true, 'video_watched' => true]
+        );
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
      * Show the learning page for an enrolled/purchased course.
      */
     public function learn(Request $request, Course $course)
@@ -53,7 +114,7 @@ class CourseController extends Controller
             ->where('course_id', $course->id)
             ->first();
 
-        $enrolledActive = $enrollment && in_array((string) $enrollment->status, ['active', 'completed'], true);
+        $enrolledActive = $enrollment && $enrollment->status === 'active';
 
         $hasSettledPayment = ManualPayment::query()
             ->where('user_id', $user->id)
@@ -69,7 +130,7 @@ class CourseController extends Controller
         // Only allow entry to learning page if enrolled OR it's a course with preview enabled.
         if (!$isUserEnrolled && $configuredFreeAccessMode === 'none') {
             return redirect()->route('course.detail', $course->id)
-                ->with('error', 'Silakan lakukan pembelian course terlebih dahulu.');
+                ->with('error', 'Please purchase this course first.');
         }
 
         // If payment is settled but enrollment isn't active yet, auto-activate it.
@@ -79,16 +140,15 @@ class CourseController extends Controller
                 ['status' => 'active']
             );
             if ($enrollment->status !== 'active') {
-                if ((string) $enrollment->status !== 'completed') {
-                    $enrollment->status = 'active';
-                    $enrollment->save();
-                }
+                $enrollment->status = 'active';
+                $enrollment->save();
             }
             $enrolledActive = true;
             $isUserEnrolled = true;
         }
 
         $course->load([
+            'units',
             'modules' => function ($q) {
                 $q->orderBy('order_no');
             },
@@ -120,7 +180,20 @@ class CourseController extends Controller
             $currentModule = $modules->firstWhere('id', (int) $selectedId);
         }
         if (!$currentModule) {
-            $currentModule = $modules->first();
+            $currentModule = $modules->firstWhere('type', 'video') ?: $modules->first();
+        }
+
+        // Simplified Redirect: If current module is a PDF, skip to the next module automatically.
+        // PDF content is already displayed as a description within the Video lessons.
+        if ($currentModule && strtolower(trim((string)($currentModule->type ?? ''))) === 'pdf') {
+            $nextModule = $modules
+                ->filter(fn($m) => (int)($m->order_no ?? 0) > (int)($currentModule->order_no ?? 0))
+                ->sortBy('order_no')
+                ->first();
+            
+            if ($nextModule) {
+                return redirect()->route('course.learn', ['course' => $course->id, 'module' => $nextModule->id]);
+            }
         }
 
         // Preview access policy: optionally limit to first 2 modules
@@ -131,43 +204,93 @@ class CourseController extends Controller
                 if ($fallbackId > 0) {
                     $target = route('course.learn', $course->id) . '?module=' . $fallbackId;
                     return redirect()->to($target)
-                        ->with('error', 'Materi ini terkunci. Silakan beli course untuk membuka modul selanjutnya.');
+                        ->with('error', 'This content is locked. Please purchase the course untuk membuka modul selanjutnya.');
                 }
             }
         }
 
-        // Gate: only lock the module immediately after an unpassed quiz
+        // Gate: sequential progression logic
         $passingPercent = 75;
-        if ($currentModule && $currentModule->order_no && $isUserEnrolled) {
-            $prevModule = $modules
-                ->filter(fn($m) => (int) ($m->order_no ?? 0) < (int) $currentModule->order_no)
-                ->sortByDesc('order_no')
-                ->first();
+        if ($currentModule && $isUserEnrolled) {
+            $precedingModules = $modules
+                ->filter(fn($m) => (int) ($m->order_no ?? 0) < (int) ($currentModule->order_no ?? 0))
+                ->sortBy('order_no');
 
-            if ($prevModule && strtolower(trim((string) ($prevModule->type ?? ''))) === 'quiz') {
-                $lastAttempt = QuizAttempt::query()
-                    ->where('user_id', $user->id)
-                    ->where('course_module_id', $prevModule->id)
-                    ->whereNotNull('completed_at')
-                    ->orderByDesc('completed_at')
-                    ->first();
+            foreach ($precedingModules as $pm) {
+                $pmType = strtolower(trim((string)($pm->type ?? '')));
+                
+                if ($pmType === 'quiz') {
+                    $attempts = QuizAttempt::where('user_id', $user->id)
+                        ->where('course_module_id', $pm->id)
+                        ->whereNotNull('completed_at')
+                        ->get();
+                    
+                    $passed = $attempts->contains(fn($a) => $a->isPassed($passingPercent));
+                    $attemptCount = $attempts->count();
+                    
+                    if (!$passed) {
+                        $isCurrentQuiz = strtolower(trim((string)($currentModule->type ?? ''))) === 'quiz';
+                        // Lock if: attempts < 3 OR trying to open a quiz
+                        if ($attemptCount < 3 || $isCurrentQuiz) {
+                            $target = route('course.learn', $course->id) . '?module=' . $pm->id;
+                            $msg = $isCurrentQuiz 
+                                ? 'You must pass the previous quiz to unlock this quiz.' 
+                                : 'Please complete the previous quiz or try up to 3 times to unlock this material..';
+                            return redirect()->to($target)->with('error', $msg);
+                        }
+                    }
+                }
+                
+                if ($pmType === 'video') {
+                    $videoProgress = Progress::where('enrollment_id', $enrollment->id ?? 0)
+                        ->where('course_module_id', $pm->id)
+                        ->where('completed', true)
+                        ->exists();
+                    if (!$videoProgress) {
+                        $target = route('course.learn', $course->id) . '?module=' . $pm->id;
+                        return redirect()->to($target)->with('error', 'Please complete the previous video lesson to the end to continue.');
+                    }
+                }
+            }
+        }
 
-                $passedPrevQuiz = $lastAttempt ? $lastAttempt->isPassed($passingPercent) : false;
+        // On page load: ensure a progress record exists for the current video module with 0,0
+        // (only if not already completed). This prevents stale completed=1 records from showing checkmarks.
+        $enrollmentForProgress = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['active', 'completed', 'expired'])
+            ->first();
 
-                if (!$passedPrevQuiz) {
-                    $target = route('course.learn', $course->id) . '?module=' . $prevModule->id;
-                    return redirect()->to($target)
-                        ->with('error', 'Anda harus menyelesaikan kuis terlebih dahulu baru bisa lanjut ke tahap selanjutnya.');
+        if ($enrollmentForProgress) {
+            $allVideoModuleIds = $modules
+                ->filter(fn($m) => strtolower(trim((string)($m->type ?? ''))) === 'video')
+                ->pluck('id')->filter()->values()->all();
+            if (!empty($allVideoModuleIds)) {
+                // Reset any video that has NOT been properly completed (video_watched=0 means stale/incomplete)
+                Progress::query()
+                    ->where('enrollment_id', $enrollmentForProgress->id)
+                    ->whereIn('course_module_id', $allVideoModuleIds)
+                    ->where('video_watched', false)
+                    ->update(['completed' => false, 'video_watched' => false]);
+
+                // Upsert 0,0 for the current video module if it doesn't exist yet
+                if ($currentModule && strtolower(trim((string)($currentModule->type ?? ''))) === 'video') {
+                    Progress::query()->firstOrCreate(
+                        ['enrollment_id' => $enrollmentForProgress->id, 'course_module_id' => $currentModule->id],
+                        ['completed' => false, 'video_watched' => false]
+                    );
                 }
             }
         }
 
         // Progress tracking:
-        // - video/pdf modules are marked completed once opened
+        // - pdf modules are marked completed once opened
+        // - video modules are marked completed only when the video ends (via AJAX from frontend)
         // - quiz modules are marked completed only if user has passed
         if ($enrollment && $currentModule) {
             $moduleType = strtolower(trim((string) ($currentModule->type ?? '')));
-            $markCompleted = $moduleType !== 'quiz';
+
+            $markCompleted = ($moduleType === 'pdf'); // video requires explicit completion via JS
 
             if (!$markCompleted && $moduleType === 'quiz') {
                 $markCompleted = QuizAttempt::query()
@@ -180,123 +303,15 @@ class CourseController extends Controller
             }
 
             if ($markCompleted) {
-                // The UI groups PDF+Video as a single "Materi" item.
-                // If we only mark the currently selected module (e.g. PDF),
-                // progress can never reach 100% because Video is counted as a separate module.
-                $moduleIdsToMark = [(int) $currentModule->id];
-
-                if (in_array($moduleType, ['pdf', 'video'], true)) {
-                    $normalizeGroupKey = function (string $title, int $fallbackIndex = 1): string {
-                        $t = trim($title);
-                        if ($t === '') {
-                            return 'UNIT_' . $fallbackIndex;
-                        }
-
-                        if (preg_match('/^(Module\s*\d+)/i', $t, $m)) {
-                            return mb_strtoupper(trim($m[1]));
-                        }
-
-                        $t2 = preg_replace('/\s*-\s*(PDF\s*Material|Video\s*Lesson|Quiz)\s*$/i', '', $t);
-                        $t2 = trim((string) $t2);
-                        return $t2 !== '' ? mb_strtoupper($t2) : ('UNIT_' . $fallbackIndex);
-                    };
-
-                    $isGenericUnitTitle = function (string $title): bool {
-                        $t = trim($title);
-                        return (bool) preg_match('/^(PDF\s*Material|Video\s*Lesson|Quiz)$/i', $t);
-                    };
-
-                    $currentGroupKey = null;
-                    $unitCounter = 1;
-                    $currentGenericKey = null;
-
-                    foreach ($modules as $m) {
-                        $titleStr = (string) ($m->title ?? '');
-                        $type = strtolower(trim((string) ($m->type ?? '')));
-
-                        if ($isGenericUnitTitle($titleStr)) {
-                            if (!$currentGenericKey) {
-                                $currentGenericKey = 'UNIT_' . $unitCounter;
-                                $unitCounter++;
-                            }
-                            $key = $currentGenericKey;
-                            if ($type === 'quiz') {
-                                $currentGenericKey = null;
-                            }
-                        } else {
-                            $currentGenericKey = null;
-                            $key = $normalizeGroupKey($titleStr, $unitCounter);
-                            if (str_starts_with($key, 'UNIT_')) {
-                                $unitCounter++;
-                            }
-                        }
-
-                        if ((int) ($m->id ?? 0) === (int) $currentModule->id) {
-                            $currentGroupKey = $key;
-                            break;
-                        }
-                    }
-
-                    if ($currentGroupKey) {
-                        // Collect PDF+Video ids in the same group.
-                        $unitCounter = 1;
-                        $currentGenericKey = null;
-                        foreach ($modules as $m) {
-                            $titleStr = (string) ($m->title ?? '');
-                            $type = strtolower(trim((string) ($m->type ?? '')));
-
-                            if ($isGenericUnitTitle($titleStr)) {
-                                if (!$currentGenericKey) {
-                                    $currentGenericKey = 'UNIT_' . $unitCounter;
-                                    $unitCounter++;
-                                }
-                                $key = $currentGenericKey;
-                                if ($type === 'quiz') {
-                                    $currentGenericKey = null;
-                                }
-                            } else {
-                                $currentGenericKey = null;
-                                $key = $normalizeGroupKey($titleStr, $unitCounter);
-                                if (str_starts_with($key, 'UNIT_')) {
-                                    $unitCounter++;
-                                }
-                            }
-
-                            if ($key !== $currentGroupKey) {
-                                continue;
-                            }
-
-                            if (in_array($type, ['pdf', 'video'], true)) {
-                                $moduleIdsToMark[] = (int) $m->id;
-                            }
-                        }
-                    }
-                }
-
-                $moduleIdsToMark = array_values(array_unique(array_filter($moduleIdsToMark, fn ($id) => $id > 0)));
-                foreach ($moduleIdsToMark as $mid) {
-                    Progress::query()->updateOrCreate(
-                        [
-                            'enrollment_id' => $enrollment->id,
-                            'course_module_id' => $mid,
-                        ],
-                        [
-                            'completed' => true,
-                        ]
-                    );
-                }
-
-                // If all modules are completed, mark enrollment completed (needed for certificate readiness).
-                $enrollment->setRelation('course', $course);
-                if ($enrollment->getProgressPercentage() >= 100) {
-                    if ((string) $enrollment->status !== 'completed') {
-                        $enrollment->status = 'completed';
-                    }
-                    if (!$enrollment->completed_at) {
-                        $enrollment->completed_at = now();
-                    }
-                    $enrollment->save();
-                }
+                Progress::query()->updateOrCreate(
+                    [
+                        'enrollment_id' => $enrollment->id,
+                        'course_module_id' => $currentModule->id,
+                    ],
+                    [
+                        'completed' => true,
+                    ]
+                );
             }
         }
 
@@ -339,37 +354,29 @@ class CourseController extends Controller
             $missing[] = 'Kuis';
         }
 
+        // Hard block: jika ada missing material, tidak bisa publish
+        if (!empty($missing)) {
+            return redirect()->route('admin.courses.index')
+                ->with('error', 'Course cannot be published yet. Please complete the Module Course ini terlebih dahulu: ' . implode(', ', $missing) . '.');
+        }
+
         $course->status = 'active';
         $course->save();
 
-        $redirect = redirect()->route('admin.courses.index')
-            ->with('success', 'Course berhasil diterbitkan!');
-
-        if (!empty($missing)) {
-            $redirect->with('publish_warning', $missing);
-        }
-
-        return $redirect;
+        return redirect()->route('admin.courses.index')
+            ->with('success', 'Course published successfully!');
     }
 
     /**
-     * Unpublish course: cancel publish by setting status back to 'approved'.
+     * Unpublish course: set status back to 'archive'
      */
     public function unpublish(Request $request, Course $course)
     {
-        if (((string) $course->status) !== 'active') {
-            return redirect()
-                ->route('admin.courses.index')
-                ->with('error', 'Course ini belum diterbitkan');
-        }
-
-        // Return to pre-publish state so it no longer appears on public pages
-        $course->status = 'approved';
+        $course->status = 'archive';
         $course->save();
 
-        return redirect()
-            ->route('admin.courses.index')
-            ->with('success', 'Publish course berhasil dibatalkan.');
+        return redirect()->route('admin.courses.index')
+            ->with('success', 'Course unpublished successfully!');
     }
 
     /**
@@ -399,6 +406,7 @@ class CourseController extends Controller
             'type' => 'course_invitation',
             'title' => 'Undangan Menjadi Trainer Course',
             'message' => 'Anda diundang menjadi trainer untuk course "' . $course->name . '".',
+            'invitation_status' => 'pending',
             'data' => [
                 'entity_type' => 'course',
                 'entity_id' => $course->id,
@@ -610,12 +618,7 @@ class CourseController extends Controller
         ])->withCount('enrollments')->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         if ($month !== '') {
@@ -697,12 +700,7 @@ class CourseController extends Controller
             ->orderByDesc('created_at');
 
         if ($q !== '') {
-            $coursesQuery->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', '%' . $q . '%')
-                    ->orWhereHas('category', function ($cat) use ($q) {
-                        $cat->where('name', 'like', '%' . $q . '%');
-                    });
-            });
+            $coursesQuery->where('name', 'like', '%' . $q . '%');
         }
 
         $periodName = 'Semua Data';
@@ -745,7 +743,7 @@ class CourseController extends Controller
                 ->header('Content-Disposition', 'attachment; filename="Daftar_Course_' . now()->format('YmdHis') . '.pdf"');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Export PDF error: ' . $e->getMessage());
-            return back()->with('error', 'Gagal membuat PDF: ' . $e->getMessage());
+            return back()->with('error', 'Failed to generate PDF: ' . $e->getMessage());
         }
     }
 
@@ -868,7 +866,6 @@ class CourseController extends Controller
     {
         $course->load([
             'category',
-            'reviews.user',
             'modules' => function ($q) {
                 $q->orderBy('order_no')->withCount('quizQuestions');
             },
@@ -923,11 +920,17 @@ class CourseController extends Controller
             ]);
         }
 
+        // If category_id is empty but category_name is provided, create or find the category
+        if (empty($request->input('category_id')) && $request->filled('category_name')) {
+            $catName = trim($request->input('category_name'));
+            $category = Category::firstOrCreate(['name' => $catName], ['description' => '']);
+            $request->merge(['category_id' => $category->id]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
-            'is_reseller_course' => 'nullable|boolean',
             'trainer_id' => [
                 'required',
                 'integer',
@@ -1041,7 +1044,6 @@ class CourseController extends Controller
             'status' => $request->status,
             'price' => $request->price,
             'free_access_mode' => $request->input('free_access_mode', 'limit_2'),
-            'is_reseller_course' => $request->boolean('is_reseller_course'),
             'duration' => $request->duration,
             'media' => $mediaPath,
             'media_type' => $mediaType,
@@ -1054,6 +1056,21 @@ class CourseController extends Controller
 
         if (!empty($course->trainer_id)) {
             $this->notifyTrainerCourseInvitation($course, (int) $course->trainer_id);
+        }
+
+        // Save unit titles from form input
+        $unitTitlesInput = $request->input('unit_titles', []);
+        $unitCount = 0;
+        if (is_array($unitTitlesInput)) {
+            foreach ($unitTitlesInput as $unitNo => $title) {
+                $title = trim((string) $title);
+                if ($title === '') continue;
+                \App\Models\CourseUnit::updateOrCreate(
+                    ['course_id' => $course->id, 'unit_no' => (int) $unitNo],
+                    ['title' => $title]
+                );
+                $unitCount++;
+            }
         }
 
         // Create modules from payload
@@ -1139,8 +1156,13 @@ class CourseController extends Controller
                 }
             }
         } elseif ($template) {
-            app(CourseTemplateCloneService::class)
-                ->cloneToCourse($course, $template, replaceExisting: false);
+            if ($unitCount > 0) {
+                app(CourseTemplateCloneService::class)
+                    ->cloneSlotsByUnitCount($course, $template, $unitCount);
+            } else {
+                app(CourseTemplateCloneService::class)
+                    ->cloneToCourse($course, $template, replaceExisting: false);
+            }
         }
 
         return redirect()->route('admin.courses.index')->with('success', 'Course created successfully!');
@@ -1192,12 +1214,18 @@ class CourseController extends Controller
             $request->merge(['modules_order_updates' => json_encode($orderUpdatesRaw)]);
         }
 
+        // If category_id is empty but category_name is provided, create or find the category
+        if (empty($request->input('category_id')) && $request->filled('category_name')) {
+            $catName = trim($request->input('category_name'));
+            $category = Category::firstOrCreate(['name' => $catName], ['description' => '']);
+            $request->merge(['category_id' => $category->id]);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'template_id' => 'nullable|exists:course_templates,id',
             'sync_template_modules' => 'nullable|boolean',
-            'is_reseller_course' => 'nullable|boolean',
             'trainer_id' => [
                 'nullable',
                 Rule::exists('users', 'id')->where(function ($query) {
@@ -1239,7 +1267,9 @@ class CourseController extends Controller
             'expenses.*.unit_price' => 'nullable|integer|min:0',
             'expenses.*.total' => 'nullable|integer|min:0',
             'module_files' => 'sometimes|array',
-            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800'
+            'module_files.*' => 'file|mimes:pdf,mp4,webm,ogg|max:204800',
+            'unit_titles' => 'nullable|array',
+            'unit_titles.*' => 'nullable|string|max:255',
         ]);
 
         // Normalize discount fields: if discount is not set (null/0), ignore dates.
@@ -1308,7 +1338,6 @@ class CourseController extends Controller
             'status' => $request->status,
             'price' => $request->price,
             'free_access_mode' => $request->input('free_access_mode', $course->free_access_mode ?? 'limit_2'),
-            'is_reseller_course' => $request->boolean('is_reseller_course'),
             'duration' => $request->duration,
             'discount_percent' => $request->discount_percent,
             'discount_start' => $request->discount_start,
@@ -1586,8 +1615,8 @@ class CourseController extends Controller
                 TrainerNotification::create([
                     'trainer_id' => (int) $trainer->id,
                     'type' => 'course_modules_updated',
-                    'title' => 'Modul Course Diperbarui',
-                    'message' => 'Admin telah melakukan perubahan pada modul/materi course "' . $course->name . '". Silakan periksa perubahan terbaru.',
+                    'title' => 'Course Module Updated',
+                    'message' => 'Admin has made changes to the module/materi course "' . $course->name . '". Silakan periksa perubahan terbaru.',
                     'data' => [
                         'entity_type' => 'course',
                         'entity_id' => (int) $course->id,
@@ -1601,14 +1630,12 @@ class CourseController extends Controller
         // Save Academic Unit header titles (admin-managed)
         $unitTitles = $request->input('unit_titles');
         if (is_array($unitTitles)) {
-            $unitCount = (int) ceil(max(0, (int) $course->modules()->count()) / 3);
+            $maxUnitNo = 0;
             foreach ($unitTitles as $unitNoRaw => $titleRaw) {
                 $unitNo = (int) $unitNoRaw;
-                if ($unitNo <= 0 || ($unitCount > 0 && $unitNo > $unitCount)) {
-                    continue;
-                }
+                if ($unitNo <= 0) continue;
+                
                 $title = trim((string) $titleRaw);
-
                 if ($title === '') {
                     \App\Models\CourseUnit::query()
                         ->where('course_id', $course->id)
@@ -1621,10 +1648,58 @@ class CourseController extends Controller
                     ['course_id' => $course->id, 'unit_no' => $unitNo],
                     ['title' => $title]
                 );
+                if ($unitNo > $maxUnitNo) $maxUnitNo = $unitNo;
+            }
+
+            // If we added new units, ensure modules exist for them
+            if ($maxUnitNo > 0) {
+                $currentModuleCount = (int) $course->modules()->count();
+                $expectedModuleCount = $maxUnitNo * 3;
+                
+                if ($currentModuleCount < $expectedModuleCount && $template) {
+                    $hasModuleChanges = true;
+                    $diff = $expectedModuleCount - $currentModuleCount;
+                    $unitsToAdd = (int) ceil($diff / 3);
+                    
+                    // We can't easily use cloneSlotsByUnitCount here because it starts from order_no 1.
+                    // Let's manually append.
+                    $templateModules = $template->modules()->orderBy('order_no')->get();
+                    if ($templateModules->isNotEmpty()) {
+                        $rows = [];
+                        for ($i = $currentModuleCount; $i < $expectedModuleCount; $i++) {
+                            $blueprint = $templateModules->get($i % $templateModules->count());
+                            $uNo = (int) floor($i / 3) + 1;
+                            $typeLabel = match($blueprint->type) {
+                                'pdf' => 'PDF Material',
+                                'video' => 'Video Lesson',
+                                'quiz' => 'Quiz',
+                                default => 'Material'
+                            };
+
+                            $rows[] = [
+                                'course_id' => $course->id,
+                                'order_no' => $i + 1,
+                                'title' => "Module $uNo - $typeLabel",
+                                'description' => $blueprint->description,
+                                'type' => (string) $blueprint->type,
+                                'content_url' => '',
+                                'file_name' => null,
+                                'mime_type' => null,
+                                'file_size' => 0,
+                                'is_free' => false,
+                                'preview_pages' => 0,
+                                'duration' => (int) ($blueprint->duration ?? 0),
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                        CourseModule::insert($rows);
+                    }
+                }
             }
         }
 
-        return redirect()->route('admin.courses.index')->with('success', 'Course berhasil diedit!');
+        return redirect()->route('admin.courses.index')->with('success', 'Course updated successfully!');
     }
 
     public function destroy(Course $course)

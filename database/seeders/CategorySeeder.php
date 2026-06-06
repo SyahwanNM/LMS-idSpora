@@ -14,30 +14,14 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            [
-                'name' => 'Web Development',
-                'description' => 'Learn modern web development technologies and frameworks',
-            ],
-            [
-                'name' => 'Mobile Development',
-                'description' => 'Build mobile applications for iOS and Android platforms',
-            ],
-            [
-                'name' => 'Data Science',
-                'description' => 'Analyze data and build machine learning models',
-            ],
-            [
-                'name' => 'UI/UX Design',
-                'description' => 'Create beautiful and user-friendly interfaces',
-            ],
-            [
-                'name' => 'DevOps',
-                'description' => 'Learn deployment, monitoring, and infrastructure management',
-            ],
-            [
-                'name' => 'Cybersecurity',
-                'description' => 'Protect systems and data from cyber threats',
-            ],
+            ['name' => 'Artificial Intelligence', 'description' => ''],
+            ['name' => 'Machine Learning', 'description' => ''],
+            ['name' => 'Literatur Review', 'description' => ''],
+            ['name' => 'Digital Marketing', 'description' => ''],
+            ['name' => 'UI/UX Design', 'description' => ''],
+            ['name' => 'IT Management', 'description' => ''],
+            ['name' => 'Programming', 'description' => ''],
+            ['name' => 'Graphic Design', 'description' => ''],
         ];
 
         foreach ($categories as $category) {

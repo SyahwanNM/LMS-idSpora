@@ -370,6 +370,7 @@ class TrainerController extends Controller
 
     private function ensureTemplateStructureExists(Course $course): void
     {
+<<<<<<< HEAD
         $existingModuleCount = (int) $course->modules()->count();
         if ($existingModuleCount > 0) {
             // If the course is backed by an auto-template, ensure it has a sensible minimum unit count.
@@ -597,6 +598,35 @@ class TrainerController extends Controller
         $lvl = strtolower(trim($level));
         $units = (int) (self::AUTO_TEMPLATE_UNITS_BY_LEVEL[$lvl] ?? 3);
         return max(1, $units);
+=======
+        // Kalau sudah ada modul, tidak perlu clone
+        if ((int) $course->modules()->count() > 0) {
+            return;
+        }
+
+        $template = \App\Models\CourseTemplate::find($course->template_id);
+        if (!$template) {
+            $template = \App\Models\CourseTemplate::where('level', $course->level)->first();
+            if (!$template) return;
+        }
+
+        // Assign template ke course jika belum ada
+        if ((int) ($course->template_id ?? 0) <= 0) {
+            $course->template_id      = $template->id;
+            $course->template_version = $template->version;
+            $course->saveQuietly();
+        }
+
+        $unitCount = (int) $course->units()->count();
+
+        if ($unitCount > 0) {
+            app(\App\Services\CourseTemplateCloneService::class)
+                ->cloneSlotsByUnitCount($course, $template, $unitCount);
+        } else {
+            app(\App\Services\CourseTemplateCloneService::class)
+                ->cloneToCourse($course, $template, replaceExisting: false);
+        }
+>>>>>>> f8aa303376d9a6c43165708cd48b2e77f6ae6aae
     }
 
     private function ensureQuizSlotPerUnit(Course $course): void
@@ -753,7 +783,7 @@ class TrainerController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
-        $dashboardInvitations = TrainerNotification::query()
+        $pendingInvitationItems = TrainerNotification::query()
             ->where('trainer_id', $user->id)
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
@@ -804,7 +834,7 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $activeAssignments = TrainerAssignment::query()
+        $activeAssignmentItems = TrainerAssignment::query()
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
             ->with([
@@ -858,7 +888,7 @@ class TrainerController extends Controller
             })
             ->values();
 
-        $revenueCourses = (clone $coursesQuery)
+        $revenueCourseItems = (clone $coursesQuery)
             ->withCount([
                 'enrollments as monthly_active_students_count' => function ($query) {
                     $query->where('status', 'active')
@@ -890,7 +920,7 @@ class TrainerController extends Controller
             })
             ->values();
 
-        $completedCourses = (clone $coursesQuery)
+        $completedCourseItems = (clone $coursesQuery)
             ->whereIn('status', ['completed', 'finished', 'archived', 'approved'])
             ->withCount([
                 'enrollments as active_students_count' => function ($query) {
@@ -903,7 +933,7 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $recentEventFeedbacks = Feedback::query()
+        $feedbackItems = Feedback::query()
             ->whereHas('event', function ($query) use ($user) {
                 $query->where('trainer_id', $user->id);
             })
@@ -931,11 +961,11 @@ class TrainerController extends Controller
             'totalStudents',
             'totalCertificates',
             'teachingHistory',
-            'activeAssignments',
-            'revenueCourses',
-            'completedCourses',
-            'recentEventFeedbacks',
-            'dashboardInvitations',
+            'activeAssignmentItems',
+            'revenueCourseItems',
+            'completedCourseItems',
+            'feedbackItems',
+            'pendingInvitationItems',
             'unreadInvitationCount',
             'trainerActivity',
             'availableContributionSchemes'
@@ -1067,8 +1097,14 @@ class TrainerController extends Controller
                 // Urutkan modul, dan load relasi kuis
                 $query->orderBy('order_no', 'asc')->with('quizQuestions');
             },
+<<<<<<< HEAD
             'enrollments.student',
             'reviews'
+=======
+            'enrollments.user',
+            'reviews',
+            'units',
+>>>>>>> f8aa303376d9a6c43165708cd48b2e77f6ae6aae
         ])
             ->where('id', $id)
             ->where('trainer_id', $trainerId)
@@ -1569,8 +1605,8 @@ class TrainerController extends Controller
         $this->ensureTemplateStructureExists($course);
         $this->ensureQuizSlotPerUnit($course);
 
-        // 1. Ambil semua modul course, lalu pecah per Bab (chunk 3)
-        $unitIndex = $request->query('unit', 0); // Default ke Bab 1 (index 0)
+        // 1. Ambil semua modul course
+        $unitIndex = (int) $request->query('unit', 0); // Default ke Bab 1 (index 0)
         $allModules = \App\Models\CourseModule::where('course_id', $id)
             ->with([
                 'quizQuestions' => function ($query) {
@@ -1584,9 +1620,20 @@ class TrainerController extends Controller
             ->withCount('quizQuestions')
             ->orderBy('order_no', 'asc')
             ->get();
-        $chunks = $allModules->chunk(3)->values();
 
-        // 2. Ambil modul-modul HANYA untuk Bab yang dipilih
+        // 2. Tentukan jumlah Bab (Unit)
+        // Jika ada CourseUnit, gunakan itu. Jika tidak, gunakan chunk 3.
+        $units = \App\Models\CourseUnit::where('course_id', $id)->orderBy('unit_no')->get();
+        if ($units->isNotEmpty()) {
+            $unitCount = $units->count();
+            // Group modules by units (assuming 3 modules per unit as convention)
+            $chunks = $allModules->chunk(3)->values();
+        } else {
+            $chunks = $allModules->chunk(3)->values();
+            $unitCount = $chunks->count();
+        }
+
+        // 3. Ambil modul-modul HANYA untuk Bab yang dipilih
         $activeUnitModules = $chunks->get($unitIndex, collect());
 
         // Hanya tampilkan materi yang sudah diupload untuk bab (unit) yang sedang aktif saja.
@@ -1621,7 +1668,9 @@ class TrainerController extends Controller
             return redirect()->route('trainer.courses')->with('error', 'Silabus untuk bab ini belum tersedia.');
         }
 
-        $unitTitle = "Modul " . ($unitIndex + 1);
+        $unitNo = $unitIndex + 1;
+        $unit = \App\Models\CourseUnit::where('course_id', $id)->where('unit_no', $unitNo)->first();
+        $unitTitle = $unit && !empty($unit->title) ? $unit->title : ("Bab " . $unitNo);
 
         return view('trainer.content-studio', compact(
             'course',
@@ -1753,7 +1802,26 @@ class TrainerController extends Controller
             ->latest('created_at')
             ->paginate(10);
 
-        return view('trainer.finance', compact('totalEarned', 'payments'));
+        // Fetch disburse payouts for this trainer
+        $payouts = \App\Models\TrainerPayment::with(['event', 'course'])
+            ->where('user_id', $trainerId)
+            ->latest()
+            ->get();
+
+        return view('trainer.finance', compact('totalEarned', 'payments', 'payouts'));
+    }
+
+    /**
+     * Download or view payout invoice for the trainer
+     */
+    public function downloadPayoutInvoice($id)
+    {
+        $trainerId = Auth::id();
+        $payment = \App\Models\TrainerPayment::with('trainer', 'event')
+            ->where('user_id', $trainerId)
+            ->findOrFail($id);
+
+        return view('admin.finance.trainers.invoice', compact('payment'));
     }
 
     public function show()
@@ -2546,7 +2614,7 @@ class TrainerController extends Controller
 
         // Kunci Quiz ke Slot Bab Ini
         $quizModule = \App\Models\CourseModule::where('id', $request->quiz_module_id)->where('course_id', $id)->firstOrFail();
-        $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'approved']);
+        $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'pending_review']);
 
         // Delete old questions
         $quizModule->quizQuestions()->delete();

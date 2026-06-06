@@ -11,17 +11,95 @@
         rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        /* ===== RESPONSIVE — Report Course ===== */
+        @media (max-width: 1024px) {
+            .box_filter_cari { flex-wrap: wrap; gap: 10px; }
+            .box_filter { flex-wrap: wrap; }
+            .detail_laporan { flex: 1 1 calc(50% - 16px); }
+        }
+        @media (max-width: 640px) {
+            .btn_box_report { flex-direction: column; align-items: flex-start; }
+            .box_unduh { width: 100%; justify-content: flex-start; }
+            .btn_unduh { flex: 1 1 auto; justify-content: center; }
+            .detail_laporan { flex: 1 1 100%; }
+            .box_filter_cari { flex-direction: column; align-items: stretch; }
+            .box_filter { flex-direction: column; align-items: stretch; }
+            .tanggal_course { width: 100% !important; max-width: 100%; }
+            .btn_terapkan { width: 100%; }
+            .cari_course { max-width: 100%; }
+            .box_pendapatan_per_course { width: 500%; }
+            /* Summary cards */
+            .box_detail_laporan { flex-direction: column; }
+            /* Tabel */
+            .tabel_pendapatan th, .tabel_pendapatan td { font-size: 12px; padding: 5px 6px; }
+        }
+        @media (max-width: 480px) {
+            .judul_report { font-size: 1.3rem; }
+            .keterangan_judul { font-size: 14px; }
+            .btn_report, .btn_laporan { font-size: 13px; padding: 7px 10px; }
+        }
+        /* Force tabel pendapatan full width */
+        #pendapatan .table-responsive { width: 100% !important; display: block !important; }
+        #pendapatan .tabel_pendapatan { width: 100% !important; }
+        .box_luar_report { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+        #pendapatan { width: 100% !important; }
+
+        /* ===== CUSTOM MONTH PICKER ===== */
+        .mp-wrapper { position: relative; display: inline-block; }
+        .mp-input {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px;
+            background: #f9fafb; cursor: pointer; font-size: 14px; color: #374151;
+            min-width: 160px; user-select: none;
+        }
+        .mp-input:hover { border-color: #9ca3af; }
+        .mp-label { flex: 1; }
+        .mp-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 16px;
+            min-width: 240px; z-index: 999;
+        }
+        .mp-dropdown.open { display: block; }
+        .mp-nav {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .mp-nav-btn {
+            background: none; border: none; font-size: 22px; color: #3b82f6;
+            cursor: pointer; padding: 0 6px; line-height: 1;
+        }
+        .mp-nav-btn:hover { color: #1d4ed8; }
+        .mp-year { font-weight: 700; font-size: 16px; color: #111827; }
+        .mp-months {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+        }
+        .mp-month-btn {
+            background: none; border: none; border-radius: 8px;
+            padding: 8px 4px; font-size: 14px; color: #374151;
+            cursor: pointer; text-align: center; transition: background .15s;
+        }
+        .mp-month-btn:hover { background: #eff6ff; color: #3b82f6; }
+        .mp-month-btn.selected { background: #3b82f6; color: #fff; font-weight: 600; }
+        .mp-clear-row { margin-top: 12px; text-align: center; }
+        .mp-clear-btn {
+            background: none; border: 1px solid #e5e7eb; border-radius: 6px;
+            padding: 4px 14px; font-size: 13px; color: #6b7280; cursor: pointer;
+        }
+        .mp-clear-btn:hover { background: #f3f4f6; }
+    </style>
 </head>
 
 <body>
     @include("partials.navbar-admin-course")
     <div class="box_luar_report">
-        <h1 class="judul_report">Laporan EduPlatform Admin</h1>
-        <p class="keterangan_judul">Berikut adalah laporan course.</p>
+        <h1 class="judul_report">EduPlatform Admin Report</h1>
+        <p class="keterangan_judul">Here are the course reports.</p>
         <div class="btn_box_report">
             <div class="btn-group" role="group" aria-label="Report sections">
-                <button type="button" class="btn_report active" data-target="pendapatan">Pendapatan</button>
-                <button type="button" class="btn_report" data-target="pertumbuhan">Pertumbuhan</button>
+                <button type="button" class="btn_report active" data-target="pendapatan">Income</button>
+                <button type="button" class="btn_report" data-target="pertumbuhan">Growth</button>
             </div>
             <div class="box_unduh">
                 <button type="button" class="btn_unduh" id="btnCourseExportPdf">
@@ -42,14 +120,14 @@
         <div id="pendapatan" class="box_report active">
             <div class="box_detail_laporan">
                 <div class="detail_laporan">
-                    <h4>Total Pendapatan</h4>
+                    <h4>Total Revenue</h4>
                     <h3 class="total_kenaikan" id="totalRevenue">
                         Rp. {{ number_format((float)($revenueReport['totals']['total_revenue'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="totalRevenueChange">
                         @php
                         $chg = $revenueReport['changes']['total_revenue'] ?? ['percent' => 0, 'direction' => 'up'];
-                        $chgLabel = $revenueReport['changes']['label'] ?? 'dari bulan lalu';
+                        $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
                         <div class="{{ $isDown ? 'informasi_penurunan_pendapatan' : 'informasi_kenaikan_pendapatan' }}">
@@ -67,14 +145,14 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Pendapatan per Level Course</h4>
+                    <h4>Total Expenses</h4>
                     <h3 class="total_kenaikan" id="topLevelRevenue">
-                        Rp. {{ number_format((float)(($revenueReport['revenue_by_level'][0]['revenue_total'] ?? 0)), 0, ',', '.') }}
+                        Rp. {{ number_format((float)($revenueReport['totals']['total_expenses'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="topLevelRevenueChange">
                         @php
-                        $chg = $revenueReport['changes']['top_level_revenue'] ?? ['percent' => 0, 'direction' => 'up'];
-                        $chgLabel = $revenueReport['changes']['label'] ?? 'dari bulan lalu';
+                        $chg = $revenueReport['changes']['total_expenses'] ?? ['percent' => 0, 'direction' => 'up'];
+                        $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
                         <div class="{{ $isDown ? 'informasi_penurunan_pendapatan' : 'informasi_kenaikan_pendapatan' }}">
@@ -92,19 +170,14 @@
                     </div>
                 </div>
                 <div class="detail_laporan">
-                    <h4>Pendapatan per Modul</h4>
+                    <h4>Total Profit</h4>
                     <h3 class="total_kenaikan" id="totalTransactions">
-                        @php
-                        $totalRevenue = (float)($revenueReport['totals']['total_revenue'] ?? 0);
-                        $totalTransactions = (int)($revenueReport['totals']['total_transactions'] ?? 0);
-                        $revenuePerModule = $totalTransactions > 0 ? (float) round($totalRevenue / $totalTransactions) : 0;
-                        @endphp
-                        Rp. {{ number_format($revenuePerModule, 0, ',', '.') }}
+                        Rp. {{ number_format((float)($revenueReport['totals']['total_profit'] ?? 0), 0, ',', '.') }}
                     </h3>
                     <div id="revenuePerModuleChange">
                         @php
-                        $chg = $revenueReport['changes']['revenue_per_module'] ?? ['percent' => 0, 'direction' => 'up'];
-                        $chgLabel = $revenueReport['changes']['label'] ?? 'dari bulan lalu';
+                        $chg = $revenueReport['changes']['total_profit'] ?? ['percent' => 0, 'direction' => 'up'];
+                        $chgLabel = $revenueReport['changes']['label'] ?? 'from last month';
                         $isDown = ($chg['direction'] ?? 'up') === 'down';
                         @endphp
                         <div class="{{ $isDown ? 'informasi_penurunan_pendapatan' : 'informasi_kenaikan_pendapatan' }}">
@@ -123,35 +196,55 @@
                 </div>
             </div>
             <div class="box_cari_pendapatan">
-                <h5>Pendapatan per Course</h5>
+                <h5>Revenue per Course</h5>
                 <div class="box_filter_cari">
                     <div class="cari_pendapatan">
                         <div class="box_pendapatan_per_course">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course" id="revenueSearch" type="text" placeholder="Cari Course">
+                            <input class="cari_course" id="revenueSearch" type="text" placeholder="Search Course">
                         </div>
                     </div>
                     <div class="box_filter">
-                        <p class="mulai_course">Bulan</p>
-                        <input class="tanggal_course" id="revenueMonth" type="month">
-                        <button class="btn_terapkan" id="applyRevenueFilter">Terapkan</button>
+                        <p class="mulai_course">Month</p>
+                        <!-- Custom Month Picker -->
+                        <div class="mp-wrapper" id="revenueMonthWrapper">
+                            <div class="mp-input" id="revenueMonthInput" tabindex="0">
+                                <span class="mp-label" id="revenueMonthLabel">Select a month</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#6b7280" viewBox="0 0 16 16">
+                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                                </svg>
+                            </div>
+                            <input type="hidden" id="revenueMonth" value="">
+                            <div class="mp-dropdown" id="revenueMonthDropdown">
+                                <div class="mp-nav">
+                                    <button type="button" class="mp-nav-btn" id="revenueMonthPrev">&#8249;</button>
+                                    <span class="mp-year" id="revenueMonthYear">2026</span>
+                                    <button type="button" class="mp-nav-btn" id="revenueMonthNext">&#8250;</button>
+                                </div>
+                                <div class="mp-months" id="revenueMonthGrid"></div>
+                                <div class="mp-clear-row">
+                                    <button type="button" class="mp-clear-btn" id="revenueMonthClear">All Months</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn_terapkan" id="applyRevenueFilter">Apply</button>
                     </div>
 
                 </div>
             </div>
             <div class="table-responsive">
-                <table class="tabel_pendapatan table table-striped table-hover align-middle">
+               <table class="tabel_pendapatan table table-striped table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Nama Course</th>
-                            <th>Tanggal</th>
-                            <th>Peserta</th>
-                            <th>Harga</th>
-                            <th>Pendapatan</th>
-                            <th>Pengeluaran</th>
-                            <th>Aksi</th>
+                            <th>Name Course</th>
+                            <th>Date</th>
+                            <th>Participants</th>
+                            <th>Price</th>
+                            <th>Income</th>
+                            <th>Expenses</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="revenueTableBody">
@@ -159,7 +252,10 @@
                         <tr>
                             <td>{{ $row['course_name'] }}</td>
                             <td>
-                                {{ $row['last_paid_at'] ? \Carbon\Carbon::parse($row['last_paid_at'])->format('d/m/Y') : ($row['created_at'] ? \Carbon\Carbon::parse($row['created_at'])->format('d/m/Y') : '-') }}
+                                @php
+                                    $dateVal = $row['last_paid_at'] ?? $row['created_at'] ?? null;
+                                @endphp
+                                {{ $dateVal ? \Carbon\Carbon::parse($dateVal)->format('d/m/Y') : '-' }}
                             </td>
                             <td>{{ (int)($row['participants_count'] ?? 0) }}</td>
                             <td>{{ number_format((float)($row['course_price'] ?? 0), 0, ',', '.') }}</td>
@@ -176,7 +272,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center text-muted">Belum ada transaksi course pada rentang tanggal ini.</td>
+                            <td colspan="7" class="text-center text-muted">No course transactions found for the selected date range.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -190,7 +286,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Total View</h6>
+                                <h6>Total Views</h6>
                                 <h3 id="totalViews">{{ (int)(data_get($growthReport, 'summary.total_views', 0)) }}</h3>
                             </div>
                         </div>
@@ -199,8 +295,8 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Waktu Tonton Rata-rata</h6>
-                                <h3 id="avgWatch">{{ (int)(data_get($growthReport, 'summary.avg_watch_minutes', 0)) }} Menit</h3>
+                                <h6>Average Watch Time</h6>
+                                <h3 id="avgWatch">{{ (int)(data_get($growthReport, 'summary.avg_watch_minutes', 0)) }} Minutes</h3>
                             </div>
                         </div>
                     </div>
@@ -208,7 +304,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Peserta</h6>
+                                <h6>Participants</h6>
                                 <h3 id="totalStudents">{{ (int)(data_get($growthReport, 'summary.participants', 0)) }}</h3>
                             </div>
                         </div>
@@ -217,7 +313,7 @@
                     <div class="col-md-3">
                         <div class="card shadow-sm">
                             <div class="card-body text-center">
-                                <h6>Rating Keseluruhan</h6>
+                                <h6>Rating Course</h6>
                                 <h3 id="courseRating">{{ number_format((float)(data_get($growthReport, 'summary.rating_avg', 0)), 1) }} ⭐</h3>
                             </div>
                         </div>
@@ -227,29 +323,41 @@
 
                 <div class="card mt-4 shadow-sm">
                     <div class="card-body">
-                        <h5 class="mb-3">Report Pertumbuhan Course</h5>
+                        <h5 class="mb-3">Course Growth Report</h5>
                         <canvas id="growthChart" height="90"></canvas>
                     </div>
                 </div>
             </div>
             <div class="box_cari_pendapatan">
-                <h3>Detail Performa Course</h3>
+                <h3>Course Performance Details</h3>
             </div>
             <div class="box_cari_pendapatan">
-                <h5>Pertumbuhan per Course</h5>
+                <h5>Growth per Course</h5>
                 <div class="box_filter_cari">
                     <div class="cari_pendapatan">
                         <div class="box_pendapatan_per_course">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                             </svg>
-                            <input class="cari_course" id="growthSearch" type="text" placeholder="Cari Course" value="{{ $growthQuery ?? '' }}">
+                            <input class="cari_course" id="growthSearch" type="text" placeholder="Search Courses" value="{{ $growthQuery ?? '' }}">
                         </div>
                     </div>
+                    <div class="filter-group">
+                    <label for="filter-kelola-pertumbuhan" class="filter-label" style="margin-left: -300px;">Action Type</label>
+                    <div>
+                    <select id="filter-kelola-pertumbuhan" class="filter-input" style="min-width:130px; margin-left:-300px;">
+                        <option value="">All Type</option>
+                        <option value="high-part">High to Low Participants</option>
+                        <option value="low-part">Low to High Participants</option>
+                        <option value="high-rate">High to Low Rating</option>
+                        <option value="low-rate">Low to High Rating</option>
+                    </select>
+                    </div>
+                    </div>
                     <div class="box_filter">
-                        <p class="mulai_course">Bulan</p>
+                        <p class="mulai_course">Month</p>
                         <input class="tanggal_course" id="growthMonth" type="month" value="{{ $growthMonth ?? now()->format('Y-m') }}">
-                        <button class="btn_terapkan" id="applyGrowthFilter" type="button">Terapkan</button>
+                        <button class="btn_terapkan" id="applyGrowthFilter" type="button">Apply</button>
                     </div>
 
                 </div>
@@ -259,18 +367,20 @@
                 <table class="tabel_pertumbuhan table table-striped table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Nama Course</th>
+                            <th>Name Course</th>
+                            <th>Date Created</th>
                             <th>Level</th>
-                            <th>Total View</th>
-                            <th>Waktu tonton rata-rata</th>
-                            <th>Peserta</th>
-                            <th>Rating Keseluruhan Course</th>
+                            <th>Total Views</th>
+                            <th>Average Watch Time</th>
+                            <th>Participants</th>
+                            <th>Overall Course Rating</th>
                         </tr>
                     </thead>
                     <tbody id="growthTableBody">
                         @forelse(($growthReport['rows'] ?? []) as $row)
                         <tr>
                             <td>{{ $row['course_name'] ?? '-' }}</td>
+                            <td>{{ $row['course_created_at'] ? \Carbon\Carbon::parse($row['course_created_at'])->format('d/m/Y') : '-' }}</td>
                             <td>{{ $row['course_level'] ?? '-' }}</td>
                             <td>{{ $row['total_views_compact'] ?? '0' }}</td>
                             <td>{{ $row['avg_watch_time_label'] ?? '0 min' }}</td>
@@ -280,7 +390,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center text-muted">Belum ada data.</td>
+                            <td colspan="7" class="text-center text-muted">No data available.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -524,60 +634,74 @@
             const seriesWatch = Array.isArray(dbSeries.watch_minutes) ? dbSeries.watch_minutes : [];
             const seriesRating = Array.isArray(dbSeries.rating) ? dbSeries.rating : [];
 
+            // Initial selected month from server (1-indexed, 0 = no filter)
+            const initialMonth = @json(isset($growthMonth) && $growthMonth ? (int) explode('-', $growthMonth)[1] : 0);
+
+            const DATASET_COLORS = [
+                { border: '#4e73df', bg: 'rgba(78,115,223,0.1)',   dimBorder: 'rgba(78,115,223,0.15)',   dimBg: 'rgba(78,115,223,0.03)' },
+                { border: '#1cc88a', bg: 'rgba(28,200,138,0.1)',   dimBorder: 'rgba(28,200,138,0.15)',   dimBg: 'rgba(28,200,138,0.03)' },
+                { border: '#f6c23e', bg: 'rgba(246,194,62,0.1)',   dimBorder: 'rgba(246,194,62,0.15)',   dimBg: 'rgba(246,194,62,0.03)' },
+                { border: '#e74a3b', bg: 'rgba(231,74,59,0.1)',    dimBorder: 'rgba(231,74,59,0.15)',    dimBg: 'rgba(231,74,59,0.03)' },
+            ];
+
+            /**
+             * Build per-point colors for a dataset.
+             * highlightIdx: 0-based month index to highlight, or -1 for no highlight (all normal).
+             */
+            function buildPointColors(colorSet, highlightIdx) {
+                if (highlightIdx < 0) {
+                    // No filter — all points use normal color
+                    return { point: Array(12).fill(colorSet.border), pointBorder: Array(12).fill(colorSet.border) };
+                }
+                return {
+                    point: Array.from({ length: 12 }, (_, i) => i === highlightIdx ? colorSet.border : colorSet.dimBorder),
+                    pointBorder: Array.from({ length: 12 }, (_, i) => i === highlightIdx ? colorSet.border : colorSet.dimBorder),
+                };
+            }
+
+            function buildPointRadius(highlightIdx) {
+                if (highlightIdx < 0) return 3;
+                return Array.from({ length: 12 }, (_, i) => i === highlightIdx ? 7 : 2);
+            }
+
+            function makeDataset(label, data, colorSet, highlightIdx) {
+                const pc = buildPointColors(colorSet, highlightIdx);
+                return {
+                    label,
+                    data,
+                    borderColor: highlightIdx < 0 ? colorSet.border : colorSet.dimBorder,
+                    backgroundColor: highlightIdx < 0 ? colorSet.bg : colorSet.dimBg,
+                    pointBackgroundColor: pc.point,
+                    pointBorderColor: pc.pointBorder,
+                    pointRadius: buildPointRadius(highlightIdx),
+                    pointHoverRadius: 6,
+                    tension: 0.4,
+                };
+            }
+
+            const hlIdx = initialMonth > 0 ? initialMonth - 1 : -1;
+
             const growthChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [
-                        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-                        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-                    ],
-                    datasets: [{
-                            label: 'Total View',
-                            data: (seriesViews.length === 12 ? seriesViews : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#4e73df',
-                            backgroundColor: 'rgba(78,115,223,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Peserta',
-                            data: (seriesParticipants.length === 12 ? seriesParticipants : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#1cc88a',
-                            backgroundColor: 'rgba(28,200,138,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Waktu Tonton (Menit)',
-                            data: (seriesWatch.length === 12 ? seriesWatch : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#f6c23e',
-                            backgroundColor: 'rgba(246,194,62,0.1)',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Rating Course',
-                            data: (seriesRating.length === 12 ? seriesRating : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-                            borderColor: '#e74a3b',
-                            backgroundColor: 'rgba(231,74,59,0.1)',
-                            tension: 0.4
-                        }
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                    datasets: [
+                        makeDataset('Total View',           seriesViews.length === 12 ? seriesViews : Array(12).fill(0),        DATASET_COLORS[0], hlIdx),
+                        makeDataset('Peserta',              seriesParticipants.length === 12 ? seriesParticipants : Array(12).fill(0), DATASET_COLORS[1], hlIdx),
+                        makeDataset('Waktu Tonton (Menit)', seriesWatch.length === 12 ? seriesWatch : Array(12).fill(0),         DATASET_COLORS[2], hlIdx),
+                        makeDataset('Rating Course',        seriesRating.length === 12 ? seriesRating : Array(12).fill(0),       DATASET_COLORS[3], hlIdx),
                     ]
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
 
-            // Expose for the filter script (keeps style/config identical; only data changes).
+            // Expose helpers for the filter script.
             window.__growthChart = growthChart;
+            window.__growthChartHelpers = { makeDataset, buildPointColors, buildPointRadius, DATASET_COLORS };
 
         });
     </script>
@@ -599,6 +723,89 @@
                 button.classList.add("active");
             });
         });
+    </script>
+
+    <script>
+        // ===== CUSTOM MONTH PICKER =====
+        (function() {
+            const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const wrapper = document.getElementById('revenueMonthWrapper');
+            const inputEl = document.getElementById('revenueMonthInput');
+            const dropdown = document.getElementById('revenueMonthDropdown');
+            const hiddenInput = document.getElementById('revenueMonth');
+            const labelEl = document.getElementById('revenueMonthLabel');
+            const yearEl = document.getElementById('revenueMonthYear');
+            const grid = document.getElementById('revenueMonthGrid');
+            const prevBtn = document.getElementById('revenueMonthPrev');
+            const nextBtn = document.getElementById('revenueMonthNext');
+            const clearBtn = document.getElementById('revenueMonthClear');
+
+            if (!wrapper) return;
+
+            let currentYear = new Date().getFullYear();
+            let selectedYear = null;
+            let selectedMonth = null; // 0-indexed
+
+            function renderGrid() {
+                yearEl.textContent = currentYear;
+                grid.innerHTML = '';
+                MONTHS.forEach((m, i) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'mp-month-btn';
+                    btn.textContent = m;
+                    if (selectedYear === currentYear && selectedMonth === i) {
+                        btn.classList.add('selected');
+                    }
+                    btn.addEventListener('click', function() {
+                        selectedYear = currentYear;
+                        selectedMonth = i;
+                        const val = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
+                        hiddenInput.value = val;
+                        labelEl.textContent = `${m} ${currentYear}`;
+                        dropdown.classList.remove('open');
+                        renderGrid();
+                    });
+                    grid.appendChild(btn);
+                });
+            }
+
+            inputEl.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+                renderGrid();
+            });
+
+            prevBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                currentYear--;
+                renderGrid();
+            });
+
+            nextBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                currentYear++;
+                renderGrid();
+            });
+
+            clearBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectedYear = null;
+                selectedMonth = null;
+                hiddenInput.value = '';
+                labelEl.textContent = 'Select a month';
+                dropdown.classList.remove('open');
+                renderGrid();
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!wrapper.contains(e.target)) {
+                    dropdown.classList.remove('open');
+                }
+            });
+
+            renderGrid();
+        })();
     </script>
 
     <script>
@@ -680,7 +887,7 @@
                     const el = document.getElementById(containerId);
                     if (!el) return;
 
-                    const label = String(changes.label || 'dari bulan lalu');
+                    const label = String(changes.label || 'From last month');
                     const percent = Number(changeObj?.percent ?? 0);
                     const direction = (changeObj?.direction === 'down') ? 'down' : 'up';
 
@@ -712,7 +919,7 @@
                 if (!tbody) return;
 
                 if (!rows.length) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Belum ada transaksi course pada rentang tanggal ini.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">There are no course transactions in this date range.</td></tr>';
                     return;
                 }
 
@@ -748,21 +955,29 @@
                 const month = monthInput?.value || '';
                 const q = searchInput?.value || '';
                 const url = new URL(apiUrl, window.location.origin);
-                if (month) url.searchParams.set('month', month);
+                if (month) {
+                    url.searchParams.set('month', month);
+                } else {
+                    url.searchParams.set('month', 'all');
+                }
                 if (q) url.searchParams.set('q', q);
                 url.searchParams.set('period', currentPeriod);
 
+                // Show loading state
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>';
+
                 try {
                     const res = await fetch(url.toString(), {
-                        headers: {
-                            'Accept': 'application/json'
-                        }
+                        headers: { 'Accept': 'application/json' }
                     });
-                    if (!res.ok) return;
+                    if (!res.ok) {
+                        if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Gagal memuat data.</td></tr>';
+                        return;
+                    }
                     const data = await res.json();
                     render(data);
                 } catch (e) {
-                    // ignore fetch errors
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Terjadi kesalahan.</td></tr>';
                 }
             }
 
@@ -825,12 +1040,21 @@
 
             const renderRows = (rows) => {
                 if (!Array.isArray(rows) || rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Belum ada data.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No data has been entered yet.</td></tr>';
                     return;
                 }
 
                 tbody.innerHTML = rows.map((r) => {
                     const name = escapeHtml(r.course_name ?? '-');
+                    // Tanggal pembuatan course — tidak berubah meski filter bulan diganti
+                    const rawDate = r.course_created_at || null;
+                    let dateText = '-';
+                    if (rawDate) {
+                        const d = new Date(rawDate);
+                        if (!isNaN(d.getTime())) {
+                            dateText = d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        }
+                    }
                     const level = escapeHtml(r.course_level ?? '-');
                     const views = escapeHtml(r.total_views_compact ?? String(r.total_views ?? 0));
                     const avg = escapeHtml(r.avg_watch_time_label ?? '0 min');
@@ -840,6 +1064,7 @@
                     return (
                         '<tr>' +
                         '<td>' + name + '</td>' +
+                        '<td>' + dateText + '</td>' +
                         '<td>' + level + '</td>' +
                         '<td>' + views + '</td>' +
                         '<td>' + avg + '</td>' +
@@ -871,14 +1096,33 @@
                 const watch = Array.isArray(s.watch_minutes) ? s.watch_minutes : [];
                 const rating = Array.isArray(s.rating) ? s.rating : [];
 
-                if (views.length === 12) ch.data.datasets[0].data = views;
-                if (participants.length === 12) ch.data.datasets[1].data = participants;
-                if (watch.length === 12) ch.data.datasets[2].data = watch;
-                if (rating.length === 12) ch.data.datasets[3].data = rating;
+                // Determine which month to highlight based on the current filter input
+                const monthVal = (monthInput?.value || '').trim(); // YYYY-MM
+                let hlIdx = -1;
+                if (monthVal && /^\d{4}-\d{2}$/.test(monthVal)) {
+                    hlIdx = parseInt(monthVal.split('-')[1], 10) - 1; // 0-based
+                }
+
+                const helpers = window.__growthChartHelpers;
+                if (helpers) {
+                    const { makeDataset, DATASET_COLORS } = helpers;
+                    const newDatasets = [
+                        makeDataset('Total View',           views.length === 12 ? views : Array(12).fill(0),        DATASET_COLORS[0], hlIdx),
+                        makeDataset('Peserta',              participants.length === 12 ? participants : Array(12).fill(0), DATASET_COLORS[1], hlIdx),
+                        makeDataset('Waktu Tonton (Menit)', watch.length === 12 ? watch : Array(12).fill(0),         DATASET_COLORS[2], hlIdx),
+                        makeDataset('Rating Course',        rating.length === 12 ? rating : Array(12).fill(0),       DATASET_COLORS[3], hlIdx),
+                    ];
+                    ch.data.datasets = newDatasets;
+                } else {
+                    if (views.length === 12) ch.data.datasets[0].data = views;
+                    if (participants.length === 12) ch.data.datasets[1].data = participants;
+                    if (watch.length === 12) ch.data.datasets[2].data = watch;
+                    if (rating.length === 12) ch.data.datasets[3].data = rating;
+                }
                 ch.update();
             };
 
-            const fetchAndRender = async (period) => {
+            let fetchAndRender = async (period) => {
                 const url = new URL(apiUrl, window.location.origin);
                 url.searchParams.set('period', period);
 
@@ -942,6 +1186,47 @@
                         console.warn(err);
                     }
                 });
+            }
+            // ── Action Type sorting filter ──────────────────────────────
+            const actionFilter = document.getElementById('filter-kelola-pertumbuhan');
+            if (actionFilter) {
+                function sortGrowthTable() {
+                    const sortVal = actionFilter.value;
+                    if (!sortVal || !tbody) return;
+
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    // Don't sort if it's the "no data" placeholder row
+                    if (rows.length <= 1 && rows[0]?.querySelectorAll('td').length <= 1) return;
+
+                    rows.sort((a, b) => {
+                        const cellsA = a.querySelectorAll('td');
+                        const cellsB = b.querySelectorAll('td');
+                        if (sortVal === 'high-part' || sortVal === 'low-part') {
+                            // Participants column is index 5
+                            const valA = parseInt(cellsA[5]?.textContent || '0', 10);
+                            const valB = parseInt(cellsB[5]?.textContent || '0', 10);
+                            return sortVal === 'high-part' ? valB - valA : valA - valB;
+                        }
+                        if (sortVal === 'high-rate' || sortVal === 'low-rate') {
+                            // Rating column is index 6
+                            const valA = parseFloat(cellsA[6]?.textContent || '0');
+                            const valB = parseFloat(cellsB[6]?.textContent || '0');
+                            return sortVal === 'high-rate' ? valB - valA : valA - valB;
+                        }
+                        return 0;
+                    });
+
+                    rows.forEach(r => tbody.appendChild(r));
+                }
+
+                actionFilter.addEventListener('change', sortGrowthTable);
+
+                // Also re-sort after data is fetched from API
+                const origFetchAndRender = fetchAndRender;
+                fetchAndRender = async (period) => {
+                    await origFetchAndRender(period);
+                    sortGrowthTable();
+                };
             }
         })();
     </script>

@@ -138,27 +138,40 @@ class SyncMidtransPaymentStatus extends Command
 
             } catch (\Throwable $e) {
                 DB::rollBack();
-                // 404 from Midtrans = order not found (never charged), mark as expired
+                // 404 dari Midtrans = order belum pernah dicharge (user belum buka popup Snap).
+                // Ini NORMAL selama snap token masih dalam masa berlaku (< 24 jam).
+                // Hanya set expired jika token sudah > 24 jam atau tidak ada token sama sekali.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours  = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 25; // tidak ada token → anggap sudah expired
 
-                    if ($payment->event_registration_id) {
-                        $reg = EventRegistration::find($payment->event_registration_id);
-                        if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
-                            $reg->status = 'expired';
-                            $reg->save();
+                    if ($tokenAgeHours >= 24) {
+                        // Token sudah kedaluwarsa → set expired
+                        $payment->status = 'expired';
+                        $payment->save();
+
+                        if ($payment->event_registration_id) {
+                            $reg = EventRegistration::find($payment->event_registration_id);
+                            if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                                $reg->status = 'expired';
+                                $reg->save();
+                            }
                         }
-                    }
-                    if ($payment->enrollment_id) {
-                        $enr = Enrollment::find($payment->enrollment_id);
-                        if ($enr && $enr->status !== 'active') {
-                            $enr->status = 'expired';
-                            $enr->save();
+                        if ($payment->enrollment_id) {
+                            $enr = Enrollment::find($payment->enrollment_id);
+                            if ($enr && $enr->status !== 'active') {
+                                $enr->status = 'expired';
+                                $enr->save();
+                            }
                         }
+                        $updated++;
+                        $this->line("  [expired/token-stale] order_id={$payment->order_id} (token age: {$tokenAgeHours}h)");
+                    } else {
+                        // Token masih valid, user belum buka popup → biarkan pending
+                        $this->line("  [skip/not-yet-opened] order_id={$payment->order_id} (token age: {$tokenAgeHours}h)");
                     }
-                    $updated++;
-                    $this->line("  [expired/not-found] order_id={$payment->order_id}");
                 } else {
                     Log::warning('SyncMidtransPaymentStatus: failed to check order', [
                         'order_id' => $payment->order_id,

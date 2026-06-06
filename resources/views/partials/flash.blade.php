@@ -12,7 +12,7 @@
                     </svg>
                 </div>
                 <div class="flash-body">
-                    <div class="flash-title">Berhasil</div>
+                    <div class="flash-title">Success</div>
                     <div class="flash-message">{{ session('success') }}</div>
                 </div>
                 <button class="flash-close" type="button" aria-label="Tutup">&times;</button>

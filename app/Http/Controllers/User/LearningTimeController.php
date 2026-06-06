@@ -107,8 +107,8 @@ class LearningTimeController extends Controller
             if (!$label) {
                 continue;
             }
-            $hours = ((int) $row->total_seconds) / 3600;
-            $dataByLabel[$label] = (float) number_format($hours, 1);
+            $minutes = ((int) $row->total_seconds) / 60;
+            $dataByLabel[$label] = (float) round($minutes);
         }
 
         return response()->json([
@@ -144,8 +144,8 @@ class LearningTimeController extends Controller
 
         $data = [];
         for ($i = 1; $i <= 5; $i++) {
-            $hours = $secondsByWeek[$i] / 3600;
-            $data[] = (float) number_format($hours, 1);
+            $minutes = $secondsByWeek[$i] / 60;
+            $data[] = (float) round($minutes);
         }
 
         return response()->json([

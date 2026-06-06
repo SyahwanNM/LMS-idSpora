@@ -846,11 +846,11 @@
                                                 <form action="{{ route('admin.event-material.approve', $eventModule->event_id) }}" method="POST">
                                                     @csrf
                                                     <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
-                                                    <button type="submit" class="btn-action btn-icon-action" style="color:#166634;border-color:#bbf7d0;background:#f0fdf4;" title="Approve" aria-label="Approve">
+                                                    <button type="submit" class="btn-action btn-icon-action" style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Approve" aria-label="Approve">
                                                         <i class="bi bi-check2-circle"></i>
                                                     </button>
                                                 </form>
-                                                <button class="btn-action btn-icon-action" type="button" data-bs-toggle="collapse" data-bs-target="#rejectEventModule-{{ $eventModule->id }}" aria-expanded="false" style="color:#991b1b;border-color:#fecaca;background:#fef2f2;" title="Tolak" aria-label="Tolak">
+                                                <button class="btn-action btn-icon-action" type="button" data-bs-toggle="collapse" data-bs-target="#rejectEventModule-{{ $eventModule->id }}" aria-expanded="false" aria-controls="rejectEventModule-{{ $eventModule->id }}" style="color:#991b1b;border-color:#fecaca;background:#fef2f2;" title="Tolak" aria-label="Tolak">
                                                     <i class="bi bi-x-circle"></i>
                                                 </button>
                                             </div>
@@ -858,7 +858,7 @@
                                                 <form action="{{ route('admin.event-material.reject', $eventModule->event_id) }}" method="POST" class="d-flex flex-column gap-2">
                                                     @csrf
                                                     <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
-                                                    <textarea name="reason" rows="2" class="form-control" placeholder="Alasan penolakan (wajib)" required></textarea>
+                                                    <textarea name="rejection_reason" rows="2" class="form-control" placeholder="Alasan penolakan (wajib)" required></textarea>
                                                     <div class="d-flex justify-content-end">
                                                         <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-send me-1"></i>Kirim Penolakan</button>
                                                     </div>

@@ -24,19 +24,19 @@
             <ul class="navbar-nav mb-lg-0 d-flex align-items-center">
                 <li class="nav-item mx-1">
                     <a class="nav-link nav-section-link {{ request()->routeIs('landing-page') && !request()->query('section') ? 'active' : '' }}"
-                        href="{{ route('landing-page') }}">Beranda</a>
+                        href="{{ route('landing-page') }}">Home</a>
                 </li>
                 <li class="nav-item mx-1">
                     <a class="nav-link nav-section-link"
-                        href="{{ request()->routeIs('landing-page') ? '#tentang' : route('landing-page') . '#tentang' }}">Tentang</a>
+                        href="{{ request()->routeIs('landing-page') ? '#tentang' : route('landing-page') . '#tentang' }}">About</a>
                 </li>
                 <li class="nav-item mx-1">
                     <a class="nav-link nav-section-link"
-                        href="{{ request()->routeIs('landing-page') ? '#layanan' : route('landing-page') . '#layanan' }}">Layanan</a>
+                        href="{{ request()->routeIs('landing-page') ? '#layanan' : route('landing-page') . '#layanan' }}">Service</a>
                 </li>
                 <li class="nav-item mx-1">
                     <a class="nav-link nav-section-link"
-                        href="{{ request()->routeIs('landing-page') ? '#fitur' : route('landing-page') . '#fitur' }}">Fitur</a>
+                        href="{{ request()->routeIs('landing-page') ? '#fitur' : route('landing-page') . '#fitur' }}">Feature</a>
                 </li>
                 <li class="nav-item mx-1">
                     <a class="nav-link nav-section-link"
@@ -44,11 +44,11 @@
                 </li>
                 <li class="nav-item mx-1">
                     <a class="nav-link nav-section-link"
-                        href="{{ request()->routeIs('landing-page') ? '#kursus' : route('landing-page') . '#kursus' }}">Kursus</a>
+                        href="{{ request()->routeIs('landing-page') ? '#kursus' : route('landing-page') . '#kursus' }}">Course</a>
                 </li>
                 <li class="nav-item mx-1">
                     <a class="nav-link {{ request()->routeIs('public.support') ? 'active' : '' }}"
-                        href="{{ route('public.support') }}">Kendala</a>
+                        href="{{ route('public.support') }}">Help</a>
                 </li>
             </ul>
         </div>
@@ -56,9 +56,9 @@
         <!-- Auth Buttons (Always Right) -->
         <div class="d-flex align-items-center order-2 order-lg-3 ms-auto ms-lg-0">
             <a href="{{ route('login') }}" class="btn btn-outline-new me-2 px-2 px-md-4 shadow-none border-2"
-                style="font-size: 0.8rem; white-space: nowrap;">Masuk</a>
+                style="font-size: 0.8rem; white-space: nowrap;">Login</a>
             <a href="{{ route('register') }}" class="btn btn-primary-new px-2 px-md-4 shadow-none"
-                style="font-size: 0.8rem; white-space: nowrap;">Daftar</a>
+                style="font-size: 0.8rem; white-space: nowrap;">Register</a>
         </div>
     </div>
 </nav>
@@ -192,5 +192,3 @@
         }
     });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

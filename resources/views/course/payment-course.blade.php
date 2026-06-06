@@ -301,7 +301,7 @@
         <div class="biodata_payment_course">
             
             <div class="box_kiri_biodata">
-                <h5>Data Peserta</h5>
+                <h5>Participant Data</h5>
                 
 
                 <div class="input_biodata">
@@ -310,39 +310,38 @@
                 </div>
 
                 <div class="input_biodata">
-                    <p>Nama Lengkap</p>
+                    <p>Full Name</p>
                     <div class="info_biodata">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
                             <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0" />
                         </svg>
-                        <span>Nama Akan digunakan pada sertifikat</span>
+                        <span>Name Will be used on certificate</span>
                     </div>
-                    <input class="kolom_input_biodata" type="text" value="{{ Auth::user()->name ?? '' }}" readonly>
+                    <input class="kolom_input_biodata" type="text" id="fullNameInput" name="display_name" value="{{ Auth::user()->name ?? '' }}">
                 </div>
 
                 <div class="input_biodata">
                     <p>No Whatsapp</p>
                     <div class="whatsapp_biodata">
-                        <span class="btn_nomor" style="display:inline-flex;align-items:center;justify-content:center;font-weight:600;cursor:default;">+62</span>
-                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="+62">
-                        <input class="input_nomor" type="text" placeholder="No Whatsapp" id="whatsappNumberInput" inputmode="tel" autocomplete="tel">
+                        <input type="hidden" name="kode_dial" id="kodeDialInput" value="">
+                        <input class="input_nomor" type="text" placeholder="Example: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
                     </div>
                 </div>
                 @if((bool) ($course->is_reseller_course ?? false))
                     <div class="input_biodata">
-                        <p>Kode Referral</p>
+                        <p>Referral Code</p>
                         <input
                             class="kolom_input_biodata"
                             type="text"
                             id="referralCodeInput"
-                            placeholder="Masukkan kode referral reseller jika ada"
+                            placeholder="Enter the reseller referral code if any"
                             value="{{ request()->query('ref', '') }}"
                             autocomplete="off"
                         >
                         <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
                         <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-                            Kode valid akan memberi potongan 10%.
+                            Valid code will give 10% discount.
                         </div>
                     </div>
                 @endif
@@ -372,7 +371,7 @@
                             @php $isFreeCourseLocal = (int) ($course->price ?? 0) <= 0; @endphp
                             <p class="harga_judul_event">
                                 @if($isFreeCourseLocal)
-                                    GRATIS
+                                    Free Enroll
                                 @elseif($course->hasDiscount())
                                     <span style="text-decoration: line-through; color: #888; font-size: 12px; margin-right: 5px;">Rp{{ number_format($course->price, 0, ',', '.') }}</span>
                                     Rp{{ number_format($course->discounted_price, 0, ',', '.') }}
@@ -390,7 +389,7 @@
                             <p>Total</p>
                             <h4 id="totalAmountText" data-base-amount="{{ (int) round($course->hasDiscount() ? $course->discounted_price : ($course->price ?? 0)) }}">
                                 @if($isFreeCourseLocal)
-                                    GRATIS
+                                    Free Enroll!
                                 @elseif($course->hasDiscount())
                                     <span style="text-decoration: line-through; color: #888; font-size: 14px; margin-right: 8px; font-weight: 400;">Rp {{ number_format($course->price, 0, ',', '.') }}</span>
                                     Rp {{ number_format($course->discounted_price, 0, ',', '.') }}
@@ -413,37 +412,15 @@
                 <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
-                    <input type="hidden" name="name" value="{{ Auth::user()->name ?? '' }}">
+                    <input type="hidden" name="name" id="hiddenNameInput" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
                     <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', '') }}">
 
-                    @if(!$isFreeCourse)
-                        <div style="margin-top:20px;">
-                            <div style="font-size:13px; font-weight:600; margin-bottom:8px; color:#333;">Metode Pembayaran</div>
-                           <div style="display:flex; gap:14px; flex-wrap:wrap;">
-                                @if(!$midtransClientKey)
-                                    <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                        <input type="radio" name="payment_method" value="manual" checked>
-                                        Manual (QRIS + upload bukti)
-                                    </label>
-                                @endif
-                                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:black;">
-                                    <input type="radio" name="payment_method" value="midtrans" @if(!$midtransClientKey) disabled @endif @if($midtransClientKey) checked @endif>
-                                    Midtrans
-                                </label>
-                           </div>
-                            @if(!$midtransClientKey)
-                                <div style="font-size:12px; color:#888; margin-top:6px;">Midtrans belum dikonfigurasi.</div>
-                            @endif
-                        </div>
-                    @endif
-
-                    @if($isFreeCourse || !$midtransClientKey)
-                        <button type="button" id="showQrisBtn" class="btn_bayar_payment" disabled>Bayar</button>
-                    @endif
-                    @if(!$isFreeCourse)
-                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" style="display:none;" disabled>Bayar dengan Midtrans</button>
+                    @if($isFreeCourse)
+                        <button type="submit" id="freeEnrollBtn" class="btn_bayar_payment" disabled>Study Now!</button>
+                    @else
+                        <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" disabled>Pay Now</button>
                     @endif
                 </form>
             </div>
@@ -453,50 +430,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    @if(!$isFreeCourse && !$midtransClientKey)
-        <!-- QRIS Modal -->
-        <div class="modal fade qris-modal" id="qrisModal" tabindex="-1" aria-labelledby="qrisModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="qrisModalLabel">Pembayaran - QRIS</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <p class="text-secondary">Scan QRIS berikut untuk melakukan pembayaran.</p>
-
-                        <img id="qrisImage" class="qris-image" src="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" alt="QRIS Payment">
-
-                        <div class="d-grid gap-2 mt-3">
-                            <a href="{{ asset('aset/Qris Payment IdSpora.jpeg') }}" class="btn btn-outline-primary" download>
-                                Download QR
-                            </a>
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+    <!-- QRIS Modal removed -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Sync editable full name to hidden input
+            var fullNameInput = document.getElementById('fullNameInput');
+            var hiddenNameInput = document.getElementById('hiddenNameInput');
+            if (fullNameInput && hiddenNameInput) {
+                fullNameInput.addEventListener('input', function() {
+                    hiddenNameInput.value = this.value;
+                    updatePayButtonState();
+                });
+            }
+
             var kodeDialInput = document.getElementById('kodeDialInput');
             var formKodeDialInput = document.getElementById('formKodeDialInput');
             var whatsappInput = document.getElementById('whatsappNumberInput') || document.querySelector('.input_nomor');
             var formWhatsappInput = document.getElementById('formWhatsappInput');
             var totalAmountText = document.getElementById('totalAmountText');
             var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
-            var showQrisBtn = document.getElementById('showQrisBtn');
+            var freeEnrollBtn = document.getElementById('freeEnrollBtn');
             var midtransPayBtn = document.getElementById('midtransPayBtnCourse');
             var manualPaymentForm = document.getElementById('manualPaymentForm');
             var referralInput = document.getElementById('referralCodeInput');
             var referralMessageEl = document.getElementById('referralMessage');
             var formReferralCodeInput = document.getElementById('formReferralCodeInput');
-            var uploadProofForm = document.getElementById('uploadProofForm');
-            var confirmProofModalEl = document.getElementById('confirmProofModal');
-            var confirmProofSubmitBtn = document.getElementById('confirmProofSubmitBtn');
-            var pendingProofSubmit = false;
             var checkReferralUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-referral', $course) : '');
             var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
             var referralState = referralInput ? 'idle' : 'disabled';
@@ -505,24 +464,6 @@
             var isFreeCourse = false;
             if (manualPaymentForm) {
                 isFreeCourse = (manualPaymentForm.getAttribute('data-is-free') || '0') === '1';
-            }
-
-            function getSelectedMethod(){
-                var checked = document.querySelector('input[name="payment_method"]:checked');
-                return checked ? checked.value : 'manual';
-            }
-
-            function togglePayButtons(){
-                if (isFreeCourse) {
-                    if (showQrisBtn) showQrisBtn.style.display = '';
-                    if (midtransPayBtn) midtransPayBtn.style.display = 'none';
-                    return;
-                }
-                var method = getSelectedMethod();
-                var isManual = method !== 'midtrans';
-                if (showQrisBtn) showQrisBtn.style.display = isManual ? '' : 'none';
-                if (midtransPayBtn) midtransPayBtn.style.display = isManual ? 'none' : '';
-                updatePayButtonState();
             }
 
             function formatIdrNumber(amount) {
@@ -562,7 +503,7 @@
                 if (!totalAmountText) return;
                 var n = Math.max(0, parseInt(amount || 0, 10));
                 if (isFreeCourse || n === 0) {
-                    totalAmountText.textContent = 'GRATIS';
+                    totalAmountText.textContent = 'Free Enroll';
                     return;
                 }
                 totalAmountText.textContent = 'Rp ' + formatIdrNumber(n);
@@ -590,18 +531,21 @@
             }
 
             function updatePayButtonState() {
-                if (!showQrisBtn && !midtransPayBtn) return;
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                // For free course, allow without WhatsApp. For paid, WhatsApp is required (min 8 digits).
-                var disable = (!isFreeCourse) && (wa.length < 8);
+                var fullName = (fullNameInput ? fullNameInput.value : '').trim();
+                var disable = wa.length < 8 || fullName.length === 0;
                 if (referralInput) {
                     var code = getReferralCode();
                     if (code !== '' && referralState !== 'valid') {
                         disable = true;
                     }
                 }
-                if (showQrisBtn) showQrisBtn.disabled = disable;
+                if (freeEnrollBtn) freeEnrollBtn.disabled = disable;
                 if (midtransPayBtn) midtransPayBtn.disabled = disable;
+            }
+
+            if (whatsappInput) {
+                whatsappInput.addEventListener('input', updatePayButtonState);
             }
 
             function updateReferralUIFromResult(data) {
@@ -682,7 +626,7 @@
 
             function showPaymentValidationAlert() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
-                if ((!isFreeCourse) && wa.length < 8) {
+                if (wa.length < 8) {
                     alert('Nomor WhatsApp tidak valid. Minimal 8 digit angka.');
                     try { whatsappInput && whatsappInput.focus(); } catch (_e) {}
                     return;
@@ -694,7 +638,7 @@
                 }
             }
 
-            // Enable/disable Bayar button based on required fields
+            // Enable/disable button based on required fields
             updatePayButtonState();
             if (whatsappInput) {
                 whatsappInput.addEventListener('input', updatePayButtonState);
@@ -708,69 +652,17 @@
                 setTotalAmount(getBaseAmount());
             }
 
-            // Method toggle
-            var methodRadios = document.querySelectorAll('input[name="payment_method"]');
-            if (methodRadios && methodRadios.length) {
-                methodRadios.forEach(function(r){
-                    r.addEventListener('change', function(){
-                        togglePayButtons();
-                    });
-                });
-            }
-            togglePayButtons();
-
-            // Show QRIS modal when clicking bayar
-            if (showQrisBtn) {
-                showQrisBtn.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    // guard (in case button enabled state is bypassed)
+            // Handle free registration submit
+            if (manualPaymentForm && isFreeCourse) {
+                manualPaymentForm.addEventListener('submit', function(e) {
                     updatePayButtonState();
-                    if (showQrisBtn.disabled) {
+                    if (freeEnrollBtn && freeEnrollBtn.disabled) {
+                        e.preventDefault();
                         showPaymentValidationAlert();
                         return;
                     }
-                    if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
                     syncReferralInput();
-                    if (formWhatsappFullInput) {
-                        var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
-                        var waRaw = whatsappInput ? whatsappInput.value : '';
-                        formWhatsappFullInput.value = (dial + waRaw).replace(/\s+/g, '');
-                    }
-
-                    // Free course: submit directly to enroll (no QRIS / no admin validation)
-                    if (isFreeCourse) {
-                        try {
-                            if (manualPaymentForm && manualPaymentForm.getAttribute('action') && manualPaymentForm.getAttribute('action') !== '#') {
-                                manualPaymentForm.submit();
-                                return;
-                            }
-                        } catch (_e) {
-                            // fallthrough to default behavior
-                        }
-                    }
-
-                    var qrisEl = document.getElementById('qrisModal');
-                    if (qrisEl && window.bootstrap) {
-                        var qrisModal = new window.bootstrap.Modal(qrisEl);
-                        // keep modal compact on open
-                        try {
-                            var collapseEl = document.getElementById('uploadProofCollapse');
-                            if (collapseEl && window.bootstrap.Collapse) {
-                                var collapse = window.bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
-                                collapse.hide();
-                            }
-                            var paymentProofInputEl = document.getElementById('paymentProofInput');
-                            var proofPreviewEl = document.getElementById('proofPreview');
-                            if (paymentProofInputEl) paymentProofInputEl.value = '';
-                            if (proofPreviewEl) proofPreviewEl.style.display = 'none';
-                        } catch(e) {}
-                        qrisModal.show();
-                    } else if (qrisEl) {
-                        qrisEl.classList.add('show');
-                        qrisEl.style.display = 'block';
-                        document.body.classList.add('modal-open');
-                    }
                 });
             }
 
@@ -799,7 +691,7 @@
                     var pending = await fetchPendingCourseOrder();
                     cachedPending = pending;
                     if (pending && pending.pending && pending.order_id) {
-                        midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                        midtransPayBtn.textContent = 'Continue Payment';
                         if (pending.amount) {
                             setTotalAmount(pending.amount);
                         }
@@ -813,7 +705,6 @@
                         if (pending.whatsapp_number && whatsappInput && (!whatsappInput.value || whatsappInput.value.trim() === '')) {
                             var raw = String(pending.whatsapp_number || '').trim();
                             if (raw.startsWith('+')) {
-                                // Match +62xxxxxxxx etc
                                 var m = raw.match(/^\+(\d{1,3})(.*)$/);
                                 if (m) {
                                     var rest = String(m[2] || '').replace(/\D/g, '');
@@ -824,22 +715,10 @@
                             }
                         }
 
-                        // Auto select Midtrans and disable manual option while pending
-                        var midtransRadio = document.querySelector('input[name="payment_method"][value="midtrans"]');
-                        var manualRadio = document.querySelector('input[name="payment_method"][value="manual"]');
-                        if (midtransRadio && !midtransRadio.disabled) {
-                            midtransRadio.checked = true;
-                        }
-                        if (manualRadio) {
-                            manualRadio.disabled = true;
-                        }
-
-                        togglePayButtons();
                         updatePayButtonState();
                     } else if (pending && pending.needs_force_new) {
-                        // Previous order expired/rejected — reset to fresh payment state
                         cachedPending = null;
-                        midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                        midtransPayBtn.textContent = 'Pay Now';
                         updatePayButtonState();
                     }
                 }
@@ -856,10 +735,8 @@
                         return;
                     }
 
-                    // Ensure latest hidden values
-                    if (formKodeDialInput) formKodeDialInput.value = kodeDialInput.value;
                     if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
-                    var dialVal = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
+                    var dialVal = '+62';
                     var waVal = whatsappInput ? (whatsappInput.value || '').trim() : '';
                     var referralVal = getReferralCode();
 
@@ -895,7 +772,7 @@
 
                     midtransPayBtn.disabled = true;
                     var originalText = midtransPayBtn.textContent;
-                    midtransPayBtn.textContent = 'Memproses...';
+                    midtransPayBtn.textContent = 'Processing...';
 
                     try {
                         var data;
@@ -932,13 +809,12 @@
                             onPending: function(){
                                 alert('Pembayaran pending. Silakan selesaikan pembayaran di Midtrans.');
                                 cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
-                                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                                midtransPayBtn.textContent = 'Continue Payment';
                             },
                             onError: function(){
                                 alert('Pembayaran gagal. Silakan coba lagi.');
                             },
                             onClose: async function(){
-                                // Always check status when popup closes
                                 midtransPayBtn.disabled = true;
                                 midtransPayBtn.textContent = 'Memeriksa status...';
                                 try {
@@ -965,7 +841,7 @@
                                     }
                                 } catch(_e) {}
                                 midtransPayBtn.disabled = false;
-                                midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                                midtransPayBtn.textContent = 'Continue Payment';
                                 updatePayButtonState();
                             }
                         });
@@ -974,7 +850,7 @@
                     } finally {
                         midtransPayBtn.disabled = false;
                         if (cachedPending && cachedPending.pending && cachedPending.order_id) {
-                            midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                            midtransPayBtn.textContent = 'Continue Payment';
                         } else {
                             midtransPayBtn.textContent = originalText;
                         }
@@ -982,92 +858,12 @@
                     }
                 });
 
-                // If there is a pending Midtrans payment, show "continue" label
                 ensurePendingCourseLabel();
 
-                // If force_new=1 in URL (redirect from expired), clear cached pending
                 if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
                     cachedPending = null;
-                    midtransPayBtn.textContent = 'Bayar dengan Midtrans';
+                    midtransPayBtn.textContent = 'Pay Now';
                 }
-            }
-
-            // Confirm modal before submitting payment proof
-            if (uploadProofForm && confirmProofModalEl && window.bootstrap) {
-                uploadProofForm.addEventListener('submit', async function(e) {
-                    if (pendingProofSubmit) return;
-                    e.preventDefault();
-
-                    // sync latest inputs to hidden fields
-                    if (formWhatsappFullInput) {
-                        var dial = (kodeDialInput && kodeDialInput.value) ? kodeDialInput.value : '+62';
-                        var waRaw = whatsappInput ? whatsappInput.value : '';
-                        formWhatsappFullInput.value = (dial + waRaw).replace(/\s+/g, '');
-                    }
-
-                    var m = window.bootstrap.Modal.getOrCreateInstance(confirmProofModalEl);
-                    m.show();
-                });
-
-                if (confirmProofSubmitBtn) {
-                    confirmProofSubmitBtn.addEventListener('click', function() {
-                        if (pendingProofSubmit) return;
-                        pendingProofSubmit = true;
-                        try { confirmProofSubmitBtn.disabled = true; } catch (e) {}
-                        uploadProofForm.submit();
-                    });
-                }
-
-                confirmProofModalEl.addEventListener('hidden.bs.modal', function() {
-                    pendingProofSubmit = false;
-                    if (confirmProofSubmitBtn) {
-                        try { confirmProofSubmitBtn.disabled = false; } catch (e) {}
-                    }
-                });
-            }
-
-            // Preview selected proof image and simple client-side validation
-            var paymentProofInput = document.getElementById('paymentProofInput');
-            var proofPreview = document.getElementById('proofPreview');
-            var proofPreviewImg = document.getElementById('proofPreviewImg');
-            var uploadProofForm = document.getElementById('uploadProofForm');
-            var payNowBtn = document.getElementById('payNowBtn');
-
-            if (paymentProofInput) {
-                paymentProofInput.addEventListener('change', function(e) {
-                    var file = paymentProofInput.files[0];
-                    if (!file) {
-                        proofPreview.style.display = 'none';
-                        return;
-                    }
-                    // size check (5MB)
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('Ukuran file terlalu besar. Maksimal 5MB.');
-                        paymentProofInput.value = '';
-                        proofPreview.style.display = 'none';
-                        return;
-                    }
-                    var reader = new FileReader();
-                    reader.onload = function(evt) {
-                        proofPreviewImg.src = evt.target.result;
-                        proofPreview.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }
-
-            // Optionally handle upload form submit: simple UX feedback
-            if (uploadProofForm) {
-                uploadProofForm.addEventListener('submit', function(e) {
-                    // let normal POST happen; show simple feedback
-                    if (!paymentProofInput || !paymentProofInput.files[0]) {
-                        e.preventDefault();
-                        alert('Silakan pilih file bukti pembayaran terlebih dahulu.');
-                        return;
-                    }
-                    payNowBtn.disabled = true;
-                    payNowBtn.textContent = 'Mengirim...';
-                });
             }
         });
     </script>

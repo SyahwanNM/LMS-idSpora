@@ -26,45 +26,34 @@
     @endphp
 
     @unless($isSpecialPage)
-    <nav class="navbar navbar-expand-lg navbar-dark bg-purple-gradient shadow-sm fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom fixed-top" style="height: 64px;">
         <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="{{ route('admin.dashboard') }}">
-                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:22px;">
-                <span class="fw-semibold">Admin</span>
+                <img src="{{ asset('aset/logo.png') }}" alt="logo" class="me-2" style="height:26px;">
+                <span class="fw-bold text-dark fs-5" style="letter-spacing: -0.5px;">Admin</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar" aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @unless(request()->routeIs('admin.dashboard') || request()->routeIs('admin.users.*') || request()->routeIs('admin.carousels.*'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ (request()->routeIs('admin.add-event') || request()->routeIs('admin.events.*')) ? 'active' : '' }}" href="{{ route('admin.add-event') }}">Manage Event</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.add-users') ? 'active' : '' }}" href="{{ route('admin.add-users') }}">Manage User</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}" href="{{ route('admin.reports') }}">Report</a>
-                    </li>
-                    @endunless
-                    {{-- Certificate management moved to CRM --}}
-                    @if(request()->routeIs('admin.dashboard'))
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Manage Accounts Admin</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('admin.carousels.*') ? 'active' : '' }}" href="{{ route('admin.carousels.index') }}">Manage Carousel</a>
-                    </li>
+                    @if(!request()->routeIs('admin.dashboard'))
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-medium text-primary d-flex align-items-center" href="{{ route('admin.dashboard') }}">
+                                <i class="bi bi-grid-1x2-fill me-2"></i> Module Hub
+                            </a>
+                        </li>
                     @endif
                 </ul>
-                <ul class="navbar-nav ms-auto align-items-center">
+                <ul class="navbar-nav ms-auto align-items-center gap-3">
                     <li class="nav-item dropdown">
                         <a class="nav-link d-flex align-items-center dropdown-toggle" href="#" id="adminProfileDropdown" role="button" data-bs-toggle="dropdown" data-bs-offset="0,8" data-bs-auto-close="outside" aria-expanded="false">
                             <span class="avatar-circle me-2">
                                 <img src="{{ $user?->avatar_url }}" alt="avatar" referrerpolicy="no-referrer">
                             </span>
-                            <span class="d-none d-lg-inline user-name small fw-semibold">{{ $user?->name ?? 'Admin' }}</span>
+                            <span class="d-none d-lg-inline user-name small fw-semibold text-dark">{{ $user?->name ?? 'Admin' }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow profile-dropdown" aria-labelledby="adminProfileDropdown">
                             <li class="d-flex justify-content-end align-items-center pt-2 px-2">
@@ -78,7 +67,10 @@
                             <li>
                                 <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="m-0">
                                     @csrf
-                                    <button type="button" id="logoutTrigger" class="dropdown-item small text-danger">
+                                    <button type="button" id="logoutTrigger"
+                                        class="dropdown-item small text-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmLogoutModal">
                                         <i class="bi bi-box-arrow-right me-1"></i>Logout
                                     </button>
                                 </form>
@@ -100,19 +92,20 @@
                                 <i class="bi bi-box-arrow-right"></i>
                             </div>
                             <div>
-                                <h5 class="modal-title mb-0" id="confirmLogoutLabel">Konfirmasi Logout</h5>
-                                <small class="text-muted">Pastikan ini memang Anda</small>
+                                <h5 class="modal-title mb-0" id="confirmLogoutLabel">Confirm Logout</h5>
+                                <small class="text-muted">Make sure this is really you</small>
                             </div>
                         </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body pt-0">
-                        <p class="text-secondary mb-3">Apakah Anda yakin ingin keluar dari akun admin?</p>
+                        <p class="text-secondary mb-3">Are you sure you want to log out of the admin account?</p>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
-                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
-                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn">
+                            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger px-4" id="logoutConfirmBtn"
+                                onclick="document.getElementById('logoutForm').submit();">
                                 <span class="me-1">Logout</span>
                                 <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                             </button>
@@ -129,125 +122,128 @@
         @yield('content')
     </div>
 
-    @if($isSpecialPage)
     <style>
-        body { padding-top: 0 !important; }
+        body { padding-top: 64px !important; }
+        @if($isSpecialPage)
+            /* Special pages might handle their own padding if needed, but for now we enforce the top offset for the fixed navbar */
+            .container-fluid.p-0 { padding-top: 0 !important; } 
+        @endif
     </style>
-    @endif
     
     
     <script>
     document.addEventListener('DOMContentLoaded', function(){
-        // Ensure dropdown initialization even if other scripts errored earlier
-        var trigger = document.getElementById('adminProfileDropdown');
-        if (trigger && window.bootstrap && bootstrap.Dropdown) {
-            try { new bootstrap.Dropdown(trigger, { autoClose: 'outside' }); } catch(e){}
-            // Defensive: manually toggle on click if data-api missed
-            trigger.addEventListener('click', function(ev){ try {
-                const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside' });
-                dd.toggle();
-                // Fallback: force show if still hidden
-                const menu = document.querySelector('ul.profile-dropdown.dropdown-menu');
-                if(menu && !menu.classList.contains('show')){
-                    menu.classList.add('show');
-                    menu.style.display = 'block';
-                    trigger.setAttribute('aria-expanded', 'true');
-                }
-            } catch(e){} });
-
-            // Close button in dropdown
-            document.querySelectorAll('.dropdown-close').forEach(function(btn){
-                btn.addEventListener('click', function(ev){
-                    ev.preventDefault(); ev.stopPropagation();
-                    try {
-                        const dd = bootstrap.Dropdown.getOrCreateInstance(trigger, { autoClose: 'outside', display: 'static' });
-                        dd.hide();
-                    } catch(e){}
-                });
-            });
-        }
-        // Auto-show any server-rendered Bootstrap toasts (flash messages)
-        try {
-            document.querySelectorAll('.toast').forEach(function(t){
-                try {
-                    if(window.bootstrap && bootstrap.Toast){
-                        var inst = bootstrap.Toast.getOrCreateInstance(t);
-                        inst.show();
-                    }
-                } catch(e) {}
-            });
-        } catch(e) {}
-        
-        // Logout confirmation (modern modal)
+        const trigger = document.getElementById('adminProfileDropdown');
         const logoutTrigger = document.getElementById('logoutTrigger');
         const logoutForm = document.getElementById('logoutForm');
         const modalEl = document.getElementById('confirmLogoutModal');
-        if (logoutTrigger && logoutForm && modalEl && window.bootstrap && bootstrap.Modal) {
-            const confirmModal = new bootstrap.Modal(modalEl);
 
-            const initialBodyHtml = modalEl.querySelector('.modal-body')?.innerHTML || '';
-            const initialBodyClass = modalEl.querySelector('.modal-body')?.className || '';
-            const initialFooterHtml = modalEl.querySelector('.modal-footer')?.innerHTML || '';
-            const initialFooterDisplay = modalEl.querySelector('.modal-footer')?.style.display || '';
+        const getBootstrap = () => window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
 
-            function resetLogoutModal(){
-                const body = modalEl.querySelector('.modal-body');
-                const footer = modalEl.querySelector('.modal-footer');
-                if(body){
-                    body.className = initialBodyClass;
-                    body.innerHTML = initialBodyHtml;
-                }
-                if(footer){
-                    footer.style.display = initialFooterDisplay;
-                    footer.innerHTML = initialFooterHtml;
-                }
-                const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
-                if(confirmBtn) confirmBtn.disabled = false;
+        let _adminInitDone = false;
+        const initAdminNavbar = () => {
+            if (_adminInitDone) return;
+            const bs = getBootstrap();
+            if (!bs || !bs.Dropdown || !bs.Modal) return;
+            _adminInitDone = true;
+
+            // 1. Profile Dropdown Logic
+            if (trigger) {
+                const dd = new bs.Dropdown(trigger, { autoClose: 'outside' });
+                trigger.addEventListener('click', function(ev) {
+                    ev.preventDefault();
+                    dd.toggle();
+                });
+
+                // Close button in dropdown
+                document.querySelectorAll('.dropdown-close').forEach(function(btn){
+                    btn.addEventListener('click', function(ev){
+                        ev.preventDefault(); ev.stopPropagation();
+                        dd.hide();
+                    });
+                });
             }
 
-            logoutTrigger.addEventListener('click', function(ev){
-                ev.preventDefault();
-                resetLogoutModal();
-                confirmModal.show();
-                // focus confirm button for faster keyboard flow
-                setTimeout(function(){
-                    try { modalEl.querySelector('#logoutConfirmBtn')?.focus(); } catch(e) {}
-                }, 150);
-            });
+            // 2. Logout Modal Logic
+            if (logoutTrigger && logoutForm && modalEl) {
+                const confirmModal = new bs.Modal(modalEl);
 
-            function showLogoutSuccessState(){
-                const body = modalEl.querySelector('.modal-body');
-                const footer = modalEl.querySelector('.modal-footer');
-                if(footer) footer.style.display = 'none';
-                if(body){
-                    body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
-                    body.innerHTML = `
-                        <div class="logout-success-feedback text-center">
-                            <svg class="check-anim" viewBox="0 0 72 72" width="88" height="88" aria-hidden="true">
-                                <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
-                                <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
-                            </svg>
-                            <p class="fw-semibold mb-1 mt-3">Berhasil logout</p>
-                            <small class="text-muted">Mengalihkan...</small>
-                        </div>`;
+                const initialBodyHtml = modalEl.querySelector('.modal-body')?.innerHTML || '';
+                const initialBodyClass = modalEl.querySelector('.modal-body')?.className || '';
+                const initialFooterHtml = modalEl.querySelector('.modal-footer')?.innerHTML || '';
+                const initialFooterDisplay = modalEl.querySelector('.modal-footer')?.style.display || '';
+
+                function resetLogoutModal(){
+                    const body = modalEl.querySelector('.modal-body');
+                    const footer = modalEl.querySelector('.modal-footer');
+                    if(body){
+                        body.className = initialBodyClass;
+                        body.innerHTML = initialBodyHtml;
+                    }
+                    if(footer){
+                        footer.style.display = initialFooterDisplay;
+                        footer.innerHTML = initialFooterHtml;
+                    }
+                    const confirmBtn = modalEl.querySelector('#logoutConfirmBtn');
+                    if(confirmBtn) confirmBtn.disabled = false;
                 }
+
+                logoutTrigger.addEventListener('click', function(ev){
+                    ev.preventDefault();
+                    resetLogoutModal();
+                    confirmModal.show();
+                    setTimeout(function(){
+                        try { modalEl.querySelector('#logoutConfirmBtn')?.focus(); } catch(e) {}
+                    }, 150);
+                });
+
+                function showLogoutSuccessState(){
+                    const body = modalEl.querySelector('.modal-body');
+                    const footer = modalEl.querySelector('.modal-footer');
+                    if(footer) footer.style.display = 'none';
+                    if(body){
+                        body.classList.add('d-flex','flex-column','align-items-center','justify-content-center');
+                        body.innerHTML = `
+                            <div class="logout-success-feedback text-center">
+                                <svg class="check-anim" viewBox="0 0 72 72" width="88" height="88" aria-hidden="true">
+                                    <circle class="circle" cx="36" cy="36" r="32" fill="none" stroke="#16a34a" stroke-width="4" />
+                                    <path class="check" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M22 36.5 32 46 50 27" />
+                                </svg>
+                                <p class="fw-semibold mb-1 mt-3">Logout successful</p>
+                                <small class="text-muted">Redirecting...</small>
+                            </div>`;
+                    }
+                }
+
+                modalEl.addEventListener('click', function(ev){
+                    const target = ev.target;
+                    const btn = target && (target.id === 'logoutConfirmBtn' ? target : target.closest && target.closest('#logoutConfirmBtn'));
+                    if(!btn) return;
+                    ev.preventDefault();
+                    btn.disabled = true;
+                    try { showLogoutSuccessState(); } catch(e){}
+                    setTimeout(function(){ logoutForm.submit(); }, 900);
+                });
+
+                modalEl.addEventListener('hidden.bs.modal', function(){
+                    try { resetLogoutModal(); } catch(e){}
+                });
             }
+        };
 
-            modalEl.addEventListener('click', function(ev){
-                const target = ev.target;
-                const btn = target && (target.id === 'logoutConfirmBtn' ? target : target.closest && target.closest('#logoutConfirmBtn'));
-                if(!btn) return;
-                ev.preventDefault();
-                btn.disabled = true;
-                try { showLogoutSuccessState(); } catch(e){}
-                setTimeout(function(){ logoutForm.submit(); }, 900);
-            });
+        // Polling for bootstrap
+        let _checkCount = 0;
+        const _interval = setInterval(() => {
+            if (getBootstrap() && getBootstrap().Dropdown) {
+                clearInterval(_interval);
+                initAdminNavbar();
+            }
+            if (++_checkCount > 100) clearInterval(_interval);
+        }, 100);
 
-            modalEl.addEventListener('hidden.bs.modal', function(){
-                // keep modal consistent if user closes it mid-way
-                try { resetLogoutModal(); } catch(e){}
-            });
-        }
+        window.addEventListener('load', initAdminNavbar);
+
+
         
         // Inactivity auto-logout (idle timeout)
         try {
@@ -273,7 +269,7 @@
             });
             resetIdle();
         } catch(e){ /* noop */ }
-        });
+    });
     </script>
     <style>
     .bg-purple-gradient {background:linear-gradient(#4B2DBF 100%);}    
@@ -326,12 +322,12 @@
 
     /* New global notification component */
     .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:12050; pointer-events:none; }
-    .notification { min-width: 300px; max-width:420px; pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+    .notification { min-width: 320px; max-width:480px; pointer-events:auto; display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; box-shadow: 0 8px 30px rgba(2,6,23,0.12); color:#fff; transform: translateY(-6px) scale(.99); opacity:0; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
     .notification.show { transform: translateY(0) scale(1); opacity:1; }
     .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
     .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
-    .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; }
-    .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); }
+    .notification .notif-message{ flex:1; font-weight:600; font-size:0.95rem; line-height:1.4; }
+    .notification .notif-close { background:transparent; border:0; color:rgba(255,255,255,.95); flex-shrink:0; padding:0; line-height:1; }
     /* Body padding to prevent content from hiding under fixed navbar */
     /* Extra top spacing so main content sits a bit lower under fixed navbar */
     body { padding-top: 64px; }
@@ -407,8 +403,52 @@
             });
         } catch(e){}
     });
+
+    // Programmatic API for the new notification banner (replaces legacy Bootstrap toasts)
+    window.adminNotify = function(type, message, timeout){
+        try {
+            const kind = (type === 'error') ? 'error' : 'success';
+            const text = (message == null) ? '' : String(message);
+            const ms = Number.isFinite(Number(timeout)) ? Math.max(800, Number(timeout)) : 3800;
+
+            let wrap = document.getElementById('globalNotifications');
+            if(!wrap){
+                wrap = document.createElement('div');
+                wrap.id = 'globalNotifications';
+                wrap.className = 'global-notification';
+                wrap.setAttribute('aria-live', 'polite');
+                wrap.setAttribute('aria-atomic', 'true');
+                document.body.appendChild(wrap);
+            }
+
+            const n = document.createElement('div');
+            n.className = 'notification ' + kind;
+            n.setAttribute('role', 'status');
+            n.setAttribute('data-timeout', String(ms));
+
+            const msg = document.createElement('div');
+            msg.className = 'notif-message';
+            msg.textContent = text;
+
+            const close = document.createElement('button');
+            close.className = 'notif-close';
+            close.setAttribute('aria-label', 'Close');
+            close.type = 'button';
+            close.innerHTML = '&times;';
+
+            n.appendChild(msg);
+            n.appendChild(close);
+            wrap.appendChild(n);
+
+            const hide = function(){ n.classList.remove('show'); setTimeout(()=> n.remove(), 260); };
+            close.addEventListener('click', hide);
+            setTimeout(function(){ n.classList.add('show'); }, 20);
+            setTimeout(hide, ms);
+        } catch(e){}
+    };
     </script>
 
     @yield('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -15,8 +15,10 @@ use App\Models\Referral;
 use App\Models\User;
 use App\Models\UserNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Mail\PaymentInvoiceMail;
 
 class PaymentController extends Controller
 {
@@ -98,124 +100,9 @@ class PaymentController extends Controller
         ]);
     }
 
-    /**
-     * Submit manual payment (create or update proof).
-     * Expects: event_id, payment_proof (file)
-     */
     public function store(Request $request)
     {
-        $request->validate([
-            'event_id' => 'required|exists:events,id',
-            'payment_proof' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
-            'referral_code' => 'nullable|string|max:64',
-        ]);
-
-        $user = $request->user();
-        $eventId = $request->input('event_id');
-        $event = Event::find($eventId);
-
-        // Find registration
-        $registration = EventRegistration::where('user_id', $user->id)
-            ->where('event_id', $eventId)
-            ->first();
-
-        if (!$registration) {
-            return response()->json(['status' => 'error', 'message' => 'Anda belum terdaftar di event ini.'], 404);
-        }
-
-        // Determine base amount (as recorded by registration)
-        $baseAmount = (float) ($registration->total_price ?? 0);
-        $amount = (float) $baseAmount;
-        if ($amount <= 0) {
-             return response()->json(['status' => 'error', 'message' => 'Event ini gratis, tidak perlu pembayaran.'], 400);
-        }
-
-        // Referral/discount only applies for reseller-enabled events.
-        $rawReferralCode = trim((string) $request->input('referral_code'));
-        $referrer = (bool) ($event->is_reseller_event ?? false)
-            ? $this->resolveValidReferrer($user, $rawReferralCode)
-            : null;
-        $referralCode = $referrer ? $rawReferralCode : null;
-        $finalAmount = $this->applyReferralDiscountAmount((float) $baseAmount, $referrer !== null);
-
-        DB::beginTransaction();
-        try {
-            // Find or Create ManualPayment Record
-            $manualPayment = ManualPayment::where('event_registration_id', $registration->id)->first();
-
-            if (!$manualPayment) {
-                $manualPayment = ManualPayment::create([
-                    'event_id' => $event->id,
-                    'event_registration_id' => $registration->id,
-                    'user_id' => $user->id,
-                    'order_id' => 'MP-' . strtoupper(uniqid()),
-                    'amount' => $finalAmount,
-                    'currency' => 'IDR',
-                    'method' => 'manual_transfer', // Default method
-                    'status' => 'pending',
-                    'referral_code' => $referralCode,
-                    'metadata' => [
-                        'source' => 'event',
-                        'base_amount' => $baseAmount,
-                        'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
-                    ],
-                ]);
-            } else {
-                 // Reset status if re-uploading
-                 $manualPayment->amount = $finalAmount;
-                 $manualPayment->status = 'pending';
-                 $manualPayment->referral_code = $referralCode;
-                 $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
-                     'source' => 'event',
-                     'base_amount' => $baseAmount,
-                     'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
-                 ]);
-                 $manualPayment->save();
-            }
-
-            // Handle File Upload
-            if ($request->hasFile('payment_proof')) {
-                $file = $request->file('payment_proof');
-                $path = $file->store('payments', 'public');
-
-                // Create Proof Record
-                PaymentProof::create([
-                    'manual_payment_id' => $manualPayment->id,
-                    'event_registration_id' => $registration->id,
-                    'file_path' => $path,
-                    'mime_type' => $file->getClientMimeType(),
-                    'file_size' => $file->getSize(),
-                    'uploaded_by' => $user->id,
-                ]);
-
-                // Update legacy field
-                $registration->update([
-                    'status' => 'pending', // Ensure status is pending waiting for admin
-                    'total_price' => $finalAmount,
-                    'payment_proof' => $path
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Bukti pembayaran berhasil diupload. Mohon tunggu verifikasi admin.',
-                'data' => [
-                    'manual_payment' => $manualPayment->load('proofs'),
-                    'amount_breakdown' => [
-                        'base_amount' => (float) $baseAmount,
-                        'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
-                        'final_amount' => (float) $finalAmount,
-                        'referral_applied' => $referrer !== null,
-                    ],
-                ],
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Gagal memproses pembayaran: ' . $e->getMessage()], 500);
-        }
+        abort(403, 'Pembayaran manual dinonaktifkan. Gunakan Midtrans.');
     }
 
     /**
@@ -223,87 +110,10 @@ class PaymentController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Effectively same as store but targeting specific payment ID
-        // For simplicity, let's allow users to just use store endpoint generally, 
-        // OR implements strict update here. 
-        
-        $request->validate([
-            'payment_proof' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
-            'referral_code' => 'nullable|string|max:64',
-        ]);
-
-        $user = $request->user();
-        $manualPayment = ManualPayment::where('user_id', $user->id)->find($id);
-
-        if (!$manualPayment) {
-            return response()->json(['status' => 'error', 'message' => 'Pembayaran tidak ditemukan'], 404);
-        }
-
-        $event = $manualPayment->event_id ? Event::find($manualPayment->event_id) : null;
-        $registration = $manualPayment->event_registration_id ? EventRegistration::find($manualPayment->event_registration_id) : null;
-        $baseAmount = (float) ($registration?->total_price ?? $manualPayment->amount ?? 0);
-
-        $rawReferralCode = trim((string) $request->input('referral_code'));
-        $referrer = ($event && (bool) ($event->is_reseller_event ?? false))
-            ? $this->resolveValidReferrer($user, $rawReferralCode)
-            : null;
-        $referralCode = $referrer ? $rawReferralCode : null;
-        $finalAmount = $this->applyReferralDiscountAmount((float) $baseAmount, $referrer !== null);
-
-        DB::beginTransaction();
-        try {
-            $file = $request->file('payment_proof');
-            $path = $file->store('payments', 'public');
-
-            PaymentProof::create([
-                'manual_payment_id' => $manualPayment->id,
-                'event_registration_id' => $manualPayment->event_registration_id,
-                'file_path' => $path,
-                'mime_type' => $file->getClientMimeType(),
-                'file_size' => $file->getSize(),
-                'uploaded_by' => $user->id,
-            ]);
-
-            $manualPayment->update(['status' => 'pending']);
-            $manualPayment->amount = $finalAmount;
-            $manualPayment->referral_code = $referralCode;
-            $manualPayment->metadata = array_merge((array) ($manualPayment->metadata ?? []), [
-                'source' => 'event',
-                'base_amount' => $baseAmount,
-                'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
-            ]);
-            $manualPayment->save();
-            
-            // Update legacy fields
-            if ($registration) {
-                $registration->update([
-                    'status' => 'pending',
-                    'total_price' => $finalAmount,
-                    'payment_proof' => $path,
-                ]);
-            }
-
-            DB::commit();
-
-             return response()->json([
-                'status' => 'success',
-                'message' => 'Bukti pembayaran berhasil diperbarui.',
-                'data' => [
-                    'manual_payment' => $manualPayment->load('proofs'),
-                    'amount_breakdown' => [
-                        'base_amount' => (float) $baseAmount,
-                        'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
-                        'final_amount' => (float) $finalAmount,
-                        'referral_applied' => $referrer !== null,
-                    ],
-                ],
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Gagal update pembayaran: ' . $e->getMessage()], 500);
-        }
+        abort(403, 'Pembayaran manual dinonaktifkan. Gunakan Midtrans.');
     }
+
+
 
     /**
      * Cancel manual payment.
@@ -573,8 +383,25 @@ class PaymentController extends Controller
 
         $forceNew = (bool) $request->boolean('force_new');
 
-        $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
-        $baseAmount = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+        // Resolve base amount — for hybrid events use attendance_type to pick the right price
+        $attendanceType = strtolower(trim((string) $request->query('attendance_type', $request->input('attendance_type', 'offline'))));
+        $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link)
+                          && ($event->price_offline > 0 || $event->price_online > 0);
+
+        if ($isHybridEvent) {
+            $rawHybridPrice = $attendanceType === 'online'
+                              ? (float) ($event->price_online ?? 0)
+                              : (float) ($event->price_offline ?? 0);
+            $discountPct    = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
+                              ? (float) ($event->discount_percentage ?? 0) : 0.0;
+            $baseAmount     = $discountPct > 0
+                              ? round($rawHybridPrice * (1 - $discountPct / 100), 2)
+                              : $rawHybridPrice;
+        } else {
+            $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
+            $baseAmount  = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+        }
+
         if ($baseAmount <= 0) {
             return response()->json(['message' => 'Event gratis, tidak perlu Midtrans.'], 400);
         }
@@ -676,6 +503,7 @@ class PaymentController extends Controller
                     'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
                     'event_id' => $event->id,
                     'event_title' => $event->title,
+                    'attendance_type' => $attendanceType,
                 ]),
             ]);
             $payment->save();
@@ -697,7 +525,14 @@ class PaymentController extends Controller
                 ]
             );
 
+            Log::info('Midtrans snapParams(event)', ['params' => $snapParams]);
+
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
+            
+            Log::info('Midtrans snapToken(event) created', [
+                'order_id' => $payment->order_id,
+                'snap_token' => $snapToken
+            ]);
 
             // Persist token so user can continue when still pending
             $this->storeSnapTokenToPayment($payment, $snapToken);
@@ -803,8 +638,13 @@ class PaymentController extends Controller
                 }
             }
 
-            Log::error('Midtrans snapToken(event) failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans.'], 500);
+            Log::error('Midtrans snapToken(event) failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'event_id' => $event->id
+            ]);
+            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans: ' . $e->getMessage()], 500);
         }
     }
 
@@ -939,8 +779,15 @@ class PaymentController extends Controller
                 ]
             );
 
+            Log::info('Midtrans snapParams(course)', ['params' => $snapParams]);
+            
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
 
+            Log::info('Midtrans courseSnapToken created', [
+                'order_id' => $payment->order_id,
+                'snap_token' => $snapToken
+            ]);
+            
             $this->storeSnapTokenToPayment($payment, $snapToken);
             DB::commit();
 
@@ -1037,8 +884,13 @@ class PaymentController extends Controller
                 }
             }
 
-            Log::error('Midtrans courseSnapToken failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans.'], 500);
+            Log::error('Midtrans courseSnapToken failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'course_id' => $course->id
+            ]);
+            return response()->json(['message' => 'Gagal membuat pembayaran Midtrans: ' . $e->getMessage()], 500);
         }
     }
 
@@ -1102,6 +954,7 @@ class PaymentController extends Controller
                     if ($event) {
                         $this->processEventReferralCommission($event, $payment);
                         $this->notifyEventMidtransRegistrationSuccess($event, $payment);
+                        $this->sendPaymentInvoice($payment, 'event', (string) ($event->title ?? 'Event'));
                     }
                 }
 
@@ -1114,6 +967,8 @@ class PaymentController extends Controller
                     $course = $payment->course_id ? Course::find($payment->course_id) : null;
                     if ($course) {
                         $this->processCourseReferralCommission($course, $payment);
+                        $this->processCourseTrainerRevenue($course, $payment);
+                        $this->sendPaymentInvoice($payment, 'course', (string) ($course->name ?? 'Course'));
                     }
                 }
             }
@@ -1223,6 +1078,7 @@ class PaymentController extends Controller
                     if ($event) {
                         $this->processEventReferralCommission($event, $payment);
                         $this->notifyEventMidtransRegistrationSuccess($event, $payment);
+                        $this->sendPaymentInvoice($payment, 'event', (string) ($event->title ?? 'Event'));
                     }
                 }
 
@@ -1235,6 +1091,7 @@ class PaymentController extends Controller
                     $course = $payment->course_id ? Course::find($payment->course_id) : null;
                     if ($course) {
                         $this->processCourseReferralCommission($course, $payment);
+                        $this->sendPaymentInvoice($payment, 'course', (string) ($course->name ?? 'Course'));
                     }
                 }
             }
@@ -1349,6 +1206,7 @@ class PaymentController extends Controller
                 }
                 $this->processEventReferralCommission($event, $payment);
                 $this->notifyEventMidtransRegistrationSuccess($event, $payment);
+                $this->sendPaymentInvoice($payment, 'event', (string) ($event->title ?? 'Event'));
             }
 
             if ($payment->event_registration_id && in_array($internalStatus, ['expired', 'rejected'], true)) {
@@ -1415,16 +1273,26 @@ class PaymentController extends Controller
                     $payment = null; // treat as no pending payment
                 }
             } catch (\Throwable $e) {
-                // 404 = never charged → expired
+                // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
+                // Only expire if snap token is older than 24 hours (Midtrans token TTL).
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
-                    $reg = EventRegistration::find($payment->event_registration_id);
-                    if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
-                        $reg->status = 'expired';
-                        $reg->save();
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours  = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 0;
+
+                    if ($tokenAgeHours >= 24) {
+                        // Token truly expired — mark as expired
+                        $payment->status = 'expired';
+                        $payment->save();
+                        $reg = EventRegistration::find($payment->event_registration_id);
+                        if ($reg && !in_array($reg->status, ['active', 'canceled'], true)) {
+                            $reg->status = 'expired';
+                            $reg->save();
+                        }
+                        $payment = null;
                     }
-                    $payment = null;
+                    // else: token still valid, keep as pending — do nothing
                 }
                 // Other errors: keep as pending, don't block the user
             }
@@ -1437,9 +1305,11 @@ class PaymentController extends Controller
             ->latest('id')
             ->first();
 
+        // Only treat registration as expired if Midtrans confirmed it — not just because
+        // the snap token hasn't been used yet.
         $registrationExpired = $registration && in_array($registration->status, ['expired', 'rejected'], true);
 
-        // If registration is expired, treat any pending payment as stale too
+        // If registration is truly expired and there's still a pending payment, expire it too
         if ($registrationExpired && $payment) {
             $payment->status = 'expired';
             $payment->save();
@@ -1503,16 +1373,26 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $payment->status = 'expired';
-                    $payment->save();
-                    if ($payment->enrollment_id) {
-                        $enr = Enrollment::find($payment->enrollment_id);
-                        if ($enr && $enr->status !== 'active') {
-                            $enr->status = 'expired';
-                            $enr->save();
+                    // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
+                    // Only expire if snap token is older than 24 hours.
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
+                    $tokenAgeHours  = $tokenCreatedAt
+                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                        : 0;
+
+                    if ($tokenAgeHours >= 24) {
+                        $payment->status = 'expired';
+                        $payment->save();
+                        if ($payment->enrollment_id) {
+                            $enr = Enrollment::find($payment->enrollment_id);
+                            if ($enr && $enr->status !== 'active') {
+                                $enr->status = 'expired';
+                                $enr->save();
+                            }
                         }
+                        $payment = null;
                     }
-                    $payment = null;
+                    // else: token still valid, keep as pending
                 }
                 // Other errors: keep as pending, don't block the user
             }
@@ -1587,6 +1467,7 @@ class PaymentController extends Controller
                     $course = Course::find($payment->course_id);
                     if ($course) {
                         $this->processCourseReferralCommission($course, $payment);
+                        $this->sendPaymentInvoice($payment, 'course', (string) ($course->name ?? 'Course'));
                     }
                 }
             }
@@ -1624,4 +1505,154 @@ class PaymentController extends Controller
             'message' => 'QRIS Core API belum diaktifkan. Gunakan QRIS statis/manual upload.',
         ], 501);
     }
+
+    /**
+     * Send a payment invoice email to the user — call once per settlement.
+     * Idempotency: checks metadata flag so duplicate calls are no-ops.
+     */
+    private function sendPaymentInvoice(ManualPayment $payment, string $itemType, string $itemTitle): void
+    {
+        // Idempotency guard: skip if invoice already sent for this payment
+        if (data_get($payment->metadata, 'invoice_sent')) {
+            return;
+        }
+
+        try {
+            $invoiceUser = $payment->user ?? User::find($payment->user_id);
+            if (!$invoiceUser || empty($invoiceUser->email)) {
+                return;
+            }
+
+            $prefix        = $itemType === 'event' ? 'INV-EVT-' : 'INV-CRS-';
+            $invoiceNumber = $prefix . strtoupper(substr(md5($payment->id . $payment->order_id), 0, 8));
+
+            Mail::to($invoiceUser->email)->send(new PaymentInvoiceMail(
+                invoiceNumber: $invoiceNumber,
+                userName:      (string) ($invoiceUser->name ?? 'User'),
+                userEmail:     (string) ($invoiceUser->email),
+                itemType:      $itemType,
+                itemTitle:     $itemTitle,
+                amount:        (float) ($payment->amount ?? 0),
+                paymentMethod: (string) ($payment->method ?? 'midtrans'),
+                paidAt:        now()->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
+                orderId:       (string) ($payment->order_id ?? '-'),
+            ));
+
+            // Mark invoice as sent so we don't resend on duplicate webhook calls
+            $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
+                'invoice_sent'    => true,
+                'invoice_sent_at' => now()->toIso8601String(),
+                'invoice_number'  => $invoiceNumber,
+            ]);
+            $payment->save();
+
+            Log::info('PaymentInvoice sent', ['order_id' => $payment->order_id, 'invoice' => $invoiceNumber]);
+        } catch (\Throwable $e) {
+            Log::warning('PaymentInvoice send failed', [
+                'order_id' => $payment->order_id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function processCourseTrainerRevenue(Course $course, ManualPayment $payment): void
+    {
+        if ($course->trainer_id && $course->trainer_revenue_percent > 0) {
+            $trainer = User::find($course->trainer_id);
+            if ($trainer) {
+                $trainerShare = ($payment->amount * $course->trainer_revenue_percent) / 100;
+                if ($trainerShare > 0) {
+                    $trainer->increment('wallet_balance', $trainerShare);
+                    
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $trainer->id,
+                        'type' => 'revenue_share',
+                        'title' => 'Pendapatan Course Baru',
+                        'message' => 'Anda menerima bagi hasil sebesar Rp ' . number_format($trainerShare, 0, ',', '.') . ' dari penjualan course: ' . $course->name,
+                        'data' => ['amount' => $trainerShare, 'course_id' => $course->id]
+                    ]);
+                }
+            }
+        }
+    }
+
+    public function downloadInvoice(Request $request, string $orderId)
+    {
+        $user = auth()->user();
+        if (!$user) {
+            abort(401, 'Unauthorized');
+        }
+
+        // Find the payment. Admins can view any payment. Regular users can only view their own.
+        $paymentQuery = ManualPayment::where('order_id', $orderId);
+        if ($user->role !== 'admin') {
+            $paymentQuery->where('user_id', $user->id);
+        }
+        $payment = $paymentQuery->first();
+
+        if (!$payment) {
+            abort(404, 'Transaksi tidak ditemukan.');
+        }
+
+        // Determine item details
+        $itemType = $payment->event_id ? 'event' : 'course';
+        $itemTitle = '';
+        if ($itemType === 'event') {
+            $event = Event::find($payment->event_id);
+            $itemTitle = $event ? $event->title : 'Event';
+        } else {
+            $course = Course::find($payment->course_id);
+            $itemTitle = $course ? $course->name : 'Course';
+        }
+
+        $invoiceUser = $payment->user ?? User::find($payment->user_id);
+        $prefix = $itemType === 'event' ? 'INV-EVT-' : 'INV-CRS-';
+        $invoiceNumber = $prefix . strtoupper(substr(md5($payment->id . $payment->order_id), 0, 8));
+
+        // Get logo base64 for embedding in PDF
+        $logoPath = public_path('aset/logo idspora_dark.png');
+        $logoSrc = '';
+        if (file_exists($logoPath)) {
+            $logoData = base64_encode(file_get_contents($logoPath));
+            $logoSrc = 'data:image/png;base64,' . $logoData;
+        }
+
+        // Format dates
+        $paidAt = $payment->updated_at->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB';
+
+        // Prepare data
+        $data = [
+            'invoiceNumber' => $invoiceNumber,
+            'userName'      => $invoiceUser ? $invoiceUser->name : 'User',
+            'userEmail'     => $invoiceUser ? $invoiceUser->email : '',
+            'itemType'      => $itemType,
+            'itemTitle'     => $itemTitle,
+            'amount'        => (float) $payment->amount,
+            'paymentMethod' => $payment->method ?? 'midtrans',
+            'paidAt'        => $paidAt,
+            'orderId'       => $payment->order_id,
+            'logoSrc'       => $logoSrc,
+            'isPdf'         => true,
+        ];
+
+        // Generate PDF using Dompdf
+        $html = view('emails.payment-invoice', $data)->render();
+
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'Helvetica');
+        
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Invoice-' . $invoiceNumber . '.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
 }
+

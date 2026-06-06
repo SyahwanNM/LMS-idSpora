@@ -2,37 +2,6 @@
 <html lang="en">
 
 <head>
-    <style>
-        .stars-bi {
-            transition: color 0.2s, transform 0.18s;
-            color: gray;
-        }
-
-        .stars-bi.active {
-            color: #FFD600 !important;
-        }
-
-        .stars-bi.hovered {
-            transform: scale(1.22) rotate(-8deg) !important;
-            filter: drop-shadow(0 2px 6px #FFD600cc) !important;
-            z-index: 2 !important;
-        }
-    </style>
-    <style>
-        .stars-bi {
-            transition: color 0.2s, transform 0.18s;
-        }
-
-        .add-stars .stars-bi.hovered,
-        .add-stars .stars-bi.hovered:focus {
-            transform: scale(1.22) rotate(-8deg) !important;
-            color: #FFD600 !important;
-            filter: drop-shadow(0 2px 6px #FFD600cc) !important;
-            z-index: 2 !important;
-            transition: color 0.2s !important;
-            transition-property: color, transform, filter !important;
-        }
-    </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -43,67 +12,13 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        /* Make the top navy section flush to the very top */
         html,
-        body {
-            margin: 0;
-            padding: 0;
-        }
 
         .container-ungu {
             margin-top: 0 !important;
         }
 
-        /* Nudge breadcrumb down so it's not hidden under fixed navbar */
-        .container-ungu .link-box {
-            padding-top: 110px;
-            padding-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-left: 70px;
-            /* Align with title on desktop */
-        }
-
-        .container-ungu .link-box a {
-            text-decoration: none;
-            color: #fbbf24;
-            font-weight: 500;
-        }
-
-        .container-ungu .link-box a:hover {
-            color: #ffd33b;
-            text-decoration: underline;
-        }
-
-        .container-ungu .link-box span.sep {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .container-ungu .link-box .active {
-            color: white;
-            font-weight: 600;
-        }
-
-        @media (max-width: 992px) {
-            .container-ungu .link-box {
-                margin-left: 20px !important;
-                padding-top: 100px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .container-ungu .link-box {
-                margin-left: 15px !important;
-                padding-top: 100px;
-                gap: 6px;
-                font-size: 13px;
-            }
-        }
-
-        /* Add breathing space inside tab panes (Overview, etc.) */
+       
         .desc-box .tab-content .tab-pane {
             padding: 16px 20px 24px;
         }
@@ -115,11 +30,6 @@
             min-height: 0 !important;
         }
 
-        @media (max-width: 576px) {
-            .desc-box .tab-content .tab-pane {
-                padding: 12px 14px 18px;
-            }
-        }
 
         /* Reduce padding specifically for Terms & Condition tab (stronger override) */
         .desc-box .tab-content #nav-contact {
@@ -147,13 +57,6 @@
         .desc-box .tab-content #nav-contact .terms-content {
             margin-top: 4px !important;
         }
-
-        @media (max-width: 576px) {
-            .desc-box .tab-content #nav-contact {
-                padding: 4px 8px 0 !important;
-            }
-        }
-
         /* Align Facebook icon baseline with other share icons */
         .share .share-list .bi-facebook {
             position: relative;
@@ -329,13 +232,13 @@
             min-height: 92px !important;
             height: auto !important;
         }
-
         .resource-box .participant-resources .resource-card .img-resource {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 34px;
             height: 34px;
+            
         }
 
         .resource-box .participant-resources .resource-card .resource-value h6 {
@@ -347,6 +250,7 @@
             line-height: 1.25;
         }
 
+        
         /* Feedback card: do NOT blur when locked, instead show an overlay message */
         .add-rating.locked {
             opacity: 1 !important;
@@ -600,7 +504,6 @@
             width: 20px !important;
             height: 20px !important;
         }
-
         /* RESPONSIVENESS FIXES */
         @media (max-width: 992px) {
             .container-ungu {
@@ -751,7 +654,10 @@
             .box-copy button {
                 width: 100% !important;
             }
+           
         }
+    
+        
     </style>
 
 </head>
@@ -762,7 +668,7 @@
     @else
         @include('partials.navbar-before-login')
     @endauth
-    <div class="all">
+    <main class="all">
         <div class="container-ungu">
             <div class="link-box">
                 <a href="{{ route('dashboard') }}">Home</a>
@@ -923,7 +829,7 @@
                     $authUser = Auth::user();
                     $registration = isset($event) && $authUser ? $event->registrations()->where('user_id', $authUser->id)->first() : null;
                     $isRegistered = $registration && $registration->status === 'active';
-                    $eventDate = isset($event) && $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
+                    $eventDate = isset($event) && $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date, config('app.timezone'))) : null;
                     $parseEventTime = function ($date, $raw) {
                         if (empty($raw))
                             return null;
@@ -938,7 +844,7 @@
                         // If includes date part already, parse directly
                         if (preg_match('/\d{4}-\d{2}-\d{2}/', $norm)) {
                             try {
-                                return \Carbon\Carbon::parse($norm);
+                                return \Carbon\Carbon::parse($norm, config('app.timezone'));
                             } catch (\Throwable $e) {
                                 return null;
                             }
@@ -947,14 +853,14 @@
                         if ($date) {
                             $dateStr = $date instanceof \Carbon\Carbon ? $date->format('Y-m-d') : (string) $date;
                             try {
-                                return \Carbon\Carbon::parse($dateStr . ' ' . $norm);
+                                return \Carbon\Carbon::parse($dateStr . ' ' . $norm, config('app.timezone'));
                             } catch (\Throwable $e) {
                                 return null;
                             }
                         }
                         // Fallback parse
                         try {
-                            return \Carbon\Carbon::parse($norm);
+                            return \Carbon\Carbon::parse($norm, config('app.timezone'));
                         } catch (\Throwable $e) {
                             return null;
                         }
@@ -999,7 +905,7 @@
                         'Certificate' => $hasCertificate,
                     ];
                 @endphp
-                <div class="progress-box">
+                <section class="progress-box">
                     <h5>Your Progress</h5>
                     <div class="progress-line">&nbsp;</div>
                     <div class="progress-steps">
@@ -1023,12 +929,12 @@
                             </div>
                         @endforeach
                     </div>
-                </div>
+                </section>
             </div>
-            <div class="detail-box-right">
+            <section class="detail-box-right">
                 @php
                     $eventObj = isset($event) ? $event : null;
-                    $nowTs = \Carbon\Carbon::now();
+                    $nowTs = \Carbon\Carbon::now(config('app.timezone'));
                     // Event states
                     // Finished if now is after the event end time (or end of event day if time end missing)
                     $eventFinished = false;
@@ -1059,37 +965,99 @@
                             }
                         }
                     }
+                    // Hybrid pricing
+                    $isHybridEvent = $eventObj && !empty($eventObj->maps_url) && !empty($eventObj->zoom_link);
+                    $priceOffline  = $eventObj ? (float) ($eventObj->price_offline ?? 0) : 0.0;
+                    $priceOnline   = $eventObj ? (float) ($eventObj->price_online  ?? 0) : 0.0;
+                    $hasHybridPrices = $isHybridEvent && ($priceOffline > 0 || $priceOnline > 0);
+
+                    // Apply discount to hybrid prices too
+                    $discountRate       = ($hasActiveDiscount && !empty($eventObj->discount_percentage))
+                                            ? (float) $eventObj->discount_percentage / 100
+                                            : 0.0;
+                    $priceOfflineFinal  = $discountRate > 0 ? round($priceOffline * (1 - $discountRate)) : $priceOffline;
+                    $priceOnlineFinal   = $discountRate > 0 ? round($priceOnline  * (1 - $discountRate)) : $priceOnline;
                 @endphp
                 <div class="info-price-box">
-                    @php $isFreeNow = ((int) $finalPrice) === 0; @endphp
-                    <div class="price-box">
-                        <span>
-                            @if($hasActiveDiscount && $basePrice > 0)
-                                Rp.{{ number_format($basePrice, 0, ',', '.') }}
+                    @if($hasHybridPrices)
+                        {{-- Hybrid: show offline & online prices separately --}}
+                        <div class="price-box">
+                            <div class="d-flex flex-column gap-2">
+                                {{-- Offline --}}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:#e8f4fd;color:#1565c0;border:1px solid #90caf9;text-decoration:none;">Offline</span>
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        @if($hasActiveDiscount && $priceOffline > 0)
+                                            <span style="font-size:0.82rem;color:#9e9e9e;text-decoration:line-through;">Rp.{{ number_format($priceOffline, 0, ',', '.') }}</span>
+                                        @endif
+                                        @if((int)$priceOfflineFinal === 0)
+                                            <h5 class="price-free mb-0">FREE!</h5>
+                                        @else
+                                            <h5 class="mb-0">Rp.{{ number_format($priceOfflineFinal, 0, ',', '.') }}</h5>
+                                        @endif
+                                    </div>
+                                </div>
+                                {{-- Online --}}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:600;background:#fce4ec;color:#c62828;border:1px solid #f48fb1;text-decoration:none;">Online</span>
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        @if($hasActiveDiscount && $priceOnline > 0)
+                                            <span style="font-size:0.82rem;color:#9e9e9e;text-decoration:line-through;">Rp.{{ number_format($priceOnline, 0, ',', '.') }}</span>
+                                        @endif
+                                        @if((int)$priceOnlineFinal === 0)
+                                            <h5 class="price-free mb-0">FREE!</h5>
+                                        @else
+                                            <h5 class="mb-0">Rp.{{ number_format($priceOnlineFinal, 0, ',', '.') }}</h5>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @if($hasActiveDiscount && $discountMsg)
+                                <div class="diskon-time mt-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-alarm" viewBox="0 0 16 16">
+                                        <path d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z"/>
+                                        <path d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1"/>
+                                    </svg>
+                                    <p>{{ $discountMsg }}</p>
+                                </div>
                             @endif
-                        </span>
-                        @if($isFreeNow)
-                            <h5 class="price-free">GRATIS!</h5>
-                        @else
-                            <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
-                        @endif
-                        @if($hasActiveDiscount && $discountMsg)
-                            <div class="diskon-time">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
-                                    class="bi bi-alarm" viewBox="0 0 16 16">
-                                    <path
-                                        d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z" />
-                                    <path
-                                        d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
-                                </svg>
-                                <p>{{ $discountMsg }}</p>
+                        </div>
+                        @if($hasActiveDiscount)
+                            <div class="diskon-event">
+                                <p>{{ $eventObj->discount_percentage }}% OFF</p>
                             </div>
                         @endif
-                    </div>
-                    @if($hasActiveDiscount)
-                        <div class="diskon-event">
-                            <p>{{ $eventObj->discount_percentage }}% OFF</p>
+                    @else
+                        @php $isFreeNow = ((int) $finalPrice) === 0; @endphp
+                        <div class="price-box">
+                            <span>
+                                @if($hasActiveDiscount && $basePrice > 0)
+                                    Rp.{{ number_format($basePrice, 0, ',', '.') }}
+                                @endif
+                            </span>
+                            @if($isFreeNow)
+                                <h5 class="price-free">FREE!</h5>
+                            @else
+                                <h5>Rp.{{ number_format($finalPrice, 0, ',', '.') }}</h5>
+                            @endif
+                            @if($hasActiveDiscount && $discountMsg)
+                                <div class="diskon-time">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                                        class="bi bi-alarm" viewBox="0 0 16 16">
+                                        <path
+                                            d="M8.5 5.5a.5.5 0 0 0-1 0v3.362l-1.429 2.38a.5.5 0 1 0 .858.515l1.5-2.5A.5.5 0 0 0 8.5 9z" />
+                                        <path
+                                            d="M6.5 0a.5.5 0 0 0 0 1H7v1.07a7.001 7.001 0 0 0-3.273 12.474l-.602.602a.5.5 0 0 0 .707.708l.746-.746A6.97 6.97 0 0 0 8 16a6.97 6.97 0 0 0 3.422-.892l.746.746a.5.5 0 0 0 .707-.708l-.601-.602A7.001 7.001 0 0 0 9 2.07V1h.5a.5.5 0 0 0 0-1zm1.038 3.018a6 6 0 0 1 .924 0 6 6 0 1 1-.924 0M0 3.5c0 .753.333 1.429.86 1.887A8.04 8.04 0 0 1 4.387 1.86 2.5 2.5 0 0 0 0 3.5M13.5 1c-.753 0-1.429.333-1.887.86a8.04 8.04 0 0 1 3.527 3.527A2.5 2.5 0 0 0 13.5 1" />
+                                    </svg>
+                                    <p>{{ $discountMsg }}</p>
+                                </div>
+                            @endif
                         </div>
+                        @if($hasActiveDiscount)
+                            <div class="diskon-event">
+                                <p>{{ $eventObj->discount_percentage }}% OFF</p>
+                            </div>
+                        @endif
                     @endif
                 </div>
                 <hr class="line-info">
@@ -1121,7 +1089,7 @@
                                 $trainerObj = $sp->trainer ?? null;
                                 $profileUrl = $trainerObj ? route('public.trainer-profile.show', $trainerObj->id) : null;
                                 $nameLen = mb_strlen($sp->name ?? '');
-                                $nameFontSize = $nameLen > 20 ? '11px' : ($nameLen > 14 ? '12px' : '13px');
+                                $nameFontSize = $nameLen > 20 ? '11px' : ($nameLen > 14 ? '12px' : '18px');
                             @endphp
                             <div class="d-flex align-items-center gap-2" style="max-width:180px;">
                                 @if($profileUrl)
@@ -1308,7 +1276,7 @@
                     @elseif($midtransExpired)
                         <a class="bookseat text-white text-center"
                             href="{{ route('payment', ['event' => $event->id, 'force_new' => 1]) }}"
-                            style="text-decoration:none;">Bayar lagi</a>
+                            style="text-decoration:none;">Payment Again</a>
                     @elseif($paymentUnderReview)
                         <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
                     @elseif($canRegister)
@@ -1327,9 +1295,9 @@
                         @endif
                     @else
                         @if(!$isRegistered && $eventFinished)
-                            <button class="bookseat" disabled>Event Telah Selesai</button>
+                            <button class="bookseat" disabled>Event has finished</button>
                         @elseif(!$isRegistered && $eventStarted)
-                            <button class="bookseat" disabled>Event Sudah Dimulai</button>
+                            <button class="bookseat" disabled>Event Has Started</button>
                         @elseif($isRegistered)
                             <button class="bookseat" disabled>Seat Booked</button>
                         @else
@@ -1344,8 +1312,13 @@
                     <div class="include-title">
                         <h6 style="color:#000; margin: 0 0 8px 2px;">Benefit Event</h6>
                         <ul class="event-benefit-list" style="margin-bottom:0;">
-                            @if(!empty($event->benefit))
-                                @foreach(explode('|', $event->benefit) as $benefit)
+                            @php
+                                $benefitItems = is_array($event->benefit)
+                                    ? $event->benefit
+                                    : array_values(array_filter(array_map('trim', preg_split('/\|\s*|\r\n|\n/', (string)($event->benefit ?? ''))), fn($s) => $s !== ''));
+                            @endphp
+                            @if(!empty($benefitItems))
+                                @foreach($benefitItems as $benefit)
                                     <li>{{ trim($benefit) }}</li>
                                 @endforeach
                             @else
@@ -1412,10 +1385,9 @@
                         </a>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
 
-        <!-- Registration Modal -->
         <div class="modal fade" id="registrationModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -1440,6 +1412,25 @@
                                         value="{{ $registration->registration_code ?? 'Pending assignment' }}" disabled>
                                 </div>
 
+                                @php
+                                    $payment = \App\Models\ManualPayment::where('event_registration_id', $registration->id)
+                                        ->where('status', 'settled')
+                                        ->first();
+                                @endphp
+                                @if($payment)
+                                    <div class="mt-4 text-center">
+                                        <a href="{{ route('payment.invoice.download', $payment->order_id) }}" 
+                                           class="btn btn-dark w-100 fw-semibold d-flex align-items-center justify-content-center gap-2"
+                                           style="background-color:#0f172a; border-color:#0f172a;"
+                                           target="_blank">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                            </svg>
+                                            Download Invoice (PDF)
+                                        </a>
+                                    </div>
+                                @endif
                             </form>
                         @else
                             <p class="text-muted">You are not registered yet.</p>
@@ -1449,7 +1440,6 @@
             </div>
         </div>
 
-        <!-- Scan QR Modal -->
         <div class="modal fade" id="scanQrModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
                 <div class="modal-content">
@@ -1468,17 +1458,16 @@
                                     <polyline points="22 4 12 14.01 9 11.01" />
                                 </svg>
                             </div>
-                            <p class="mb-1 fw-semibold text-success">Absensi Berhasil Dilakukan</p>
+                            <p class="mb-1 fw-semibold text-success">Attendance Successful Dilakukan</p>
                             <p class="text-muted" style="margin-bottom:16px;">
                                 {{ $event->title }}<br>{{ optional($eventDate)->translatedFormat('l, d F Y') }}</p>
                             <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Tutup</button>
                         </div>
                         <div class="mt-3">
-                            <div id="qr-status" class="alert alert-info small">Arahkan kamera ke QR event untuk
-                                memindai.</div>
+                            <div id="qr-status" class="alert alert-info small">Point your camera at the QR code to scan it.</div>
                             <div class="d-flex justify-content-center mt-2 gap-2 flex-wrap">
                                 <button id="qr-permission-btn" type="button"
-                                    class="btn btn-sm btn-primary d-none">Izinkan Kamera</button>
+                                    class="btn btn-sm btn-primary d-none">Allow Camera</button>
                                 <button id="qr-test-btn" type="button"
                                     class="btn btn-sm btn-outline-primary d-none">Test Kamera</button>
                                 <label class="btn btn-sm btn-outline-secondary d-none" id="qr-upload-btn">
@@ -1520,7 +1509,7 @@
                 </div>
             </div>
         </div>
-        <div class="resource-box">
+        <section class="resource-box">
             <h5>Participant Resources</h5>
             <div class="participant-resources">
 
@@ -1564,8 +1553,8 @@
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
                     $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    // Unlock saat event selesai dan user terdaftar (meski belum ada modul)
-                    $moduleUnlocked = $isRegistered && $eventIsFinished;
+                    // Unlock saat user selesai mengisi feedback (sertifikat dan modul)
+                    $moduleUnlocked = $isRegistered && isset($hasFeedback) && $hasFeedback;
                 @endphp
                 @if($isRegistered || $approvedModules->isNotEmpty())
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
@@ -1580,15 +1569,15 @@
                         </svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Modules Materi</h6>
+                        <h6>Modules</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
-                        @elseif(!$eventIsFinished)
-                            <p>Available after event completion</p>
+                        @elseif(!isset($hasFeedback) || !$hasFeedback)
+                            <p>Available after send feedback.</p>
                         @elseif($approvedModules->isEmpty())
                             <p>Not available</p>
                         @else
-                            <p>{{ $approvedModules->count() }} modul tersedia</p>
+                            <p>{{ $approvedModules->count() }} Modules Available</p>
                         @endif
                     </div>
                     @if($moduleUnlocked)
@@ -1619,12 +1608,12 @@
                                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
                                         <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
                                     </svg>
-                                    Unduh Materi Event
+                                    Download Modules 
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Pilih materi yang ingin diunduh:</p>
+                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
                                 <div class="d-flex flex-column gap-2">
                                     @foreach($approvedModules as $mod)
                                         <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
@@ -1640,7 +1629,7 @@
                                             <div style="overflow:hidden;">
                                                 <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
                                                 @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">oleh {{ $mod->trainer->name }}</div>
+                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
                                                 @endif
                                             </div>
                                         </a>
@@ -1654,7 +1643,7 @@
                 </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventIsFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
@@ -1687,17 +1676,17 @@
                     <div class="resource-value">
                         <h6>Attendance QR Event</h6>
                         @if(isset($attendanceSubmitted) && $attendanceSubmitted)
-                            <p class="text-success" style="font-weight:600;">Absensi Berhasil Dilakukan</p>
+                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
                         @else
-                            <p>Scan QR Event to mark your attendance.</p>
+                            <p>Scan the event QR for attendance.</p>
                         @endif
                     </div>
                     @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
-                        <span class="d-inline-flex align-items-center" style="position:absolute; top:24px; right:10px;"
-                            title="Absensi Berhasil Dilakukan">
+                        <span class="d-inline-flex align-items-center""
+                            title="Berhasil Dilakukan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                 stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                aria-label="Absensi Berhasil">
+                                aria-label="Attendance Successful">
                                 <circle cx="12" cy="12" r="9"></circle>
                                 <polyline points="8 12 11 15 16 10"></polyline>
                             </svg>
@@ -1735,18 +1724,26 @@
                         <h6>Certificate</h6>
                         @if(isset($isRegistered) && $isRegistered)
                             @if(isset($hasFeedback) && $hasFeedback)
-                                <p>Sertifikat tersedia! Silakan preview atau unduh.</p>
-                                <div class="d-flex gap-2 mt-2">
-                                    <a href="{{ route('certificates.show', [$event->id, $registration->id]) }}" class="btn btn-sm btn-outline-primary" target="_blank">Lihat</a>
-                                    <a href="{{ route('certificates.download', [$event->id, $registration->id]) }}" class="btn btn-sm btn-primary" target="_blank">Unduh PDF</a>
+                            <div class="box-resources-sertif">
+                              <p>Silakan preview / unduh.</p>
+                                <div class="box-sertif-after-event">
+                                  
+                                    <a class="view-sertif-event" href="{{ route('certificates.show', [$event->id, $registration->id]) }}" target="_blank"
+                                       style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; color:#111;">
+                                        <svg  xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                                        </svg>
+                                    </a>
                                 </div>
+                            </div>
                             @elseif($eventIsFinished)
-                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
+                                <p>Available after feedback</p>
                             @else
-                                <p>Sertifikat tersedia setelah Anda mengisi feedback.</p>
+                                <p>Available after send feedback.</p>
                             @endif
                         @else
-                            <p>Tersedia setelah acara selesai.</p>
+                            <p>Available after the event ends.</p>
                         @endif
                     </div>
                 </div>
@@ -1762,7 +1759,7 @@
                     </div>
                     <div class="resource-value">
                         <h6>Link Zoom</h6>
-                        <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
+                        <p>{{ $isRegistered ? 'Available after booking' : 'Available after booking' }}</p>
                     </div>
                     @if($isRegistered && !empty($event->zoom_link))
                         <a class="link-share" href="{{ $event->zoom_link }}" target="_blank" rel="noopener">
@@ -1805,7 +1802,7 @@
                     </div>
                     <div class="resource-value">
                         <h6>Location Map</h6>
-                        <p>{{ $isRegistered ? 'Available for registered participants' : 'Available upon registration' }}</p>
+                        <p>{{ $isRegistered ? 'Available after seat booking' : 'Available after seat booking' }}</p>
                     </div>
                     @if($isRegistered && $mapLink)
                         <a class="link-share" href="{{ $mapLink }}" target="_blank" rel="noopener">
@@ -1819,7 +1816,7 @@
                     @endif
                 </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted) ? '' : 'locked' }}"
+            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventFinished) ? '' : 'locked' }}"
                     style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1831,13 +1828,13 @@
                     <div class="resource-value">
                         <h6>Feedback and Ratings</h6>
                         @if(isset($hasFeedback) && $hasFeedback)
-                            <p class="text-success" style="font-weight:600;">Feedback and Ratings berhasil dilakukan</p>
+                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
                         @else
-                            <p>Please fill out your feedback for this event</p>
+                            <p style="width: 70%;">Available after the event ends</p>
                         @endif
                     </div>
 
-                    @if($isRegistered && $attendanceSubmitted)
+                    @if($isRegistered && $attendanceSubmitted && $eventFinished)
                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
                             @if(isset($hasFeedback) && $hasFeedback)
@@ -1862,10 +1859,9 @@
                     @endif
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Feedback & Reviews Section (Hidden by default) -->
-        @if($isRegistered && $attendanceSubmitted)
+        @if($isRegistered && $attendanceSubmitted && $eventFinished)
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
                     <div class="d-flex justify-content-between align-items-center"
@@ -1880,67 +1876,53 @@
                     </div>
                     <div class="row g-0">
                     </div>
-                    <!-- Right Column: Share Your Feedback -->
                     <div class="col-md-6" style="background-color: white; padding: 1rem;">
                         <h6 class="fw-bold mb-3" style="font-size: 1rem; color: #333;">Share your feedback</h6>
                         @if(isset($hasFeedback) && $hasFeedback)
                             <div class="text-center text-muted py-3" style="font-size: 0.9rem;">
-                                Feedback sudah dikirim dan tidak bisa dikirim ulang.
+                                Feedback already submitted and cannot be sent again.
                             </div>
                         @else
                             <form action="#" method="POST" id="feedback-form">
                                 @csrf
 
-                                <div style="display: flex; gap: 20px; margin-bottom: 15px;">
-                                    <!-- Event Rating -->
-                                    <div style="flex: 5;">
-                                        <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating
-                                            Event</label>
+                                <div class="feedback-rating-row" style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 15px;">
+                            
+                                    <div style="flex: 1 1 140px; min-width: 0;">
+                                        <label class="form-label" style="font-weight: 500; color: #333; font-size: 0.9rem;">Event Ratings</label>
                                         <div class="stars-rating-input" data-target="eventRating"
-                                            style="font-size: 30px !important; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                            <span data-rating="1"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="2"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="3"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="4"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="5"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
+                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                         </div>
                                     </div>
 
                                     <!-- Speaker Rating -->
-                                    <div style="flex: 5;">
+                                    <div style="flex: 1 1 140px; min-width: 0;">
                                         <label class="form-label mb-1"
-                                            style="font-weight: 500; color: #333; font-size: 0.9rem;">Rating Speaker</label>
+                                            style="font-weight: 500; color: #333; font-size: 0.9rem;">Speaker Ratings</label>
                                         <div class="stars-rating-input" data-target="speakerRating"
-                                            style="font-size: 30px !important; letter-spacing: 4px; cursor: pointer; user-select: none;">
-                                            <span data-rating="1"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="2"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="3"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="4"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
-                                            <span data-rating="5"
-                                                style="color: #ccc; font-size: 50px !important; transition: color 0.2s;">☆</span>
+                                            style="letter-spacing: 1px; cursor: pointer; user-select: none; line-height: 1;">
+                                            <span data-rating="1" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="2" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="3" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="4" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
+                                            <span data-rating="5" style="color: #ccc; font-size: clamp(28px, 5vw, 40px); transition: color 0.2s;">☆</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Feedback Text -->
                                 <div class="mb-3">
-                                    <textarea style="width: 1200px;" id="feedback-text" name="feedback" class="form-control"
+                                    <textarea id="feedback-text" name="feedback" class="form-control"
                                         rows="4" placeholder="Write your thoughts..." required
-                                        style="border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
+                                        style="width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-size: 0.85rem; resize: none;"></textarea>
                                 </div>
 
-                                <!-- Submit Button -->
                                 <button type="button" id="submit-feedback-btn" class="btn fw-semibold"
-                                    style="width: 1200px; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
+                                    style="width: 100%; background-color: #FFD600; color: #000; border: none; border-radius: 8px; padding: 0.6rem; font-size: 0.9rem;">
                                     Submit Feedback
                                 </button>
                             </form>
@@ -1950,7 +1932,7 @@
             </div>
         @endif
 
-    <div class="desc-box">
+        <div class="desc-box">
         <nav>
             <div class="nav nav-tabs" id="nav-tab" role="tablist">
                 <button class="nav-event nav-link active" id="nav-home-tab" data-bs-toggle="tab"
@@ -2399,13 +2381,17 @@
                         @endphp
 
                         @if($termsText === '')
-                            <p class="text-muted" style="margin:0;">Terms and Condition akan segera diumumkan</p>
+                            <p class="text-muted" style="margin:0;">Terms and Conditions will be announced soon</p>
                         @else
                             {!! $termsHtml !!}
                         @endif
                     </div>
                 </div>
             </div>
+            
+</main>
+ <div class="footer-section-wrapper">
+        @include('partials.footer-after-login')
     </div>
 
     <script>
@@ -2510,23 +2496,23 @@
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">Konfirmasi Feedback</h5>
+                            <h5 class="modal-title">Feedback Confirmation</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                                                 <div class="modal-body">
-                                                    <p class="text-center mb-2">
-                                                        Mohon pastikan feedback Anda sesuai pedoman. Feedback tidak boleh mengandung SARA, pornografi, ancaman, ujaran kebencian, atau konten ilegal lainnya.
-                                                    </p>
+                                                    <label class="form-check-label text-dark mb-0">
+                                                        Please ensure your feedback complies with the guidelines. Feedback must not contain SARA, pornography, threats, hate speech, or other illegal content.
+                                                    </label>
                                                     <div class="d-flex align-items-center mb-3" style="justify-content: flex-start;">
                                                         <input class="form-check-input me-2" type="checkbox" value="" id="confirm-eval">
-                                                        <label class="form-check-label fw-semibold text-dark mb-0" for="confirm-eval">Saya yakin bahwa feedback ini digunakan untuk keperluan evaluasi IdSpora. Lanjutkan?</label>
+                                                        <label class="form-check-label text-dark mb-0" for="confirm-eval">I am sure I want to submit this feedback</label>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <div class="w-100 d-grid gap-2 d-sm-flex justify-content-end">
-                                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                                                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
                                                         <button type="button" class="btn btn-primary px-4" id="confirm-submit-feedback" disabled>
-                                                            <span class="me-1">Kirim Feedback</span>
+                                                            <span class="me-1">Submit Feedback</span>
                                                             <i class="bi bi-arrow-right-short" aria-hidden="true"></i>
                                                         </button>
                                                     </div>
@@ -2689,7 +2675,6 @@
         })();
     </script>
     <script>
-        // Save/Unsave event handler (supports ID and fallback by class)
         (function () {
             const nodeList = document.querySelectorAll('#saveEventBtn, .booksave-row .save');
             // Deduplicate elements in case the selector matches the same node twice
@@ -3011,13 +2996,13 @@
                             fallbackCopy(pageUrl);
                         }
                         if (copyText) {
-                            copyText.textContent = 'Tersalin!';
+                            copyText.textContent = 'Copied!';
                             setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
                         }
                     } catch (_e) {
                         fallbackCopy(pageUrl);
                         if (copyText) {
-                            copyText.textContent = 'Tersalin!';
+                            copyText.textContent = 'Copied!';
                             setTimeout(() => { copyText.textContent = 'Copy link'; }, 2000);
                         }
                     }
@@ -3025,7 +3010,7 @@
             }
         })();
         </script>
-         @include('partials.footer-after-login')
+        
     </body>
 
 </html>

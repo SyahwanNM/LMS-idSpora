@@ -16,6 +16,7 @@ class PublicEventController extends Controller
 		$isAdmin = $request->user() && strtolower(trim((string) ($request->user()->role ?? ''))) === 'admin';
 
 		$query = Event::query()
+			->with('speakers')
 			->withCount([
 				'registrations as registrations_count' => function($q){
 					$q->select(DB::raw('COUNT(DISTINCT user_id)'))
@@ -49,11 +50,7 @@ class PublicEventController extends Controller
 
 		// Search
 		if ($search = $request->get('search')) {
-			$query->where(function ($q) use ($search) {
-				$q->where('title', 'like', "%$search%")
-					->orWhere('speaker', 'like', "%$search%")
-					->orWhere('location', 'like', "%$search%");
-			});
+			$query->where('title', 'like', "%$search%");
 		}
 
 		// Filter: location
@@ -74,22 +71,26 @@ class PublicEventController extends Controller
 		}
 
 		// Filter: event_type (online|offline|hybrid)
-		// online  = has zoom_link, no physical location
-		// offline = no zoom_link, has physical location
-		// hybrid  = has both zoom_link and physical location
+		// online  = has zoom_link, no physical location (exclude hybrid)
+		// offline = no zoom_link, has location
+		// hybrid  = has both zoom_link and location
 		if ($type = $request->get('event_type')) {
 			if ($type === 'online') {
 				$query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
 					->where(function ($q) {
-						$q->whereNull('location')->orWhere('location', '');
+						$q->whereNull('location')
+						  ->orWhere('location', '')
+						  ->orWhereRaw('LOWER(location) = ?', ['online']);
 					});
 			} elseif ($type === 'offline') {
 				$query->where(function ($q) {
 					$q->whereNull('zoom_link')->orWhere('zoom_link', '');
-				})->whereNotNull('location')->where('location', '!=', '');
+				})->whereNotNull('location')->where('location', '!=', '')
+				  ->whereRaw('LOWER(location) != ?', ['online']);
 			} elseif ($type === 'hybrid') {
 				$query->whereNotNull('zoom_link')->where('zoom_link', '!=', '')
-					->whereNotNull('location')->where('location', '!=', '');
+					->whereNotNull('location')->where('location', '!=', '')
+					->whereRaw('LOWER(location) != ?', ['online']);
 			}
 		}
 
@@ -136,7 +137,7 @@ class PublicEventController extends Controller
 		// Tandai event yang sudah diregistrasi user login
 		if($request->user()){
 			$userRegEventIds = $request->user()->eventRegistrations()
-				->where('status', 'active')
+                ->where('status', 'active')
                 ->pluck('event_id')->toArray();
             
             // Tandai event yang disimpan
@@ -217,10 +218,20 @@ class PublicEventController extends Controller
 		if($request->user()){
 			$isRegistered = $request->user()->eventRegistrations()
                 ->where('event_id',$event->id)
-                ->where('status', 'active')
+                ->where('status', '!=', 'rejected')
                 ->exists();
 		}
 		$event->is_registered = $isRegistered;
+
+		$isSaved = false;
+		if($request->user()){
+			$isSaved = \Illuminate\Support\Facades\DB::table('user_saved_events')
+				->where('user_id', $request->user()->id)
+				->where('event_id', $event->id)
+				->exists();
+		}
+		$event->is_saved = $isSaved;
+
 		// Load feedbacks for display on the event detail page
 		$feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
 		// Tampilkan halaman detail menggunakan tampilan "detail-event-registered"

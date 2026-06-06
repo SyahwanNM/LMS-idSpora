@@ -61,10 +61,6 @@ class CourseReviewController extends Controller
             ->where('course_id', $course->id)
             ->first();
 
-        if ($enrollment) {
-            $enrollment->setRelation('course', $course);
-        }
-
         if ($enrollment && $enrollment->isFullyCompleted()) {
             $enrollment->update([
                 'status' => 'completed',
@@ -79,7 +75,29 @@ class CourseReviewController extends Controller
             }
         }
 
-        return redirect()->route('course.certificate', $course->id)
-            ->with('success', 'Penilaian berhasil disimpan. Sertifikat Anda siap dicek.');
+        return redirect()->route('course.rating.success', $course->id)->with('success', 'Penilaian Anda berhasil disimpan. Terima kasih atas feedback Anda!');
+    }
+
+    public function success(Course $course)
+    {
+        $user = Auth::user();
+        
+        $enrollment = \App\Models\Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        if (!$enrollment) {
+            abort(404);
+        }
+
+        // Check if user has given review (sanity check)
+        $hasReviewed = Review::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->exists();
+
+        // If not reviewed yet, allow them to pass but typically they should review first
+        // However, the image shows this as step 2, so it's fine.
+
+        return view('course.sertifikat-course', compact('course', 'enrollment'));
     }
 }

@@ -875,6 +875,14 @@
 <body>
     @include('partials.navbar-after-login')
 
+    <div style="position:fixed; top:80px; left:20px; z-index:999;">
+        <a href="javascript:history.back()" style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; background:#fff; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,0.15); color:#1f2937; text-decoration:none; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.2)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+            </svg>
+        </a>
+    </div>
+
     <section class="hero-section">
         <div class="container-custom">
             <div class="hero-flex">

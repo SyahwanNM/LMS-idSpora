@@ -16,8 +16,8 @@ class Event extends Model
         'image',
         'vbg_path',
         'certificate_path',
-        'attendance_path',
         'module_path',
+        'module_submission_path',
         'material_status',
         'material_approved_at',
         'material_approved_by',
@@ -39,6 +39,8 @@ class Event extends Model
         'terms_and_conditions',
         'location',
         'price',
+        'price_offline',
+        'price_online',
         'discount_percentage',
         'discount_until',
         'event_time',
@@ -79,6 +81,7 @@ class Event extends Model
         'longitude' => 'decimal:7',
         'schedule_json' => 'array',
         'expenses_json' => 'array',
+        'benefit' => 'array',
         'is_reseller_event' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
@@ -95,7 +98,9 @@ class Event extends Model
         // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
         // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
         $hasVbg = !empty($this->vbg_path);
-        $hasModule = !empty($this->module_path);
+        // Module: cek module_path ATAU approved trainer modules
+        $hasModule     = !empty($this->module_path)
+                         || $this->approvedTrainerModules()->exists();
         $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
 
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));

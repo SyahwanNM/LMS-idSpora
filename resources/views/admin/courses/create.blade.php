@@ -72,8 +72,8 @@
                             </div>
                         </div>
 
-                        <!-- Category -->
-                        <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
+                        <!-- Category & Template -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="category_id"
                                     class="block text-sm font-medium text-gray-700 mb-2">Kategori <span class="text-red-600">*</span></label>
@@ -85,6 +85,22 @@
                                     @endforeach
                                 </select>
                                 <p id="category_id_error" class="mt-1 text-xs text-red-600 hidden"></p>
+                            </div>
+
+                            <div>
+                                <label for="template_id" class="block text-sm font-medium text-gray-700 mb-2">Course
+                                    Template</label>
+                                <select name="template_id" id="template_id"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                    <option value="">-- Tanpa template --</option>
+                                    @foreach($templates as $template)
+                                        <option value="{{ $template->id }}" {{ old('template_id') == $template->id ? 'selected' : '' }}>
+                                            {{ $template->name }} ({{ $template->modules_count }} modules)
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">Pilih template untuk pre-populate struktur modul
+                                    course</p>
                             </div>
                         </div>
 
@@ -105,13 +121,13 @@
                             <p id="trainer_id_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
-                        <!-- Harga -->
+                        <!-- Price -->
                         <div>
-                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Harga <span class="text-red-600">*</span></label>
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp) <span class="text-red-600">*</span></label>
                             <input type="text" name="price" id="price" required inputmode="numeric"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                 value="{{ old('price', 0) }}" placeholder="0">
-                            <p class="mt-1 text-xs text-gray-500">Masukkan 0 untuk course gratis</p>
+                            <p class="mt-1 text-xs text-gray-500">Enter 0 for free course</p>
                             <p id="price_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
@@ -125,52 +141,6 @@
                                 <option value="none" {{ old('free_access_mode') === 'none' ? 'selected' : '' }}>Tutup Review (Harus Bayar Dulu)</option>
                             </select>
                             <p class="mt-1 text-xs text-gray-500">Pilih bagaimana user dapat mengakses materi sebelum membeli (untuk course berbayar) atau status akses untuk course gratis.</p>
-                        </div>
-
-                        <!-- Reseller Course -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Reseller Course</label>
-                            @php
-                                $isResellerCourse = (int) old('is_reseller_course', 0);
-                            @endphp
-                            <div class="reseller-course-radios mt-1 flex flex-wrap items-center gap-x-8 gap-y-2" role="radiogroup" aria-label="Reseller Course">
-                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
-                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_0" value="0" class="h-4 w-4"
-                                        {{ $isResellerCourse === 0 ? 'checked' : '' }}>
-                                    <label for="is_reseller_course_0" class="text-sm text-gray-700">Tidak</label>
-                                </div>
-                                <div class="reseller-course-option inline-flex items-center whitespace-nowrap shrink-0">
-                                    <input type="radio" name="is_reseller_course" id="is_reseller_course_1" value="1" class="h-4 w-4"
-                                        {{ $isResellerCourse === 1 ? 'checked' : '' }}>
-                                    <label for="is_reseller_course_1" class="text-sm text-gray-700">Ya</label>
-                                </div>
-                            </div>
-                            <p class="mt-1 text-xs text-gray-500">Jika Ya, course ini ditandai sebagai course reseller.</p>
-                            <style>
-                                .reseller-course-radios .reseller-course-option{
-                                    display: inline-flex !important;
-                                    align-items: center !important;
-                                    flex: 0 0 auto !important;
-                                    white-space: nowrap !important;
-                                }
-                                .reseller-course-radios label{
-                                    display: inline-flex !important;
-                                    align-items: center !important;
-                                    margin: 0 0 0 0.5rem !important;
-                                    cursor: pointer;
-                                    user-select: none;
-                                }
-                                .reseller-course-radios .reseller-course-option:first-child label{
-                                    margin-left: 0.15rem !important;
-                                }
-                                .reseller-course-radios input[type="radio"]{
-                                    appearance: auto !important;
-                                    -webkit-appearance: radio !important;
-                                    -moz-appearance: auto !important;
-                                    margin: 0 !important;
-                                    vertical-align: middle !important;
-                                }
-                            </style>
                         </div>
 
                         <!-- Deskripsi -->
@@ -319,12 +289,12 @@
                 const rawPrice = (price?.value || '').trim();
                 const digits = normalizeDigits(rawPrice);
                 if (digits.length === 0) {
-                    setError('price', 'Harga wajib diisi.');
+                    setError('price', 'Price is required.');
                     firstInvalid ||= price;
                 } else {
                     const val = parseInt(digits, 10);
                     if (Number.isNaN(val) || val < 0) {
-                        setError('price', 'Harga harus angka >= 0.');
+                        setError('price', 'Price must be a number >= 0.');
                         firstInvalid ||= price;
                     } else {
                         setError('price', '');

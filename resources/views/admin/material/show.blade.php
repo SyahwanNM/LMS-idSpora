@@ -662,125 +662,6 @@
             background: transparent;
         }
 
-        .module-handoff-panel {
-            border-top: 1px dashed #e2e8f0;
-            padding-top: 10px;
-            margin-top: 2px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .module-handoff-head {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-            font-size: 0.75rem;
-            color: #475569;
-            font-weight: 700;
-        }
-
-        .module-handoff-state {
-            color: #1e3a8a;
-            font-weight: 800;
-        }
-
-        .module-handoff-summary {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 2px;
-        }
-
-        .module-handoff-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .module-handoff-pill.assigned {
-            color: #1d4ed8;
-            background: #eff6ff;
-        }
-
-        .module-handoff-pill.uploaded {
-            color: #0f766e;
-            background: #f0fdfa;
-        }
-
-        .module-handoff-pill.revision {
-            color: #9a3412;
-            background: #fff7ed;
-        }
-
-        .module-handoff-note {
-            margin: 0;
-            padding: 8px 10px;
-            border-radius: 10px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            color: #475569;
-            font-size: 0.76rem;
-            line-height: 1.45;
-        }
-
-        .module-handoff-form,
-        .module-handoff-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .module-handoff-field {
-            flex: 1 1 260px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 7px 10px;
-            font-size: 0.75rem;
-            line-height: 1.3;
-            min-width: 200px;
-        }
-
-        .module-handoff-file {
-            flex: 1 1 240px;
-            font-size: 0.72rem;
-            min-width: 220px;
-        }
-
-        .module-handoff-action {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-
-        .module-handoff-action form {
-            margin: 0;
-        }
-
-        @media (max-width: 768px) {
-
-            .module-handoff-field,
-            .module-handoff-file {
-                min-width: 100%;
-                flex-basis: 100%;
-            }
-
-            .module-handoff-form .module-btn-approve,
-            .module-handoff-row .module-btn-approve,
-            .module-handoff-action .module-btn-approve,
-            .module-handoff-action .module-btn-reject {
-                width: 100%;
-                justify-content: center;
-            }
-        }
 
         .module-btn {
             text-decoration: none;
@@ -1242,6 +1123,17 @@
                                     <span style="font-size:0.75rem;color:#94a3b8;">
                                         {{ $unit['uploaded'] }}/{{ $unit['total'] }} modul
                                     </span>
+                                    @if($material->status === 'pending_review' && $unit['any_pending'])
+                                        <form method="POST" action="{{ route('admin.material.unit.approve', $material) }}"
+                                            style="margin:0;margin-left:auto;">
+                                            @csrf
+                                            <input type="hidden" name="unit_no" value="{{ $unit['unit_no'] }}">
+                                            <button type="submit" class="module-btn-approve"
+                                                style="height:28px; font-size:0.7rem; padding:0 10px; border-radius:6px;">
+                                                <i class="bi bi-check-all"></i> Setujui Bab {{ $unit['unit_no'] }}
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
 
                                 {{-- Daftar Modul dalam Bab --}}
@@ -1277,15 +1169,11 @@
 
                                             $canOpenFile = !$module->isQuiz() && !empty($contentUrl) && !$hasTextContent;
                                             $canPreview = $canOpenFile || $module->isQuiz() || $hasTextContent;
-                                            $quizEmpty = $module->isQuiz() && $module->quizQuestions->count() === 0;
-                                            $hasAnyContent = $canOpenFile || $hasTextContent || ($module->isQuiz() && !$quizEmpty);
+                                            $hasAnyContent = $canOpenFile || $hasTextContent || $module->isQuiz();
                                             $reviewStatus = in_array(($module->review_status ?? ''), ['approved', 'rejected', 'pending_review'], true)
                                                 ? $module->review_status : 'pending_review';
                                             $processingStatus = (string) ($module->processing_status ?? '');
-                                            $handoffAssigned = in_array($processingStatus, ['assigned_to_admin_course', 'revision_requested', 'processed_uploaded', 'ready_for_publish'], true);
-                                            $handoffReadyToUpload = in_array($processingStatus, ['assigned_to_admin_course', 'revision_requested'], true);
-                                            $handoffReadyToReview = $processingStatus === 'processed_uploaded';
-                                            $hasProcessedVideo = filled($module->processed_file_url ?? null);
+
                                         @endphp
 
                                         <div
@@ -1376,14 +1264,8 @@
                                                             @endif
                                                         </div>
                                                     @else
-                                                        @if($quizEmpty)
-                                                            <span class="module-tag" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">
-                                                                <i class="bi bi-question-circle me-1"></i>Kuis belum dibuat
-                                                            </span>
-                                                        @else
-                                                            <span class="module-tag module-tag-missing"><i
-                                                                    class="bi bi-exclamation me-1"></i>File belum diupload</span>
-                                                        @endif
+                                                        <span class="module-tag module-tag-missing"><i
+                                                                class="bi bi-exclamation me-1"></i>File belum diupload</span>
                                                     @endif
 
                                                     {{-- Tombol Setujui/Tolak — tampil untuk SEMUA tipe modul (termasuk quiz) jika
@@ -1418,92 +1300,7 @@
                                                         </div>
                                                     @endif
 
-                                                    @if($module->isVideo() && $reviewStatus === 'approved')
-                                                        <div class="module-handoff-panel">
-                                                            <div class="module-handoff-head">
-                                                                <i class="bi bi-arrow-left-right"></i>
-                                                                <span>Handoff Admin Trainer -> Admin Course</span>
-                                                                @if($processingStatus !== '')
-                                                                    <span
-                                                                        class="module-handoff-state">({{ str_replace('_', ' ', strtoupper($processingStatus)) }})</span>
-                                                                @endif
-                                                            </div>
 
-                                                            <div class="module-handoff-summary">
-                                                                @if($processingStatus === 'assigned_to_admin_course')
-                                                                    <span class="module-handoff-pill assigned"><i
-                                                                            class="bi bi-send-check"></i> Diserahkan ke Admin Course</span>
-                                                                @elseif($processingStatus === 'revision_requested')
-                                                                    <span class="module-handoff-pill revision"><i
-                                                                            class="bi bi-arrow-counterclockwise"></i> Revisi Diminta</span>
-                                                                @elseif($processingStatus === 'processed_uploaded')
-                                                                    <span class="module-handoff-pill uploaded"><i class="bi bi-upload"></i>
-                                                                        Hasil Edit Diunggah</span>
-                                                                @elseif($processingStatus === 'ready_for_publish')
-                                                                    <span class="module-handoff-pill uploaded"><i
-                                                                            class="bi bi-check2-circle"></i> Siap Dipublikasikan</span>
-                                                                @else
-                                                                    <span class="module-handoff-pill assigned"><i
-                                                                            class="bi bi-clock-history"></i> Menunggu Handoff</span>
-                                                                @endif
-                                                            </div>
-
-                                                            @if(!empty($module->assignment_notes))
-                                                                <p class="module-handoff-note"><strong>Catatan:</strong>
-                                                                    {{ $module->assignment_notes }}</p>
-                                                            @endif
-
-                                                            @if(!$handoffAssigned)
-                                                                <form method="POST"
-                                                                    action="{{ route('admin.material.module.assign-course', [$material, $module]) }}"
-                                                                    class="module-handoff-form">
-                                                                    @csrf
-                                                                    <input type="text" name="assignment_notes" class="module-handoff-field"
-                                                                        placeholder="Catatan handoff ke admin course (opsional)">
-                                                                    <button type="submit" class="module-btn-approve">
-                                                                        <i class="bi bi-send-check"></i> Serahkan
-                                                                    </button>
-                                                                </form>
-                                                            @endif
-
-                                                            @if($handoffReadyToUpload)
-                                                                <form method="POST"
-                                                                    action="{{ route('admin.material.module.upload-processed', [$material, $module]) }}"
-                                                                    enctype="multipart/form-data" class="module-handoff-row">
-                                                                    @csrf
-                                                                    <input type="file" name="processed_file" class="module-handoff-file"
-                                                                        accept="video/mp4,video/quicktime,video/x-matroska,video/webm"
-                                                                        required>
-                                                                    <button type="submit" class="module-btn-approve">
-                                                                        <i class="bi bi-upload"></i> Upload Hasil Edit
-                                                                    </button>
-                                                                </form>
-                                                            @endif
-
-                                                            @if($handoffReadyToReview && $hasProcessedVideo)
-                                                                <div class="module-handoff-action">
-                                                                    <form method="POST"
-                                                                        action="{{ route('admin.material.module.accept-processed', [$material, $module]) }}">
-                                                                        @csrf
-                                                                        <button type="submit" class="module-btn-approve">
-                                                                            <i class="bi bi-check2-circle"></i> Terima Hasil Edit
-                                                                        </button>
-                                                                    </form>
-                                                                    <form method="POST"
-                                                                        action="{{ route('admin.material.module.request-revision', [$material, $module]) }}"
-                                                                        class="module-handoff-form">
-                                                                        @csrf
-                                                                        <input type="text" name="assignment_notes"
-                                                                            class="module-handoff-field" minlength="10" required
-                                                                            placeholder="Alasan minta revisi hasil edit">
-                                                                        <button type="submit" class="module-btn-reject">
-                                                                            <i class="bi bi-arrow-counterclockwise"></i> Minta Revisi
-                                                                        </button>
-                                                                    </form>
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                    @endif
 
                                                 </div>{{-- end status+actions --}}
                                             </div>{{-- end module-desc --}}
@@ -1572,7 +1369,7 @@
                                     <div style="font-size:0.7rem;color:#166534;margin-top:2px;">Disetujui</div>
                                 </div>
                                 <div
-                                    style="background:#{ $totalRejectedM > 0 ? 'fff1f2' : 'f8fafc' };border-radius:10px;padding:10px 12px;text-align:center;">
+                                    style="background:{{ $totalRejectedM > 0 ? '#fff1f2' : '#f8fafc' }};border-radius:10px;padding:10px 12px;text-align:center;">
                                     <div
                                         style="font-size:1.3rem;font-weight:800;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};">
                                         {{ $totalRejectedM }}</div>
@@ -1589,6 +1386,40 @@
                                 </div>
                             @endif
                         </div>
+
+                        {{-- Final Actions --}}
+                        @if($material->status === 'pending_review')
+                            <div class="card-custom side-card" style="padding:16px; margin-top:14px;">
+                                <div class="side-card-title">Keputusan Akhir</div>
+                                <form method="POST" action="{{ route('admin.material.approve', $material) }}"
+                                    style="margin-bottom:10px;">
+                                    @csrf
+                                    <button type="submit" class="btn-approve"
+                                        {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
+                                        <i class="bi bi-check-circle-fill"></i> Setujui Seluruh Materi
+                                    </button>
+                                    @if(!$structureCompleteness['is_complete'])
+                                        <div
+                                            style="font-size:0.7rem; color:#be123c; margin-top:6px; background:#fff1f2; padding:8px; border-radius:8px; border:1px solid #fecaca;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> <strong>Struktur Belum Lengkap</strong>
+                                            <ul style="margin:4px 0 0 16px; padding:0;">
+                                                @foreach(array_slice($structureCompleteness['missing_items'], 0, 3) as $item)
+                                                    <li>{{ $item }}</li>
+                                                @endforeach
+                                                @if(count($structureCompleteness['missing_items']) > 3)
+                                                    <li>...dan {{ count($structureCompleteness['missing_items']) - 3 }} lainnya</li>
+                                                @endif
+                                            </ul>
+                                        </div>
+                                    @endif
+                                </form>
+
+                                <button type="button" class="btn-reject" data-bs-toggle="modal"
+                                    data-bs-target="#rejectCourseModal">
+                                    <i class="bi bi-x-circle-fill"></i> Tolak Seluruh Course
+                                </button>
+                            </div>
+                        @endif
 
                     </div>
                 </div>{{-- end col-xl-4 --}}

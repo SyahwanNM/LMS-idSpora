@@ -16,10 +16,12 @@ class Progress extends Model
         'enrollment_id',
         'course_module_id',
         'completed',
+        'video_watched',
     ];
 
     protected $casts = [
         'completed' => 'boolean',
+        'video_watched' => 'boolean',
     ];
 
     public function enrollment(): BelongsTo

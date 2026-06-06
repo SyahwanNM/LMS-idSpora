@@ -78,22 +78,17 @@
         margin-top: 60px;
         
        
-        width: 100vw; 
+        width: 100%;
         position: relative;
-        left: 50%;
-        right: 50%;
-        margin-left: -50vw; 
-        margin-right: -50vw; 
     }
 
-    
     body {
         overflow-x: hidden; 
     }
     
-    d
+
     .footer-section a:not(.btn) {
-        text-decoration: none;
+
         color: inherit;
         opacity: 0.9;
         transition: opacity 0.3s;
@@ -104,7 +99,8 @@
     }
     @media (max-width: 768px) {
         .footer-section {
-            padding: 30px 0 15px !important;
+            padding: 30px 0 15px  !important;
         }
     }
+    
 </style>

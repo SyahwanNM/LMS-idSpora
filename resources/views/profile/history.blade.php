@@ -96,12 +96,13 @@
         // Add saved events (that are NOT registered)
         foreach($savedEvents as $event) {
             if(in_array($event->id, $registeredEventIds)) continue;
+            $eventSavedAt = $savedEventAtMap[$event->id] ?? null;
             $allActivities->push([
                 'type' => 'EVENT',
                 'id' => $event->id,
                 'title' => $event->title,
                 'image' => $event->image_url ?? asset('aset/poster.png'),
-                'date' => $event->event_date ? $event->event_date : '-',
+                'date' => $eventSavedAt ? \Carbon\Carbon::parse($eventSavedAt)->format('d-m-Y') : '-',
                 'description' => $event->short_description,
                 'status' => 'saved',
                 'is_saved' => true,
@@ -115,7 +116,13 @@
         foreach($enrollments as $enr) {
             $course = $enr->course;
             if(!$course) continue;
-            $isCompleted = ($enr->status === 'completed') || !empty($enr->certificate_issued_at);
+            
+            // Strictly check for 100% progress
+            $isFullyCompleted = $enr->isFullyCompleted();
+            $hasCertificate = !empty($enr->certificate_issued_at);
+            
+            $isHistory = $isFullyCompleted || $hasCertificate || ($enr->status === 'completed');
+            
             $allActivities->push([
                 'type' => 'COURSE',
                 'id' => $course->id,
@@ -123,9 +130,9 @@
                 'image' => $course->card_thumbnail_url ?? 'https://via.placeholder.com/400x250',
                 'date' => $enr->enrolled_at ? $enr->enrolled_at->format('d-m-Y') : '-',
                 'description' => $course->short_description,
-                'status' => $isCompleted ? 'history' : 'ongoing',
+                'status' => $isHistory ? 'history' : 'ongoing',
                 'is_saved' => in_array($course->id, $savedCourseIds),
-                'certificate_route' => $isCompleted ? route('course.certificates.download', [$course->id, $enr->id]) : null,
+                'certificate_route' => ($isFullyCompleted || $hasCertificate) ? route('course.certificates.download', [$course->id, $enr->id]) : null,
                 'detail_route' => route('course.detail', $course->id),
                 'save_route' => route('courses.save', $course->id)
             ]);
@@ -134,12 +141,13 @@
         // Add saved courses (that are NOT enrolled)
         foreach($savedCourses as $course) {
             if(in_array($course->id, $enrolledCourseIds)) continue;
+            $savedAt = $savedAtMap[$course->id] ?? null;
             $allActivities->push([
                 'type' => 'COURSE',
                 'id' => $course->id,
                 'title' => $course->name,
                 'image' => $course->card_thumbnail_url ?? 'https://via.placeholder.com/400x250',
-                'date' => '-',
+                'date' => $savedAt ? \Carbon\Carbon::parse($savedAt)->format('d-m-Y') : '-',
                 'description' => $course->short_description,
                 'status' => 'saved',
                 'is_saved' => true,
@@ -165,9 +173,6 @@
             </div>
             <div class="main-tab" id="tab-course" onclick="setMainTab('COURSE')">
                 <i class="bi bi-mortarboard me-2"></i> COURSE
-            </div>
-            <div class="main-tab" id="tab-log" onclick="setMainTab('LOG')">
-                <i class="bi bi-clock-history me-2"></i> AKTIVITAS
             </div>
         </div>
 
@@ -212,7 +217,7 @@
         </div>
 
         <!-- Scrollable List -->
-        <div id="activity-list" class="space-y-6 mb-20">
+        <div id="activity-list" class="space-y-6 mb-20" style="max-height: 70vh; overflow-y: auto; padding-right: 4px;">
             @foreach($allActivities as $item)
                 <div class="activity-item-card p-6" 
                      data-type="{{ $item['type'] }}" 
@@ -252,33 +257,7 @@
                 <p class="text-slate-500">Mulai ambil program belajar baru untuk melihat aktivitasmu.</p>
             </div>
 
-            <div id="log-section" class="hidden space-y-4">
-                @forelse($activitiesLogs as $log)
-                    <div class="bg-white p-4 rounded-2xl border border-slate-100 flex items-center gap-4">
-                        <div class="stat-icon bg-slate-50 text-slate-600">
-                            @if($log->action == 'Login')
-                                <i class="bi bi-box-arrow-in-right"></i>
-                            @elseif($log->action == 'Save Course' || $log->action == 'Unsave Course')
-                                <i class="bi bi-bookmark"></i>
-                            @else
-                                <i class="bi bi-activity"></i>
-                            @endif
-                        </div>
-                        <div class="flex-1">
-                            <div class="font-bold text-slate-800">{{ $log->action }}</div>
-                            <div class="text-sm text-slate-500">{{ $log->description }}</div>
-                        </div>
-                        <div class="text-xs font-bold text-slate-400">
-                            {{ $log->created_at->format('d M Y, H:i') }}
-                        </div>
-                    </div>
-                @empty
-                    <div class="py-16 text-center bg-white rounded-3xl border border-dashed border-slate-200">
-                        <i class="bi bi-clock-history text-4xl text-slate-300 mb-4"></i>
-                        <h4 class="text-xl font-bold text-slate-800">Belum ada log aktivitas</h4>
-                    </div>
-                @endforelse
-            </div>
+            <!-- Log section removed -->
         </div>
     </div>
 
@@ -323,32 +302,23 @@
 
         function applyFilters() {
             const cards = document.querySelectorAll('.activity-item-card');
-            const logSection = document.getElementById('log-section');
             const subFilterContainer = document.querySelector('.sub-filter').parentElement;
             let count = 0;
             
-            if (currentType === 'LOG') {
-                cards.forEach(c => c.classList.add('hidden-filter'));
-                logSection.classList.remove('hidden');
-                subFilterContainer.classList.add('hidden');
-                count = 1; // dummy so empty-state doesn't show
-            } else {
-                logSection.classList.add('hidden');
-                subFilterContainer.classList.remove('hidden');
-                cards.forEach(card => {
-                    const typeMatch = card.dataset.type === currentType;
-                    const isSaved = card.dataset.isSaved === 'true';
-                    const statusMatch = currentStatus === 'all' || 
-                                       (currentStatus === 'saved' ? isSaved : card.dataset.status === currentStatus);
-                    
-                    if (typeMatch && statusMatch) {
-                        card.classList.remove('hidden-filter');
-                        count++;
-                    } else {
-                        card.classList.add('hidden-filter');
-                    }
-                });
-            }
+            subFilterContainer.classList.remove('hidden');
+            cards.forEach(card => {
+                const typeMatch = card.dataset.type === currentType;
+                const isSaved = card.dataset.isSaved === 'true';
+                const statusMatch = currentStatus === 'all' || 
+                                   (currentStatus === 'saved' ? isSaved : card.dataset.status === currentStatus);
+                
+                if (typeMatch && statusMatch) {
+                    card.classList.remove('hidden-filter');
+                    count++;
+                } else {
+                    card.classList.add('hidden-filter');
+                }
+            });
             
             const empty = document.getElementById('empty-state');
             if (count === 0) empty.classList.remove('hidden');

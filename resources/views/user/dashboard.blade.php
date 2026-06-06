@@ -141,6 +141,22 @@
         .save-btn {
             transition: all 0.2s ease;
         }
+
+        /* Hilangkan kotak kuning pada hover carousel control */
+        .carousel-control-prev,
+        .carousel-control-next {
+            background: transparent !important;
+            border: none !important;
+            width: 10% !important;
+            transition: opacity 0.3s ease !important;
+        }
+
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            background: transparent !important;
+            transform: none !important;
+            opacity: 0.8 !important;
+        }
     </style>
 </head>
 
@@ -220,17 +236,22 @@
                     <span class="visually-hidden">Next</span>
                 </button>
             </div>
+            
+
+
+
 
 
             <div class="row g-4">
                 <div class="col-lg-8">
 
                     {{-- /* Section Lanjutkan Belajar */ --}}
+                    @if($userEnrollments->count() > 0)
                     <div class="mb-5">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Lanjutkan Belajar</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Keep Learning</h5>
                             <a href="#" class="text-decoration-none fw-semibold"
-                                style="color: var(--primary); font-size: 14px;">Lihat Semua &raquo;</a>
+                                style="color: var(--primary); font-size: 14px;">View All &raquo;</a>
                         </div>
 
                         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -238,13 +259,13 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="bg-light">
                                         <tr style="font-size: 13px; color: #666;">
-                                            <th class="border-0 ps-4 py-3" style="width: 50%;">Nama Kursus</th>
-                                            <th class="border-0 py-3" style="width: 35%;">Progres</th>
-                                            <th class="border-0 py-3 text-center pe-4" style="width: 15%;">Aksi</th>
+                                            <th class="border-0 ps-4 py-3" style="width: 50%;">Courses Name</th>
+                                            <th class="border-0 py-3" style="width: 35%;">Progress</th>
+                                            <th class="border-0 py-3 text-center pe-4" style="width: 15%;">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($userEnrollments as $enrollment)
+                                        @foreach($userEnrollments as $enrollment)
                                             @php
                                                 $progress = $enrollment->getProgressPercentage();
                                                 $course = $enrollment->course;
@@ -254,7 +275,15 @@
                                                     <div class="d-flex align-items-center gap-3">
                                                         <div class="rounded-3 overflow-hidden flex-shrink-0"
                                                             style="width: 48px; height: 48px;">
-                                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
+                                                            @php
+                                                                $cMedia = $course->card_thumbnail ?? $course->media;
+                                                                if ($cMedia) {
+                                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
+                                                                } else {
+                                                                    $imgSrc = asset('aset/poster.png');
+                                                                }
+                                                            @endphp
+                                                            <img src="{{ $imgSrc }}"
                                                                 class="w-100 h-100 object-fit-cover" alt="Thumb">
                                                         </div>
                                                         <h6 class="fw-semibold mb-0"
@@ -275,41 +304,50 @@
                                                     </div>
                                                 </td>
                                                 <td class="text-center pe-4 py-3">
-                                                    <a href="{{ route('course.learn', $course->id) }}"
-                                                        class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                                        style="width: 36px; height: 36px; background-color: var(--navy);">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                                            fill="currentColor" viewBox="0 0 16 16">
-                                                            <path
-                                                                d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
-                                                        </svg>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="3" class="text-center py-5">
-                                                    <div class="mb-3 text-muted opacity-50">
-                                                        <i class="bi bi-journal-x" style="font-size: 40px;"></i>
+                                                    @php
+                                                        $nextModuleId = $enrollment->getNextModuleId();
+                                                        $continueUrl = $nextModuleId
+                                                            ? route('course.learn', $course->id) . '?module=' . $nextModuleId
+                                                            : route('course.learn', $course->id);
+                                                    @endphp
+                                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                                        @if($progress >= 100)
+                                                            <a href="{{ route('course.certificates.download', [$course->id, $enrollment->id]) }}" 
+                                                                class="btn btn-sm btn-outline-success rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                                style="width: 36px; height: 36px;" title="Download Sertifikat">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                                                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                                                                </svg>
+                                                            </a>
+                                                        @endif
+
+                                                        <a href="{{ $continueUrl }}"
+                                                            class="btn btn-sm text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                                                            style="width: 36px; height: 36px; background-color: var(--navy);" title="Lanjutkan Belajar">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                                                fill="currentColor" viewBox="0 0 16 16">
+                                                                <path
+                                                                    d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
+                                                            </svg>
+                                                        </a>
                                                     </div>
-                                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">Belum Ada Kursus</h6>
-                                                    <p class="text-muted mb-3" style="font-size: 11px;">Ayo mulai tingkatkan keahlianmu hari ini!</p>
-                                                    <a href="{{ route('courses.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Cari Kursus</a>
                                                 </td>
                                             </tr>
-                                        @endforelse
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     {{-- /* Section Rekomendasi Course */ --}}
                     <div class="mb-5">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Rekomendasi Course</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Recommended Courses</h5>
                             <a href="/courses" class="btn btn-sm btn-outline-warning rounded-pill px-3"
-                                style="color: var(--primary); border-color: var(--secondary);">Lihat Lainnya</a>
+                                style="color: var(--primary); border-color: var(--secondary);">View All</a>
                         </div>
 
                         <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
@@ -322,7 +360,15 @@
                                     <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
                                         style="background: white;">
                                         <div class="position-relative" style="height: 160px;">
-                                            <img src="{{ $course->card_thumbnail_url ?? asset('aset/poster.png') }}"
+                                            @php
+                                                $cMedia = $course->card_thumbnail ?? $course->media;
+                                                if ($cMedia) {
+                                                    $imgSrc = str_starts_with($cMedia, 'http') ? $cMedia : asset('uploads/' . $cMedia);
+                                                } else {
+                                                    $imgSrc = 'https://via.placeholder.com/280x160';
+                                                }
+                                            @endphp
+                                            <img src="{{ $imgSrc }}"
                                                 class="w-100 h-100 object-fit-cover" alt="{{ $course->name }}">
                                             <span
                                                 class="badge position-absolute top-0 start-0 m-2 bg-white text-dark shadow-sm fw-semibold"
@@ -334,8 +380,11 @@
                                                 data-save-url="{{ route('courses.save', $course) }}"
                                                 onclick="event.stopPropagation(); toggleSaveCourse(this)"
                                                 style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                @php
+                                                    $isSaved = !empty($course->is_saved);
+                                                @endphp
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
                                         </div>
@@ -375,19 +424,19 @@
                                                         </div>
                                                     @else
                                                         <div class="fw-bold" style="color: var(--primary); font-size: 16px;">
-                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Gratis' }}
+                                                            {{ $course->price > 0 ? 'Rp ' . number_format($course->price, 0, ',', '.') : 'Free' }}
                                                         </div>
                                                     @endif
                                                 </div>
                                                 <a href="{{ Route::currentRouteName() == 'admin.dashboard' ? route('admin.courses.show', $course->id) : route('course.detail', $course->id) }}"
-                                                    class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Mulai' }}</a>
+                                                    class="btn btn-warning btn-sm px-3 fw-bold border-0">{{ Route::currentRouteName() == 'admin.dashboard' ? 'Detail' : 'Start' }}</a>
                                             </div>
                                         </div>
                                 </div>
                                 </div>
                             @empty
                                 <div class="text-center py-4 w-100">
-                                    <p class="text-muted">Tidak ada rekomendasi course saat ini.</p>
+                                    <p class="text-muted">There are no course recommendations at this time.</p>
                                 </div>
                             @endforelse
                         </div>
@@ -396,9 +445,9 @@
                     {{-- /* Section Event Terbaru */ --}}
                     <div class="mb-5">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Event Terbaru</h5>
+                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Latest Events</h5>
                             <a href="/events" class="btn btn-sm btn-outline-warning rounded-pill px-3"
-                                style="color: var(--primary); border-color: var(--secondary);">Lihat Lainnya</a>
+                                style="color: var(--primary); border-color: var(--secondary);">View All</a>
                         </div>
 
                         <div class="d-flex overflow-auto pb-3 gap-3" style="white-space: nowrap;">
@@ -433,8 +482,11 @@
                                                     data-save-url="{{ route('events.save', $event) }}"
                                                     onclick="event.stopPropagation(); toggleSaveEvent(this)"
                                                     style="position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(255, 255, 255, 0.9); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #64748b; transition: all 0.2s;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                                    <path d="M2 2v13.5l6-3 6 3V2z" />
+                                                @php
+                                                    $isSaved = !empty($event->is_saved);
+                                                @endphp
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="{{ $isSaved ? '#dc3545' : 'currentColor' }}" viewBox="0 0 16 16">
+                                                    <path d="{{ $isSaved ? 'M2 2v13.5l6-3 6 3V2z' : 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z' }}" />
                                                 </svg>
                                             </button>
                                     </div>
@@ -495,7 +547,7 @@
                                                         <path
                                                             d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" />
                                                     </svg>
-                                                    <span>{{ $isFull ? 'Kuota Penuh' : 'Kuota Terisi' }}</span>
+                                                    <span>{{ $isFull ? 'Full Slot' : 'Quota Filled' }}</span>
                                                 </div>
                                                 <span
                                                     class="fw-bold {{ $isFull ? 'text-danger' : ($percentage > 80 ? 'text-warning' : 'text-primary') }}">
@@ -512,7 +564,7 @@
 
                                         <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"
                                             style="background:#f8f9fa;">
-                                            <span class="small fw-bold text-muted">Mulai dalam:</span>
+                                            <span class="small fw-bold text-muted">Start in:</span>
                                             <span class="font-monospace px-2 py-1 rounded"
                                                 style="background:#212f4d; color:#ffd54f; letter-spacing:1px; font-size:11px;">
                                                 {{ $event->event_date ?
@@ -524,22 +576,39 @@
                                         <div
                                             class="d-flex justify-content-between align-items-end mt-auto pt-3 border-top">
                                             <div class="d-flex flex-column">
-                                                @if($event->price == 0)
-                                                <span
-                                                    style="color: #198754; font-weight:700; font-size:16px;">Gratis</span>
+                                                @php
+                                                    $isHybridCard = !empty($event->maps_url) && !empty($event->zoom_link)
+                                                                    && ($event->price_offline > 0 || $event->price_online > 0);
+                                                    $discountPctCard = ($event->discount_percentage > 0 && $event->hasDiscount())
+                                                                       ? (float) $event->discount_percentage : 0.0;
+                                                @endphp
+                                                @if($isHybridCard)
+                                                    @php
+                                                        $offFinal = $discountPctCard > 0 ? round((float)$event->price_offline * (1 - $discountPctCard/100)) : (float)$event->price_offline;
+                                                        $onFinal  = $discountPctCard > 0 ? round((float)$event->price_online  * (1 - $discountPctCard/100)) : (float)$event->price_online;
+                                                    @endphp
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <span style="font-size:0.65rem;font-weight:600;padding:1px 6px;border-radius:20px;background:#e8f4fd;color:#1565c0;border:1px solid #90caf9;white-space:nowrap;">Offline</span>
+                                                            <span style="color:var(--navy);font-weight:700;font-size:14px;">{{ $offFinal > 0 ? 'Rp '.number_format($offFinal,0,',','.') : 'Free' }}</span>
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <span style="font-size:0.65rem;font-weight:600;padding:1px 6px;border-radius:20px;background:#fce4ec;color:#c62828;border:1px solid #f48fb1;white-space:nowrap;">Online</span>
+                                                            <span style="color:var(--navy);font-weight:700;font-size:14px;">{{ $onFinal > 0 ? 'Rp '.number_format($onFinal,0,',','.') : 'Free' }}</span>
+                                                        </div>
+                                                    </div>
+                                                @elseif($event->price == 0)
+                                                    <span style="color: #198754; font-weight:700; font-size:16px;">Free</span>
                                                 @else
-                                                @if($event->original_price && $event->original_price > $event->price)
-                                                <span
-                                                    style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp
-                                                    {{ number_format($event->original_price, 0, ',', '.') }}</span>
-                                                @endif
-                                                <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp
-                                                    {{ number_format($event->price, 0, ',', '.') }}</span>
+                                                    @if($event->original_price && $event->original_price > $event->price)
+                                                        <span style="color:#9ca3af; text-decoration: line-through; font-size:11px;">Rp {{ number_format($event->original_price, 0, ',', '.') }}</span>
+                                                    @endif
+                                                    <span style="color: var(--navy); font-weight:700; font-size:16px;">Rp {{ number_format($event->price, 0, ',', '.') }}</span>
                                                 @endif
                                             </div>
                                             <a href="{{ route('events.show', $event->id) }}"
                                                 class="btn btn-primary btn-sm px-3 bg-warning text-dark border-0 fw-semibold {{ $isFull ? 'disabled' : '' }}">
-                                                {{ $isFull ? 'Penuh' : 'Detail' }}
+                                                {{ $isFull ? 'Full' : 'Detail' }}
                                             </a>
                                         </div>
                                     </div>
@@ -547,7 +616,7 @@
                             </div>
                             @empty
                             <div class="text-center w-100 py-5">
-                                <p class="text-muted">Belum ada event terbaru saat ini.</p>
+                                <p class="text-muted">No latest events available.</p>
                             </div>
                             @endforelse
                         </div>
@@ -559,7 +628,7 @@
                     {{-- /* Sidebar - Kalender Events */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Jadwal Event</h5>
+                            <h5 class="fw-bold mb-0" style="color: #2e2050;">Event Schedule</h5>
                             <button class="btn btn-sm p-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#999"
                                     class="bi bi-three-dots-vertical" viewBox="0 0 16 16">
@@ -573,8 +642,7 @@
                             @php
                                 $today = \Carbon\Carbon::now();
                                 $daysToShow = 5;
-                                // Prepare unique dates that have events for the user
-                                $eventDates = $userEvents->pluck('event_date')->map(function($date) {
+                                $eventDates = $userRegistrations->pluck('event.event_date')->map(function($date) {
                                     return $date ? (\Carbon\Carbon::parse($date)->format('Y-m-d')) : null;
                                 })->filter()->unique()->toArray();
                             @endphp
@@ -607,35 +675,34 @@
                                 $defaultStyle = ['icon' => 'bi-calendar-event', 'bg' => '#f3f4f6', 'color' => '#6b7280'];
                             @endphp
 
-                            @forelse($userEvents as $userEv)
+                            @forelse($userRegistrations as $registration)
                                 @php
+                                    $userEv = $registration->event;
                                     $style = $eventStyles[strtoupper($userEv->jenis)] ?? $defaultStyle;
                                     $evDate = $userEv->event_date ? $userEv->event_date->format('d M Y') : 'TBA';
                                     $evTime = $userEv->event_time ? (\Carbon\Carbon::parse($userEv->event_time)->format('H:i')) : 'TBA';
                                 @endphp
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0"
-                                        style="width: 45px; height: 45px; background-color: {{ $style['bg'] }}; color: {{ $style['color'] }};">
-                                        <i class="bi {{ $style['icon'] }}" style="font-size: 20px;"></i>
-                                    </div>
+                                <div class="d-flex align-items-center gap-3 flex-grow-1 min-w-0">
                                     <div class="flex-grow-1 min-w-0">
                                         <h6 class="fw-bold mb-0 text-truncate" style="font-size: 14px;">{{ $userEv->title }}</h6>
                                         <small class="text-muted d-block text-truncate" style="font-size: 11px;">
                                             {{ $evDate }} • {{ $evTime }} WIB
                                         </small>
                                     </div>
-                                    <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0;">
-                                        <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
-                                    </a>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('events.show', $userEv->id) }}" class="btn btn-sm btn-light rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             @empty
                                 <div class="text-center py-4">
                                     <div class="mb-3 text-muted opacity-50">
                                         <i class="bi bi-calendar-x" style="font-size: 40px;"></i>
                                     </div>
-                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">Belum Ada Event</h6>
-                                    <p class="text-muted mb-3" style="font-size: 11px;">Ayo mulai eksplorasi event menarik!</p>
-                                    <a href="{{ route('events.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Cari Event</a>
+                                    <h6 class="fw-bold mb-1" style="font-size: 14px; color: #2e2050;">There are no events yet</h6>
+                                    <p class="text-muted mb-3" style="font-size: 11px;">Let's start exploring interesting events!</p>
+                                    <a href="{{ route('events.index') }}" class="btn btn-warning btn-sm fw-bold px-3">Search Event</a>
                                 </div>
                             @endforelse
                         </div>
@@ -646,11 +713,11 @@
                     {{-- /* Sidebar - Chart Waktu Belajar */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Waktu Belajar</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Study Time</h5>
                             <select id="learningRange" class="form-select form-select-sm border-0 bg-light rounded-pill"
                                 style="width: auto; font-size: 12px; font-weight: 500;">
-                                <option value="week" selected>Minggu Ini</option>
-                                <option value="month">Bulan Ini</option>
+                                <option value="week" selected>This Week</option>
+                                <option value="month">This Month</option>
                             </select>
                         </div>
 
@@ -659,28 +726,43 @@
                         </div>
                     </div>
 
+                    @if($popularTopics->count() > 0)
                     {{-- /* Sidebar - Topik Populer */ --}}
                     <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Topik Populer</h5>
+                            <h5 class="fw-bold mb-0" style="color: var(--navy);">Popular Topics</h5>
                             <button class="btn btn-sm p-0 text-muted">
                                 <i class="bi bi-three-dots" style="font-size: 20px;"></i>
                             </button>
                         </div>
 
                         <div class="d-flex flex-column gap-3">
-                            @php
-                                $topicStyles = [
-                                    ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'],
-                                    ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'],
-                                    ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-graph-up-arrow'],
-                                    ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'],
-                                ];
-                            @endphp
-
-                            @forelse($popularTopics as $index => $topic)
+                            @foreach($popularTopics as $index => $topic)
                                 @php
-                                    $style = $topicStyles[$index % count($topicStyles)];
+                                    $name = strtolower($topic->name ?? '');
+                                    if (str_contains($name, 'design') || str_contains($name, 'ui') || str_contains($name, 'ux') || str_contains($name, 'art')) {
+                                        $style = ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'];
+                                    } elseif (str_contains($name, 'code') || str_contains($name, 'program') || str_contains($name, 'web') || str_contains($name, 'software') || str_contains($name, 'developer')) {
+                                        $style = ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'];
+                                    } elseif (str_contains($name, 'data') || str_contains($name, 'machine') || str_contains($name, 'ai') || str_contains($name, 'artificial') || str_contains($name, 'analytic')) {
+                                        $style = ['bg' => '#ede9fe', 'color' => '#7c3aed', 'icon' => 'bi-cpu-fill'];
+                                    } elseif (str_contains($name, 'market') || str_contains($name, 'digital') || str_contains($name, 'brand') || str_contains($name, 'social')) {
+                                        $style = ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'];
+                                    } elseif (str_contains($name, 'business') || str_contains($name, 'finance') || str_contains($name, 'manage') || str_contains($name, 'bisnis')) {
+                                        $style = ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-briefcase-fill'];
+                                    } elseif (str_contains($name, 'photo') || str_contains($name, 'video') || str_contains($name, 'film') || str_contains($name, 'media')) {
+                                        $style = ['bg' => '#fee2e2', 'color' => '#dc2626', 'icon' => 'bi-camera-video-fill'];
+                                    } elseif (str_contains($name, 'music') || str_contains($name, 'audio') || str_contains($name, 'sound')) {
+                                        $style = ['bg' => '#fce7f3', 'color' => '#9d174d', 'icon' => 'bi-music-note-beamed'];
+                                    } else {
+                                        $topicStyles = [
+                                            ['bg' => '#fce7f3', 'color' => '#db2777', 'icon' => 'bi-palette-fill'],
+                                            ['bg' => '#e0f2fe', 'color' => '#0284c7', 'icon' => 'bi-code-slash'],
+                                            ['bg' => '#dcfce7', 'color' => '#16a34a', 'icon' => 'bi-graph-up-arrow'],
+                                            ['bg' => '#fef3c7', 'color' => '#d97706', 'icon' => 'bi-megaphone-fill'],
+                                        ];
+                                        $style = $topicStyles[$index % count($topicStyles)];
+                                    }
                                 @endphp
                                 <a href="{{ route('courses.index', ['category' => $topic->name]) }}"
                                     class="d-flex align-items-center gap-3 text-decoration-none group-item p-2 rounded-3 hover-bg-light"
@@ -691,19 +773,16 @@
                                     </div>
                                     <div class="flex-grow-1">
                                         <h6 class="fw-bold mb-0 text-dark" style="font-size: 14px;">{{ $topic->name }}</h6>
-                                        <small class="text-muted" style="font-size: 12px;">{{ $topic->courses_count }} Kursus • {{ $topic->enrollments_count }} Siswa</small>
+                                        <small class="text-muted" style="font-size: 12px;">{{ $topic->courses_count }} Course • {{ $topic->enrollments_count }} Participant</small>
                                     </div>
                                     <div class="text-muted">
                                         <i class="bi bi-chevron-right" style="font-size: 14px;"></i>
                                     </div>
                                 </a>
-                            @empty
-                                <div class="text-center py-3">
-                                    <small class="text-muted">Belum ada data topik.</small>
-                                </div>
-                            @endforelse
+                            @endforeach
                         </div>
                     </div>
+                    @endif
 
                         </div>
                     </div>
@@ -713,6 +792,8 @@
             </div>
         {{-- </div> --}}
     </main>
+
+
 
     @include('partials.footer-after-login')
 
@@ -745,7 +826,7 @@
                 data: {
                     labels: initialLabels,
                     datasets: [{
-                        label: 'Jam Belajar',
+                        label: 'Waktu Belajar',
                         data: initialDataValues,
                         backgroundColor: toBackgroundColors(initialDataValues),
                         borderRadius: 8, // Membuat sudut bar membulat
@@ -767,7 +848,7 @@
                             displayColors: false,
                             callbacks: {
                                 label: function (context) {
-                                    return context.raw + ' Jam';
+                                    return context.raw + ' Menit';
                                 }
                             }
                         }
@@ -783,7 +864,9 @@
                             },
                             ticks: {
                                 font: { family: 'Poppins', size: 10 },
-                                color: '#94a3b8'
+                                color: '#94a3b8',
+                                precision: 0, // Memastikan angka bulat untuk menit
+                                stepSize: 1 // Minimal lompatan 1 menit
                             }
                         },
                         x: {
@@ -869,12 +952,16 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        btn.style.color = '#ef4444';
+                        svg.setAttribute('fill', '#dc3545');
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
-                        btn.style.color = '#64748b';
+                        svg.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
                     }
                 }
             })
@@ -911,12 +998,16 @@
             })
             .then(data => {
                 if (data && data.success) {
+                    const svg = btn.querySelector('svg');
+                    const path = svg.querySelector('path');
                     if (data.saved) {
                         btn.classList.add('active');
-                        btn.style.color = '#ef4444';
+                        svg.setAttribute('fill', '#dc3545');
+                        path.setAttribute('d', 'M2 2v13.5l6-3 6 3V2z');
                     } else {
                         btn.classList.remove('active');
-                        btn.style.color = '#64748b';
+                        svg.setAttribute('fill', 'currentColor');
+                        path.setAttribute('d', 'M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z');
                     }
                 }
             })
@@ -929,27 +1020,6 @@
             });
         }
     </script>
-
-<style>
-    .carousel-control-prev,
-    .carousel-control-next {
-        display: none !important;
-    }
-    .carousel-indicators [data-bs-target] {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background-color: #f4c430;
-        opacity: 0.5;
-        transition: opacity 0.2s;
-        border: none;
-        margin: 0 4px;
-    }
-    .carousel-indicators .active {
-        opacity: 1;
-        background-color: #51376c;
-    }
-</style>
 </body>
 
 </html>

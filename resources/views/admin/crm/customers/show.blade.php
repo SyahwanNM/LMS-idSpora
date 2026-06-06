@@ -3,142 +3,119 @@
 @section('title', 'Detail Customer')
 
 @section('styles')
-
 <style>
-    .profile-header-card {
-        background: linear-gradient(135deg, var(--crm-primary), var(--crm-primary-dark));
-        color: white;
-        border-radius: 24px;
-        overflow: hidden;
-        border: none;
-        position: relative;
+    .page-eyebrow {
+        font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 1.2px; color: var(--crm-primary);
+        display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px;
     }
-    .profile-header-card::before {
-        content: '';
-        position: absolute;
-        top: -50px;
-        right: -50px;
-        width: 200px;
-        height: 200px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
+    .page-eyebrow::before { content: ''; display: inline-block; width: 16px; height: 2px; background: var(--crm-primary); border-radius: 2px; }
+
+    .profile-banner {
+        background: linear-gradient(135deg, var(--crm-navy) 0%, #1e1b4b 100%);
+        height: 120px; border-radius: 20px 20px 0 0; position: relative;
+    }
+    .profile-info-card {
+        background: #fff; border-radius: 0 0 20px 20px;
+        padding: 0 2rem 2rem; border: 1px solid var(--crm-border-soft);
+        border-top: none; position: relative; margin-top: -40px;
+    }
+    .avatar-wrapper {
+        position: relative; margin-top: -60px; display: inline-block;
     }
     .profile-avatar-big {
-        width: 120px;
-        height: 120px;
-        border-radius: 20px;
-        border: 4px solid rgba(255, 255, 255, 0.2);
-        object-fit: cover;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        width: 120px; height: 120px; border-radius: 24px;
+        border: 5px solid #fff; object-fit: cover;
+        box-shadow: var(--crm-shadow-lg); background: #fff;
     }
-    .info-label {
-        color: var(--crm-text-muted);
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: block;
-        margin-bottom: 0.25rem;
+    
+    .stat-box {
+        padding: 1rem; background: var(--crm-border-soft); border-radius: 12px;
+        text-align: center; border: 1px solid transparent; transition: all 0.2s;
     }
-    .info-value {
-        color: var(--crm-navy);
-        font-weight: 600;
-        font-size: 0.95rem;
+    .stat-box:hover { border-color: var(--crm-primary-light); background: #fff; transform: translateY(-2px); box-shadow: var(--crm-shadow-sm); }
+    .stat-value { font-size: 1.25rem; font-weight: 800; color: var(--crm-navy); display: block; line-height: 1.2; }
+    .stat-label { font-size: 0.65rem; font-weight: 700; color: var(--crm-text-subtle); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .info-group { margin-bottom: 1.25rem; }
+    .info-group:last-child { margin-bottom: 0; }
+    .info-label { font-size: 0.68rem; font-weight: 700; color: var(--crm-text-subtle); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+    .info-value { font-size: 0.88rem; font-weight: 600; color: var(--crm-navy); display: flex; align-items: center; gap: 8px; }
+
+    .tab-switcher { display: flex; gap: 4px; background: var(--crm-border-soft); border-radius: 10px; padding: 4px; width: fit-content; }
+    .tab-switcher button {
+        font-size: 0.78rem; font-weight: 600; padding: 8px 20px;
+        border-radius: 8px; border: none; background: transparent; color: var(--crm-text-muted);
+        transition: all 0.2s;
     }
-    .icon-box {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--crm-accent-light);
-        color: var(--crm-primary);
-        font-size: 1.1rem;
+    .tab-switcher button.active { background: #fff; color: var(--crm-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+    .activity-card {
+        border: 1px solid var(--crm-border-soft); border-radius: 16px; padding: 1.25rem;
+        transition: all 0.2s; background: #fff;
     }
-    .timeline-item {
-        position: relative;
-        padding-left: 30px;
-        padding-bottom: 25px;
-        border-left: 2px solid var(--crm-border);
-    }
-    .timeline-item:last-child {
-        border-left: 2px solid transparent;
-        padding-bottom: 0;
-    }
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -7px;
-        top: 0;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--crm-primary);
-        border: 2px solid white;
-        box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.1);
-    }
+    .activity-card:hover { border-color: var(--crm-primary-light); box-shadow: var(--crm-shadow-sm); }
 </style>
 @endsection
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-5">
+{{-- Page Header --}}
+<div class="crm-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center">
     <div>
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-1">
-                <li class="breadcrumb-item"><a href="{{ route('admin.crm.dashboard') }}" class="text-decoration-none">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('admin.crm.customers.index') }}" class="text-decoration-none">Customers</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Detail</li>
+            <ol class="breadcrumb" style="font-size:0.75rem;margin-bottom:8px;">
+                <li class="breadcrumb-item"><a href="{{ route('admin.crm.dashboard') }}" style="color:var(--crm-primary);text-decoration:none;font-weight:600;">CRM</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.crm.customers.index') }}" style="color:var(--crm-text-subtle);text-decoration:none;">Customers</a></li>
+                <li class="breadcrumb-item active" style="color:var(--crm-navy);font-weight:700;">Detail</li>
             </ol>
         </nav>
-        <h3 class="fw-800 text-navy mb-0">Manajemen Profil Akun</h3>
+        <h1 style="font-size:1.5rem;font-weight:800;color:var(--crm-navy);letter-spacing:-0.8px;margin:0;">Manajemen Profil Customer</h1>
     </div>
-    <div class="d-flex gap-2">
-        <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-white shadow-sm border-0 px-3 fw-600 rounded-3">
-            <i class="bi bi-arrow-left me-2"></i> Kembali
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="{{ route('admin.crm.customers.index') }}" class="btn btn-sm px-3 fw-600" style="background:var(--crm-border-soft);color:var(--crm-navy);border-radius:8px;">
+            <i class="bi bi-arrow-left me-1"></i> Kembali
         </a>
-        <a href="{{ route('admin.crm.customers.edit', $customer) }}" class="btn btn-primary shadow-lg border-0 px-3 fw-600 rounded-3">
-            <i class="bi bi-pencil-square me-2"></i> Edit Profil
+        <a href="{{ route('admin.crm.customers.edit', $customer) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary);color:#fff;border-radius:8px;box-shadow:0 4px 10px rgba(124,58,237,0.2);">
+            <i class="bi bi-pencil-square me-1"></i> Edit Profil
         </a>
     </div>
 </div>
 
-<div class="row g-4 mb-5">
-    <div class="col-12">
-        <div class="card profile-header-card border-0">
-            <div class="card-body p-5">
-                <div class="row align-items-center">
-                    <div class="col-auto">
-                        <img src="{{ $customer->avatar_url }}" class="profile-avatar-big" alt="avatar" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($customer->name) }}&background=fff&color=6d28d9&size=128'">
+{{-- Profile Header Card --}}
+<div class="mb-5">
+    <div class="profile-banner"></div>
+    <div class="profile-info-card">
+        <div class="row align-items-end">
+            <div class="col-md-auto">
+                <div class="avatar-wrapper">
+                    <img src="{{ $customer->avatar_url }}" class="profile-avatar-big" alt="avatar" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($customer->name) }}&background=6d28d9&color=fff&size=128'">
+                </div>
+            </div>
+            <div class="col-md mt-3 mt-md-0 ps-md-4">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <h2 style="font-size:1.4rem;font-weight:800;color:var(--crm-navy);margin:0;">{{ $customer->name }}</h2>
+                    @if($customer->role === 'reseller')
+                        <span class="badge" style="background:rgba(245,158,11,0.1);color:#d97706;font-weight:700;font-size:0.65rem;padding:4px 10px;border-radius:100px;">RESELLER</span>
+                    @elseif($customer->role === 'trainer')
+                        <span class="badge" style="background:rgba(6,182,212,0.1);color:#0891b2;font-weight:700;font-size:0.65rem;padding:4px 10px;border-radius:100px;">TRAINER</span>
+                    @else
+                        <span class="badge" style="background:rgba(124,58,237,0.1);color:var(--crm-primary);font-weight:700;font-size:0.65rem;padding:4px 10px;border-radius:100px;">CUSTOMER</span>
+                    @endif
+                </div>
+                <div style="font-size:0.85rem;color:var(--crm-text-subtle);display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+                    <span><i class="bi bi-envelope me-1"></i> {{ $customer->email }}</span>
+                    <span><i class="bi bi-calendar-check me-1"></i> Terdaftar: {{ $customer->created_at->translatedFormat('d M Y') }}</span>
+                </div>
+            </div>
+            <div class="col-md-auto mt-4 mt-lg-0">
+                <div class="d-flex gap-3">
+                    <div class="stat-box">
+                        <span class="stat-value">{{ $registrations->count() }}</span>
+                        <span class="stat-label">Events</span>
                     </div>
-                    <div class="col ms-3">
-                        <div class="d-flex align-items-center gap-3 mb-2">
-                            <h2 class="fw-800 mb-0">{{ $customer->name }}</h2>
-                            @if($customer->role === 'reseller')
-                                <span class="badge bg-warning text-dark fw-700 px-3 rounded-pill shadow-sm">RESELLER</span>
-                            @elseif($customer->role === 'trainer')
-                                <span class="badge bg-info text-dark fw-700 px-3 rounded-pill shadow-sm">TRAINER</span>
-                            @else
-                                <span class="badge bg-white text-primary fw-700 px-3 rounded-pill shadow-sm">CUSTOMER</span>
-                            @endif
-                        </div>
-                        <p class="mb-0 opacity-75 fs-5 fw-500"><i class="bi bi-envelope me-2"></i>{{ $customer->email }}</p>
-                        <div class="d-flex gap-4 mt-4">
-                            <div class="text-center">
-                                <div class="fw-800 fs-4">{{ $registrations->count() }}</div>
-                                <div class="smaller opacity-75 fw-600">Events</div>
-                            </div>
-                            <div class="vr opacity-25"></div>
-                            <div class="text-center">
-                                <div class="fw-800 fs-4">{{ $enrollments->count() }}</div>
-                                <div class="smaller opacity-75 fw-600">Courses</div>
-                            </div>
-                            <div class="vr opacity-25"></div>
-                            <div class="text-center">
-                                <div class="fw-800 fs-4">{{ $customer->created_at->diffForHumans() }}</div>
-                                <div class="smaller opacity-75 fw-600">Member Since</div>
-                            </div>
-                        </div>
+                    <div class="stat-box">
+                        <span class="stat-value">{{ $enrollments->count() }}</span>
+                        <span class="stat-label">Courses</span>
                     </div>
                 </div>
             </div>
@@ -147,253 +124,168 @@
 </div>
 
 <div class="row g-4">
-    <!-- Contact & Personal Info -->
+    {{-- Left Sidebar: Info --}}
     <div class="col-lg-4">
-        <div class="card-minimal border-0 shadow-sm p-4 mb-4">
-            <h5 class="fw-800 text-navy mb-4">Kontak & Informasi</h5>
+        <div class="card-minimal p-4 mb-4">
+            <h6 class="fw-800 text-navy mb-4" style="font-size:0.95rem;">Informasi Kontak</h6>
             
-            <div class="d-flex align-items-center mb-4">
-                <div class="icon-box me-3">
-                    <i class="bi bi-telephone-fill"></i>
-                </div>
-                <div>
-                    <span class="info-label">Nomor Telepon</span>
-                    <span class="info-value">{{ $customer->phone ?? 'Belum ditambahkan' }}</span>
+            <div class="info-group">
+                <span class="info-label">Nomor Telepon</span>
+                <div class="info-value">
+                    <i class="bi bi-phone text-primary"></i>
+                    {{ $customer->phone ?? 'Belum ditambahkan' }}
                 </div>
             </div>
 
-            <div class="d-flex align-items-center mb-4 text-truncate">
-                <div class="icon-box me-3">
-                    <i class="bi bi-globe"></i>
-                </div>
-                <div>
-                    <span class="info-label">Website / Portfolio</span>
+            <div class="info-group">
+                <span class="info-label">Website / Portfolio</span>
+                <div class="info-value">
+                    <i class="bi bi-globe2 text-primary"></i>
                     @if($customer->website)
-                        <a href="{{ $customer->website }}" target="_blank" class="info-value text-primary text-decoration-none">
-                            {{ Str::limit(str_replace(['http://', 'https://'], '', $customer->website), 25) }} <i class="bi bi-box-arrow-up-right smaller ms-1"></i>
+                        <a href="{{ $customer->website }}" target="_blank" style="color:var(--crm-primary);text-decoration:none;">
+                            {{ Str::limit(str_replace(['http://', 'https://'], '', $customer->website), 25) }}
                         </a>
                     @else
-                        <span class="info-value text-muted">Tidak tersedia</span>
+                        <span class="text-muted">Tidak tersedia</span>
                     @endif
                 </div>
             </div>
 
-            <div class="d-flex align-items-center mb-4">
-                <div class="icon-box me-3">
-                    <i class="bi bi-calendar3"></i>
-                </div>
-                <div>
-                    <span class="info-label">Terdaftar Pada</span>
-                    <span class="info-value">{{ $customer->created_at->format('d F Y') }}</span>
-                </div>
-            </div>
+            <hr style="border-color:var(--crm-border-soft);margin:1.5rem 0;">
 
-            <hr class="my-4 opacity-50">
-
-            <h6 class="fw-700 text-navy mb-2">Biografi Singkat</h6>
-            <p class="text-muted small lh-lg">
-                {{ $customer->bio ?? 'Customer ini belum menuliskan biografi mereka. Informasi profil yang lengkap memudahkan interaksi dalam komunitas.' }}
+            <h6 class="fw-800 text-navy mb-3" style="font-size:0.85rem;">Biografi</h6>
+            <p style="font-size:0.82rem;color:var(--crm-text-subtle);line-height:1.6;margin:0;">
+                {{ $customer->bio ?? 'Customer ini belum menuliskan biografi singkat mereka. Informasi profil lengkap memudahkan interaksi komunitas.' }}
             </p>
         </div>
 
-        <!-- Quick Summary Stats -->
-        <div class="card-minimal border-0 shadow-sm p-4 text-center" style="background: var(--crm-accent-light);">
-            <i class="bi bi-shield-check text-primary display-6 mb-3"></i>
-            <h6 class="fw-800 text-navy">Keamanan Akun</h6>
-            <p class="smaller text-muted mb-4 px-2">Akun ini memiliki status validasi terpusat dari core system IDSPora.</p>
-            <div class="d-grid">
-                <button class="btn btn-outline-danger btn-sm rounded-pill fw-700">Audit Log Transaksi</button>
+        <div class="card-minimal p-4" style="background:var(--crm-border-soft);border:none;">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:40px;height:40px;border-radius:10px;background:#fff;color:var(--crm-primary);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.75rem;font-weight:700;color:var(--crm-navy);">Account Status</div>
+                    <div style="font-size:0.7rem;color:var(--crm-text-muted);">Verified Member</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Activities & Programs -->
+    {{-- Right Content: Activity --}}
     <div class="col-lg-8">
-        <!-- Activity List -->
-        <div class="card-minimal border-0 shadow-sm mb-4">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                <h5 class="fw-800 text-navy mb-0">Jejak Aktivitas Program</h5>
-                <ul class="nav nav-pills nav-pills-custom" id="activityTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fw-700 smaller" id="events-tab" data-bs-toggle="pill" data-bs-target="#events" type="button" role="tab">Event Terdaftar</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fw-700 smaller" id="courses-tab" data-bs-toggle="pill" data-bs-target="#courses" type="button" role="tab">Materi Kursus</button>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body p-4">
-                <div class="tab-content" id="activityTabContent">
-                    <!-- Events Tab -->
-                    <div class="tab-pane fade show active" id="events" role="tabpanel">
-                        @if($registrations->count() > 0)
-                            @foreach($registrations as $registration)
-                                <div class="timeline-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <div class="fw-800 text-navy">{{ $registration->event?->title ?? 'Program N/A' }}</div>
-                                            <div class="text-muted smaller mb-2">
-                                                <i class="bi bi-calendar-event me-1"></i> {{ $registration->event?->event_date ? \Carbon\Carbon::parse($registration->event?->event_date)->format('d M Y') : 'Online/Flexible' }}
-                                            </div>
-                                            <span class="badge {{ $registration->status === 'active' ? 'bg-success bg-opacity-10 text-success' : 'bg-light text-muted' }} fw-700 rounded-pill px-3" style="font-size: 0.65rem;">
-                                                STATUS: {{ strtoupper($registration->status) }}
-                                            </span>
-                                        </div>
-                                        <div class="text-end">
-                                            <div class="smaller text-muted fw-600">Registrasi pada:</div>
-                                            <div class="small fw-700 text-navy">{{ $registration->created_at->format('d M Y') }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <div class="text-center py-5">
-                                <img src="https://cdn-icons-png.flaticon.com/512/2648/2648554.png" style="width: 80px; opacity: 0.2;" alt="empty">
-                                <p class="text-muted mt-3 fw-600">Belum ada history pendaftaran event.</p>
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Courses Tab -->
-                    <div class="tab-pane fade" id="courses" role="tabpanel">
-                        @if($enrollments->count() > 0)
-                            <div class="row g-3">
-                                @foreach($enrollments as $enrollment)
-                                    <div class="col-md-6">
-                                        <div class="p-3 bg-light rounded-4 border h-100">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="bg-white p-2 rounded-3 shadow-sm me-3">
-                                                    <i class="bi bi-journal-check text-primary fs-5"></i>
-                                                </div>
-                                                <div class="fw-800 text-navy fs-6">{{ $enrollment->course->name ?? 'N/A' }}</div>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mt-auto">
-                                                <span class="badge {{ $enrollment->status === 'active' ? 'bg-primary' : ($enrollment->status === 'completed' ? 'bg-success' : 'bg-secondary') }} rounded-pill px-2" style="font-size: 0.6rem;">
-                                                    {{ strtoupper($enrollment->status) }}
-                                                </span>
-                                                <small class="text-muted smaller">Enrolled: {{ $enrollment->created_at->format('d M y') }}</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="text-center py-5">
-                                <i class="bi bi-journal-x display-1 text-muted opacity-10"></i>
-                                <p class="text-muted mt-3 fw-600">Customer belum mengambil kursus apapun.</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h6 class="fw-800 text-navy mb-0" style="font-size:1.1rem;letter-spacing:-0.5px;">Riwayat Aktivitas</h6>
+            <div class="tab-switcher" id="activityTabs">
+                <button class="active" onclick="showSection('events', this)">Events</button>
+                <button onclick="showSection('courses', this)">Courses</button>
             </div>
         </div>
 
-        <!-- Custom Support Ticket Section for this specific user -->
-        <div class="card-minimal border-0 shadow-sm p-4" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white;">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="fw-800 mb-0">Tiket Bantuan Aktif</h5>
-                <span class="badge bg-primary px-3 rounded-pill fw-700 shadow-sm">{{ $activeTickets->count() }} TIKET</span>
-            </div>
-            
-            @forelse($activeTickets as $ticket)
-                <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-10 mb-3 hover-lift transition-all cursor-pointer" data-bs-toggle="modal" data-bs-target="#ticketModal{{ $ticket->id }}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge {{ $ticket->status === 'new' ? 'bg-primary' : 'bg-warning' }} rounded-pill smaller fw-700 shadow-sm">
-                            {{ strtoupper($ticket->status === 'new' ? 'BARU' : 'DIPROSES') }}
-                        </span>
-                        <small class="text-white opacity-75 fw-600">{{ $ticket->created_at->diffForHumans() }}</small>
+        {{-- Events Section --}}
+        <div id="section-events" class="activity-section">
+            <div class="row g-3">
+                @forelse($registrations as $reg)
+                <div class="col-12">
+                    <div class="activity-card">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <div style="font-size:0.95rem;font-weight:800;color:var(--crm-navy);letter-spacing:-0.3px;">{{ $reg->event?->title ?? 'Program N/A' }}</div>
+                                <div style="font-size:0.75rem;color:var(--crm-text-subtle);"><i class="bi bi-calendar3 me-1"></i> {{ $reg->event?->event_date ? \Carbon\Carbon::parse($reg->event->event_date)->translatedFormat('d M Y') : 'Online' }}</div>
+                            </div>
+                            <div class="text-end">
+                                <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;">Registered</div>
+                                <div style="font-size:0.8rem;font-weight:700;color:var(--crm-navy);">{{ $reg->created_at->format('d M Y') }}</div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            @php
+                                $statusColor = $reg->status === 'active' ? '#059669' : '#6b7280';
+                                $statusBg = $reg->status === 'active' ? 'rgba(16,185,129,0.1)' : 'rgba(107,114,128,0.1)';
+                            @endphp
+                            <span class="badge" style="background:{{ $statusBg }};color:{{ $statusColor }};font-size:0.65rem;font-weight:700;border-radius:6px;padding:4px 10px;">{{ strtoupper($reg->status) }}</span>
+                            
+                            @if($reg->attendance_status)
+                                <span class="badge" style="background:rgba(6,182,212,0.1);color:#0891b2;font-size:0.65rem;font-weight:700;border-radius:6px;padding:4px 10px;">PRESENT</span>
+                            @endif
+
+                            @if($reg->certificate_number)
+                                <span class="badge" style="background:rgba(124,58,237,0.1);color:var(--crm-primary);font-size:0.65rem;font-weight:700;border-radius:6px;padding:4px 10px;">CERTIFIED</span>
+                            @endif
+                        </div>
                     </div>
-                    <div class="fw-800 small text-white">{{ $ticket->subject }}</div>
-                    <div class="smaller text-white opacity-100 fw-400 mt-2 lh-sm">{{ Str::limit($ticket->message, 100) }}</div>
-                    <div class="text-primary smaller fw-700 mt-2 d-inline-block bg-white px-2 py-1 rounded-pill" style="font-size: 0.65rem;">KLIK UNTUK DETAIL</div>
                 </div>
-            @empty
-                <div class="p-4 bg-white bg-opacity-5 rounded-4 border border-white border-opacity-10 text-center py-5">
-                    <i class="bi bi-chat-left-dots-fill opacity-25 display-4 d-block mb-3"></i>
-                    <p class="mb-0 opacity-75 small">Tidak ada laporan kendala atau tiket bantuan yang aktif untuk akun ini.</p>
+                @empty
+                <div class="col-12">
+                    <div class="text-center py-5 bg-white border border-dashed rounded-4">
+                        <i class="bi bi-calendar-x display-4 text-muted opacity-25"></i>
+                        <p class="text-muted small mt-3">Belum ada riwayat pendaftaran event</p>
+                    </div>
                 </div>
-            @endforelse
-            
-            @if($activeTickets->count() > 0)
-                <div class="text-center mt-3">
-                    <a href="{{ route('admin.crm.support.index', ['email' => $customer->email]) }}" class="btn btn-link btn-sm text-white text-decoration-none opacity-50 hover-opacity-100 fw-600">
-                        Lihat Semua Support History <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
+                @endforelse
+            </div>
+        </div>
+
+        {{-- Courses Section --}}
+        <div id="section-courses" class="activity-section d-none">
+            <div class="row g-3">
+                @forelse($enrollments as $enr)
+                <div class="col-md-6">
+                    <div class="activity-card h-100">
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <div style="width:44px;height:44px;border-radius:12px;background:rgba(124,58,237,0.08);color:var(--crm-primary);display:flex;align-items:center;justify-content:center;font-size:1.3rem;">
+                                <i class="bi bi-book"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:0.85rem;font-weight:800;color:var(--crm-navy);line-height:1.3;">{{ $enr->course->name ?? 'N/A' }}</div>
+                                <div style="font-size:0.7rem;color:var(--crm-text-subtle);">{{ $enr->course->category->name ?? 'General' }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex flex-column gap-2 mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span style="font-size:0.75rem;color:var(--crm-text-subtle);font-weight:600;">Status</span>
+                                <span class="badge" style="background:rgba(16,185,129,0.1);color:#059669;font-size:0.65rem;font-weight:700;border-radius:100px;">{{ strtoupper($enr->status) }}</span>
+                            </div>
+                            @if($enr->completed_at)
+                            <div class="d-flex justify-content-between">
+                                <span style="font-size:0.75rem;color:var(--crm-text-subtle);font-weight:600;">Selesai pada</span>
+                                <span style="font-size:0.75rem;color:var(--crm-navy);font-weight:700;">{{ $enr->completed_at->format('d M Y') }}</span>
+                            </div>
+                            @endif
+                        </div>
+
+                        <div class="pt-3 border-top d-flex justify-content-between align-items-center">
+                            <span style="font-size:0.68rem;color:var(--crm-text-muted);">Enrolled {{ $enr->created_at->format('d/m/Y') }}</span>
+                            @if($enr->certificate_number)
+                                <i class="bi bi-patch-check-fill text-primary" title="Certified" style="font-size:1rem;"></i>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-            @endif
+                @empty
+                <div class="col-12">
+                    <div class="text-center py-5 bg-white border border-dashed rounded-4">
+                        <i class="bi bi-journal-x display-4 text-muted opacity-25"></i>
+                        <p class="text-muted small mt-3">Belum ada riwayat kursus</p>
+                    </div>
+                </div>
+                @endforelse
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Support Ticket Modals relocation for stability -->
-@foreach($activeTickets as $ticket)
-<div class="modal fade" id="ticketModal{{ $ticket->id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 24px; color: var(--crm-navy);">
-            <div class="modal-header bg-navy text-white border-0 p-4" style="border-radius: 24px 24px 0 0;">
-                <div class="d-flex align-items-center">
-                    <div class="bg-white bg-opacity-20 p-2 rounded-3 me-3">
-                        <i class="bi bi-chat-dots-fill fs-4"></i>
-                    </div>
-                    <div>
-                        <h5 class="modal-title fw-800 mb-0">Detail Tiket Bantuan</h5>
-                        <span class="smaller opacity-75">ID Tiket: #SPT-{{ $ticket->id }}</span>
-                    </div>
-                </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-light">
-                <div class="mb-4 bg-white p-3 rounded-4 shadow-sm">
-                    <label class="text-muted smaller fw-800 text-uppercase mb-1 d-block opacity-50">Subjek</label>
-                    <div class="fw-800 text-navy fs-5">{{ $ticket->subject }}</div>
-                    <div class="smaller text-muted mt-1"><i class="bi bi-clock me-1"></i> {{ $ticket->created_at->translatedFormat('d F Y, H:i') }}</div>
-                </div>
-                <div class="mb-4 bg-white p-3 rounded-4 shadow-sm text-dark">
-                    <label class="text-muted smaller fw-800 text-uppercase mb-2 d-block opacity-50">Isi Pesan</label>
-                    <div class="smaller lh-lg" style="white-space: pre-wrap;">{{ $ticket->message }}</div>
-                </div>
-                @if($ticket->attachment)
-                <div class="bg-white p-3 rounded-4 shadow-sm">
-                    <label class="text-muted smaller fw-800 text-uppercase mb-2 d-block opacity-50">Lampiran</label>
-                    <a href="{{ asset('uploads/' . $ticket->attachment) }}" target="_blank" class="d-block mt-2 overflow-hidden rounded-3 border">
-                        <img src="{{ asset('uploads/' . $ticket->attachment) }}" class="img-fluid w-100 hover-zoom">
-                    </a>
-                </div>
-                @endif
-            </div>
-            <div class="modal-footer border-0 p-4 bg-white">
-                <div class="w-100">
-                    <div class="d-flex flex-wrap gap-2 justify-content-center">
-                        @if($ticket->status !== 'processed' && $ticket->status !== 'resolved')
-                        <form action="{{ route('admin.crm.support.updateStatus', $ticket) }}" method="POST" class="m-0 flex-grow-1">
-                            @csrf
-                            <input type="hidden" name="status" value="processed">
-                            <button type="submit" class="btn btn-warning text-white w-100 rounded-pill fw-700 smaller shadow-sm py-2">
-                                <i class="bi bi-arrow-repeat me-1"></i> Proses
-                            </button>
-                        </form>
-                        @endif
-
-                        @if($ticket->status !== 'resolved')
-                        <form action="{{ route('admin.crm.support.updateStatus', $ticket) }}" method="POST" class="m-0 flex-grow-1">
-                            @csrf
-                            <input type="hidden" name="status" value="resolved">
-                            <button type="submit" class="btn btn-success w-100 rounded-pill fw-700 smaller shadow-sm py-2">
-                                <i class="bi bi-check-circle me-1"></i> Selesaikan
-                            </button>
-                        </form>
-                        @endif
-
-                        <button type="button" class="btn btn-navy w-100 rounded-pill fw-700 py-2 shadow-sm mt-2" data-bs-dismiss="modal">Tutup</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endforeach
-
+<script>
+    function showSection(section, btn) {
+        // Toggle Sections
+        document.getElementById('section-events').classList.toggle('d-none', section !== 'events');
+        document.getElementById('section-courses').classList.toggle('d-none', section !== 'courses');
+        
+        // Toggle Buttons
+        const buttons = document.querySelectorAll('#activityTabs button');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+</script>
 @endsection
-
-
-

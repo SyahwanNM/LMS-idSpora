@@ -4,171 +4,167 @@
 
 @section('styles')
 <style>
-    .status-indicator {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 0.5rem;
+    .page-eyebrow {
+        font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 1.2px; color: var(--crm-primary);
+        display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px;
     }
-    .info-card {
-        background: #f8fafc;
-        border: 1px dashed var(--crm-border);
+    .page-eyebrow::before { content: ''; display: inline-block; width: 16px; height: 2px; background: var(--crm-primary); border-radius: 2px; }
+    
+    /* Custom Tab Switcher (No Bootstrap JS Dependency) */
+    .crm-tab-switcher { 
+        display: inline-flex; 
+        background: var(--crm-border-soft); 
+        padding: 4px; 
         border-radius: 12px;
-        padding: 1.25rem;
+        gap: 4px;
+        list-style: none;
+        margin: 0;
     }
-    .table-custom thead th {
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
+    .crm-tab-switcher button {
+        font-size: 0.78rem; 
+        font-weight: 700; 
+        padding: 8px 18px;
+        border-radius: 9px; 
+        border: none;
         color: var(--crm-text-muted);
-        letter-spacing: 0.5px;
-        padding: 1rem;
-        background: #f8fafc;
-        border-bottom: 1px solid var(--crm-border);
+        background: transparent;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+    }
+    .crm-tab-switcher button.active {
+        background-color: #fff;
+        color: var(--crm-primary);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .status-pill {
+        font-size: 0.65rem; font-weight: 700; padding: 3px 9px;
+        border-radius: 100px; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .status-pill.ready { background: rgba(16,185,129,0.1); color: #059669; }
+    .status-pill.configured { background: rgba(59,130,246,0.1); color: #2563eb; }
+    .status-pill.missing { background: var(--crm-border-soft); color: var(--crm-text-muted); }
+
+    .filter-input {
+        border: 1px solid var(--crm-border); border-radius: 10px;
+        padding: 0.45rem 1rem; font-size: 0.85rem; color: var(--crm-navy);
+        background: var(--crm-border-soft); outline: none; width: 100%;
+        transition: all 0.2s; height: 44px;
+    }
+    .filter-input:focus { border-color: var(--crm-primary-light); box-shadow: 0 0 0 3px rgba(124,58,237,0.1); background: #fff; }
+
+    /* Custom Pane Visibility */
+    .custom-tab-pane {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .custom-tab-pane.active {
+        display: block;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 @endsection
 
 @section('content')
-<div class="row align-items-center mb-4">
-    <div class="col">
-        <h3 class="fw-bold text-navy mb-1">Sertifikat & Penghargaan</h3>
-        <p class="text-muted small mb-0">Kelola distribusi sertifikat digital untuk peserta event</p>
+<div class="crm-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+    <div>
+        <div class="page-eyebrow">Recognition System</div>
+        <h1 style="font-size:1.75rem;font-weight:800;color:var(--crm-navy);letter-spacing:-0.8px;margin:0;">Sertifikat & Penghargaan</h1>
+        <p style="font-size:0.85rem;color:var(--crm-text-subtle);margin:5px 0 0;">Kelola aset sertifikat untuk event dan kursus yang sudah dibuat.</p>
     </div>
-    <div class="col-auto">
-        <button class="btn btn-outline-secondary btn-sm bg-white" data-bs-toggle="modal" data-bs-target="#helpModal">
-            <i class="bi bi-question-circle me-1"></i> Bantuan
-        </button>
+    <div class="mt-3 mt-md-0">
+        <ul class="crm-tab-switcher">
+            <li>
+                <button type="button" class="custom-tab-btn {{ $tab === 'events' ? 'active' : '' }}" data-target="events-pane">
+                    <i class="bi bi-calendar-event me-2"></i>Sertifikat Event
+                    <span class="badge rounded-pill bg-light text-muted border ms-2" style="font-size: 0.65rem;">{{ $events->count() }}</span>
+                </button>
+            </li>
+            <li>
+                <button type="button" class="custom-tab-btn {{ $tab === 'courses' ? 'active' : '' }}" data-target="courses-pane">
+                    <i class="bi bi-mortarboard me-2"></i>Sertifikat Kursus
+                    <span class="badge rounded-pill bg-light text-muted border ms-2" style="font-size: 0.65rem;">{{ $courses->count() }}</span>
+                </button>
+            </li>
+        </ul>
     </div>
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success border-0 shadow-sm alert-dismissible fade show mb-4" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-@endif
-
-<!-- Filter Section -->
-<div class="card-minimal mb-4">
-    <div class="card-body p-4 bg-light bg-opacity-10">
-        <div class="row g-3">
-            <div class="col-md-5">
-                <label class="form-label smaller fw-bold text-muted">Cari Nama Program</label>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                    <input type="text" id="eventSearch" class="form-control border-start-0 ps-0" placeholder="Ketik judul event...">
-                </div>
+{{-- Search & Filter Section --}}
+<div class="card-minimal p-4 mb-4 border-0 shadow-sm" style="border-radius: 16px;">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="position-relative">
+                <i class="bi bi-search position-absolute" style="left:16px;top:50%;transform:translateY(-50%);color:var(--crm-text-subtle);"></i>
+                <input type="text" id="certSearch" class="filter-input ps-5" placeholder="Cari berdasarkan nama program atau kursus..." style="background: #fff;">
             </div>
-            <div class="col-md-4">
-                <label class="form-label smaller fw-bold text-muted">Status Kesiapan</label>
-                <select id="certificateStatusFilter" class="form-select form-select-sm">
-                    <option value="all">Semua Status</option>
-                    <option value="ready">Siap Generate (H+3)</option>
-                    <option value="configured">Dikonfigurasi</option>
-                    <option value="not-configured">Belum Ada Aset</option>
-                </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button type="button" id="clearFilters" class="btn btn-outline-secondary btn-sm w-100">Reset Filter</button>
-            </div>
+        </div>
+        <div class="col-md-4">
+            <select id="certStatus" class="filter-input" style="background: #fff; cursor: pointer;">
+                <option value="all">Semua Status Kesiapan</option>
+                <option value="ready">Siap Terbit (Event Selesai + Aset Ada)</option>
+                <option value="configured">Dikonfigurasi (Aset Ada)</option>
+                <option value="not-configured">Belum Dikonfigurasi</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="button" id="certReset" class="btn btn-light fw-700 w-100 h-100" style="border-radius: 10px; border: 1px solid var(--crm-border);">
+                Reset
+            </button>
         </div>
     </div>
 </div>
 
-<!-- Tab Navigation -->
-<ul class="nav nav-tabs nav-tabs-custom mb-4 border-bottom-0" id="certificateTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link {{ $tab === 'events' ? 'active' : '' }} fw-bold px-4 py-3" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-content" type="button" role="tab" aria-controls="events-content" aria-selected="{{ $tab === 'events' ? 'true' : 'false' }}">
-            <i class="bi bi-calendar-event me-2"></i>Sertifikat Event
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link {{ $tab === 'courses' ? 'active' : '' }} fw-bold px-4 py-3" id="courses-tab" data-bs-toggle="tab" data-bs-target="#courses-content" type="button" role="tab" aria-controls="courses-content" aria-selected="{{ $tab === 'courses' ? 'true' : 'false' }}">
-            <i class="bi bi-mortarboard me-2"></i>Sertifikat Kursus
-        </button>
-    </li>
-</ul>
-
-<div class="tab-content" id="certificateTabsContent">
-    <!-- Events Tab Pane -->
-    <div class="tab-pane fade {{ $tab === 'events' ? 'show active' : '' }}" id="events-content" role="tabpanel" aria-labelledby="events-tab">
-        <div class="card-minimal overflow-hidden mb-4">
+<div class="tab-content-container">
+    {{-- Events Tab Pane --}}
+    <div class="custom-tab-pane {{ $tab === 'events' ? 'active' : '' }}" id="events-pane">
+        <div class="card-minimal border-0 shadow-sm" style="border-radius: 16px; overflow: hidden;">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light bg-opacity-50">
+                <table class="crm-table w-100">
+                    <thead>
                         <tr>
-                            <th class="ps-4">Nama Program / Event</th>
-                            <th class="text-center">Peserta</th>
-                            <th>Konfigurasi Aset</th>
-                            <th>Akses Sertifikat</th>
-                            <th class="text-end pe-4">Tindakan</th>
+                            <th style="padding-left:1.5rem;">Nama Event</th>
+                            <th style="text-align:center;">Peserta</th>
+                            <th>Status Konfigurasi</th>
+                            <th style="padding-right:1.5rem;text-align:right;">Tindakan</th>
                         </tr>
                     </thead>
-                    <tbody id="eventsTableBody">
+                    <tbody>
                         @forelse($events as $event)
                             @php
-                                $registrationsCount = $event->registrations_count;
-                                $hasLogo = !empty($event->certificate_logo);
-                                $hasSignature = !empty($event->certificate_signature);
-                                $isConfigured = $hasLogo || $hasSignature;
+                                $isConfigured = !empty($event->certificate_logo) || !empty($event->certificate_signature);
                                 $eventDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
-                                $isFinished = false;
-                                if($eventDate) {
-                                    $certificateReadyDate = $eventDate->copy()->addDays(3);
-                                    $isFinished = $certificateReadyDate->isPast();
-                                }
-                                $status = 'not-configured';
-                                if($isConfigured) { $status = $isFinished ? 'ready' : 'configured'; }
+                                $isFinished = $eventDate ? ($eventDate->isPast() || $eventDate->isToday()) : false;
+                                $status = $isConfigured ? ($isFinished ? 'ready' : 'configured') : 'not-configured';
                             @endphp
-                            <tr class="event-row" data-title="{{ strtolower($event->title) }}" data-status="{{ $status }}">
-                                <td class="ps-4">
-                                    <div class="fw-bold text-navy small">{{ $event->title }}</div>
-                                    <div class="text-muted smaller" style="font-size: 0.7rem;">{{ $event->event_date ? $eventDate->format('d M Y') : 'Tanpa Tanggal' }}</div>
+                            <tr class="cert-row" data-title="{{ strtolower($event->title) }}" data-status="{{ $status }}">
+                                <td style="padding-left:1.5rem;">
+                                    <div style="font-weight:800;font-size:0.95rem;color:var(--crm-navy);">{{ $event->title }}</div>
+                                    <div style="font-size:0.75rem;color:var(--crm-text-subtle);">{{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}</div>
                                 </td>
-                                <td class="text-center">
-                                    <span class="small fw-semibold text-muted">{{ $registrationsCount }} Jiwa</span>
+                                <td style="text-align:center;">
+                                    <span class="badge-soft" style="font-weight:700;">{{ $event->registrations_count }}</span>
                                 </td>
                                 <td>
                                     @if($isConfigured)
-                                        <div class="d-flex align-items-center">
-                                            <span class="status-indicator" style="background: var(--crm-primary);"></span>
-                                            <span class="smaller fw-medium" style="font-size: 0.75rem; color: var(--crm-primary);">ASET LENGKAP</span>
-                                        </div>
+                                        <span class="status-pill ready"><i class="bi bi-check-circle-fill"></i> ASET LENGKAP</span>
                                     @else
-                                        <div class="d-flex align-items-center">
-                                            <span class="status-indicator" style="background: var(--crm-secondary);"></span>
-                                            <span class="smaller fw-medium" style="font-size: 0.75rem; color: var(--crm-secondary);">ASET KOSONG</span>
-                                        </div>
+                                        <span class="status-pill missing"><i class="bi bi-dash-circle"></i> ASET KOSONG</span>
                                     @endif
                                 </td>
-                                <td>
-                                    @if($registrationsCount > 0)
-                                        @if($isFinished)
-                                            <span class="badge rounded-pill px-2 py-1" style="font-size: 0.65rem; background: var(--crm-accent-light); color: var(--crm-primary); border: 1px solid rgba(109, 40, 217, 0.2);">SIAP DITERBITKAN</span>
-                                        @else
-                                            <span class="badge bg-light text-muted border border-secondary border-opacity-10 rounded-pill px-2 py-1" style="font-size: 0.65rem;">MENUNGGU H+3</span>
-                                        @endif
-                                    @else
-                                        <span class="text-muted smaller">---</span>
-                                    @endif
-                                </td>
-                                <td class="text-end pe-4">
-                                    <div class="d-flex justify-content-end gap-2">
-                                        @if($registrationsCount > 0 && $isFinished)
-                                            <a href="{{ route('admin.crm.certificates.generate-massal', $event) }}" class="btn btn-sm px-3" style="background: var(--crm-primary); color: white;" onclick="return handleGenerateClick(this, {{ $registrationsCount }})">
-                                                Unduh Semua (ZIP)
-                                            </a>
-                                        @endif
-                                        <a href="{{ route('admin.crm.certificates.edit', $event) }}" class="btn btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border: 1px solid var(--crm-primary); color: var(--crm-primary);" title="Konfigurasi">
-                                            <i class="bi bi-gear-fill" style="font-size: 0.8rem;"></i>
-                                        </a>
-                                    </div>
+                                <td style="padding-right:1.5rem;text-align:right;">
+                                    <a href="{{ route('admin.crm.certificates.edit', $event) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary-bg);color:var(--crm-primary);border-radius:8px;">Kelola Aset</a>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="text-center py-5"><p class="text-muted mb-0">Data event belum tersedia</p></td></tr>
+                            <tr><td colspan="4" class="text-center py-5 text-muted">Data event tidak ditemukan.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -176,103 +172,48 @@
         </div>
     </div>
 
-    <!-- Courses Tab Pane -->
-    <div class="tab-pane fade {{ $tab === 'courses' ? 'show active' : '' }}" id="courses-content" role="tabpanel" aria-labelledby="courses-tab">
-        <div class="card-minimal overflow-hidden mb-4">
+    {{-- Courses Tab Pane --}}
+    <div class="custom-tab-pane {{ $tab === 'courses' ? 'active' : '' }}" id="courses-pane">
+        <div class="card-minimal border-0 shadow-sm" style="border-radius: 16px; overflow: hidden;">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light bg-opacity-50">
+                <table class="crm-table w-100">
+                    <thead>
                         <tr>
-                            <th class="ps-4">Nama Kursus</th>
-                            <th class="text-center">Siswa</th>
-                            <th class="text-center">Lulus (Dapat Sertif)</th>
-                            <th>Konfigurasi Aset</th>
-                            <th class="text-end pe-4">Tindakan</th>
+                            <th style="padding-left:1.5rem;">Nama Kursus</th>
+                            <th style="text-align:center;">Siswa</th>
+                            <th>Status Konfigurasi</th>
+                            <th style="padding-right:1.5rem;text-align:right;">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($courses as $course)
                             @php
-                                $enrollmentsCount = $course->enrollments_count;
-                                $completedCount = $course->enrollments()->where('status', 'completed')->count();
-                                $hasLogo = !empty($course->certificate_logo);
-                                $hasSignature = !empty($course->certificate_signature);
-                                $isConfigured = $hasLogo || $hasSignature;
+                                $isConfigured = !empty($course->certificate_logo) || !empty($course->certificate_signature);
                             @endphp
-                            <tr class="course-row" data-title="{{ strtolower($course->name) }}">
-                                <td class="ps-4">
-                                    <div class="fw-bold text-navy small">{{ $course->name }}</div>
-                                    <div class="text-muted smaller" style="font-size: 0.7rem;">{{ $course->category->name ?? 'General' }}</div>
+                            <tr class="cert-row" data-title="{{ strtolower($course->name) }}" data-status="{{ $isConfigured ? 'ready' : 'not-configured' }}">
+                                <td style="padding-left:1.5rem;">
+                                    <div style="font-weight:800;font-size:0.95rem;color:var(--crm-navy);">{{ $course->name }}</div>
+                                    <div style="font-size:0.75rem;color:var(--crm-text-subtle);">{{ $course->category->name ?? 'General' }}</div>
                                 </td>
-                                <td class="text-center">
-                                    <span class="small fw-semibold text-muted">{{ $enrollmentsCount }} Siswa</span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge rounded-pill bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1" style="font-size: 0.65rem;">{{ $completedCount }} Selesai</span>
+                                <td style="text-align:center;">
+                                    <span class="badge-soft">{{ $course->enrollments_count }}</span>
                                 </td>
                                 <td>
                                     @if($isConfigured)
-                                        <div class="d-flex align-items-center">
-                                            <span class="status-indicator" style="background: var(--crm-primary);"></span>
-                                            <span class="smaller fw-medium" style="font-size: 0.75rem; color: var(--crm-primary);">ASET LENGKAP</span>
-                                        </div>
+                                        <span class="status-pill ready"><i class="bi bi-check-circle-fill"></i> ASET LENGKAP</span>
                                     @else
-                                        <div class="d-flex align-items-center">
-                                            <span class="status-indicator" style="background: var(--crm-secondary);"></span>
-                                            <span class="smaller fw-medium" style="font-size: 0.75rem; color: var(--crm-secondary);">ASET KOSONG</span>
-                                        </div>
+                                        <span class="status-pill missing"><i class="bi bi-dash-circle"></i> ASET KOSONG</span>
                                     @endif
                                 </td>
-                                <td class="text-end pe-4">
-                                    <div class="d-flex justify-content-end gap-2">
-                                        @if($completedCount > 0)
-                                            <a href="{{ route('admin.crm.certificates.generate-massal-course', $course) }}" class="btn btn-sm px-3" style="background: var(--crm-primary); color: white;" onclick="return handleGenerateClick(this, {{ $completedCount }})">
-                                                Unduh Semua (ZIP)
-                                            </a>
-                                        @endif
-                                        <a href="{{ route('admin.crm.certificates.edit-course', $course) }}" class="btn btn-sm rounded-circle p-0 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border: 1px solid var(--crm-primary); color: var(--crm-primary);" title="Konfigurasi">
-                                            <i class="bi bi-gear-fill" style="font-size: 0.8rem;"></i>
-                                        </a>
-                                    </div>
+                                <td style="padding-right:1.5rem;text-align:right;">
+                                    <a href="{{ route('admin.crm.certificates.edit-course', $course) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary-bg);color:var(--crm-primary);border-radius:8px;">Kelola Aset</a>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="text-center py-5"><p class="text-muted mb-0">Data kursus belum tersedia</p></td></tr>
+                            <tr><td colspan="4" class="text-center py-5 text-muted">Data kursus tidak ditemukan.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="info-card h-100" style="border-left: 4px solid var(--crm-primary);">
-            <h6 class="fw-bold text-navy mb-3">Ketentuan Penerbitan</h6>
-            <ul class="smaller text-muted ps-3 mb-0">
-                <li class="mb-2">Sertifikat hanya dapat diterbitkan <b>3 hari setelah</b> tanggal pelaksanaan event berakhir untuk memastikan sinkronisasi absensi.</li>
-                <li class="mb-2">Pastikan <b>Logo Partner</b> dan <b>Tanda Tangan Authorized</b> telah diupload pada menu pengaturan masing-masing event.</li>
-                <li>Gunakan fitur "Generate" untuk memproses sertifikat secara massal dalam format arsip terkompresi.</li>
-            </ul>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="info-card h-100" style="border-left: 4px solid var(--crm-secondary);">
-            <h6 class="fw-bold text-navy mb-3">Bantuan Cepat</h6>
-            <div class="d-flex align-items-center mb-3">
-                <div class="p-2 bg-white rounded border me-3"><i class="bi bi-file-earmark-pdf text-danger fs-4"></i></div>
-                <div>
-                    <div class="small fw-bold">Manual Book Sertifikat</div>
-                    <a href="#" class="smaller text-primary text-decoration-none">Unduh Panduan (PDF)</a>
-                </div>
-            </div>
-            <div class="d-flex align-items-center">
-                <div class="p-2 bg-white rounded border me-3"><i class="bi bi-envelope text-info fs-4"></i></div>
-                <div>
-                    <div class="small fw-bold">Hubungi Support IT</div>
-                    <a href="mailto:support@idspora.com" class="smaller text-primary text-decoration-none">Kirim Email Bantuan</a>
-                </div>
             </div>
         </div>
     </div>
@@ -282,62 +223,67 @@
 @section('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('eventSearch');
-    const certStatusFilter = document.getElementById('certificateStatusFilter');
-    const clearBtn = document.getElementById('clearFilters');
-    
-    function filterRows() {
-        const searchTerm = (searchInput.value || '').toLowerCase().trim();
-        const certStatus = certStatusFilter.value;
-        
-        // Filter Events
-        document.querySelectorAll('.event-row').forEach(row => {
-            const title = (row.getAttribute('data-title') || '').toLowerCase();
-            const rowCertStatus = row.getAttribute('data-status');
-            const matchSearch = searchTerm === '' || title.includes(searchTerm);
-            const matchCertStatus = certStatus === 'all' || rowCertStatus === certStatus;
-            row.style.display = (matchSearch && matchCertStatus) ? '' : 'none';
-        });
+    // --- Custom Tab Switching Logic ---
+    const tabBtns = document.querySelectorAll('.custom-tab-btn');
+    const tabPanes = document.querySelectorAll('.custom-tab-pane');
 
-        // Filter Courses
-        document.querySelectorAll('.course-row').forEach(row => {
-            const title = (row.getAttribute('data-title') || '').toLowerCase();
-            const matchSearch = searchTerm === '' || title.includes(searchTerm);
-            // Courses don't have H+3 logic in this filter yet, but could be added if needed
-            row.style.display = matchSearch ? '' : 'none';
-        });
-    }
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all buttons and panes
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('active'));
 
-    searchInput?.addEventListener('input', filterRows);
-    certStatusFilter?.addEventListener('change', filterRows);
-    clearBtn?.addEventListener('click', function() {
-        searchInput.value = '';
-        certStatusFilter.value = 'all';
-        filterRows();
-    });
+            // Add active class to clicked button and target pane
+            this.classList.add('active');
+            const targetId = this.getAttribute('data-target');
+            document.getElementById(targetId).classList.add('active');
 
-    // Handle Tab Persistence
-    const triggerTabList = [].slice.call(document.querySelectorAll('#certificateTabs button'))
-    triggerTabList.forEach(function (triggerEl) {
-        triggerEl.addEventListener('click', function (event) {
-            const tabName = event.target.id.replace('-tab', '');
+            // Update URL without reloading
+            const tabName = targetId.replace('-pane', '');
             const url = new URL(window.location);
             url.searchParams.set('tab', tabName);
             window.history.pushState({}, '', url);
-        })
-    })
-});
+        });
+    });
 
-function handleGenerateClick(btn, count) {
-    if(!confirm(`Terbitkan sertifikat massal untuk ${count} peserta?`)) return false;
-    const originalHtml = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-    setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-    }, 15000);
-    return true;
-}
+    // --- Filtering Logic ---
+    const searchInput = document.getElementById('certSearch');
+    const statusFilter = document.getElementById('certStatus');
+    const resetBtn = document.getElementById('certReset');
+    
+    // Force reset filters on load to prevent browser cache from hiding rows accidentally
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = 'all';
+    
+    function runFilter() {
+        if(!searchInput || !statusFilter) return;
+        const term = searchInput.value.toLowerCase().trim();
+        const status = statusFilter.value;
+        
+        document.querySelectorAll('.cert-row').forEach(row => {
+            const title = row.getAttribute('data-title') || '';
+            const rowStatus = row.getAttribute('data-status');
+            const matchSearch = term === '' || title.includes(term);
+            const matchStatus = status === 'all' || rowStatus === status;
+            
+            // Explicitly set display without !important first to be safe
+            if (matchSearch && matchStatus) {
+                row.style.display = 'table-row';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    searchInput?.addEventListener('input', runFilter);
+    statusFilter?.addEventListener('change', runFilter);
+    resetBtn?.addEventListener('click', () => {
+        if(searchInput) searchInput.value = '';
+        if(statusFilter) statusFilter.value = 'all';
+        runFilter();
+    });
+
+    console.log('CRM Certificate: Custom Tabs & Filtering initialized.');
+});
 </script>
 @endsection
