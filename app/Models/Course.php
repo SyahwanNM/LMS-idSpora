@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\TrainerCertificateAsset;
 use Illuminate\Support\Facades\Storage;
 
 class Course extends Model
@@ -34,6 +35,8 @@ class Course extends Model
         'certificate_logo',
         'certificate_signature',
         'certificate_template',
+        'material_deadline',
+        'is_reseller_course',
     ];
 
     protected $casts = [
@@ -44,6 +47,7 @@ class Course extends Model
         'expenses_json' => 'array',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+        'material_deadline' => 'datetime',
     ];
 
     public function getCardThumbnailUrlAttribute(): ?string
@@ -155,11 +159,11 @@ class Course extends Model
         }
 
         $now = now();
-        
+
         if ($this->discount_start && $now->lt($this->discount_start)) {
             return false;
         }
-        
+
         if ($this->discount_end && $now->gt($this->discount_end)) {
             return false;
         }
@@ -184,5 +188,13 @@ class Course extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function trainerCertificateAssets()
+    {
+        return $this->morphMany(
+            TrainerCertificateAsset::class,
+            'certifiable'
+        )->orderBy('order_no');
     }
 }

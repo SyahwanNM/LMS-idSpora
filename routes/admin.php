@@ -13,7 +13,7 @@ use App\Http\Controllers\User\UserModuleController;
 use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Public\SocialAuthController;
-use App\Http\Controllers\TrainerApiController;
+use App\Http\Controllers\Trainer\TrainerApiController;
 use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
 use App\Http\Controllers\User\NotificationsController;
@@ -159,6 +159,16 @@ Route::middleware(['admin'])->group(function () {
     Route::put('/admin/courses/{course}/modules/{module}', [ModuleController::class, 'update'])->name('admin.courses.modules.update');
     Route::delete('/admin/courses/{course}/modules/{module}', [ModuleController::class, 'destroy'])->name('admin.courses.modules.destroy');
     Route::post('/admin/courses/{course}/modules/reorder', [ModuleController::class, 'reorder'])->name('admin.courses.modules.reorder');
+
+    // --- Admin Course Studio ---
+    Route::get('/admin/courses/{course}/studio', [\App\Http\Controllers\Admin\CourseStudioController::class, 'index'])->name('admin.courses.studio');
+    Route::get('/admin/courses/{course}/studio/materials/{material}/view', [\App\Http\Controllers\Admin\CourseStudioController::class, 'viewMaterial'])->name('admin.courses.studio.material.view');
+    Route::post('/admin/courses/{course}/studio/upload', [\App\Http\Controllers\Admin\CourseStudioController::class, 'upload'])->name('admin.courses.studio.upload');
+    Route::post('/admin/courses/{course}/studio/quiz', [\App\Http\Controllers\Admin\CourseStudioController::class, 'quiz'])->name('admin.courses.studio.quiz');
+    Route::post('/admin/courses/{course}/studio/editor-image', [\App\Http\Controllers\Admin\CourseStudioController::class, 'editorImage'])->name('admin.courses.studio.editor-image');
+    
+    // Admin Trainer Course Studio List
+    Route::get('/admin/trainer-studio', [\App\Http\Controllers\Admin\CourseStudioController::class, 'list'])->name('admin.trainer.studio.list');
 
     // Event document uploads (admin)
     Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');

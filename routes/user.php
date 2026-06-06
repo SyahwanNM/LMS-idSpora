@@ -13,7 +13,7 @@ use App\Http\Controllers\User\UserModuleController;
 use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Public\SocialAuthController;
-use App\Http\Controllers\TrainerApiController;
+use App\Http\Controllers\Trainer\TrainerApiController;
 use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
 use App\Http\Controllers\User\NotificationsController;

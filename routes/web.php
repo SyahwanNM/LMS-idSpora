@@ -2,7 +2,7 @@
 // Payment page for course
 Route::middleware(['auth'])->get('/courses/{course}/payment', [App\Http\Controllers\Admin\CourseController::class, 'payment'])->name('course.payment');
 
-Route::get('/debug-finance', function() {
+Route::get('/debug-finance', function () {
     $controller = new App\Http\Controllers\Admin\FinanceController();
     $request = request();
     $admin = \App\Models\User::where('email', 'admin@idspora.com')->first();
@@ -33,12 +33,13 @@ use App\Models\Enrollment;
 
 
 use App\Http\Controllers\Admin\CourseController;
+use App\Http\Controllers\Admin\CourseManualPaymentController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\User\UserModuleController;
 use App\Http\Controllers\Admin\QuizController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Public\SocialAuthController;
-use App\Http\Controllers\TrainerApiController;
+use App\Http\Controllers\Trainer\TrainerApiController;
 use App\Http\Controllers\Trainer\EventModuleController as TrainerEventModuleController;
 
 use App\Http\Controllers\User\NotificationsController;
@@ -49,8 +50,8 @@ use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Http\Controllers\User\ResellerController;
-use App\Http\Controllers\TrainerController;
-use App\Http\Controllers\TrainerNotificationsController;
+use App\Http\Controllers\Trainer\TrainerController;
+use App\Http\Controllers\Trainer\TrainerNotificationsController;
 use App\Http\Controllers\Api\PaymentController;
 
 Route::get('/admin/detail-event', function () {
@@ -68,14 +69,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
-    // Pull regular users only (exclude admin and trainer)
-    $users = \App\Models\User::with([
-        'eventRegistrations' => function ($q) {
-            $q->with('event')->orderBy('created_at', 'desc');
-        }
-    ])
+    // Pull non-admin users with event participations for the Manage User table and view modal
+    $users = \App\Models\User::with(['eventRegistrations' => function ($q) {
+        $q->with('event')->orderBy('created_at', 'desc');
+    }])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
-        ->where('role', 'user')
+        ->where('role', '!=', 'admin')
         ->orderBy('name')
         ->get();
     return view('/admin/add-users', compact('users'));
@@ -88,16 +87,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
-    Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
+    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
     Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
-    Route::get('/reseller/withdraw/download', [\App\Http\Controllers\User\ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
+
+    Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
+    Route::get('/reseller/withdraw/download', [ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
+
     // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
     Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
-
-    // Referral check (auto discount 10% if valid)
-    Route::get('/courses/{course}/check-referral', [\App\Http\Controllers\Admin\CourseManualPaymentController::class, 'checkReferral'])->name('courses.check-referral');
-    Route::get('/payment/{event}/check-referral', [\App\Http\Controllers\Admin\ManualPaymentController::class, 'checkReferral'])->name('payment.check-referral');
-
 });
 
 
@@ -159,7 +156,6 @@ Route::get('/admin/add-course2', function () {
 Route::get('/admin/preview-pendapatan', function () {
     return redirect()->route('admin.view-pendapatan', request()->query());
 })->middleware(['auth', 'admin'])->name('preview-pendapatan');
-
 Route::get('/rating-course', function () {
     return view('course.rating-course');
 })->name('rating-course');
@@ -183,7 +179,7 @@ Route::get('/storage/{path}', function ($path) {
     // Normalize separators then ensure no path traversal segments exist
     $pathNormalized = str_replace('\\', '/', $path);
     $segments = array_values(array_filter(explode('/', $pathNormalized), fn($s) => $s !== ''));
-    $segments = array_values(array_filter(explode('/', $pathNormalized), fn($s) => $s !== ''));
+
     foreach ($segments as $seg) {
         if ($seg === '.' || $seg === '..') {
             abort(403, 'Invalid path');
@@ -193,11 +189,8 @@ Route::get('/storage/{path}', function ($path) {
     // Use normalized path for filesystem lookup
     $path = implode('/', $segments);
 
-
     // Get file path in uploads
     $filePath = public_path('uploads/' . $path);
-
-
     // Check if file exists
     if (!file_exists($filePath) || !is_file($filePath)) {
         abort(404, 'File not found: ' . $path);
@@ -292,7 +285,7 @@ Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
     if ($already) {
         return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
     }
-    return view('payment', compact('event'));
+    return view('user.payment', compact('event'));
 })->name('payment');
 
 // Midtrans Snap token endpoint (auth required)
@@ -324,11 +317,15 @@ Route::middleware('auth')->get('/payment/invoice/{orderId}/download', [PaymentCo
 // Fallback: Generate QRIS via Core API, return qr_string + base64 PNG (auth required)
 Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController::class, 'qrisCore'])->name('payment.qris-core');
 
-// Event actions (register/feedback/etc.) require authentication
+// Event routes now require authentication to view & register
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
     Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
-    Route::post('/events/{event}/register', [App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
+    Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
+    Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+    // Redirect search to the best-matching event detail (exact title match preferred)
+    Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
+    Route::post('/events/{event}/register', [\App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\User\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
@@ -354,10 +351,8 @@ Route::middleware('auth')->group(function () {
             $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
         } catch (\Throwable $e) {
         }
-        if (!$startTime && $eventDate)
-            $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate)
-            $endTime = $eventDate->copy()->endOfDay();
+        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
@@ -378,12 +373,18 @@ Route::middleware('auth')->group(function () {
     // User profile
     Route::get('/profile', [\App\Http\Controllers\User\ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/history', [\App\Http\Controllers\User\ProfileController::class, 'history'])->name('profile.history');
-    Route::get('/profile/events', function() { return redirect()->route('profile.history'); }); // Redirect legacy route
+    Route::get('/profile/events', function () {
+        return redirect()->route('profile.history');
+    }); // Redirect legacy route
     Route::get('/profile/settings', [\App\Http\Controllers\User\ProfileController::class, 'settings'])->name('profile.settings');
     Route::get('/profile/edit', [\App\Http\Controllers\User\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [\App\Http\Controllers\User\ProfileController::class, 'update'])->name('profile.update');
     Route::get('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
     Route::post('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
+
+    // Profile Reminder API
+    Route::get('/api/profile-reminder/check', [\App\Http\Controllers\User\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
+    Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\User\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
 
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\User\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
@@ -484,7 +485,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Admin dashboard (only for admin users)
     Route::middleware(['admin'])->group(function () {
-        Route::get('/admin/reseller', [\App\Http\Controllers\User\ResellerController::class, 'admin'])->name('admin.reseller');
+        Route::get('/admin/reseller/dashboard', [\App\Http\Controllers\User\ResellerController::class, 'adminDashboard'])->name('admin.reseller.dashboard');
+        Route::get('/admin/reseller/data', [\App\Http\Controllers\User\ResellerController::class, 'adminData'])->name('admin.reseller.data');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');
@@ -495,15 +497,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/finance/store-income', [\App\Http\Controllers\Admin\FinanceController::class, 'storeIncome'])->name('admin.finance.store-income');
         Route::get('/admin/finance/expenses', [\App\Http\Controllers\Admin\FinanceController::class, 'expenses'])->name('admin.finance.expenses');
         Route::post('/admin/finance/expense', [\App\Http\Controllers\Admin\FinanceController::class, 'storeExpense'])->name('admin.finance.store-expense');
-        
+
         // Expense Approvals
         Route::post('/admin/finance/event-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventExpense'])->name('admin.finance.event-expense.approve');
         Route::post('/admin/finance/event-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventExpense'])->name('admin.finance.event-expense.reject');
-        
-        
+
+
         Route::post('/admin/finance/manual-expenses/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveExpense'])->name('admin.finance.manual-expense.approve');
         Route::post('/admin/finance/manual-expenses/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectExpense'])->name('admin.finance.manual-expense.reject');
-        
+
         Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
         Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
@@ -514,7 +516,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/finance/event-fees/{id}/approve', [\App\Http\Controllers\Admin\FinanceController::class, 'approveEventFeePayment'])->name('admin.finance.event-fee.approve');
         Route::post('/admin/finance/event-fees/{id}/reject', [\App\Http\Controllers\Admin\FinanceController::class, 'rejectEventFeePayment'])->name('admin.finance.event-fee.reject');
         Route::get('/admin/finance/payouts/{id}/invoice', [\App\Http\Controllers\Admin\FinanceController::class, 'downloadPayoutInvoice'])->name('admin.finance.payouts.invoice');
-        
+
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
@@ -639,8 +641,10 @@ Route::middleware(['auth'])->group(function () {
             ]
         ]);
 
+
         // Duplicate event
         Route::post('/admin/events/{event}/duplicate', [\App\Http\Controllers\Admin\EventController::class, 'duplicate'])->name('admin.events.duplicate');
+
 
         // Legacy certificate routes (keep for backward compatibility, redirect to CRM)
         Route::get('/admin/certificates', function () {
@@ -657,8 +661,6 @@ Route::middleware(['auth'])->group(function () {
         })->name('admin.certificates.generate-massal');
     });
 });
-// Include additional manual-payment routes (manual QRIS proof upload)
-require __DIR__ . '/web_manual_payment.php';
 
 
 Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->group(function () {
@@ -671,6 +673,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/profile', [TrainerController::class, 'show'])->name('profile');
     Route::get('/profile/edit', [TrainerController::class, 'editProfile'])->name('profile.edit');
     Route::put('/profile', [TrainerController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/list', [TrainerController::class, 'updateProfileList'])->name('profile.list.update');
 
     Route::get('/events', [TrainerController::class, 'events'])->name('events');
     Route::get('/events/{event}/vbg/download', [TrainerController::class, 'downloadVbg'])->name('events.vbg.download');
@@ -714,35 +717,37 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'index'])->name('admin.trainer.index');
     Route::get('/admin/trainer/create', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'create'])->name('admin.trainer.create');
     Route::post('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'store'])->name('admin.trainer.store');
+
+    // Trainer Certificates
+    Route::get('/admin/trainer/certificates', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'index'])->name('admin.trainer.certificates.index');
+    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'queue'])->name('admin.trainer.certificates.queue');
+    Route::get('/admin/trainer/certificates/detail/{certificate}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'detail'])->name('admin.trainer.certificates.detail');
+    Route::get('/admin/trainer/certificates/{trainer}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'show'])->name('admin.trainer.certificates.show');
+    Route::get('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'edit'])->name('admin.trainer.certificates.edit');
+    Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'update'])->name('admin.trainer.certificates.update');
+    Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/publish', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'publish'])->name('admin.trainer.certificates.publish');
+
     Route::get('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'show'])->name('admin.trainer.show');
     Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
-    Route::post('/admin/trainer/{trainer}/certificates', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
-    // Allow admin to upload/manual-send a certificate file to a trainer
-    Route::post('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendCertificate'])->name('admin.trainer.certificates.send');
-    // Show form to upload/send certificate (GET)
-    Route::get('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'showSendCertificateForm'])->name('admin.trainer.certificates.send.form');
-    // Certificates queue for trainers (admin)
-    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'certificatesQueue'])->name('admin.trainer.certificates.queue');
-    Route::post('/admin/trainer/certificates/preview', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'previewCertificate'])->name('admin.trainer.certificates.preview');
-    Route::delete('/admin/trainer/certificates/{trainerCertificate}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'revokeCertificate'])->name('admin.trainer.certificates.revoke');
+    Route::post('/admin/trainer/{trainer}/course/{course}/deadline', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'updateCourseDeadline'])->name('admin.trainer.courses.deadline');
 
     // Material Approval Routes
-    Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.material.approvals');
-    Route::get('/admin/material/approved', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approved'])->name('admin.material.approved');
-    Route::get('/admin/material/rejected', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejected'])->name('admin.material.rejected');
-    Route::get('/admin/material/{material}/modules/{module}/stream', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'streamModule'])->name('admin.material.module.stream');
-    Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.material.module.approve');
-    Route::post('/admin/material/{material}/unit/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveUnit'])->name('admin.material.unit.approve');
-    Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.material.module.reject');
-    Route::post('/admin/material/{material}/modules/{module}/assign-course', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'assignCourse'])->name('admin.material.module.assign-course');
-    Route::post('/admin/material/{material}/modules/{module}/upload-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'uploadProcessed'])->name('admin.material.module.upload-processed');
-    Route::post('/admin/material/{material}/modules/{module}/accept-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'acceptProcessed'])->name('admin.material.module.accept-processed');
-    Route::post('/admin/material/{material}/modules/{module}/request-revision', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'requestRevision'])->name('admin.material.module.request-revision');
-    Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.material.show');
-    Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.material.approve');
-    Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.material.reject');
+    Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.trainer.material.approvals');
+    Route::get('/admin/material/approved', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approved'])->name('admin.trainer.material.approved');
+    Route::get('/admin/material/rejected', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejected'])->name('admin.trainer.material.rejected');
+    Route::get('/admin/material/{material}/modules/{module}/stream', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'streamModule'])->name('admin.trainer.material.module.stream');
+    Route::post('/admin/material/{material}/modules/{module}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveModule'])->name('admin.trainer.material.module.approve');
+    Route::post('/admin/material/{material}/unit/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approveUnit'])->name('admin.trainer.material.unit.approve');
+    Route::post('/admin/material/{material}/modules/{module}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'rejectModule'])->name('admin.trainer.material.module.reject');
+    Route::post('/admin/material/{material}/modules/{module}/assign-course', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'assignCourse'])->name('admin.trainer.material.module.assign-course');
+    Route::post('/admin/material/{material}/modules/{module}/upload-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'uploadProcessed'])->name('admin.trainer.material.module.upload-processed');
+    Route::post('/admin/material/{material}/modules/{module}/accept-processed', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'acceptProcessed'])->name('admin.trainer.material.module.accept-processed');
+    Route::post('/admin/material/{material}/modules/{module}/request-revision', [\App\Http\Controllers\Admin\ModuleProcessingController::class, 'requestRevision'])->name('admin.trainer.material.module.request-revision');
+    Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.trainer.material.show');
+    Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.trainer.material.approve');
+    Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.trainer.material.reject');
 
     // Event Material Approval Routes
     Route::get('/admin/event-materials', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'index'])->name('admin.event-materials.index');

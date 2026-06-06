@@ -11,6 +11,7 @@ class Broadcast extends Model
         'message',
         'segment',
         'platform',
+        'link',
         'sender_id',
         'target_count',
         'status'

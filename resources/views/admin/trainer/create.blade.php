@@ -343,8 +343,7 @@
 @section('content')
     <div class="trainer-wrapper">
         <!-- Sidebar Navigation -->
-        @include('admin.trainer._sidebar')
-        @include('admin.trainer._top-text-color')
+        @include('admin.trainer.partials.sidebar')
 
         <!-- Main Content -->
         <main class="trainer-main">
@@ -363,19 +362,6 @@
                     <!-- Form Card -->
                     <div class="card trainer-form-card mb-4">
                         <div class="card-body p-5">
-                            @if ($errors->any())
-                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                    <i class="bi bi-exclamation-circle me-2"></i>
-                                    <strong>Terjadi kesalahan!</strong>
-                                    <ul class="mb-0 mt-2">
-                                        @foreach ($errors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                </div>
-                            @endif
-
                             <form action="{{ route('admin.trainer.store') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
 
