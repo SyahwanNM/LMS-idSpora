@@ -252,6 +252,11 @@ Route::middleware('auth')->group(function () {
         }
         return back()->with('success', $saved ? 'Course disimpan.' : 'Course dihapus dari tersimpan.');
     })->name('courses.save');
+
+    // Voucher & Redemption
+    Route::post('/profile/redeem-voucher/{voucher}', [\App\Http\Controllers\User\ProfileController::class, 'redeemVoucher'])->name('profile.redeem-voucher');
+    Route::get('/courses/{course}/check-voucher', [\App\Http\Controllers\User\ProfileController::class, 'checkVoucher'])->name('courses.check-voucher');
+    Route::get('/events/{event}/check-voucher', [\App\Http\Controllers\User\ProfileController::class, 'checkVoucherEvent'])->name('events.check-voucher');
 });
     // User dashboard (only for non-admin users)
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('profile.complete')->name('dashboard');

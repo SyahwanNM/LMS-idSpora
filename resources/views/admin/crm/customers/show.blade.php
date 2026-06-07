@@ -127,6 +127,10 @@
                         <span class="stat-value">{{ $enrollments->count() }}</span>
                         <span class="stat-label">Courses</span>
                     </div>
+                    <div class="stat-box">
+                        <span class="stat-value text-primary">{{ $customer->points ?? 0 }}</span>
+                        <span class="stat-label">Poin</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -169,6 +173,23 @@
             </p>
         </div>
 
+        {{-- Loyalty & Points Card --}}
+        <div class="card-minimal p-4 mb-4">
+            <h6 class="fw-800 text-navy mb-4" style="font-size:0.95rem;">Loyalty & Poin</h6>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <span style="font-size:0.8rem;color:var(--crm-text-subtle);">Poin Saat Ini:</span>
+                    <h3 class="fw-800 text-primary m-0">{{ $customer->points ?? 0 }} Poin</h3>
+                </div>
+                <button type="button" class="btn btn-sm px-3 text-white fw-700 hover-scale" style="background:var(--crm-primary);border-radius:8px;" data-bs-toggle="modal" data-bs-target="#adjustPointsModal">
+                    <i class="bi bi-sliders me-1"></i> Sesuaikan
+                </button>
+            </div>
+            <div style="font-size:0.75rem;color:var(--crm-text-subtle);">
+                Badge: <span class="badge" style="background:var(--crm-primary-bg);color:var(--crm-primary);font-weight:700;">{{ $customer->badge ?? 'Bronze' }}</span>
+            </div>
+        </div>
+
         <div class="card-minimal p-4" style="background:var(--crm-border-soft);border:none;">
             <div class="d-flex align-items-center gap-3">
                 <div style="width:40px;height:40px;border-radius:10px;background:#fff;color:var(--crm-primary);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
@@ -189,6 +210,7 @@
             <div class="tab-switcher" id="activityTabs">
                 <button class="active" onclick="showSection('events', this)">Events</button>
                 <button onclick="showSection('courses', this)">Courses</button>
+                <button onclick="showSection('points', this)">Poin & Voucher</button>
             </div>
         </div>
 
@@ -283,6 +305,100 @@
                 @endforelse
             </div>
         </div>
+
+        {{-- Points & Vouchers Section --}}
+        <div id="section-points" class="activity-section d-none">
+            {{-- Point Transactions Ledger --}}
+            <h6 class="fw-800 text-navy mb-3" style="font-size:0.9rem;"><i class="bi bi-clock-history me-1"></i> Ledger Transaksi Poin</h6>
+            <div class="card-minimal p-3 mb-4">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless align-middle" style="font-size: 0.8rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--crm-border-soft); color: var(--crm-text-subtle);">
+                                <th>Tanggal</th>
+                                <th>Jumlah</th>
+                                <th>Tipe</th>
+                                <th>Sumber</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($pointTransactions as $tx)
+                            <tr style="border-bottom: 1px solid var(--crm-border-soft);">
+                                <td>{{ $tx->created_at->format('d/m/Y H:i') }}</td>
+                                <td>
+                                    <span class="fw-800" style="color: {{ $tx->type === 'credit' ? '#10b981' : '#ef4444' }};">
+                                        {{ $tx->type === 'credit' ? '+' : '-' }}{{ $tx->amount }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge" style="font-size:0.65rem; background: {{ $tx->type === 'credit' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }}; color: {{ $tx->type === 'credit' ? '#10b981' : '#ef4444' }};">
+                                        {{ strtoupper($tx->type) }}
+                                    </span>
+                                </td>
+                                <td><span class="text-muted">{{ strtoupper($tx->source) }}</span></td>
+                                <td>{{ $tx->description }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">Belum ada riwayat transaksi poin.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- Claimed Vouchers --}}
+            <h6 class="fw-800 text-navy mb-3" style="font-size:0.9rem;"><i class="bi bi-ticket-perforated me-1"></i> Voucher Yang Diklaim</h6>
+            <div class="card-minimal p-3">
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless align-middle" style="font-size: 0.8rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--crm-border-soft); color: var(--crm-text-subtle);">
+                                <th>Nama Voucher</th>
+                                <th>Kode Klaim</th>
+                                <th>Potongan</th>
+                                <th>Status</th>
+                                <th>Berlaku Sampai</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($voucherRedemptions as $redemption)
+                            <tr style="border-bottom: 1px solid var(--crm-border-soft);">
+                                <td>
+                                    <div class="fw-700 text-navy">{{ $redemption->voucher->name }}</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">Code: {{ $redemption->voucher->code }}</div>
+                                </td>
+                                <td><span class="font-monospace text-primary fw-700">{{ $redemption->code }}</span></td>
+                                <td>
+                                    @if($redemption->voucher->discount_type === 'percentage')
+                                        {{ $redemption->voucher->discount_value }}%
+                                    @else
+                                        Rp{{ number_format($redemption->voucher->discount_value, 0, ',', '.') }}
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($redemption->is_used)
+                                        <span class="badge bg-success-subtle text-success">Used</span>
+                                    @elseif($redemption->expires_at && $redemption->expires_at->isPast())
+                                        <span class="badge bg-danger-subtle text-danger">Expired</span>
+                                    @else
+                                        <span class="badge bg-warning-subtle text-warning">Active</span>
+                                    @endif
+                                </td>
+                                <td>{{ $redemption->expires_at ? $redemption->expires_at->format('d/m/Y H:i') : 'Unlimited' }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">Belum ada voucher yang diklaim.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -291,6 +407,7 @@
         // Toggle Sections
         document.getElementById('section-events').classList.toggle('d-none', section !== 'events');
         document.getElementById('section-courses').classList.toggle('d-none', section !== 'courses');
+        document.getElementById('section-points').classList.toggle('d-none', section !== 'points');
         
         // Toggle Buttons
         const buttons = document.querySelectorAll('#activityTabs button');
@@ -370,6 +487,47 @@
                         </button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Adjust Points Modal --}}
+<div class="modal fade" id="adjustPointsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:20px;">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div style="width:60px;height:60px;border-radius:50%;background:rgba(124,58,237,0.1);display:inline-flex;align-items:center;justify-content:center;color:var(--crm-primary);font-size:1.75rem;">
+                        <i class="bi bi-star"></i>
+                    </div>
+                    <h5 class="fw-800 mt-3 mb-1" style="font-size:1.1rem;color:var(--crm-navy);">Penyesuaian Poin Manual</h5>
+                    <p style="font-size:0.8rem;color:var(--crm-text-subtle);margin:0;">Sesuaikan saldo poin customer secara manual.</p>
+                </div>
+
+                <form action="{{ route('admin.crm.customers.adjust-points', $customer) }}" method="POST" class="m-0">
+                    @csrf
+                    <div class="mb-3">
+                        <label for="amount" class="form-field-label">Jumlah Poin <span class="text-danger">*</span></label>
+                        <input type="number" class="form-field" id="amount" name="amount" placeholder="Contoh: 50 atau -20" required>
+                        <small class="text-muted" style="font-size: 0.72rem;">Gunakan nilai positif (+) untuk menambah, dan negatif (-) untuk mengurangi poin.</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="reason" class="form-field-label">Alasan Penyesuaian <span class="text-danger">*</span></label>
+                        <input type="text" class="form-field" id="reason" name="reason" placeholder="Contoh: Bonus partisipasi khusus" required>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button type="button" class="btn btn-sm fw-700 px-4"
+                                style="background:var(--crm-border-soft);color:var(--crm-navy);border-radius:10px;font-size:0.85rem;padding:0.6rem 1.5rem;"
+                                data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-sm fw-700 px-4 text-white"
+                                style="background:var(--crm-primary);border-radius:10px;font-size:0.85rem;padding:0.6rem 1.5rem;">
+                            Simpan
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

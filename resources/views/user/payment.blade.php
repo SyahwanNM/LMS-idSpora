@@ -195,6 +195,14 @@
                         </div>
                         @endif
 
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Kode Voucher (opsional)</label>
+                            <input type="text" class="form-control-custom" name="voucher_code" id="voucherCodeInput" placeholder="Masukkan kode voucher penukaran Anda" autocomplete="off">
+                            <div id="voucherMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
+                            <div class="form-text small">Masukkan kode voucher yang telah ditukarkan di halaman profil untuk potongan harga.</div>
+                        </div>
+
+
                         @if($isHybridPayment)
                         <div class="mb-custom" style="margin-top:14px;">
                             <label class="form-label-custom" style="margin-bottom:8px;">Attendance Type <span style="color:#ef4444;">*</span></label>
@@ -499,6 +507,13 @@
         const currentUserReferral = @json(auth()->user()->referral_code ?? '');
         const REFERRAL_RATE = 0.10;
 
+        const voucherInput = document.getElementById('voucherCodeInput');
+        const voucherMessageEl = document.getElementById('voucherMessage');
+        let voucherState = voucherInput ? 'idle' : 'disabled';
+        let referralState = referralInput ? 'idle' : 'disabled';
+        let voucherTimer = null;
+        let currentDiscount = 0;
+
         function formatRupiah(val){
             try{
                 return (new Intl.NumberFormat('id-ID')).format(Math.round(val));
@@ -507,7 +522,6 @@
             }
         }
 
-        // --- Hybrid attendance type radio ---
         const isHybrid = eventPriceEl?.dataset.isHybrid === 'true';
         const priceOffline = parseInt(eventPriceEl?.dataset.priceOffline || '0', 10);
         const priceOnline  = parseInt(eventPriceEl?.dataset.priceOnline  || '0', 10);
@@ -517,22 +531,25 @@
         const labelOffline = document.getElementById('label-offline');
         const labelOnline  = document.getElementById('label-online');
 
+        let referralFinalAmount = parseFloat(eventPriceEl?.dataset.baseAmount || '0') || 0;
+
+        function getReferralCode() {
+            return referralInput ? String(referralInput.value || '').trim() : '';
+        }
+
+        function getVoucherCode() {
+            return voucherInput ? String(voucherInput.value || '').trim() : '';
+        }
+
         function setHybridPrice(type) {
             if (!isHybrid || !eventPriceEl) return;
             const price = type === 'online' ? priceOnline : priceOffline;
             const raw   = type === 'online' ? priceOnlineRaw : priceOfflineRaw;
-            // Update checkout price display
+            
             eventPriceEl.dataset.baseAmount = price;
-            if (price === 0) {
-                eventPriceEl.textContent = 'FREE';
-            } else if (raw > price) {
-                eventPriceEl.innerHTML = '<span style="text-decoration:line-through;color:#888;font-size:0.85em;margin-right:6px;font-weight:400;">Rp' + formatRupiah(raw) + '</span>Rp' + formatRupiah(price);
-            } else {
-                eventPriceEl.textContent = 'Rp' + formatRupiah(price);
-            }
-            // Update hidden input
+            
             if (attendanceTypeInput) attendanceTypeInput.value = type;
-            // Update label styles
+            
             if (labelOffline && labelOnline) {
                 if (type === 'offline') {
                     labelOffline.style.border = '2px solid #1565c0';
@@ -550,8 +567,8 @@
                     labelOffline.style.color = '#555';
                 }
             }
-            // Re-trigger referral recalculation if active
-            if (typeof recalcReferral === 'function') recalcReferral();
+            
+            updateReferralUI();
         }
 
         if (isHybrid) {
@@ -560,9 +577,37 @@
                     setHybridPrice(this.value);
                 });
             });
-            // Init
             setHybridPrice('offline');
         }
+
+        function updateTotalDisplay() {
+            if (!eventPriceEl) return;
+            const base = parseFloat(eventPriceEl.dataset.baseAmount || '0') || 0;
+            let finalAmount = referralFinalAmount || base;
+            if (voucherState === 'valid' && currentDiscount > 0) {
+                finalAmount = Math.max(0, finalAmount - currentDiscount);
+            }
+
+            if (finalAmount === 0) {
+                eventPriceEl.textContent = 'FREE';
+            } else {
+                eventPriceEl.textContent = 'Rp' + formatRupiah(finalAmount);
+            }
+
+            if (midtransPayBtn) {
+                if (finalAmount === 0) {
+                    midtransPayBtn.textContent = 'Register Now (Free)';
+                } else {
+                    var pending = cachedPending;
+                    if (pending && pending.pending) {
+                        midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
+                    } else {
+                        midtransPayBtn.textContent = 'Pay with Midtrans';
+                    }
+                }
+            }
+        }
+
         let _referralTimer = null;
         async function validateReferralServer(code){
             if(!checkReferralUrl) return null;
@@ -575,56 +620,185 @@
             } catch(e){ return null; }
         }
 
+        async function validateVoucherServer(code) {
+            if(!code) return null;
+            try {
+                const url = new URL(@json(route('events.check-voucher', $event->id ?? 0)), window.location.origin);
+                url.searchParams.set('code', code);
+                
+                const ref = getReferralCode();
+                if (ref !== '' && referralState === 'valid') {
+                    url.searchParams.set('referral_code', ref);
+                }
+
+                const attendanceTypeEl = document.getElementById('attendanceTypeInput');
+                if(attendanceTypeEl && attendanceTypeEl.value) {
+                    url.searchParams.set('attendance_type', attendanceTypeEl.value);
+                }
+
+                const res = await fetch(url.toString(), {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                });
+                if(!res.ok) return null;
+                return await res.json();
+            } catch(e) {
+                return null;
+            }
+        }
+
         function updateReferralUI(){
             if(!eventPriceEl) return;
             const base = parseFloat(eventPriceEl.dataset.baseAmount || '0') || 0;
-            const code = referralInput ? String(referralInput.value || '').trim() : '';
+            const code = getReferralCode();
 
-            // self-referral block
             if(code !== '' && currentUserReferral && code.toUpperCase() === String(currentUserReferral).toUpperCase()){
                 if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'You cannot use your own referral code.'; }
-                if(showQrisBtn) showQrisBtn.disabled = true;
-                if(midtransPayBtn) midtransPayBtn.disabled = true;
-                if(payNowBtn) payNowBtn.disabled = true;
-                if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(base);
+                referralState = 'invalid';
+                referralFinalAmount = base;
+                if (getVoucherCode() !== '') {
+                    scheduleVoucherValidation();
+                } else {
+                    updateTotalDisplay();
+                    validate();
+                }
                 return;
             }
 
             if(code === ''){
-                if(eventPriceEl) eventPriceEl.textContent = base > 0 ? ('Rp' + formatRupiah(base)) : 'FREE';
+                referralState = 'idle';
+                referralFinalAmount = base;
                 if(referralMessageEl){ referralMessageEl.style.display = 'none'; referralMessageEl.textContent = ''; }
-                validate();
+                if (getVoucherCode() !== '') {
+                    scheduleVoucherValidation();
+                } else {
+                    updateTotalDisplay();
+                    validate();
+                }
                 return;
             }
 
-            // debounce server validation
             if(_referralTimer) clearTimeout(_referralTimer);
             _referralTimer = setTimeout(async function(){
                 const data = await validateReferralServer(code);
                 if(!data){
+                    referralState = 'invalid';
+                    referralFinalAmount = base;
                     if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Failed to verify code. Please try again.'; }
-                    if(showQrisBtn) showQrisBtn.disabled = true;
-                    if(midtransPayBtn) midtransPayBtn.disabled = true;
-                    if(payNowBtn) payNowBtn.disabled = true;
-                    if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(base);
+                    if (getVoucherCode() !== '') {
+                        scheduleVoucherValidation();
+                    } else {
+                        updateTotalDisplay();
+                        validate();
+                    }
                     return;
                 }
 
                 if(data.valid){
-                    if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(data.final_amount) + ' (' + Math.round((data.discount_rate||REFERRAL_RATE)*100) + '% off)';
+                    referralState = 'valid';
+                    referralFinalAmount = parseFloat(data.final_amount) || base;
                     if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-danger'); referralMessageEl.classList.add('text-muted'); referralMessageEl.textContent = data.message || 'Referral code is valid.'; }
-                    validate();
                 } else {
+                    referralState = 'invalid';
+                    referralFinalAmount = base;
                     if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = data.message || 'Invalid referral code.'; }
-                    if(showQrisBtn) showQrisBtn.disabled = true;
-                    if(midtransPayBtn) midtransPayBtn.disabled = true;
-                    if(payNowBtn) payNowBtn.disabled = true;
-                    if(eventPriceEl) eventPriceEl.textContent = 'Rp' + formatRupiah(base);
+                }
+                
+                if (getVoucherCode() !== '') {
+                    scheduleVoucherValidation();
+                } else {
+                    updateTotalDisplay();
+                    validate();
                 }
             }, 450);
         }
+
+        function updateVoucherUIFromResult(data) {
+            const code = getVoucherCode();
+
+            if (code === '') {
+                voucherState = 'idle';
+                currentDiscount = 0;
+                if (voucherMessageEl) {
+                    voucherMessageEl.style.display = 'none';
+                    voucherMessageEl.textContent = '';
+                }
+                updateTotalDisplay();
+                validate();
+                return;
+            }
+
+            if (!data) {
+                voucherState = 'invalid';
+                currentDiscount = 0;
+                if (voucherMessageEl) {
+                    voucherMessageEl.style.display = '';
+                    voucherMessageEl.classList.remove('text-muted');
+                    voucherMessageEl.classList.add('text-danger');
+                    voucherMessageEl.textContent = 'Gagal memeriksa kode voucher. Coba lagi.';
+                }
+                updateTotalDisplay();
+                validate();
+                return;
+            }
+
+            if (data.valid) {
+                voucherState = 'valid';
+                currentDiscount = data.discount || 0;
+                if (voucherMessageEl) {
+                    voucherMessageEl.style.display = '';
+                    voucherMessageEl.classList.remove('text-danger');
+                    voucherMessageEl.classList.add('text-muted');
+                    voucherMessageEl.textContent = data.message || 'Voucher berhasil diterapkan.';
+                }
+            } else {
+                voucherState = 'invalid';
+                currentDiscount = 0;
+                if (voucherMessageEl) {
+                    voucherMessageEl.style.display = '';
+                    voucherMessageEl.classList.remove('text-muted');
+                    voucherMessageEl.classList.add('text-danger');
+                    voucherMessageEl.textContent = data.message || 'Voucher tidak valid.';
+                }
+            }
+
+            updateTotalDisplay();
+            validate();
+        }
+
+        function scheduleVoucherValidation() {
+            if (!voucherInput) return;
+            if (voucherTimer) {
+                clearTimeout(voucherTimer);
+            }
+
+            const code = getVoucherCode();
+
+            if (code === '') {
+                updateVoucherUIFromResult({ valid: false, message: '' });
+                return;
+            }
+
+            voucherState = 'checking';
+            if (voucherMessageEl) {
+                voucherMessageEl.style.display = '';
+                voucherMessageEl.classList.remove('text-danger');
+                voucherMessageEl.classList.add('text-muted');
+                voucherMessageEl.textContent = 'Memeriksa kode voucher...';
+            }
+            validate();
+
+            voucherTimer = setTimeout(async function() {
+                const data = await validateVoucherServer(code);
+                if (code !== getVoucherCode()) {
+                    return;
+                }
+                updateVoucherUIFromResult(data);
+            }, 400);
+        }
+
         const payNowBtn = document.getElementById('payNowBtn');
-        const methodRadios = form.querySelectorAll('input[name="payment_method"]');
         const manualPaySection = document.getElementById('manualPaySection');
         const midtransSection = document.getElementById('midtransSection');
         const midtransPayBtn = document.getElementById('midtransPayBtn');
@@ -690,14 +864,23 @@
                 validate();
             });
         }
-
         function isValidPhone(val){ return /^[0-9]{8,15}$/.test(String(val || '').trim()); }
 
         function validate(){
             const nameOk = fullName && fullName.value.trim().length >= 3;
-            const dialOk = true;
             const waOk = wa && isValidPhone(wa.value);
-            const allOk = nameOk && dialOk && waOk;
+            
+            let refOk = true;
+            if (referralInput && referralInput.value.trim() !== '') {
+                refOk = (referralState === 'valid');
+            }
+
+            let vchOk = true;
+            if (voucherInput && getVoucherCode() !== '') {
+                vchOk = (voucherState === 'valid');
+            }
+
+            const allOk = nameOk && waOk && refOk && vchOk;
 
             if(isFree){
                 const freeBtn = document.getElementById('freeRegBtn');
@@ -708,14 +891,14 @@
                 return allOk;
             }
 
-            const method = getSelectedMethod();
             const okMidtrans = allOk;
 
             if(midtransPayBtn){
-                midtransPayBtn.disabled = !(method === 'midtrans' && okMidtrans);
-                midtransPayBtn.style.opacity = (method === 'midtrans' && okMidtrans) ? '1' : '0.5';
+                midtransPayBtn.disabled = !okMidtrans;
+                midtransPayBtn.style.opacity = okMidtrans ? '1' : '0.5';
             }
 
+            const method = getSelectedMethod();
             const transferPayBtn = document.getElementById('transferPayBtn');
             const hasProof = proofInput && proofInput.files && proofInput.files.length > 0
                              && proofInput.files[0].size <= 1 * 1024 * 1024;
@@ -736,6 +919,11 @@
 
         // Init payment method UI
         syncMethodUI();
+
+        if (voucherInput) {
+            voucherInput.addEventListener('input', scheduleVoucherValidation);
+            voucherInput.addEventListener('blur', scheduleVoucherValidation);
+        }
 
         form.addEventListener('submit', function(e){
             if(isFree){
@@ -779,15 +967,12 @@
                 });
                 return;
             }
-            
             e.preventDefault();
         });
 
-        // initial
         updateReferralUI();
         validate();
 
-        // Midtrans flow
         const snapTokenUrl = @json(isset($event) ? route('payment.snap-token', $event->id) : '');
         const pendingOrderUrl = @json(isset($event) ? route('payment.pending-order', $event->id) : '');
         const finalizeUrl = @json(isset($event) ? route('payment.finalize', $event->id) : '');
@@ -800,7 +985,6 @@
             if (text) {
                 text.textContent = customMsg || ('You have successfully registered for the event "' + eventTitle + '".');
             }
-
             const modalEl = document.getElementById('midtransSuccessModal');
             if (modalEl && window.bootstrap && window.bootstrap.Modal) {
                 const m = window.bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: 'static', keyboard: false });
@@ -833,10 +1017,8 @@
             if(pending && pending.pending && pending.order_id){
                 midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
 
-                // Autofill WA from pending payment if empty
                 if (pending.whatsapp_number && wa && (!wa.value || wa.value.trim() === '')) {
                     const raw = String(pending.whatsapp_number).trim();
-                    // Expect formats like +62xxxxxxxx or 62xxxxxxxx or 0xxxxxxxx
                     if (raw.startsWith('+')) {
                         const m = raw.match(/^\+(\d{1,3})(.*)$/);
                         if (m) {
@@ -847,10 +1029,8 @@
                         wa.value = raw.replace(/\D/g, '');
                     }
                 }
-
                 validate();
             } else if (pending && pending.needs_force_new) {
-                // Previous order expired/rejected — reset to fresh payment state
                 cachedPending = null;
                 midtransPayBtn.textContent = 'Pay Now';
                 validate();
@@ -881,7 +1061,6 @@
             const forceNewFromQuery = (new URLSearchParams(window.location.search)).get('force_new') === '1';
             const forceNewFromExpired = !!(cachedPending && cachedPending.needs_force_new);
 
-            // ensure validation up-to-date
             validate();
             if(midtransPayBtn && midtransPayBtn.disabled){
                 showAppNotify('Please complete your details before paying.', 'error');
@@ -890,12 +1069,15 @@
 
             const dialVal = '+62';
             const waVal = (wa ? wa.value : '').trim();
+            const voucherVal = getVoucherCode();
 
             async function getOrCreateSnapToken(forceNew){
-                // Prefer pending order token if available
                 const pending = cachedPending || await fetchPendingOrder();
                 cachedPending = pending;
-                if(!forceNew && pending && pending.pending && pending.order_id && pending.snap_token){
+                const pendingReferral = pending && pending.referral_code ? String(pending.referral_code).trim() : '';
+                const pendingVoucher = pending && pending.metadata && pending.metadata.voucher_code ? String(pending.metadata.voucher_code).trim() : '';
+                
+                if(!forceNew && pending && pending.pending && pending.order_id && pending.snap_token && pendingReferral === (referralInput ? referralInput.value.trim() : '') && pendingVoucher === voucherVal){
                     return { snap_token: pending.snap_token, order_id: pending.order_id };
                 }
 
@@ -903,8 +1085,9 @@
                 if(dialVal) url.searchParams.set('dial_code', dialVal);
                 if(waVal) url.searchParams.set('whatsapp', waVal);
                 if(referralInput && referralInput.value && referralInput.value.trim() !== '') url.searchParams.set('referral_code', referralInput.value.trim());
+                if(voucherVal !== '') url.searchParams.set('voucher_code', voucherVal);
                 if(forceNew) url.searchParams.set('force_new', '1');
-                // Pass attendance_type for hybrid events
+                
                 const attendanceTypeEl = document.getElementById('attendanceTypeInput');
                 if(attendanceTypeEl && attendanceTypeEl.value) url.searchParams.set('attendance_type', attendanceTypeEl.value);
 
@@ -914,7 +1097,7 @@
                     credentials: 'same-origin'
                 });
                 const data = await res.json();
-                if(!res.ok || !data || !data.snap_token){
+                if(!res.ok || !data || (!data.snap_token && !data.redirect_url)){
                     throw new Error(data && data.message ? data.message : 'Failed membuat token Midtrans');
                 }
                 return data;
@@ -927,19 +1110,21 @@
             try{
                 let data;
                 if (forceNewFromQuery || forceNewFromExpired) {
-                    // Explicit user intent: always create a new Midtrans transaction.
                     cachedPending = null;
                     data = await getOrCreateSnapToken(true);
                 } else {
                     try {
                         data = await getOrCreateSnapToken(false);
                     } catch(e) {
-                        // One-time fallback: force new transaction if needed
                         data = await getOrCreateSnapToken(true);
                     }
                 }
 
-                // If we used pending order, make label reflect it
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return;
+                }
+
                 if(data && data.snap_token && originalText !== 'Lanjutkan pembayaran Midtrans'){
                     try { await ensurePendingLabel(); } catch(_e) {}
                 }
@@ -951,17 +1136,14 @@
                             await postFinalize(data.order_id);
                         } catch(_e) {}
                         showMidtransSuccessModal();
-                        // Give user a moment to see success modal before redirect
                         setTimeout(function(){
                             window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
                         }, 1400);
                     },
                     onPending: async function(){
                         clearInterval(window._snapPollTimer);
-                        // keep as pending; user can retry later
                         try { await postFinalize(data.order_id); } catch(_e) {}
                         showAppNotify('Payment pending. Please complete the paybayaran di Midtrans.', 'info');
-                        // Update label for next attempt
                         cachedPending = { pending: true, order_id: data.order_id, snap_token: data.snap_token };
                         if(midtransPayBtn) midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
                     },
@@ -971,7 +1153,6 @@
                     },
                     onClose: async function(){
                         clearInterval(window._snapPollTimer);
-                        // Always check status when popup closes (handles timer expiry, close button, etc.)
                         midtransPayBtn.disabled = true;
                         midtransPayBtn.textContent = 'Memeriksa status...';
                         try {
@@ -989,15 +1170,12 @@
                                 return;
                             }
                         } catch(_e) {}
-                        // Still pending or unknown — re-enable button
                         midtransPayBtn.disabled = false;
                         midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
                         validate();
                     }
                 });
 
-                // Poll status every 5 seconds while Snap popup is open
-                // so expired/settled status is detected even if user doesn't close popup
                 clearInterval(window._snapPollTimer);
                 window._snapPollTimer = setInterval(async function() {
                     try {
@@ -1005,7 +1183,6 @@
                         if (!result) return;
                         if (result.status === 'settled') {
                             clearInterval(window._snapPollTimer);
-                            // Payment done — close snap and redirect
                             if (window.snap && typeof window.snap.hide === 'function') window.snap.hide();
                             showMidtransSuccessModal();
                             setTimeout(function(){
@@ -1017,7 +1194,7 @@
                             if (window.snap && typeof window.snap.hide === 'function') window.snap.hide();
                             window.location.href = window.location.pathname + '?force_new=1';
                         }
-                    } catch(_e) { /* ignore poll errors */ }
+                    } catch(_e) {}
                 }, 5000);
             } catch(e){
                 showAppNotify(String(e && e.message ? e.message : e), 'error');
@@ -1039,10 +1216,8 @@
             });
         }
 
-        // If there is a pending Midtrans payment, show "continue" label
         ensurePendingLabel();
 
-        // If force_new=1 in URL, clear cached pending and reset button label
         if ((new URLSearchParams(window.location.search)).get('force_new') === '1') {
             cachedPending = null;
             if (midtransPayBtn) {

@@ -7660,7 +7660,11 @@ textarea::placeholder {
 
 /* Bootstrap tabs compatibility: show tab-content container.
        (Bootstrap controls visibility via .tab-pane, not .tab-content.active) */
-.nav-tabs+.tab-content {
+.nav-tabs+.tab-content,
+.nav-pills+.tab-content,
+.nav-tabs-custom+.tab-content,
+[class*="nav-"]+.tab-content,
+.tab-content:has(.tab-pane) {
     display: block;
 }
 

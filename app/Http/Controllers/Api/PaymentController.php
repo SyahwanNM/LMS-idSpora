@@ -14,6 +14,8 @@ use App\Models\Enrollment;
 use App\Models\Referral;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Models\Voucher;
+use App\Models\VoucherRedemption;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -369,6 +371,25 @@ class PaymentController extends Controller
         $referrer->increment('wallet_balance', $commissionAmount);
     }
 
+    private function markVoucherUsedIfApplicable(ManualPayment $payment): void
+    {
+        $redemptionId = data_get($payment->metadata, 'voucher_redemption_id');
+        if ($redemptionId) {
+            $redemption = VoucherRedemption::find($redemptionId);
+            if ($redemption && !$redemption->is_used) {
+                $redemption->update([
+                    'is_used' => true,
+                    'used_at' => now(),
+                ]);
+                Log::info('Voucher redemption marked as used', [
+                    'redemption_id' => $redemption->id,
+                    'code' => $redemption->code,
+                    'payment_id' => $payment->id,
+                ]);
+            }
+        }
+    }
+
     /**
      * Midtrans Snap token for paid Event (auth required).
      */
@@ -413,6 +434,34 @@ class PaymentController extends Controller
         $referralCode = $referrer ? $rawReferralCode : null;
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
+        $voucherCode = trim((string) $request->query('voucher_code', $request->input('voucher_code')));
+        $redemption = null;
+        $discountAmount = 0.0;
+
+        if ($voucherCode !== '') {
+            $redemption = VoucherRedemption::where('user_id', $user->id)
+                ->where('code', $voucherCode)
+                ->first();
+
+            if (!$redemption) {
+                return response()->json(['message' => 'Voucher tidak ditemukan.'], 422);
+            }
+
+            if (!$redemption->isUsable()) {
+                return response()->json(['message' => 'Voucher tidak valid atau sudah kedaluwarsa.'], 422);
+            }
+
+            $voucher = $redemption->voucher;
+            if ($finalAmount < $voucher->min_purchase) {
+                return response()->json([
+                    'message' => 'Minimal pembelian untuk menggunakan voucher ini adalah Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.'
+                ], 422);
+            }
+
+            $discountAmount = $voucher->calculateDiscount($finalAmount);
+            $finalAmount = max(0.0, $finalAmount - $discountAmount);
+        }
+
         $dial = trim((string) $request->query('dial_code', $request->input('dial_code')));
         $wa = trim((string) $request->query('whatsapp', $request->input('whatsapp')));
         $phone = trim($dial . $wa);
@@ -431,6 +480,82 @@ class PaymentController extends Controller
             if ($registration && $registration->status === 'active') {
                 DB::rollBack();
                 return response()->json(['message' => 'Anda sudah terdaftar.'], 409);
+            }
+
+            if ($finalAmount <= 0) {
+                if (!$registration) {
+                    $registration = EventRegistration::create([
+                        'user_id' => $user->id,
+                        'event_id' => $event->id,
+                        'status' => 'active',
+                        'registration_code' => 'EVT-' . strtoupper(uniqid()),
+                        'total_price' => 0.00,
+                        'payment_verified_at' => now(),
+                    ]);
+                } else {
+                    $registration->status = 'active';
+                    $registration->total_price = 0.00;
+                    $registration->payment_verified_at = now();
+                    $registration->save();
+                }
+
+                $method = $redemption ? 'voucher' : 'free';
+                $orderId = 'VCH-EVT-' . strtoupper(uniqid());
+
+                $payment = ManualPayment::create([
+                    'event_id' => $event->id,
+                    'event_registration_id' => $registration->id,
+                    'user_id' => $user->id,
+                    'order_id' => $orderId,
+                    'amount' => 0,
+                    'currency' => 'IDR',
+                    'method' => $method,
+                    'status' => 'settled',
+                    'whatsapp_number' => $phone ?: null,
+                    'referral_code' => $referralCode,
+                    'metadata' => [
+                        'source' => 'event',
+                        'type' => 'voucher_free',
+                        'base_amount' => $baseAmount,
+                        'voucher_code' => $voucherCode ?: null,
+                        'voucher_redemption_id' => $redemption?->id ?? null,
+                        'voucher_discount' => $discountAmount,
+                        'attendance_type' => $attendanceType,
+                    ]
+                ]);
+
+                if ($redemption) {
+                    $redemption->update([
+                        'is_used' => true,
+                        'used_at' => now(),
+                    ]);
+                }
+
+                try {
+                    $pointsService = app(\App\Services\UserPointsService::class);
+                    $pointsService->addEventPoints($user, $event, $registration);
+                } catch (\Throwable $e) {
+                    Log::error('Error awarding event points: ' . $e->getMessage());
+                }
+
+                try {
+                    UserNotification::create([
+                        'user_id' => $user->id,
+                        'type' => 'event_registration',
+                        'title' => 'Pendaftaran Dikonfirmasi',
+                        'message' => 'Pendaftaran untuk "' . $event->title . '" telah dikonfirmasi.',
+                        'data' => ['url' => route('events.show', $event)],
+                        'expires_at' => now()->addDays(14),
+                    ]);
+                } catch (\Throwable $e) { /* ignore */ }
+
+                DB::commit();
+
+                return response()->json([
+                    'redirect_url' => route('events.registered.detail', $event->id),
+                    'amount' => 0,
+                    'message' => 'Pendaftaran berhasil menggunakan voucher.'
+                ]);
             }
 
             if (!$registration) {
@@ -455,6 +580,14 @@ class PaymentController extends Controller
                 ->where('status', 'pending')
                 ->latest('id')
                 ->first();
+
+            if ($payment && !$forceNew) {
+                $paymentVoucherCode = data_get($payment->metadata, 'voucher_code');
+                $paymentReferral = $payment->referral_code;
+                if ($paymentVoucherCode !== $voucherCode || $paymentReferral !== $referralCode) {
+                    $forceNew = true;
+                }
+            }
 
             if ($payment && !$forceNew) {
                 $existingToken = $this->getSnapTokenFromPayment($payment);
@@ -504,6 +637,9 @@ class PaymentController extends Controller
                     'event_id' => $event->id,
                     'event_title' => $event->title,
                     'attendance_type' => $attendanceType,
+                    'voucher_code' => $voucherCode ?: null,
+                    'voucher_redemption_id' => $redemption?->id ?? null,
+                    'voucher_discount' => $discountAmount,
                 ]),
             ]);
             $payment->save();
@@ -600,6 +736,9 @@ class PaymentController extends Controller
                             'retry_reason' => 'order_id_conflict',
                             'event_id' => $event->id,
                             'event_title' => $event->title,
+                            'voucher_code' => $voucherCode ?: null,
+                            'voucher_redemption_id' => $redemption?->id ?? null,
+                            'voucher_discount' => $discountAmount,
                         ],
                     ]);
                     $newPayment->save();
@@ -691,6 +830,34 @@ class PaymentController extends Controller
         $referralCode = $referrer ? $rawReferralCode : null;
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
+        $voucherCode = trim((string) $request->query('voucher_code', $request->input('voucher_code')));
+        $redemption = null;
+        $discountAmount = 0.0;
+
+        if ($voucherCode !== '') {
+            $redemption = VoucherRedemption::where('user_id', $user->id)
+                ->where('code', $voucherCode)
+                ->first();
+
+            if (!$redemption) {
+                return response()->json(['message' => 'Voucher tidak ditemukan.'], 422);
+            }
+
+            if (!$redemption->isUsable()) {
+                return response()->json(['message' => 'Voucher tidak valid atau sudah kedaluwarsa.'], 422);
+            }
+
+            $voucher = $redemption->voucher;
+            if ($finalAmount < $voucher->min_purchase) {
+                return response()->json([
+                    'message' => 'Minimal pembelian untuk menggunakan voucher ini adalah Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.'
+                ], 422);
+            }
+
+            $discountAmount = $voucher->calculateDiscount($finalAmount);
+            $finalAmount = max(0.0, $finalAmount - $discountAmount);
+        }
+
         $dial = trim((string) $request->query('dial_code', $request->input('dial_code')));
         $wa = trim((string) $request->query('whatsapp', $request->input('whatsapp')));
         $phone = trim($dial . $wa);
@@ -706,6 +873,52 @@ class PaymentController extends Controller
                 $enrollment->save();
             }
 
+            if ($finalAmount <= 0) {
+                $enrollment->status = 'active';
+                $enrollment->save();
+
+                $method = $redemption ? 'voucher' : 'free';
+                $orderId = 'VCH-CRS-' . strtoupper(uniqid());
+
+                $payment = ManualPayment::create([
+                    'course_id' => $course->id,
+                    'enrollment_id' => $enrollment->id,
+                    'user_id' => $user->id,
+                    'order_id' => $orderId,
+                    'amount' => 0,
+                    'currency' => 'IDR',
+                    'method' => $method,
+                    'status' => 'settled',
+                    'whatsapp_number' => $phone ?: null,
+                    'referral_code' => $referralCode,
+                    'metadata' => [
+                        'source' => 'course',
+                        'type' => 'voucher_free',
+                        'base_amount' => $baseAmount,
+                        'voucher_code' => $voucherCode ?: null,
+                        'voucher_redemption_id' => $redemption?->id ?? null,
+                        'voucher_discount' => $discountAmount,
+                    ]
+                ]);
+
+                if ($redemption) {
+                    $redemption->update([
+                        'is_used' => true,
+                        'used_at' => now(),
+                    ]);
+                }
+
+                $enrollment->checkAndComplete($user);
+
+                DB::commit();
+
+                return response()->json([
+                    'redirect_url' => route('course.learn', $course->id),
+                    'amount' => 0,
+                    'message' => 'Pendaftaran berhasil menggunakan voucher.'
+                ]);
+            }
+
             // Reuse existing pending midtrans order if any
             $payment = ManualPayment::query()
                 ->where('course_id', $course->id)
@@ -714,6 +927,14 @@ class PaymentController extends Controller
                 ->where('status', 'pending')
                 ->latest('id')
                 ->first();
+
+            if ($payment && !$forceNew) {
+                $paymentVoucherCode = data_get($payment->metadata, 'voucher_code');
+                $paymentReferral = $payment->referral_code;
+                if ($paymentVoucherCode !== $voucherCode || $paymentReferral !== $referralCode) {
+                    $forceNew = true;
+                }
+            }
 
             if ($payment && !$forceNew) {
                 $existingToken = $this->getSnapTokenFromPayment($payment);
@@ -758,6 +979,9 @@ class PaymentController extends Controller
                     'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
                     'course_id' => $course->id,
                     'course_name' => $course->name,
+                    'voucher_code' => $voucherCode ?: null,
+                    'voucher_redemption_id' => $redemption?->id ?? null,
+                    'voucher_discount' => $discountAmount,
                 ]),
             ]);
             $payment->save();
@@ -846,6 +1070,9 @@ class PaymentController extends Controller
                             'retry_reason' => 'order_id_conflict',
                             'course_id' => $course->id,
                             'course_name' => $course->name,
+                            'voucher_code' => $voucherCode ?: null,
+                            'voucher_redemption_id' => $redemption?->id ?? null,
+                            'voucher_discount' => $discountAmount,
                         ],
                     ]);
                     $newPayment->save();
@@ -940,6 +1167,7 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 // Activate related entities
                 if ($payment->event_registration_id) {
                     $registration = EventRegistration::find($payment->event_registration_id);
@@ -1064,6 +1292,7 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 // Activate related entities (mirrors notify/finalize behavior).
                 if ($payment->event_registration_id) {
                     $registration = EventRegistration::find($payment->event_registration_id);
@@ -1197,6 +1426,7 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 $registration = $payment->event_registration_id ? EventRegistration::find($payment->event_registration_id) : null;
                 if ($registration && $registration->status !== 'active') {
                     $registration->status = 'active';
@@ -1456,6 +1686,7 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 if ($payment->enrollment_id) {
                     $enrollment = Enrollment::find($payment->enrollment_id);
                     if ($enrollment && $enrollment->status !== 'active') {
