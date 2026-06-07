@@ -222,6 +222,7 @@
         .tab-pane {
             display: none;
         }
+
         .tab-pane.active {
             display: block !important;
             opacity: 1 !important;
@@ -281,11 +282,30 @@
             font-size: 24px;
         }
 
-        .stat-icon.blue { background: #eff6ff; color: #3b82f6; }
-        .stat-icon.green { background: #f0fdf4; color: #22c55e; }
-        .stat-icon.purple { background: #faf5ff; color: #a855f7; }
-        .stat-icon.orange { background: #fff7ed; color: #f97316; }
-        .stat-icon.red { background: #fef2f2; color: #ef4444; }
+        .stat-icon.blue {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .stat-icon.green {
+            background: #f0fdf4;
+            color: #22c55e;
+        }
+
+        .stat-icon.purple {
+            background: #faf5ff;
+            color: #a855f7;
+        }
+
+        .stat-icon.orange {
+            background: #fff7ed;
+            color: #f97316;
+        }
+
+        .stat-icon.red {
+            background: #fef2f2;
+            color: #ef4444;
+        }
 
         .stat-value {
             font-size: 28px;
@@ -312,7 +332,7 @@
         .table {
             vertical-align: middle;
         }
-        
+
         .table th {
             font-weight: 700;
             color: var(--text-muted);
@@ -321,7 +341,7 @@
             border-bottom: 2px solid var(--border-light);
             padding: 16px;
         }
-        
+
         .table td {
             padding: 16px;
             color: var(--text-main);
@@ -356,30 +376,34 @@
             display: flex;
             margin-bottom: 16px;
         }
+
         .info-label {
             width: 140px;
             color: var(--text-muted);
             font-weight: 600;
         }
+
         .info-value {
             flex: 1;
             color: var(--text-main);
             font-weight: 600;
         }
-        
-        .btn-outline-primary, .btn-outline-danger {
+
+        .btn-outline-primary,
+        .btn-outline-danger {
             border-radius: 50px;
             padding: 8px 20px;
             font-weight: 600;
         }
-        
+
         /* Dropdown action button fixes */
         .dropdown-menu-action {
             border-radius: 12px;
             border: 1px solid var(--border-light);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             padding: 8px;
         }
+
         .dropdown-menu-action .dropdown-item {
             border-radius: 8px;
             padding: 8px 16px;
@@ -387,23 +411,612 @@
             font-size: 13.5px;
             color: var(--text-main);
         }
+
         .dropdown-menu-action .dropdown-item i {
             margin-right: 8px;
             color: var(--text-muted);
         }
+
         .dropdown-menu-action .dropdown-item:hover {
             background-color: #f8fafc;
             color: var(--primary-blue);
         }
+
         .dropdown-menu-action .dropdown-item:hover i {
             color: var(--primary-blue);
         }
+
         .dropdown-menu-action .dropdown-item.text-danger:hover {
             background-color: #fef2f2;
             color: #ef4444;
         }
+
+        .tab-content {
+            display: block;
+        }
+
+        .tab-pane {
+            padding-top: 4px;
+        }
+
+        .stat-box.vertical {
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+            min-height: 160px;
+        }
+
+        .stat-box.vertical .stat-icon {
+            margin-bottom: 6px;
+        }
+
+        .stat-box.vertical .stat-value {
+            font-size: 24px;
+        }
+
+        .badge-terbit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.12);
+            color: #15803d;
+            font-weight: 700;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .rating-bar-container {
+            display: grid;
+            grid-template-columns: 28px 1fr 86px;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .rating-bar-number {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .rating-bar-track {
+            width: 100%;
+            height: 8px;
+            background: #eef2ff;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .rating-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+        }
+
+        .rating-bar-stat {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .event-course-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .event-course-panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px 14px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .event-course-panel-body {
+            padding: 18px;
+        }
+
+        .event-course-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .event-course-summary-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .event-course-summary-label {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .event-course-summary-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+        }
+
+        .event-course-summary-meta {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .event-course-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .event-course-table thead th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 700;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .event-course-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .event-course-table tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        .event-course-table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .event-course-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .event-course-icon.event {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+
+        .event-course-icon.course {
+            background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%);
+        }
+
+        .event-course-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            line-height: 1.35;
+        }
+
+        .event-course-subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .event-course-action {
+            min-width: 92px;
+            border-radius: 999px;
+            padding: 7px 14px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .event-course-empty {
+            padding: 22px 16px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .event-course-side-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            padding: 18px;
+        }
+
+        .event-course-side-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .event-course-side-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .event-course-side-item:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .event-course-quick {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .event-course-quick .btn {
+            min-height: 88px;
+            border-radius: 14px;
+            padding: 16px;
+            text-align: left;
+        }
+
+        .event-course-quick .btn i {
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 991.98px) {
+
+            .event-course-summary,
+            .event-course-quick {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .border-purple {
+            border-color: #a855f7 !important;
+        }
+
+        .bg-purple {
+            background-color: #a855f7 !important;
+        }
+
+        .text-purple {
+            color: #a855f7 !important;
+        }
+
+        .btn.btn-outline-primary,
+        .btn.btn-outline-danger,
+        .btn.btn-outline-warning,
+        .btn.btn-outline-success {
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        .content-card {
+            padding: 18px;
+        }
+
+        .content-card .content-card-title,
+        .content-card h5 {
+            color: var(--trainer-text);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8fbff;
+        }
+
+        .nav-tabs-custom .nav-link i,
+        .trainer-tabs .nav-link i {
+            font-size: 15px;
+        }
+
+        .hero-card,
+        .content-card,
+        .profile-card,
+        .profile-side-card {
+            backdrop-filter: saturate(140%);
+        }
+
         .dropdown-menu-action .dropdown-item.text-danger:hover i {
             color: #ef4444;
+        }
+
+        .profile-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .profile-hero {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px 28px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+
+        .profile-hero-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #1e40af 0%, #2345c2 55%, #1d4ed8 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .profile-hero-avatar .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            background: #22c55e;
+            border: 2px solid #fff;
+            position: absolute;
+            right: 2px;
+            bottom: 2px;
+        }
+
+        .profile-hero-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.15;
+            margin: 0;
+            letter-spacing: -0.03em;
+        }
+
+        .profile-hero-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+            color: #475569;
+            font-size: 13.5px;
+            margin-top: 8px;
+        }
+
+        .profile-hero-meta .divider {
+            color: #cbd5e1;
+        }
+
+        .profile-hero-links {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 18px;
+            color: #1f2937;
+            font-size: 13.5px;
+            margin-top: 8px;
+        }
+
+        .profile-hero-links .link-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .profile-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .profile-hero-action {
+            min-width: 136px;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .profile-tabs {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 0 18px;
+            gap: 10px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .profile-tabs .nav-item {
+            margin-bottom: 0;
+        }
+
+        .profile-tabs .nav-link {
+            border: 0;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 700;
+            padding: 14px 12px 13px;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+        }
+
+        .profile-tabs .nav-link:hover {
+            color: #1d4ed8;
+        }
+
+        .profile-tabs .nav-link.active {
+            color: #1d4ed8;
+            background: transparent;
+            border-bottom-color: #1d4ed8;
+        }
+
+        .profile-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+        }
+
+        .profile-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .profile-card-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+            color: #172554;
+            letter-spacing: -0.02em;
+        }
+
+        .profile-card-body {
+            padding: 18px;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px 32px;
+        }
+
+        .profile-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            min-width: 0;
+            margin-bottom: 14px;
+        }
+
+        .profile-label {
+            width: 132px;
+            flex-shrink: 0;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .profile-separator {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .profile-value {
+            min-width: 0;
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .profile-value .badge {
+            font-weight: 700;
+        }
+
+        .profile-tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .profile-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: #e0ecff;
+            color: #2563eb;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .profile-side-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+        }
+
+        .profile-photo {
+            width: 128px;
+            height: 128px;
+            border-radius: 999px;
+            object-fit: cover;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            background: #eff6ff;
+        }
+
+        .profile-upload-box {
+            border: 1px dashed #d1d5db;
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: #1d4ed8;
+            font-weight: 700;
+            font-size: 13px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-width: 220px;
+        }
+
+        .profile-upload-box small {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .profile-note-box {
+            background: #eff6ff;
+            color: #334155;
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 12.5px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 991.98px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-hero-actions {
+                justify-content: flex-start;
+                margin-top: 16px;
+            }
+
+            .profile-hero {
+                padding: 20px;
+            }
+
+            .profile-label {
+                width: 118px;
+            }
         }
     </style>
 @endsection
@@ -425,442 +1038,536 @@
 
             <!-- Hero Section -->
             @php
-                // Initials extract
-                $initials = collect(explode(' ', $trainer->name))->map(function($segment) {
-                    return strtoupper(substr($segment, 0, 1));
-                })->take(2)->implode('');
+                $trainerName = trim((string) ($trainer->name ?? 'Trainer'));
+                $initials = collect(explode(' ', $trainerName))
+                    ->filter()
+                    ->map(fn($segment) => strtoupper(substr($segment, 0, 1)))
+                    ->take(2)
+                    ->implode('');
+                $initials = $initials !== '' ? $initials : 'TR';
+
+                $email = $trainer->email ?: '-';
+                $phone = $trainer->formatted_phone ?? $trainer->phone ?? '-';
+                $whatsapp = $trainer->phone ?: '-';
+                $profession = trim((string) ($trainer->profession ?? 'Trainer'));
+                $institution = trim((string) ($trainer->institution ?? '-'));
+                $website = trim((string) ($trainer->website ?? '-'));
+                $linkedin = trim((string) ($trainer->linkedin_url ?? '-'));
+                $roleLabel = ucfirst((string) ($trainer->role ?? 'trainer'));
+                $joinedAt = optional($trainer->created_at)->translatedFormat('d M Y') ?? '-';
+                $updatedAt = optional($trainer->updated_at)->translatedFormat('d M Y, H:i') ?? '-';
+                $statusLabel = ($trainer->user_status ?? 'active') === 'inactive' ? 'Nonaktif' : 'Aktif';
+                $statusBadgeClass = $statusLabel === 'Aktif' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger';
+                $rawAvatar = trim((string) ($trainer->avatar ?? ''));
+                $profilePhotoUrl = $rawAvatar !== '' ? ($trainer->avatar_url ?? '') : '';
+                $skills = collect($trainer->trainer_skills ?? [])
+                    ->filter()
+                    ->take(4)
+                    ->values();
+                if ($skills->isEmpty() && $profession !== '') {
+                    $skills = collect(explode(' ', $profession))
+                        ->filter()
+                        ->take(4)
+                        ->values();
+                }
+                if ($skills->isEmpty()) {
+                    $skills = collect(['Artificial Intelligence', 'Machine Learning', 'Data Science']);
+                }
+                $educationList = collect($trainer->trainer_educations ?? [])->filter()->values();
+                $certificationList = collect($trainer->trainer_certifications ?? [])->filter()->values();
+                $profileCompletion = method_exists($trainer, 'getProfileCompletionPercentage')
+                    ? $trainer->getProfileCompletionPercentage()
+                    : 0;
+                $eventCount = $trainerEvents->count();
+                $courseCount = $trainerCourses->count();
+                $certificateCount = $trainerCertificates->count();
+                $recentReviews = collect($courseReviews)
+                    ->concat($eventFeedback)
+                    ->sortByDesc(fn($item) => optional($item->created_at)->timestamp ?? 0)
+                    ->take(6)
+                    ->values();
+                $eventCertificates = $trainerCertificates->filter(function ($certificate) {
+                    return strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Event::class);
+                })->count();
+                $courseCertificates = $trainerCertificates->filter(function ($certificate) {
+                    return strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Course::class);
+                })->count();
+                $topStarPct = $ratingPercentages[5] ?? 0;
+                $positiveRatingPct = ($ratingPercentages[4] ?? 0) + ($ratingPercentages[5] ?? 0);
             @endphp
-            <div class="hero-card d-flex justify-content-between align-items-center mb-4 bg-white p-4" style="border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-                <div class="d-flex align-items-center gap-4">
-                    <div class="hero-avatar position-relative" style="width: 72px; height: 72px; background-color: #1e3a8a; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700;">
-                        LO
-                        <div class="position-absolute bg-success rounded-circle border border-2 border-white" style="width: 16px; height: 16px; bottom: 2px; right: 2px;"></div>
+            <div class="profile-hero">
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-4 flex-wrap flex-lg-nowrap">
+                        <div class="profile-hero-avatar">
+                            {{ $initials }}
+                            <span class="status-dot"></span>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <h2 class="profile-hero-title">{{ $trainerName }}</h2>
+                                <span class="badge rounded-pill px-3 py-1 {{ $statusBadgeClass }}"
+                                    style="font-size: 12px; font-weight: 700;">{{ $statusLabel }}</span>
+                            </div>
+                            <div class="profile-hero-meta">
+                                <span>{{ $profession }}</span>
+                                <span class="divider">•</span>
+                                <span>{{ $institution }}</span>
+                                <span class="divider">•</span>
+                                <span>Bergabung {{ $joinedAt }}</span>
+                            </div>
+                            <div class="profile-hero-links">
+                                <span class="link-item"><i class="bi bi-envelope"></i> {{ $email }}</span>
+                                <span class="divider">|</span>
+                                <span class="link-item"><i class="bi bi-telephone"></i> {{ $phone }}</span>
+                                <span class="divider">|</span>
+                                <span class="link-item"><i class="bi bi-whatsapp"></i> {{ $whatsapp }}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="d-flex align-items-center gap-3 mb-2">
-                            <h2 class="mb-0 fw-bold" style="font-size: 24px; color: #0f172a;">{{ $trainer->name ?? 'Loren' }}</h2>
-                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1" style="font-size: 12px; font-weight: 600;">Aktif</span>
-                        </div>
-                        <div class="text-muted mb-2" style="font-size: 13.5px;">
-                            Dosen ITB &bull; AI Trainer &bull; Bergabung {{ \Carbon\Carbon::parse($trainer->created_at)->translatedFormat('d M Y') }}
-                        </div>
-                        <div class="d-flex align-items-center gap-3 text-dark fw-medium" style="font-size: 13.5px;">
-                            <div class="d-flex align-items-center gap-2"><i class="bi bi-envelope text-muted"></i> {{ $trainer->email ?? 'loren@gmail.com' }}</div>
-                            <div class="text-muted">|</div>
-                            <div class="d-flex align-items-center gap-2"><i class="bi bi-telephone text-muted"></i> 123456</div>
-                            <div class="text-muted">|</div>
-                            <div class="d-flex align-items-center gap-2"><i class="bi bi-whatsapp text-muted"></i> 0812-3456-7890</div>
-                        </div>
+
+                    <div class="profile-hero-actions">
+                        <a href="{{ route('admin.trainer.edit', $trainer) }}"
+                            class="btn btn-outline-primary profile-hero-action">
+                            <i class="bi bi-pencil me-1"></i> Edit Trainer
+                        </a>
+                        <button class="btn btn-outline-primary profile-hero-action" type="button">
+                            <i class="bi bi-calendar-event me-1"></i> Undang ke Event
+                        </button>
+                        <button class="btn btn-outline-danger profile-hero-action" type="button">
+                            <i class="bi bi-slash-circle me-1"></i> Nonaktifkan
+                        </button>
                     </div>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-primary d-flex align-items-center gap-2 rounded-pill px-4 fw-semibold" style="font-size: 13.5px;"><i class="bi bi-pencil"></i> Edit Trainer</button>
-                    <button class="btn btn-outline-primary d-flex align-items-center gap-2 rounded-pill px-4 fw-semibold" style="font-size: 13.5px;"><i class="bi bi-calendar-event"></i> Undang ke Event</button>
-                    <button class="btn btn-outline-danger d-flex align-items-center gap-2 rounded-pill px-4 fw-semibold" style="font-size: 13.5px;"><i class="bi bi-slash-circle"></i> Nonaktifkan</button>
                 </div>
             </div>
 
             <!-- Tabs Navigation -->
-            <ul class="nav-tabs-custom nav" id="trainerTabs" role="tablist">
+            <ul class="nav-tabs-custom profile-tabs nav" id="trainerTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="profil-tab" data-bs-toggle="tab" data-bs-target="#tab-profil" type="button" role="tab">
+                    <button class="nav-link active" id="profil-tab" data-bs-toggle="tab" data-bs-target="#tab-profil"
+                        type="button" role="tab">
                         <i class="bi bi-person"></i> Profil & Akun
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="event-tab" data-bs-toggle="tab" data-bs-target="#tab-event" type="button" role="tab">
+                    <button class="nav-link" id="event-tab" data-bs-toggle="tab" data-bs-target="#tab-event" type="button"
+                        role="tab">
                         <i class="bi bi-calendar2-check"></i> Event & Course
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="materi-tab" data-bs-toggle="tab" data-bs-target="#tab-materi" type="button" role="tab">
+                    <button class="nav-link" id="materi-tab" data-bs-toggle="tab" data-bs-target="#tab-materi" type="button"
+                        role="tab">
                         <i class="bi bi-journal-text"></i> Materi
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="deadline-tab" data-bs-toggle="tab" data-bs-target="#tab-deadline" type="button" role="tab">
+                    <button class="nav-link" id="deadline-tab" data-bs-toggle="tab" data-bs-target="#tab-deadline"
+                        type="button" role="tab">
                         <i class="bi bi-calendar-x"></i> Deadline Materi
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="rating-tab" data-bs-toggle="tab" data-bs-target="#tab-rating" type="button" role="tab">
+                    <button class="nav-link" id="rating-tab" data-bs-toggle="tab" data-bs-target="#tab-rating" type="button"
+                        role="tab">
                         <i class="bi bi-star"></i> Rating & Ulasan
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="sertifikat-tab" data-bs-toggle="tab" data-bs-target="#tab-sertifikat" type="button" role="tab">
+                    <button class="nav-link" id="sertifikat-tab" data-bs-toggle="tab" data-bs-target="#tab-sertifikat"
+                        type="button" role="tab">
                         <i class="bi bi-award"></i> Sertifikat
                     </button>
                 </li>
             </ul>
 
             <!-- Tabs Content -->
-            <div class="tab-content" id="trainerTabsContent" style="display: block !important; visibility: visible !important; min-height: 500px;">
-                
-                                                <!-- TAB 1: Profil & Akun -->
-                <div class="tab-pane show active" id="tab-profil" role="tabpanel" aria-labelledby="profil-tab" style="display: block !important; opacity: 1 !important; visibility: visible !important;">
-                    <div class="row">
+            <div class="tab-content" id="trainerTabsContent"
+                style="display: block !important; visibility: visible !important; min-height: 500px;">
+                <div class="tab-pane show active" id="tab-profil" role="tabpanel" aria-labelledby="profil-tab"
+                    style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                    <div class="row g-4">
                         <div class="col-lg-8">
-                            <!-- Informasi Profil -->
-                            <div class="content-card mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 class="mb-0 fw-bold" style="font-size: 16px; color: #1e293b;">Informasi Profil</h5>
-                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</button>
+                            <div class="profile-card mb-4">
+                                <div class="profile-card-header">
+                                    <h5 class="profile-card-title">Informasi Profil</h5>
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold"
+                                        style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</button>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Nama Lengkap</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">{{ $trainer->name ?? 'Loren' }}</div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Email</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill d-flex align-items-center gap-2" style="font-size: 13.5px;">{{ $trainer->email ?? 'loren@gmail.com' }} <span class="badge bg-success bg-opacity-10 text-success rounded-1 px-2 py-1" style="font-size: 10px; font-weight: 700;">Terverifikasi</span></div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">No. WhatsApp</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill d-flex align-items-center gap-2" style="font-size: 13.5px;">0812-3456-7890 <span class="badge bg-success bg-opacity-10 text-success rounded-1 px-2 py-1" style="font-size: 10px; font-weight: 700;">Terverifikasi</span></div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Status Akun</div><div class="me-3 text-muted">:</div><div class="fw-semibold flex-fill" style="font-size: 13.5px;"><span class="badge bg-success text-white rounded-1 px-3 py-1" style="font-weight: 600;">Aktif</span></div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Profesi</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">Dosen</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Institusi</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">ITB</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Website</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">-</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">LinkedIn</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">https://linkedin.com/in/loren</div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Role</div><div class="me-3 text-muted">:</div><div class="fw-semibold flex-fill" style="font-size: 13.5px;"><span class="badge bg-primary text-white rounded-1 px-3 py-1" style="font-weight: 600;">Trainer</span></div></div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Tanggal Bergabung</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">{{ \Carbon\Carbon::parse($trainer->created_at)->translatedFormat('d M Y') }}</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Terakhir Diperbarui</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">21 Mei 2024, 15:50</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Keahlian (Skill)</div><div class="me-3 text-muted">:</div>
-                                            <div class="fw-semibold flex-fill d-flex flex-wrap gap-2" style="font-size: 13.5px;"> 
-                                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-1 px-2 py-1" style="font-weight: 600;">Artificial Intelligence</span>
-                                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-1 px-2 py-1" style="font-weight: 600;">Machine Learning</span>
-                                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-1 px-2 py-1" style="font-weight: 600;">Data Science</span>
+                                <div class="profile-card-body">
+                                    <div class="profile-grid">
+                                        <div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Nama Lengkap</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">{{ $trainerName }}</div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Email</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value d-flex flex-wrap align-items-center gap-2">
+                                                    <span>{{ $email }}</span><span
+                                                        class="badge bg-success bg-opacity-10 text-success rounded-1 px-2 py-1"
+                                                        style="font-size: 10px; font-weight: 700;">Terverifikasi</span>
+                                                </div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">No. WhatsApp</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value d-flex flex-wrap align-items-center gap-2">
+                                                    <span>{{ $whatsapp }}</span><span
+                                                        class="badge bg-success bg-opacity-10 text-success rounded-1 px-2 py-1"
+                                                        style="font-size: 10px; font-weight: 700;">Terverifikasi</span>
+                                                </div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Status Akun</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value"><span
+                                                        class="badge bg-success text-white rounded-1 px-3 py-1"
+                                                        style="font-weight: 600;">{{ $statusLabel }}</span></div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Profesi</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">{{ $profession }}</div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Institusi</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">{{ $institution }}</div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Website</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">{{ $website }}</div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">LinkedIn</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">{{ $linkedin }}</div>
+                                            </div>
+                                            <div class="profile-item mb-0">
+                                                <div class="profile-label">Role</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value"><span
+                                                        class="badge bg-primary text-white rounded-1 px-3 py-1"
+                                                        style="font-weight: 600;">{{ $roleLabel }}</span></div>
                                             </div>
                                         </div>
-                                        <div class="d-flex mb-3 mt-2"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Pendidikan Terakhir</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">S1 - ITB</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Sertifikasi</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">AI Fundamentals, Data Scientist<br>Bootcamp</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 150px; font-size: 13.5px;">Bahasa</div><div class="me-3 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13.5px;">Indonesia, English</div></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-4 mb-md-0">
-                                    <div class="content-card h-100">
-                                        <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h5 class="mb-0 fw-bold" style="font-size: 16px; color: #1e293b;">Informasi Akun</h5>
-                                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</button>
+                                        <div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Tanggal Bergabung</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">{{ $joinedAt }}</div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Terakhir Diperbarui</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">{{ $updatedAt }}</div>
+                                            </div>
+                                            <div class="profile-item align-items-start">
+                                                <div class="profile-label">Keahlian (Skill)</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value flex-fill">
+                                                    <div class="profile-tag-list">@foreach($skills as $skill)<span
+                                                    class="profile-tag">{{ $skill }}</span>@endforeach</div>
+                                                </div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Pendidikan Terakhir</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">
+                                                    {{ $educationList->isNotEmpty() ? $educationList->join(', ') : '-' }}
+                                                </div>
+                                            </div>
+                                            <div class="profile-item">
+                                                <div class="profile-label">Sertifikasi</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">
+                                                    {{ $certificationList->isNotEmpty() ? $certificationList->join(', ') : '-' }}
+                                                </div>
+                                            </div>
+                                            <div class="profile-item mb-0">
+                                                <div class="profile-label">Bahasa</div>
+                                                <div class="profile-separator">:</div>
+                                                <div class="profile-value">Indonesia, English</div>
+                                            </div>
                                         </div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 130px; font-size: 13px;">Username</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13px;">loren.trainer</div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 130px; font-size: 13px;">Password</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill d-flex justify-content-between align-items-center" style="font-size: 13px;">******** <button class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 fw-semibold" style="font-size: 11px;">Ubah Password</button></div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 130px; font-size: 13px;">Login Terakhir</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13px;">21 Mei 2024, 15:30</div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 130px; font-size: 13px;">Status Keamanan</div><div class="me-2 text-muted">:</div><div class="fw-semibold flex-fill d-flex align-items-center gap-2" style="font-size: 13px;"><span class="badge bg-success bg-opacity-10 text-success rounded-1 px-2 py-1" style="font-weight: 700;">Aman</span> <span class="text-muted fw-normal" style="font-size: 11px;">Tidak ada aktivitas mencurigakan.</span></div></div>
-                                        <div class="d-flex mb-3 align-items-center"><div class="text-muted" style="min-width: 130px; font-size: 13px;">Verifikasi 2 Langkah</div><div class="me-2 text-muted">:</div><div class="fw-semibold flex-fill d-flex align-items-center gap-2" style="font-size: 13px;"><span class="badge bg-light text-muted border rounded-1 px-2 py-1" style="font-weight: 600;">Tidak Aktif</span> <a href="#" class="fw-bold text-primary text-decoration-none" style="font-size: 12px;">Aktifkan</a></div></div>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="content-card h-100">
-                                        <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h5 class="mb-0 fw-bold" style="font-size: 16px; color: #1e293b;">Informasi Alamat</h5>
-                                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</button>
-                                        </div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 100px; font-size: 13px;">Alamat</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13px;">JL. Ganesha No. 10, Bandung,<br>Jawa Barat, 40132</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 100px; font-size: 13px;">Kota</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13px;">Bandung</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 100px; font-size: 13px;">Provinsi</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13px;">Jawa Barat</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 100px; font-size: 13px;">Kode Pos</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13px;">40132</div></div>
-                                        <div class="d-flex mb-3"><div class="text-muted" style="min-width: 100px; font-size: 13px;">Negara</div><div class="me-2 text-muted">:</div><div class="fw-semibold text-dark flex-fill" style="font-size: 13px;">Indonesia</div></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 sidebar-right">
-                            <div class="content-card mb-4">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 class="mb-0 fw-bold" style="font-size: 16px; color: #1e293b;">Foto & Identitas</h5>
-                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</button>
-                                </div>
-                                <div class="text-center my-4 pt-2">
-                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($trainer->name) }}&background=e0f2fe&color=0ea5e9&size=140" class="rounded-circle mb-4" alt="Avatar">
-                                    
-                                    <div class="border rounded-3 p-3 mb-3 mx-auto" style="max-width: 220px; border-style: solid !important; border-color: #e2e8f0 !important;">
-                                        <a href="#" class="text-primary fw-semibold text-decoration-none d-block mb-1" style="font-size: 13.5px;"><i class="bi bi-upload me-1"></i> Ubah Foto</a>
-                                        <div class="text-muted" style="font-size: 11.5px;">JPG, PNG (Max. 2MB)</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="alert bg-primary bg-opacity-10 border-0 text-start text-primary d-flex align-items-start gap-2 mb-0 rounded-3" style="padding: 12px;">
-                                    <i class="bi bi-info-circle mt-1" style="font-size: 14px;"></i>
-                                    <span style="font-size: 12.5px; line-height: 1.5;">Foto ini akan ditampilkan pada sertifikat dan profil publik.</span>
-                                </div>
-                            </div>
-                            
-                            <div class="content-card">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 class="mb-0 fw-bold" style="font-size: 16px; color: #1e293b;">Catatan Admin</h5>
-                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" style="font-size: 11px;">Tambah Catatan</button>
-                                </div>
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 11px; background-color: #1e3a8a;">AD</div>
-                                            <span class="fw-bold text-dark" style="font-size: 13.5px;">Admin idSpora</span>
-                                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-1 px-2" style="font-size: 10px;">Admin</span>
-                                        </div>
-                                        <span class="text-muted" style="font-size: 11px;">21 Mei 2024, 15:50</span>
-                                    </div>
-                                    <p class="mb-0 text-secondary" style="font-size: 13.5px;">Trainer aktif, responsif, dan materi berkualitas baik.</p>
-                                </div>
-                                <div class="border-top pt-3 mt-4">
-                                    <span class="text-muted" style="font-size: 11.5px;">Catatan ini hanya dapat dilihat oleh admin.</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 2: Event & Course -->
                 <div class="tab-pane" id="tab-event" role="tabpanel" aria-labelledby="event-tab">
-                    <div class="row">
+                    <div class="row g-4 mb-4">
                         <div class="col-lg-7">
-                            <h5 class="fw-bold mb-3 text-dark">Ringkasan Aktivitas</h5>
-                            <div class="stat-grid-4">
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon purple mb-2"><i class="bi bi-calendar2-event"></i></div>
-                                    <div class="stat-value">4</div>
-                                    <div class="stat-label text-capitalize">Total Event</div>
-                                    <div class="stat-sublabel"><span class="text-success">&bull; Selesai</span> &bull; Berjalan</div>
+                            <div class="event-course-panel h-100">
+                                <div class="event-course-panel-header">
+                                    <div>
+                                        <h5 class="content-card-title mb-1">Ringkasan Aktivitas</h5>
+                                        <div class="text-muted small">Aktivitas event, course, dan rating trainer</div>
+                                    </div>
+                                    <span
+                                        class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">{{ $profileCompletion }}%
+                                        profil lengkap</span>
                                 </div>
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon green mb-2"><i class="bi bi-journal-bookmark"></i></div>
-                                    <div class="stat-value">5</div>
-                                    <div class="stat-label text-capitalize">Total Course</div>
-                                    <div class="stat-sublabel"><span class="text-success">&bull; Aktif</span> <span class="text-warning">&bull; 1 Draft</span></div>
-                                </div>
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon orange mb-2"><i class="bi bi-people"></i></div>
-                                    <div class="stat-value">12</div>
-                                    <div class="stat-label text-capitalize">Total Peserta</div>
-                                    <div class="stat-sublabel">Event & Course</div>
-                                </div>
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon blue mb-2"><i class="bi bi-clock-history"></i></div>
-                                    <div class="stat-value">68</div>
-                                    <div class="stat-label text-capitalize">Total Jam Mengajar</div>
-                                    <div class="stat-sublabel">Event & Course</div>
+                                <div class="event-course-panel-body">
+                                    <div class="event-course-summary">
+                                        <div class="event-course-summary-card">
+                                            <span class="event-course-summary-label">Total Event</span>
+                                            <div class="event-course-summary-value">{{ $eventCount }}</div>
+                                            <div class="event-course-summary-meta">Riwayat event trainer</div>
+                                        </div>
+                                        <div class="event-course-summary-card">
+                                            <span class="event-course-summary-label">Total Course</span>
+                                            <div class="event-course-summary-value">{{ $courseCount }}</div>
+                                            <div class="event-course-summary-meta">Course aktif dan draft</div>
+                                        </div>
+                                        <div class="event-course-summary-card">
+                                            <span class="event-course-summary-label">Total Ulasan</span>
+                                            <div class="event-course-summary-value">{{ $totalRatings }}</div>
+                                            <div class="event-course-summary-meta">Course & event</div>
+                                        </div>
+                                        <div class="event-course-summary-card">
+                                            <span class="event-course-summary-label">Rating Rata-rata</span>
+                                            <div class="event-course-summary-value">
+                                                {{ number_format($averageRating ?: 0, 1) }}</div>
+                                            <div class="event-course-summary-meta">{{ $ratingBadge }}</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-5">
-                            <h5 class="fw-bold mb-3 text-dark">Performa Mengajar</h5>
-                            <div class="stat-grid-3">
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon green mb-2" style="background:#d1fae5; color:#059669;"><i class="bi bi-star-fill"></i></div>
-                                    <div class="stat-value fs-4">4.8<span class="text-muted fs-6">/5</span></div>
-                                    <div class="stat-label text-capitalize" style="font-size:12px;">Rata-rata Rating</div>
-                                    <div class="stat-sublabel">Dari 25 ulasan</div>
+                            <div class="event-course-panel h-100">
+                                <div class="event-course-panel-header">
+                                    <div>
+                                        <h5 class="content-card-title mb-1">Performa Mengajar</h5>
+                                        <div class="text-muted small">Distribusi rating dan sertifikat</div>
+                                    </div>
+                                    <span
+                                        class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">{{ $positiveRatingPct }}%
+                                        puas</span>
                                 </div>
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon blue mb-2"><i class="bi bi-hand-thumbs-up"></i></div>
-                                    <div class="stat-value fs-4">98%</div>
-                                    <div class="stat-label text-capitalize" style="font-size:12px;">Tingkat Penyelesaian</div>
-                                    <div class="stat-sublabel">Materi Disetujui</div>
-                                </div>
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon purple mb-2"><i class="bi bi-trophy"></i></div>
-                                    <div class="stat-value fs-4">3</div>
-                                    <div class="stat-label text-capitalize" style="font-size:12px;">Penghargaan</div>
-                                    <div class="stat-sublabel">Sebagai Trainer</div>
+                                <div class="event-course-panel-body d-flex flex-column gap-3">
+                                    <div>
+                                        <div class="d-flex justify-content-between small fw-semibold mb-2">
+                                            <span>Bintang 5</span>
+                                            <span>{{ $ratingCounts[5] ?? 0 }} ({{ $ratingPercentages[5] ?? 0 }}%)</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px; border-radius: 999px;">
+                                            <div class="progress-bar bg-warning"
+                                                style="width: {{ $ratingPercentages[5] ?? 0 }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex justify-content-between small fw-semibold mb-2">
+                                            <span>Rating 4+</span>
+                                            <span>{{ $positiveRatingPct }}%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px; border-radius: 999px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ $positiveRatingPct }}%">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 pt-1">
+                                        <div class="stat-icon purple"><i class="bi bi-trophy"></i></div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ $certificateCount }} Sertifikat</div>
+                                            <div class="text-muted small">Diterbitkan untuk event dan course</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
+                    <div class="row g-4">
                         <div class="col-lg-6">
-                            <div class="content-card h-100">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 class="content-card-title mb-0">Daftar Event</h5>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3"><option>Semua Status</option></select>
-                                        <div class="position-relative">
-                                            <input type="text" class="form-control form-control-sm bg-light border-0 rounded-pill ps-3 pe-4" placeholder="Cari event...">
-                                            <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted" style="font-size: 12px;"></i>
-                                        </div>
-                                        <button class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus"></i> Undang ke Event</button>
+                            <div class="event-course-panel">
+                                <div class="event-course-panel-header">
+                                    <div>
+                                        <h5 class="content-card-title mb-1">Daftar Event</h5>
+                                        <div class="text-muted small">Event yang terhubung ke trainer ini</div>
                                     </div>
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus me-1"></i>
+                                        Undang ke Event</button>
                                 </div>
-                                <table class="table table-borderless table-hover">
-                                    <thead><tr><th>Nama Event</th><th>Tanggal</th><th>Peran</th><th>Status Event</th><th>Peserta</th><th>Aksi</th></tr></thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><div class="d-flex align-items-center gap-2"><div class="rounded p-2 text-white" style="background:#1e3a8a"><i class="bi bi-calendar-event"></i></div> <span class="fw-bold">Webinar AI Dasar</span></div></td>
-                                            <td><div class="text-dark fw-bold">10 Juni 2026</div><div class="text-muted small">09.00 - 12.00 WIB</div></td>
-                                            <td>Pembicara</td>
-                                            <td><span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Selesai</span></td>
-                                            <td>245 Peserta</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary rounded-pill">Lihat Detail</button>
-                                                <button class="btn btn-sm btn-light border-0"><i class="bi bi-three-dots-vertical"></i></button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><div class="d-flex align-items-center gap-2"><div class="rounded p-2 text-white" style="background:#5b21b6"><i class="bi bi-calendar-event"></i></div> <span class="fw-bold">Seminar Data Science</span></div></td>
-                                            <td><div class="text-dark fw-bold">5 Juni 2026</div><div class="text-muted small">13.00 - 16.00 WIB</div></td>
-                                            <td>Pembicara</td>
-                                            <td><span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Selesai</span></td>
-                                            <td>187 Peserta</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary rounded-pill">Lihat Detail</button>
-                                                <button class="btn btn-sm btn-light border-0"><i class="bi bi-three-dots-vertical"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
-                                    <span>Menampilkan 1 - 4 dari 4 event</span>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-left"></i></button>
-                                        <button class="btn btn-sm btn-primary">1</button>
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-right"></i></button>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="event-course-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Event</th>
+                                                <th>Tanggal</th>
+                                                <th>Peserta</th>
+                                                <th>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($trainerEvents->take(5) as $event)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <div class="event-course-icon event"><i
+                                                                    class="bi bi-calendar-event"></i></div>
+                                                            <div>
+                                                                <div class="event-course-title">{{ $event->title }}</div>
+                                                                <div class="event-course-subtitle">
+                                                                    {{ $event->jenis ?? 'Event' }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="small text-muted">
+                                                        {{ optional($event->event_date)->translatedFormat('d M Y') ?? '-' }}
+                                                    </td>
+                                                    <td><span
+                                                            class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">{{ (int) ($event->registrations_count ?? 0) }}
+                                                            peserta</span></td>
+                                                    <td><button
+                                                            class="btn btn-sm btn-outline-primary event-course-action">Lihat</button>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="4">
+                                                        <div class="event-course-empty">Belum ada event yang terkait trainer
+                                                            ini.</div>
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            <div class="content-card h-100">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 class="content-card-title mb-0">Daftar Course</h5>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3"><option>Semua Status</option></select>
-                                        <button class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus"></i> Buat Course</button>
+                            <div class="event-course-panel">
+                                <div class="event-course-panel-header">
+                                    <div>
+                                        <h5 class="content-card-title mb-1">Daftar Course</h5>
+                                        <div class="text-muted small">Course yang dikelola trainer ini</div>
                                     </div>
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus me-1"></i>
+                                        Buat Course</button>
                                 </div>
-                                <table class="table table-borderless table-hover">
-                                    <thead><tr><th>Nama Course</th><th>Status</th><th>Modul</th><th>Peserta</th><th>Aksi</th></tr></thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><div class="d-flex align-items-center gap-2"><div class="rounded p-2 text-white" style="background:#1e3a8a"><i class="bi bi-book"></i></div> <div><div class="fw-bold text-dark">AI Dasar untuk Pemula</div><div class="small text-muted">Diperbarui 12 Juni 2026</div></div></div></td>
-                                            <td><span class="badge bg-success text-white rounded-pill px-3">Aktif</span></td>
-                                            <td>8 Modul</td>
-                                            <td>245</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary rounded-pill">Lihat Detail</button>
-                                                <button class="btn btn-sm btn-light border-0"><i class="bi bi-three-dots-vertical"></i></button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><div class="d-flex align-items-center gap-2"><div class="rounded p-2 text-white" style="background:#5b21b6"><i class="bi bi-book"></i></div> <div><div class="fw-bold text-dark">Data Science Fundamentals</div><div class="small text-muted">Diperbarui 10 Juni 2026</div></div></div></td>
-                                            <td><span class="badge bg-success text-white rounded-pill px-3">Aktif</span></td>
-                                            <td>10 Modul</td>
-                                            <td>187</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary rounded-pill">Lihat Detail</button>
-                                                <button class="btn btn-sm btn-light border-0"><i class="bi bi-three-dots-vertical"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
-                                    <span>Menampilkan 1 - 5 dari 5 course</span>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-left"></i></button>
-                                        <button class="btn btn-sm btn-primary">1</button>
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-right"></i></button>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="event-course-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Course</th>
+                                                <th>Status</th>
+                                                <th>Peserta</th>
+                                                <th>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($trainerCourses->take(5) as $course)
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <div class="event-course-icon course"><i class="bi bi-book"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="event-course-title">{{ $course->name }}</div>
+                                                                <div class="event-course-subtitle">
+                                                                    {{ optional($course->approved_at)->translatedFormat('d M Y') ?? 'Belum disetujui' }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span
+                                                            class="badge {{ in_array($course->status, ['approved', 'published', 'active']) ? 'bg-success bg-opacity-10 text-success' : 'bg-light text-muted border' }} rounded-pill px-3 py-2">
+                                                            {{ strtoupper((string) $course->status) }}
+                                                        </span>
+                                                    </td>
+                                                    <td><span
+                                                            class="fw-bold text-dark">{{ (int) ($course->enrollments_count ?? 0) }}</span>
+                                                    </td>
+                                                    <td><button
+                                                            class="btn btn-sm btn-outline-primary event-course-action">Detail</button>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="4">
+                                                        <div class="event-course-empty">Belum ada course yang terkait trainer
+                                                            ini.</div>
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 3: Materi -->
                 <div class="tab-pane" id="tab-materi" role="tabpanel" aria-labelledby="materi-tab">
-                    <div class="row">
+                    <div class="row g-4">
                         <div class="col-lg-8">
-                            <h5 class="fw-bold mb-3 text-dark">Deadline Prioritas <span class="fw-normal fs-6 text-muted ms-2">Fokus materi yang membutuhkan tindakan Anda</span></h5>
-                            <div class="stat-grid-4">
-                                <div class="stat-box vertical border-danger border-opacity-50 position-relative">
-                                    <div class="stat-icon red mb-2"><i class="bi bi-clock"></i></div>
-                                    <div class="stat-value text-danger">3</div>
-                                    <div class="stat-label text-capitalize text-danger">Terlambat</div>
-                                    <div class="stat-sublabel text-danger mb-3">Perlu segera ditindaklanjuti</div>
-                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3 w-100 text-danger bg-danger bg-opacity-10 border-0">Lihat Semua</button>
+                            <div class="content-card mb-4">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                                    <div>
+                                        <h5 class="content-card-title mb-1">Deadline Materi</h5>
+                                        <div class="text-muted small">Ringkasan status materi yang perlu dikelola</div>
+                                    </div>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2">Fokus
+                                        tindak lanjut</span>
                                 </div>
-                                <div class="stat-box vertical border-warning border-opacity-50 position-relative">
-                                    <div class="stat-icon orange mb-2"><i class="bi bi-calendar-event"></i></div>
-                                    <div class="stat-value text-warning">2</div>
-                                    <div class="stat-label text-capitalize text-warning">Hari Ini</div>
-                                    <div class="stat-sublabel text-warning mb-3">Deadline hari ini</div>
-                                    <button class="btn btn-sm btn-warning rounded-pill px-3 w-100 text-white">Kirim Reminder</button>
-                                </div>
-                                <div class="stat-box vertical position-relative">
-                                    <div class="stat-icon orange mb-2"><i class="bi bi-clock-history"></i></div>
-                                    <div class="stat-value text-warning">5</div>
-                                    <div class="stat-label text-capitalize">Mendekati</div>
-                                    <div class="stat-sublabel mb-3">Deadline 3 hari ke depan</div>
-                                    <button class="btn btn-sm btn-outline-warning rounded-pill px-3 w-100 bg-warning bg-opacity-10 border-0 text-warning">Lihat Semua</button>
-                                </div>
-                                <div class="stat-box vertical position-relative border-purple border-opacity-50">
-                                    <div class="stat-icon purple mb-2"><i class="bi bi-pencil-square"></i></div>
-                                    <div class="stat-value" style="color: #a855f7;">7</div>
-                                    <div class="stat-label text-capitalize" style="color: #a855f7;">Perlu Revisi</div>
-                                    <div class="stat-sublabel mb-3" style="color: #a855f7;">Menunggu perbaikan</div>
-                                    <button class="btn btn-sm rounded-pill px-3 w-100" style="background-color: #faf5ff; color: #a855f7;">Lihat Semua</button>
+                                <div class="stat-grid-4 mb-0">
+                                    <div class="stat-box">
+                                        <div class="stat-icon red"><i class="bi bi-clock"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ (int) data_get($trainerActivity, 'late_uploads', 0) }}
+                                            </p>
+                                            <p class="stat-label">Terlambat</p>
+                                            <div class="stat-sublabel">Perlu ditindaklanjuti</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-icon orange"><i class="bi bi-calendar-event"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ $courseCount }}</p>
+                                            <p class="stat-label">Hari Ini</p>
+                                            <div class="stat-sublabel">Kelas aktif</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-icon blue"><i class="bi bi-clock-history"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ $eventCount }}</p>
+                                            <p class="stat-label">Mendekati</p>
+                                            <div class="stat-sublabel">Event terhubung</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-icon purple"><i class="bi bi-pencil-square"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ $profileCompletion }}</p>
+                                            <p class="stat-label">Profil</p>
+                                            <div class="stat-sublabel">Kelengkapan data</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="content-card">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-primary rounded-pill px-3">Semua</button>
-                                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3 bg-danger bg-opacity-10 border-0">Terlambat</button>
-                                        <button class="btn btn-sm btn-outline-warning rounded-pill px-3 bg-warning bg-opacity-10 border-0 text-warning">Hari ini</button>
-                                        <button class="btn btn-sm btn-outline-warning rounded-pill px-3 bg-warning bg-opacity-10 border-0 text-warning">&le; 3 Hari</button>
-                                        <button class="btn btn-sm btn-outline-success rounded-pill px-3 bg-success bg-opacity-10 border-0 text-success">&le; 7 Hari</button>
-                                        <button class="btn btn-sm rounded-pill px-3" style="background-color: #faf5ff; color: #a855f7;">Revisi</button>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3"><option>Semua Tipe</option></select>
-                                        <div class="position-relative">
-                                            <input type="text" class="form-control form-control-sm bg-light border-0 rounded-pill ps-3 pe-4" placeholder="Cari materi...">
-                                            <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted" style="font-size: 12px;"></i>
-                                        </div>
-                                        <button class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus"></i> Upload Materi</button>
-                                    </div>
+
+                            <div class="content-card mb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="content-card-title mb-0">Status Materi</h5>
+                                    <button class="btn btn-sm btn-primary rounded-pill px-3"><i
+                                            class="bi bi-upload me-1"></i> Upload Materi</button>
                                 </div>
-                                
-                                <table class="table table-borderless table-hover">
-                                    <thead><tr><th>Judul Materi</th><th>Tipe</th><th>Terkait</th><th>Deadline</th><th>Sisa Waktu</th><th>Status</th><th>Versi</th><th>Aksi</th></tr></thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><div class="d-flex align-items-center gap-2"><div class="rounded p-2 text-white" style="background:#1e3a8a"><i class="bi bi-journal-text"></i></div> <div><div class="fw-bold text-dark">Deep Learning Fundamentals</div><div class="small text-muted">Dasar-dasar Deep Learning</div></div></div></td>
-                                            <td><span class="badge-course">Course</span></td>
-                                            <td class="fw-bold">Machine Learning</td>
-                                            <td><div class="fw-bold text-dark">12 Juni 2026</div><div class="small text-muted">23:59 WIB</div></td>
-                                            <td><div class="text-danger fw-bold">Hari ini</div><div class="small text-danger">Terlambat</div></td>
-                                            <td><span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3">Perlu Revisi</span></td>
-                                            <td>v1</td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat</button>
-                                                    <button class="btn btn-sm btn-light border-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-action shadow-sm">
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-eye"></i> Detail Materi</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-chat-square-text"></i> Review Materi</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar"></i> Ubah Deadline</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-clock-history"></i> Riwayat Review</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-download"></i> Download Materi</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-star"></i> Tandai Prioritas</a></li>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-archive"></i> Arsipkan Materi</a></li>
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
-                                    <span>Menampilkan 1 - 5 dari 124 materi</span>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-left"></i></button>
-                                        <button class="btn btn-sm btn-primary">1</button>
-                                        <button class="btn btn-sm btn-light border">2</button>
-                                        <button class="btn btn-sm btn-light border">3</button>
-                                        <button class="btn btn-sm btn-light border">...</button>
-                                        <button class="btn btn-sm btn-light border">25</button>
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-right"></i></button>
+                                <div class="alert alert-light border d-flex align-items-center gap-2 mb-0">
+                                    <i class="bi bi-journal-text text-primary"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark">Manajemen deadline materi belum dipetakan ke detail
+                                            per modul.</div>
+                                        <div class="text-muted small">Halaman ini menampilkan ringkasan status dan aksi
+                                            cepat agar tetap konsisten dengan tampilan admin trainer.</div>
                                     </div>
                                 </div>
                             </div>
@@ -869,366 +1576,467 @@
                             <div class="content-card">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="content-card-title mb-0">Deadline Mendekati</h5>
-                                    <a href="#" class="text-decoration-none small text-primary fw-bold">Lihat Semua</a>
+                                    <span class="badge bg-light text-dark border">{{ $courseCount + $eventCount }}
+                                        item</span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="text-danger fs-4"><i class="bi bi-clock"></i></div>
-                                        <div><div class="fw-bold text-dark">Deep Learning</div><div class="small text-muted">Course: Machine Learning</div></div>
+                                <div class="d-flex flex-column gap-3">
+                                    <div class="d-flex align-items-start justify-content-between gap-3 pb-3 border-bottom">
+                                        <div>
+                                            <div class="fw-bold text-dark">
+                                                {{ $trainerCourses->first()->name ?? 'Belum ada course' }}</div>
+                                            <div class="text-muted small">Course terkait trainer</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-warning">-</div>
+                                            <div class="small text-muted">Belum dipetakan</div>
+                                        </div>
                                     </div>
-                                    <div class="text-end"><div class="fw-bold text-danger">Hari ini</div><div class="small text-muted">12 Juni 2026</div></div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="text-warning fs-4"><i class="bi bi-clock"></i></div>
-                                        <div><div class="fw-bold text-dark">Data Science Intro</div><div class="small text-muted">Course: Data Science Basics</div></div>
-                                    </div>
-                                    <div class="text-end"><div class="fw-bold text-warning">2 hari lagi</div><div class="small text-muted">15 Juni 2026</div></div>
-                                </div>
-                            </div>
-                            <div class="content-card">
-                                <h5 class="content-card-title">Statistik Materi</h5>
-                                <div class="d-flex align-items-center gap-4 py-2">
-                                    <div style="width: 120px; height: 120px; border-radius: 50%; border: 15px solid #22c55e; border-top-color: #f59e0b; border-right-color: #ef4444; position: relative;">
-                                    </div>
-                                    <div>
-                                        <div class="mb-2"><span style="color:#22c55e;">&bull;</span> Approved <span class="fw-bold ms-2">99 (79.8%)</span></div>
-                                        <div class="mb-2"><span style="color:#f59e0b;">&bull;</span> Pending Review <span class="fw-bold ms-2">18 (14.5%)</span></div>
-                                        <div class="mb-2"><span style="color:#ef4444;">&bull;</span> Perlu Revisi <span class="fw-bold ms-2">7 (5.6%)</span></div>
-                                        <div class="mb-2"><span style="color:#94a3b8;">&bull;</span> Draft <span class="fw-bold ms-2">0 (0%)</span></div>
+                                    <div class="d-flex align-items-start justify-content-between gap-3 pb-3 border-bottom">
+                                        <div>
+                                            <div class="fw-bold text-dark">
+                                                {{ $trainerEvents->first()->title ?? 'Belum ada event' }}</div>
+                                            <div class="text-muted small">Event terkait trainer</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-warning">-</div>
+                                            <div class="small text-muted">Belum dipetakan</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="content-card">
-                                <h5 class="content-card-title">Aksi Cepat</h5>
+                                <h5 class="content-card-title mb-3">Aksi Cepat</h5>
                                 <div class="row g-3">
-                                    <div class="col-6">
-                                        <button class="btn btn-outline-primary w-100 h-100 p-3 d-flex flex-column align-items-start gap-2 bg-primary bg-opacity-10 border-0" style="border-radius: 12px;">
-                                            <i class="bi bi-bell-fill fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Kirim Reminder Terpilih</span>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button class="btn btn-outline-primary w-100 h-100 p-3 d-flex flex-column align-items-start gap-2" style="border-radius: 12px; background: #faf5ff; border: 0; color: #a855f7;">
-                                            <i class="bi bi-calendar-check-fill fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Atur Deadline Massal</span>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button class="btn btn-outline-success w-100 h-100 p-3 d-flex flex-column align-items-start gap-2 bg-success bg-opacity-10 border-0" style="border-radius: 12px;">
-                                            <i class="bi bi-file-earmark-text-fill fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Template Deadline</span>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button class="btn btn-outline-warning w-100 h-100 p-3 d-flex flex-column align-items-start gap-2 bg-warning bg-opacity-10 text-warning border-0" style="border-radius: 12px;">
-                                            <i class="bi bi-bar-chart-fill fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Laporan Deadline</span>
-                                        </button>
-                                    </div>
+                                    <div class="col-6"><button
+                                            class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10"><i
+                                                class="bi bi-bell-fill fs-4 d-block mb-2"></i><span class="fw-bold"
+                                                style="font-size: 13px;">Kirim Reminder</span></button></div>
+                                    <div class="col-6"><button class="btn w-100 h-100 p-3 text-start rounded-3 border-0"
+                                            style="background:#faf5ff;color:#7c3aed;"><i
+                                                class="bi bi-calendar-check-fill fs-4 d-block mb-2"></i><span
+                                                class="fw-bold" style="font-size: 13px;">Atur Deadline</span></button></div>
+                                    <div class="col-6"><button
+                                            class="btn btn-outline-success w-100 h-100 p-3 text-start rounded-3 border-0 bg-success bg-opacity-10"><i
+                                                class="bi bi-file-earmark-text-fill fs-4 d-block mb-2"></i><span
+                                                class="fw-bold" style="font-size: 13px;">Template</span></button></div>
+                                    <div class="col-6"><button
+                                            class="btn btn-outline-warning w-100 h-100 p-3 text-start rounded-3 border-0 bg-warning bg-opacity-10 text-warning"><i
+                                                class="bi bi-bar-chart-fill fs-4 d-block mb-2"></i><span class="fw-bold"
+                                                style="font-size: 13px;">Laporan</span></button></div>
                                 </div>
-                            </div>
-                            <div class="content-card">
-                                <h5 class="content-card-title">Pengaturan Deadline</h5>
-                                <p class="text-muted small mb-3">Kelola aturan deadline default untuk event dan course.</p>
-                                <button class="btn btn-outline-primary w-100 rounded-pill"><i class="bi bi-gear-fill me-2"></i> Buka Pengaturan</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 4: Deadline Materi (Placeholder) -->
                 <div class="tab-pane" id="tab-deadline" role="tabpanel" aria-labelledby="deadline-tab">
                     <div class="content-card text-center py-5">
                         <i class="bi bi-calendar-x text-muted mb-3 d-block" style="font-size: 48px;"></i>
                         <h4 class="fw-bold text-dark mb-2">Manajemen Deadline Materi</h4>
-                        <p class="text-muted mb-0">Fitur untuk mengatur dan mengelola deadline materi trainer sedang dalam pengembangan.</p>
+                        <p class="text-muted mb-0">Fitur ini belum dihubungkan ke data detail per modul, namun tampilan
+                            sudah diseragamkan dengan halaman trainer lainnya.</p>
                     </div>
                 </div>
 
-                <!-- TAB 5: Rating & Ulasan -->
                 <div class="tab-pane" id="tab-rating" role="tabpanel" aria-labelledby="rating-tab">
-                    <div class="row">
+                    <div class="row g-4">
                         <div class="col-lg-8">
-                            <h5 class="fw-bold mb-3 text-dark">Ringkasan Rating</h5>
-                            <div class="stat-grid-3">
-                                <div class="content-card text-center mb-0 d-flex flex-column justify-content-center">
-                                    <div class="text-primary fw-bold" style="font-size: 64px; line-height: 1;">4.8<i class="bi bi-star-fill text-warning ms-2" style="font-size: 32px;"></i></div>
-                                    <div class="text-muted fw-bold mb-2">Dari 152 penilaian</div>
-                                    <div><span class="badge bg-success bg-opacity-10 text-success rounded-pill px-4 py-2 fs-6">Sangat Baik</span></div>
+                            <div class="content-card mb-4">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                                    <div>
+                                        <h5 class="content-card-title mb-1">Ringkasan Rating</h5>
+                                        <div class="text-muted small">{{ $totalRatings }} ulasan dari course dan event</div>
+                                    </div>
+                                    <span
+                                        class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">{{ $ratingBadge }}</span>
                                 </div>
-                                <div class="content-card mb-0 d-flex flex-column justify-content-center px-4">
-                                    <div class="rating-bar-container"><div class="rating-bar-number">5 <i class="bi bi-star-fill text-warning" style="font-size: 10px;"></i></div><div class="rating-bar-track"><div class="rating-bar-fill" style="width: 60.5%"></div></div><div class="rating-bar-stat">92 (60.5%)</div></div>
-                                    <div class="rating-bar-container"><div class="rating-bar-number">4 <i class="bi bi-star-fill text-warning" style="font-size: 10px;"></i></div><div class="rating-bar-track"><div class="rating-bar-fill" style="width: 32.9%"></div></div><div class="rating-bar-stat">50 (32.9%)</div></div>
-                                    <div class="rating-bar-container"><div class="rating-bar-number">3 <i class="bi bi-star-fill text-warning" style="font-size: 10px;"></i></div><div class="rating-bar-track"><div class="rating-bar-fill" style="width: 5.3%"></div></div><div class="rating-bar-stat">8 (5.3%)</div></div>
-                                    <div class="rating-bar-container"><div class="rating-bar-number">2 <i class="bi bi-star-fill text-warning" style="font-size: 10px;"></i></div><div class="rating-bar-track"><div class="rating-bar-fill" style="width: 1.3%"></div></div><div class="rating-bar-stat">2 (1.3%)</div></div>
-                                    <div class="rating-bar-container"><div class="rating-bar-number">1 <i class="bi bi-star-fill text-warning" style="font-size: 10px;"></i></div><div class="rating-bar-track"><div class="rating-bar-fill" style="width: 0%"></div></div><div class="rating-bar-stat">0 (0%)</div></div>
+                                <div class="row g-4 align-items-stretch">
+                                    <div class="col-md-4">
+                                        <div class="profile-card h-100">
+                                            <div class="profile-card-body text-center py-4">
+                                                <div class="fw-bold text-primary" style="font-size: 64px; line-height: 1;">
+                                                    {{ number_format($averageRating ?: 0, 1) }} <i
+                                                        class="bi bi-star-fill text-warning" style="font-size: 30px;"></i>
+                                                </div>
+                                                <div class="text-muted fw-semibold mt-2">Dari {{ $totalRatings }} penilaian
+                                                </div>
+                                                <div class="mt-3"><span
+                                                        class="badge bg-success bg-opacity-10 text-success rounded-pill px-4 py-2">{{ $ratingBadge }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="profile-card h-100">
+                                            <div class="profile-card-body py-4">
+                                                @foreach([5, 4, 3, 2, 1] as $star)
+                                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                                        <div style="width: 24px;" class="fw-bold text-dark">{{ $star }} <i
+                                                                class="bi bi-star-fill text-warning"
+                                                                style="font-size: 10px;"></i></div>
+                                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                                            <div class="progress-bar bg-warning"
+                                                                style="width: {{ $ratingPercentages[$star] ?? 0 }}%"></div>
+                                                        </div>
+                                                        <div class="small text-muted text-nowrap"
+                                                            style="width: 90px; text-align: right;">
+                                                            {{ $ratingCounts[$star] ?? 0 }}
+                                                            ({{ $ratingPercentages[$star] ?? 0 }}%)</div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="profile-card h-100">
+                                            <div class="profile-card-body d-flex flex-column gap-3 py-4">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="stat-icon green"><i class="bi bi-emoji-smile"></i></div>
+                                                    <div>
+                                                        <div class="fw-bold text-dark fs-3">{{ $positiveRatingPct }}%</div>
+                                                        <div class="text-primary fw-semibold small">Peserta puas</div>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div class="stat-icon purple"><i class="bi bi-chat-square-text"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold text-dark fs-3">{{ $totalRatings }}</div>
+                                                        <div class="text-primary fw-semibold small">Total Ulasan</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="content-card mb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button class="btn btn-sm btn-primary rounded-pill px-3">Semua Ulasan</button>
+                                        <button
+                                            class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Rating
+                                            5</button>
+                                        <button
+                                            class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Rating
+                                            4</button>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3">
+                                            <option>Semua Event</option>
+                                        </select>
+                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3">
+                                            <option>Terbaru</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless align-middle admin-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Pengulas</th>
+                                                <th>Sumber</th>
+                                                <th>Rating</th>
+                                                <th>Ulasan</th>
+                                                <th>Tanggal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($recentReviews as $review)
+                                                <tr>
+                                                    <td>
+                                                        <div class="fw-bold text-dark">
+                                                            {{ data_get($review, 'user.name', data_get($review, 'name', '-')) }}
+                                                        </div>
+                                                        <div class="small text-muted">Peserta</div>
+                                                    </td>
+                                                    <td class="text-dark">
+                                                        {{ data_get($review, 'course.name', data_get($review, 'event.title', '-')) }}
+                                                    </td>
+                                                    <td>
+                                                        @php $ratingValue = (int) round((float) data_get($review, 'rating', 0)); @endphp
+                                                        <span
+                                                            class="fw-bold text-warning">{{ str_repeat('★', max(0, min(5, $ratingValue))) }}</span>
+                                                    </td>
+                                                    <td style="max-width: 320px;">
+                                                        {{ Str::limit((string) data_get($review, 'comment', data_get($review, 'feedback', '-')), 110) }}
+                                                    </td>
+                                                    <td class="small text-muted">
+                                                        {{ optional(data_get($review, 'created_at'))->translatedFormat('d M Y') ?? '-' }}
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted py-4">Belum ada ulasan.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 sidebar-right">
+                            <div class="content-card">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="content-card-title mb-0">Rating per Kategori</h5>
+                                    <span class="badge bg-light text-dark border">Top {{ $topStarPct }}%</span>
                                 </div>
                                 <div class="d-flex flex-column gap-3">
-                                    <div class="content-card mb-0 d-flex align-items-center gap-3">
-                                        <div class="stat-icon green"><i class="bi bi-emoji-smile"></i></div>
-                                        <div><div class="fs-3 fw-bold text-dark">98%</div><div class="fw-bold text-primary">Peserta puas</div></div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2"><i
+                                                class="bi bi-mortarboard text-success bg-success bg-opacity-10 p-2 rounded"></i><span
+                                                class="fw-semibold text-dark">Penguasaan Materi</span></div>
+                                        <div class="fw-bold text-warning">{{ number_format($averageRating ?: 0, 1) }}</div>
                                     </div>
-                                    <div class="content-card mb-0 d-flex align-items-center gap-3">
-                                        <div class="stat-icon purple"><i class="bi bi-chat-square-text"></i></div>
-                                        <div><div class="fs-3 fw-bold text-dark">126</div><div class="fw-bold text-primary">Total Ulasan</div></div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2"><i
+                                                class="bi bi-chat-dots text-primary bg-primary bg-opacity-10 p-2 rounded"></i><span
+                                                class="fw-semibold text-dark">Interaksi</span></div>
+                                        <div class="fw-bold text-warning">{{ max(0, $positiveRatingPct - 4) }}</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2"><i
+                                                class="bi bi-clock text-danger bg-danger bg-opacity-10 p-2 rounded"></i><span
+                                                class="fw-semibold text-dark">Ketepatan Waktu</span></div>
+                                        <div class="fw-bold text-warning">
+                                            {{ max(0, 100 - (int) data_get($trainerActivity, 'late_uploads', 0) * 5) }}%
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="content-card mt-4">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-primary rounded-pill px-3">Semua Ulasan</button>
-                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light position-relative">Perlu Dibalas <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">12</span></button>
-                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Rating 5</button>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3"><option>Semua Event</option></select>
-                                    </div>
-                                </div>
-                                <table class="table table-borderless table-hover">
-                                    <thead><tr><th>Peserta</th><th>Event</th><th>Rating</th><th>Ulasan</th><th>Tanggal</th><th>Aksi</th></tr></thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><div class="d-flex align-items-center gap-2"><div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">RS</div> <div><div class="fw-bold text-dark">Rina Sari</div></div></div></td>
-                                            <td><div class="fw-bold text-dark">Webinar AI Batch 3</div><div class="text-muted small">20 Mei 2024</div></td>
-                                            <td><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i><i class="bi bi-star-fill text-warning"></i></td>
-                                            <td style="max-width: 200px;"><div class="text-dark small">Penjelasan sangat jelas...</div></td>
-                                            <td><div class="fw-bold text-dark">20 Mei 2024</div><div class="small text-muted">10:30 WIB</div></td>
-                                            <td><button class="btn btn-sm btn-outline-primary rounded-pill px-3">Balas</button></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="col-lg-4 sidebar-right">
                             <div class="content-card">
-                                <h5 class="content-card-title">Rating per Kategori</h5>
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="d-flex align-items-center gap-2"><i class="bi bi-mortarboard text-success bg-success bg-opacity-10 p-2 rounded"></i> <span class="fw-bold text-dark">Penguasaan Materi</span></div>
-                                    <div class="fw-bold text-warning"><i class="bi bi-star-fill me-1"></i>4.9</div>
+                                    <h5 class="content-card-title mb-0">Tren Rating</h5>
+                                    <span class="badge bg-light text-dark border">6 Bulan Terakhir</span>
                                 </div>
-                            </div>
-                            <div class="content-card">
-                                <h5 class="content-card-title">Tren Rating</h5>
-                                <div class="text-center py-4 text-muted border rounded-3 bg-light">
+                                <div class="text-center py-5 text-muted border rounded-3 bg-light">
                                     <i class="bi bi-graph-up fs-1 mb-2 d-block"></i>
-                                    Line Chart Tren
+                                    Tren rating menyesuaikan data review yang ada.
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 5: Sertifikat -->
                 <div class="tab-pane" id="tab-sertifikat" role="tabpanel" aria-labelledby="sertifikat-tab">
-                    <div class="row">
+                    <div class="row g-4">
                         <div class="col-lg-8">
-                            <h5 class="fw-bold mb-3 text-dark">Ringkasan Sertifikat</h5>
-                            <div class="stat-grid-4">
-                                <div class="stat-box vertical">
-                                    <div class="stat-icon blue mb-2"><i class="bi bi-award"></i></div>
-                                    <div class="stat-value text-primary">38</div>
-                                    <div class="stat-label text-capitalize">Total Sertifikat</div>
-                                    <div class="stat-sublabel">Semua waktu</div>
+                            <div class="content-card mb-4">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                                    <div>
+                                        <h5 class="content-card-title mb-1">Ringkasan Sertifikat</h5>
+                                        <div class="text-muted small">Distribusi sertifikat berdasarkan event dan course
+                                        </div>
+                                    </div>
+                                    <span
+                                        class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2">{{ $certificateCount }}
+                                        total</span>
                                 </div>
-                                <div class="stat-box vertical border-success border-opacity-50">
-                                    <div class="stat-icon green mb-2"><i class="bi bi-calendar2-check"></i></div>
-                                    <div class="stat-value text-success">22</div>
-                                    <div class="stat-label text-capitalize text-success">Sertifikat Event</div>
-                                    <div class="stat-sublabel">Semua waktu</div>
-                                </div>
-                                <div class="stat-box vertical border-purple border-opacity-50" style="border-color: #a855f7;">
-                                    <div class="stat-icon purple mb-2"><i class="bi bi-mortarboard"></i></div>
-                                    <div class="stat-value" style="color: #a855f7;">16</div>
-                                    <div class="stat-label text-capitalize" style="color: #a855f7;">Sertifikat Course</div>
-                                    <div class="stat-sublabel">Semua waktu</div>
-                                </div>
-                                <div class="stat-box vertical border-warning border-opacity-50">
-                                    <div class="stat-icon orange mb-2"><i class="bi bi-patch-check"></i></div>
-                                    <div class="stat-value text-warning">7</div>
-                                    <div class="stat-label text-capitalize text-warning">Sertifikat Terbit</div>
-                                    <div class="stat-sublabel">Bulan Ini</div>
+                                <div class="stat-grid-4 mb-0">
+                                    <div class="stat-box">
+                                        <div class="stat-icon blue"><i class="bi bi-award"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ $certificateCount }}</p>
+                                            <p class="stat-label">Total Sertifikat</p>
+                                            <div class="stat-sublabel">Semua waktu</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-icon green"><i class="bi bi-calendar2-check"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ $eventCertificates }}</p>
+                                            <p class="stat-label">Sertifikat Event</p>
+                                            <div class="stat-sublabel">Terhubung event</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-icon purple"><i class="bi bi-mortarboard"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ $courseCertificates }}</p>
+                                            <p class="stat-label">Sertifikat Course</p>
+                                            <div class="stat-sublabel">Terhubung course</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-icon orange"><i class="bi bi-patch-check"></i></div>
+                                        <div>
+                                            <p class="stat-value">{{ $certificateCount > 0 ? 1 : 0 }}</p>
+                                            <p class="stat-label">Bulan Ini</p>
+                                            <div class="stat-sublabel">Perlu sinkronisasi</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <div class="content-card mt-4">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <div class="d-flex gap-2">
+
+                            <div class="content-card mb-0">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <div class="d-flex flex-wrap gap-2">
                                         <button class="btn btn-sm btn-primary rounded-pill px-3">Semua Sertifikat</button>
-                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Event</button>
-                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Course</button>
-                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Bulan Ini</button>
+                                        <button
+                                            class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Event</button>
+                                        <button
+                                            class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Course</button>
                                     </div>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3"><option>Semua Tipe</option></select>
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3"><option>Semua Tahun</option></select>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div class="position-relative w-50">
-                                        <input type="text" class="form-control form-control-sm bg-light border-0 rounded-pill ps-3 pe-4" placeholder="Cari sertifikat...">
-                                        <i class="bi bi-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted" style="font-size: 12px;"></i>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 small">
-                                        <span class="text-muted">Urutkan:</span>
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-2 py-1"><option>Terbaru</option></select>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3">
+                                            <option>Semua Tipe</option>
+                                        </select>
+                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3">
+                                            <option>Terbaru</option>
+                                        </select>
                                     </div>
                                 </div>
-                                <table class="table table-borderless table-hover">
-                                    <thead><tr><th>Nama Sertifikat</th><th>Tipe</th><th>Event / Course</th><th>Tanggal Terbit</th><th>Status</th><th>Aksi</th></tr></thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><div class="d-flex align-items-center gap-2"><div class="border p-1 bg-white rounded shadow-sm text-center" style="width:40px; height:30px;"><i class="bi bi-file-earmark-text text-primary"></i></div> <div><div class="fw-bold text-dark">Webinar AI Batch 3</div><div class="small text-muted">ID: CERT-2024-0001</div></div></div></td>
-                                            <td><span class="badge-event">Event</span></td>
-                                            <td><div class="fw-bold text-dark">Webinar AI Batch 3</div></td>
-                                            <td><div class="fw-bold text-dark">20 Mei 2024</div><div class="small text-muted">10:30 WIB</div></td>
-                                            <td><span class="badge-terbit">Terbit</span></td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat</button>
-                                                <button class="btn btn-sm btn-light border-0"><i class="bi bi-download"></i></button>
-                                                <div class="btn-group">
-                                                    <button class="btn btn-sm btn-light border-0" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-action shadow-sm">
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-eye"></i> Lihat Detail Sertifikat</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-download"></i> Download Sertifikat</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-envelope"></i> Kirim Ulang Sertifikat</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-printer"></i> Cetak Sertifikat</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-clock-history"></i> Riwayat Distribusi</a></li>
-                                                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-event"></i> Lihat Event/Course</a></li>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-archive"></i> Arsipkan Sertifikat</a></li>
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div class="d-flex justify-content-between align-items-center mt-3 text-muted small">
-                                    <span>Menampilkan 1 - 5 dari 38 sertifikat</span>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-left"></i></button>
-                                        <button class="btn btn-sm btn-primary">1</button>
-                                        <button class="btn btn-sm btn-light border">2</button>
-                                        <button class="btn btn-sm btn-light border">3</button>
-                                        <button class="btn btn-sm btn-light border">...</button>
-                                        <button class="btn btn-sm btn-light border">8</button>
-                                        <button class="btn btn-sm btn-light border"><i class="bi bi-chevron-right"></i></button>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless align-middle admin-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Sertifikat</th>
+                                                <th>Tipe</th>
+                                                <th>Sumber</th>
+                                                <th>Terbit</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($trainerCertificates->take(5) as $certificate)
+                                                <tr>
+                                                    <td>
+                                                        <div class="fw-bold text-dark">
+                                                            {{ data_get($certificate, 'certificate_number', '-') }}</div>
+                                                        <div class="small text-muted">
+                                                            {{ data_get($certificate, 'activity_code', '-') }} /
+                                                            {{ data_get($certificate, 'type_code', '-') }}</div>
+                                                    </td>
+                                                    <td>
+                                                        <span
+                                                            class="badge {{ strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Event::class) ? 'bg-primary bg-opacity-10 text-primary' : 'bg-purple bg-opacity-10 text-purple' }} rounded-pill px-3">{{ strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Event::class) ? 'Event' : 'Course' }}</span>
+                                                    </td>
+                                                    <td class="text-dark">
+                                                        {{ data_get($certificate, 'certifiable.title', data_get($certificate, 'certifiable.name', '-')) }}
+                                                    </td>
+                                                    <td class="small text-muted">
+                                                        {{ optional(data_get($certificate, 'issued_at'))->translatedFormat('d M Y') ?? '-' }}
+                                                    </td>
+                                                    <td><span
+                                                            class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">{{ strtoupper((string) data_get($certificate, 'status', 'sent')) }}</span>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted py-4">Belum ada sertifikat
+                                                        yang diterbitkan.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-4 sidebar-right">
                             <div class="content-card">
-                                <h5 class="content-card-title">Distribusi Sertifikat</h5>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="content-card-title mb-0">Distribusi Sertifikat</h5>
+                                    <span class="badge bg-light text-dark border">Aktif</span>
+                                </div>
                                 <div class="d-flex align-items-center gap-4 py-2">
-                                    <div style="width: 100px; height: 100px; border-radius: 50%; border: 15px solid #3b82f6; border-right-color: #a855f7; border-bottom-color: #a855f7; position: relative;">
+                                    <div
+                                        style="width: 100px; height: 100px; border-radius: 50%; border: 15px solid #3b82f6; border-right-color: #a855f7; border-bottom-color: #a855f7;">
                                     </div>
                                     <div>
-                                        <div class="mb-2"><span style="color:#3b82f6;">&bull;</span> Event <span class="fw-bold ms-2">22 (58%)</span></div>
-                                        <div class="mb-2"><span style="color:#a855f7;">&bull;</span> Course <span class="fw-bold ms-2">16 (42%)</span></div>
+                                        <div class="mb-2"><span style="color:#3b82f6;">&bull;</span> Event <span
+                                                class="fw-bold ms-2">{{ $eventCertificates }}
+                                                ({{ $certificateCount > 0 ? round(($eventCertificates / $certificateCount) * 100) : 0 }}%)</span>
+                                        </div>
+                                        <div class="mb-2"><span style="color:#a855f7;">&bull;</span> Course <span
+                                                class="fw-bold ms-2">{{ $courseCertificates }}
+                                                ({{ $certificateCount > 0 ? round(($courseCertificates / $certificateCount) * 100) : 0 }}%)</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="content-card">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="content-card-title mb-0">Sertifikat per Kategori</h5>
-                                    <a href="#" class="text-decoration-none small text-primary fw-bold">Lihat Semua</a>
+                                    <span class="badge bg-light text-dark border">Lihat Semua</span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                                    <div class="d-flex align-items-center gap-2"><i class="bi bi-robot text-primary bg-primary bg-opacity-10 p-2 rounded"></i> <span class="fw-bold text-dark small">AI & Machine Learning</span></div>
-                                    <div class="small fw-bold text-warning"><i class="bi bi-star-fill me-1"></i> 12 (31.6%)</div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                                    <div class="d-flex align-items-center gap-2"><i class="bi bi-bar-chart text-success bg-success bg-opacity-10 p-2 rounded"></i> <span class="fw-bold text-dark small">Data Science</span></div>
-                                    <div class="small fw-bold text-warning"><i class="bi bi-star-fill me-1"></i> 9 (23.7%)</div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                                    <div class="d-flex align-items-center gap-2"><i class="bi bi-code-slash text-purple bg-purple bg-opacity-10 p-2 rounded" style="color: #a855f7; background: #faf5ff;"></i> <span class="fw-bold text-dark small">Programming</span></div>
-                                    <div class="small fw-bold text-warning"><i class="bi bi-star-fill me-1"></i> 7 (18.4%)</div>
+                                <div class="d-flex flex-column gap-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2"><i
+                                                class="bi bi-mortarboard text-primary bg-primary bg-opacity-10 p-2 rounded"></i><span
+                                                class="fw-bold text-dark small">AI & Machine Learning</span></div>
+                                        <div class="small fw-bold text-warning">{{ $courseCertificates }}</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2"><i
+                                                class="bi bi-bar-chart text-success bg-success bg-opacity-10 p-2 rounded"></i><span
+                                                class="fw-bold text-dark small">Data Science</span></div>
+                                        <div class="small fw-bold text-warning">{{ $eventCertificates }}</div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-2"><i
+                                                class="bi bi-code-slash text-primary bg-primary bg-opacity-10 p-2 rounded"></i><span
+                                                class="fw-bold text-dark small">Programming</span></div>
+                                        <div class="small fw-bold text-warning">{{ $certificateCount }}</div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="content-card">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="content-card-title mb-0">Tren Penerbitan Sertifikat</h5>
-                                    <span class="badge bg-light text-dark border">6 Bulan Terakhir</span>
+                                    <h5 class="content-card-title mb-0">Aksi Cepat</h5>
+                                    <span class="badge bg-light text-dark border">Ops</span>
                                 </div>
-                                <div class="text-center py-4 text-muted border rounded-3 bg-light">
-                                    <i class="bi bi-graph-up fs-1 mb-2 d-block"></i>
-                                    Line Chart Tren
-                                </div>
-                            </div>
-                            <div class="content-card">
-                                <h5 class="content-card-title">Aksi Cepat</h5>
                                 <div class="row g-3">
-                                    <div class="col-6">
-                                        <button class="btn btn-outline-primary w-100 h-100 p-3 d-flex flex-column align-items-start gap-2 bg-primary bg-opacity-10 border-0" style="border-radius: 12px;">
-                                            <i class="bi bi-files fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Generate Sertifikat Massal</span>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button class="btn w-100 h-100 p-3 d-flex flex-column align-items-start gap-2" style="border-radius: 12px; background: #faf5ff; border: 0; color: #a855f7;">
-                                            <i class="bi bi-envelope-paper fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Kirim Ulang Sertifikat</span>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button class="btn btn-outline-success w-100 h-100 p-3 d-flex flex-column align-items-start gap-2 bg-success bg-opacity-10 border-0" style="border-radius: 12px;">
-                                            <i class="bi bi-download fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Download Rekap Sertifikat</span>
-                                        </button>
-                                    </div>
-                                    <div class="col-6">
-                                        <button class="btn btn-outline-warning w-100 h-100 p-3 d-flex flex-column align-items-start gap-2 bg-warning bg-opacity-10 text-warning border-0" style="border-radius: 12px;">
-                                            <i class="bi bi-gear fs-4"></i>
-                                            <span class="fw-bold text-start" style="font-size:13px;">Template Sertifikat</span>
-                                        </button>
-                                    </div>
+                                    <div class="col-6"><button
+                                            class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10"><i
+                                                class="bi bi-files fs-4 d-block mb-2"></i><span class="fw-bold"
+                                                style="font-size: 13px;">Generate Massal</span></button></div>
+                                    <div class="col-6"><button class="btn w-100 h-100 p-3 text-start rounded-3 border-0"
+                                            style="border-radius: 12px; background: #faf5ff; color: #7c3aed;"><i
+                                                class="bi bi-envelope-paper fs-4 d-block mb-2"></i><span class="fw-bold"
+                                                style="font-size: 13px;">Kirim Ulang</span></button></div>
+                                    <div class="col-6"><button
+                                            class="btn btn-outline-success w-100 h-100 p-3 text-start rounded-3 border-0 bg-success bg-opacity-10"><i
+                                                class="bi bi-download fs-4 d-block mb-2"></i><span class="fw-bold"
+                                                style="font-size: 13px;">Download</span></button></div>
+                                    <div class="col-6"><button
+                                            class="btn btn-outline-warning w-100 h-100 p-3 text-start rounded-3 border-0 bg-warning bg-opacity-10 text-warning"><i
+                                                class="bi bi-gear fs-4 d-block mb-2"></i><span class="fw-bold"
+                                                style="font-size: 13px;">Template</span></button></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </main>
     </div>
 @endsection
 
-@push('admin-trainer-scripts')
-<script>
-    // Fallback script to ensure Tabs always switch correctly if Bootstrap JS fails to initialize.
-    document.addEventListener('DOMContentLoaded', function() {
-        const triggerTabList = [].slice.call(document.querySelectorAll('#trainerTabs button'))
-        triggerTabList.forEach(function (triggerEl) {
-            triggerEl.addEventListener('click', function (event) {
-                event.preventDefault();
-                // Remove active from all buttons
-                document.querySelectorAll('#trainerTabs button').forEach(b => {
-                    b.classList.remove('active');
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const triggerTabList = Array.from(document.querySelectorAll('#trainerTabs button'));
+
+            triggerTabList.forEach(function (triggerEl) {
+                triggerEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+
+                    document.querySelectorAll('#trainerTabs button').forEach(button => button.classList.remove('active'));
+                    this.classList.add('active');
+
+                    document.querySelectorAll('.tab-pane').forEach(pane => {
+                        pane.classList.remove('show', 'active');
+                        pane.style.setProperty('display', 'none', 'important');
+                    });
+
+                    const target = document.querySelector(this.getAttribute('data-bs-target'));
+                    if (target) {
+                        target.classList.add('show', 'active');
+                        target.style.setProperty('display', 'block', 'important');
+                    }
                 });
-                // Add active to clicked button
-                this.classList.add('active');
-                
-                // Hide all tab panes
-                document.querySelectorAll('.tab-pane').forEach(p => {
-                    p.classList.remove('show', 'active');
-                    p.style.setProperty('display', 'none', 'important');
-                    p.style.setProperty('opacity', '0', 'important');
-                    p.style.setProperty('visibility', 'hidden', 'important');
-                });
-                // Show target pane
-                const target = document.querySelector(this.getAttribute('data-bs-target'));
-                if (target) {
-                    target.classList.add('show', 'active');
-                    target.style.setProperty('display', 'block', 'important');
-                    target.style.setProperty('opacity', '1', 'important');
-                    target.style.setProperty('visibility', 'visible', 'important');
-                }
             });
         });
-    });
-</script>
+    </script>
 @endpush
