@@ -1,6 +1,6 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Rejected Materials')
+@section('title', 'Materi Ditolak')
 
 @push('admin-trainer-styles')
 @push('admin-trainer-styles')
@@ -336,10 +336,7 @@
             display: block;
         }
 
-        @media (max-width: 992px) {
-            .trainer-sidebar {
-                display: none;
-            }
+        @media (max-width: 1200px) {
 
             .toolbar {
                 flex-direction: column;
@@ -348,6 +345,7 @@
 
             .toolbar-left {
                 width: 100%;
+                flex: none !important;
             }
 
             .toolbar-form {
@@ -397,7 +395,7 @@
                 $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
                 $deadlineLabelMap = [
                     'all' => 'Semua Deadline',
-                    'overdue' => 'Overdue',
+                    'overdue' => 'Lewat Tenggat',
                     'on_time' => 'Tepat Waktu',
                     'no_deadline' => 'Tanpa Deadline',
                 ];
@@ -414,7 +412,7 @@
                             Deadline
                         </option>
                         <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                            Overdue
+                            Lewat Tenggat
                         </option>
                         <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
                             Waktu</option>
@@ -549,7 +547,7 @@
                             Deadline
                         </option>
                         <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                            Overdue
+                            Lewat Tenggat
                         </option>
                         <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
                             Waktu</option>
@@ -627,7 +625,7 @@
                                         @csrf
                                         <button type="submit" class="btn-action"
                                             style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
-                                            Approve <i class="bi bi-check2-circle"></i>
+                                            Setujui <i class="bi bi-check2-circle"></i>
                                         </button>
                                     </form>
                                 </div>

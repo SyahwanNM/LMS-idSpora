@@ -1,12 +1,8 @@
-@extends('layouts.admin')
+@extends('layouts.admin-trainer')
 
 @section('title', 'Edit Trainer')
 
-@section('navbar')
-    @include('partials.navbar-admin-trainer')
-@endsection
-
-@section('styles')
+@push('admin-trainer-styles')
     <style>
         /* Trainer Hero Section - CRM Style */
         .trainer-hero {
@@ -81,122 +77,110 @@
             font-size: 1.05rem;
         }
 
-        /* Form Card Styling */
-        .trainer-form-card {
-            border: 0;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-        }
-
-        .trainer-form-card:hover {
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
-        }
-
         .form-section-title {
             font-size: 1.05rem;
             font-weight: 700;
             color: #1a237e;
             letter-spacing: -0.3px;
-            margin-bottom: 20px;
             padding-bottom: 16px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e3f2fd;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
-        .form-label {
-            color: #424242;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .input-group-text {
-            background: #ede7f6;
+        /* Input Styling */
+        .form-control,
+        .form-select {
             border: 1.5px solid #e9ecef;
-            color: #3949ab;
-            font-weight: 600;
-        }
-
-        .form-control {
-            border: 1.5px solid #e9ecef;
+            border-radius: 12px;
             padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 15px;
+            font-size: 0.95rem;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
         }
 
-        .form-control:focus {
+        .form-control:focus,
+        .form-select:focus {
             border-color: #3949ab;
-            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.12);
+            box-shadow: 0 0 0 0.2rem rgba(57, 73, 171, 0.12);
             background-color: #f8f9ff;
         }
 
+        .input-group-text {
+            background-color: #f8f9ff !important;
+            border: 1.5px solid #e9ecef !important;
+            color: #3949ab;
+            font-size: 1.1rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #424242;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        /* Button Styling */
         .btn-submit {
-            background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);
-            color: #fff;
-            font-weight: 700;
-            padding: 14px 32px;
+            background: linear-gradient(135deg, #3949ab 0%, #5c6bc0 100%);
+            border: none;
             border-radius: 12px;
-            border: 0;
-            box-shadow: 0 8px 20px rgba(26, 35, 126, 0.3);
+            padding: 12px 36px;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(57, 73, 171, 0.3);
         }
 
         .btn-submit:hover {
+            background: linear-gradient(135deg, #283593 0%, #3949ab 100%);
             transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(26, 35, 126, 0.4);
-            background: linear-gradient(135deg, #0d1642 0%, #283593 100%);
-            color: #fff;
+            box-shadow: 0 6px 20px rgba(57, 73, 171, 0.4);
+            color: white;
         }
 
         .btn-reset {
-            background: #f5f5f5;
-            color: #424242;
-            font-weight: 600;
-            padding: 14px 28px;
             border-radius: 12px;
-            border: 1.5px solid #e0e0e0;
+            border: 2px solid #e9ecef;
+            padding: 10px 32px;
+            font-weight: 600;
+            color: #424242;
+            background-color: #ffffff;
             transition: all 0.2s ease;
         }
 
         .btn-reset:hover {
-            background: #eeeeee;
-            border-color: #bdbdbd;
-            color: #212121;
+            border-color: #cbd5e0;
+            background-color: #f8f9ff;
+            color: #1a237e;
         }
 
         /* Info Panel */
         .info-panel {
-            background: linear-gradient(135deg, #ede7f6 0%, #e8eaf6 100%);
-            border-radius: 20px;
-            padding: 28px;
-            border: 2px solid #d1c4e9;
-            border-left: 6px solid #3949ab;
+            background: linear-gradient(135deg, rgba(57, 73, 171, 0.08) 0%, rgba(138, 43, 226, 0.08) 100%);
+            border-left: 4px solid #3949ab;
+            border-radius: 12px;
+            padding: 24px;
         }
 
         .info-panel h5 {
-            font-weight: 700;
             color: #1a237e;
-            font-size: 18px;
-            margin-bottom: 12px;
-        }
-
-        .info-panel h6 {
             font-weight: 700;
-            font-size: 15px;
+            margin-bottom: 16px;
+            font-size: 1.05rem;
         }
 
-        .info-panel li {
-            font-size: 14px;
-            padding: 6px 0;
+        .info-panel .list-unstyled li {
             color: #424242;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
 
-        .info-panel .bi-check-circle,
-        .info-panel .bi-x-circle {
-            font-size: 18px;
+        .info-panel i {
             margin-right: 10px;
             font-weight: 600;
         }
@@ -207,112 +191,6 @@
 
         .info-panel .text-danger {
             color: #c62828 !important;
-        }
-
-        /* Sidebar Navigation - Clean Style */
-        .trainer-wrapper {
-            display: flex;
-            min-height: calc(100vh - 72px);
-        }
-
-        .trainer-sidebar {
-            width: 260px;
-            background: #fff;
-            padding: 24px 16px;
-            border-right: 1px solid #eee;
-            flex-shrink: 0;
-            position: sticky;
-            top: 72px;
-            height: calc(100vh - 72px);
-            overflow-y: auto;
-        }
-
-        .trainer-main {
-            flex-grow: 1;
-            padding: 32px;
-            background-color: #F8F9FA;
-        }
-
-        .nav-menu-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #94a3b8;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            margin-top: 24px;
-            display: block;
-            padding-left: 16px;
-        }
-
-        .nav-menu-label:first-child {
-            margin-top: 0;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            padding: 11px 16px;
-            color: #1e293b;
-            text-decoration: none;
-            border-radius: 10px;
-            margin-bottom: 4px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-            gap: 12px;
-        }
-
-        .sidebar-link i {
-            font-size: 1.15rem;
-            color: #64748b;
-            transition: color 0.2s ease;
-        }
-
-        .sidebar-link:hover {
-            background-color: #f8fafc;
-            color: #3949ab;
-        }
-
-        .sidebar-link:hover i {
-            color: #3949ab;
-        }
-
-        .sidebar-link.active {
-            background-color: #3949ab;
-            color: #fff;
-        }
-
-        .sidebar-link.active i {
-            color: #fff;
-        }
-
-        .sidebar-parent {
-            justify-content: space-between;
-        }
-
-        .sidebar-parent .sidebar-chevron {
-            font-size: 0.8rem;
-            transition: transform 0.2s ease;
-        }
-
-        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
-            transform: rotate(180deg);
-        }
-
-        .sidebar-submenu {
-            margin: 4px 0 8px;
-        }
-
-        .sidebar-submenu .sidebar-link {
-            margin-left: 14px;
-            padding: 7px 10px;
-            font-size: 0.82rem;
-            border-radius: 8px;
-        }
-
-        .sidebar-submenu .sidebar-link i {
-            font-size: 0.95rem;
         }
 
         /* Responsive */
@@ -328,27 +206,15 @@
             .hero-subtitle {
                 font-size: 1rem;
             }
-
-            .trainer-sidebar {
-                display: none !important;
-            }
-
-            .trainer-main {
-                padding: 20px;
-            }
         }
     </style>
-@endsection
+@endpush
 
-@section('content')
-    <div class="trainer-wrapper">
-        @include('admin.trainer.partials.sidebar')
-
-        <main class="trainer-main">
+@section('admin-trainer-content')
             <!-- Hero Section -->
             <div class="trainer-hero mb-5">
                 <div>
-                    <span class="hero-label"><i class="bi bi-shield-check me-2"></i>Admin Panel</span>
+                    <span class="hero-label"><i class="bi bi-shield-check me-2"></i>Panel Admin</span>
                     <h1 class="hero-title">Edit Data Trainer</h1>
                     <p class="hero-subtitle">Perbarui informasi instruktur. Kosongkan password jika tidak ingin mengubahnya.
                     </p>
@@ -432,7 +298,7 @@
 
                                 <div class="mb-5">
                                     <h5 class="form-section-title">
-                                        <i class="bi bi-key text-primary"></i> Update Password
+                                        <i class="bi bi-key text-primary"></i> Perbarui Password
                                     </h5>
                                     <p class="text-primary small mb-3">
                                         <i class="bi bi-info-circle me-1"></i> Kosongkan jika tidak ingin mengganti
@@ -500,6 +366,4 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
 @endsection

@@ -735,4 +735,21 @@ class TrainerCertificateController extends Controller
 
         return $template;
     }
+
+    public function viewCertificateFile(\App\Models\TrainerCertificate $certificate)
+    {
+        if (empty($certificate->file_path)) {
+            abort(404);
+        }
+
+        $absolutePath = storage_path('app/' . $certificate->file_path);
+        if (!is_file($absolutePath)) {
+            abort(404);
+        }
+
+        return response()->file($absolutePath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($absolutePath) . '"'
+        ]);
+    }
 }

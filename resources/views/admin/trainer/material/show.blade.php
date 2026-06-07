@@ -1,6 +1,6 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Review Material - ' . $material->name)
+@section('title', 'Tinjau Materi - ' . $material->name)
 
 @push('admin-trainer-styles')
     <style>
@@ -878,7 +878,7 @@
                     </span>
                 @else
                     <span class="status-chip">
-                        <i class="bi bi-hourglass-split"></i> Pending Review
+                        <i class="bi bi-hourglass-split"></i> Menunggu Tinjauan
                     </span>
                 @endif
             </div>
@@ -901,7 +901,7 @@
                                             style="background:#e2e8f0;color:#475569;font-weight:700;font-size:0.72rem;">
                                             {{ $material->category->name ?? 'Kategori Umum' }}
                                         </span>
-                                        Diupload
+                                        Diunggah
                                         {{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}
                                     </p>
                                 </div>
@@ -1103,7 +1103,7 @@
                                                                 @elseif($reviewStatus === 'rejected')
                                                                     <i class="bi bi-x-circle-fill"></i> Ditolak
                                                                 @else
-                                                                    <i class="bi bi-hourglass-split"></i> Menunggu review
+                                                                    <i class="bi bi-hourglass-split"></i> Menunggu tinjauan
                                                                 @endif
                                                             </span>
                                                             @if($module->isQuiz())
@@ -1243,7 +1243,7 @@
                                 <div
                                     style="margin-top:10px;background:#fffbeb;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:6px;font-size:0.78rem;color:#92400e;font-weight:700;">
                                     <i class="bi bi-hourglass-split"></i>
-                                    {{ $totalPending }} modul menunggu review
+                                    {{ $totalPending }} modul menunggu tinjauan
                                 </div>
                             @endif
                         </div>
@@ -1394,7 +1394,7 @@
                     const copyBtn = document.createElement('button');
                     copyBtn.type = 'button';
                     copyBtn.className = 'module-code-copy';
-                    copyBtn.textContent = 'Copy Code';
+                    copyBtn.textContent = 'Salin Kode';
                     copyBtn.dataset.codeText = codeText;
                     const holder = document.createElement('div');
                     holder.className = 'module-code-block';
@@ -1408,7 +1408,7 @@
                         const txt = this.dataset.codeText || '';
                         navigator.clipboard.writeText(txt).then(() => {
                             const orig = this.textContent;
-                            this.textContent = 'Copied!';
+                            this.textContent = 'Tersalin!';
                             setTimeout(() => { this.textContent = orig; }, 1000);
                         }).catch(() => { });
                     });
@@ -1432,7 +1432,7 @@
                                         <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
                                     </div>`;
                 }).join('');
-                return `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
+                return `<div class="quiz-preview-head">Tinjauan Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
             }
 
             function renderPreview(url, kind) {

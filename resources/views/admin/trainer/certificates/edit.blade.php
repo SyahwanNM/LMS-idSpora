@@ -291,11 +291,15 @@
         color: #1a237e;
         letter-spacing: 1.4px;
         margin-bottom: 12px;
+        position: relative;
+        z-index: 10;
     }
 
     .template-paper small {
         font-size: 9px;
         color: #334155;
+        position: relative;
+        z-index: 10;
     }
 
     .template-paper .line {
@@ -303,60 +307,102 @@
         width: 76px;
         background: #94a3b8;
         margin: 12px auto 0;
+        position: relative;
+        z-index: 10;
     }
 
-    .template-paper.t1::before,
-    .template-paper.t1::after,
-    .template-paper.t2::before,
-    .template-paper.t2::after,
-    .template-paper.t3::before,
-    .template-paper.t3::after {
+    /* ─── Template 1 Mockup (Maroon & Gold Waves) ─── */
+    .template-paper.t1 {
+        background-color: #ffffff;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M 30,0 C 50,40 70,60 100,80 L 100,0 Z' fill='%237f1d1d' /%3E%3Cpath d='M 40,0 C 58,38 74,54 100,70 L 100,0 Z' fill='%23eab308' /%3E%3Cpath d='M 50,0 C 66,34 78,46 100,60 L 100,0 Z' fill='%23991b1b' /%3E%3Cpath d='M 0,30 C 40,50 60,70 80,100 L 0,100 Z' fill='%237f1d1d' /%3E%3Cpath d='M 0,40 C 38,58 54,74 70,100 L 0,100 Z' fill='%23eab308' /%3E%3Cpath d='M 0,50 C 34,66 46,78 60,100 L 0,100 Z' fill='%23991b1b' /%3E%3C/svg%3E");
+        background-size: cover;
+    }
+    .template-paper.t1 h6 {
+        color: #1e1b4b;
+    }
+    .template-paper.t1 small {
+        color: #7f1d1d;
+    }
+    .template-paper.t1 .line {
+        background: #7f1d1d;
+    }
+    .template-paper.t1::before {
         content: '';
         position: absolute;
-        width: 90px;
-        height: 90px;
+        top: 6px;
+        left: 6px;
+        width: 45px;
+        height: 2px;
+        background: #eab308;
+        z-index: 8;
     }
-
-    .template-paper.t1::before {
-        left: -10px;
-        bottom: -10px;
-        border-left: 12px solid #0f2d52;
-        border-bottom: 12px solid #fbbf24;
-    }
-
     .template-paper.t1::after {
-        right: -10px;
-        top: -10px;
-        border-top: 12px solid #fbbf24;
-        border-right: 12px solid #0f2d52;
+        content: '';
+        position: absolute;
+        bottom: 6px;
+        right: 6px;
+        width: 45px;
+        height: 2px;
+        background: #eab308;
+        z-index: 8;
     }
 
+    /* ─── Template 2 Mockup (Diagonal Gold Ribbons) ─── */
+    .template-paper.t2 {
+        background-color: #f8fafc;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 297 210' preserveAspectRatio='none'%3E%3Cpolygon points='0,0 60,0 0,60' fill='%23d4af37' /%3E%3Cpolygon points='0,0 55,0 0,55' fill='%23fef08a' /%3E%3Cpolygon points='0,0 40,0 0,40' fill='%23ca8a04' /%3E%3Cpolygon points='297,0 215,0 297,125' fill='%230f172a' /%3E%3Cpolygon points='297,210 185,210 297,135' fill='%23ca8a04' /%3E%3Cpolygon points='297,210 190,210 297,137' fill='%23fbbf24' /%3E%3C/svg%3E");
+        background-size: cover;
+    }
+    .template-paper.t2 h6 {
+        color: #0f172a;
+    }
+    .template-paper.t2 small {
+        color: #0f172a;
+    }
+    .template-paper.t2 .line {
+        background: #0f172a;
+    }
     .template-paper.t2::before {
-        left: -8px;
-        top: -8px;
-        border-left: 10px solid #0f2d52;
-        border-top: 10px solid #fbbf24;
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1.5px solid #d4af37;
+        background: #ffffff;
+        z-index: 8;
     }
-
     .template-paper.t2::after {
-        right: -8px;
-        bottom: -8px;
-        border-right: 10px solid #0f2d52;
-        border-bottom: 10px solid #fbbf24;
+        content: '';
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 0.5px solid #d4af37;
+        background: #faf8f5;
+        z-index: 9;
     }
 
-    .template-paper.t3::before {
-        left: -8px;
-        top: -8px;
-        border-left: 10px solid #047857;
-        border-top: 10px solid #fbbf24;
+    /* ─── Template 3 Mockup (Creative Theme) ─── */
+    .template-paper.t3 {
+        background-color: #fdfdfd;
+        background-image: url("/aset/bg-creative.png");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
     }
-
-    .template-paper.t3::after {
-        right: -8px;
-        bottom: -8px;
-        border-right: 10px solid #047857;
-        border-bottom: 10px solid #fbbf24;
+    .template-paper.t3 h6 {
+        color: #1e1b4b;
+    }
+    .template-paper.t3 small {
+        color: #4c1d95;
+    }
+    .template-paper.t3 .line {
+        background: #d97706;
     }
 
     .template-name {
@@ -638,10 +684,10 @@
             <div class="col-xl-9">
                 <section class="cert-hero">
                     <div class="cert-hero-content">
-                        <div class="page-eyebrow">Recognition System</div>
+                        <div class="page-eyebrow">Sistem Rekognisi</div>
                         <h1>Konfigurasi Sertifikat</h1>
                         <p>
-                            {{ strtoupper($context) }}: {{ $modelTitle }}<br>
+                            {{ strtoupper($context === 'course' ? 'Kursus' : 'Acara') }}: {{ $modelTitle }}<br>
                             Trainer: {{ $trainer->name }}
                         </p>
 

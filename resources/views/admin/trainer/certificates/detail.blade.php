@@ -11,7 +11,8 @@
     $modelTitle = $model?->title ?? $model?->name ?? 'Program Sertifikat';
     $trainerName = $trainer?->name ?? '-';
     $issuedDate = $certificate?->issued_at ?? $certificate?->created_at;
-    $programType = $model ? class_basename(get_class($model)) : '-';
+    $programTypeRaw = $model ? class_basename(get_class($model)) : '-';
+    $programType = strtolower($programTypeRaw) === 'course' ? 'Kursus' : (strtolower($programTypeRaw) === 'event' ? 'Acara' : $programTypeRaw);
     $context = $model && strtolower(class_basename(get_class($model))) === 'course' ? 'course' : 'event';
 
     $templateAsset = $assets->where('type', 'template')->first();
@@ -79,6 +80,7 @@
 @push('admin-trainer-styles')
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
         :root {
             --cert-primary: #2f3fcb;
@@ -230,22 +232,26 @@
             box-shadow: 0 10px 24px rgba(15, 23, 42, .08);
         }
 
-        .template_1,
-        .template_2,
-        .template_3 {
+        .certificate-preview > .template_1,
+        .certificate-preview > .template_2,
+        .certificate-preview > .template_3 {
+            position: absolute;
+            top: 0;
+            left: 0;
             height: 100%;
             width: 100%;
-            position: relative;
+            z-index: 1;
         }
 
         .tpl-inner {
             position: relative;
             height: 100%;
             width: 100%;
-            padding: 36px 56px;
+            padding: 20px 36px;
             text-align: center;
-            color: #1e1b4b;
+            color: #1e293b;
             box-sizing: border-box;
+            z-index: 2;
         }
 
         .tpl-logo-row {
@@ -253,157 +259,185 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             flex-wrap: wrap;
         }
 
         .tpl-logo {
-            height: 32px;
-            max-width: 120px;
+            height: 28px;
+            max-width: 100px;
             object-fit: contain;
         }
 
         .tpl-title {
             font-family: 'Georgia', serif;
-            font-size: 30px;
-            letter-spacing: 4px;
-            margin: 6px 0 8px;
+            font-size: 20px;
+            letter-spacing: 2px;
+            margin: 6px 0 2px;
             text-transform: uppercase;
             font-weight: 700;
         }
 
         .tpl-subtitle {
-            font-size: 10px;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 9px;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #fbbf24;
-            font-weight: 600;
-            margin-bottom: 8px;
+            letter-spacing: 2px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .presented-text {
+            font-size: 10px;
+            color: #64748b;
+            font-style: italic;
+            margin: 4px 0 2px;
         }
 
         .tpl-name {
-            font-size: 34px;
-            font-weight: 700;
-            margin: 8px 0;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Great Vibes', 'Georgia', serif;
+            font-size: 28px;
+            font-weight: normal;
+            margin: 6px 0;
         }
 
         .tpl-desc {
-            font-size: 12px;
-            line-height: 1.6;
+            font-size: 10px;
+            line-height: 1.5;
             color: #1f2937;
+            max-width: 580px;
+            margin: 6px auto 0;
         }
 
         .tpl-footer {
-            margin-top: 24px;
+            margin-top: 18px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
             gap: 24px;
         }
 
         .tpl-sig {
             text-align: center;
-            min-width: 140px;
-            font-size: 10px;
-            color: #1e1b4b;
+            min-width: 120px;
+            font-size: 9px;
+            color: #0f172a;
         }
 
         .tpl-sig img {
-            max-height: 40px;
-            max-width: 120px;
+            max-height: 32px;
+            max-width: 90px;
             object-fit: contain;
             display: block;
-            margin: 0 auto 4px;
+            margin: 0 auto 2px;
         }
 
         .tpl-sig-line {
-            border-top: 1px solid #1e1b4b;
+            border-top: 1px solid #0f172a;
             margin: 4px 0;
         }
 
+        /* ─── Template 1: Premium Royal (Maroon & Gold Waves) ─── */
         .template_1 {
-            border: 12px solid #1e1b4b;
-            background: #fff;
+            padding: 16px;
+            background: #ffffff;
         }
-
-        .template_1 .tpl-inner {
-            border: 2px double #fbbf24;
-            margin: 10px;
-            height: calc(100% - 20px);
-            width: calc(100% - 20px);
-            box-sizing: border-box;
+        .template_1 .tpl-title {
+            color: #1e1b4b;
         }
-
+        .template_1 .tpl-subtitle {
+            color: #7f1d1d;
+            margin-bottom: 6px;
+        }
         .template_1 .tpl-name {
-            border-bottom: 2px solid #fbbf24;
-            display: inline-block;
-            padding: 4px 24px;
+            color: #7f1d1d;
+        }
+        .template_1 .tpl-sig-line {
+            border-bottom: 1.5px dashed #7f1d1d;
         }
 
+        /* ─── Template 2: Modern Corporate (Sleek Ribbon & Navy Corners) ─── */
         .template_2 {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-        }
-
-        .template_2::before {
-            content: '';
-            position: absolute;
-            inset: 0 auto 0 0;
-            width: 60px;
-            background: #1e1b4b;
-        }
-
-        .template_2::after {
-            content: '';
-            position: absolute;
-            inset: 0 auto 0 60px;
-            width: 6px;
-            background: #fbbf24;
-        }
-
-        .template_2 .tpl-inner {
-            text-align: left;
-            padding: 36px 56px 36px 110px;
-        }
-
-        .template_2 .tpl-name {
-            border-left: 6px solid #fbbf24;
-            padding-left: 12px;
-        }
-
-        .template_2 .tpl-logo-row {
-            justify-content: flex-start;
-        }
-
-        .template_2 .tpl-footer {
-            justify-content: flex-start;
-        }
-
-        .template_3 {
+            padding: 0;
             background: #f8fafc;
         }
-
-        .template_3 .tpl-header {
-            background: #1e1b4b;
-            color: #fff;
-            padding: 18px 56px;
+        .template_2 .tpl-inner {
+            padding: 24px 20px 20px 20px;
+        }
+        .template_2 .tpl-title {
+            color: #0f172a;
+        }
+        .template_2 .tpl-subtitle {
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .template_2 .tpl-name {
+            color: #0f172a;
+            margin: 8px auto;
+            border-bottom: 1.5px solid #0f172a;
+            padding-bottom: 2px;
+        }
+        .template_2 .gold-badge {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #d4af37;
+            background: #ffffff;
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .template_2 .gold-badge-inner {
+            position: absolute;
+            top: 3px; left: 3px; right: 3px; bottom: 3px;
+            border-radius: 50%;
+            border: 1px solid #d4af37;
+            background: #faf8f5;
+        }
+        .template_2 .tpl-inner {
+            padding-left: 90px;
+        }
+        .template_2 .tpl-verification {
+            left: 90px;
         }
 
-        .template_3 .tpl-header .tpl-title {
-            font-size: 24px;
-            margin: 0;
+        /* ─── Template 3: Creative Professional (Dynamic Wave & Gradients) ─── */
+        .template_3 {
+            padding: 0;
+            background: #fdfdfd;
+            border: 8px solid #ffffff;
         }
-
-        .template_3 .tpl-bar {
-            height: 6px;
-            background: #fbbf24;
-        }
-
         .template_3 .tpl-inner {
-            text-align: left;
-            padding: 24px 56px;
-            height: calc(100% - 72px);
-            box-sizing: border-box;
+            padding: 20px 20px 10px 20px;
+        }
+        .template_3 .tpl-title {
+            color: #1e1b4b;
+        }
+        .template_3 .tpl-subtitle {
+            color: #d97706;
+            margin-bottom: 6px;
+        }
+        .template_3 .tpl-name {
+            color: #4c1d95;
+            margin: 6px auto;
+            border-bottom: 1.5px solid #d97706;
+            padding-bottom: 2px;
+        }
+        .template_3 .tpl-sig {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .template_3 .tpl-sig-line {
+            border-bottom-color: #4c1d95;
+        }
+        .template_3 .tpl-verification {
+            left: 40px;
+        }
+        .template_3 .tpl-cert-id {
+            right: 40px;
         }
 
         .preview-actions {
@@ -441,7 +475,7 @@
         .history-table-wrap {
             border: 1px solid var(--cert-border);
             border-radius: 12px;
-            overflow: hidden;
+            overflow-x: auto;
         }
 
         .history-table {
@@ -682,7 +716,7 @@
             <div class="col-xl-9">
                 <section class="detail-hero">
                     <div class="hero-content">
-                        <div class="page-eyebrow">Recognition System</div>
+                        <div class="page-eyebrow">Sistem Rekognisi</div>
                         <h1>Detail Sertifikat</h1>
                         <p>
                             Informasi lengkap sertifikat yang telah diterbitkan.
@@ -697,128 +731,101 @@
                         <div class="certificate-preview {{ $templateName }}">
                             @if($templateName === 'template_1')
                                 <div class="template_1">
-                                    <div class="tpl-inner">
-                                        <div class="tpl-logo-row">
-                                            <img class="tpl-logo" src="{{ asset('aset/logo-idspora.png') }}" alt="Logo idSpora">
-                                            @foreach($logos as $logo)
-                                                @php $logoUrl = $assetUrl($logo->image_path); @endphp
-                                                @if($logoUrl)
-                                                    <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
-                                                @endif
-                                            @endforeach
-                                        </div>
+                                    <!-- Top Left Gold Bar -->
+                                    <div style="position: absolute; top: 12px; left: 12px; width: 120px; height: 3px; background: #eab308; z-index: 2;"></div>
+                                    <!-- Bottom Right Gold Bar -->
+                                    <div style="position: absolute; bottom: 12px; right: 12px; width: 120px; height: 3px; background: #eab308; z-index: 2;"></div>
 
-                                        <div class="tpl-title">Sertifikat Penghargaan</div>
-                                        <div class="tpl-subtitle">Narasumber</div>
+                                    <!-- Top Right Maroon & Gold Waves -->
+                                    <div style="position: absolute; top: 0; right: 0; width: 140px; height: 140px; z-index: 1; pointer-events: none;">
+                                        <svg width="140px" height="140px" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                                            <path d="M 30,0 C 50,40 70,60 100,80 L 100,0 Z" fill="#7f1d1d" />
+                                            <path d="M 40,0 C 58,38 74,54 100,70 L 100,0 Z" fill="#eab308" />
+                                            <path d="M 50,0 C 66,34 78,46 100,60 L 100,0 Z" fill="#991b1b" />
+                                            <path d="M 65,0 C 78,26 86,34 100,45 L 100,0 Z" fill="#eab308" />
+                                            <path d="M 75,0 C 85,20 90,25 100,35 L 100,0 Z" fill="#7f1d1d" />
+                                        </svg>
+                                    </div>
 
-                                        <div class="tpl-name">{{ $trainerName }}</div>
-
-                                        <div class="tpl-desc">
-                                            Atas kontribusinya sebagai narasumber dalam
-                                            <strong>{{ $modelTitle }}</strong>,
-                                            diterbitkan pada
-                                            {{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d M Y') : '-' }}.
-                                        </div>
-
-                                        <div class="tpl-footer">
-                                            @foreach($signatures->take(2) as $signature)
-                                                <div class="tpl-sig">
-                                                    @php $sigUrl = $assetUrl($signature->image_path); @endphp
-                                                    @if($sigUrl)
-                                                        <img src="{{ $sigUrl }}" alt="Signature">
-                                                    @endif
-                                                    <div class="tpl-sig-line"></div>
-                                                    <strong>{{ $signature->name ?? 'Admin idSpora' }}</strong><br>
-                                                    {{ $signature->position ?? 'Learning Manager' }}
-                                                </div>
-                                            @endforeach
-                                        </div>
+                                    <!-- Bottom Left Maroon & Gold Waves -->
+                                    <div style="position: absolute; bottom: 0; left: 0; width: 140px; height: 140px; z-index: 1; pointer-events: none;">
+                                        <svg width="140px" height="140px" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                                            <path d="M 0,30 C 40,50 60,70 80,100 L 0,100 Z" fill="#7f1d1d" />
+                                            <path d="M 0,40 C 38,58 54,74 70,100 L 0,100 Z" fill="#eab308" />
+                                            <path d="M 0,50 C 34,66 46,78 60,100 L 0,100 Z" fill="#991b1b" />
+                                            <path d="M 0,65 C 26,78 34,86 45,100 L 0,100 Z" fill="#eab308" />
+                                            <path d="M 0,75 C 20,85 25,90 35,100 L 0,100 Z" fill="#7f1d1d" />
+                                        </svg>
                                     </div>
                                 </div>
                             @elseif($templateName === 'template_2')
                                 <div class="template_2">
-                                    <div class="tpl-inner">
-                                        <div class="tpl-logo-row">
-                                            <img class="tpl-logo" src="{{ asset('aset/logo-idspora.png') }}" alt="Logo idSpora">
-                                            @foreach($logos as $logo)
-                                                @php $logoUrl = $assetUrl($logo->image_path); @endphp
-                                                @if($logoUrl)
-                                                    <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
-                                                @endif
-                                            @endforeach
-                                        </div>
-
-                                        <div class="tpl-title">Sertifikat Penghargaan</div>
-                                        <div class="tpl-subtitle">Narasumber</div>
-
-                                        <div class="tpl-name">{{ $trainerName }}</div>
-
-                                        <div class="tpl-desc">
-                                            Atas kontribusinya sebagai narasumber dalam
-                                            <strong>{{ $modelTitle }}</strong>,
-                                            diterbitkan pada
-                                            {{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d M Y') : '-' }}.
-                                        </div>
-
-                                        <div class="tpl-footer">
-                                            @foreach($signatures->take(2) as $signature)
-                                                <div class="tpl-sig">
-                                                    @php $sigUrl = $assetUrl($signature->image_path); @endphp
-                                                    @if($sigUrl)
-                                                        <img src="{{ $sigUrl }}" alt="Signature">
-                                                    @endif
-                                                    <div class="tpl-sig-line"></div>
-                                                    <strong>{{ $signature->name ?? 'Admin idSpora' }}</strong><br>
-                                                    {{ $signature->position ?? 'Learning Manager' }}
-                                                </div>
-                                            @endforeach
-                                        </div>
+                                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
+                                        <svg width="100%" height="100%" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                                            <!-- Top-left diagonal gold ribbon -->
+                                            <polygon points="0,0 60,0 0,60" fill="#d4af37" />
+                                            <polygon points="0,0 55,0 0,55" fill="#fef08a" />
+                                            <polygon points="0,0 40,0 0,40" fill="#ca8a04" />
+                                            
+                                            <!-- Right side navy & gold triangles -->
+                                            <polygon points="297,0 215,0 297,125" fill="#0f172a" />
+                                            <polygon points="297,210 185,210 297,135" fill="#ca8a04" />
+                                            <polygon points="297,210 190,210 297,137" fill="#fbbf24" />
+                                        </svg>
+                                    </div>
+                                    
+                                    <div class="gold-badge">
+                                        <div class="gold-badge-inner"></div>
                                     </div>
                                 </div>
                             @else
                                 <div class="template_3">
-                                    <div class="tpl-header">
-                                        <div class="tpl-title">Sertifikat Penghargaan</div>
-                                    </div>
-                                    <div class="tpl-bar"></div>
-                                    <div class="tpl-inner">
-                                        @if($logos->isNotEmpty())
-                                            <div class="tpl-logo-row">
-                                                @foreach($logos as $logo)
-                                                    @php $logoUrl = $assetUrl($logo->image_path); @endphp
-                                                    @if($logoUrl)
-                                                        <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
-                                                    @endif
-                                                @endforeach
-                                            </div>
-                                        @endif
-
-                                        <div class="tpl-subtitle">Narasumber</div>
-                                        <div class="tpl-name">{{ $trainerName }}</div>
-
-                                        <div class="tpl-desc">
-                                            Atas kontribusinya sebagai narasumber dalam
-                                            <strong>{{ $modelTitle }}</strong>,
-                                            diterbitkan pada
-                                            {{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d M Y') : '-' }}.
-                                        </div>
-
-                                        <div class="tpl-footer">
-                                            @foreach($signatures->take(2) as $signature)
-                                                <div class="tpl-sig">
-                                                    @php $sigUrl = $assetUrl($signature->image_path); @endphp
-                                                    @if($sigUrl)
-                                                        <img src="{{ $sigUrl }}" alt="Signature">
-                                                    @endif
-                                                    <div class="tpl-sig-line"></div>
-                                                    <strong>{{ $signature->name ?? 'Admin idSpora' }}</strong><br>
-                                                    {{ $signature->position ?? 'Learning Manager' }}
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
+                                    <img src="{{ asset('aset/bg-creative.png') }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
                                 </div>
                             @endif
+
+                            {{-- Content wrap containing layout details --}}
+                            <div class="tpl-inner">
+                                <div class="logo-row">
+                                    <img class="tpl-logo" src="{{ asset('aset/logo idspora_dark.png') }}" onerror="this.src='{{ asset('aset/logo-idspora.png') }}'" alt="Logo idSpora">
+                                    @foreach($logos as $logo)
+                                        @php $logoUrl = $assetUrl($logo->image_path); @endphp
+                                        @if($logoUrl)
+                                            <img class="tpl-logo" src="{{ $logoUrl }}" alt="Logo">
+                                        @endif
+                                    @endforeach
+                                </div>
+
+                                <div class="tpl-title">Sertifikat Penghargaan</div>
+                                <div class="tpl-subtitle">Narasumber</div>
+
+                                <div class="presented-text">Diberikan kepada:</div>
+                                <div class="tpl-name">{{ $trainerName }}</div>
+
+                                <div class="tpl-desc">
+                                    Atas kontribusinya sebagai narasumber dalam
+                                    <strong>{{ $modelTitle }}</strong>,
+                                    diterbitkan pada
+                                    {{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d M Y') : '-' }}.
+                                </div>
+
+                                <div class="tpl-footer">
+                                    @foreach($signatures->take(3) as $signature)
+                                        <div class="tpl-sig">
+                                            @php $sigUrl = $assetUrl($signature->image_path); @endphp
+                                            @if($sigUrl)
+                                                <img src="{{ $sigUrl }}" alt="Signature">
+                                            @endif
+                                            <div class="tpl-sig-line"></div>
+                                            <strong>{{ $signature->name ?? 'Admin idSpora' }}</strong><br>
+                                            {{ $signature->position ?? 'Learning Manager' }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="tpl-verification">VERIFIED BY IDSPORA.COM</div>
+                            <div class="tpl-cert-id">Verified Certificate ID: {{ $certificate->certificate_number ?? '-' }}</div>
                         </div>
                     </div>
                 </section>

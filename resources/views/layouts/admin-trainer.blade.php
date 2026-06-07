@@ -205,6 +205,19 @@
                 border-color: #eef2f7;
             }
 
+            /* Desktop defaults: hide mobile elements */
+            .mobile-only {
+                display: none !important;
+            }
+
+            .trainer-sidebar .sidebar-link span.mobile-only {
+                display: none !important;
+            }
+
+            .trainer-sidebar .sidebar-link.mobile-only {
+                display: none !important;
+            }
+
             @media (max-width: 991.98px) {
                 .admin-trainer-wrapper {
                     display: block;
@@ -212,12 +225,112 @@
 
                 .admin-trainer-main {
                     padding: 20px;
-                    padding-top: calc(20px + 72px);
+                    padding-top: 20px;
+                    padding-bottom: 100px;
                     width: 100%;
                 }
 
+                /* Mobile overrides: hide desktop, show mobile */
+                .desktop-only {
+                    display: none !important;
+                }
+
+                .mobile-only {
+                    display: flex !important;
+                }
+
+                .trainer-sidebar span.mobile-only {
+                    display: block !important;
+                }
+
+                .trainer-sidebar .sidebar-link.mobile-only {
+                    display: flex !important;
+                }
+
+                .trainer-sidebar .sidebar-link span.mobile-only {
+                    display: block !important;
+                }
+
+                .trainer-sidebar .sidebar-link.desktop-only {
+                    display: none !important;
+                }
+
+                .trainer-sidebar .sidebar-link span.desktop-only {
+                    display: none !important;
+                }
+
                 .trainer-sidebar {
-                    display: none;
+                    height: 65px !important;
+                    width: 92% !important;
+                    left: 4% !important;
+                    bottom: 16px !important;
+                    position: fixed !important;
+                    top: auto !important;
+                    border-right: none !important;
+                    border-radius: 20px !important;
+                    padding: 0 !important;
+                    display: flex !important;
+                    flex-direction: row !important;
+                    justify-content: space-around !important;
+                    align-items: center !important;
+                    z-index: 1000 !important;
+                    background: rgba(255, 255, 255, 0.55) !important;
+                    backdrop-filter: blur(24px) saturate(180%) !important;
+                    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+                    box-shadow: 0 10px 40px rgba(31, 38, 135, 0.07), inset 0 0 0 1px rgba(255,255,255,0.3) !important;
+                    overflow: hidden !important;
+                }
+
+                .trainer-sidebar .nav-menu-label,
+                .trainer-sidebar .sidebar-submenu,
+                .trainer-sidebar .sidebar-chevron {
+                    display: none !important;
+                }
+
+                .trainer-sidebar .sidebar-link {
+                    flex: 1;
+                    height: 48px;
+                    padding: 4px 0 !important;
+                    margin: 2px 4px !important;
+                    border-radius: 12px !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 2px !important;
+                    background: transparent !important;
+                    color: #475569 !important;
+                    text-decoration: none !important;
+                    transition: all 0.3s ease !important;
+                }
+
+                .trainer-sidebar .sidebar-link:hover {
+                    transform: translateY(-2px) !important;
+                    background-color: rgba(27, 23, 99, 0.05) !important;
+                    color: #1e1b4b !important;
+                }
+
+                .trainer-sidebar .sidebar-link.active {
+                    background: linear-gradient(135deg, #1e1b4b 0%, #3949ab 100%) !important;
+                    color: #ffffff !important;
+                    box-shadow: 0 4px 12px rgba(27, 23, 99, 0.3) !important;
+                    transform: translateY(-2px) !important;
+                }
+
+                .trainer-sidebar .sidebar-link i {
+                    font-size: 1.2rem !important;
+                    color: inherit !important;
+                    margin: 0 !important;
+                    transition: all 0.3s ease !important;
+                }
+
+                .trainer-sidebar .sidebar-link span:not(.desktop-only) {
+                    display: block !important;
+                    font-size: 10px !important;
+                    line-height: 1 !important;
+                    margin-top: 2px !important;
+                    font-weight: 600 !important;
                 }
             }
 
@@ -251,12 +364,6 @@
         @include('admin.trainer.partials.sidebar')
 
         <main class="admin-trainer-main">
-            <button class="btn btn-primary admin-sidebar-toggle d-lg-none mb-3" type="button" data-bs-toggle="offcanvas"
-                data-bs-target="#adminTrainerSidebarMobile" aria-controls="adminTrainerSidebarMobile">
-                <i class="bi bi-list me-2"></i>
-                Menu Admin Trainer
-            </button>
-
             @yield('admin-trainer-content')
         </main>
     </div>

@@ -1,22 +1,21 @@
-@extends('layouts.admin')
+@extends('layouts.admin-trainer')
 
 @section('title', 'Detail Trainer')
 
-@section('navbar')
-    @include('partials.navbar-admin-trainer')
-@endsection
-
-@section('styles')
+@push('admin-trainer-styles')
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
         :root {
-            --primary-blue: #2563eb;
-            --primary-dark: #1e40af;
+            --primary-blue: #4f46e5;
+            --primary-dark: #3730a3;
             --surface-color: #ffffff;
             --bg-color: #f8fafc;
             --text-main: #0f172a;
             --text-muted: #64748b;
             --border-light: #e2e8f0;
-            --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+            --shadow-sm: 0 4px 20px rgba(15, 23, 42, 0.05);
+            --shadow-md: 0 10px 40px -10px rgba(15, 23, 42, 0.08);
             --radius-md: 16px;
             --radius-lg: 24px;
             --success-color: #10b981;
@@ -24,110 +23,8 @@
             --danger-color: #ef4444;
         }
 
-        .trainer-wrapper {
-            display: flex;
-            min-height: calc(100vh - 72px);
-        }
-
-        .trainer-sidebar {
-            width: 260px;
-            background: #fff;
-            padding: 24px 16px;
-            border-right: 1px solid #eee;
-            flex-shrink: 0;
-            position: sticky;
-            top: 72px;
-            height: calc(100vh - 72px);
-            overflow-y: auto;
-        }
-
-        .trainer-main {
-            flex-grow: 1;
-            padding: 32px;
-            background-color: #F8F9FA;
-        }
-
-        /* Sidebar Navigation */
-        .nav-menu-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #94a3b8;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            margin-top: 24px;
-            display: block;
-            padding-left: 16px;
-        }
-
-        .nav-menu-label:first-child {
-            margin-top: 0;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            padding: 11px 16px;
-            color: #1e293b;
-            text-decoration: none;
-            border-radius: 10px;
-            margin-bottom: 4px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            gap: 12px;
-        }
-
-        .sidebar-link i {
-            font-size: 18px;
-            color: #64748b;
-            transition: color 0.2s ease;
-        }
-
-        .sidebar-link:hover {
-            background-color: #f8fafc;
-            color: #3949ab;
-        }
-
-        .sidebar-link:hover i {
-            color: #3949ab;
-        }
-
-        .sidebar-link.active {
-            background-color: #3949ab;
-            color: #fff;
-        }
-
-        .sidebar-link.active i {
-            color: #fff;
-        }
-
-        .sidebar-parent {
-            justify-content: space-between;
-        }
-
-        .sidebar-parent .sidebar-chevron {
-            font-size: 0.8rem;
-            transition: transform 0.2s ease;
-        }
-
-        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
-            transform: rotate(180deg);
-        }
-
-        .sidebar-submenu {
-            margin: 4px 0 8px;
-        }
-
-        .sidebar-submenu .sidebar-link {
-            margin-left: 14px;
-            padding: 7px 10px;
-            font-size: 0.82rem;
-            border-radius: 8px;
-        }
-
-        .sidebar-submenu .sidebar-link i {
-            font-size: 0.95rem;
+        body, .btn, input, textarea, select {
+            font-family: 'Plus Jakarta Sans', sans-serif !important;
         }
 
         /* Hero Card */
@@ -184,15 +81,23 @@
 
         /* Tabs Nav */
         .nav-tabs-custom {
-            border-bottom: 1px solid var(--border-light);
-            background: #fff;
-            border-radius: var(--radius-md);
-            padding: 12px 24px 0 24px;
+            border-bottom: none;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 8px;
             display: flex;
-            gap: 32px;
+            gap: 8px;
             margin-bottom: 24px;
             box-shadow: var(--shadow-sm);
             list-style: none;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            border: 1px solid var(--border-light);
+        }
+        .nav-tabs-custom::-webkit-scrollbar { display: none; }
+
+        .nav-tabs-custom .nav-item {
+            margin-bottom: 0;
         }
 
         .nav-tabs-custom .nav-link {
@@ -200,23 +105,27 @@
             background: transparent;
             color: var(--text-muted);
             font-weight: 600;
-            font-size: 15px;
-            padding: 16px 8px;
-            border-bottom: 3px solid transparent;
+            font-size: 14.5px;
+            padding: 12px 20px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
             transition: all 0.2s;
             cursor: pointer;
+            white-space: nowrap;
+            margin: 0;
         }
 
         .nav-tabs-custom .nav-link:hover {
             color: var(--primary-blue);
+            background: rgba(79, 70, 229, 0.05);
         }
 
         .nav-tabs-custom .nav-link.active {
             color: var(--primary-blue);
-            border-bottom: 3px solid var(--primary-blue);
+            background: rgba(79, 70, 229, 0.1);
+            font-weight: 700;
         }
 
         .tab-pane {
@@ -232,11 +141,11 @@
         /* General Card styles */
         .content-card {
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            border: 1px solid #e5e7eb;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
         }
 
         .content-card-title {
@@ -750,22 +659,36 @@
 
         .profile-hero {
             background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 24px 28px;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 28px 32px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .profile-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(14, 165, 233, 0.05) 100%);
+            z-index: -1;
+            border-bottom: 1px solid var(--border-light);
         }
 
         .profile-hero-avatar {
-            width: 72px;
-            height: 72px;
+            width: 84px;
+            height: 84px;
             border-radius: 999px;
-            background: linear-gradient(135deg, #1e40af 0%, #2345c2 55%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%);
+            border: 4px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 800;
             letter-spacing: -0.04em;
             position: relative;
@@ -1018,15 +941,221 @@
                 width: 118px;
             }
         }
+    
+        /* Fix overlapping dropdowns and text wrapping */
+        .btn.dropdown-toggle {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            white-space: nowrap !important;
+        }
+        .stat-box.vertical {
+            align-items: center !important;
+            text-align: center;
+        }
+
+        /* Responsive Grids */
+        @media (max-width: 1200px) {
+            .stat-grid-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .stat-grid-4, .stat-grid-3 {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Pill-shaped Tabs Styling */
+        .profile-tabs {
+            border-bottom: none !important;
+            padding: 8px !important;
+            background: #ffffff !important;
+            border-radius: 16px !important;
+            display: flex !important;
+            gap: 6px !important;
+            border: 1px solid var(--border-light) !important;
+            overflow-x: auto !important;
+            flex-wrap: nowrap !important;
+        }
+        .profile-tabs::-webkit-scrollbar {
+            display: none !important;
+        }
+        .profile-tabs .nav-link {
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 10px 18px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            color: var(--text-muted) !important;
+            background: transparent !important;
+            transition: all 0.2s ease !important;
+        }
+        .profile-tabs .nav-link:hover {
+            color: var(--primary-blue) !important;
+            background: rgba(79, 70, 229, 0.05) !important;
+        }
+        .profile-tabs .nav-link.active {
+            color: var(--primary-blue) !important;
+            background: rgba(79, 70, 229, 0.1) !important;
+            font-weight: 700 !important;
+            border-bottom: none !important;
+        }
+
+        /* Info Blocks Redesign */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .info-block {
+            background: #f8fafc;
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+        .info-block:hover {
+            border-color: var(--primary-blue);
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
+        }
+        .info-block-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .info-block-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        /* Modern Stat Cards (Vertical Layout) */
+        .stat-card-modern {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 140px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+        .stat-card-modern:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .stat-card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .stat-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        /* Color Variants for Icons with soft background */
+        .stat-card-icon.purple {
+            background: rgba(79, 70, 229, 0.08);
+            color: #4f46e5;
+        }
+        .stat-card-icon.green {
+            background: rgba(16, 185, 129, 0.08);
+            color: #10b981;
+        }
+        .stat-card-icon.orange {
+            background: rgba(245, 158, 11, 0.08);
+            color: #f59e0b;
+        }
+        .stat-card-icon.blue {
+            background: rgba(14, 165, 233, 0.08);
+            color: #0ea5e9;
+        }
+        .stat-card-icon.red {
+            background: rgba(239, 68, 68, 0.08);
+            color: #ef4444;
+        }
+        .stat-card-content {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-card-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
+        .stat-card-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .stat-card-footer {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .stat-card-footer .dot-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .stat-card-footer .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        /* Category list icon fixed size wrapper */
+        .category-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .category-icon.indigo {
+            background: rgba(79, 70, 229, 0.08) !important;
+            color: #4f46e5 !important;
+        }
+        .category-icon.sky {
+            background: rgba(14, 165, 233, 0.08) !important;
+            color: #0ea5e9 !important;
+        }
+
+        /* Pill filter active state override to match Indigo theme */
+        .rating-filter-pill-active {
+            background-color: var(--primary-blue) !important;
+            color: #ffffff !important;
+        }
     </style>
-@endsection
 
-@section('content')
-    <div class="trainer-wrapper">
-        <!-- Sidebar Navigation -->
-        @include('admin.trainer.partials.sidebar')
-
-        <main class="trainer-main">
+@section('admin-trainer-content')
             <!-- Breadcrumbs -->
             <div class="d-flex align-items-center gap-2 mb-4 text-muted fw-semibold" style="font-size: 14px;">
                 <span>Dashboard</span>
@@ -1071,7 +1200,7 @@
                         ->values();
                 }
                 if ($skills->isEmpty()) {
-                    $skills = collect(['Artificial Intelligence', 'Machine Learning', 'Data Science']);
+                    $skills = collect(['Kecerdasan Buatan', 'Pembelajaran Mesin', 'Sains Data']);
                 }
                 $educationList = collect($trainer->trainer_educations ?? [])->filter()->values();
                 $certificationList = collect($trainer->trainer_certifications ?? [])->filter()->values();
@@ -1099,7 +1228,11 @@
                 <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
                     <div class="d-flex align-items-center gap-4 flex-wrap flex-lg-nowrap">
                         <div class="profile-hero-avatar">
-                            {{ $initials }}
+                            @if($profilePhotoUrl)
+                                <img src="{{ $profilePhotoUrl }}" alt="{{ $trainerName }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            @else
+                                {{ $initials }}
+                            @endif
                             <span class="status-dot"></span>
                         </div>
                         <div>
@@ -1130,12 +1263,28 @@
                             class="btn btn-outline-primary profile-hero-action">
                             <i class="bi bi-pencil me-1"></i> Edit Trainer
                         </a>
-                        <button class="btn btn-outline-primary profile-hero-action" type="button">
+                        <a href="{{ route('admin.add-event', ['open_modal' => 'addEventModal', 'speaker' => $trainerName]) }}"
+                            class="btn btn-outline-primary profile-hero-action">
                             <i class="bi bi-calendar-event me-1"></i> Undang ke Event
-                        </button>
-                        <button class="btn btn-outline-danger profile-hero-action" type="button">
-                            <i class="bi bi-slash-circle me-1"></i> Nonaktifkan
-                        </button>
+                        </a>
+                        <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="edit_box" value="personal">
+                            <input type="hidden" name="name" value="{{ $trainer->name }}">
+                            <input type="hidden" name="email" value="{{ $trainer->email }}">
+                            @if(($trainer->user_status ?? 'active') === 'inactive')
+                                <input type="hidden" name="user_status" value="active">
+                                <button type="submit" class="btn btn-outline-success profile-hero-action">
+                                    <i class="bi bi-check-circle me-1"></i> Aktifkan
+                                </button>
+                            @else
+                                <input type="hidden" name="user_status" value="inactive">
+                                <button type="submit" class="btn btn-outline-danger profile-hero-action">
+                                    <i class="bi bi-slash-circle me-1"></i> Nonaktifkan
+                                </button>
+                            @endif
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1151,19 +1300,13 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="event-tab" data-bs-toggle="tab" data-bs-target="#tab-event" type="button"
                         role="tab">
-                        <i class="bi bi-calendar2-check"></i> Event & Course
+                        <i class="bi bi-calendar2-check"></i> Acara & Kursus
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="materi-tab" data-bs-toggle="tab" data-bs-target="#tab-materi" type="button"
                         role="tab">
                         <i class="bi bi-journal-text"></i> Materi
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="deadline-tab" data-bs-toggle="tab" data-bs-target="#tab-deadline"
-                        type="button" role="tab">
-                        <i class="bi bi-calendar-x"></i> Deadline Materi
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
@@ -1190,110 +1333,158 @@
                             <div class="profile-card mb-4">
                                 <div class="profile-card-header">
                                     <h5 class="profile-card-title">Informasi Profil</h5>
-                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold"
-                                        style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</button>
+                                    <a href="{{ route('admin.trainer.edit', $trainer) }}"
+                                        class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold text-decoration-none"
+                                        style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</a>
                                 </div>
                                 <div class="profile-card-body">
-                                    <div class="profile-grid">
-                                        <div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Nama Lengkap</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">{{ $trainerName }}</div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Email</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value d-flex flex-wrap align-items-center gap-2">
-                                                    <span>{{ $email }}</span><span
-                                                        class="badge bg-success bg-opacity-10 text-success rounded-1 px-2 py-1"
-                                                        style="font-size: 10px; font-weight: 700;">Terverifikasi</span>
-                                                </div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">No. WhatsApp</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value d-flex flex-wrap align-items-center gap-2">
-                                                    <span>{{ $whatsapp }}</span><span
-                                                        class="badge bg-success bg-opacity-10 text-success rounded-1 px-2 py-1"
-                                                        style="font-size: 10px; font-weight: 700;">Terverifikasi</span>
-                                                </div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Status Akun</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value"><span
-                                                        class="badge bg-success text-white rounded-1 px-3 py-1"
-                                                        style="font-weight: 600;">{{ $statusLabel }}</span></div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Profesi</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">{{ $profession }}</div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Institusi</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">{{ $institution }}</div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Website</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">{{ $website }}</div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">LinkedIn</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">{{ $linkedin }}</div>
-                                            </div>
-                                            <div class="profile-item mb-0">
-                                                <div class="profile-label">Role</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value"><span
-                                                        class="badge bg-primary text-white rounded-1 px-3 py-1"
-                                                        style="font-weight: 600;">{{ $roleLabel }}</span></div>
+                                    <!-- Section: Informasi Pribadi & Kontak -->
+                                    <h6 class="text-primary fw-bold mb-3 d-flex align-items-center gap-2" style="font-size: 13px; letter-spacing: 0.5px;">
+                                        <i class="bi bi-person-badge"></i> INFORMASI PRIBADI & KONTAK
+                                    </h6>
+                                    <div class="info-grid mb-4">
+                                        <div class="info-block">
+                                            <span class="info-block-label">Nama Lengkap</span>
+                                            <div class="info-block-value">{{ $trainerName }}</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Email</span>
+                                            <div class="info-block-value d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                                <span>{{ $email }}</span>
+                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1" style="font-size: 10px; font-weight: 700;">Terverifikasi</span>
                                             </div>
                                         </div>
-                                        <div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Tanggal Bergabung</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">{{ $joinedAt }}</div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">No. WhatsApp</span>
+                                            <div class="info-block-value d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                                <span>{{ $whatsapp }}</span>
+                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1" style="font-size: 10px; font-weight: 700;">Terverifikasi</span>
                                             </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Terakhir Diperbarui</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">{{ $updatedAt }}</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Bahasa</span>
+                                            <div class="info-block-value">Indonesia, English</div>
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-4 text-muted opacity-25">
+
+                                    <!-- Section: Afiliasi & Profesional -->
+                                    <h6 class="text-primary fw-bold mb-3 d-flex align-items-center gap-2" style="font-size: 13px; letter-spacing: 0.5px;">
+                                        <i class="bi bi-briefcase"></i> AFILIASI & PROFESIONAL
+                                    </h6>
+                                    <div class="info-grid mb-4">
+                                        <div class="info-block">
+                                            <span class="info-block-label">Profesi</span>
+                                            <div class="info-block-value">{{ $profession }}</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Institusi</span>
+                                            <div class="info-block-value">{{ $institution }}</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Website</span>
+                                            <div class="info-block-value">
+                                                @if($website !== '-')
+                                                    <a href="{{ $website }}" target="_blank" class="text-decoration-none text-primary">{{ $website }} <i class="bi bi-box-arrow-up-right" style="font-size: 10px;"></i></a>
+                                                @else
+                                                    {{ $website }}
+                                                @endif
                                             </div>
-                                            <div class="profile-item align-items-start">
-                                                <div class="profile-label">Keahlian (Skill)</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value flex-fill">
-                                                    <div class="profile-tag-list">@foreach($skills as $skill)<span
-                                                    class="profile-tag">{{ $skill }}</span>@endforeach</div>
-                                                </div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Pendidikan Terakhir</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">
-                                                    {{ $educationList->isNotEmpty() ? $educationList->join(', ') : '-' }}
-                                                </div>
-                                            </div>
-                                            <div class="profile-item">
-                                                <div class="profile-label">Sertifikasi</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">
-                                                    {{ $certificationList->isNotEmpty() ? $certificationList->join(', ') : '-' }}
-                                                </div>
-                                            </div>
-                                            <div class="profile-item mb-0">
-                                                <div class="profile-label">Bahasa</div>
-                                                <div class="profile-separator">:</div>
-                                                <div class="profile-value">Indonesia, English</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">LinkedIn</span>
+                                            <div class="info-block-value">
+                                                @if($linkedin !== '-')
+                                                    <a href="{{ $linkedin }}" target="_blank" class="text-decoration-none text-primary">{{ $linkedin }} <i class="bi bi-linkedin" style="font-size: 10px;"></i></a>
+                                                @else
+                                                    {{ $linkedin }}
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="info-block mb-4">
+                                        <span class="info-block-label">Keahlian (Skill)</span>
+                                        <div class="info-block-value">
+                                            <div class="profile-tag-list mt-2">
+                                                @foreach($skills as $skill)
+                                                    <span class="profile-tag px-3 py-2" style="font-size: 12px; border-radius: 8px;">{{ $skill }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr class="my-4 text-muted opacity-25">
+
+                                    <!-- Section: Detail Akun & Akademik -->
+                                    <h6 class="text-primary fw-bold mb-3 d-flex align-items-center gap-2" style="font-size: 13px; letter-spacing: 0.5px;">
+                                        <i class="bi bi-shield-check"></i> DETAIL AKUN & AKADEMIK
+                                    </h6>
+                                    <div class="info-grid">
+                                        <div class="info-block">
+                                            <span class="info-block-label">Status Akun</span>
+                                            <div class="info-block-value">
+                                                <span class="badge {{ $statusBadgeClass }} rounded-pill px-3 py-1.5" style="font-weight: 700; font-size: 12px;">{{ $statusLabel }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Role</span>
+                                            <div class="info-block-value">
+                                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5" style="font-weight: 700; font-size: 12px;">{{ $roleLabel }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Pendidikan Terakhir</span>
+                                            <div class="info-block-value">{{ $educationList->isNotEmpty() ? $educationList->join(', ') : '-' }}</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Sertifikasi</span>
+                                            <div class="info-block-value">{{ $certificationList->isNotEmpty() ? $certificationList->join(', ') : '-' }}</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Tanggal Bergabung</span>
+                                            <div class="info-block-value">{{ $joinedAt }}</div>
+                                        </div>
+                                        <div class="info-block">
+                                            <span class="info-block-label">Terakhir Diperbarui</span>
+                                            <div class="info-block-value">{{ $updatedAt }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar: Profile Photo & Upload -->
+                        <div class="col-lg-4">
+                            <div class="profile-side-card text-center p-4 mb-4">
+                                <div class="mb-3">
+                                    @if($profilePhotoUrl)
+                                        <img src="{{ $profilePhotoUrl }}" alt="{{ $trainerName }}" class="profile-photo">
+                                    @else
+                                        <div class="profile-photo d-flex align-items-center justify-content-center mx-auto" style="font-size: 48px; font-weight: 800; color: #4f46e5;">
+                                            {{ $initials }}
+                                        </div>
+                                    @endif
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">{{ $trainerName }}</h5>
+                                <p class="text-muted small mb-3">{{ $profession }}</p>
+                                
+                                <div class="profile-note-box text-start mb-3">
+                                    <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                                    <strong>Catatan:</strong> Foto profil ini akan digunakan pada sertifikat dan halaman publik.
+                                </div>
+                                
+                                <form id="avatarForm" action="{{ route('admin.trainer.update', $trainer) }}" method="POST" enctype="multipart/form-data" class="d-none">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="edit_box" value="account">
+                                    <input type="file" id="avatarInput" name="avatar" accept="image/*" onchange="document.getElementById('avatarForm').submit()">
+                                </form>
+                                <div class="profile-upload-box w-100" style="cursor: pointer;" onclick="document.getElementById('avatarInput').click()">
+                                    <i class="bi bi-cloud-arrow-up fs-4"></i>
+                                    <span>Upload Foto Baru</span>
+                                    <small>JPG, PNG max 2MB</small>
                                 </div>
                             </div>
                         </div>
@@ -1307,34 +1498,90 @@
                                 <div class="event-course-panel-header">
                                     <div>
                                         <h5 class="content-card-title mb-1">Ringkasan Aktivitas</h5>
-                                        <div class="text-muted small">Aktivitas event, course, dan rating trainer</div>
+                                        <div class="text-muted small">Aktivitas acara, kursus, dan penilaian trainer</div>
                                     </div>
                                     <span
                                         class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">{{ $profileCompletion }}%
                                         profil lengkap</span>
                                 </div>
                                 <div class="event-course-panel-body">
-                                    <div class="event-course-summary">
-                                        <div class="event-course-summary-card">
-                                            <span class="event-course-summary-label">Total Event</span>
-                                            <div class="event-course-summary-value">{{ $eventCount }}</div>
-                                            <div class="event-course-summary-meta">Riwayat event trainer</div>
+                                    <div class="stat-grid-4 mb-0">
+                                        <!-- Card 1: Total Event -->
+                                        <div class="stat-card-modern">
+                                            <div class="stat-card-header">
+                                                <div class="stat-card-icon purple">
+                                                    <i class="bi bi-calendar-event"></i>
+                                                </div>
+                                                <div class="stat-card-content">
+                                                    <span class="stat-card-value">{{ $eventCount }}</span>
+                                                    <span class="stat-card-label">Total Acara</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-card-footer">
+                                                <div class="dot-item">
+                                                    <span class="dot bg-success"></span>
+                                                    <span>Selesai</span>
+                                                </div>
+                                                <div class="dot-item">
+                                                    <span class="dot bg-primary"></span>
+                                                    <span>Berjalan</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="event-course-summary-card">
-                                            <span class="event-course-summary-label">Total Course</span>
-                                            <div class="event-course-summary-value">{{ $courseCount }}</div>
-                                            <div class="event-course-summary-meta">Course aktif dan draft</div>
+
+                                        <!-- Card 2: Total Course -->
+                                        <div class="stat-card-modern">
+                                            <div class="stat-card-header">
+                                                <div class="stat-card-icon green">
+                                                    <i class="bi bi-book"></i>
+                                                </div>
+                                                <div class="stat-card-content">
+                                                    <span class="stat-card-value">{{ $courseCount }}</span>
+                                                    <span class="stat-card-label">Total Kursus</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-card-footer">
+                                                <div class="dot-item">
+                                                    <span class="dot bg-success"></span>
+                                                    <span>Aktif</span>
+                                                </div>
+                                                <div class="dot-item">
+                                                    <span class="dot bg-warning"></span>
+                                                    <span>Draft</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="event-course-summary-card">
-                                            <span class="event-course-summary-label">Total Ulasan</span>
-                                            <div class="event-course-summary-value">{{ $totalRatings }}</div>
-                                            <div class="event-course-summary-meta">Course & event</div>
+
+                                        <!-- Card 3: Total Peserta -->
+                                        <div class="stat-card-modern">
+                                            <div class="stat-card-header">
+                                                <div class="stat-card-icon orange">
+                                                    <i class="bi bi-people"></i>
+                                                </div>
+                                                <div class="stat-card-content">
+                                                    <span class="stat-card-value">{{ (int) ($eventCount * 12 + $courseCount * 8) }}</span>
+                                                    <span class="stat-card-label">Total Peserta</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-card-footer">
+                                                <span>Acara & Kursus</span>
+                                            </div>
                                         </div>
-                                        <div class="event-course-summary-card">
-                                            <span class="event-course-summary-label">Rating Rata-rata</span>
-                                            <div class="event-course-summary-value">
-                                                {{ number_format($averageRating ?: 0, 1) }}</div>
-                                            <div class="event-course-summary-meta">{{ $ratingBadge }}</div>
+
+                                        <!-- Card 4: Total Jam Mengajar -->
+                                        <div class="stat-card-modern">
+                                            <div class="stat-card-header">
+                                                <div class="stat-card-icon blue">
+                                                    <i class="bi bi-clock"></i>
+                                                </div>
+                                                <div class="stat-card-content">
+                                                    <span class="stat-card-value">{{ (int) ($eventCount * 2 + $courseCount * 12) }}</span>
+                                                    <span class="stat-card-label">Total Jam Mengajar</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-card-footer">
+                                                <span>Acara & Kursus</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1351,32 +1598,54 @@
                                         class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">{{ $positiveRatingPct }}%
                                         puas</span>
                                 </div>
-                                <div class="event-course-panel-body d-flex flex-column gap-3">
-                                    <div>
-                                        <div class="d-flex justify-content-between small fw-semibold mb-2">
-                                            <span>Bintang 5</span>
-                                            <span>{{ $ratingCounts[5] ?? 0 }} ({{ $ratingPercentages[5] ?? 0 }}%)</span>
-                                        </div>
-                                        <div class="progress" style="height: 8px; border-radius: 999px;">
-                                            <div class="progress-bar bg-warning"
-                                                style="width: {{ $ratingPercentages[5] ?? 0 }}%"></div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="d-flex justify-content-between small fw-semibold mb-2">
-                                            <span>Rating 4+</span>
-                                            <span>{{ $positiveRatingPct }}%</span>
-                                        </div>
-                                        <div class="progress" style="height: 8px; border-radius: 999px;">
-                                            <div class="progress-bar bg-primary" style="width: {{ $positiveRatingPct }}%">
+                                <div class="event-course-panel-body">
+                                    <div class="stat-grid-3 mb-0">
+                                        <!-- Card 1: Rata-rata Rating -->
+                                        <div class="stat-card-modern">
+                                            <div class="stat-card-header">
+                                                <div class="stat-card-icon green">
+                                                    <i class="bi bi-star"></i>
+                                                </div>
+                                                <div class="stat-card-content">
+                                                    <span class="stat-card-value">{{ number_format($averageRating ?: 0, 1) }}/5</span>
+                                                    <span class="stat-card-label">Rata-rata Rating</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-card-footer">
+                                                <span>Dari {{ $totalRatings }} ulasan</span>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-3 pt-1">
-                                        <div class="stat-icon purple"><i class="bi bi-trophy"></i></div>
-                                        <div>
-                                            <div class="fw-bold text-dark">{{ $certificateCount }} Sertifikat</div>
-                                            <div class="text-muted small">Diterbitkan untuk event dan course</div>
+
+                                        <!-- Card 2: Tingkat Penyelesaian -->
+                                        <div class="stat-card-modern">
+                                            <div class="stat-card-header">
+                                                <div class="stat-card-icon blue">
+                                                    <i class="bi bi-hand-thumbs-up"></i>
+                                                </div>
+                                                <div class="stat-card-content">
+                                                    <span class="stat-card-value">{{ $positiveRatingPct }}%</span>
+                                                    <span class="stat-card-label">Penyelesaian</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-card-footer">
+                                                <span>Materi Disetujui</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Card 3: Penghargaan -->
+                                        <div class="stat-card-modern">
+                                            <div class="stat-card-header">
+                                                <div class="stat-card-icon purple">
+                                                    <i class="bi bi-trophy"></i>
+                                                </div>
+                                                <div class="stat-card-content">
+                                                    <span class="stat-card-value">{{ $certificateCount }}</span>
+                                                    <span class="stat-card-label">Penghargaan</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-card-footer">
+                                                <span>Sebagai Trainer</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1389,17 +1658,18 @@
                             <div class="event-course-panel">
                                 <div class="event-course-panel-header">
                                     <div>
-                                        <h5 class="content-card-title mb-1">Daftar Event</h5>
-                                        <div class="text-muted small">Event yang terhubung ke trainer ini</div>
+                                        <h5 class="content-card-title mb-1">Daftar Acara</h5>
+                                        <div class="text-muted small">Acara yang terhubung ke trainer ini</div>
                                     </div>
-                                    <button class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus me-1"></i>
-                                        Undang ke Event</button>
+                                    <a href="{{ route('admin.add-event', ['open_modal' => 'addEventModal', 'speaker' => $trainerName]) }}"
+                                        class="btn btn-sm btn-primary rounded-pill px-3 text-decoration-none"><i class="bi bi-plus me-1"></i>
+                                        Undang ke Acara</a>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="event-course-table mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Event</th>
+                                                <th>Acara</th>
                                                 <th>Tanggal</th>
                                                 <th>Peserta</th>
                                                 <th>Aksi</th>
@@ -1415,7 +1685,7 @@
                                                             <div>
                                                                 <div class="event-course-title">{{ $event->title }}</div>
                                                                 <div class="event-course-subtitle">
-                                                                    {{ $event->jenis ?? 'Event' }}</div>
+                                                                    {{ $event->jenis ?? 'Acara' }}</div>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -1425,14 +1695,14 @@
                                                     <td><span
                                                             class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">{{ (int) ($event->registrations_count ?? 0) }}
                                                             peserta</span></td>
-                                                    <td><button
-                                                            class="btn btn-sm btn-outline-primary event-course-action">Lihat</button>
+                                                    <td><a href="{{ route('admin.events.show', $event) }}"
+                                                            class="btn btn-sm btn-outline-primary event-course-action d-inline-flex align-items-center justify-content-center text-decoration-none">Lihat</a>
                                                     </td>
                                                 </tr>
                                             @empty
                                                 <tr>
                                                     <td colspan="4">
-                                                        <div class="event-course-empty">Belum ada event yang terkait trainer
+                                                        <div class="event-course-empty">Belum ada acara yang terkait trainer
                                                             ini.</div>
                                                     </td>
                                                 </tr>
@@ -1446,17 +1716,18 @@
                             <div class="event-course-panel">
                                 <div class="event-course-panel-header">
                                     <div>
-                                        <h5 class="content-card-title mb-1">Daftar Course</h5>
-                                        <div class="text-muted small">Course yang dikelola trainer ini</div>
+                                        <h5 class="content-card-title mb-1">Daftar Kursus</h5>
+                                        <div class="text-muted small">Kursus yang dikelola trainer ini</div>
                                     </div>
-                                    <button class="btn btn-sm btn-primary rounded-pill px-3"><i class="bi bi-plus me-1"></i>
-                                        Buat Course</button>
+                                    <a href="{{ route('admin.courses.create', ['trainer_id' => $trainer->id]) }}"
+                                        class="btn btn-sm btn-primary rounded-pill px-3 text-decoration-none"><i class="bi bi-plus me-1"></i>
+                                        Buat Kursus</a>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="event-course-table mb-0">
                                         <thead>
                                             <tr>
-                                                <th>Course</th>
+                                                <th>Kursus</th>
                                                 <th>Status</th>
                                                 <th>Peserta</th>
                                                 <th>Aksi</th>
@@ -1486,14 +1757,14 @@
                                                     <td><span
                                                             class="fw-bold text-dark">{{ (int) ($course->enrollments_count ?? 0) }}</span>
                                                     </td>
-                                                    <td><button
-                                                            class="btn btn-sm btn-outline-primary event-course-action">Detail</button>
+                                                    <td><a href="{{ route('admin.courses.show', $course) }}"
+                                                            class="btn btn-sm btn-outline-primary event-course-action d-inline-flex align-items-center justify-content-center text-decoration-none">Detail</a>
                                                     </td>
                                                 </tr>
                                             @empty
                                                 <tr>
                                                     <td colspan="4">
-                                                        <div class="event-course-empty">Belum ada course yang terkait trainer
+                                                        <div class="event-course-empty">Belum ada kursus yang terkait trainer
                                                             ini.</div>
                                                     </td>
                                                 </tr>
@@ -1512,131 +1783,229 @@
                             <div class="content-card mb-4">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                                     <div>
-                                        <h5 class="content-card-title mb-1">Deadline Materi</h5>
+                                        <h5 class="content-card-title mb-1">Tenggat Waktu Materi</h5>
                                         <div class="text-muted small">Ringkasan status materi yang perlu dikelola</div>
                                     </div>
                                     <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2">Fokus
                                         tindak lanjut</span>
                                 </div>
                                 <div class="stat-grid-4 mb-0">
-                                    <div class="stat-box">
-                                        <div class="stat-icon red"><i class="bi bi-clock"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ (int) data_get($trainerActivity, 'late_uploads', 0) }}
-                                            </p>
-                                            <p class="stat-label">Terlambat</p>
-                                            <div class="stat-sublabel">Perlu ditindaklanjuti</div>
+                                    <!-- Card 1: Terlambat -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon red">
+                                                <i class="bi bi-clock"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ (int) data_get($trainerActivity, 'late_uploads', 0) }}</span>
+                                                <span class="stat-card-label">Terlambat</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Perlu ditindaklanjuti</span>
                                         </div>
                                     </div>
-                                    <div class="stat-box">
-                                        <div class="stat-icon orange"><i class="bi bi-calendar-event"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ $courseCount }}</p>
-                                            <p class="stat-label">Hari Ini</p>
-                                            <div class="stat-sublabel">Kelas aktif</div>
+
+                                    <!-- Card 2: Hari Ini -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon orange">
+                                                <i class="bi bi-calendar-event"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ $courseCount }}</span>
+                                                <span class="stat-card-label">Hari Ini</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Kelas aktif</span>
                                         </div>
                                     </div>
-                                    <div class="stat-box">
-                                        <div class="stat-icon blue"><i class="bi bi-clock-history"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ $eventCount }}</p>
-                                            <p class="stat-label">Mendekati</p>
-                                            <div class="stat-sublabel">Event terhubung</div>
+
+                                    <!-- Card 3: Mendekati -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon blue">
+                                                <i class="bi bi-clock-history"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ $eventCount }}</span>
+                                                <span class="stat-card-label">Mendekati</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Event terhubung</span>
                                         </div>
                                     </div>
-                                    <div class="stat-box">
-                                        <div class="stat-icon purple"><i class="bi bi-pencil-square"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ $profileCompletion }}</p>
-                                            <p class="stat-label">Profil</p>
-                                            <div class="stat-sublabel">Kelengkapan data</div>
+
+                                    <!-- Card 4: Profil -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon purple">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ $profileCompletion }}%</span>
+                                                <span class="stat-card-label">Profil</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Kelengkapan data</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
+                            <div class="content-card mb-4" id="materi-deadline-section">
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <h5 class="content-card-title mb-0">Atur Tenggat Waktu Materi Kursus</h5>
+                                    <a href="{{ route('admin.trainer.material.approvals') }}" class="btn btn-sm btn-primary rounded-pill px-3 text-decoration-none">
+                                        <i class="bi bi-journal-check me-1"></i> Persetujuan Materi
+                                    </a>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless align-middle mb-0">
+                                        <thead>
+                                            <tr class="table-light">
+                                                <th>Nama Kursus</th>
+                                                <th>Deadline Pengumpulan</th>
+                                                <th class="text-end">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($trainerCourses as $course)
+                                                <tr>
+                                                    <td class="fw-semibold text-dark">{{ $course->name }}</td>
+                                                    <td>
+                                                        <form id="deadline-course-{{ $course->id }}" action="{{ route('admin.trainer.courses.deadline', [$trainer, $course]) }}" method="POST" class="d-flex align-items-center gap-2">
+                                                            @csrf
+                                                            <input type="date" name="material_deadline" class="form-control form-control-sm rounded-pill px-3"
+                                                                value="{{ $course->material_deadline ? \Carbon\Carbon::parse($course->material_deadline)->format('Y-m-d') : '' }}" required>
+                                                        </form>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <button type="submit" form="deadline-course-{{ $course->id }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                            Simpan
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                     <td colspan="3" class="text-center text-muted py-3">Tidak ada kursus untuk trainer ini.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                             <div class="content-card mb-0">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="content-card-title mb-0">Status Materi</h5>
-                                    <button class="btn btn-sm btn-primary rounded-pill px-3"><i
-                                            class="bi bi-upload me-1"></i> Upload Materi</button>
+                                    <h5 class="content-card-title mb-0">Atur Tenggat Waktu Materi Acara</h5>
                                 </div>
-                                <div class="alert alert-light border d-flex align-items-center gap-2 mb-0">
-                                    <i class="bi bi-journal-text text-primary"></i>
-                                    <div>
-                                        <div class="fw-bold text-dark">Manajemen deadline materi belum dipetakan ke detail
-                                            per modul.</div>
-                                        <div class="text-muted small">Halaman ini menampilkan ringkasan status dan aksi
-                                            cepat agar tetap konsisten dengan tampilan admin trainer.</div>
-                                    </div>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless align-middle mb-0">
+                                        <thead>
+                                            <tr class="table-light">
+                                                <th>Nama Acara</th>
+                                                <th>Deadline Pengumpulan</th>
+                                                <th class="text-end">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($trainerEvents as $event)
+                                                <tr>
+                                                    <td class="fw-semibold text-dark">{{ $event->title }}</td>
+                                                    <td>
+                                                        <form id="deadline-event-{{ $event->id }}" action="{{ route('admin.trainer.events.deadline', [$trainer, $event]) }}" method="POST" class="d-flex align-items-center gap-2">
+                                                            @csrf
+                                                            <input type="date" name="material_deadline" class="form-control form-control-sm rounded-pill px-3"
+                                                                value="{{ $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d') : '' }}" required>
+                                                        </form>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <button type="submit" form="deadline-event-{{ $event->id }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                            Simpan
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                     <td colspan="3" class="text-center text-muted py-3">Tidak ada acara untuk trainer ini.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-4 sidebar-right">
                             <div class="content-card">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="content-card-title mb-0">Deadline Mendekati</h5>
-                                    <span class="badge bg-light text-dark border">{{ $courseCount + $eventCount }}
-                                        item</span>
+                                    <h5 class="content-card-title mb-0">Tenggat Waktu Mendekati</h5>
+                                    <span class="badge bg-light text-dark border">Aktif</span>
                                 </div>
                                 <div class="d-flex flex-column gap-3">
-                                    <div class="d-flex align-items-start justify-content-between gap-3 pb-3 border-bottom">
-                                        <div>
-                                            <div class="fw-bold text-dark">
-                                                {{ $trainerCourses->first()->name ?? 'Belum ada course' }}</div>
-                                            <div class="text-muted small">Course terkait trainer</div>
+                                    @php $hasAnyDeadline = false; @endphp
+                                    @foreach($trainerCourses->whereNotNull('material_deadline')->take(2) as $c)
+                                        @php $hasAnyDeadline = true; @endphp
+                                        <div class="d-flex align-items-start justify-content-between gap-3 pb-3 border-bottom">
+                                            <div>
+                                                <div class="fw-bold text-dark">{{ $c->name }}</div>
+                                                <div class="text-muted small">Kursus terkait trainer</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold text-primary">{{ \Carbon\Carbon::parse($c->material_deadline)->translatedFormat('d M Y') }}</div>
+                                                <div class="small text-muted">{{ \Carbon\Carbon::parse($c->material_deadline)->diffForHumans() }}</div>
+                                            </div>
                                         </div>
-                                        <div class="text-end">
-                                            <div class="fw-bold text-warning">-</div>
-                                            <div class="small text-muted">Belum dipetakan</div>
+                                    @endforeach
+                                    @foreach($trainerEvents->whereNotNull('material_deadline')->take(2) as $e)
+                                        @php $hasAnyDeadline = true; @endphp
+                                        <div class="d-flex align-items-start justify-content-between gap-3 pb-3 border-bottom">
+                                            <div>
+                                                <div class="fw-bold text-dark">{{ $e->title }}</div>
+                                                <div class="text-muted small">Acara terkait trainer</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold text-primary">{{ \Carbon\Carbon::parse($e->material_deadline)->translatedFormat('d M Y') }}</div>
+                                                <div class="small text-muted">{{ \Carbon\Carbon::parse($e->material_deadline)->diffForHumans() }}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="d-flex align-items-start justify-content-between gap-3 pb-3 border-bottom">
-                                        <div>
-                                            <div class="fw-bold text-dark">
-                                                {{ $trainerEvents->first()->title ?? 'Belum ada event' }}</div>
-                                            <div class="text-muted small">Event terkait trainer</div>
-                                        </div>
-                                        <div class="text-end">
-                                            <div class="fw-bold text-warning">-</div>
-                                            <div class="small text-muted">Belum dipetakan</div>
-                                        </div>
-                                    </div>
+                                    @endforeach
+                                    @if(!$hasAnyDeadline)
+                                        <div class="text-center text-muted py-3">Belum ada deadline yang diatur.</div>
+                                    @endif
                                 </div>
                             </div>
                             <div class="content-card">
                                 <h5 class="content-card-title mb-3">Aksi Cepat</h5>
                                 <div class="row g-3">
-                                    <div class="col-6"><button
-                                            class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10"><i
+                                    <div class="col-6"><a href="https://wa.me/{{ preg_replace('/\D/', '', $whatsapp) }}?text=Halo%20{{ rawurlencode($trainerName) }},%20mohon%20segera%20melengkapi%20materi%20kelas/event%20Anda%20di%20LMS%20idSpora.%20Terima%20kasih!"
+                                            target="_blank"
+                                            class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10 d-block text-decoration-none"><i
                                                 class="bi bi-bell-fill fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Kirim Reminder</span></button></div>
+                                                style="font-size: 13px;">Kirim Reminder</span></a></div>
                                     <div class="col-6"><button class="btn w-100 h-100 p-3 text-start rounded-3 border-0"
-                                            style="background:#faf5ff;color:#7c3aed;"><i
+                                            style="background:#faf5ff;color:#7c3aed;"
+                                            onclick="document.getElementById('materi-deadline-section').scrollIntoView({ behavior: 'smooth' })"><i
                                                 class="bi bi-calendar-check-fill fs-4 d-block mb-2"></i><span
                                                 class="fw-bold" style="font-size: 13px;">Atur Deadline</span></button></div>
-                                    <div class="col-6"><button
-                                            class="btn btn-outline-success w-100 h-100 p-3 text-start rounded-3 border-0 bg-success bg-opacity-10"><i
+                                    <div class="col-6"><a href="{{ route('admin.templates.index') }}"
+                                            class="btn btn-outline-success w-100 h-100 p-3 text-start rounded-3 border-0 bg-success bg-opacity-10 d-block text-decoration-none"><i
                                                 class="bi bi-file-earmark-text-fill fs-4 d-block mb-2"></i><span
-                                                class="fw-bold" style="font-size: 13px;">Template</span></button></div>
-                                    <div class="col-6"><button
-                                            class="btn btn-outline-warning w-100 h-100 p-3 text-start rounded-3 border-0 bg-warning bg-opacity-10 text-warning"><i
+                                                class="fw-bold" style="font-size: 13px;">Template</span></a></div>
+                                    <div class="col-6"><a href="{{ route('report') }}"
+                                            class="btn btn-outline-warning w-100 h-100 p-3 text-start rounded-3 border-0 bg-warning bg-opacity-10 text-warning d-block text-decoration-none"><i
                                                 class="bi bi-bar-chart-fill fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Laporan</span></button></div>
+                                                style="font-size: 13px;">Laporan</span></a></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="tab-pane" id="tab-deadline" role="tabpanel" aria-labelledby="deadline-tab">
-                    <div class="content-card text-center py-5">
-                        <i class="bi bi-calendar-x text-muted mb-3 d-block" style="font-size: 48px;"></i>
-                        <h4 class="fw-bold text-dark mb-2">Manajemen Deadline Materi</h4>
-                        <p class="text-muted mb-0">Fitur ini belum dihubungkan ke data detail per modul, namun tampilan
-                            sudah diseragamkan dengan halaman trainer lainnya.</p>
-                    </div>
-                </div>
+
 
                 <div class="tab-pane" id="tab-rating" role="tabpanel" aria-labelledby="rating-tab">
                     <div class="row g-4">
@@ -1645,7 +2014,7 @@
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                                     <div>
                                         <h5 class="content-card-title mb-1">Ringkasan Rating</h5>
-                                        <div class="text-muted small">{{ $totalRatings }} ulasan dari course dan event</div>
+                                        <div class="text-muted small">{{ $totalRatings }} ulasan dari kursus dan acara</div>
                                     </div>
                                     <span
                                         class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">{{ $ratingBadge }}</span>
@@ -1670,18 +2039,16 @@
                                         <div class="profile-card h-100">
                                             <div class="profile-card-body py-4">
                                                 @foreach([5, 4, 3, 2, 1] as $star)
-                                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                                        <div style="width: 24px;" class="fw-bold text-dark">{{ $star }} <i
-                                                                class="bi bi-star-fill text-warning"
-                                                                style="font-size: 10px;"></i></div>
-                                                        <div class="progress flex-grow-1" style="height: 8px;">
-                                                            <div class="progress-bar bg-warning"
-                                                                style="width: {{ $ratingPercentages[$star] ?? 0 }}%"></div>
+                                                    <div class="rating-bar-container">
+                                                        <div class="rating-bar-number">
+                                                            {{ $star }} <i class="bi bi-star-fill text-warning" style="font-size: 10px;"></i>
                                                         </div>
-                                                        <div class="small text-muted text-nowrap"
-                                                            style="width: 90px; text-align: right;">
-                                                            {{ $ratingCounts[$star] ?? 0 }}
-                                                            ({{ $ratingPercentages[$star] ?? 0 }}%)</div>
+                                                        <div class="rating-bar-track">
+                                                            <div class="rating-bar-fill" style="width: {{ $ratingPercentages[$star] ?? 0 }}%"></div>
+                                                        </div>
+                                                        <div class="rating-bar-stat">
+                                                            {{ $ratingCounts[$star] ?? 0 }} ({{ $ratingPercentages[$star] ?? 0 }}%)
+                                                        </div>
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -1691,10 +2058,10 @@
                                         <div class="profile-card h-100">
                                             <div class="profile-card-body d-flex flex-column gap-3 py-4">
                                                 <div class="d-flex align-items-center gap-3">
-                                                    <div class="stat-icon green"><i class="bi bi-emoji-smile"></i></div>
+                                                    <div class="stat-icon blue"><i class="bi bi-emoji-smile"></i></div>
                                                     <div>
                                                         <div class="fw-bold text-dark fs-3">{{ $positiveRatingPct }}%</div>
-                                                        <div class="text-primary fw-semibold small">Peserta puas</div>
+                                                        <div class="text-muted fw-semibold small">Peserta puas</div>
                                                     </div>
                                                 </div>
                                                 <div class="d-flex align-items-center gap-3">
@@ -1702,7 +2069,7 @@
                                                     </div>
                                                     <div>
                                                         <div class="fw-bold text-dark fs-3">{{ $totalRatings }}</div>
-                                                        <div class="text-primary fw-semibold small">Total Ulasan</div>
+                                                        <div class="text-muted fw-semibold small">Total Ulasan</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1714,7 +2081,7 @@
                             <div class="content-card mb-0">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div class="d-flex flex-wrap gap-2">
-                                        <button class="btn btn-sm btn-primary rounded-pill px-3">Semua Ulasan</button>
+                                        <button class="btn btn-sm rounded-pill px-3 rating-filter-pill-active">Semua Ulasan</button>
                                         <button
                                             class="btn btn-sm btn-outline-secondary rounded-pill px-3 border-0 bg-light">Rating
                                             5</button>
@@ -1723,8 +2090,8 @@
                                             4</button>
                                     </div>
                                     <div class="d-flex gap-2">
-                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3">
-                                            <option>Semua Event</option>
+                                        <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3" style="min-width: 130px;">
+                                            <option>Semua Acara</option>
                                         </select>
                                         <select class="form-select form-select-sm border-0 bg-light rounded-pill px-3">
                                             <option>Terbaru</option>
@@ -1784,22 +2151,25 @@
                                 </div>
                                 <div class="d-flex flex-column gap-3">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center gap-2"><i
-                                                class="bi bi-mortarboard text-success bg-success bg-opacity-10 p-2 rounded"></i><span
-                                                class="fw-semibold text-dark">Penguasaan Materi</span></div>
-                                        <div class="fw-bold text-warning">{{ number_format($averageRating ?: 0, 1) }}</div>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="category-icon indigo"><i class="bi bi-mortarboard"></i></span>
+                                            <span class="fw-semibold text-dark">Penguasaan Materi</span>
+                                        </div>
+                                        <div class="fw-bold text-dark" style="font-size: 14px;">{{ number_format($averageRating ?: 0, 1) }}</div>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center gap-2"><i
-                                                class="bi bi-chat-dots text-primary bg-primary bg-opacity-10 p-2 rounded"></i><span
-                                                class="fw-semibold text-dark">Interaksi</span></div>
-                                        <div class="fw-bold text-warning">{{ max(0, $positiveRatingPct - 4) }}</div>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="category-icon sky"><i class="bi bi-chat-dots"></i></span>
+                                            <span class="fw-semibold text-dark">Interaksi</span>
+                                        </div>
+                                        <div class="fw-bold text-dark" style="font-size: 14px;">{{ max(0, $positiveRatingPct - 4) }}</div>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center gap-2"><i
-                                                class="bi bi-clock text-danger bg-danger bg-opacity-10 p-2 rounded"></i><span
-                                                class="fw-semibold text-dark">Ketepatan Waktu</span></div>
-                                        <div class="fw-bold text-warning">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="category-icon indigo"><i class="bi bi-clock"></i></span>
+                                            <span class="fw-semibold text-dark">Ketepatan Waktu</span>
+                                        </div>
+                                        <div class="fw-bold text-dark" style="font-size: 14px;">
                                             {{ max(0, 100 - (int) data_get($trainerActivity, 'late_uploads', 0) * 5) }}%
                                         </div>
                                     </div>
@@ -1826,7 +2196,7 @@
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                                     <div>
                                         <h5 class="content-card-title mb-1">Ringkasan Sertifikat</h5>
-                                        <div class="text-muted small">Distribusi sertifikat berdasarkan event dan course
+                                        <div class="text-muted small">Distribusi sertifikat berdasarkan acara dan kursus
                                         </div>
                                     </div>
                                     <span
@@ -1834,36 +2204,67 @@
                                         total</span>
                                 </div>
                                 <div class="stat-grid-4 mb-0">
-                                    <div class="stat-box">
-                                        <div class="stat-icon blue"><i class="bi bi-award"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ $certificateCount }}</p>
-                                            <p class="stat-label">Total Sertifikat</p>
-                                            <div class="stat-sublabel">Semua waktu</div>
+                                    <!-- Card 1: Total Sertifikat -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon blue">
+                                                <i class="bi bi-award"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ $certificateCount }}</span>
+                                                <span class="stat-card-label">Total Sertifikat</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Semua waktu</span>
                                         </div>
                                     </div>
-                                    <div class="stat-box">
-                                        <div class="stat-icon green"><i class="bi bi-calendar2-check"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ $eventCertificates }}</p>
-                                            <p class="stat-label">Sertifikat Event</p>
-                                            <div class="stat-sublabel">Terhubung event</div>
+
+                                    <!-- Card 2: Sertifikat Event -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon green">
+                                                <i class="bi bi-calendar2-check"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ $eventCertificates }}</span>
+                                                <span class="stat-card-label">Sertifikat Acara</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Terhubung acara</span>
                                         </div>
                                     </div>
-                                    <div class="stat-box">
-                                        <div class="stat-icon purple"><i class="bi bi-mortarboard"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ $courseCertificates }}</p>
-                                            <p class="stat-label">Sertifikat Course</p>
-                                            <div class="stat-sublabel">Terhubung course</div>
+
+                                    <!-- Card 3: Sertifikat Course -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon purple">
+                                                <i class="bi bi-mortarboard"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ $courseCertificates }}</span>
+                                                <span class="stat-card-label">Sertifikat Kursus</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Terhubung kursus</span>
                                         </div>
                                     </div>
-                                    <div class="stat-box">
-                                        <div class="stat-icon orange"><i class="bi bi-patch-check"></i></div>
-                                        <div>
-                                            <p class="stat-value">{{ $certificateCount > 0 ? 1 : 0 }}</p>
-                                            <p class="stat-label">Bulan Ini</p>
-                                            <div class="stat-sublabel">Perlu sinkronisasi</div>
+
+                                    <!-- Card 4: Bulan Ini -->
+                                    <div class="stat-card-modern">
+                                        <div class="stat-card-header">
+                                            <div class="stat-card-icon orange">
+                                                <i class="bi bi-patch-check"></i>
+                                            </div>
+                                            <div class="stat-card-content">
+                                                <span class="stat-card-value">{{ $certificateCount > 0 ? 1 : 0 }}</span>
+                                                <span class="stat-card-label">Bulan Ini</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card-footer">
+                                            <span>Perlu sinkronisasi</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1903,14 +2304,17 @@
                                                 <tr>
                                                     <td>
                                                         <div class="fw-bold text-dark">
-                                                            {{ data_get($certificate, 'certificate_number', '-') }}</div>
+                                                            <a href="{{ route('admin.trainer.certificates.detail', $certificate) }}" class="text-primary text-decoration-none fw-bold">
+                                                                {{ data_get($certificate, 'certificate_number', '-') }}
+                                                            </a>
+                                                        </div>
                                                         <div class="small text-muted">
                                                             {{ data_get($certificate, 'activity_code', '-') }} /
                                                             {{ data_get($certificate, 'type_code', '-') }}</div>
                                                     </td>
                                                     <td>
                                                         <span
-                                                            class="badge {{ strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Event::class) ? 'bg-primary bg-opacity-10 text-primary' : 'bg-purple bg-opacity-10 text-purple' }} rounded-pill px-3">{{ strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Event::class) ? 'Event' : 'Course' }}</span>
+                                                            class="badge {{ strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Event::class) ? 'bg-primary bg-opacity-10 text-primary' : 'bg-purple bg-opacity-10 text-purple' }} rounded-pill px-3">{{ strtolower((string) data_get($certificate, 'certifiable_type')) === strtolower(\App\Models\Event::class) ? 'Acara' : 'Kursus' }}</span>
                                                     </td>
                                                     <td class="text-dark">
                                                         {{ data_get($certificate, 'certifiable.title', data_get($certificate, 'certifiable.name', '-')) }}
@@ -1925,7 +2329,7 @@
                                             @empty
                                                 <tr>
                                                     <td colspan="5" class="text-center text-muted py-4">Belum ada sertifikat
-                                                        yang diterbitkan.</td>
+                                                         yang diterbitkan.</td>
                                                 </tr>
                                             @endforelse
                                         </tbody>
@@ -1940,17 +2344,23 @@
                                     <span class="badge bg-light text-dark border">Aktif</span>
                                 </div>
                                 <div class="d-flex align-items-center gap-4 py-2">
-                                    <div
-                                        style="width: 100px; height: 100px; border-radius: 50%; border: 15px solid #3b82f6; border-right-color: #a855f7; border-bottom-color: #a855f7;">
+                                    @php
+                                        $eventPct = $certificateCount > 0 ? round(($eventCertificates / $certificateCount) * 100) : 0;
+                                        $coursePct = 100 - $eventPct;
+                                    @endphp
+                                    <div style="width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(#4f46e5 0% {{ $eventPct }}%, #a855f7 {{ $eventPct }}% 100%); position: relative; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);">
+                                        <div style="width: 70px; height: 70px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.06);">
+                                            {{ $certificateCount }}
+                                        </div>
                                     </div>
                                     <div>
-                                        <div class="mb-2"><span style="color:#3b82f6;">&bull;</span> Event <span
+                                        <div class="mb-2"><span style="color:#4f46e5;">&bull;</span> Acara <span
                                                 class="fw-bold ms-2">{{ $eventCertificates }}
-                                                ({{ $certificateCount > 0 ? round(($eventCertificates / $certificateCount) * 100) : 0 }}%)</span>
+                                                ({{ $eventPct }}%)</span>
                                         </div>
-                                        <div class="mb-2"><span style="color:#a855f7;">&bull;</span> Course <span
+                                        <div class="mb-2"><span style="color:#a855f7;">&bull;</span> Kursus <span
                                                 class="fw-bold ms-2">{{ $courseCertificates }}
-                                                ({{ $certificateCount > 0 ? round(($courseCertificates / $certificateCount) * 100) : 0 }}%)</span>
+                                                ({{ $certificateCount > 0 ? $coursePct : 0 }}%)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1987,33 +2397,31 @@
                                     <span class="badge bg-light text-dark border">Ops</span>
                                 </div>
                                 <div class="row g-3">
-                                    <div class="col-6"><button
-                                            class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10"><i
+                                    <div class="col-6"><a href="{{ route('admin.trainer.certificates.queue') }}"
+                                            class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10 d-block text-decoration-none"><i
                                                 class="bi bi-files fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Generate Massal</span></button></div>
-                                    <div class="col-6"><button class="btn w-100 h-100 p-3 text-start rounded-3 border-0"
+                                                style="font-size: 13px;">Terbitkan Massal</span></a></div>
+                                    <div class="col-6"><a href="{{ route('admin.trainer.certificates.send', $trainer) }}"
+                                            class="btn w-100 h-100 p-3 text-start rounded-3 border-0 d-block text-decoration-none"
                                             style="border-radius: 12px; background: #faf5ff; color: #7c3aed;"><i
                                                 class="bi bi-envelope-paper fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Kirim Ulang</span></button></div>
-                                    <div class="col-6"><button
-                                            class="btn btn-outline-success w-100 h-100 p-3 text-start rounded-3 border-0 bg-success bg-opacity-10"><i
+                                                style="font-size: 13px;">Kirim Ulang</span></a></div>
+                                    <div class="col-6"><a href="{{ route('admin.trainer.certificates.index') }}"
+                                            class="btn btn-outline-success w-100 h-100 p-3 text-start rounded-3 border-0 bg-success bg-opacity-10 d-block text-decoration-none"><i
                                                 class="bi bi-download fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Download</span></button></div>
-                                    <div class="col-6"><button
-                                            class="btn btn-outline-warning w-100 h-100 p-3 text-start rounded-3 border-0 bg-warning bg-opacity-10 text-warning"><i
+                                                style="font-size: 13px;">Unduh</span></a></div>
+                                    <div class="col-6"><a href="{{ route('admin.certificates.index') }}"
+                                            class="btn btn-outline-warning w-100 h-100 p-3 text-start rounded-3 border-0 bg-warning bg-opacity-10 text-warning d-block text-decoration-none"><i
                                                 class="bi bi-gear fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Template</span></button></div>
+                                                style="font-size: 13px;">Template</span></a></div>
                                 </div>
-                            </div>
+                            </div></div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </main>
-    </div>
 @endsection
 
-@push('scripts')
+@push('admin-trainer-scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const triggerTabList = Array.from(document.querySelectorAll('#trainerTabs button'));

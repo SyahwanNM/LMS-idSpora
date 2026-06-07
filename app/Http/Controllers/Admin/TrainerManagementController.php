@@ -227,7 +227,7 @@ class TrainerManagementController extends Controller
                 $isLate = $dueAt->lt($now);
                 $daysLeft = $isLate ? 0 : $now->diffInDays($dueAt);
                 $badgeClass = $isLate ? 'red' : ($daysLeft <= 2 ? 'yellow' : 'blue');
-                $badgeText = $isLate ? 'Overdue' : ($daysLeft . ' Hari Lagi');
+                $badgeText = $isLate ? 'Lewat Tenggat' : ($daysLeft . ' Hari Lagi');
 
                 return array_merge($item, [
                     'badge_class' => $badgeClass,
@@ -251,7 +251,7 @@ class TrainerManagementController extends Controller
                 $rating = max(0, min(5, $rating));
 
                 return [
-                    'title' => 'Course: ' . ($review->course?->name ?? 'Course'),
+                    'title' => 'Kursus: ' . ($review->course?->name ?? 'Kursus'),
                     'name' => $review->user?->name ?? 'User',
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $review->created_at?->diffForHumans() ?? '-',
@@ -263,7 +263,7 @@ class TrainerManagementController extends Controller
                 $rating = max(0, min(5, $rating));
 
                 return [
-                    'title' => 'Event: ' . ($feedback->event?->title ?? 'Event'),
+                    'title' => 'Acara: ' . ($feedback->event?->title ?? 'Acara'),
                     'name' => $feedback->user?->name ?? 'User',
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $feedback->created_at?->diffForHumans() ?? '-',
@@ -408,7 +408,7 @@ class TrainerManagementController extends Controller
                 return [
                     'type' => 'course',
                     'title' => $module->title,
-                    'source' => $module->course?->name ?? 'Course',
+                    'source' => $module->course?->name ?? 'Kursus',
                     'trainer' => $module->course?->trainer?->name ?? 'Trainer',
                     'date' => $module->updated_at,
                     'url' => route('admin.trainer.material.show', $module->course_id),
@@ -422,8 +422,8 @@ class TrainerManagementController extends Controller
             ->map(function ($module) {
                 return [
                     'type' => 'event',
-                    'title' => $module->original_name ?? 'Materi Event',
-                    'source' => $module->event?->title ?? 'Event',
+                    'title' => $module->original_name ?? 'Materi Acara',
+                    'source' => $module->event?->title ?? 'Acara',
                     'trainer' => $module->trainer?->name ?? 'Trainer',
                     'date' => $module->created_at,
                     'url' => route('admin.event-material.show', $module->event_id),
@@ -1034,10 +1034,7 @@ class TrainerManagementController extends Controller
     {
         if ($trainer->role !== 'trainer')
             abort(404);
-        return redirect()->route('admin.trainer.show', [
-            'trainer' => $trainer->id,
-            'edit' => 'personal',
-        ]);
+        return view('admin.trainer.edit', compact('trainer'));
     }
 
     // [UPDATED] UPDATE TRAINER (YANG ANDA CARI)

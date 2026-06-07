@@ -183,7 +183,7 @@
     .cert-table-wrap {
         border: 1px solid var(--cert-border);
         border-radius: 12px;
-        overflow: hidden;
+        overflow-x: auto;
     }
 
     .cert-table {
@@ -471,7 +471,7 @@
         <div class="col-xl-9">
             <section class="publish-hero">
                 <div class="hero-content">
-                    <div class="page-eyebrow">Recognition System</div>
+                    <div class="page-eyebrow">Sistem Rekognisi</div>
                     <h1>Penerbitan Sertifikat</h1>
                     <p>
                         Kelola dan terbitkan sertifikat untuk event dan kursus
@@ -484,7 +484,7 @@
                 <button type="button"
                     class="publish-tab-btn custom-tab-btn {{ $tab === 'items' ? 'active' : '' }}"
                     data-target="items-pane">
-                    Event / Course
+                    Acara / Kursus
                 </button>
 
                 <button type="button"
@@ -521,7 +521,7 @@
                         <table class="cert-table">
                             <thead>
                                 <tr>
-                                    <th>Event / Course</th>
+                                    <th>Acara / Kursus</th>
                                     <th>Tipe</th>
                                     <th>Tanggal Selesai</th>
                                     <th>Peserta</th>
@@ -536,7 +536,7 @@
                                     @php
                                         $itemDate = !empty($item['date']) ? \Carbon\Carbon::parse($item['date']) : null;
                                         $context = $item['context'] ?? 'event';
-                                        $type = $item['type'] ?? ucfirst($context);
+                                        $type = $item['type'] ?? ($context === 'course' ? 'Kursus' : 'Acara');
                                         $title = $item['title'] ?? '-';
                                     @endphp
 
@@ -557,7 +557,7 @@
                                         </td>
 
                                         <td>
-                                            <span class="type-badge">{{ strtoupper($context) }}</span>
+                                            <span class="type-badge">{{ strtoupper($context === 'course' ? 'Kursus' : 'Acara') }}</span>
                                         </td>
 
                                         <td>
@@ -632,9 +632,10 @@
                                     @php
                                         $certifiable = $certificate->certifiable;
                                         $programTitle = $certifiable?->title ?? $certifiable?->name ?? '-';
-                                        $programType = class_basename($certificate->certifiable_type ?? 'Event');
+                                        $programTypeRaw = class_basename($certificate->certifiable_type ?? 'Event');
+                                        $programType = strtolower($programTypeRaw) === 'course' ? 'Kursus' : (strtolower($programTypeRaw) === 'event' ? 'Acara' : $programTypeRaw);
                                         $issuedDate = $certificate->issued_at ?? $certificate->created_at;
-                                        $isCourse = strtolower($programType) === 'course';
+                                        $isCourse = strtolower($programTypeRaw) === 'course';
                                     @endphp
 
                                     <tr class="cert-row"

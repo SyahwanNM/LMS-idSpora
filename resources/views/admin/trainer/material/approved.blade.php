@@ -1,6 +1,6 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Approved Materials')
+@section('title', 'Materi Disetujui')
 
 @push('admin-trainer-styles')
 <style>
@@ -298,7 +298,7 @@
         display: block;
     }
 
-    @media (max-width: 992px) {
+    @media (max-width: 1200px) {
         .toolbar,
         .page-header {
             flex-direction: column;
@@ -311,6 +311,10 @@
         .filter-select,
         .toolbar-right {
             width: 100%;
+        }
+
+        .toolbar-left {
+            flex: none !important;
         }
 
         .toolbar-right {
@@ -353,7 +357,7 @@
 
                 <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
                     <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Deadline</option>
-                    <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Overdue</option>
+                    <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Lewat Tenggat</option>
                     <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat Waktu</option>
                     <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>Tanpa Deadline</option>
                 </select>
@@ -492,7 +496,7 @@
 
                 <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
                     <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Deadline</option>
-                    <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Overdue</option>
+                    <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Lewat Tenggat</option>
                     <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat Waktu</option>
                     <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>Tanpa Deadline</option>
                 </select>

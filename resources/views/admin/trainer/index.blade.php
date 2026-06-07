@@ -50,146 +50,132 @@
     <style>
         :root {
             --dash-navy: #0f172a;
-            --dash-primary: #1e3a8a;
-            --dash-blue: #3b82f6;
+            --dash-primary: #4f46e5;
+            --dash-purple: #7c3aed;
+            --dash-blue: #0ea5e9;
             --dash-green: #10b981;
             --dash-orange: #f59e0b;
-            --dash-purple: #8b5cf6;
-            --dash-red: #ef4444;
+            --dash-red: #f43f5e;
             --dash-muted: #64748b;
             --dash-soft: #f8fafc;
-            --dash-border: #e2e8f0;
-            --dash-card-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
+            --dash-border: #f1f5f9;
+            --dash-card-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.02), 0 4px 6px -4px rgba(15, 23, 42, 0.02);
         }
 
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
         body {
             background-color: #f8fafc;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             color: #334155;
             -webkit-font-smoothing: antialiased;
         }
 
         .admin-dashboard {
+            width: 100%;
             max-width: 1400px;
             margin: 0 auto;
             padding: 24px;
             display: flex;
             flex-direction: column;
             gap: 24px;
+            color: var(--dash-navy);
         }
 
         /* Header Section */
         .header-section {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, var(--dash-primary) 0%, var(--dash-purple) 100%);
             border: none;
             border-radius: 24px;
             padding: 32px 40px;
-            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 15px 35px rgba(30, 58, 138, 0.15);
+            box-shadow: 0 20px 40px -15px rgba(79, 70, 229, 0.2);
             position: relative;
             overflow: hidden;
         }
+        
         .header-section::before {
             content: '';
             position: absolute;
             top: -50px;
             right: -50px;
-            width: 250px;
-            height: 250px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
             border-radius: 50%;
+            pointer-events: none;
         }
+        
         .header-content {
             position: relative;
             z-index: 2;
         }
-        .welcome-greeting { font-size: 32px; font-weight: 800; color: white; margin: 0 0 12px 0; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; }
-        .welcome-subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.8); margin: 0; font-weight: 500; }
-
-
-        .admin-dashboard {
-            width: 100%;
-            color: var(--dash-navy);
-        }
-
-        .dashboard-top {
+        
+        .welcome-greeting {
+            font-size: 30px;
+            font-weight: 800;
+            color: white;
+            margin: 0 0 8px 0;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 24px;
-            margin-bottom: 20px;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
         }
-
-        .dashboard-title {
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--dash-navy);
-            margin: 0 0 4px;
-            letter-spacing: -.7px;
-        }
-
-        .dashboard-greeting {
-            font-size: 17px;
-            color: #415077;
+        
+        .welcome-subtitle {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.85);
             margin: 0;
-            line-height: 1.45;
-        }
-
-        .dashboard-note {
-            color: #71809d;
-            font-size: 14px;
-            margin-top: 2px;
+            font-weight: 500;
         }
 
         .date-widget {
             min-width: 220px;
-            height: 64px;
-            padding: 12px 16px;
-            background: #fff;
-            border: 1px solid var(--dash-border);
-            border-radius: 14px;
-            box-shadow: var(--dash-card-shadow);
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             gap: 14px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: white;
+            z-index: 2;
         }
 
         .date-widget-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: #f3f6ff;
-            color: #5265a4;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 19px;
+            font-size: 20px;
             flex-shrink: 0;
         }
 
         .date-main {
-            font-weight: 900;
+            font-weight: 700;
             font-size: 14px;
-            color: var(--dash-navy);
             line-height: 1.2;
         }
 
         .date-sub {
             font-size: 12px;
-            color: #71809d;
+            color: rgba(255, 255, 255, 0.8);
             margin-top: 2px;
         }
 
+        /* Metric Grid */
         .metric-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 24px;
-            margin-bottom: 8px;
         }
 
         .metric-card {
@@ -200,19 +186,14 @@
             box-shadow: var(--dash-card-shadow);
             display: flex;
             align-items: center;
-            gap: 16px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            gap: 18px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
         .metric-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-            border-color: #cbd5e1;
-        }
-            padding: 14px 16px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.05), 0 10px 10px -5px rgba(15, 23, 42, 0.02);
+            border-color: rgba(79, 70, 229, 0.2);
         }
 
         .metric-icon {
@@ -224,91 +205,107 @@
             justify-content: center;
             font-size: 24px;
             flex-shrink: 0;
-            position: relative;
-            overflow: hidden;
-            color: white;
-            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover .metric-icon {
+            transform: scale(1.05);
         }
 
-        .metric-body {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex: 1;
-            min-height: 50px;
-        }
+        .metric-icon.blue { background: #e0e7ff; color: var(--dash-primary); }
+        .metric-icon.green { background: #d1fae5; color: var(--dash-green); }
+        .metric-icon.orange { background: #fef3c7; color: var(--dash-orange); }
+        .metric-icon.purple { background: #f3e8ff; color: var(--dash-purple); }
 
         .metric-info {
             display: flex;
             flex-direction: column;
             gap: 4px;
-            min-height: 50px;
-            justify-content: center;
+            flex: 1;
         }
 
-        .metric-icon.blue { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); }
-        .metric-icon.green { background: linear-gradient(135deg, #34d399 0%, #059669 100%); }
-        .metric-icon.orange { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
-        .metric-icon.purple { background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); }
-
         .metric-label {
-            font-size: 12px;
-            color: #71809d;
-            margin-bottom: 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dash-muted);
+            margin: 0;
         }
 
         .metric-value {
-            font-size: 24px;
-            font-weight: 900;
-            line-height: 1;
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.1;
             color: var(--dash-navy);
+            letter-spacing: -0.5px;
         }
 
         .metric-change {
             font-size: 11px;
+            font-weight: 700;
             margin-top: 2px;
-            font-weight: 800;
-            background: none;
-            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .metric-change.up {
-            color: #00a961;
-        }
+        .metric-change.up { color: var(--dash-green); }
+        .metric-change.down { color: var(--dash-red); }
 
-        .metric-change.down {
-            color: #ff3b30;
-        }
-
-        .metric-sparkline {
-            width: 96px;
-            height: 44px;
-        }
-
+        /* Work Queue Section */
         .queue-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .dash-card {
+            background: #ffffff;
+            border: 1px solid var(--dash-border);
+            border-radius: 24px;
+            box-shadow: var(--dash-card-shadow);
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
             gap: 20px;
-            margin-bottom: 24px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .dash-card:hover {
+            border-color: rgba(15, 23, 42, 0.08);
+        }
+
+        .card-header-clean {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .card-title-clean {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dash-navy);
+            margin: 0;
+            letter-spacing: -0.2px;
         }
 
         .queue-item-card {
             border: 1px solid var(--dash-border);
-            border-radius: 14px;
-            padding: 14px 16px;
+            border-radius: 16px;
+            padding: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: #fff;
-            transition: all 0.22s ease-in-out;
-            box-shadow: 0 4px 10px rgba(15, 23, 42, .01);
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.01);
         }
 
         .queue-item-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
-            border-color: #cbd5e1;
+            box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.04);
+            border-color: rgba(79, 70, 229, 0.2);
         }
 
         .queue-item-left {
@@ -316,36 +313,35 @@
             align-items: center;
             gap: 14px;
             min-width: 0;
-            flex-grow: 1;
+            flex: 1;
         }
 
         .queue-icon-wrapper {
-            width: 42px;
-            height: 42px;
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 20px;
             flex-shrink: 0;
         }
 
-        .queue-icon-wrapper.course,
-        .queue-icon-wrapper.event {
-            background: #eff6ff;
-            color: #2563eb;
-        }
+        .queue-icon-wrapper.course { background: #e0e7ff; color: var(--dash-primary); }
+        .queue-icon-wrapper.event { background: #e0f2fe; color: #0284c7; }
+        .queue-icon-wrapper.publish { background: #fef3c7; color: var(--dash-orange); }
 
         .queue-item-details {
             min-width: 0;
+            flex: 1;
         }
 
         .queue-item-title {
-            font-weight: 800;
+            font-weight: 700;
             font-size: 14px;
             color: var(--dash-navy);
             line-height: 1.4;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -359,6 +355,10 @@
             gap: 6px;
             flex-wrap: wrap;
         }
+        
+        .queue-item-meta strong {
+            color: #475569;
+        }
 
         .meta-dot {
             color: #cbd5e1;
@@ -369,116 +369,121 @@
             align-items: center;
             gap: 6px;
             font-size: 12px;
-            font-weight: 800;
-            border-radius: 8px;
-            padding: 8px 14px;
+            font-weight: 700;
+            border-radius: 10px;
+            padding: 8px 16px;
             text-decoration: none;
             transition: all 0.2s ease;
             white-space: nowrap;
             border: 0;
         }
 
-        .btn-queue-action.course,
-        .btn-queue-action.event,
-        .btn-queue-action.publish {
-            background: #eff6ff;
-            color: #2563eb;
+        .btn-queue-action.course { background: #f1f5f9; color: #334155; }
+        .btn-queue-action.course:hover { background: var(--dash-primary); color: #fff; }
+        
+        .btn-queue-action.event { background: #f1f5f9; color: #334155; }
+        .btn-queue-action.event:hover { background: #0284c7; color: #fff; }
+
+        .btn-queue-action.publish { background: #fef3c7; color: #b45309; }
+        .btn-queue-action.publish:hover { background: var(--dash-orange); color: #fff; }
+
+        .card-link {
+            color: var(--dash-primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: gap 0.2s ease, color 0.2s ease;
         }
 
-        .btn-queue-action.course:hover,
-        .btn-queue-action.event:hover,
-        .btn-queue-action.publish:hover {
-            background: #2563eb;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        .card-link:hover {
+            color: var(--dash-purple);
+            text-decoration: none;
+            gap: 10px;
         }
 
+        /* Layout Grid */
         .main-grid {
             display: grid;
-            grid-template-columns: 1.55fr .92fr 1.06fr;
-            gap: 16px;
-            margin-bottom: 16px;
+            grid-template-columns: 1.6fr 1fr 1fr;
+            gap: 24px;
         }
 
         .bottom-grid {
             display: grid;
-            grid-template-columns: 1.12fr 1.05fr 1.05fr;
-            gap: 16px;
-            margin-bottom: 18px;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
         }
 
-        .dash-card {
+        /* Donut Charts */
+        .approval-wrap, .category-wrap {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .approval-donut, .category-donut {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .approval-donut-inner, .category-inner {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
             background: #fff;
-            border: 1px solid var(--dash-border);
-            border-radius: 20px;
-            box-shadow: var(--dash-card-shadow);
-            padding: 24px;
-            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .donut-number {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--dash-navy);
+            line-height: 1;
+        }
+
+        .donut-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--dash-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .approval-list, .category-list {
             display: flex;
             flex-direction: column;
-            gap: 16px;
-        }
-
-        .dash-card .card-link {
-            margin-top: auto;
-        }
-
-        .card-header-clean {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             gap: 12px;
-            margin-bottom: 24px;
+            flex: 1;
         }
 
-        .card-title-clean {
-            font-size: 16px;
-            font-weight: 700;
-            color: #0f172a;
-            margin: 0;
-        }
-
-        .card-link {
-            color: #1e3a8a;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .card-link:hover {
-            color: #3b82f6;
-            text-decoration: underline;
-        }
-
-        .chart-select {
-            height: 34px;
-            border: 1px solid var(--dash-border);
-            border-radius: 9px;
-            padding: 0 12px;
-            font-size: 13px;
-            color: #53617f;
-            background: #fff;
-        }
-
-        .legend-row {
+        .approval-item, .category-item {
             display: flex;
-            align-items: center;
-            gap: 26px;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
-            padding-left: 28px;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--dash-muted);
+            line-height: 1.4;
         }
 
-        .legend-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #53617f;
-            white-space: nowrap;
+        .approval-item strong, .category-item strong {
+            color: var(--dash-navy);
+            font-weight: 700;
         }
 
         .legend-dot {
@@ -486,11 +491,244 @@
             height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
+            display: inline-block;
+        }
+
+        /* Deadlines */
+        .deadline-list, .trainer-list, .feedback-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .deadline-item {
+            padding: 14px;
+            border: 1px solid var(--dash-border);
+            border-radius: 16px;
+            background: #fff;
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .deadline-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(79, 70, 229, 0.15);
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.03);
+        }
+
+        .deadline-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .deadline-icon.green { background: #e6fdf0; color: var(--dash-green); }
+        .deadline-icon.orange { background: #fff7ed; color: var(--dash-orange); }
+        .deadline-icon.blue { background: #e0f2fe; color: #0284c7; }
+
+        .deadline-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--dash-navy);
+            margin-bottom: 2px;
+            line-height: 1.3;
+        }
+
+        .deadline-sub {
+            font-size: 11px;
+            color: var(--dash-muted);
+        }
+
+        .deadline-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .deadline-badge.red { background: #fee2e2; color: #dc2626; }
+        .deadline-badge.yellow { background: #fef3c7; color: #d97706; }
+        .deadline-badge.blue { background: #e0e7ff; color: var(--dash-primary); }
+
+        .deadline-date {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--dash-muted);
+        }
+
+        /* Top Trainers & Feedback */
+        .trainer-item {
+            border: 1px solid var(--dash-border);
+            border-radius: 16px;
+            padding: 14px;
+            display: grid;
+            grid-template-columns: 28px 40px 1fr 100px;
+            gap: 12px;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .trainer-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(79, 70, 229, 0.15);
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.03);
+        }
+
+        .rank-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 11px;
+        }
+
+        .rank-icon.gold { background: #fef3c7; color: #d97706; }
+        .rank-icon.silver { background: #f1f5f9; color: #475569; }
+        .rank-icon.bronze { background: #ffedd5; color: #c2410c; }
+
+        .trainer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .trainer-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--dash-navy);
+            margin-bottom: 2px;
+        }
+        
+        .trainer-name a:hover {
+            color: var(--dash-primary) !important;
+        }
+
+        .trainer-meta {
+            font-size: 11px;
+            color: var(--dash-muted);
+        }
+
+        .score-area {
+            text-align: right;
+            font-size: 11px;
+            color: var(--dash-muted);
+        }
+
+        .score-area strong {
+            font-size: 15px;
+            color: var(--dash-navy);
+            font-weight: 800;
+        }
+
+        .score-bar {
+            height: 4px;
+            border-radius: 99px;
+            background: #f1f5f9;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .score-bar span {
+            display: block;
+            height: 100%;
+            border-radius: 99px;
+            background: var(--dash-primary);
+        }
+
+        .feedback-item {
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--dash-border);
+        }
+
+        .feedback-item:last-child {
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .feedback-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .stars {
+            color: #fbbf24;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .feedback-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--dash-navy);
+            margin-bottom: 1px;
+        }
+
+        .feedback-name {
+            font-size: 11px;
+            color: var(--dash-muted);
+        }
+
+        .feedback-time {
+            font-size: 11px;
+            color: var(--dash-muted);
+            align-self: center;
+        }
+
+        /* SVG Chart */
+        .chart-select {
+            height: 36px;
+            border: 1px solid var(--dash-border);
+            border-radius: 10px;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dash-navy);
+            background: #fff;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+            padding-left: 36px;
+        }
+
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--dash-muted);
         }
 
         .line-chart {
             width: 100%;
-            height: 230px;
+            height: 220px;
             display: block;
         }
 
@@ -503,44 +741,44 @@
         .chart-y-axis {
             position: absolute;
             left: 0;
-            top: 28px;
-            bottom: 32px;
+            top: 6px;
+            bottom: 24px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            font-size: 11px;
-            color: #8b96ad;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--dash-muted);
             text-align: right;
-            width: 32px;
-            padding-right: 6px;
+            width: 28px;
         }
 
         .chart-x-axis {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
-            color: #8b96ad;
-            margin-top: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--dash-muted);
+            margin-top: 8px;
             padding: 0 8px 0 2px;
         }
 
         .chart-tooltip {
             position: absolute;
-            top: 8px;
-            left: 12px;
-            background: #0f172a;
+            background: rgba(15, 23, 42, 0.95);
             color: #fff;
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-            line-height: 1.4;
-            min-width: 120px;
-            box-shadow: 0 12px 24px rgba(15, 23, 42, .25);
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 11px;
+            line-height: 1.5;
+            min-width: 130px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             opacity: 0;
-            transform: translateY(-6px);
-            transition: .18s;
+            transform: translateY(-4px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
             pointer-events: none;
-            z-index: 2;
+            z-index: 10;
+            backdrop-filter: blur(4px);
         }
 
         .chart-tooltip.visible {
@@ -548,359 +786,62 @@
             transform: translateY(0);
         }
 
-        .approval-wrap {
-            display: flex;
-            align-items: center;
-            gap: 28px;
-            min-height: 255px;
+        /* Trainer Table */
+        .table {
+            margin-bottom: 0;
         }
-
-        .approval-donut {
-            width: 190px;
-            height: 190px;
-            border-radius: 50%;
-            background: conic-gradient(var(--dash-orange) 0 10%,
-                    var(--dash-green) 10% 90%,
-                    var(--dash-red) 90% 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .approval-donut-inner {
-            width: 102px;
-            height: 102px;
-            border-radius: 50%;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            box-shadow: inset 0 0 0 1px #eef2f7;
-        }
-
-        .donut-number {
-            font-size: 23px;
-            font-weight: 900;
-            color: var(--dash-navy);
-            line-height: 1;
-        }
-
-        .donut-label {
-            font-size: 12px;
-            color: #71809d;
-            margin-top: 5px;
-        }
-
-        .approval-list {
-            display: grid;
-            gap: 18px;
-            flex: 1;
-        }
-
-        .approval-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 13px;
-            color: #53617f;
-            line-height: 1.35;
-        }
-
-        .approval-item strong {
-            color: var(--dash-navy);
-            font-weight: 900;
-        }
-
-        .deadline-list,
-        .trainer-list,
-        .feedback-list {
-            display: grid;
-            gap: 12px;
-        }
-
-        .deadline-item {
-            min-height: 68px;
-            padding: 12px;
-            border: 1px solid #eef2f7;
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, .035);
-            display: grid;
-            grid-template-columns: 44px 1fr auto;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .deadline-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .deadline-icon.green {
-            background: #e9fff3;
-            color: #19bd6b;
-        }
-
-        .deadline-icon.orange {
-            background: #fff7e8;
-            color: #ff970f;
-        }
-
-        .deadline-icon.blue {
-            background: #eef4ff;
-            color: #2f5bff;
-        }
-
-        .deadline-title {
-            font-size: 13px;
-            font-weight: 900;
-            color: var(--dash-navy);
-            margin-bottom: 3px;
-            line-height: 1.3;
-        }
-
-        .deadline-sub {
-            font-size: 12px;
-            color: #71809d;
-        }
-
-        .deadline-right {
-            text-align: right;
-        }
-
-        .deadline-badge {
-            display: inline-block;
-            padding: 5px 8px;
-            border-radius: 6px;
+        
+        .table thead th {
             font-size: 11px;
-            font-weight: 900;
-            margin-bottom: 5px;
-        }
-
-        .deadline-badge.red {
-            background: #ffe7e7;
-            color: #ef2727;
-        }
-
-        .deadline-badge.yellow {
-            background: #fff2c8;
-            color: #e79500;
-        }
-
-        .deadline-badge.blue {
-            background: #e8efff;
-            color: #275bff;
-        }
-
-        .deadline-date {
-            font-size: 12px;
-            color: #53617f;
-        }
-
-        .trainer-item {
-            border: 1px solid #eef2f7;
-            border-radius: 12px;
-            padding: 10px 12px;
-            display: grid;
-            grid-template-columns: 34px 42px 1fr 110px;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .rank-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 12px;
-        }
-
-        .rank-icon.gold {
-            background: #fff2c8;
-            color: #f2a900;
-        }
-
-        .rank-icon.silver {
-            background: #eef2f7;
-            color: #8a97aa;
-        }
-
-        .rank-icon.bronze {
-            background: #ffe8d7;
-            color: #e87531;
-        }
-
-        .trainer-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            object-fit: cover;
-            flex-shrink: 0;
-        }
-
-        .trainer-name {
-            font-size: 13px;
-            font-weight: 900;
-            color: var(--dash-navy);
-            margin-bottom: 2px;
-        }
-
-        .trainer-meta {
-            font-size: 12px;
-            color: #71809d;
-        }
-
-        .score-area {
-            text-align: right;
-            font-size: 12px;
-            color: #53617f;
-        }
-
-        .score-area strong {
-            font-size: 17px;
-            color: var(--dash-navy);
-        }
-
-        .score-bar {
-            height: 5px;
-            border-radius: 99px;
-            background: #edf2fb;
-            overflow: hidden;
-            margin-top: 6px;
-        }
-
-        .score-bar span {
-            display: block;
-            height: 100%;
-            border-radius: 99px;
-            background: #2745e8;
-        }
-
-        .category-wrap {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-            min-height: 245px;
-        }
-
-        .category-donut {
-            width: 190px;
-            height: 190px;
-            border-radius: 50%;
-            background: conic-gradient(#2f5bff 0 37.5%,
-                    #19bd6b 37.5% 62.5%,
-                    #ff970f 62.5% 79.2%,
-                    #8d54df 79.2% 91.7%,
-                    #9ca3af 91.7% 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .category-inner {
-            width: 102px;
-            height: 102px;
-            border-radius: 50%;
-            background: #fff;
-            box-shadow: inset 0 0 0 1px #eef2f7;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: var(--dash-navy);
-        }
-
-        .category-list {
-            flex: 1;
-            display: grid;
-            gap: 13px;
-        }
-
-        .category-item {
-            display: grid;
-            grid-template-columns: 12px 1fr auto;
-            gap: 10px;
-            align-items: center;
-            font-size: 13px;
-            color: #53617f;
-        }
-
-        .category-item strong {
-            color: #53617f;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            background-color: #f8fafc;
+            border-bottom: 1px solid var(--dash-border);
+            padding: 14px 16px;
         }
-
-        .feedback-item {
-            display: grid;
-            grid-template-columns: 44px 1fr auto;
-            gap: 12px;
-            align-items: center;
-            padding-bottom: 13px;
-            border-bottom: 1px solid #eef2f7;
+        
+        .table tbody td {
+            padding: 16px;
+            border-bottom: 1px solid var(--dash-border);
+            font-size: 13px;
         }
-
-        .feedback-item:last-child {
+        
+        .table tbody tr:last-child td {
             border-bottom: 0;
-            padding-bottom: 0;
         }
-
-        .feedback-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            object-fit: cover;
+        
+        .table-hover tbody tr {
+            transition: background-color 0.2s ease;
         }
-
-        .stars {
-            color: #ffb020;
-            font-size: 13px;
-            letter-spacing: 1px;
-            line-height: 1;
-            margin-bottom: 5px;
-            justify-content: flex-start;
+        
+        .table-hover tbody tr:hover {
+            background-color: #f8fafc;
         }
-
-        .feedback-title {
-            font-size: 13px;
-            color: #53617f;
-            margin-bottom: 2px;
-            line-height: 1.25;
+        
+        .badge {
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
         }
+        
+        .badge.bg-success { background: #ecfdf5 !important; color: #059669; border: 1px solid #a7f3d0; }
+        .badge.bg-warning { background: #fffbeb !important; color: #d97706; border: 1px solid #fde68a; }
+        .badge.bg-danger { background: #fef2f2 !important; color: #dc2626; border: 1px solid #fca5a5; }
 
-        .feedback-name {
-            font-size: 12px;
-            color: var(--dash-navy);
-        }
-
-        .feedback-time {
-            font-size: 12px;
-            color: #71809d;
-            white-space: nowrap;
-            align-self: center;
-        }
-
+        /* Insight Card */
         .insight-card {
-            min-height: 96px;
-            background: linear-gradient(135deg, #eef2ff, #f7f8ff);
-            border: 1px solid #dfe7ff;
-            border-radius: 12px;
+            background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
+            border: 1px solid #e0e7ff;
+            border-radius: 20px;
             box-shadow: var(--dash-card-shadow);
-            padding: 20px 24px;
+            padding: 24px 32px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 18px;
+            gap: 24px;
         }
 
         .insight-left {
@@ -910,97 +851,103 @@
         }
 
         .insight-icon {
-            width: 64px;
-            height: 64px;
+            width: 54px;
+            height: 54px;
             border-radius: 16px;
             background: #dfe8ff;
             color: var(--dash-primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 10px 22px rgba(47, 91, 255, .16);
+            font-size: 26px;
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.15);
             flex-shrink: 0;
         }
 
         .insight-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 700;
             color: #1e3a8a;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .insight-text {
             margin: 0;
-            color: #53617f;
-            font-size: 14px;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.4;
         }
 
         .btn-report {
-            height: 48px;
-            min-width: 230px;
-            padding: 0 20px;
+            height: 44px;
+            padding: 0 24px;
             border: 0;
             border-radius: 12px;
-            background: #1e3a8a;
+            background: var(--dash-primary);
             color: #fff;
             text-decoration: none;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 13px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            transition: all 0.2s ease;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .btn-report:hover {
             color: #fff;
-            background: #3b82f6;
+            background: var(--dash-purple);
             transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 16px rgba(124, 58, 237, 0.25);
         }
 
+        /* Responsive Layouts */
         @media (max-width: 1400px) {
             .metric-grid {
-                grid-template-columns: repeat(2, minmax(220px, 1fr));
+                grid-template-columns: repeat(2, 1fr);
             }
 
-            .main-grid,
+            .main-grid {
+                grid-template-columns: 1.6fr 1fr;
+            }
+            
+            .main-grid .dash-card:first-child {
+                grid-column: 1 / -1;
+            }
+
             .bottom-grid {
                 grid-template-columns: 1fr 1fr;
             }
-
-            .activity-card {
-                grid-column: 1 / -1;
-            }
         }
 
-        @media (max-width: 992px) {
+        @media (max-width: 1200px) {
             .header-section {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 16px;
+                gap: 20px;
+                padding: 24px 30px;
             }
 
             .date-widget {
                 width: 100%;
             }
 
-            .main-grid,
-            .bottom-grid {
+            .main-grid, .bottom-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .main-grid .dash-card:first-child, .bottom-grid .dash-card:first-child {
+                grid-column: span 1;
+            }
 
-            .approval-wrap,
-            .category-wrap {
+            .approval-wrap, .category-wrap {
                 flex-direction: column;
                 align-items: center;
             }
 
-            .approval-list,
-            .category-list {
+            .approval-list, .category-list {
                 width: 100%;
             }
 
@@ -1023,42 +970,27 @@
                 grid-template-columns: 1fr;
             }
 
-            .metric-card {
-                grid-template-columns: 58px 1fr;
-            }
-
             .dash-card {
-                padding: 16px;
-            }
-
-            .line-chart {
-                height: 210px;
-            }
-
-            .legend-row {
-                padding-left: 0;
-                gap: 12px;
+                padding: 20px;
             }
 
             .trainer-item {
-                grid-template-columns: 30px 38px 1fr;
+                grid-template-columns: 24px 36px 1fr;
             }
 
             .score-area {
                 grid-column: 3;
                 text-align: left;
+                margin-top: 6px;
             }
 
             .feedback-item {
-                grid-template-columns: 42px 1fr;
+                grid-template-columns: 36px 1fr;
             }
 
             .feedback-time {
                 grid-column: 2;
-            }
-
-            .insight-left {
-                align-items: flex-start;
+                margin-top: 4px;
             }
         }
     </style>
@@ -1071,7 +1003,7 @@
         <div class="header-section">
             <div class="header-content">
                 <h1 class="welcome-greeting">
-                    <i class="bi bi-shield-lock-fill"></i> Admin Trainer Workspace
+                    <i class="bi bi-shield-lock-fill"></i> Ruang Kerja Admin Trainer
                 </h1>
                 <p class="welcome-subtitle">Pantau kinerja, materi, dan portofolio seluruh Trainer.</p>
             </div>
@@ -1093,8 +1025,8 @@
                     <i class="bi bi-journal-richtext"></i>
                 </div>
 
-                <div>
-                    <div class="metric-label">Total Course</div>
+                <div class="metric-info">
+                    <div class="metric-label">Total Kursus</div>
                     <div class="metric-value">{{ $totalCourses }}</div>
                     <div class="metric-change {{ $metricChanges['courses']['direction'] ?? 'up' }}">
                         {{ $metricChanges['courses']['text'] ?? '0 dari bulan lalu' }}
@@ -1107,8 +1039,8 @@
                     <i class="bi bi-calendar-event"></i>
                 </div>
 
-                <div>
-                    <div class="metric-label">Total Event</div>
+                <div class="metric-info">
+                    <div class="metric-label">Total Acara</div>
                     <div class="metric-value">{{ $totalEvents }}</div>
                     <div class="metric-change {{ $metricChanges['events']['direction'] ?? 'up' }}">
                         {{ $metricChanges['events']['text'] ?? '0 dari bulan lalu' }}
@@ -1121,8 +1053,8 @@
                     <i class="bi bi-clock-history"></i>
                 </div>
 
-                <div>
-                    <div class="metric-label">Pending Review</div>
+                <div class="metric-info">
+                    <div class="metric-label">Menunggu Tinjauan</div>
                     <div class="metric-value">{{ $pendingReviews }}</div>
                     <div class="metric-change {{ $metricChanges['pending']['direction'] ?? 'up' }}">
                         {{ $metricChanges['pending']['text'] ?? '0 dari bulan lalu' }}
@@ -1135,7 +1067,7 @@
                     <i class="bi bi-check2-circle"></i>
                 </div>
 
-                <div>
+                <div class="metric-info">
                     <div class="metric-label">Disetujui</div>
                     <div class="metric-value">{{ $approvedMaterials }}</div>
                     <div class="metric-change {{ $metricChanges['approved']['direction'] ?? 'up' }}">
@@ -1172,13 +1104,13 @@
                                     <div class="queue-item-meta">
                                         <span>Trainer: <strong>{{ $item['trainer'] }}</strong></span>
                                         <span class="meta-dot">&bull;</span>
-                                        <span>{{ $item['type'] === 'course' ? 'Course: ' : 'Event: ' }}{{ $item['source'] }}</span>
+                                        <span>{{ $item['type'] === 'course' ? 'Kursus: ' : 'Acara: ' }}{{ $item['source'] }}</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="queue-item-right">
                                 <a href="{{ $item['url'] }}" class="btn-queue-action {{ $item['type'] }}">
-                                    <span>Review</span>
+                                    <span>Tinjau</span>
                                     <i class="bi bi-chevron-right"></i>
                                 </a>
                             </div>
@@ -1247,7 +1179,7 @@
         <div class="main-grid">
             <div class="dash-card activity-card">
                 <div class="card-header-clean">
-                    <h5 class="card-title-clean">Aktivitas Overview</h5>
+                    <h5 class="card-title-clean">Ringkasan Aktivitas</h5>
 
                     <select class="chart-select">
                         <option>7 Hari Terakhir</option>
@@ -1258,17 +1190,17 @@
                 <div class="legend-row">
                     <span class="legend-item">
                         <span class="legend-dot" style="background:#2f5bff;"></span>
-                        Course Dibuat
+                        Kursus Dibuat
                     </span>
 
                     <span class="legend-item">
                         <span class="legend-dot" style="background:#19bd6b;"></span>
-                        Event Dibuat
+                        Acara Dibuat
                     </span>
 
                     <span class="legend-item">
                         <span class="legend-dot" style="background:#ff970f;"></span>
-                        Material Disubmit
+                        Materi Dikirim
                     </span>
                 </div>
 
@@ -1303,7 +1235,7 @@
 
             <div class="dash-card">
                 <div class="card-header-clean">
-                    <h5 class="card-title-clean">Status Approval</h5>
+                    <h5 class="card-title-clean">Status Persetujuan</h5>
                 </div>
 
                 <div class="approval-wrap">
@@ -1323,7 +1255,7 @@
                     <div class="approval-list">
                         <div class="approval-item">
                             <span class="legend-dot" style="background:#ff970f;margin-top:3px;"></span>
-                            <div>Menunggu Review<br><strong>{{ $approvalStats['pending'] }}</strong>
+                            <div>Menunggu Tinjauan<br><strong>{{ $approvalStats['pending'] }}</strong>
                                 ({{ $approvalStats['pending_pct'] }}%)</div>
                         </div>
 
@@ -1342,7 +1274,7 @@
                 </div>
 
                 <a href="{{ route('admin.trainer.material.approvals') }}" class="card-link mt-2">
-                    Lihat semua approval
+                    Lihat semua persetujuan
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
@@ -1361,7 +1293,7 @@
 
                             <div>
                                 <div class="deadline-title">
-                                    {{ $item['type'] === 'event' ? 'Event:' : 'Materi:' }} {{ $item['title'] }}
+                                    {{ $item['type'] === 'event' ? 'Acara:' : 'Materi:' }} {{ $item['title'] }}
                                 </div>
                                 <div class="deadline-sub">Trainer: {{ $item['trainer'] }}</div>
                             </div>
@@ -1427,8 +1359,8 @@
                                     </a>
                                 </div>
                                 <div class="trainer-meta">
-                                    {{ $trainer->courses_as_trainer_count ?? 0 }} Course •
-                                    {{ $trainer->events_as_trainer_count ?? 0 }} Event
+                                    {{ $trainer->courses_as_trainer_count ?? 0 }} Kursus •
+                                    {{ $trainer->events_as_trainer_count ?? 0 }} Acara
                                 </div>
                             </div>
 
@@ -1446,45 +1378,13 @@
                     @endforelse
                 </div>
 
-                <a href="{{ route('admin.trainer.index') }}" class="card-link mt-3">
+                <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}#daftar-trainer" class="card-link mt-3">
                     Lihat semua trainer
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
 
-            <div class="dash-card">
-                <div class="card-header-clean">
-                    <h5 class="card-title-clean">Distribusi Course per Kategori</h5>
-                </div>
 
-                <div class="category-wrap">
-                    <div class="category-donut" style="background: conic-gradient({{ $categoryGradient }});">
-                        <div class="category-inner">
-                            <div class="donut-number">{{ $totalCourses }}</div>
-                            <div class="donut-label">Total</div>
-                        </div>
-                    </div>
-
-                    <div class="category-list">
-                        @forelse($categoryStats as $stat)
-                            <div class="category-item">
-                                <span class="legend-dot" style="background:{{ $stat['color'] }};"></span>
-                                <span>{{ $stat['name'] }}</span>
-                                <strong>{{ $stat['total'] }} ({{ $stat['pct'] }}%)</strong>
-                            </div>
-                        @empty
-                            <div class="text-muted" style="font-size:13px;">
-                                Belum ada data kategori.
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-
-                <a href="{{ route('admin.trainer.index') }}" class="card-link mt-3">
-                    Lihat semua kategori
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
 
             <div class="dash-card">
                 <div class="card-header-clean">
@@ -1520,7 +1420,7 @@
         </div>
 
         <!-- Daftar Seluruh Trainer -->
-        <h4 style="font-weight: 800; font-size: 18px; color: var(--dash-navy); margin: 36px 0 16px; letter-spacing: -.4px; display: flex; align-items: center; gap: 8px;">
+        <h4 id="daftar-trainer" style="font-weight: 800; font-size: 18px; color: var(--dash-navy); margin: 36px 0 16px; letter-spacing: -.4px; display: flex; align-items: center; gap: 8px;">
             <i class="bi bi-people-fill text-primary"></i> Daftar Seluruh Trainer
         </h4>
         <div class="dash-card mb-4">
@@ -1589,27 +1489,7 @@
             @endif
         </div>
 
-        <div class="insight-card">
-            <div class="insight-left">
-                <div class="insight-icon">
-                    <i class="bi bi-lightbulb-fill"></i>
-                </div>
 
-                <div>
-                    <div class="insight-title">Platform Insights</div>
-                    <p class="insight-text">
-                        Terus tingkatkan kualitas konten dan dukung para trainer untuk menciptakan pengalaman belajar
-                        terbaik!
-                    </p>
-                </div>
-            </div>
-
-            <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-report">
-                <i class="bi bi-graph-up-arrow"></i>
-                Lihat Laporan Lengkap
-                <i class="bi bi-chevron-down"></i>
-            </a>
-        </div>
     </div>
 @endsection
 
@@ -1627,8 +1507,8 @@
             var data = window.dashboardChartData;
             var labels = data.labels || [];
             var series = [
-                { name: 'Course', color: '#2f5bff', values: data.course || [] },
-                { name: 'Event', color: '#19bd6b', values: data.event || [] },
+                { name: 'Kursus', color: '#2f5bff', values: data.course || [] },
+                { name: 'Acara', color: '#19bd6b', values: data.event || [] },
                 { name: 'Materi', color: '#ff970f', values: data.material || [] }
             ];
 
@@ -1729,4 +1609,17 @@
             svg.addEventListener('mouseleave', hideHover);
         })();
     </script>
+
+    @if(request()->query('view') === 'list')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    var el = document.getElementById('daftar-trainer');
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 150);
+            });
+        </script>
+    @endif
 @endpush
