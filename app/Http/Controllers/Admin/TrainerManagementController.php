@@ -136,14 +136,24 @@ class TrainerManagementController extends Controller
             })
             ->count();
 
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
         $trainerCollection = User::whereIn('role', ['trainer', 'Trainer'])
-            ->withCount(['coursesAsTrainer', 'eventsAsTrainer'])
+            ->withCount([
+                'coursesAsTrainer' => function ($query) use ($startOfMonth, $endOfMonth) {
+                    $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
+                },
+                'eventsAsTrainer' => function ($query) use ($startOfMonth, $endOfMonth) {
+                    $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
+                }
+            ])
             ->get();
         $topTrainers = $trainerCollection
             ->map(function (User $trainer) {
                 $courseCount = (int) ($trainer->courses_as_trainer_count ?? 0);
                 $eventCount = (int) ($trainer->events_as_trainer_count ?? 0);
-                $trainer->score = ($courseCount * 4) + ($eventCount * 3);
+                $trainer->score = $courseCount + $eventCount;
                 return $trainer;
             })
             ->sortByDesc('score')
@@ -256,6 +266,7 @@ class TrainerManagementController extends Controller
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $review->created_at?->diffForHumans() ?? '-',
                     'created_at' => $review->created_at ?? now(),
+                    'comment' => $review->comment,
                 ];
             })
             ->merge($eventFeedback->map(function (Feedback $feedback) {
@@ -268,6 +279,7 @@ class TrainerManagementController extends Controller
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $feedback->created_at?->diffForHumans() ?? '-',
                     'created_at' => $feedback->created_at ?? now(),
+                    'comment' => $feedback->comment,
                 ];
             }))
             ->sortByDesc('created_at')
@@ -363,7 +375,7 @@ class TrainerManagementController extends Controller
                 $q->where('role', 'trainer')
                     ->orWhere('role', 'Trainer');
             })
-            ->withCount(['coursesAsTrainer', 'eventsAsTrainer']);
+            ->withCount(['coursesAsTrainer', 'eventsAsTrainer', 'trainerEnrollments']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -507,7 +519,9 @@ class TrainerManagementController extends Controller
             'categoryStats',
             'categoryGradient',
             'pendingMaterialsQueue',
-            'pendingCertificatesQueue'
+            'pendingCertificatesQueue',
+            'courseLast30',
+            'eventLast30'
         ));
     }
 
