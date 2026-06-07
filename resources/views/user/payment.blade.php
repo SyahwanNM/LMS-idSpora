@@ -255,9 +255,52 @@
                             </div>
                         </div>
 
-                            @if(!$isFree)
-                                <div class="mt-3" style="display: none;">
-                                    <input type="radio" name="payment_method" value="midtrans" checked>
+                    @if(!$isFree)
+                                <div class="mt-3">
+                                    <div class="form-label-custom" style="margin-bottom:8px; font-weight:600;">Payment Method</div>
+                                    <div style="display:flex; flex-direction:column; gap:10px;">
+                                        <label id="method-midtrans-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:#f5f5f5;cursor:not-allowed;font-size:14px;font-weight:600;color:#9ca3af;opacity:0.6;pointer-events:none;">
+                                            <input type="radio" name="payment_method" value="midtrans" id="method-midtrans" disabled style="accent-color:#4f46e5;">
+                                            <span>💳 Pembayaran Online</span>
+                                            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#9ca3af;">Not available at this time</span>
+                                        </label>
+                                        <label id="method-transfer-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #059669;background:#ecfdf5;cursor:pointer;font-size:14px;font-weight:600;color:#047857;transition:all .2s;">
+                                            <input type="radio" name="payment_method" value="transfer" id="method-transfer" checked style="accent-color:#059669;">
+                                            <span>🏦 Transfer Rekening</span>
+                                            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#6b7280;">Upload bukti • pending verifikasi</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                {{-- Transfer proof upload — shown only when Transfer Rekening selected --}}
+                                <div id="transferProofSection" class="mt-3" style="display:none;">
+                                    {{-- Bank account info --}}
+                                    <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+                                        <div style="font-size:12px;font-weight:600;color:#15803d;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-bank" viewBox="0 0 16 16" style="margin-right:4px;">
+                                                <path d="m8 0 6.61 3h.89a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5H15v7a.5.5 0 0 1 .485.379l.5 2A.5.5 0 0 1 15.5 16h-15a.5.5 0 0 1-.485-.621l.5-2A.5.5 0 0 1 1 13V6H.5a.5.5 0 0 1-.5-.5v-2A.5.5 0 0 1 .5 3h.89zM3.777 3h8.447L8 1zM2 6v7h1V6zm2 0v7h2.5V6zm3.5 0v7h1V6zm2 0v7H12V6zM13 6v7h1V6zm2-1V4H1v1zm-.39 9H1.39l-.25 1h13.72z"/>
+                                            </svg>
+                                            Tujuan Transfer
+                                        </div>
+                                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                            <div>
+                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">023 401 267</div>
+                                                <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>BCA</strong> &nbsp;·&nbsp; a.n. APTIKOM</div>
+                                            </div>
+                                            <button type="button" onclick="navigator.clipboard.writeText('023401267');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500);"
+                                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:600;">
+                                                Copy
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <label class="form-label-custom" style="font-weight:600;">Bukti Transfer <span style="color:#ef4444;">*</span></label>
+                                    <input type="file" name="payment_proof" id="paymentProofInput"
+                                        class="form-control-custom"
+                                        accept="image/jpeg,image/png,image/jpg,image/webp"
+                                        style="padding:8px;">
+                                    <div class="form-text small text-muted mt-1">Format: JPG, PNG, WebP. Maks <strong>1 MB</strong>.</div>
+                                    <div id="proofSizeError" class="form-text small text-danger mt-1" style="display:none;">Ukuran file melebihi 1 MB. Pilih file yang lebih kecil.</div>
                                 </div>
                             @endif
 
@@ -274,14 +317,106 @@
                             <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay with Midtrans</button>
                             <div class="small text-muted mt-2">Payment will be verified automatically after success.</div>
                         </div>
+                        <div id="transferSection" style="display:none; margin-top:0;">
+                            <button type="button" id="transferPayBtn" class="btn-pay"
+                                style="background:#059669;"
+                                data-bs-toggle="modal" data-bs-target="#transferConfirmModal">
+                                Kirim Bukti Transfer
+                            </button>
+                            <div class="small text-muted mt-2">Pembayaran akan diverifikasi oleh admin dalam 1×24 jam.</div>
+                        </div>
                     @endif
                 </div>
             </div>
         </div>
     </form>
 
-    <!-- QRIS Modal (manual) - mirip Course payment -->
-    <!-- QRIS Modal (manual) removed -->
+    <!-- Transfer Confirmation Modal -->
+    <div class="modal fade" id="transferConfirmModal" tabindex="-1" aria-labelledby="transferConfirmLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+            <div class="modal-content" style="border-radius:16px;overflow:hidden;border:none;">
+                <div class="modal-header" style="background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:20px 24px 16px;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div style="width:40px;height:40px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#16a34a" viewBox="0 0 16 16">
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
+                            </svg>
+                        </div>
+                        <h5 class="modal-title mb-0 fw-bold" id="transferConfirmLabel" style="color:#15803d;">Konfirmasi Pembayaran</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding:20px 24px;">
+                    <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:16px;">
+                        Pastikan pembayaran yang Anda lakukan sesuai dengan jumlah total yang tertera pada halaman sebelumnya.
+                        Kesalahan nominal pembayaran dapat menyebabkan proses verifikasi menjadi lebih lama.
+                    </p>
+                    <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:20px;">
+                        Silakan periksa kembali sebelum melanjutkan ke proses pembayaran.
+                    </p>
+                    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;background:#f9fafb;">
+                        <input type="checkbox" id="transferConfirmCheck" style="margin-top:2px;accent-color:#059669;width:16px;height:16px;flex-shrink:0;">
+                        <span style="font-size:13px;color:#374151;line-height:1.5;">
+                            Saya menyatakan bahwa saya telah memeriksa dan memastikan jumlah pembayaran sesuai dengan total yang tertera.
+                        </span>
+                    </label>
+                </div>
+                <div class="modal-footer" style="padding:12px 24px 20px;border-top:none;gap:10px;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
+                        style="border-radius:10px;padding:10px 20px;font-weight:600;flex:1;">
+                        Batal
+                    </button>
+                    <button type="button" id="transferConfirmProceed"
+                        style="flex:2;border-radius:10px;padding:10px 20px;font-weight:600;background:#059669;color:#fff;border:none;opacity:0.5;cursor:not-allowed;transition:all .2s;"
+                        disabled>
+                        Lanjutkan Pembayaran
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const check   = document.getElementById('transferConfirmCheck');
+        const proceed = document.getElementById('transferConfirmProceed');
+        const modal   = document.getElementById('transferConfirmModal');
+
+        if (check && proceed) {
+            check.addEventListener('change', function() {
+                proceed.disabled = !this.checked;
+                proceed.style.opacity = this.checked ? '1' : '0.5';
+                proceed.style.cursor  = this.checked ? 'pointer' : 'not-allowed';
+            });
+        }
+
+        if (proceed) {
+            proceed.addEventListener('click', function() {
+                // Close modal and submit form
+                if (window.bootstrap) {
+                    bootstrap.Modal.getInstance(modal)?.hide();
+                }
+                // Small delay to let modal close before submit
+                setTimeout(function() {
+                    const form = document.getElementById('paymentForm');
+                    if (form) form.submit();
+                }, 200);
+            });
+        }
+
+        // Reset checkbox when modal closes
+        if (modal) {
+            modal.addEventListener('hidden.bs.modal', function() {
+                if (check) { check.checked = false; }
+                if (proceed) {
+                    proceed.disabled = true;
+                    proceed.style.opacity = '0.5';
+                    proceed.style.cursor  = 'not-allowed';
+                }
+            });
+        }
+    });
+    </script>
 
     <!-- Midtrans Success Modal (Checklist hijau) -->
     <div class="modal fade" id="midtransSuccessModal" tabindex="-1" aria-hidden="true">
@@ -497,15 +632,70 @@
 
         let pendingProofSubmit = false;
 
+        // Payment method toggle
+        const methodMidtrans  = document.getElementById('method-midtrans');
+        const methodTransfer  = document.getElementById('method-transfer');
+        const midtransLbl     = document.getElementById('method-midtrans-label');
+        const transferLbl     = document.getElementById('method-transfer-label');
+        const transferSection = document.getElementById('transferSection');
+        const transferProofSection = document.getElementById('transferProofSection');
+        const proofInput      = document.getElementById('paymentProofInput');
+        const proofSizeError  = document.getElementById('proofSizeError');
+
         function getSelectedMethod(){
+            if (methodTransfer && methodTransfer.checked) return 'transfer';
             return 'midtrans';
+        }
+
+        function syncMethodUI() {
+            const m = getSelectedMethod();
+            const isMidtrans = m === 'midtrans';
+
+            // Style active label
+            if (midtransLbl) {
+                midtransLbl.style.border = isMidtrans ? '2px solid #4f46e5' : '2px solid #e0e0e0';
+                midtransLbl.style.background = isMidtrans ? '#eef2ff' : '#fff';
+                midtransLbl.style.color = isMidtrans ? '#4338ca' : '#374151';
+            }
+            if (transferLbl) {
+                transferLbl.style.border = !isMidtrans ? '2px solid #059669' : '2px solid #e0e0e0';
+                transferLbl.style.background = !isMidtrans ? '#ecfdf5' : '#fff';
+                transferLbl.style.color = !isMidtrans ? '#047857' : '#374151';
+            }
+
+            // Show/hide sections
+            const midSec = document.getElementById('midtransSection');
+            if (midSec) midSec.style.display = isMidtrans ? '' : 'none';
+            if (transferSection) transferSection.style.display = isMidtrans ? 'none' : '';
+            if (transferProofSection) transferProofSection.style.display = isMidtrans ? 'none' : '';
+
+            validate();
+        }
+
+        if (methodMidtrans) methodMidtrans.addEventListener('change', syncMethodUI);
+        if (methodTransfer)  methodTransfer.addEventListener('change', syncMethodUI);
+
+        // Init payment method UI — transfer is default (midtrans disabled)
+        syncMethodUI();
+
+        // Validate proof file size (max 1MB)
+        if (proofInput) {
+            proofInput.addEventListener('change', function() {
+                if (this.files[0] && this.files[0].size > 1 * 1024 * 1024) {
+                    proofSizeError && (proofSizeError.style.display = '');
+                    this.value = '';
+                } else {
+                    proofSizeError && (proofSizeError.style.display = 'none');
+                }
+                validate();
+            });
         }
 
         function isValidPhone(val){ return /^[0-9]{8,15}$/.test(String(val || '').trim()); }
 
         function validate(){
             const nameOk = fullName && fullName.value.trim().length >= 3;
-            const dialOk = true; // dial code fixed to +62
+            const dialOk = true;
             const waOk = wa && isValidPhone(wa.value);
             const allOk = nameOk && dialOk && waOk;
 
@@ -520,10 +710,21 @@
 
             const method = getSelectedMethod();
             const okMidtrans = allOk;
+
             if(midtransPayBtn){
                 midtransPayBtn.disabled = !(method === 'midtrans' && okMidtrans);
                 midtransPayBtn.style.opacity = (method === 'midtrans' && okMidtrans) ? '1' : '0.5';
             }
+
+            const transferPayBtn = document.getElementById('transferPayBtn');
+            const hasProof = proofInput && proofInput.files && proofInput.files.length > 0
+                             && proofInput.files[0].size <= 1 * 1024 * 1024;
+            if (transferPayBtn) {
+                const okTransfer = allOk && hasProof;
+                transferPayBtn.disabled = !(method === 'transfer' && okTransfer);
+                transferPayBtn.style.opacity = (method === 'transfer' && okTransfer) ? '1' : '0.5';
+            }
+
             return okMidtrans;
         }
 
@@ -532,6 +733,9 @@
             if(wa) wa.addEventListener(evt, validate);
             if(referralInput) referralInput.addEventListener(evt, updateReferralUI);
         });
+
+        // Init payment method UI
+        syncMethodUI();
 
         form.addEventListener('submit', function(e){
             if(isFree){
@@ -849,4 +1053,3 @@
     </script>
 </body>
 </html>
-

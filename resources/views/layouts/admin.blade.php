@@ -41,12 +41,28 @@
             
             <div class="collapse navbar-collapse" id="adminNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @if(!request()->routeIs('admin.dashboard'))
+                    @if(auth()->user()?->role === 'admin' && !request()->routeIs('admin.dashboard'))
                         <li class="nav-item ms-lg-3">
                             <a class="nav-link fw-medium text-primary d-flex align-items-center" href="{{ route('admin.dashboard') }}">
                                 <i class="bi bi-grid-1x2-fill me-2"></i> Module Hub
                             </a>
                         </li>
+                    @elseif(auth()->user()?->role === 'event_admin')
+                        @php
+                            $assignedId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                                ->where('user_id', auth()->id())
+                                ->value('event_id');
+                            $assignedEvent = $assignedId ? \App\Models\Event::find($assignedId) : null;
+                        @endphp
+                        @if($assignedEvent)
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-medium text-primary d-flex align-items-center"
+                               href="{{ route('admin.events.show', $assignedEvent) }}">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                {{ \Illuminate\Support\Str::limit($assignedEvent->title, 30) }}
+                            </a>
+                        </li>
+                        @endif
                     @endif
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center gap-3">
@@ -249,27 +265,71 @@
         
         // Inactivity auto-logout (idle timeout)
         try {
-            const logoutFormEl = document.getElementById('logoutForm');
-            // Adjust minutes as needed; defaults to 30 minutes
-            const IDLE_MINUTES = 30;
+            const IDLE_MINUTES = {{ (int) config('session.lifetime', 120) }};
+            const WARN_BEFORE_S = 60;
             const EVENTS = ['click','mousemove','keydown','scroll','touchstart','touchmove'];
-            let idleTimer;
-            const resetIdle = function(){
-                if(idleTimer) clearTimeout(idleTimer);
-                idleTimer = setTimeout(function(){
-                    // Prefer graceful modal if present; otherwise submit directly
-                    if (logoutFormEl) {
-                        try {
-                            // If confirmation modal exists, bypass UI and submit
-                            logoutFormEl.submit();
-                        } catch(e){ /* noop */ }
-                    }
-                }, IDLE_MINUTES * 60 * 1000);
-            };
+            let idleTimer, warnTimer, countdownInterval;
+            let idleWarned = false;
+
+            // Create warning modal dynamically
+            const idleModal = document.createElement('div');
+            idleModal.id = 'adminIdleModal';
+            idleModal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;';
+            idleModal.innerHTML = `
+                <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+                    <div style="font-size:2.5rem;margin-bottom:12px;">⏱️</div>
+                    <h5 style="font-weight:700;margin-bottom:8px;">Session Expiring Soon</h5>
+                    <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">You have been inactive. You will be logged out in <strong id="adminIdleCountdown">60</strong> seconds.</p>
+                    <div style="display:flex;gap:12px;justify-content:center;">
+                        <button id="adminIdleStayBtn" style="flex:1;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Stay Logged In</button>
+                        <button onclick="document.getElementById('logoutForm')?.submit()" style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Logout Now</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(idleModal);
+
+            const cdEl = document.getElementById('adminIdleCountdown');
+            const stayBtn = document.getElementById('adminIdleStayBtn');
+
+            function doAdminLogout(){ document.getElementById('logoutForm')?.submit(); }
+
+            function startAdminCountdown(){
+                let secs = WARN_BEFORE_S;
+                cdEl && (cdEl.textContent = secs);
+                countdownInterval = setInterval(function(){
+                    secs--;
+                    cdEl && (cdEl.textContent = secs);
+                    if (secs <= 0){ clearInterval(countdownInterval); doAdminLogout(); }
+                }, 1000);
+            }
+
+            function showAdminWarning(){
+                idleWarned = true;
+                idleModal.style.display = 'flex';
+                startAdminCountdown();
+            }
+
+            function hideAdminWarning(){
+                idleModal.style.display = 'none';
+                clearInterval(countdownInterval);
+                idleWarned = false;
+            }
+
+            stayBtn && stayBtn.addEventListener('click', function(){ resetAdminIdle(); });
+
+            function resetAdminIdle(){
+                clearTimeout(idleTimer);
+                clearTimeout(warnTimer);
+                hideAdminWarning();
+                const totalMs = IDLE_MINUTES * 60 * 1000;
+                const warnMs  = totalMs - (WARN_BEFORE_S * 1000);
+                warnTimer = setTimeout(showAdminWarning, warnMs > 0 ? warnMs : totalMs);
+                idleTimer = setTimeout(doAdminLogout, totalMs);
+            }
+
             EVENTS.forEach(function(evt){
-                window.addEventListener(evt, resetIdle, { passive: true });
+                window.addEventListener(evt, resetAdminIdle, { passive: true });
             });
-            resetIdle();
+            resetAdminIdle();
         } catch(e){ /* noop */ }
     });
     </script>

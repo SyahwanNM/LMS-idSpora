@@ -29,6 +29,18 @@ class AdminController extends Controller
 
     public function dashboard()
     {
+        // event_admin: redirect to their assigned event directly
+        $user = auth()->user();
+        if ($user && $user->role === 'event_admin') {
+            $assignedEventId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->value('event_id');
+            if ($assignedEventId) {
+                return redirect()->route('admin.events.show', $assignedEventId);
+            }
+            abort(403, 'No event assigned to your account.');
+        }
+
         // Current totals
         $activeUsers = User::count(); // total accounts
         $totalCourses = Course::count();
@@ -550,6 +562,145 @@ class AdminController extends Controller
             'chartFreeParticipantData',
             'chartPaidParticipantData'
         ));
+    }
+
+    /**
+     * API: Event Revenue Report
+     * GET /api/admin/reports/event-revenue
+     *
+     * Query params:
+     *   - period  : YYYY-MM (default: current month)
+     *   - from    : YYYY-MM-DD (custom range start, overrides period)
+     *   - to      : YYYY-MM-DD (custom range end, overrides period)
+     *   - q       : search event name
+     */
+    public function eventRevenueApi(\Illuminate\Http\Request $request): \Illuminate\Http\JsonResponse
+    {
+        // --- Date range resolution ---
+        $from = null;
+        $to   = null;
+
+        $fromParam = trim((string) $request->query('from', ''));
+        $toParam   = trim((string) $request->query('to', ''));
+
+        if ($fromParam && $toParam) {
+            try {
+                $from = Carbon::parse($fromParam)->startOfDay();
+                $to   = Carbon::parse($toParam)->endOfDay();
+            } catch (\Throwable $e) {
+                $from = null;
+            }
+        }
+
+        if (!$from) {
+            $periodParam = trim((string) $request->query('period', ''));
+            if ($periodParam && preg_match('/^(\d{4})-(\d{2})$/', $periodParam)) {
+                try {
+                    $base = Carbon::createFromFormat('Y-m', $periodParam)->startOfMonth();
+                    $from = $base->copy()->startOfDay();
+                    $to   = $base->copy()->endOfMonth()->endOfDay();
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        if (!$from) {
+            $from = Carbon::now()->startOfMonth()->startOfDay();
+            $to   = Carbon::now()->endOfDay();
+        }
+
+        $q = trim((string) $request->query('q', ''));
+
+        // --- Revenue map from settled manual payments ---
+        $revenueMap = \App\Models\ManualPayment::query()
+            ->selectRaw('event_id, SUM(COALESCE(amount, 0)) as total')
+            ->where('status', 'settled')
+            ->groupBy('event_id')
+            ->pluck('total', 'event_id');
+
+        // --- Events in range ---
+        $eventsQuery = \App\Models\Event::query()
+            ->whereBetween('event_date', [$from->toDateString(), $to->toDateString()])
+            ->withCount('registrations')
+            ->orderBy('event_date', 'desc');
+
+        if ($q !== '') {
+            $eventsQuery->where('title', 'like', "%{$q}%");
+        }
+
+        $events = $eventsQuery->get();
+
+        // --- Summary totals ---
+        $totalRevenue  = 0.0;
+        $totalExpenses = 0.0;
+
+        $rows = $events->map(function ($e) use ($revenueMap, &$totalRevenue, &$totalExpenses) {
+            $revenue = (float) ($revenueMap[$e->id] ?? 0);
+
+            $speakerSalaries = \App\Models\EventSpeaker::where('event_id', $e->id)
+                ->where('salary', '>', 0)->sum('salary');
+
+            $expense = (float) ($e->expenses_total ?? 0.0) + (float) $speakerSalaries;
+            $profit  = $revenue - $expense;
+
+            $totalRevenue  += $revenue;
+            $totalExpenses += $expense;
+
+            return [
+                'id'           => $e->id,
+                'title'        => $e->title,
+                'date'         => $e->event_date?->toDateString(),
+                'participants' => (int) $e->registrations_count,
+                'price'        => (float) ($e->discounted_price ?? $e->price),
+                'revenue'      => $revenue,
+                'expense'      => $expense,
+                'profit'       => $profit,
+            ];
+        });
+
+        // --- Previous period comparison (same duration before $from) ---
+        $duration     = $from->diffInDays($to);
+        $prevTo       = $from->copy()->subDay()->endOfDay();
+        $prevFrom     = $prevTo->copy()->subDays($duration)->startOfDay();
+
+        $prevRevenue = (float) \App\Models\ManualPayment::query()
+            ->join('event_registrations', function ($j) {
+                $j->on('manual_payments.event_id', '=', 'event_registrations.event_id')
+                  ->on('manual_payments.user_id', '=', 'event_registrations.user_id');
+            })
+            ->join('events', 'events.id', '=', 'manual_payments.event_id')
+            ->where('manual_payments.status', 'settled')
+            ->whereBetween('events.event_date', [$prevFrom->toDateString(), $prevTo->toDateString()])
+            ->sum('manual_payments.amount');
+
+        $prevExpenses = (float) \App\Models\EventExpense::query()
+            ->join('events', 'events.id', '=', 'event_expenses.event_id')
+            ->whereBetween('events.event_date', [$prevFrom->toDateString(), $prevTo->toDateString()])
+            ->sum('event_expenses.total');
+
+        $revenueChange  = $prevRevenue  > 0 ? round((($totalRevenue  - $prevRevenue)  / $prevRevenue)  * 100, 1) : null;
+        $expensesChange = $prevExpenses > 0 ? round((($totalExpenses - $prevExpenses) / $prevExpenses) * 100, 1) : null;
+        $profit         = $totalRevenue - $totalExpenses;
+        $prevProfit     = $prevRevenue  - $prevExpenses;
+        $profitChange   = $prevProfit   > 0 ? round((($profit - $prevProfit) / abs($prevProfit)) * 100, 1) : null;
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Event revenue report',
+            'meta'    => [
+                'from'   => $from->toDateString(),
+                'to'     => $to->toDateString(),
+                'period' => $request->query('period', Carbon::now()->format('Y-m')),
+            ],
+            'summary' => [
+                'total_revenue'   => $totalRevenue,
+                'total_expenses'  => $totalExpenses,
+                'profit_margin'   => $profit,
+                'revenue_change_pct'  => $revenueChange,
+                'expenses_change_pct' => $expensesChange,
+                'profit_change_pct'   => $profitChange,
+            ],
+            'data' => $rows->values(),
+        ]);
     }
 
     // ========== Profile ==========

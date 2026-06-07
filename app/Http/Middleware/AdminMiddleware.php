@@ -28,9 +28,10 @@ class AdminMiddleware
             return redirect()->route('login')->with('error', 'Anda harus login terlebih dahulu.');
         }
 
-        // Only allow admin role
+        // Only allow admin or event_admin role
         $user = auth()->user();
-        if ($user->role !== 'admin') {
+        $role = (string) ($user->role ?? '');
+        if (!in_array($role, ['admin', 'event_admin'], true)) {
             if ($isApiRequest) {
                 return response()->json([
                     'status' => 'error',
