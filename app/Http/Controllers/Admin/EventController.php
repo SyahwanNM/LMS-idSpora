@@ -319,7 +319,7 @@ class EventController extends Controller
 
         $normalizedSpeaker = trim((string) $request->input('speaker', ''));
         if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
-            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+            $normalizedSpeaker = $submittedSpeakers->implode('|');
         }
 
         $event = Event::create([
@@ -460,7 +460,13 @@ class EventController extends Controller
         } catch (\Throwable $e) { /* ignore QR errors */
         }
 
-        // If the newly created event is already finished based on end time, pre-select the Finished filter
+        // Auto-generate per-day QR codes (supports multi-day via event_until_date)
+        try {
+            app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event->fresh());
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to auto-generate daily QRs', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+        }
+
         $statusFilter = $event->isFinished() ? 'finished' : null;
 
         return redirect()
@@ -478,6 +484,17 @@ class EventController extends Controller
         }
 
         $event->load(['trainerModules.trainer', 'approvedTrainerModules.trainer']);
+
+        // Lazy-generate per-day QRs if they don't exist yet (covers events created before this feature)
+        try {
+            $existingCount = \App\Models\EventDailyQr::where('event_id', $event->id)->count();
+            if ($existingCount === 0 && !empty($event->event_date)) {
+                app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event);
+            }
+        } catch (\Throwable $e) {
+            // Non-critical — don't block the page
+        }
+
         return view('admin.events.show', compact('event'));
     }
 
@@ -511,7 +528,7 @@ class EventController extends Controller
 
         $normalizedSpeaker = trim((string) $request->input('speaker', ''));
         if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
-            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+            $normalizedSpeaker = $submittedSpeakers->implode('|');
         }
 
         $normalizedLocationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
@@ -790,6 +807,13 @@ class EventController extends Controller
                 'unit_price' => $row['unit_price'],
                 'total' => $row['total'],
             ]);
+        }
+
+        // Sync per-day QRs (adds new days if dates changed, keeps existing)
+        try {
+            app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event->fresh());
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to sync daily QRs on update', ['event_id' => $event->id, 'error' => $e->getMessage()]);
         }
 
         return redirect()->route('admin.add-event')->with('success', 'Event updated successfully!');
@@ -1375,46 +1399,46 @@ class EventController extends Controller
     public function generateQr(Event $event)
     {
         try {
-            // Generate new token and QR image (PNG preferred, SVG fallback)
-            $token = bin2hex(random_bytes(16));
-            $content = url('/events/' . $event->id . '?t=' . $token);
-            $png = null;
-            $svg = null;
-            $filename = null;
-            try {
-                if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
-                    $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
-                }
-            } catch (\Throwable $e) {
-                $png = null;
+            /** @var \App\Services\EventDailyQrService $qrService */
+            $qrService = app(\App\Services\EventDailyQrService::class);
+
+            // Check if a specific day is being regenerated (POST param: day_id)
+            $dayId = request()->input('day_id');
+            if ($dayId) {
+                $dailyQr = \App\Models\EventDailyQr::where('id', $dayId)
+                    ->where('event_id', $event->id)
+                    ->firstOrFail();
+                $qrService->regenerateDailyQr($dailyQr, $event);
+                return back()->with('success', 'QR Hari ke-' . $dailyQr->day_number . ' berhasil di-regenerate.');
             }
-            if ($png) {
-                $filename = 'events/qr/event-' . $event->id . '-qr.png';
-                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
-            } else {
+
+            // Generate / ensure all daily QRs for the event
+            $qrService->ensureAllDailyQrs($event);
+
+            // Also keep legacy single QR (for backward compat with older scan views)
+            if (empty($event->attendance_qr_token)) {
+                $token   = bin2hex(random_bytes(16));
+                $content = url('/events/' . $event->id . '?t=' . $token);
+                $png = null;
                 try {
                     if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
-                        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                        $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
                     }
-                } catch (\Throwable $e) {
-                    $svg = null;
-                }
-                if ($svg) {
-                    $filename = 'events/qr/event-' . $event->id . '-qr.svg';
-                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
-                } else {
-                    $filename = 'events/qr/event-' . $event->id . '-qr.png';
-                    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
-                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
-                }
+                } catch (\Throwable $e) {}
+
+                $filename = 'events/qr/event-' . $event->id . '-qr.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png ?: base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII='));
+
+                $event->attendance_qr_token        = $token;
+                $event->attendance_qr_image        = $filename;
+                $event->attendance_qr_generated_at = now();
+                $event->save();
             }
-            $event->attendance_qr_token = $token;
-            $event->attendance_qr_image = $filename;
-            $event->attendance_qr_generated_at = now();
-            $event->save();
-            return back()->with('success', 'Attendance QR generated successfully.');
+
+            return back()->with('success', 'QR Attendance per hari berhasil di-generate.');
         } catch (\Throwable $e) {
-            return back()->with('error', 'Gagal generate QR Absensi.');
+            \Log::error('generateQr failed: ' . $e->getMessage());
+            return back()->with('error', 'Gagal generate QR Absensi: ' . $e->getMessage());
         }
     }
 
@@ -1540,6 +1564,45 @@ class EventController extends Controller
         } catch (\Throwable $e) {}
 
         return back()->with('success', 'Pendaftaran berhasil ditolak.');
+    }
+
+    /**
+     * Admin: Cancel an approved registration — set back to pending.
+     */
+    public function cancelApprovalRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if ($registration->event_id !== $event->id) {
+            return back()->with('error', 'Data tidak valid.');
+        }
+
+        if ($registration->status !== 'active') {
+            return back()->with('error', 'Hanya registrasi aktif yang bisa dibatalkan.');
+        }
+
+        $registration->update([
+            'status'               => 'pending',
+            'payment_verified_at'  => null,
+            'payment_verified_by'  => null,
+        ]);
+
+        // Reset ManualPayment back to pending
+        \App\Models\ManualPayment::where('event_registration_id', $registration->id)
+            ->where('status', 'settled')
+            ->update(['status' => 'pending']);
+
+        // Notify user
+        try {
+            \App\Models\UserNotification::create([
+                'user_id'    => $registration->user_id,
+                'type'       => 'event_registration_cancelled',
+                'title'      => 'Konfirmasi Pembayaran Dibatalkan',
+                'message'    => 'Konfirmasi pembayaran Anda untuk event "' . ($event->title ?? 'Event') . '" telah dibatalkan oleh admin. Silakan hubungi admin untuk informasi lebih lanjut.',
+                'data'       => ['event_id' => $event->id],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch (\Throwable $e) {}
+
+        return back()->with('success', 'Approval berhasil dibatalkan. Status kembali ke pending.');
     }
 
     /**

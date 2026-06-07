@@ -47,6 +47,16 @@
                                 <i class="bi bi-grid-1x2-fill me-2"></i> Module Hub
                             </a>
                         </li>
+                    @endif
+                    @if(auth()->user()?->role === 'admin')
+                        <li class="nav-item ms-lg-2">
+                            <a class="btn btn-sm btn-warning fw-semibold d-flex align-items-center gap-1 {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
+                               href="{{ route('admin.users.index') }}"
+                               style="border-radius:8px;padding:5px 12px;color:#1a1a2e;">
+                                <i class="bi bi-people-fill"></i>
+                                <span class="d-none d-sm-inline">Kelola Akun</span>
+                            </a>
+                        </li>
                     @elseif(auth()->user()?->role === 'event_admin')
                         @php
                             $assignedId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')

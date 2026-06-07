@@ -282,6 +282,11 @@ class Event extends Model
         return $this->hasMany(\App\Models\EventTrainerModule::class);
     }
 
+    public function trainerAssignments()
+    {
+        return $this->hasMany(\App\Models\TrainerAssignment::class);
+    }
+
     public function approvedTrainerModules()
     {
         return $this->hasMany(\App\Models\EventTrainerModule::class)->where('status', 'approved');

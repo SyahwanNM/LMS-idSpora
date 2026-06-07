@@ -53,6 +53,82 @@ class TrainerController extends Controller
             ->first();
     }
 
+    private function trainerEventQuery(int $trainerId, string $trainerName = '', bool $includeLegacySpeakerMatch = false): \Illuminate\Database\Eloquent\Builder
+    {
+        return Event::query()->where(function ($query) use ($trainerId, $trainerName, $includeLegacySpeakerMatch) {
+            $query->where('trainer_id', $trainerId)
+                ->orWhereHas('speakers', function ($speakerQuery) use ($trainerId) {
+                    $speakerQuery->where('trainer_id', $trainerId);
+                })
+                ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainerId) {
+                    $assignmentQuery->where('trainer_id', $trainerId)
+                        ->where('status', 'accepted');
+                });
+
+            if ($includeLegacySpeakerMatch && $trainerName !== '') {
+                $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+            }
+        });
+    }
+
+    private function parseTrainerSpeakerNames(?string $speaker): array
+    {
+        $speaker = trim((string) $speaker);
+        if ($speaker === '') {
+            return [];
+        }
+
+        if (str_contains($speaker, '|')) {
+            $parts = preg_split('/\s*\|\s*/', $speaker) ?: [];
+        } elseif (preg_match('/\R/', $speaker)) {
+            $parts = preg_split('/\R+/', $speaker) ?: [];
+        } elseif (str_contains($speaker, ';')) {
+            $parts = preg_split('/\s*;\s*/', $speaker) ?: [];
+        } else {
+            $parts = [$speaker];
+        }
+
+        return collect($parts)
+            ->map(fn($name) => mb_strtolower(trim((string) $name)))
+            ->filter(fn($name) => $name !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function trainerMatchesEvent(Event $event, int $trainerId, string $trainerName = ''): bool
+    {
+        if ($trainerId <= 0) {
+            return false;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === $trainerId) {
+            return true;
+        }
+
+        $speakerMatch = $event->relationLoaded('speakers')
+            ? $event->speakers->contains(fn($speaker) => (int) ($speaker->trainer_id ?? 0) === $trainerId)
+            : $event->speakers()->where('trainer_id', $trainerId)->exists();
+
+        if ($speakerMatch) {
+            return true;
+        }
+
+        $assignmentMatch = $event->relationLoaded('trainerAssignments')
+            ? $event->trainerAssignments->contains(fn($assignment) => (int) ($assignment->trainer_id ?? 0) === $trainerId && (string) ($assignment->status ?? '') === 'accepted')
+            : $event->trainerAssignments()->where('trainer_id', $trainerId)->where('status', 'accepted')->exists();
+
+        if ($assignmentMatch) {
+            return true;
+        }
+
+        if ($trainerName === '') {
+            return false;
+        }
+
+        return in_array(mb_strtolower($trainerName), $this->parseTrainerSpeakerNames($event->speaker), true);
+    }
+
     private function resolveEventCompensation(Event $event, int $trainerId, ?TrainerAssignment $assignment = null): array
     {
         $activeParticipants = (int) ($event->active_participants_count ?? $event->participants_count ?? 0);
@@ -510,8 +586,7 @@ class TrainerController extends Controller
             ->values()
             ->all();
 
-        $activeEventsQuery = Event::query()
-            ->where('trainer_id', $user->id)
+        $activeEventsQuery = $this->trainerEventQuery((int) $user->id, (string) ($user->name ?? ''), true)
             ->whereNotIn('id', $pendingInvitationEventIds)
             ->whereNotNull('event_date')
             ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
@@ -712,7 +787,16 @@ class TrainerController extends Controller
 
         $feedbackItems = Feedback::query()
             ->whereHas('event', function ($query) use ($user) {
-                $query->where('trainer_id', $user->id);
+                $query->where(function ($eventQuery) use ($user) {
+                    $eventQuery->where('trainer_id', $user->id)
+                        ->orWhereHas('speakers', function ($speakerQuery) use ($user) {
+                            $speakerQuery->where('trainer_id', $user->id);
+                        })
+                        ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($user) {
+                            $assignmentQuery->where('trainer_id', $user->id)
+                                ->where('status', 'accepted');
+                        });
+                });
             })
             ->with(['user', 'event', 'replies.trainer'])
             ->latest('created_at')
@@ -959,16 +1043,20 @@ class TrainerController extends Controller
     public function events(Request $request)
     {
         $user = \Illuminate\Support\Facades\Auth::user();
+        $trainerId = (int) ($user->id ?? 0);
         $search = $request->query('search');
         $trainerName = trim((string) ($user->name ?? ''));
 
-        // Include events where trainer is assigned via trainer_id OR speaker name match
-        $query = \App\Models\Event::where(function ($q) use ($user, $trainerName) {
-            $q->where('trainer_id', $user->id);
-            if ($trainerName !== '') {
-                $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
-            }
-        })
+        $query = $this->trainerEventQuery($trainerId, $trainerName, true)
+            ->with([
+                'speakers' => function ($speakerQuery) use ($trainerId) {
+                    $speakerQuery->where('trainer_id', $trainerId);
+                },
+                'trainerAssignments' => function ($assignmentQuery) use ($trainerId) {
+                    $assignmentQuery->where('trainer_id', $trainerId)
+                        ->where('status', 'accepted');
+                },
+            ])
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
@@ -985,14 +1073,8 @@ class TrainerController extends Controller
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->get()
-            ->filter(function ($event) use ($user, $trainerName) {
-                // Exact name match for speaker field to avoid partial false positives
-                if ((int) ($event->trainer_id ?? 0) === (int) $user->id)
-                    return true;
-                if ($trainerName === '')
-                    return false;
-                $names = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
-                return in_array(mb_strtolower($trainerName), $names, true);
+            ->filter(function ($event) use ($trainerId, $trainerName) {
+                return $this->trainerMatchesEvent($event, $trainerId, $trainerName);
             })
             ->values();
 
@@ -1101,9 +1183,15 @@ class TrainerController extends Controller
         $eventQuery = \App\Models\Event::query()->where('id', $id);
 
         if (!$canOpenFromInvitation) {
-            // Allow access if trainer_id matches OR trainer name is in speaker field
             $eventQuery->where(function ($q) use ($trainerId, $trainerName) {
                 $q->where('trainer_id', $trainerId);
+                $q->orWhereHas('speakers', function ($speakerQuery) use ($trainerId) {
+                    $speakerQuery->where('trainer_id', $trainerId);
+                });
+                $q->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainerId) {
+                    $assignmentQuery->where('trainer_id', $trainerId)
+                        ->where('status', 'accepted');
+                });
                 if ($trainerName !== '') {
                     $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
                 }
@@ -1118,12 +1206,8 @@ class TrainerController extends Controller
             ])
             ->firstOrFail();
 
-        // Extra check: if matched via speaker LIKE, verify exact name match
-        if (!$canOpenFromInvitation && (int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
-            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
-            if (!in_array($trainerName, $speakerNames, true)) {
-                abort(403);
-            }
+        if (!$canOpenFromInvitation && !$this->trainerMatchesEvent($event, (int) $trainerId, $trainerName)) {
+            abort(403);
         }
 
         // Per-trainer module status
@@ -1175,6 +1259,13 @@ class TrainerController extends Controller
         if (!$canOpenFromInvitation) {
             $eventQuery->where(function ($q) use ($trainerId, $trainerName) {
                 $q->where('trainer_id', $trainerId);
+                $q->orWhereHas('speakers', function ($speakerQuery) use ($trainerId) {
+                    $speakerQuery->where('trainer_id', $trainerId);
+                });
+                $q->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainerId) {
+                    $assignmentQuery->where('trainer_id', $trainerId)
+                        ->where('status', 'accepted');
+                });
                 if ($trainerName !== '') {
                     $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
                 }
@@ -1182,6 +1273,10 @@ class TrainerController extends Controller
         }
 
         $event = $eventQuery->firstOrFail();
+
+        if (!$canOpenFromInvitation && !$this->trainerMatchesEvent($event, (int) $trainerId, $trainerName)) {
+            abort(403);
+        }
 
         $isOfflineEvent = !empty($event->maps_url)
             || (!empty($event->latitude) && !empty($event->longitude));
@@ -1307,7 +1402,7 @@ class TrainerController extends Controller
     {
         $user = \Illuminate\Support\Facades\Auth::user();
 
-        $eventIds = \App\Models\Event::where('trainer_id', $user->id)->pluck('id');
+        $eventIds = $this->trainerEventQuery((int) $user->id, (string) ($user->name ?? ''))->pluck('id');
 
         $query = \App\Models\Feedback::with(['user', 'event', 'replies.trainer'])
             ->whereIn('event_id', $eventIds)
@@ -1514,14 +1609,6 @@ class TrainerController extends Controller
             $event->setAttribute('module_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
         }
 
-        // Exact speaker name check for LIKE matches
-        if ((int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
-            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
-            if (!in_array($trainerName, $speakerNames, true)) {
-                abort(403);
-            }
-        }
-
         // Per-trainer module status
         $myModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
             ->where('trainer_id', $trainerId)
@@ -1647,7 +1734,9 @@ class TrainerController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
-        $completedEventsCount = $trainer->eventsAsTrainer()
+        $trainerEventsQuery = $this->trainerEventQuery((int) $trainer->id, (string) ($trainer->name ?? ''));
+
+        $completedEventsCount = (clone $trainerEventsQuery)
             ->whereDate('event_date', '<', now()->toDateString())
             ->count();
 
@@ -1657,7 +1746,7 @@ class TrainerController extends Controller
             ->where('approved_at', '<', now())
             ->count();
 
-        $eventIds = $trainer->eventsAsTrainer()->pluck('id');
+        $eventIds = (clone $trainerEventsQuery)->pluck('id');
         $feedbackQuery = \App\Models\Feedback::query();
         if ($eventIds->isNotEmpty()) {
             $feedbackQuery->whereIn('event_id', $eventIds);
@@ -1673,7 +1762,7 @@ class TrainerController extends Controller
             ->take(3)
             ->get();
 
-        $upcomingEvents = $trainer->eventsAsTrainer()
+        $upcomingEvents = (clone $trainerEventsQuery)
             ->whereDate('event_date', '>=', now()->toDateString())
             ->withCount([
                 'registrations as participants_count' => function ($query) {
@@ -1734,7 +1823,7 @@ class TrainerController extends Controller
 
         // Additional stats for enhanced profile
         $totalCourses = $courses->count();
-        $totalEvents = $trainer->eventsAsTrainer()->count();
+        $totalEvents = (clone $trainerEventsQuery)->count();
         $totalFeedbacks = (clone $feedbackQuery)->count();
         $topCourses = $courses->sortByDesc('reviews_avg_rating')->take(3);
 
@@ -2896,40 +2985,16 @@ class TrainerController extends Controller
             return false;
         }
 
-        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
-            return true;
-        }
-
+        $trainerId = (int) ($trainer->id ?? 0);
         $trainerName = mb_strtolower(trim((string) ($trainer->name ?? '')));
-        if ($trainerName === '') {
-            return false;
-        }
 
-        $speakerRaw = trim((string) ($event->speaker ?? ''));
-        if ($speakerRaw === '') {
-            return false;
-        }
-
-        $parts = preg_split('/\s*[,;]+\s*/', $speakerRaw) ?: [];
-        $speakerNames = collect($parts)
-            ->map(fn($name) => mb_strtolower(trim((string) $name)))
-            ->filter(fn($name) => $name !== '')
-            ->unique()
-            ->values();
-
-        if ($speakerNames->contains($trainerName)) {
-            $assignment = $this->latestEventAssignment((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
-            if ($assignment) {
-                return in_array((string) ($assignment->status ?? ''), ['accepted', 'active'], true);
-            }
-
-            $invitation = $this->latestEventInvitation((int) ($event->id ?? 0), (int) ($trainer->id ?? 0));
-            if ($invitation) {
-                return in_array((string) $invitation->effectiveInvitationStatus(), ['accepted', 'pending'], true);
-            }
-
-            // Legacy fallback: speaker listed but no invitation/assignment record yet.
+        if ($this->trainerMatchesEvent($event, $trainerId, $trainerName)) {
             return true;
+        }
+
+        $invitation = $this->latestEventInvitation((int) ($event->id ?? 0), $trainerId);
+        if ($invitation) {
+            return in_array((string) $invitation->effectiveInvitationStatus(), ['accepted', 'pending'], true);
         }
 
         return false;

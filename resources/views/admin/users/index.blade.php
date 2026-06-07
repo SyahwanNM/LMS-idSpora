@@ -48,7 +48,7 @@
                                 <div class="fw-semibold">{{ $u->name }}</div>
                                 <div class="text-muted small">{{ $u->email }}</div>
                             </div>
-                            <span class="badge bg-{{ $u->role==='admin' ? 'danger' : 'secondary' }}">{{ ucfirst($u->role) }}</span>
+                                <span class="badge bg-{{ $u->role==='admin' ? 'danger' : ($u->role==='event_admin' ? 'warning text-dark' : 'secondary') }}">{{ $u->role === 'event_admin' ? 'Event Admin' : ucfirst($u->role) }}</span>
                         </div>
                         <div class="text-muted small mt-2">Dibuat: {{ $u->created_at?->format('d-m-Y') }}</div>
                     </div>

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Event;
 use App\Models\EventRegistration;
+use App\Models\EventDailyQr;
+use App\Models\EventDailyAttendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -194,23 +196,35 @@ class EventParticipationController extends Controller
 
     /**
      * Persist attendance upon scanning the event QR.
-     * Accepts the full decoded text (URL with ?t=token or raw token).
-     * Marks `attendance_status = yes` and sets `attended_at` for the active registration.
+     *
+     * Supports two modes:
+     * 1. Multi-day events: validates per-day token from event_daily_qrs.
+     * 2. Single-day (legacy): validates against events.attendance_qr_token.
+     *
+     * Records one daily attendance row per user per day.
+     * Also marks the top-level registration as attended (attended_at / attendance_scan_qr)
+     * on the first successful scan.
      */
     public function scanAttendance(Event $event, Request $request)
     {
         $user = Auth::user();
-        if(!$user){
+        if (!$user) {
             return response()->json(['message' => 'Login diperlukan.'], 401);
         }
-        $registration = EventRegistration::where('event_id',$event->id)->where('user_id',$user->id)->first();
-        if(!$registration || $registration->status !== 'active'){
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$registration || $registration->status !== 'active') {
             return response()->json(['message' => 'Anda belum terdaftar aktif.'], 403);
         }
-        // Gate: event must have started (not necessarily finished)
-        $startAt = $event->start_at; $endAt = $event->end_at;
-        $now = Carbon::now();
-        if($startAt && $now->lt($startAt)){
+
+        // Gate: event must have started
+        $startAt = $event->start_at;
+        $now     = Carbon::now(config('app.timezone'));
+
+        if ($startAt && $now->lt($startAt)) {
             return response()->json(['message' => 'Event belum dimulai.'], 422);
         }
 
@@ -218,37 +232,105 @@ class EventParticipationController extends Controller
             'qr_text' => 'required|string|max:2048',
         ]);
 
-        // Extract token from text: support full URL or raw token
-        $token = null; $text = trim($data['qr_text']);
+        $text = trim($data['qr_text']);
+
+        // ── Extract token and optional date from QR content ──────────────────
+        $token   = null;
+        $qrDate  = null;
+
         if (preg_match('/[?&]t=([0-9a-f]{16,})/i', $text, $m)) {
             $token = $m[1];
-        } else if (preg_match('/^[0-9a-f]{16,}$/i', $text)) {
+        } elseif (preg_match('/^[0-9a-f]{16,}$/i', $text)) {
             $token = $text;
         }
-        $tokenOk = false;
-        if (!empty($event->attendance_qr_token) && $token) {
-            $tokenOk = hash_equals((string)$event->attendance_qr_token, (string)$token);
+
+        // Extract optional date param ?d=YYYY-MM-DD
+        if (preg_match('/[?&]d=(\d{4}-\d{2}-\d{2})/i', $text, $md)) {
+            $qrDate = $md[1];
         }
-        // Fallback: accept legacy QR that encodes the event URL without token
+
+        $today = $now->format('Y-m-d');
+
+        // ── Try per-day QR validation first ──────────────────────────────────
+        $dailyQr = null;
+
+        if ($token) {
+            // Look up by token in daily QR table
+            $dailyQr = EventDailyQr::where('event_id', $event->id)
+                ->where('token', $token)
+                ->first();
+        }
+
+        if ($dailyQr) {
+            // Validate: the daily QR must match today's date
+            $qrDayDate = $dailyQr->qr_date instanceof Carbon
+                ? $dailyQr->qr_date->format('Y-m-d')
+                : (string) $dailyQr->qr_date;
+
+            if ($qrDayDate !== $today) {
+                return response()->json([
+                    'message' => 'QR ini hanya berlaku untuk hari ' . \Carbon\Carbon::parse($qrDayDate)->format('d F Y') . '. Gunakan QR hari ini dari panitia.',
+                ], 422);
+            }
+
+            // Check if user already scanned today
+            $alreadyScanned = EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('attendance_date', $today)
+                ->exists();
+
+            if ($alreadyScanned) {
+                return response()->json(['message' => 'Attendance hari ini sudah tercatat.'], 200);
+            }
+
+            // Record daily attendance
+            DB::transaction(function () use ($registration, $dailyQr, $today, $now) {
+                EventDailyAttendance::create([
+                    'event_registration_id' => $registration->id,
+                    'event_daily_qr_id'     => $dailyQr->id,
+                    'attendance_date'       => $today,
+                    'day_number'            => $dailyQr->day_number,
+                    'scanned_at'            => $now,
+                ]);
+
+                // Mark top-level registration attended on first scan
+                if (empty($registration->attended_at)) {
+                    $registration->attendance_status = 'yes';
+                    $registration->attended_at       = $now;
+                    $registration->attendance_scan_qr = $now;
+                    $registration->save();
+                }
+            });
+
+            return response()->json([
+                'message'    => 'Attendance Hari ke-' . $dailyQr->day_number . ' berhasil disimpan.',
+                'day_number' => $dailyQr->day_number,
+                'day_date'   => $qrDayDate,
+            ], 200);
+        }
+
+        // ── Legacy single-day QR fallback ────────────────────────────────────
+        $tokenOk  = !empty($event->attendance_qr_token) && $token
+            && hash_equals((string) $event->attendance_qr_token, (string) $token);
         $eventUrlPattern = sprintf('/\/events\/%d(\?|$)/', (int) $event->id);
         $urlOk = (bool) preg_match($eventUrlPattern, $text);
+
         if (!$tokenOk && !$urlOk) {
             \Log::info('Attendance scan rejected', [
-                'event_id' => $event->id,
-                'user_id' => $user->id,
-                'has_event_token' => !empty($event->attendance_qr_token),
+                'event_id'       => $event->id,
+                'user_id'        => $user->id,
                 'extracted_token' => $token,
-                'text' => $text,
+                'text'           => $text,
             ]);
             return response()->json(['message' => 'QR tidak valid untuk event ini. Gunakan QR terbaru dari panitia.'], 422);
         }
+
         if (!empty($registration->attendance_scan_qr) || !empty($registration->attended_at)) {
             return response()->json(['message' => 'Attendance sudah tercatat.'], 200);
         }
 
         $registration->attendance_status = 'yes';
-        $registration->attended_at = Carbon::now();
-        $registration->attendance_scan_qr = Carbon::now();
+        $registration->attended_at       = $now;
+        $registration->attendance_scan_qr = $now;
         $registration->save();
 
         return response()->json(['message' => 'Attendance berhasil disimpan.'], 200);

@@ -325,7 +325,7 @@
       <form action="{{ route('login') }}" method="POST" novalidate id="signinForm">
         @csrf
         @php
-          $redirectTarget = old('redirect', request('redirect'));
+          $redirectTarget = old('redirect', request('redirect', request('return')));
         @endphp
         @if(!empty($redirectTarget))
           <input type="hidden" name="redirect" value="{{ $redirectTarget }}">

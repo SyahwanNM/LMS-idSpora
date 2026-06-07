@@ -112,28 +112,18 @@ Route::middleware('auth')->group(function () {
             return redirect()->route('events.show', $event)->with('warning', 'Anda harus terdaftar untuk melakukan scan.');
         }
 
-        // Blok jika sudah absen
-        if (!empty($registration->attended_at) || !empty($registration->attendance_scan_qr)) {
-            return redirect()->route('events.registered.detail', $event)->with('info', 'Anda sudah melakukan absensi untuk event ini.');
-        }
-
         // Compute event start/end for gating
         $eventDate = $event->event_date ? ($event->event_date instanceof \Carbon\Carbon ? $event->event_date : \Carbon\Carbon::parse($event->event_date)) : null;
         $startTime = null;
-        $endTime = null;
-        try {
-            $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null;
-        } catch (\Throwable $e) {
-        }
-        try {
-            $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
-        } catch (\Throwable $e) {
-        }
+        $endTime   = null;
+        try { $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time) : null; } catch (\Throwable $e) {}
+        try { $endTime   = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null; } catch (\Throwable $e) {}
         if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
-        $now = \Carbon\Carbon::now(config('app.timezone'));
+        if (!$endTime && $eventDate)   $endTime   = $eventDate->copy()->endOfDay();
+
+        $now          = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
-        $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
+        $eventFinished = $event->isFinished();
 
         // Blok jika event belum mulai
         if (!$eventStarted) {
@@ -145,7 +135,36 @@ Route::middleware('auth')->group(function () {
             return redirect()->route('events.registered.detail', $event)->with('warning', 'Event sudah selesai, absensi tidak dapat dilakukan.');
         }
 
-        return view('events.scan', compact('event', 'registration', 'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished'));
+        // ── Multi-day: get today's QR and check today's attendance ──
+        $qrService   = app(\App\Services\EventDailyQrService::class);
+        $todayQr     = $qrService->getTodayQr($event);   // null if today is not an event day
+        $today       = $now->format('Y-m-d');
+
+        // Has user already scanned today?
+        $scannedToday = false;
+        if ($todayQr) {
+            $scannedToday = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('attendance_date', $today)
+                ->exists();
+        } else {
+            // Single-day: block if already attended
+            $scannedToday = !empty($registration->attended_at) || !empty($registration->attendance_scan_qr);
+        }
+
+        if ($scannedToday) {
+            $dayLabel = $todayQr ? 'Hari ke-' . $todayQr->day_number : 'hari ini';
+            return redirect()->route('events.registered.detail', $event)
+                ->with('info', 'Anda sudah melakukan absensi ' . $dayLabel . '.');
+        }
+
+        // All event days list (for the scan page info strip)
+        $allDailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('qr_date')->get();
+
+        return view('events.scan', compact(
+            'event', 'registration',
+            'eventDate', 'startTime', 'endTime', 'eventStarted', 'eventFinished',
+            'todayQr', 'allDailyQrs', 'scannedToday'
+        ));
     })->name('events.scan');
     // Attendance via scan: persist attendance when QR is decoded
     Route::post('/events/{event}/attendance/scan', [\App\Http\Controllers\User\EventParticipationController::class, 'scanAttendance'])->name('events.attendance.scan');

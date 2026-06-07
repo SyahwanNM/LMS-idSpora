@@ -52,7 +52,17 @@
                                 <label class="form-label fw-semibold">Speaker Name <span
                                         class="text-danger">*</span></label>
                                 @php
-                                    $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values();
+                                    // Pisah speaker berdasarkan '|' jika ada, fallback ke '\n', hindari split by comma
+                                    // karena nama dengan gelar (Dr. Erna, S.Kom.) mengandung koma
+                                    $rawSpeaker = old('speaker', $event->speaker ?? '');
+                                    if (str_contains($rawSpeaker, '|')) {
+                                        $speakerList = collect(explode('|', $rawSpeaker))->map(fn($s) => trim($s))->filter()->values();
+                                    } elseif (str_contains($rawSpeaker, "\n")) {
+                                        $speakerList = collect(explode("\n", $rawSpeaker))->map(fn($s) => trim($s))->filter()->values();
+                                    } else {
+                                        // Single speaker — jangan split by comma
+                                        $speakerList = collect([trim($rawSpeaker)])->filter()->values();
+                                    }
                                     $existingSpeakers = $event->speakers()->get()->keyBy(fn($s) => mb_strtolower(trim($s->name)));
                                 @endphp
                                 <div id="speakersContainer" class="d-flex flex-column gap-2">
@@ -950,7 +960,7 @@
                     if (rm) rm.disabled = (rows.length <= 1);
                 });
             }
-            function updateSpeakerCombined() { if (!speakerCombined || !speakersContainer) return; const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s => String(s.value || '').trim()).filter(Boolean); speakerCombined.value = names.join(', '); }
+            function updateSpeakerCombined() { if (!speakerCombined || !speakersContainer) return; const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s => String(s.value || '').trim()).filter(Boolean); speakerCombined.value = names.join('|'); }
             function populateSpeakerSelect(selectEl, selectedName, trainers) {
                 if (!selectEl) return;
                 const selected = String(selectedName || '').trim();

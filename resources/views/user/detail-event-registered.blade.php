@@ -898,6 +898,24 @@
                             || !empty($registration->attendance_code_used_at)
                         );
                     }
+
+                    // Multi-day attendance progress
+                    $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('qr_date')->get();
+                    $isMultiDayEvent = $dailyQrs->count() > 1;
+                    $dailyAttendedDates = [];
+                    if ($registration && $dailyQrs->isNotEmpty()) {
+                        $dailyAttendedDates = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                            ->pluck('attendance_date')
+                            ->map(fn($d) => $d instanceof \Carbon\Carbon ? $d->format('Y-m-d') : \Carbon\Carbon::parse($d)->format('Y-m-d'))
+                            ->toArray();
+                        // If any daily attendance exists, mark attendanceSubmitted = true
+                        if (count($dailyAttendedDates) > 0) {
+                            $attendanceSubmitted = true;
+                        }
+                    }
+                    $totalDays    = $dailyQrs->count();
+                    $attendedDays = count($dailyAttendedDates);
+                    $allDaysAttended = $totalDays > 0 && $attendedDays >= $totalDays;
                     $stepStates = [
                         'Registered' => $isRegistered,
                         'Attendance' => $attendanceSubmitted,
@@ -1597,8 +1615,10 @@
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
                     $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    // Unlock saat user selesai mengisi feedback (sertifikat dan modul)
-                    $moduleUnlocked = $isRegistered && isset($hasFeedback) && $hasFeedback;
+                    // Unlock materi saat event sudah mulai (hari H) DAN user sudah terdaftar aktif
+                    // Tidak perlu menunggu event selesai atau feedback diisi
+                    $eventStarted = isset($event) && $event->start_at && $event->start_at->lte(\Carbon\Carbon::now());
+                    $moduleUnlocked = $isRegistered && $eventStarted;
                 @endphp
                 @if($isRegistered || $approvedModules->isNotEmpty())
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
@@ -1616,8 +1636,8 @@
                         <h6>Modules</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
-                        @elseif(!isset($hasFeedback) || !$hasFeedback)
-                            <p>Available after send feedback.</p>
+                        @elseif(!$eventStarted)
+                            <p>Available when event starts</p>
                         @elseif($approvedModules->isEmpty())
                             <p>Not available</p>
                         @else
@@ -1687,8 +1707,7 @@
                 </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
-                    <div class="img-resource">
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">                    <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
                             <path d="M2 2h2v2H2V2Z" />
@@ -1719,15 +1738,52 @@
                     </div>
                     <div class="resource-value">
                         <h6>Attendance QR Event</h6>
-                        @if(isset($attendanceSubmitted) && $attendanceSubmitted)
-                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                        @if($isMultiDayEvent)
+                            {{-- Multi-day: show day-by-day progress --}}
+                            <div class="mt-1" style="display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
+                                @foreach($dailyQrs as $dqr)
+                                    @php
+                                        $dqrDateStr = $dqr->qr_date instanceof \Carbon\Carbon ? $dqr->qr_date->format('Y-m-d') : \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d');
+                                        $isAttendedDay = in_array($dqrDateStr, $dailyAttendedDates);
+                                        $nowDay = \Carbon\Carbon::now(config('app.timezone'))->startOfDay();
+                                        $dqrDay = \Carbon\Carbon::parse($dqrDateStr)->startOfDay();
+                                        $isPastDay = $dqrDay->lt($nowDay);
+                                        $isTodayDay = $dqrDay->isSameDay($nowDay);
+                                    @endphp
+                                    <span style="
+                                        display:inline-flex; align-items:center; gap:4px;
+                                        padding:3px 8px; border-radius:20px; font-size:11px; font-weight:600;
+                                        background:{{ $isAttendedDay ? '#dcfce7' : ($isTodayDay ? '#eff6ff' : '#f3f4f6') }};
+                                        color:{{ $isAttendedDay ? '#15803d' : ($isTodayDay ? '#1d4ed8' : '#6b7280') }};
+                                        border:1.5px solid {{ $isAttendedDay ? '#86efac' : ($isTodayDay ? '#bfdbfe' : '#d1d5db') }};
+                                    ">
+                                        @if($isAttendedDay)
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 10"/></svg>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="{{ $isTodayDay ? '#1d4ed8' : '#9ca3af' }}" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+                                        @endif
+                                        Hari {{ $dqr->day_number }}
+                                    </span>
+                                @endforeach
+                            </div>
+                            <p class="mb-0 mt-1" style="font-size:11px; color:{{ $allDaysAttended ? '#15803d' : '#6b7280' }}; font-weight:{{ $allDaysAttended ? '600' : '400' }};">
+                                {{ $attendedDays }}/{{ $totalDays }} hari hadir
+                                @if($allDaysAttended) &nbsp;✓ Selesai @endif
+                            </p>
+                        @elseif($attendanceSubmitted)
+                            <p class="text-success mb-0" style="font-weight:600;">Done Successfully</p>
                         @else
-                            <p>Scan the event QR for attendance.</p>
+                            <p class="mb-0">Scan the event QR for attendance.</p>
                         @endif
                     </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
-                        <span class="d-inline-flex align-items-center""
-                            title="Berhasil Dilakukan">
+                    @php
+                        // Show checkmark only if ALL days attended (multi-day) or single-day attended
+                        $showCheckmark = $isRegistered && ($isMultiDayEvent ? $allDaysAttended : $attendanceSubmitted);
+                        // Show scan link if registered, event started, and not all days attended yet
+                        $showScanLink  = $isRegistered && $eventStarted && !($isMultiDayEvent ? $allDaysAttended : $attendanceSubmitted);
+                    @endphp
+                    @if($showCheckmark)
+                        <span class="d-inline-flex align-items-center" title="Berhasil Dilakukan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                 stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                 aria-label="Attendance Successful">
@@ -1735,7 +1791,7 @@
                                 <polyline points="8 12 11 15 16 10"></polyline>
                             </svg>
                         </span>
-                    @elseif(isset($isRegistered) && $isRegistered && isset($eventStarted) && $eventStarted)
+                    @elseif($showScanLink)
                         <a class="link-share" href="{{ route('events.scan', $event) }}" title="Buka Halaman Scan"
                             style="position:absolute; top:24px; right:10px; text-decoration:none;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
