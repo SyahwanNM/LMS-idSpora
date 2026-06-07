@@ -949,19 +949,30 @@
                     $basePrice = $eventObj ? (float) ($eventObj->price ?? 0) : 0.0;
                     $finalPrice = $basePrice;
                     $discountMsg = null;
-                    if ($eventObj && !empty($eventObj->discount_percentage) && !empty($eventObj->discount_until)) {
-                        $discountUntil = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
-                        $hasActiveDiscount = ($eventObj->discount_percentage > 0) && $nowTs->lte($discountUntil);
-                        if ($hasActiveDiscount) {
-                            $finalPrice = (float) ($eventObj->discounted_price ?? $basePrice);
-                            $startOfToday = $nowTs->copy()->startOfDay();
-                            $diffDaysInt = (int) $startOfToday->diffInDays($discountUntil, false);
-                            if ($diffDaysInt > 1) {
-                                $discountMsg = $diffDaysInt . ' Days left at this price!';
-                            } elseif ($diffDaysInt === 1) {
-                                $discountMsg = '1 Day left at this price!';
+                    if ($eventObj && !empty($eventObj->discount_percentage)) {
+                        $discountPct = (int) $eventObj->discount_percentage;
+                        if ($discountPct > 0) {
+                            // Aktif jika discount_until kosong (tidak ada batas waktu) ATAU belum lewat
+                            if (empty($eventObj->discount_until)) {
+                                $hasActiveDiscount = true;
                             } else {
-                                $discountMsg = null;
+                                $discountUntil = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
+                                $hasActiveDiscount = $nowTs->lte($discountUntil);
+                            }
+                            if ($hasActiveDiscount) {
+                                $finalPrice = (float) ($eventObj->discounted_price ?? $basePrice);
+                                if (!empty($eventObj->discount_until)) {
+                                    $discountUntil = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
+                                    $startOfToday = $nowTs->copy()->startOfDay();
+                                    $diffDaysInt = (int) $startOfToday->diffInDays($discountUntil, false);
+                                    if ($diffDaysInt > 1) {
+                                        $discountMsg = $diffDaysInt . ' Days left at this price!';
+                                    } elseif ($diffDaysInt === 1) {
+                                        $discountMsg = '1 Day left at this price!';
+                                    } else {
+                                        $discountMsg = null;
+                                    }
+                                }
                             }
                         }
                     }
@@ -1132,7 +1143,24 @@
                             <span class="event-info-label">Date</span>
                         </div>
                         <span
-                            class="event-info-value">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
+                            class="event-info-value">@php
+                                if (isset($event) && $event->event_date) {
+                                    $startDate = \Carbon\Carbon::parse($event->event_date);
+                                    if (!empty($event->event_until_date)) {
+                                        $untilDate = \Carbon\Carbon::parse($event->event_until_date);
+                                        // Same month: "06 - 07 June 2026"
+                                        if ($startDate->format('F Y') === $untilDate->format('F Y')) {
+                                            echo $startDate->format('d') . ' – ' . $untilDate->translatedFormat('d F Y');
+                                        } else {
+                                            echo $startDate->translatedFormat('d F Y') . ' – ' . $untilDate->translatedFormat('d F Y');
+                                        }
+                                    } else {
+                                        echo $startDate->translatedFormat('d F Y');
+                                    }
+                                } else {
+                                    echo '-';
+                                }
+                            @endphp</span>
                     </div>
                     <div class="event-info-item">
                         <div class="event-info-left">
@@ -1161,6 +1189,10 @@
                             };
                             $startT = isset($event) ? $formatTimeOnly($event->event_time) : null;
                             $endT = isset($event) ? $formatTimeOnly($event->event_time_end) : null;
+                            // If until_time is set, use it as the end time display
+                            if (isset($event) && !empty($event->event_until_time)) {
+                                $endT = $formatTimeOnly($event->event_until_time);
+                            }
                             if ($startT && $endT) {
                                 $timeRange = $startT . ' – ' . $endT . ' WIB';
                             } elseif ($startT) {
@@ -1260,6 +1292,16 @@
                             )
                             : true
                         );
+
+                        // Cek kuota — jika penuh dan user belum register, tidak bisa book
+                        $evQuotaDetail   = !empty($event->max_participants) ? (int) $event->max_participants : null;
+                        $evFilledDetail  = \App\Models\EventRegistration::where('event_id', $event->id)
+                                            ->whereIn('status', ['active', 'pending'])
+                                            ->count();
+                        $evIsFullDetail  = $evQuotaDetail && $evFilledDetail >= $evQuotaDetail;
+                        if ($evIsFullDetail && !$isRegistered) {
+                            $canRegister = false;
+                        }
                         // Pre-compute saved state for current user to render initial label
                         $isSaved = false;
                         if (isset($event) && auth()->check()) {
@@ -1296,6 +1338,8 @@
                     @else
                         @if(!$isRegistered && $eventFinished)
                             <button class="bookseat" disabled>Event has finished</button>
+                        @elseif($evIsFullDetail && !$isRegistered)
+                            <button class="bookseat" disabled style="background:#6b7280;">Full Booked</button>
                         @elseif(!$isRegistered && $eventStarted)
                             <button class="bookseat" disabled>Event Has Started</button>
                         @elseif($isRegistered)

@@ -210,6 +210,18 @@
                                 <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label fw-semibold">Event Until (Custom End Deadline) <span class="text-muted small">(Optional)</span></label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="date" name="event_until_date" class="form-control"
+                                        value="{{ old('event_until_date', $event->event_until_date ? \Carbon\Carbon::parse($event->event_until_date)->format('Y-m-d') : '') }}"
+                                        placeholder="YYYY-MM-DD">
+                                    <input type="time" name="event_until_time" class="form-control"
+                                        value="{{ old('event_until_time', $event->event_until_time ?? '') }}"
+                                        placeholder="00:00">
+                                </div>
+                                <div class="form-text">Set a custom deadline after which the event is considered finished. Minimum: one day after event date. Leave empty to use default (event date + end time).</div>
+                            </div>
+                            <div class="mb-3">
                                 <label for="lokasi" class="form-label fw-semibold">Event Location <span
                                         class="text-danger">*</span></label>
                                 @php
@@ -286,6 +298,13 @@
                                 <input type="date" name="discount_until" id="discount_until" class="form-control"
                                     value="{{ old('discount_until', $event->discount_until) }}" {{ old('discount_percentage', $event->discount_percentage) > 0 ? '' : 'disabled' }}>
                                 <small class="form-text">Discount end date (maximum one day before event date).</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="max_participants" class="form-label fw-semibold">Participant Quota</label>
+                                <input type="number" name="max_participants" id="max_participants" class="form-control" min="1" step="1"
+                                    value="{{ old('max_participants', $event->max_participants) }}"
+                                    placeholder="Leave empty for unlimited">
+                                <div class="form-text">Maximum number of participants. Leave empty for unlimited seats.</div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Benefit <span

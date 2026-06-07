@@ -847,6 +847,14 @@
                                     <div class="form-text">Fill in the start time (required). End time is optional.</div>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label fw-semibold">Event Until (Custom End Deadline) <span class="text-muted small">(Optional)</span></label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="date" name="event_until_date" class="form-control" value="{{ old('event_until_date') }}" placeholder="YYYY-MM-DD">
+                                        <input type="time" name="event_until_time" class="form-control" value="{{ old('event_until_time') }}" placeholder="00:00">
+                                    </div>
+                                    <div class="form-text">Set a custom deadline after which the event is considered finished. Default: event date + end time. Minimum: one day after event date.</div>
+                                </div>
+                                <div class="mb-3">
                                     <label for="lokasi" class="form-label fw-semibold">Type of Implementation <span class="text-danger">*</span></label>
                                     @php
                                         $oldMode = old('location_mode');
@@ -905,6 +913,11 @@
                                     <label for="discount_until" class="form-label fw-semibold">Discount Period</label>
                                     <input type="date" name="discount_until" id="discount_until" class="form-control js-discount-date" value="{{ old('discount_until') }}" disabled>
                                     <small class="text-muted d-block mt-1">Must be before the event date (excluding the event day).</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="max_participants" class="form-label fw-semibold">Participant Quota</label>
+                                    <input type="number" name="max_participants" id="max_participants" class="form-control" min="1" step="1" value="{{ old('max_participants') }}" placeholder="Leave empty for unlimited">
+                                    <div class="form-text">Maximum number of participants. Leave empty for unlimited seats.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="benefit" class="form-label fw-semibold">Benefit <span class="text-muted">(Optional)</span></label>

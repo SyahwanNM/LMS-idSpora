@@ -162,6 +162,10 @@
 
 <body style="background-color: var(--bg-main); padding-top: 0;">
     @include("partials.navbar-after-login")
+    @if(session('login_success'))
+    @php session()->flash('success', session('login_success')); @endphp
+    @endif
+    @include("partials.flash")
 
     <main class="container-xl">
         {{-- <div class="container pb-5"> --}}
@@ -532,11 +536,10 @@
 
                                         <div class="mb-3">
                                             @php
-                                            $quota = $event->quota ?? 100;
+                                            $quota = !empty($event->max_participants) ? (int) $event->max_participants : null;
                                             $registered = $event->registrations_count ?? 0;
-                                            $percentage = $quota > 0 ? min(100, round(($registered / $quota) * 100)) :
-                                            100;
-                                            $isFull = $registered >= $quota;
+                                            $percentage = $quota ? min(100, round(($registered / $quota) * 100)) : 0;
+                                            $isFull = $quota && $registered >= $quota;
                                             @endphp
                                             <div class="d-flex justify-content-between align-items-center mb-1"
                                                 style="font-size: 11px;">
@@ -551,15 +554,21 @@
                                                 </div>
                                                 <span
                                                     class="fw-bold {{ $isFull ? 'text-danger' : ($percentage > 80 ? 'text-warning' : 'text-primary') }}">
-                                                    {{ $registered }}/{{ $quota }}
+                                                    @if($quota)
+                                                        {{ $registered }}/{{ $quota }}
+                                                    @else
+                                                        {{ $registered }} <span class="text-muted fw-normal" style="font-size:10px;">/ ∞</span>
+                                                    @endif
                                                 </span>
                                             </div>
+                                            @if($quota)
                                             <div class="progress" style="height: 6px; background-color: #f1f5f9;">
                                                 <div class="progress-bar {{ $isFull ? 'bg-danger' : ($percentage > 80 ? 'bg-warning' : 'bg-primary') }}"
                                                     role="progressbar" style="width: {{ $percentage }}%"
                                                     aria-valuenow="{{ $percentage }}" aria-valuemin="0"
                                                     aria-valuemax="100"></div>
                                             </div>
+                                            @endif
                                         </div>
 
                                         <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded"

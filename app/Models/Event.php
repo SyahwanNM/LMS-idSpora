@@ -42,11 +42,14 @@ class Event extends Model
         'price',
         'price_offline',
         'price_online',
+        'max_participants',
         'discount_percentage',
         'discount_until',
         'event_time',
         'event_time_end',
         'event_date',
+        'event_until_date',
+        'event_until_time',
         'material_deadline',
         'material_revision_deadline',
         'benefit',
@@ -63,10 +66,13 @@ class Event extends Model
         'expenses_json',
         'manage_action',
         'is_reseller_event',
+        'is_published',
+        'published_at',
     ];
 
     protected $casts = [
         'event_date' => 'date',
+        'event_until_date' => 'date',
         'material_deadline' => 'datetime',
         'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
@@ -349,6 +355,23 @@ class Event extends Model
 
     public function getEndAtAttribute(): ?Carbon
     {
+        // If event_until_date is set, use it (+ event_until_time or 23:59:59) as the deadline
+        if (!empty($this->event_until_date)) {
+            $dateStr = $this->event_until_date instanceof Carbon
+                ? $this->event_until_date->format('Y-m-d')
+                : (string) $this->event_until_date;
+            $timeStr = '23:59:59';
+            if (!empty($this->event_until_time)) {
+                $timeStr = is_string($this->event_until_time)
+                    ? $this->event_until_time
+                    : ($this->event_until_time instanceof Carbon ? $this->event_until_time->format('H:i:s') : '23:59:59');
+            }
+            try {
+                return Carbon::parse($dateStr . ' ' . $timeStr, config('app.timezone'));
+            } catch (\Throwable $ex) {}
+        }
+
+        // Fallback: event_date + event_time_end (or end of day)
         $start = $this->start_at;
         if (!$start)
             return null;
@@ -368,7 +391,8 @@ class Event extends Model
     }
 
     /**
-     * Determine if event finished (end time < now()).
+     * Determine if event finished (end_at < now).
+     * When event_until_date is set, it acts as the real end deadline.
      */
     public function isFinished(): bool
     {
@@ -377,14 +401,18 @@ class Event extends Model
     }
 
     /**
-     * Scope: active (not finished). Treat events without date as active (legacy drafts).
+     * Scope: active (not finished).
+     * Uses COALESCE(event_until_date, event_date) + COALESCE(event_until_time, event_time_end, event_time)
      */
     public function scopeActive($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
         return $query->where(function ($q) use ($now) {
             $q->whereNull('event_date')
-                ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) >= ?", [$now]);
+                ->orWhereRaw(
+                    "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) >= ?",
+                    [$now]
+                );
         });
     }
 
@@ -395,7 +423,10 @@ class Event extends Model
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
         return $query->whereNotNull('event_date')
-            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) < ?", [$now]);
+            ->whereRaw(
+                "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) < ?",
+                [$now]
+            );
     }
 
     /**

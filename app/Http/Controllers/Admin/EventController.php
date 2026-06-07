@@ -218,11 +218,14 @@ class EventController extends Controller
             'price' => 'required|numeric|min:0',
             'price_offline' => 'nullable|numeric|min:0',
             'price_online' => 'nullable|numeric|min:0',
+            'max_participants' => 'nullable|integer|min:1',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'event_until_date' => 'nullable|date|after_or_equal:event_date',
+            'event_until_time' => 'nullable',
             'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
@@ -336,11 +339,16 @@ class EventController extends Controller
             'longitude' => $mapsUrl !== '' ? $longitude : null,
             'zoom_link' => $zoomLink !== '' ? $zoomLink : null,
             'price' => $request->price,
+            'price_offline' => $request->price_offline ?? null,
+            'price_online' => $request->price_online ?? null,
+            'max_participants' => $request->max_participants ? (int) $request->max_participants : null,
             'discount_percentage' => $request->discount_percentage ?? 0,
             'discount_until' => $request->discount_until,
             'event_date' => $request->event_date,
             'event_time' => $request->event_time,
             'event_time_end' => $request->event_time_end,
+            'event_until_date' => $request->event_until_date ?? null,
+            'event_until_time' => $request->event_until_time ?? null,
             'material_deadline' => $request->material_deadline,
             'image' => $imagePath,
             'schedule_json' => $scheduleRows,
@@ -463,12 +471,23 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
+        // event_admin can only view their assigned events
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            abort(403, 'You do not have access to this event.');
+        }
+
         $event->load(['trainerModules.trainer', 'approvedTrainerModules.trainer']);
         return view('admin.events.show', compact('event'));
     }
 
     public function edit(Event $event)
     {
+        // event_admin cannot edit events
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot edit events.');
+        }
+
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.events.edit', compact('event', 'materiOptions', 'jenisOptions'));
@@ -476,6 +495,10 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot edit events.');
+        }
+
         $previousAssignedTrainerIds = $this->resolveAssignedTrainerIds(
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
@@ -565,11 +588,14 @@ class EventController extends Controller
             'price' => 'required|numeric|min:0',
             'price_offline' => 'nullable|numeric|min:0',
             'price_online' => 'nullable|numeric|min:0',
+            'max_participants' => 'nullable|integer|min:1',
             'discount_percentage' => 'nullable|integer|min:0|max:100',
             'discount_until' => 'nullable|date',
             'event_date' => 'required|date',
             'event_time' => 'required',
             'event_time_end' => 'nullable',
+            'event_until_date' => 'nullable|date|after_or_equal:event_date',
+            'event_until_time' => 'nullable',
             'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
@@ -602,11 +628,16 @@ class EventController extends Controller
             'longitude',
             'zoom_link',
             'price',
+            'price_offline',
+            'price_online',
+            'max_participants',
             'discount_percentage',
             'discount_until',
             'event_date',
             'event_time',
             'event_time_end',
+            'event_until_date',
+            'event_until_time',
             'material_deadline'
         ]);
 
@@ -616,6 +647,8 @@ class EventController extends Controller
         $zoomLink = trim((string) $request->input('zoom_link', ''));
         $data['maps_url'] = $mapsUrl !== '' ? $mapsUrl : null;
         $data['zoom_link'] = $zoomLink !== '' ? $zoomLink : null;
+        // Normalize max_participants: null if empty/zero
+        $data['max_participants'] = !empty($data['max_participants']) ? (int) $data['max_participants'] : null;
         $data['latitude'] = $mapsUrl !== '' ? $request->input('latitude') : null;
         $data['longitude'] = $mapsUrl !== '' ? $request->input('longitude') : null;
 
@@ -764,6 +797,10 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot delete events.');
+        }
+
         $event->delete();
         // Redirect back to history page if the user came from there; otherwise to add-event
         $prev = url()->previous();
@@ -889,6 +926,10 @@ class EventController extends Controller
      */
     public function publish(Request $request, Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot publish events.');
+        }
+
         if ((bool) $event->is_published) {
             return back()->with('success', 'Event is already published.');
         }
@@ -939,6 +980,10 @@ class EventController extends Controller
      */
     public function unpublish(Request $request, Event $event)
     {
+        if (auth()->user()?->role === 'event_admin') {
+            abort(403, 'Event admin cannot unpublish events.');
+        }
+
         if (!(bool) $event->is_published) {
             return back()->with('success', 'Event has not been published yet.');
         }
@@ -1431,7 +1476,35 @@ class EventController extends Controller
         }
     }    public function approveRegistration(Request $request, Event $event, EventRegistration $registration)
     {
-        abort(403, 'Persetujuan pendaftaran manual dinonaktifkan. Gunakan Midtrans.');
+        if ($registration->event_id !== $event->id) {
+            return back()->with('error', 'Data tidak valid.');
+        }
+
+        $registration->update([
+            'status'               => 'active',
+            'payment_verified_at'  => now(),
+            'payment_verified_by'  => auth()->id(),
+            'rejection_reason'     => null,
+        ]);
+
+        // Update related ManualPayment
+        \App\Models\ManualPayment::where('event_registration_id', $registration->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'settled']);
+
+        // Notify user
+        try {
+            \App\Models\UserNotification::create([
+                'user_id'    => $registration->user_id,
+                'type'       => 'event_registration_approved',
+                'title'      => 'Pendaftaran Dikonfirmasi',
+                'message'    => 'Pembayaran transfer Anda untuk event "' . ($event->title ?? 'Event') . '" telah dikonfirmasi.',
+                'data'       => ['event_id' => $event->id, 'url' => route('events.show', $event)],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch (\Throwable $e) {}
+
+        return back()->with('success', 'Pendaftaran berhasil dikonfirmasi.');
     }
 
     /**
@@ -1439,7 +1512,34 @@ class EventController extends Controller
      */
     public function rejectRegistration(Request $request, Event $event, EventRegistration $registration)
     {
-        abort(403, 'Penolakan pendaftaran manual dinonaktifkan. Gunakan Midtrans.');
+        if ($registration->event_id !== $event->id) {
+            return back()->with('error', 'Data tidak valid.');
+        }
+
+        $reason = trim((string) $request->input('rejection_reason', 'Bukti pembayaran tidak valid.'));
+
+        $registration->update([
+            'status'           => 'rejected',
+            'rejection_reason' => $reason,
+        ]);
+
+        \App\Models\ManualPayment::where('event_registration_id', $registration->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'rejected', 'rejection_reason' => $reason]);
+
+        // Notify user
+        try {
+            \App\Models\UserNotification::create([
+                'user_id'    => $registration->user_id,
+                'type'       => 'event_registration_rejected',
+                'title'      => 'Pendaftaran Ditolak',
+                'message'    => 'Bukti pembayaran untuk event "' . ($event->title ?? 'Event') . '" ditolak. Alasan: ' . $reason,
+                'data'       => ['event_id' => $event->id, 'url' => route('payment', $event)],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch (\Throwable $e) {}
+
+        return back()->with('success', 'Pendaftaran berhasil ditolak.');
     }
 
     /**

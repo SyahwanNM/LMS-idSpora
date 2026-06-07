@@ -10,14 +10,17 @@
                 <div class="card-header bg-white border-bottom">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-3">
+                            @if(auth()->user()?->role === 'admin')
                             <a href="{{ route('admin.add-event') }}" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left me-1"></i> Back
                             </a>
+                            @endif
                             <h4 class="mb-0 text-dark d-flex align-items-center">
                                 <i class="bi bi-calendar-event me-2"></i>
                                 Detail Event
                             </h4>
                         </div>
+                        @if(auth()->user()?->role === 'admin')
                         <div class="d-flex gap-2">
                             @if((bool)($event->is_published ?? false))
                                 <form action="{{ route('admin.events.unpublish', $event) }}" method="POST" class="d-inline" id="unpublishEventFormShow">
@@ -41,6 +44,7 @@
                                 <i class="bi bi-trash me-1"></i> Delete
                             </button>
                         </div>
+                        @endif
                     </div>
                 </div>
                 
@@ -318,10 +322,12 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th style="width:48px;">No</th>
-                                                <th style="width:220px;">Name</th>
-                                                <th style="width:240px;">Email</th>
+                                                <th style="width:200px;">Name</th>
+                                                <th style="width:200px;">Email</th>
+                                                <th style="width:140px;">Phone</th>
                                                 <th style="width:120px;">Status</th>
                                                 <th style="width:160px;">Registered</th>
+                                                <th style="width:160px;">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -330,6 +336,7 @@
                                                 <td>{{ $i+1 }}</td>
                                                 <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
                                                 <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
+                                                <td class="text-muted">{{ $reg->user->phone ?? '-' }}</td>
                                                 <td>
                                                     @php
                                                         $st = strtolower((string)$reg->status);
@@ -342,8 +349,41 @@
                                                         ($displayStatus === 'alpha' ? 'bg-warning text-dark' :
                                                         ($displayStatus === 'rejected' ? 'bg-danger' : 'bg-secondary'))
                                                     }}">{{ strtoupper($displayStatus) }}</span>
+                                                    @if($st === 'pending' && !empty($reg->payment_proof))
+                                                        <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">PROOF</span>
+                                                    @endif
                                                 </td>
                                                 <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
+                                                <td>
+                                                    @if($st === 'pending' && !empty($reg->payment_proof))
+                                                        <div class="d-flex flex-column gap-1" style="width:fit-content;">
+                                                            <a href="{{ Storage::disk('public')->url($reg->payment_proof) }}"
+                                                               target="_blank"
+                                                               class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:11px;width:fit-content;">
+                                                                <i class="bi bi-image me-1"></i>Bukti
+                                                            </a>
+                                                            <div class="d-flex gap-1">
+                                                                <form method="POST" action="{{ route('admin.events.registrations.approve', [$event, $reg]) }}" class="d-inline m-0">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
+                                                                        onclick="return confirm('Konfirmasi pembayaran ini?')">
+                                                                        <i class="bi bi-check2"></i> OK
+                                                                    </button>
+                                                                </form>
+                                                                <button type="button" class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#rejectModal"
+                                                                    data-reg-id="{{ $reg->id }}"
+                                                                    data-event-id="{{ $event->id }}"
+                                                                    data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                    <i class="bi bi-x"></i> Reject
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-muted small">-</span>
+                                                    @endif
+                                                </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
@@ -816,8 +856,9 @@ document.addEventListener('DOMContentLoaded', function(){
         Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
             var name = (row.children[1]?.textContent || '').toLowerCase();
             var email = (row.children[2]?.textContent || '').toLowerCase();
+            var phone = (row.children[3]?.textContent || '').toLowerCase();
             var code = (row.dataset.regCode || '').toLowerCase();
-            var match = !q || name.includes(q) || email.includes(q) || code.includes(q);
+            var match = !q || name.includes(q) || email.includes(q) || phone.includes(q) || code.includes(q);
             row.style.display = match ? '' : 'none';
         });
         // Update empty message to include the searched query when present
@@ -988,6 +1029,54 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 });
 </script>
+
+<!-- Reject Registration Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-semibold" id="rejectModalLabel">
+                    <i class="bi bi-x-circle me-2 text-danger"></i>Reject Registration
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rejectForm" method="POST" action="">
+                @csrf
+                <div class="modal-body pt-0">
+                    <p class="text-muted small mb-3">Rejecting registration of <strong id="rejectUserName"></strong>.</p>
+                    <label class="form-label fw-semibold small">Rejection Reason</label>
+                    <textarea name="rejection_reason" class="form-control" rows="3"
+                        placeholder="e.g. Bukti transfer tidak jelas / tidak sesuai nominal"
+                        required>Bukti pembayaran tidak valid.</textarea>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-1"></i>Reject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rejectModal = document.getElementById('rejectModal');
+    if (!rejectModal) return;
+    rejectModal.addEventListener('show.bs.modal', function(e) {
+        const btn = e.relatedTarget;
+        if (!btn) return;
+        const regId   = btn.getAttribute('data-reg-id');
+        const eventId = btn.getAttribute('data-event-id');
+        const name    = btn.getAttribute('data-user-name') || '-';
+        document.getElementById('rejectUserName').textContent = name;
+        document.getElementById('rejectForm').action =
+            '/admin/events/' + eventId + '/registrations/' + regId + '/reject';
+    });
+});
+</script>
+
 <!-- Delete Confirmation Modal (modern) -->
 <div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
