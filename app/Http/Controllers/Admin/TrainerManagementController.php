@@ -192,6 +192,7 @@ class TrainerManagementController extends Controller
                 'type' => 'course',
                 'title' => $course->name ?? 'Course',
                 'trainer' => $course->trainer?->name ?? 'Trainer',
+                'trainer_id' => $course->trainer_id,
                 'due_at' => $dueAt,
             ]);
         }
@@ -211,6 +212,7 @@ class TrainerManagementController extends Controller
                 'type' => 'event',
                 'title' => $event->title ?? 'Event',
                 'trainer' => $event->trainer?->name ?? 'Trainer',
+                'trainer_id' => $event->trainer_id ?? $event->trainer?->id,
                 'due_at' => Carbon::parse($event->material_deadline),
             ]);
         }
@@ -1148,26 +1150,81 @@ class TrainerManagementController extends Controller
         ]);
 
         $deadline = \Carbon\Carbon::parse($request->material_deadline);
-        
+
         $course->material_deadline = $deadline;
         $course->save();
 
-        // Update pending notification if exists
-        $notifications = \App\Models\TrainerNotification::where('user_id', $trainer->id)
-            ->where('type', 'course_invitation')
-            ->where('status', 'pending')
-            ->get();
-            
-        foreach ($notifications as $notif) {
-            $data = $notif->data ?? [];
-            if (isset($data['course_id']) && $data['course_id'] == $course->id) {
-                $notif->due_at = $deadline->toIso8601String();
-                $data['material_deadline'] = $deadline->toIso8601String();
-                $notif->data = $data;
-                $notif->save();
+        // Notify trainer about the deadline
+        \App\Models\TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type'       => 'material_deadline_set',
+            'title'      => 'Deadline Materi Kelas Ditetapkan',
+            'message'    => 'Batas waktu upload materi untuk kelas "' . $course->name . '" telah ditetapkan: ' . $deadline->translatedFormat('d F Y, H:i') . '.',
+            'data'       => [
+                'entity_type'       => 'course',
+                'entity_id'         => $course->id,
+                'material_deadline' => $deadline->toIso8601String(),
+                'due_at'            => $deadline->toIso8601String(),
+                'url'               => route('trainer.detail-course', $course->id),
+            ],
+            'expires_at' => $deadline->copy()->addDays(3),
+        ]);
+
+        return back()->with('success', 'Deadline materi kelas "' . $course->name . '" berhasil diperbarui.');
+    }
+
+    /**
+     * Update material deadline for a specific event assigned to trainer.
+     */
+    public function updateEventDeadline(Request $request, User $trainer, \App\Models\Event $event)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $rules = ['material_deadline' => 'required|date|after_or_equal:today'];
+        if ($event->event_date) {
+            $rules['material_deadline'] .= '|before_or_equal:' . Carbon::parse($event->event_date)->format('Y-m-d');
+        }
+
+        $request->validate($rules, [
+            'material_deadline.before_or_equal' => 'Deadline materi harus sebelum atau sama dengan tanggal event (' . ($event->event_date ? Carbon::parse($event->event_date)->format('d/m/Y') : '-') . ').',
+        ]);
+
+        $deadline = Carbon::parse($request->material_deadline);
+
+        // Determine urgency based on days until event
+        $urgencyLabel = '';
+        if ($event->event_date) {
+            $daysUntilEvent = (int) now()->diffInDays(Carbon::parse($event->event_date), false);
+            if ($daysUntilEvent <= 1) {
+                $urgencyLabel = ' 🚨 [DARURAT]';
+            } elseif ($daysUntilEvent <= 3) {
+                $urgencyLabel = ' ⚠️ [URGENT]';
+            } elseif ($daysUntilEvent <= 7) {
+                $urgencyLabel = ' [SEGERA]';
             }
         }
 
-        return back()->with('success', 'Batas waktu pengumpulan materi untuk kelas ' . $course->name . ' berhasil diperbarui.');
+        $event->material_deadline = $deadline;
+        $event->save();
+
+        // Notify trainer
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type'       => 'material_deadline_set',
+            'title'      => 'Deadline Materi Event Ditetapkan' . $urgencyLabel,
+            'message'    => 'Batas waktu upload materi untuk event "' . $event->title . '" telah ditetapkan: ' . $deadline->translatedFormat('d F Y, H:i') . '.' . ($urgencyLabel ? ' Harap segera upload materi.' : ''),
+            'data'       => [
+                'entity_type'       => 'event',
+                'entity_id'         => $event->id,
+                'material_deadline' => $deadline->toIso8601String(),
+                'due_at'            => $deadline->toIso8601String(),
+                'url'               => route('trainer.events.show', $event->id),
+            ],
+            'expires_at' => $deadline->copy()->addDays(3),
+        ]);
+
+        return back()->with('success', 'Deadline materi event "' . $event->title . '" berhasil diperbarui.' . ($urgencyLabel ? ' ' . trim($urgencyLabel) : ''));
     }
 }

@@ -732,6 +732,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
     Route::post('/admin/trainer/{trainer}/course/{course}/deadline', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'updateCourseDeadline'])->name('admin.trainer.courses.deadline');
+    Route::post('/admin/trainer/{trainer}/event/{event}/deadline', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'updateEventDeadline'])->name('admin.trainer.events.deadline');
 
     // Material Approval Routes
     Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.trainer.material.approvals');

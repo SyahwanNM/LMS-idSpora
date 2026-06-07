@@ -1366,9 +1366,15 @@
                                 <div class="deadline-sub">Trainer: {{ $item['trainer'] }}</div>
                             </div>
 
-                            <div class="deadline-right">
-                                <span class="deadline-badge {{ $item['badge_class'] }}">{{ $item['badge_text'] }}</span>
-                                <div class="deadline-date">{{ $item['date_text'] }}</div>
+                            <div class="deadline-right text-end">
+                                <span class="deadline-badge {{ $item['badge_class'] }} d-block mb-1">{{ $item['badge_text'] }}</span>
+                                <div class="deadline-date mb-2">{{ $item['date_text'] }}</div>
+                                @if(isset($item['trainer_id']))
+                                    <a href="{{ route('admin.trainer.show', ['trainer' => $item['trainer_id'], 'tab' => 'deadline']) }}" 
+                                       class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 2px 8px; font-weight: 700;">
+                                        <i class="bi bi-pencil-square me-1"></i>Atur
+                                    </a>
+                                @endif
                             </div>
                         </div>
                     @empty
@@ -1378,9 +1384,9 @@
                     @endforelse
                 </div>
 
-                <a href="{{ route('admin.trainer.material.approvals') }}" class="card-link mt-3">
-                    Lihat semua deadline
-                    <i class="bi bi-arrow-right"></i>
+                <a href="#daftar-trainer" class="card-link mt-3" onclick="document.querySelector('.table-responsive').scrollIntoView({behavior: 'smooth'}); return false;">
+                    Kelola dari profil trainer
+                    <i class="bi bi-arrow-down"></i>
                 </a>
             </div>
         </div>
