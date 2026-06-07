@@ -92,9 +92,9 @@ $validator = Validator::make($request->all(), $rules, $messages);
         // Also honor explicit internal redirect param (used by guest-only links).
         $redirect = trim((string) $request->input('redirect', ''));
         if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
-            return redirect($redirect);
+            return redirect($redirect)->with('login_success', 'Success, Welcome to IdSpora LMS!');
         }
-        return redirect()->intended('/dashboard');
+        return redirect()->intended('/dashboard')->with('login_success', 'Success, Welcome to IdSpora LMS!');
     }
 
     public function register(Request $request)

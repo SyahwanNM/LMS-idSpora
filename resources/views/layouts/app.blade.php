@@ -125,5 +125,82 @@
     <div class="min-h-screen bg-gray-100">
         @yield('content')
     </div>
+
+    @auth
+    {{-- Hidden logout form for idle timeout --}}
+    <form id="idleLogoutForm" action="{{ route('logout') }}" method="POST" style="display:none;">
+        @csrf
+    </form>
+
+    {{-- Idle timeout modal --}}
+    <div id="idleWarningModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.18);">
+            <div style="font-size:2.5rem;margin-bottom:12px;">⏱️</div>
+            <h5 style="font-weight:700;margin-bottom:8px;">Session Expiring Soon</h5>
+            <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">You have been inactive. You will be logged out in <strong id="idleCountdown">60</strong> seconds.</p>
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <button onclick="resetIdleTimer()" style="flex:1;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Stay Logged In</button>
+                <button onclick="document.getElementById('idleLogoutForm').submit()" style="flex:1;padding:10px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Logout Now</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        const IDLE_MINUTES   = {{ (int) config('session.lifetime', 120) }};
+        const WARN_BEFORE_S  = 60; // show warning 60s before logout
+        const EVENTS         = ['click','mousemove','keydown','scroll','touchstart','touchmove'];
+        const modal          = document.getElementById('idleWarningModal');
+        const countdownEl    = document.getElementById('idleCountdown');
+        let idleTimer, warnTimer, countdownInterval;
+        let warned = false;
+
+        function doLogout() {
+            document.getElementById('idleLogoutForm')?.submit();
+        }
+
+        function startCountdown() {
+            let secs = WARN_BEFORE_S;
+            countdownEl && (countdownEl.textContent = secs);
+            countdownInterval = setInterval(function(){
+                secs--;
+                countdownEl && (countdownEl.textContent = secs);
+                if (secs <= 0) {
+                    clearInterval(countdownInterval);
+                    doLogout();
+                }
+            }, 1000);
+        }
+
+        function showWarning() {
+            warned = true;
+            if (modal) { modal.style.display = 'flex'; startCountdown(); }
+            else doLogout();
+        }
+
+        function hideWarning() {
+            if (modal) modal.style.display = 'none';
+            clearInterval(countdownInterval);
+            warned = false;
+        }
+
+        window.resetIdleTimer = function() {
+            clearTimeout(idleTimer);
+            clearTimeout(warnTimer);
+            hideWarning();
+            const totalMs  = IDLE_MINUTES * 60 * 1000;
+            const warnMs   = totalMs - (WARN_BEFORE_S * 1000);
+            warnTimer  = setTimeout(showWarning, warnMs > 0 ? warnMs : totalMs);
+            idleTimer  = setTimeout(doLogout, totalMs);
+        };
+
+        EVENTS.forEach(function(evt){
+            window.addEventListener(evt, resetIdleTimer, { passive: true });
+        });
+
+        resetIdleTimer();
+    })();
+    </script>
+    @endauth
 </body>
 </html>

@@ -350,14 +350,34 @@
 
                         <div class="card-body">
                             <h4 class="event-title">{{ $event->title }}</h4>
-                            <div class="tags">
+                                <div class="tags">
                                 <span class="tag">{{ $event->jenis ? Str::limit($event->jenis,18) : 'Jenis' }}</span>
                                 <span class="tag">{{ $event->materi ? Str::limit($event->materi,18) : 'Materi' }}</span>
-                                <div class="meta" style="margin-left:auto; gap:6px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" /></svg>
-                                    <span>{{ $event->registrations_count ?? ($event->registrations()->where('status','active')->distinct('user_id')->count('user_id')) }}</span>
+                                @php
+                                    $evQuota = !empty($event->max_participants) ? (int)$event->max_participants : null;
+                                    $evRegistered = $event->registrations_count ?? 0;
+                                    $evFull = $evQuota && $evRegistered >= $evQuota;
+                                    $evPct  = $evQuota ? min(100, round(($evRegistered / $evQuota) * 100)) : 0;
+                                @endphp
+                                </div>{{-- end .tags --}}
+
+                                {{-- Quota progress bar --}}
+                                @if($evQuota)
+                                <div style="margin-top:6px;">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                                        <span style="font-size:11px;color:#6b7280;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" /></svg>
+                                            {{ $evFull ? 'Full Slot' : 'Quota' }}
+                                        </span>
+                                        <span style="font-size:11px;font-weight:600;color:{{ $evFull ? '#ef4444' : ($evPct > 80 ? '#f59e0b' : '#3b82f6') }};">{{ $evRegistered }}/{{ $evQuota }}</span>
+                                    </div>
+                                    <div style="width:100%;height:6px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
+                                        <div style="height:100%;width:{{ $evPct }}%;background:{{ $evFull ? '#ef4444' : ($evPct > 80 ? '#f59e0b' : '#3b82f6') }};border-radius:4px;transition:width .3s;"></div>
+                                    </div>
                                 </div>
-                            </div>
+                                @else
+                                {{-- No quota: just show count inline --}}
+                                @endif
                             <div class="desc-event rich-desc">{!! Str::limit(strip_tags($event->description,'<p><br><strong><em><ul><ol><li><b><i>'), 220) !!}</div>
                             
                             <div class="keterangan keterangan-row">
@@ -405,23 +425,41 @@
                                     @php
                                         $isHybridCard = !empty($event->maps_url) && !empty($event->zoom_link)
                                                         && ($event->price_offline > 0 || $event->price_online > 0);
-                                        $discountPctCard = ($event->discount_percentage > 0 && method_exists($event,'hasDiscount') && $event->hasDiscount())
-                                                           ? (float) $event->discount_percentage : 0.0;
+                                        // Diskon aktif: pct > 0 dan (discount_until kosong ATAU belum lewat)
+                                        $discountPctCard = 0.0;
+                                        if ($event->discount_percentage > 0) {
+                                            $discountActive = empty($event->discount_until)
+                                                || \Carbon\Carbon::parse($event->discount_until)->endOfDay()->gte(now());
+                                            if ($discountActive) {
+                                                $discountPctCard = (float) $event->discount_percentage;
+                                            }
+                                        }
                                     @endphp
                                     @if($isHybridCard)
                                         @php
-                                            $offFinal = $discountPctCard > 0 ? round((float)$event->price_offline * (1 - $discountPctCard/100)) : (float)$event->price_offline;
-                                            $onFinal  = $discountPctCard > 0 ? round((float)$event->price_online  * (1 - $discountPctCard/100)) : (float)$event->price_online;
+                                            $offRaw   = (float) $event->price_offline;
+                                            $onRaw    = (float) $event->price_online;
+                                            $offFinal = $discountPctCard > 0 ? round($offRaw * (1 - $discountPctCard/100)) : $offRaw;
+                                            $onFinal  = $discountPctCard > 0 ? round($onRaw  * (1 - $discountPctCard/100)) : $onRaw;
                                         @endphp
                                         <div class="d-flex flex-column gap-1">
-                                            <div class="d-flex align-items-center gap-1">
+                                            <div class="d-flex align-items-center gap-1 flex-wrap">
                                                 <span style="font-size:0.65rem;font-weight:600;padding:1px 7px;border-radius:20px;background:#e8f4fd;color:#1565c0;border:1px solid #90caf9;text-decoration:none;white-space:nowrap;">Offline</span>
+                                                @if($discountPctCard > 0 && $offRaw > 0)
+                                                    <span class="price-old" style="font-size:0.75rem;">Rp{{ number_format($offRaw,0,',','.') }}</span>
+                                                @endif
                                                 <span class="price-now" style="font-size:0.95rem;">{{ $offFinal > 0 ? 'Rp'.number_format($offFinal,0,',','.') : 'Free' }}</span>
                                             </div>
-                                            <div class="d-flex align-items-center gap-1">
+                                            <div class="d-flex align-items-center gap-1 flex-wrap">
                                                 <span style="font-size:0.65rem;font-weight:600;padding:1px 7px;border-radius:20px;background:#fce4ec;color:#c62828;border:1px solid #f48fb1;text-decoration:none;white-space:nowrap;">Online</span>
+                                                @if($discountPctCard > 0 && $onRaw > 0)
+                                                    <span class="price-old" style="font-size:0.75rem;">Rp{{ number_format($onRaw,0,',','.') }}</span>
+                                                @endif
                                                 <span class="price-now" style="font-size:0.95rem;">{{ $onFinal > 0 ? 'Rp'.number_format($onFinal,0,',','.') : 'Free' }}</span>
                                             </div>
+                                            @if($discountPctCard > 0)
+                                                <span style="font-size:0.65rem;font-weight:700;color:#dc2626;">{{ (int)$discountPctCard }}% OFF</span>
+                                            @endif
                                         </div>
                                     @elseif(method_exists($event,'hasDiscount') && $event->hasDiscount())
                                         <span class="price-old">Rp{{ number_format($event->price,0,',','.') }}</span>
@@ -438,10 +476,11 @@
                                 @php 
                                     $registered = !empty($event->is_registered);
                                     $isFinished = ($status === 'finished');
-                                    $btnLabel = $registered ? 'Registered' : ($isFinished ? 'Finished' : 'See Details');
-                                    $btnClass = $registered ? 'btn-success' : ($isFinished ? 'btn-secondary' : 'btn-primary');
+                                    $btnLabel = $registered ? 'Registered' : ($evFull ? 'Full' : ($isFinished ? 'Finished' : 'See Details'));
+                                    $btnClass = $registered ? 'btn-success' : ($evFull ? 'btn-secondary' : ($isFinished ? 'btn-secondary' : 'btn-primary'));
+                                    $btnDisabled = $registered || $isFinished || $evFull;
                                 @endphp
-                                <button class="btn-register register-btn btn {{ $btnClass }}" type="button" {{ ($registered || $isFinished) ? 'disabled' : '' }} onclick="event.stopPropagation();">
+                                <button class="btn-register register-btn btn {{ $btnClass }}" type="button" {{ $btnDisabled ? 'disabled' : '' }} onclick="event.stopPropagation();">
                                     {{ $btnLabel }}
                                 </button>
                             </div>
@@ -479,7 +518,7 @@
         </section>
         
     </main> <div class="footer-section-wrapper">
-        @include('partials.footer-before-login')
+        @include('partials.footer-after-login')
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function(){
