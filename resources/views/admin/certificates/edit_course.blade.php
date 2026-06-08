@@ -300,6 +300,120 @@
     #cert-preview-scaler .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
     #cert-preview-scaler .template_3 .verification-tag { left: 70px; bottom: 25px; }
     #cert-preview-scaler .template_3 .cert-id { right: 70px; bottom: 25px; }
+
+    /* Template 4: Blue Shield */
+    #cert-preview-scaler .template_4 { 
+        padding: 0;
+        height: 642px;
+        width: 1020px;
+        box-sizing: border-box;
+        background: #ffffff;
+        position: relative;
+        overflow: hidden;
+    }
+    #cert-preview-scaler .template_4 .bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1020px;
+        height: 642px;
+        z-index: 1;
+    }
+    #cert-preview-scaler .template_4 .logo-banner-container {
+        position: absolute;
+        top: 0;
+        left: 28%;
+        width: 44%;
+        background-color: #ffffff;
+        border-radius: 0 0 15px 15px;
+        padding: 8px 20px;
+        text-align: center;
+        z-index: 10;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+    #cert-preview-scaler .template_4 .logo-poster-img {
+        height: 45px;
+        width: auto;
+        vertical-align: middle;
+        display: inline-block;
+    }
+    #cert-preview-scaler .template_4 .logo-item-top {
+        height: 38px;
+        width: auto;
+        vertical-align: middle;
+        display: inline-block;
+        margin: 0 5px;
+    }
+    #cert-preview-scaler .template_4 .content-blue {
+        position: absolute;
+        top: 136px;
+        left: 0;
+        width: 1020px;
+        text-align: center;
+        z-index: 5;
+        padding: 0;
+        box-sizing: border-box;
+        color: #ffffff;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    #cert-preview-scaler .template_4 .recipient-underline {
+        width: 604px;
+        height: 1.5px;
+        background-color: #ffffff;
+        margin: 8px auto 15px auto;
+    }
+    #cert-preview-scaler .template_4 .cert-footer {
+        position: absolute !important;
+        bottom: 45px !important;
+        left: 75px !important;
+        right: 75px !important;
+        text-align: center !important;
+        width: auto !important;
+        z-index: 6 !important;
+        padding: 0 !important;
+    }
+    #cert-preview-scaler .template_4 .sig-box {
+        display: inline-block !important;
+        vertical-align: bottom !important;
+        float: none !important;
+        text-align: center !important;
+        width: 264px !important;
+        margin: 0 30px !important;
+    }
+    #cert-preview-scaler .template_4 .sig-position {
+        font-weight: bold;
+        margin: 0 0 4px 0;
+        font-size: 8pt;
+        color: #1a1a1a;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    #cert-preview-scaler .template_4 .sig-image-wrap {
+        height: 48px;
+        margin: 4px auto;
+        text-align: center;
+    }
+    #cert-preview-scaler .template_4 .sig-img {
+        height: 48px;
+        width: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+    #cert-preview-scaler .template_4 .sig-line {
+        width: 208px;
+        border-bottom: 1.5px solid #1a1a1a;
+        margin: 2px auto;
+    }
+    #cert-preview-scaler .template_4 .sig-name {
+        font-weight: bold;
+        margin: 6px 0 0 0;
+        font-size: 8.5pt;
+        color: #1a1a1a;
+        font-family: Arial, Helvetica, sans-serif;
+    }
 </style>
 @endsection
 
@@ -350,7 +464,8 @@
                     @php $tpls = [
                         ['id'=>'template_1','name'=>'Classic Royal','desc'=>'Elegan dengan aksen emas dan navy.','bg'=>'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)','icon'=>'bi-award'],
                         ['id'=>'template_2','name'=>'Modern Minimal','desc'=>'Bersih, fokus pada tipografi modern.','bg'=>'#f1f5f9','icon'=>'bi-file-earmark-text','color'=>'#1e293b'],
-                        ['id'=>'template_3','name'=>'Creative Dynamic','desc'=>'Enerjik dengan gradien dan pola.','bg'=>'linear-gradient(135deg, #6d28d9 0%, #db2777 100%)','icon'=>'bi-palette']
+                        ['id'=>'template_3','name'=>'Creative Dynamic','desc'=>'Enerjik dengan gradien dan pola.','bg'=>'linear-gradient(135deg, #6d28d9 0%, #db2777 100%)','icon'=>'bi-palette'],
+                        ['id'=>'template_4','name'=>'Blue Shield','desc'=>'Biru navy elegan dengan aksen emas.','bg'=>'linear-gradient(155deg, #001060 0%, #0033cc 60%, #0050ff 100%)','icon'=>'bi-shield-fill-check']
                     ]; @endphp
                     @foreach($tpls as $t)
                     <div class="col-md-4">
@@ -541,6 +656,44 @@
                                 <!-- Template 3 Decorations -->
                                 <div class="template-decorations-3" style="display: none;">
                                     <img src="{{ asset('aset/bg-creative.png') }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                                </div>
+
+                                <!-- Template 4 Decorations: Blue Shield -->
+                                <div class="template-decorations-4" style="display: none;">
+                                    <img src="{{ asset('aset/bg-blue-shield.png') }}" class="bg-image">
+                                </div>
+
+                                <!-- Template 4 Top Content Area (white text on blue) -->
+                                <div id="preview-t4-top" style="display: none;" class="logo-banner-container preview-logo-container-t4">
+                                    <img src="{{ asset('aset/logo poster.png') }}" class="logo-poster-img">
+                                </div>
+
+                                <!-- Template 4 Bottom Content Area (dark text on white) -->
+                                <div id="preview-t4-bottom" style="display: none;" class="content-blue">
+                                    <h1 style="font-size: 22pt; font-weight: 900; margin: 0; letter-spacing: 3px; font-family: Arial, Helvetica, sans-serif;">SERTIFIKAT</h1>
+                                    <p style="font-size: 8.5pt; font-weight: bold; letter-spacing: 4px; margin: 9px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">DIBERIKAN KEPADA</p>
+                                    
+                                    <div style="font-size: 20pt; font-weight: bold; margin: 11px 0 4px 0; font-family: Arial, Helvetica, sans-serif;" id="preview-t4-name">
+                                        NAMA PESERTA DEMO
+                                    </div>
+                                    <div class="recipient-underline"></div>
+
+                                    <p style="font-size: 8.5pt; margin: 8px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">Atas Keberhasilannya Menyelesaikan Seluruh Persyaratan</p>
+                                    <p style="font-size: 13pt; font-weight: bold; margin: 4px 0 8px 0; font-family: Arial, Helvetica, sans-serif;">PROGRAM KURSUS</p>
+                                    <p style="font-size: 8.5pt; margin: 8px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">Dalam Pembelajaran Materi</p>
+                                    
+                                    <h2 style="font-size: 14pt; font-weight: bold; margin: 4px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">
+                                        "{{ $course->name }}"
+                                    </h2>
+                                    <p style="font-size: 8.5pt; margin: 0 0 8px 0; font-family: Arial, Helvetica, sans-serif;">
+                                        Designing Learning Experiences to Develop Real Competencies and Professional Portfolios
+                                    </p>
+                                    
+                                    <p style="font-size: 8pt; margin: 9px 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+                                        Yang diselenggarakan oleh: 
+                                        <strong>IdSPora Learning Academy</strong> pada tanggal 
+                                        <strong>{{ now()->format('d F Y') }}</strong>
+                                    </p>
                                 </div>
 
                                 <!-- Template 3 Header Area -->
@@ -804,16 +957,22 @@
         const decor1 = document.querySelector('.template-decorations-1');
         const decor2 = document.querySelector('.template-decorations-2');
         const decor3 = document.querySelector('.template-decorations-3');
+        const decor4 = document.querySelector('.template-decorations-4');
         if (decor1) decor1.style.display = (template === 'template_1') ? 'block' : 'none';
         if (decor2) decor2.style.display = (template === 'template_2') ? 'block' : 'none';
         if (decor3) decor3.style.display = (template === 'template_3') ? 'block' : 'none';
+        if (decor4) decor4.style.display = (template === 'template_4') ? 'block' : 'none';
 
         // Toggle headers
         const headerT3 = document.getElementById('preview-t3-header');
         const headerT12 = document.getElementById('preview-t12-header');
+        const headerT4top = document.getElementById('preview-t4-top');
+        const headerT4bot = document.getElementById('preview-t4-bottom');
         if (headerT3) headerT3.style.display = (template === 'template_3') ? 'block' : 'none';
+        if (headerT4top) headerT4top.style.display = (template === 'template_4') ? 'block' : 'none';
+        if (headerT4bot) headerT4bot.style.display = (template === 'template_4') ? 'block' : 'none';
         if (headerT12) {
-            headerT12.style.display = (template !== 'template_3') ? 'block' : 'none';
+            headerT12.style.display = (template !== 'template_3' && template !== 'template_4') ? 'block' : 'none';
             if (template === 'template_2') {
                 headerT12.style.cssText = 'padding: 40px 10px 0 10px; text-align: center;';
             } else {
@@ -825,13 +984,18 @@
         const contentBox = document.getElementById('preview-content-box');
         const sigContainer = document.getElementById('preview-signatures-container');
         if (contentBox) {
-            if (template === 'template_2') {
+            if (template === 'template_4') {
+                contentBox.style.display = 'none';
+            } else if (template === 'template_2') {
+                contentBox.style.display = '';
                 contentBox.removeAttribute('style');
                 contentBox.style.cssText = 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;';
             } else if (template === 'template_3') {
+                contentBox.style.display = '';
                 contentBox.removeAttribute('style');
                 contentBox.style.cssText = 'padding: 10px 70px; text-align: center; margin-top: 0;';
             } else {
+                contentBox.style.display = '';
                 contentBox.removeAttribute('style');
                 contentBox.style.cssText = 'margin-top: 40px; text-align: center;';
             }
@@ -854,13 +1018,19 @@
             }
         }
 
+        const t4NameDiv = document.getElementById('preview-t4-name');
+        if (t4NameDiv) {
+            t4NameDiv.textContent = 'NAMA PESERTA DEMO';
+        }
+
         // Update logo source depending on template (light vs dark)
         const assetPath = "{{ asset('aset') }}";
-        const mainLogoUrl = template === 'template_3' ? `${assetPath}/logo-idspora.png` : `${assetPath}/logo idspora_dark.png`;
+        const mainLogoUrl = (template === 'template_3' || template === 'template_4') ? `${assetPath}/logo-idspora.png` : `${assetPath}/logo idspora_dark.png`;
         
         // Render Logos
-        renderLogosInContainer('.preview-logo-container-t12', mainLogoUrl, 'preview-main-logo-t12');
-        renderLogosInContainer('.preview-logo-container-t3', mainLogoUrl, 'preview-main-logo-t3');
+        renderLogosInContainer('.preview-logo-container-t12', mainLogoUrl, 'preview-main-logo-t12', template);
+        renderLogosInContainer('.preview-logo-container-t3', mainLogoUrl, 'preview-main-logo-t3', template);
+        renderLogosInContainer('.preview-logo-container-t4', mainLogoUrl, 'preview-main-logo-t4', template);
 
         // Render Signatures
         renderSignatures();
@@ -869,15 +1039,22 @@
         scalePreview();
     }
 
-    function renderLogosInContainer(containerSelector, mainLogoUrl, mainLogoId) {
+    function renderLogosInContainer(containerSelector, mainLogoUrl, mainLogoId, template) {
         const container = document.querySelector(containerSelector);
         if (!container) return;
         
         container.innerHTML = '';
+        
+        // Main logo
         const mainImg = document.createElement('img');
-        mainImg.src = mainLogoUrl;
-        mainImg.className = 'logo-item';
-        mainImg.id = mainLogoId;
+        if (template === 'template_4') {
+            mainImg.src = "{{ asset('aset/logo poster.png') }}";
+            mainImg.className = 'logo-poster-img';
+        } else {
+            mainImg.src = mainLogoUrl;
+            mainImg.className = 'logo-item';
+            mainImg.id = mainLogoId;
+        }
         container.appendChild(mainImg);
 
         // Render existing logos
@@ -889,7 +1066,7 @@
                 if (img) {
                     const newImg = document.createElement('img');
                     newImg.src = img.src;
-                    newImg.className = 'logo-item';
+                    newImg.className = (template === 'template_4') ? 'logo-item-top' : 'logo-item';
                     container.appendChild(newImg);
                 }
             }
@@ -900,7 +1077,7 @@
             if (uploadedFiles.logos[key]) {
                 const newImg = document.createElement('img');
                 newImg.src = uploadedFiles.logos[key];
-                newImg.className = 'logo-item';
+                newImg.className = (template === 'template_4') ? 'logo-item-top' : 'logo-item';
                 container.appendChild(newImg);
             }
         });
@@ -910,6 +1087,8 @@
         const container = document.getElementById('preview-signatures-container');
         if (!container) return;
         container.innerHTML = '';
+
+        const template = document.getElementById('selected_template').value;
 
         const entries = document.querySelectorAll('#signaturesContainer .sig-entry');
         entries.forEach((entry, index) => {
@@ -945,17 +1124,29 @@
             const sigBox = document.createElement('div');
             sigBox.className = 'sig-box';
 
-            let imgHtml = '<div style="height: 90px;"></div>';
-            if (imgSrc) {
-                imgHtml = `<img src="${imgSrc}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">`;
+            if (template === 'template_4') {
+                let imgHtml = '<div class="sig-image-wrap"></div>';
+                if (imgSrc) {
+                    imgHtml = `<div class="sig-image-wrap"><img src="${imgSrc}" class="sig-img"></div>`;
+                }
+                sigBox.innerHTML = `
+                    <p class="sig-position">${posValue || 'Authorized Position'}</p>
+                    ${imgHtml}
+                    <div class="sig-line"></div>
+                    <p class="sig-name">${nameValue || 'Authorized Signature'}</p>
+                `;
+            } else {
+                let imgHtml = '<div style="height: 90px;"></div>';
+                if (imgSrc) {
+                    imgHtml = `<img src="${imgSrc}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">`;
+                }
+                sigBox.innerHTML = `
+                    ${imgHtml}
+                    <div class="sig-line"></div>
+                    <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">${nameValue || 'Authorized Signature'}</p>
+                    <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">${posValue || 'Authorized Position'}</p>
+                `;
             }
-
-            sigBox.innerHTML = `
-                ${imgHtml}
-                <div class="sig-line"></div>
-                <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">${nameValue || 'Authorized Signature'}</p>
-                <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">${posValue || 'Authorized Position'}</p>
-            `;
 
             container.appendChild(sigBox);
         });

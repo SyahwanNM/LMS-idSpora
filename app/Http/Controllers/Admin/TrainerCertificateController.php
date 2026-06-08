@@ -230,7 +230,7 @@ class TrainerCertificateController extends Controller
         $model = $this->getCertifiableModel($context, $id);
 
         $request->validate([
-            'certificate_template' => ['required', 'in:template_1,template_2,template_3'],
+            'certificate_template' => ['required', 'in:template_1,template_2,template_3,template_4'],
 
             'certificate_logo' => ['nullable', 'array', 'max:3'],
             'certificate_logo.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
