@@ -886,6 +886,11 @@
                         $eventStarted = $startTime ? $nowTs->gte($startTime) : $nowTs->isSameDay($eventDate);
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                     }
+                    $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    $isFeedbackDay = false;
+                    if ($eventEndDate) {
+                        $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
+                    }
                     // Attendance via QR verification (check-in)
                     $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
                     $hasCertificate = $registration && $registration->certificate_issued_at;
@@ -961,6 +966,11 @@
                     if ($eventDate) {
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                         $eventStarted = $nowTs->gte($startTime ? $startTime : $eventDate->copy()->startOfDay());
+                    }
+                    $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    $isFeedbackDay = false;
+                    if ($eventEndDate) {
+                        $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
                     }
                     // Pricing state
                     $hasActiveDiscount = false;
@@ -1916,7 +1926,7 @@
                     @endif
                 </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventFinished) ? '' : 'locked' }}"
+                 <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay)) ? '' : 'locked' }}"
                     style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1929,12 +1939,14 @@
                         <h6>Feedback and Ratings</h6>
                         @if(isset($hasFeedback) && $hasFeedback)
                             <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                        @elseif($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
+                            <p style="width: 70%;" class="text-primary">Please submit your feedback</p>
                         @else
                             <p style="width: 70%;">Available after the event ends</p>
                         @endif
                     </div>
 
-                    @if($isRegistered && $attendanceSubmitted && $eventFinished)
+                    @if($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
                             @if(isset($hasFeedback) && $hasFeedback)
@@ -1961,7 +1973,7 @@
             </div>
         </section>
 
-        @if($isRegistered && $attendanceSubmitted && $eventFinished)
+        @if($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
                     <div class="d-flex justify-content-between align-items-center"
