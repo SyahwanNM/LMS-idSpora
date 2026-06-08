@@ -66,9 +66,15 @@ class ManualPaymentController extends Controller
         $fullName = $request->input('full_name') ?: $user->name;
         $email    = $request->input('email')     ?: $user->email;
         $phone    = $request->input('whatsapp')  ?: $user->phone;
+        $university = $request->input('university_origin') ?: $user->institution;
+        $position   = $request->input('position')          ?: $user->profession;
+
         if ($fullName !== $user->name)  $profileUpdates['name']  = $fullName;
         if ($email    !== $user->email) $profileUpdates['email'] = $email;
         if ($phone    !== $user->phone) $profileUpdates['phone'] = $phone;
+        if ($university !== $user->institution) $profileUpdates['institution'] = $university;
+        if ($position !== $user->profession)   $profileUpdates['profession']  = $position;
+
         if (!empty($profileUpdates)) { $user->update($profileUpdates); $user->refresh(); }
 
         DB::beginTransaction();
@@ -86,12 +92,18 @@ class ManualPaymentController extends Controller
                     'status'            => 'pending',
                     'registration_code' => $orderId,
                     'total_price'       => $finalPrice,
+                    'university_origin' => $request->input('university_origin'),
+                    'study_program'     => $request->input('study_program'),
+                    'position'          => $request->input('position'),
                 ]);
             } else {
                 $registration->update([
                     'status'      => 'pending',
                     'total_price' => $finalPrice,
                     'rejection_reason' => null,
+                    'university_origin' => $request->input('university_origin'),
+                    'study_program'     => $request->input('study_program'),
+                    'position'          => $request->input('position'),
                 ]);
             }
 

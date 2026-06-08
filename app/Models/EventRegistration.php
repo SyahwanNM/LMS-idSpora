@@ -27,6 +27,9 @@ class EventRegistration extends Model
         'payment_verified_by',
         'payment_url',
         'rejection_reason',
+        'university_origin',
+        'study_program',
+        'position',
     ];
 
     protected $casts = [
