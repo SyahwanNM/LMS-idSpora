@@ -78,7 +78,7 @@ Route::get('/admin/preview-pendapatan', function () {
 
 // Admin dashboard (only for admin users)
 Route::middleware(['admin'])->group(function () {
-    Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
+    Route::get('/admin/reseller', [ResellerController::class, 'adminDashboard'])->name('admin.reseller');
     // Admin view: Pendapatan (financial breakdown)
     Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
         ->name('admin.view-pendapatan');
