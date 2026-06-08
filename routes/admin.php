@@ -192,6 +192,11 @@ Route::middleware(['admin'])->group(function () {
     // Utility: resolve Google Maps short links to lat/lng
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
 
+    // Event Daily Attendance Real-time Monitoring & Manual Check-in
+    Route::get('/admin/events/{event}/attendance/stats', [EventController::class, 'getAttendanceStats'])->name('admin.events.attendance.stats');
+    Route::post('/admin/events/{event}/registrations/{registration}/check-in', [EventController::class, 'manualCheckIn'])->name('admin.events.registrations.manual-check-in');
+    Route::post('/admin/events/{event}/registrations/{registration}/cancel-day', [EventController::class, 'cancelDailyAttendance'])->name('admin.events.registrations.cancel-day');
+
     // Quiz management routes
     Route::get('/admin/courses/{course}/modules/{module}/quiz', [QuizController::class, 'index'])->name('admin.courses.modules.quiz.index');
     Route::get('/admin/courses/{course}/modules/{module}/quiz/create', [QuizController::class, 'create'])->name('admin.courses.modules.quiz.create');

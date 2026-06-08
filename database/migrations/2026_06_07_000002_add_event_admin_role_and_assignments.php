@@ -10,7 +10,9 @@ return new class extends Migration
     public function up(): void
     {
         // Extend role enum to include event_admin
-        DB::statement("ALTER TABLE users MODIFY role ENUM('admin','user','trainer','event_admin') NOT NULL DEFAULT 'user'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE users MODIFY role ENUM('admin','user','trainer','event_admin') NOT NULL DEFAULT 'user'");
+        }
 
         // Pivot: which event_admin manages which events
         if (!Schema::hasTable('event_admin_assignments')) {
@@ -27,6 +29,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('event_admin_assignments');
-        DB::statement("ALTER TABLE users MODIFY role ENUM('admin','user','trainer') NOT NULL DEFAULT 'user'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE users MODIFY role ENUM('admin','user','trainer') NOT NULL DEFAULT 'user'");
+        }
     }
 };

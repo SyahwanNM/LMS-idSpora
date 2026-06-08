@@ -24,11 +24,18 @@ class CourseTrainerInvitationTest extends TestCase
         parent::setUp();
         $this->admin = User::factory()->create(['role' => 'admin']);
         $this->trainer = User::factory()->create(['role' => 'trainer']);
-        $this->category = Category::factory()->create();
-        $this->template = CourseTemplate::factory()
-            ->for($this->admin, 'creator')
-            ->for($this->category)
-            ->create();
+        $this->category = Category::create([
+            'name' => 'Test Category',
+            'description' => 'Test Category Description'
+        ]);
+        $this->template = CourseTemplate::create([
+            'name' => 'Test Template',
+            'category_id' => $this->category->id,
+            'created_by' => $this->admin->id,
+            'level' => 'beginner',
+            'version' => 1,
+            'status' => 'active'
+        ]);
     }
 
     /** @test */
@@ -92,9 +99,17 @@ class CourseTrainerInvitationTest extends TestCase
     public function test_event_trainer_invitation_structure()
     {
         // Test that event invitation data structure is correct
-        $event = \App\Models\Event::factory()
-            ->for($this->trainer, 'trainer')
-            ->create();
+        $event = \App\Models\Event::create([
+            'title' => 'Test Event Title',
+            'image' => 'placeholder.png',
+            'speaker' => $this->trainer->name,
+            'description' => 'Test description',
+            'location' => 'Jakarta',
+            'price' => 0.00,
+            'event_time' => '09:00:00',
+            'event_date' => now()->format('Y-m-d'),
+            'trainer_id' => $this->trainer->id,
+        ]);
 
         TrainerNotification::create([
             'trainer_id' => $this->trainer->id,

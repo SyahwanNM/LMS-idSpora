@@ -63,4 +63,9 @@ class EventRegistration extends Model
     {
         return $this->hasMany(PaymentProof::class, 'event_registration_id');
     }
+
+    public function dailyAttendances()
+    {
+        return $this->hasMany(EventDailyAttendance::class, 'event_registration_id');
+    }
 }

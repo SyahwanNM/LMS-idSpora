@@ -297,6 +297,18 @@ class Event extends Model
         return $this->hasMany(\App\Models\EventSpeaker::class)->orderBy('order');
     }
 
+    public function dailyAttendances()
+    {
+        return $this->hasManyThrough(
+            EventDailyAttendance::class,
+            EventRegistration::class,
+            'event_id',
+            'event_registration_id',
+            'id',
+            'id'
+        );
+    }
+
     public function getStartAtAttribute(): ?Carbon
     {
         if (empty($this->event_date))
@@ -412,12 +424,12 @@ class Event extends Model
     public function scopeActive($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
-        return $query->where(function ($q) use ($now) {
+        $rawSql = \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite'
+            ? "COALESCE(event_until_date, event_date) || ' ' || COALESCE(event_until_time, event_time_end, event_time, '23:59:59')"
+            : "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59'))";
+        return $query->where(function ($q) use ($now, $rawSql) {
             $q->whereNull('event_date')
-                ->orWhereRaw(
-                    "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) >= ?",
-                    [$now]
-                );
+                ->orWhereRaw("{$rawSql} >= ?", [$now]);
         });
     }
 
@@ -427,11 +439,11 @@ class Event extends Model
     public function scopeFinished($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
+        $rawSql = \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite'
+            ? "COALESCE(event_until_date, event_date) || ' ' || COALESCE(event_until_time, event_time_end, event_time, '23:59:59')"
+            : "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59'))";
         return $query->whereNotNull('event_date')
-            ->whereRaw(
-                "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) < ?",
-                [$now]
-            );
+            ->whereRaw("{$rawSql} < ?", [$now]);
     }
 
     /**

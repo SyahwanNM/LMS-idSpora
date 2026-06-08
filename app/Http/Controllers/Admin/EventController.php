@@ -498,6 +498,196 @@ class EventController extends Controller
         return view('admin.events.show', compact('event'));
     }
 
+    public function getAttendanceStats(Event $event)
+    {
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Forbidden'], 403);
+        }
+
+        $totalActiveReg = $event->registrations()->where('status', 'active')->count();
+        $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('day_number')->get();
+        $daysData = [];
+        $logs = [];
+
+        if ($dailyQrs->isNotEmpty()) {
+            foreach ($dailyQrs as $dqr) {
+                $checkedInCount = \App\Models\EventDailyAttendance::where('event_daily_qr_id', $dqr->id)->count();
+                $percent = $totalActiveReg > 0 ? round(($checkedInCount / $totalActiveReg) * 100) : 0;
+                $daysData[] = [
+                    'day_number' => $dqr->day_number,
+                    'date' => \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y'),
+                    'date_raw' => \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d'),
+                    'checked_in' => $checkedInCount,
+                    'total' => $totalActiveReg,
+                    'percent' => $percent
+                ];
+            }
+
+            // Fetch recent check-ins
+            $recentAttendances = \App\Models\EventDailyAttendance::whereIn('event_registration_id', function($q) use ($event) {
+                    $q->select('id')->from('event_registrations')->where('event_id', $event->id);
+                })
+                ->with('registration.user')
+                ->latest('scanned_at')
+                ->limit(15)
+                ->get();
+
+            $logs = $recentAttendances->map(function($att) {
+                return [
+                    'id' => $att->id,
+                    'name' => $att->registration->user->name ?? 'User',
+                    'email' => $att->registration->user->email ?? '-',
+                    'day_number' => $att->day_number,
+                    'scanned_at' => $att->scanned_at->format('H:i:s'),
+                    'date' => $att->scanned_at->format('d F Y')
+                ];
+            });
+        } else {
+            // Fallback for single day / legacy check-ins
+            $checkedInCount = $event->registrations()->where('status', 'active')->where(function($q) {
+                $q->whereNotNull('attended_at')
+                  ->orWhere('attendance_status', 'yes');
+            })->count();
+            $percent = $totalActiveReg > 0 ? round(($checkedInCount / $totalActiveReg) * 100) : 0;
+            $daysData[] = [
+                'day_number' => 1,
+                'date' => $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('d M Y') : '-',
+                'date_raw' => $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') : '',
+                'checked_in' => $checkedInCount,
+                'total' => $totalActiveReg,
+                'percent' => $percent
+            ];
+
+            // Fetch recent check-ins based on event_registrations.attended_at
+            $recentRegs = $event->registrations()
+                ->where('status', 'active')
+                ->whereNotNull('attended_at')
+                ->with('user')
+                ->latest('attended_at')
+                ->limit(15)
+                ->get();
+
+            $logs = $recentRegs->map(function($reg) {
+                return [
+                    'id' => $reg->id,
+                    'name' => $reg->user->name ?? 'User',
+                    'email' => $reg->user->email ?? '-',
+                    'day_number' => 1,
+                    'scanned_at' => $reg->attended_at->format('H:i:s'),
+                    'date' => $reg->attended_at->format('d F Y')
+                ];
+            });
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'total_active_participants' => $totalActiveReg,
+            'days' => $daysData,
+            'logs' => $logs
+        ]);
+    }
+
+    public function manualCheckIn(Event $event, EventRegistration $registration, Request $request)
+    {
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Forbidden'], 403);
+        }
+
+        $request->validate([
+            'day_number' => 'required|integer|min:1',
+        ]);
+
+        $dayNumber = (int) $request->day_number;
+
+        // Try to find the daily QR record
+        $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
+            ->where('day_number', $dayNumber)
+            ->first();
+
+        if ($dailyQr) {
+            $qrDayDate = $dailyQr->qr_date instanceof \Carbon\Carbon
+                ? $dailyQr->qr_date->format('Y-m-d')
+                : (string) $dailyQr->qr_date;
+
+            // Check if already checked in
+            $attendance = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('day_number', $dayNumber)
+                ->first();
+
+            if (!$attendance) {
+                \App\Models\EventDailyAttendance::create([
+                    'event_registration_id' => $registration->id,
+                    'event_daily_qr_id'     => $dailyQr->id,
+                    'attendance_date'       => $qrDayDate,
+                    'day_number'            => $dayNumber,
+                    'scanned_at'            => \Carbon\Carbon::now(config('app.timezone')),
+                ]);
+            }
+        }
+
+        // Always update the top-level registration status
+        $registration->attendance_status = 'yes';
+        if (empty($registration->attended_at)) {
+            $registration->attended_at = \Carbon\Carbon::now(config('app.timezone'));
+        }
+        if (empty($registration->attendance_scan_qr)) {
+            $registration->attendance_scan_qr = \Carbon\Carbon::now(config('app.timezone'));
+        }
+        $registration->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kehadiran Hari ' . $dayNumber . ' berhasil dicatat secara manual.',
+        ]);
+    }
+
+    public function cancelDailyAttendance(Event $event, EventRegistration $registration, Request $request)
+    {
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Forbidden'], 403);
+        }
+
+        $request->validate([
+            'day_number' => 'required|integer|min:1',
+        ]);
+
+        $dayNumber = (int) $request->day_number;
+
+        // If daily QR exists, delete the daily attendance record
+        $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
+            ->where('day_number', $dayNumber)
+            ->first();
+
+        if ($dailyQr) {
+            $qrDayDate = $dailyQr->qr_date instanceof \Carbon\Carbon
+                ? $dailyQr->qr_date->format('Y-m-d')
+                : (string) $dailyQr->qr_date;
+
+            \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('day_number', $dayNumber)
+                ->delete();
+        }
+
+        // Count remaining daily attendances
+        $remainingCount = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)->count();
+
+        if ($remainingCount === 0) {
+            // If no daily attendances left, revert top-level status
+            $registration->attendance_status = 'no';
+            $registration->attended_at = null;
+            $registration->attendance_scan_qr = null;
+            $registration->save();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kehadiran Hari ' . $dayNumber . ' berhasil dibatalkan.',
+        ]);
+    }
+
     public function edit(Event $event)
     {
         // event_admin cannot edit events
