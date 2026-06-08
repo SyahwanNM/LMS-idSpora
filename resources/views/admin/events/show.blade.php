@@ -814,6 +814,11 @@
 <style>
 .btn-close.btn-close-sm { background-size: .75em .75em; }
 
+/* Bootstrap tabs: pastikan kontainer tab selalu terlihat (visibility diatur oleh .tab-pane) */
+#eventDetailTabsContent {
+    display: block !important;
+}
+
 /* Custom premium style for Tabs */
 .nav-tabs-custom {
     border-bottom: 2px solid #e5e7eb !important;
