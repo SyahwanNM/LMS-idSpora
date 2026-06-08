@@ -171,13 +171,14 @@
 
                         <div class="mb-custom">
                             <label class="form-label-custom" style="margin-bottom:0">Full Name</label>
-                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3" readonly>
+                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3">
                             <div class="warning-text" style="margin-top:4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
                                     <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
                                 </svg>
-                                Nama Akan digunakan pada sertifikat
+                                Harap Diisi dengan Nama Lengkap (beserta gelar jika ada) yang Akan digunakan pada sertifikat
+                                
                             </div>
                         </div>
 
@@ -311,8 +312,8 @@
                                         </div>
                                         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                                             <div>
-                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">023 401 267</div>
-                                                <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>BCA</strong> &nbsp;·&nbsp; a.n. APTIKOM</div>
+                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">1111-999-236</div>
+                                                <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>Bank BNI</strong> &nbsp;·&nbsp; a.n. APTIKOM JABAR</div>
                                             </div>
                                             <button type="button" onclick="navigator.clipboard.writeText('023401267');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500);"
                                                 style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:600;">
