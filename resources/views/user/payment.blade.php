@@ -312,8 +312,8 @@
                                         </div>
                                         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                                             <div>
-                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">023 401 267</div>
-                                                <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>BCA</strong> &nbsp;·&nbsp; a.n. APTIKOM</div>
+                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">1111-999-236</div>
+                                                <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>Bank BNI</strong> &nbsp;·&nbsp; a.n. APTIKOM JABAR</div>
                                             </div>
                                             <button type="button" onclick="navigator.clipboard.writeText('023401267');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500);"
                                                 style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:600;">
