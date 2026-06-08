@@ -42,6 +42,9 @@
 
 @push('admin-trainer-styles')
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
     :root {
         --cert-primary: #2f3fcb;
         --cert-primary-soft: #eef1ff;
@@ -155,8 +158,7 @@
         margin-top: 14px;
     }
 
-    .config-card,
-    .side-panel {
+    .config-card {
         background: #fff;
         border: 1px solid var(--cert-border);
         border-radius: 22px;
@@ -282,6 +284,7 @@
         padding-top: 26px;
         text-align: center;
         overflow: hidden;
+        box-sizing: border-box;
     }
 
     .template-paper h6 {
@@ -311,100 +314,6 @@
         z-index: 10;
     }
 
-    /* ─── Template 1 Mockup (Maroon & Gold Waves) ─── */
-    .template-paper.t1 {
-        background-color: #ffffff;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M 30,0 C 50,40 70,60 100,80 L 100,0 Z' fill='%237f1d1d' /%3E%3Cpath d='M 40,0 C 58,38 74,54 100,70 L 100,0 Z' fill='%23eab308' /%3E%3Cpath d='M 50,0 C 66,34 78,46 100,60 L 100,0 Z' fill='%23991b1b' /%3E%3Cpath d='M 0,30 C 40,50 60,70 80,100 L 0,100 Z' fill='%237f1d1d' /%3E%3Cpath d='M 0,40 C 38,58 54,74 70,100 L 0,100 Z' fill='%23eab308' /%3E%3Cpath d='M 0,50 C 34,66 46,78 60,100 L 0,100 Z' fill='%23991b1b' /%3E%3C/svg%3E");
-        background-size: cover;
-    }
-    .template-paper.t1 h6 {
-        color: #1e1b4b;
-    }
-    .template-paper.t1 small {
-        color: #7f1d1d;
-    }
-    .template-paper.t1 .line {
-        background: #7f1d1d;
-    }
-    .template-paper.t1::before {
-        content: '';
-        position: absolute;
-        top: 6px;
-        left: 6px;
-        width: 45px;
-        height: 2px;
-        background: #eab308;
-        z-index: 8;
-    }
-    .template-paper.t1::after {
-        content: '';
-        position: absolute;
-        bottom: 6px;
-        right: 6px;
-        width: 45px;
-        height: 2px;
-        background: #eab308;
-        z-index: 8;
-    }
-
-    /* ─── Template 2 Mockup (Diagonal Gold Ribbons) ─── */
-    .template-paper.t2 {
-        background-color: #f8fafc;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 297 210' preserveAspectRatio='none'%3E%3Cpolygon points='0,0 60,0 0,60' fill='%23d4af37' /%3E%3Cpolygon points='0,0 55,0 0,55' fill='%23fef08a' /%3E%3Cpolygon points='0,0 40,0 0,40' fill='%23ca8a04' /%3E%3Cpolygon points='297,0 215,0 297,125' fill='%230f172a' /%3E%3Cpolygon points='297,210 185,210 297,135' fill='%23ca8a04' /%3E%3Cpolygon points='297,210 190,210 297,137' fill='%23fbbf24' /%3E%3C/svg%3E");
-        background-size: cover;
-    }
-    .template-paper.t2 h6 {
-        color: #0f172a;
-    }
-    .template-paper.t2 small {
-        color: #0f172a;
-    }
-    .template-paper.t2 .line {
-        background: #0f172a;
-    }
-    .template-paper.t2::before {
-        content: '';
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        border: 1.5px solid #d4af37;
-        background: #ffffff;
-        z-index: 8;
-    }
-    .template-paper.t2::after {
-        content: '';
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        border: 0.5px solid #d4af37;
-        background: #faf8f5;
-        z-index: 9;
-    }
-
-    /* ─── Template 3 Mockup (Creative Theme) ─── */
-    .template-paper.t3 {
-        background-color: #fdfdfd;
-        background-image: url("/aset/bg-creative.png");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
-    .template-paper.t3 h6 {
-        color: #1e1b4b;
-    }
-    .template-paper.t3 small {
-        color: #4c1d95;
-    }
-    .template-paper.t3 .line {
-        background: #d97706;
-    }
-
     .template-name {
         text-align: center;
         font-weight: 900;
@@ -419,7 +328,7 @@
 
     .logo-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 16px;
     }
 
@@ -550,8 +459,11 @@
     }
 
     .side-panel {
-        position: sticky;
-        top: 96px;
+        background: #fff;
+        border: 1px solid var(--cert-border);
+        border-radius: 22px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
+        overflow: hidden;
     }
 
     .side-content {
@@ -577,6 +489,10 @@
         gap: 14px;
         padding: 18px 0;
         border-bottom: 1px solid var(--cert-border);
+    }
+
+    .guide-item:last-of-type {
+        border-bottom: 0;
     }
 
     .guide-icon {
@@ -611,13 +527,12 @@
     }
 
     .btn-save-config {
-        width: 100%;
-        height: 48px;
         border: 0;
         border-radius: 12px;
         background: linear-gradient(135deg, #2f3fcb, #2636bd);
         color: #fff;
         font-weight: 900;
+        cursor: pointer;
     }
 
     .save-note {
@@ -655,6 +570,251 @@
             font-size: 24px;
         }
     }
+
+    #cert-preview-scaler {
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Live Preview Styles from CRM */
+    #cert-preview-scaler .certificate-page {
+        position: relative;
+        top: 0; left: 0;
+        width: 1020px;
+        height: 642px;
+        box-sizing: border-box;
+        display: block;
+        overflow: hidden;
+        background: white;
+        color: #1e293b;
+        font-family: 'Poppins', sans-serif;
+    }
+    #cert-preview-scaler .template_1 { 
+        border: none; 
+        height: 642px; 
+        width: 1020px;
+        position: relative; 
+        padding: 35px;
+        box-sizing: border-box;
+        background: #ffffff;
+        overflow: hidden;
+    }
+    #cert-preview-scaler .template_1 .header { text-align: center; position: relative; z-index: 2; }
+    #cert-preview-scaler .template_1 h1 { 
+        font-family: 'Georgia', serif; 
+        font-size: 36pt; 
+        color: #1e1b4b; 
+        margin: 10px 0 2px; 
+        text-transform: uppercase; 
+        letter-spacing: 4px;
+        font-weight: 700;
+    }
+    #cert-preview-scaler .template_1 #preview-subtitle-t12 {
+        font-family: 'Helvetica', sans-serif !important;
+        font-size: 11pt !important;
+        color: #7f1d1d !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        letter-spacing: 5px !important;
+        margin-top: 4px !important;
+        margin-bottom: 25px !important;
+    }
+    #cert-preview-scaler .template_1 #preview-line-t12 {
+        display: none !important;
+    }
+    #cert-preview-scaler .template_1 .recipient-name { 
+        font-size: 38pt !important; 
+        font-weight: normal !important; 
+        color: #7f1d1d !important;
+        border-bottom: none !important; 
+        display: inline-block !important; 
+        padding: 4px 50px !important; 
+        margin: 10px 0 !important;
+        font-family: 'Great Vibes', cursive !important;
+        letter-spacing: 1px;
+        position: relative;
+        z-index: 2;
+    }
+    #cert-preview-scaler .template_1 .content { text-align: center; position: relative; z-index: 2; }
+    #cert-preview-scaler .template_1 .sig-box {
+        display: inline-block !important;
+        float: none !important;
+        text-align: center !important;
+        width: 230px !important;
+        margin: 0 30px !important;
+    }
+    #cert-preview-scaler .template_1 .sig-line {
+        width: 170px !important;
+        border-bottom: 1.5px dashed #7f1d1d !important;
+        margin: 8px auto !important;
+    }
+
+    /* Template 2: Modern Corporate */
+    #cert-preview-scaler .template_2 { 
+        padding: 0; 
+        height: 642px; 
+        width: 1020px;
+        box-sizing: border-box; 
+        overflow: hidden; 
+        background: #f8fafc;
+        position: relative;
+    }
+    #cert-preview-scaler .template_2 .content-wrap {
+        padding: 50px 20px 20px 20px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+    #cert-preview-scaler .template_2 h1 { 
+        font-family: 'Georgia', serif;
+        font-size: 32pt; 
+        font-weight: bold; 
+        color: #0f172a; 
+        margin: 0; 
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+    #cert-preview-scaler .template_2 .sub-title {
+        font-family: 'Helvetica', sans-serif;
+        font-size: 13pt;
+        color: #475569;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-top: 5px;
+        margin-bottom: 25px;
+    }
+    #cert-preview-scaler .template_2 .recipient-name { 
+        font-family: 'Great Vibes', 'Georgia', serif;
+        font-size: 38pt; 
+        font-weight: normal; 
+        color: #0f172a; 
+        margin: 15px auto;
+        display: inline-block;
+        font-style: italic;
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 5px;
+    }
+    #cert-preview-scaler .template_2 .gold-badge {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 4px solid #d4af37;
+        background: #ffffff;
+        z-index: 5;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    #cert-preview-scaler .template_2 .gold-badge-inner {
+        position: absolute;
+        top: 5px; left: 5px; right: 5px; bottom: 5px;
+        border-radius: 50%;
+        border: 1px solid #d4af37;
+        background: #faf8f5;
+    }
+    #cert-preview-scaler .template_2 .cert-footer {
+        padding: 0 !important;
+        left: 50px !important;
+        right: 50px !important;
+        width: calc(100% - 100px) !important;
+        text-align: center !important;
+    }
+    #cert-preview-scaler .template_2 .sig-box {
+        display: inline-block !important;
+        float: none !important;
+        text-align: center !important;
+        width: 250px !important;
+        margin: 0 30px !important;
+    }
+
+    /* Template 3: Creative Professional */
+    #cert-preview-scaler .template_3 { 
+        padding: 0; 
+        height: 642px; 
+        width: 1020px;
+        box-sizing: border-box; 
+        background: #ffffff;
+        border: 15px solid #ffffff;
+        position: relative;
+        overflow: hidden;
+    }
+    #cert-preview-scaler .template-decorations-3 img {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 1;
+    }
+    #cert-preview-scaler .template_3 .header-bg {
+        height: auto;
+        background: transparent;
+        padding: 60px 70px 10px 70px;
+        color: #1e1b4b;
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+    #cert-preview-scaler .template_3 .header-bg::after {
+        display: none;
+    }
+    #cert-preview-scaler .template_3 h1 { 
+        font-size: 30pt; 
+        font-weight: 900; 
+        margin: 0; 
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-family: 'Georgia', serif;
+        color: #1e1b4b;
+        text-shadow: none;
+    }
+    #cert-preview-scaler .template_3 .main-content {
+        padding: 10px 70px;
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+    #cert-preview-scaler .template_3 .recipient-name { 
+        font-family: 'Great Vibes', 'Georgia', serif;
+        font-size: 38pt; 
+        font-weight: normal; 
+        color: #4c1d95; 
+        margin: 10px auto;
+        display: inline-block;
+        border-bottom: 2px solid #d97706;
+        padding-bottom: 5px;
+        -webkit-background-clip: initial;
+        -webkit-text-fill-color: initial;
+    }
+    #cert-preview-scaler .template_3 .award-line {
+        display: none;
+    }
+
+    /* Shared / Layout Components */
+    #cert-preview-scaler .logo-row { text-align: center; margin-bottom: 15px; width: 100%; }
+    #cert-preview-scaler .logo-container { display: inline-block; vertical-align: middle; }
+    #cert-preview-scaler .logo-item { height: 48px; width: auto; margin: 0 10px; vertical-align: middle; }
+    
+    #cert-preview-scaler .cert-footer { position: absolute; bottom: 70px; width: 100%; left: 0; padding: 0 70px; box-sizing: border-box; z-index: 3; }
+    
+    #cert-preview-scaler .sig-box { float: right; text-align: center; margin-left: 35px; }
+    #cert-preview-scaler .template_3 .sig-box {
+        display: inline-block !important;
+        float: none !important;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        padding: 10px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+        backdrop-filter: blur(6px);
+        margin: 0 20px !important;
+    }
+    #cert-preview-scaler .sig-line { width: 170px; border-bottom: 1.5px solid #0f172a; margin: 8px auto; }
+    #cert-preview-scaler .template_3 .sig-line { border-bottom-color: #4f46e5; }
+    
+    #cert-preview-scaler .cert-id { position: absolute; bottom: 25px; right: 40px; font-size: 8.5pt; color: #94a3b8; font-weight: 600; z-index: 3; }
+    #cert-preview-scaler .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
+    #cert-preview-scaler .template_3 .verification-tag { left: 70px; bottom: 25px; }
+    #cert-preview-scaler .template_3 .cert-id { right: 70px; bottom: 25px; }
 </style>
 @endpush
 
@@ -680,26 +840,27 @@
 
         <div id="removeAssetsContainer"></div>
 
-        <div class="row g-4">
-            <div class="col-xl-9">
-                <section class="cert-hero">
-                    <div class="cert-hero-content">
-                        <div class="page-eyebrow">Sistem Rekognisi</div>
-                        <h1>Konfigurasi Sertifikat</h1>
-                        <p>
-                            {{ strtoupper($context === 'course' ? 'Kursus' : 'Acara') }}: {{ $modelTitle }}<br>
-                            Trainer: {{ $trainer->name }}
-                        </p>
+        <section class="cert-hero">
+            <div class="cert-hero-content">
+                <div class="page-eyebrow">Sistem Rekognisi</div>
+                <h1>Konfigurasi Sertifikat</h1>
+                <p>
+                    {{ strtoupper($context === 'course' ? 'Kursus' : 'Acara') }}: {{ $modelTitle }}<br>
+                    Trainer: {{ $trainer->name }}
+                </p>
 
-                        @if($isCrmSource)
-                            <div class="crm-source-badge">
-                                <i class="bi bi-shield-check"></i>
-                                Aset sertifikat mengikuti data CRM
-                            </div>
-                        @endif
+                @if($isCrmSource)
+                    <div class="crm-source-badge">
+                        <i class="bi bi-shield-check"></i>
+                        Aset sertifikat mengikuti data CRM
                     </div>
-                </section>
+                @endif
+            </div>
+        </section>
 
+        <div class="row g-4">
+            <!-- Left Column: Form Configuration -->
+            <div class="col-lg-6">
                 <div class="config-card">
                     <section class="config-section">
                         <div class="cert-step-header">
@@ -858,8 +1019,129 @@
                 </div>
             </div>
 
-            <div class="col-xl-3">
-                <aside class="side-panel">
+            <!-- Right Column: Live Preview & Guides -->
+            <div class="col-lg-6">
+                <!-- Certificate Live Preview Card -->
+                <div class="card-minimal p-4 mb-4 sticky-top shadow-sm" style="top: 20px; z-index: 10; background: #fff; border: 1px solid var(--cert-border); border-radius: 16px;">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div style="width:24px;height:24px;border-radius:6px;background:var(--cert-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;"><i class="bi bi-eye-fill"></i></div>
+                        <h6 class="fw-800 mb-0" style="font-size:0.9rem;color:var(--cert-navy);">Live Preview Sertifikat</h6>
+                    </div>
+                    
+                    <!-- Scaling Container -->
+                    <div id="certificate-preview-container" style="border: 1px solid var(--cert-border); border-radius: 12px; box-shadow: 0 10px 24px rgba(15, 23, 42, .08); background: #fff; overflow: hidden; width: 100%; position: relative;">
+                        <div id="cert-preview-aspect" style="width: 100%; padding-top: 62.96%; position: relative; overflow: hidden;">
+                            <div id="cert-preview-scaler" style="position: absolute; top: 0; left: 0; width: 1020px; height: 642px; transform-origin: top left;">
+                                
+                                <!-- The dynamic certificate preview page -->
+                                <div class="certificate-page {{ $selectedTemplate }}" id="preview-cert-page">
+                                    
+                                    <!-- Template 1 Decorations -->
+                                    <div class="template-decorations-1" style="{{ $selectedTemplate === 'template_1' ? '' : 'display: none;' }}">
+                                        <!-- Top Left Gold Bar -->
+                                        <div style="position: absolute; top: 46px; left: 50px; width: 480px; height: 4px; background: #eab308; z-index: 2;"></div>
+                                        <!-- Bottom Right Gold Bar -->
+                                        <div style="position: absolute; bottom: 46px; right: 50px; width: 480px; height: 4px; background: #eab308; z-index: 2;"></div>
+
+                                        <!-- Top Right Maroon & Gold Waves -->
+                                        <div style="position: absolute; top: 0; right: 0; width: 412px; height: 366px; z-index: 1; pointer-events: none;">
+                                            <svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                                                <path d="M 30,0 C 50,40 70,60 100,80 L 100,0 Z" fill="#7f1d1d" />
+                                                <path d="M 40,0 C 58,38 74,54 100,70 L 100,0 Z" fill="#eab308" />
+                                                <path d="M 50,0 C 66,34 78,46 100,60 L 100,0 Z" fill="#991b1b" />
+                                                <path d="M 65,0 C 78,26 86,34 100,45 L 100,0 Z" fill="#eab308" />
+                                                <path d="M 75,0 C 85,20 90,25 100,35 L 100,0 Z" fill="#7f1d1d" />
+                                            </svg>
+                                        </div>
+
+                                        <!-- Bottom Left Maroon & Gold Waves -->
+                                        <div style="position: absolute; bottom: 0; left: 0; width: 412px; height: 366px; z-index: 1; pointer-events: none;">
+                                            <svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                                                <path d="M 0,30 C 40,50 60,70 80,100 L 0,100 Z" fill="#7f1d1d" />
+                                                <path d="M 0,40 C 38,58 54,74 70,100 L 0,100 Z" fill="#eab308" />
+                                                <path d="M 0,50 C 34,66 46,78 60,100 L 0,100 Z" fill="#991b1b" />
+                                                <path d="M 0,65 C 26,78 34,86 45,100 L 0,100 Z" fill="#eab308" />
+                                                <path d="M 0,75 C 20,85 25,90 35,100 L 0,100 Z" fill="#7f1d1d" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <!-- Template 2 Decorations -->
+                                    <div class="template-decorations-2" style="{{ $selectedTemplate === 'template_2' ? '' : 'display: none;' }}">
+                                        <!-- SVG background decorations -->
+                                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
+                                            <svg width="100%" height="100%" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                                                <!-- Top-left diagonal gold ribbon -->
+                                                <polygon points="0,0 60,0 0,60" fill="#d4af37" />
+                                                <polygon points="0,0 55,0 0,55" fill="#fef08a" />
+                                                <polygon points="0,0 40,0 0,40" fill="#ca8a04" />
+                                                
+                                                <!-- Right side navy & gold triangles -->
+                                                <polygon points="297,0 215,0 297,125" fill="#0f172a" />
+                                                <polygon points="297,210 185,210 297,135" fill="#ca8a04" />
+                                                <polygon points="297,210 190,210 297,137" fill="#fbbf24" />
+                                            </svg>
+                                        </div>
+                                        
+                                        <div class="gold-badge">
+                                            <div class="gold-badge-inner"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Template 3 Decorations -->
+                                    <div class="template-decorations-3" style="{{ $selectedTemplate === 'template_3' ? '' : 'display: none;' }}">
+                                        <img src="{{ asset('aset/bg-creative.png') }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                                    </div>
+
+                                    <!-- Template 3 Header Area -->
+                                    <div class="header-bg" id="preview-t3-header" style="{{ $selectedTemplate === 'template_3' ? '' : 'display: none;' }}">
+                                        <div style="float: right;" class="preview-logo-container-t3">
+                                            <img src="{{ asset('aset/logo-idspora.png') }}" class="logo-item" id="preview-main-logo-t3" style="height: 50px; width: auto;">
+                                        </div>
+                                        <h1>Sertifikat Penghargaan</h1>
+                                        <p style="color: #d97706; font-family: 'Helvetica', sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 5px; margin-top: 4px; margin-bottom: 25px;">NARASUMBER</p>
+                                    </div>
+
+                                    <!-- Template 1 & 2 Header Area -->
+                                    <div class="header" id="preview-t12-header" style="{{ $selectedTemplate !== 'template_3' ? '' : 'display: none;' }}">
+                                        <div class="logo-row">
+                                            <div class="logo-container preview-logo-container-t12">
+                                                <img src="{{ asset('aset/logo idspora_dark.png') }}" class="logo-item" id="preview-main-logo-t12">
+                                            </div>
+                                        </div>
+                                        <h1 style="margin-top: 15px; font-size: 42pt;" id="preview-h1-t12">Sertifikat Penghargaan</h1>
+                                        <p style="color: #fbbf24; font-weight: bold; letter-spacing: 5px; font-size: 16pt; margin: 0; text-transform: uppercase;" id="preview-subtitle-t12">NARASUMBER</p>
+                                        <div style="width: 200px; height: 2px; background: #fbbf24; margin: 15px auto;" id="preview-line-t12"></div>
+                                    </div>
+
+                                    <!-- Content Box -->
+                                    <div class="content" id="preview-content-box">
+                                        <p style="font-size: 16pt; color: #64748b; font-style: italic; margin-bottom: 5px;" id="preview-certify-text">Diberikan kepada:</p>
+                                        <div class="recipient-name" style="font-family: inherit;">{{ $selectedTemplate === 'template_1' ? $trainer->name : strtoupper($trainer->name) }}</div>
+                                        <div id="preview-name-divider-t1" style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 15px auto; display: {{ $selectedTemplate === 'template_1' ? 'block' : 'none' }};"></div>
+                                        <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;" id="preview-completed-text">Atas kontribusinya sebagai narasumber dalam</p>
+                                        <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;" id="preview-course-name">"{{ $modelTitle }}"</h2>
+                                        <p style="font-size: 12pt; color: #64748b;" id="preview-date-text">diterbitkan pada [Tanggal Terbit]</p>
+                                    </div>
+
+                                    <!-- Signature Footer -->
+                                    <div class="cert-footer">
+                                        <div style="float: right;" id="preview-signatures-container">
+                                            <!-- Dynamic signatures rendered by JS -->
+                                        </div>
+                                    </div>
+
+                                    <div class="verification-tag">VERIFIED BY IDSPORA.COM</div>
+                                    <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: Verified Certificate ID</div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aside Panel Guides & Save controls -->
+                <aside class="side-panel shadow-sm">
                     <div class="side-content">
                         <h5 class="guide-title">Panduan Kelola Aset</h5>
                         <p class="guide-desc">
@@ -897,13 +1179,13 @@
                         </div>
                     </div>
 
-                    <div class="side-footer">
-                        <button type="submit" class="btn-save-config">
+                    <div class="side-footer bg-light">
+                        <button type="submit" class="btn-save-config btn btn-primary w-100 py-3">
                             <i class="bi bi-save me-2"></i>
                             Simpan Konfigurasi
                         </button>
 
-                        <p class="save-note">
+                        <p class="save-note mt-2">
                             Konfigurasi akan disimpan untuk penerbitan sertifikat.
                         </p>
                     </div>
@@ -971,6 +1253,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         box.classList.remove('has-preview');
         makePlaceholder(box);
+        
+        // Trigger live preview rendering
+        renderPreview();
     }
 
     function setPreview(input) {
@@ -1004,6 +1289,9 @@ document.addEventListener('DOMContentLoaded', function () {
             box.prepend(img);
             box.prepend(closeBtn);
             box.classList.add('has-preview');
+            
+            // Trigger live preview rendering
+            renderPreview();
         };
 
         reader.readAsDataURL(file);
@@ -1052,6 +1340,181 @@ document.addEventListener('DOMContentLoaded', function () {
 
         setPreview(input);
     });
+
+    // ─── Live Preview Engine ───
+    function renderPreview() {
+        const templateInput = document.querySelector('input[name="certificate_template"]:checked');
+        const template = templateInput ? templateInput.value : 'template_1';
+        const page = document.getElementById('preview-cert-page');
+        if (!page) return;
+
+        page.className = 'certificate-page ' + template;
+
+        // Toggle template decorations
+        const decor1 = document.querySelector('.template-decorations-1');
+        const decor2 = document.querySelector('.template-decorations-2');
+        const decor3 = document.querySelector('.template-decorations-3');
+        if (decor1) decor1.style.display = (template === 'template_1') ? 'block' : 'none';
+        if (decor2) decor2.style.display = (template === 'template_2') ? 'block' : 'none';
+        if (decor3) decor3.style.display = (template === 'template_3') ? 'block' : 'none';
+
+        // Toggle headers
+        const headerT3 = document.getElementById('preview-t3-header');
+        const headerT12 = document.getElementById('preview-t12-header');
+        if (headerT3) headerT3.style.display = (template === 'template_3') ? 'block' : 'none';
+        if (headerT12) {
+            headerT12.style.display = (template !== 'template_3') ? 'block' : 'none';
+            if (template === 'template_2') {
+                headerT12.style.cssText = 'padding: 40px 10px 0 10px; text-align: center;';
+            } else {
+                headerT12.style.cssText = '';
+            }
+        }
+
+        // Toggle content box alignment
+        const contentBox = document.getElementById('preview-content-box');
+        const sigContainer = document.getElementById('preview-signatures-container');
+        if (contentBox) {
+            if (template === 'template_2') {
+                contentBox.removeAttribute('style');
+                contentBox.style.cssText = 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;';
+            } else if (template === 'template_3') {
+                contentBox.removeAttribute('style');
+                contentBox.style.cssText = 'padding: 10px 70px; text-align: center; margin-top: 0;';
+            } else {
+                contentBox.removeAttribute('style');
+                contentBox.style.cssText = 'margin-top: 40px; text-align: center;';
+            }
+        }
+        if (sigContainer) {
+            sigContainer.style.float = 'none';
+            sigContainer.style.textAlign = 'center';
+            sigContainer.style.width = '100%';
+        }
+
+        const dividerT1 = document.getElementById('preview-name-divider-t1');
+        if (dividerT1) {
+            dividerT1.style.display = (template === 'template_1') ? 'block' : 'none';
+        }
+
+        const nameDiv = document.querySelector('#preview-content-box .recipient-name');
+        const trainerName = @json($trainer->name);
+        if (nameDiv) {
+            if (template === 'template_1') {
+                nameDiv.textContent = trainerName;
+            } else {
+                nameDiv.textContent = trainerName.toUpperCase();
+            }
+        }
+
+        // Render Logos
+        renderLogos(template);
+
+        // Render Signatures
+        renderSignatures();
+
+        // Trigger scaling calculations
+        scalePreview();
+    }
+
+    function renderLogos(template) {
+        const containerT12 = document.querySelector('.preview-logo-container-t12');
+        const containerT3 = document.querySelector('.preview-logo-container-t3');
+        if (!containerT12 && !containerT3) return;
+
+        const assetPath = "{{ asset('aset') }}";
+        const mainLogoUrl = template === 'template_3' ? `${assetPath}/logo-idspora.png` : `${assetPath}/logo idspora_dark.png`;
+
+        const renderIn = (container, mainId) => {
+            if (!container) return;
+            container.innerHTML = '';
+
+            const mainImg = document.createElement('img');
+            mainImg.src = mainLogoUrl;
+            mainImg.className = 'logo-item';
+            mainImg.id = mainId;
+            container.appendChild(mainImg);
+
+            // Read logos from has-preview cards
+            document.querySelectorAll('.logo-card.has-preview img.upload-preview').forEach(img => {
+                const partnerImg = document.createElement('img');
+                partnerImg.src = img.src;
+                partnerImg.className = 'logo-item';
+                container.appendChild(partnerImg);
+            });
+        };
+
+        renderIn(containerT12, 'preview-main-logo-t12');
+        renderIn(containerT3, 'preview-main-logo-t3');
+    }
+
+    function renderSignatures() {
+        const container = document.getElementById('preview-signatures-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        for (let i = 0; i < 3; i++) {
+            const card = document.querySelector(`.signature-card[data-index="${i}"]`);
+            if (!card) continue;
+
+            const uploadBox = card.querySelector('.upload-box');
+            const hasPreview = uploadBox && uploadBox.classList.contains('has-preview');
+            const img = uploadBox ? uploadBox.querySelector('img.upload-preview') : null;
+            const nameInput = card.querySelector('[name^="signature_name"]');
+            const posInput = card.querySelector('[name^="signature_position"]');
+
+            const nameValue = nameInput ? nameInput.value.trim() : '';
+            const posValue = posInput ? posInput.value.trim() : '';
+            const imgSrc = hasPreview && img ? img.src : '';
+
+            if (imgSrc || nameValue || posValue) {
+                const sigBox = document.createElement('div');
+                sigBox.className = 'sig-box';
+
+                let imgHtml = '<div style="height: 90px;"></div>';
+                if (imgSrc) {
+                    imgHtml = `<img src="${imgSrc}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">`;
+                }
+
+                sigBox.innerHTML = `
+                    ${imgHtml}
+                    <div class="sig-line"></div>
+                    <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">${nameValue || 'Authorized Signature'}</p>
+                    <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">${posValue || 'Authorized Position'}</p>
+                `;
+
+                container.appendChild(sigBox);
+            }
+        }
+    }
+
+    function scalePreview() {
+        const scaler = document.getElementById('cert-preview-scaler');
+        if (!scaler) return;
+        const container = document.getElementById('certificate-preview-container');
+        if (!container) return;
+
+        const containerW = container.offsetWidth;
+        const certNaturalW = 1020;
+        const scale = containerW / certNaturalW;
+
+        scaler.style.transform = 'scale(' + scale + ')';
+        container.style.height = (scale * 642) + 'px';
+    }
+
+    // Bind listeners for live preview updates
+    document.querySelectorAll('input[name="certificate_template"]').forEach(radio => {
+        radio.addEventListener('change', renderPreview);
+    });
+
+    document.querySelectorAll('.signature-input').forEach(input => {
+        input.addEventListener('input', renderPreview);
+    });
+
+    window.addEventListener('resize', scalePreview);
+
+    // Initial render
+    renderPreview();
 });
 </script>
 @endpush
