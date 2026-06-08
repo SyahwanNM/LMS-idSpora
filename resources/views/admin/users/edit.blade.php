@@ -74,12 +74,57 @@
     </div>
     <div class="mb-3">
         <label class="form-label text-dark">Role</label>
-        <select name="role" class="form-select" required disabled>
-            <option value="admin" selected>Admin</option>
+        <select name="role" class="form-select" required id="roleSelect">
+            <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Admin (Full Access)</option>
+            <option value="event_admin" {{ old('role', $user->role) === 'event_admin' ? 'selected' : '' }}>Event Admin (Akses event tertentu)</option>
         </select>
-        <input type="hidden" name="role" value="admin">
-        <small class="text-muted">Role tidak dapat diubah. Hanya akun admin yang dapat dikelola melalui menu ini.</small>
+        <small class="text-muted">Admin memiliki akses penuh. Event Admin hanya bisa mengakses event yang di-assign.</small>
     </div>
+
+    {{-- Event assignment section — visible only when event_admin --}}
+    <div class="mb-3" id="eventAssignSection" style="{{ old('role', $user->role) === 'event_admin' ? '' : 'display:none;' }}">
+        <label class="form-label text-dark fw-semibold">
+            <i class="bi bi-calendar-event me-1 text-warning"></i>Assign Event
+        </label>
+        <input type="text" id="eventSearchInput" class="form-control form-control-sm mb-2"
+            placeholder="Cari nama event..." autocomplete="off"
+            style="color:#111;background:#fff;border:1px solid #ced4da;">
+        <div class="border rounded p-3" id="eventListContainer" style="max-height:280px;overflow-y:auto;background:#fff;border-color:#dee2e6 !important;">
+            @forelse($events ?? [] as $ev)
+            <div class="form-check mb-2 event-item" data-title="{{ strtolower($ev->title) }}">
+                <input class="form-check-input" type="checkbox"
+                    name="assigned_events[]"
+                    value="{{ $ev->id }}"
+                    id="ev_{{ $ev->id }}"
+                    {{ in_array($ev->id, old('assigned_events', $assignedEventIds ?? [])) ? 'checked' : '' }}>
+                <label class="form-check-label" for="ev_{{ $ev->id }}" style="color:#212529;cursor:pointer;">
+                    <span style="font-weight:500;">{{ $ev->title }}</span>
+                    @if($ev->event_date)
+                        <span style="color:#6c757d;font-size:12px;margin-left:6px;">({{ \Carbon\Carbon::parse($ev->event_date)->format('d M Y') }})</span>
+                    @endif
+                </label>
+            </div>
+            @empty
+            <p style="color:#6c757d;font-size:13px;margin:0;">Belum ada event tersedia.</p>
+            @endforelse
+        </div>
+        <small class="text-muted">Centang event yang boleh diakses oleh Event Admin ini.</small>
+    </div>
+
+    <script>
+    document.getElementById('roleSelect')?.addEventListener('change', function() {
+        const section = document.getElementById('eventAssignSection');
+        if (section) section.style.display = this.value === 'event_admin' ? '' : 'none';
+    });
+
+    document.getElementById('eventSearchInput')?.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        document.querySelectorAll('.event-item').forEach(function(item) {
+            const title = item.getAttribute('data-title') || '';
+            item.style.display = (!q || title.includes(q)) ? '' : 'none';
+        });
+    });
+    </script>
     <div class="d-flex justify-content-between">
         <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Kembali</a>
         <button class="btn btn-primary" type="submit">Update</button>

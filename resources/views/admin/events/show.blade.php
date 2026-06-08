@@ -265,28 +265,82 @@
                                             </div>
                                         </li>
                                     @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Attendance</span>
-                                        <span class="d-flex align-items-center gap-2">
-                                            @if(!empty($event->attendance_qr_image))
-                                                @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = $event->attendance_qr_image_url; @endphp
-                                                <a href="{{ $qrUrl }}" target="_blank" class="d-inline-block">
-                                                    <img src="{{ $qrUrl }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-success" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrPng"><i class="bi bi-filetype-png me-1"></i>Download PNG</button>
-                                                <button type="button" class="btn btn-sm btn-outline-info" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrJpg"><i class="bi bi-filetype-jpg me-1"></i>Download JPG</button>
-                                                <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
-                                                </form>
-                                            @else
-                                                <span class="text-muted">Belum tersedia</span>
-                                                <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-qr-code me-1"></i>Generate</button>
-                                                </form>
-                                            @endif
-                                        </span>
+                                    <li class="list-group-item">
+                                        @php
+                                            $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('qr_date')->get();
+                                            $isMultiDay = !empty($event->event_until_date)
+                                                && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                        @endphp
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span>
+                                                <i class="bi bi-qr-code {{ $dailyQrs->isNotEmpty() ? 'text-success' : 'text-muted' }} me-2"></i>
+                                                QR Attendance
+                                                @if($isMultiDay)
+                                                    <span class="badge bg-info ms-1" style="font-size:0.65rem;">Multi-Hari</span>
+                                                @endif
+                                            </span>
+                                            <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm {{ $dailyQrs->isNotEmpty() ? 'btn-outline-warning' : 'btn-outline-success' }}">
+                                                    <i class="bi bi-{{ $dailyQrs->isNotEmpty() ? 'arrow-repeat' : 'qr-code' }} me-1"></i>
+                                                    {{ $dailyQrs->isNotEmpty() ? 'Generate Ulang Semua' : 'Generate QR' }}
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                        @if($dailyQrs->isNotEmpty())
+                                            <div class="row g-2">
+                                                @foreach($dailyQrs as $dqr)
+                                                    @php
+                                                        $qrUrl = $dqr->qr_image_url;
+                                                        $qExt  = $dqr->qr_image ? strtolower(pathinfo($dqr->qr_image, PATHINFO_EXTENSION)) : 'png';
+                                                        $today = \Carbon\Carbon::now(config('app.timezone'))->format('Y-m-d');
+                                                        $isToday = ($dqr->qr_date instanceof \Carbon\Carbon ? $dqr->qr_date->format('Y-m-d') : (string)$dqr->qr_date) === $today;
+                                                    @endphp
+                                                    <div class="col-auto">
+                                                        <div class="border rounded p-2 text-center {{ $isToday ? 'border-success border-2' : '' }}" style="min-width:120px;">
+                                                            <div class="fw-bold small mb-1">
+                                                                Hari {{ $dqr->day_number }}
+                                                                @if($isToday)
+                                                                    <span class="badge bg-success ms-1" style="font-size:0.6rem;">Hari Ini</span>
+                                                                @endif
+                                                            </div>
+                                                            <div class="text-muted" style="font-size:0.7rem;">
+                                                                {{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }}
+                                                            </div>
+                                                            @if($qrUrl)
+                                                                <a href="{{ $qrUrl }}" target="_blank" class="d-block my-1">
+                                                                    <img src="{{ $qrUrl }}" alt="QR Hari {{ $dqr->day_number }}"
+                                                                         class="rounded border" style="width:80px;height:80px;object-fit:cover;">
+                                                                </a>
+                                                                <div class="d-flex flex-wrap gap-1 justify-content-center mt-1">
+                                                                    <button type="button"
+                                                                        class="btn btn-xs btn-outline-success py-0 px-1 btn-dl-qr-png"
+                                                                        style="font-size:10px;"
+                                                                        data-qr-src="{{ $qrUrl }}"
+                                                                        data-filename="event-{{ $event->id }}-day{{ $dqr->day_number }}-{{ \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d') }}.png">
+                                                                        <i class="bi bi-download"></i> PNG
+                                                                    </button>
+                                                                    <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
+                                                                        @csrf
+                                                                        <input type="hidden" name="day_id" value="{{ $dqr->id }}">
+                                                                        <button type="submit" class="btn btn-xs btn-outline-warning py-0 px-1" style="font-size:10px;">
+                                                                            <i class="bi bi-arrow-repeat"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-muted small my-2">Belum ada gambar</div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="text-muted small">
+                                                Belum ada QR. Klik "Generate QR" untuk membuat QR per hari.
+                                            </div>
+                                        @endif
                                     </li>
                                 </ul>
 
@@ -363,13 +417,14 @@
                                                                 <i class="bi bi-image me-1"></i>Bukti
                                                             </a>
                                                             <div class="d-flex gap-1">
-                                                                <form method="POST" action="{{ route('admin.events.registrations.approve', [$event, $reg]) }}" class="d-inline m-0">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
-                                                                        onclick="return confirm('Konfirmasi pembayaran ini?')">
-                                                                        <i class="bi bi-check2"></i> OK
-                                                                    </button>
-                                                                </form>
+                                                                <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#approveModal"
+                                                                    data-reg-id="{{ $reg->id }}"
+                                                                    data-event-id="{{ $event->id }}"
+                                                                    data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                    <i class="bi bi-check2"></i> OK
+                                                                </button>
                                                                 <button type="button" class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#rejectModal"
@@ -380,6 +435,15 @@
                                                                 </button>
                                                             </div>
                                                         </div>
+                                                    @elseif($st === 'active')
+                                                        <form method="POST" action="{{ route('admin.events.registrations.cancel', [$event, $reg]) }}" class="d-inline m-0">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <button type="submit" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:11px;"
+                                                                onclick="return confirm('Batalkan approval ini? Status akan kembali ke pending.')">
+                                                                <i class="bi bi-arrow-counterclockwise"></i> Batal ACC
+                                                            </button>
+                                                        </form>
                                                     @else
                                                         <span class="text-muted small">-</span>
                                                     @endif
@@ -948,6 +1012,41 @@ document.addEventListener('DOMContentLoaded', function(){
     const btnJpg = document.getElementById('btnDownloadQrJpg');
     if(btnPng) btnPng.addEventListener('click', ()=> handleDownload('png'));
     if(btnJpg) btnJpg.addEventListener('click', ()=> handleDownload('jpg'));
+
+    // Per-day QR download buttons (.btn-dl-qr-png)
+    document.querySelectorAll('.btn-dl-qr-png').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+            const src      = this.getAttribute('data-qr-src');
+            const filename = this.getAttribute('data-filename') || 'qr.png';
+            const ext      = (src || '').split('.').pop().toLowerCase();
+            const origText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.75rem;height:.75rem;"></span>';
+            try {
+                let img;
+                if (ext === 'svg') {
+                    const res    = await fetch(src, { cache: 'no-store' });
+                    const svgTxt = await res.text();
+                    img = await loadImageFromSvgText(svgTxt);
+                } else {
+                    img = await loadImageFromUrl(src);
+                }
+                const dataUrl = drawToCanvas(img, 'image/png', 800, 800);
+                const a = document.createElement('a');
+                a.href     = dataUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch(err) {
+                console.error('Download QR PNG failed', err);
+                alert('Gagal mengunduh QR sebagai PNG.');
+            } finally {
+                this.disabled  = false;
+                this.innerHTML = origText;
+            }
+        });
+    });
 });
 </script>
 <script>
@@ -1027,6 +1126,54 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
     }
+});
+</script>
+
+<!-- Approve Registration Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0" style="background:#f0fdf4;">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                    </div>
+                    <h5 class="modal-title fw-semibold mb-0" id="approveModalLabel">Konfirmasi Pembayaran</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2 pb-1">
+                <p class="text-muted small mb-1">Anda akan mengonfirmasi pembayaran dari:</p>
+                <p class="fw-semibold mb-3" id="approveUserName" style="color:#15803d;"></p>
+                <p class="text-muted small">Peserta akan otomatis mendapatkan status <strong>Active</strong> dan notifikasi konfirmasi.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <form id="approveForm" method="POST" action="" class="d-inline m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-success btn-sm px-4">
+                        <i class="bi bi-check2 me-1"></i>Konfirmasi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const approveModal = document.getElementById('approveModal');
+    if (!approveModal) return;
+    approveModal.addEventListener('show.bs.modal', function(e) {
+        const btn = e.relatedTarget;
+        if (!btn) return;
+        const regId   = btn.getAttribute('data-reg-id');
+        const eventId = btn.getAttribute('data-event-id');
+        const name    = btn.getAttribute('data-user-name') || '-';
+        document.getElementById('approveUserName').textContent = name;
+        document.getElementById('approveForm').action =
+            '/admin/events/' + eventId + '/registrations/' + regId + '/approve';
+    });
 });
 </script>
 

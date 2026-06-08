@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Kelola Event')
 @section('content')
 <div class="container-fluid py-4">
@@ -145,12 +145,12 @@
                                 </td>
                                 <td class="fw-semibold">{{ $event->title }}</td>
                                 <td class="text-truncate" style="max-width:220px;" title="{{ strip_tags($event->description) }}">{{ \Illuminate\Support\Str::limit(strip_tags($event->description), 60) }}</td>
-                                <td>{{ $event->speaker ?? '—' }}</td>
+                                <td>{{ $event->speaker ?? '�' }}</td>
                                 <td>
                                     @if(!empty($event->event_date))
                                         {{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}
                                     @else
-                                        —
+                                        �
                                     @endif
                                 </td>
                                 
@@ -170,7 +170,7 @@
                                             @endif
                                         </div>
                                     @else
-                                        —
+                                        �
                                     @endif
                                 </td>
                                
@@ -194,8 +194,8 @@
                                             : 0;
                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                         $tooltip = $requiresVbg
-                                            ? 'Virtual Background: '.($hasVbg ? '✔' : '✖').', Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖')
-                                            : 'Module (Trainer): '.($hasModule ? '✔' : '✖').', Absensi (QR/File): '.($hasAbs ? '✔' : '✖');
+                                            ? 'Virtual Background: '.($hasVbg ? '?' : '?').', Module (Trainer): '.($hasModule ? '?' : '?').', Absensi (QR/File): '.($hasAbs ? '?' : '?')
+                                            : 'Module (Trainer): '.($hasModule ? '?' : '?').', Absensi (QR/File): '.($hasAbs ? '?' : '?');
                                         $missing = [];
                                         if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
                                         if (!$hasModule) $missing[] = 'Module (Trainer)';
@@ -358,7 +358,7 @@
                     const label = new Date(+y, +m-1, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
                     parts.push('Bulan: ' + label);
                 }
-                return parts.length ? parts.join(' · ') : 'All Events';
+                return parts.length ? parts.join(' � ') : 'All Events';
             }
 
             function buildExportTable(){
@@ -471,7 +471,7 @@
 
                 const footer = document.createElement('div');
                 footer.style.cssText = 'margin-top:12px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:9px; color:#9ca3af; display:flex; justify-content:space-between;';
-                footer.innerHTML = `<span>LMS IdSpora — Manage Event</span><span>${printDate}</span>`;
+                footer.innerHTML = `<span>LMS IdSpora � Manage Event</span><span>${printDate}</span>`;
                 printable.appendChild(footer);
 
                 const offscreen = document.createElement('div');
@@ -1246,7 +1246,7 @@
             margin-right: auto !important;
         }
 
-        /* Fix asterisk position — inline with label title */
+        /* Fix asterisk position � inline with label title */
         #addEventModal label.form-label,
         #editEventModal label.form-label {
             display: inline-flex !important;
@@ -1814,7 +1814,7 @@
             const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]'))
                 .map(s => String(s.value || '').trim())
                 .filter(Boolean);
-            speakerCombined.value = names.join(', ');
+            speakerCombined.value = names.join('|');
         }
 
         function populateSpeakerSelect(selectEl, selectedName, trainers){
@@ -1947,7 +1947,7 @@
             return unformatNumber(document.getElementById('hargaDisplay')?.value || '0') > 0;
         }
 
-        // Enable/disable discount input — callable from anywhere
+        // Enable/disable discount input � callable from anywhere
         function syncDiscountEnabled() {
             const diskonInput = document.getElementById('diskon');
             const discountUntilInput = document.getElementById('discount_until');
@@ -2424,7 +2424,7 @@
                 if(submitHint){
                     if(!filled){
                         const missingNames = missingRequired().map(fieldFriendlyName);
-                        submitHint.textContent = 'Lengkapi: ' + missingNames.join(', ') + '.';
+                        submitHint.textContent = 'Lengkapi: ' + missingnames.join('|') + '.';
                         submitHint.style.display = 'block';
                     } else if(overLimit){
                         submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ' kata).';
@@ -3287,7 +3287,7 @@ function initEditEventSpeakers(modalEl){
         const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]'))
             .map(s => String(s.value || '').trim())
             .filter(Boolean);
-        speakerCombined.value = names.join(', ');
+        speakerCombined.value = names.join('|');
     }
 
     function populateSpeakerSelect(selectEl, selectedName, trainers) {
@@ -3437,7 +3437,7 @@ document.addEventListener('click', async function(e){
 </script>
 
 <script>
-// Duplicate event button handler — opens confirmation modal
+// Duplicate event button handler � opens confirmation modal
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('.duplicate-event-btn');
     if (!btn) return;

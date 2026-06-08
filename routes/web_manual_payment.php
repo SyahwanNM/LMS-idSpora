@@ -51,6 +51,8 @@ Route::middleware(['auth','admin'])->group(function(){
 		->name('admin.events.registrations.approve');
 	Route::post('/admin/events/{event}/registrations/{registration}/reject', [\App\Http\Controllers\Admin\EventController::class, 'rejectRegistration'])
 		->name('admin.events.registrations.reject');
+	Route::patch('/admin/events/{event}/registrations/{registration}/cancel', [\App\Http\Controllers\Admin\EventController::class, 'cancelApprovalRegistration'])
+		->name('admin.events.registrations.cancel');
 	Route::delete('/admin/events/{event}/registrations/{registration}', [\App\Http\Controllers\Admin\EventController::class, 'destroyRegistration'])
 		->name('admin.events.registrations.destroy');
 

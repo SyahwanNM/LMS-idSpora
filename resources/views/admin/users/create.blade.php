@@ -43,11 +43,11 @@
     </div>
     <div class="mb-3">
         <label class="form-label text-dark">Role</label>
-        <select name="role" class="form-select" required disabled>
-            <option value="admin" selected>Admin</option>
+        <select name="role" class="form-select" required>
+            <option value="admin" {{ old('role','admin') === 'admin' ? 'selected' : '' }}>Admin (Full Access)</option>
+            <option value="event_admin" {{ old('role') === 'event_admin' ? 'selected' : '' }}>Event Admin (Akses event tertentu)</option>
         </select>
-        <input type="hidden" name="role" value="admin">
-        <small class="text-muted">Hanya akun admin yang dapat dibuat melalui menu ini.</small>
+        <small class="text-muted">Admin memiliki akses penuh. Event Admin hanya bisa mengakses event yang di-assign.</small>
     </div>
     <div class="d-flex justify-content-between">
         <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">Kembali</a>

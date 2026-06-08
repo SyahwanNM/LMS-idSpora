@@ -1,4 +1,4 @@
-@include("partials.navbar-after-login")
+﻿
 <!DOCTYPE html>
 <html lang="en">
 
@@ -126,6 +126,7 @@
 </head>
 
 <body>
+    @include('partials.navbar-after-login')
     <div class="payment-container" style="margin-bottom: 12px; margin-top: 85px;">
         <div style="font-size: 12px; color: #6B7280;">
             <a href="{{ route('dashboard') }}" style="text-decoration:none; color:inherit;">Home</a> / 

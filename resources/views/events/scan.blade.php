@@ -28,6 +28,10 @@
         @keyframes drawCircle { to { stroke-dashoffset: 0; } }
         @keyframes drawCheck { to { stroke-dashoffset: 0; } }
         .btn.disabled { pointer-events: none; opacity: 0.6; }
+        .day-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+        .day-badge.today { background: #dcfce7; color: #15803d; border: 1.5px solid #86efac; }
+        .day-badge.past   { background: #f3f4f6; color: #6b7280; border: 1.5px solid #d1d5db; }
+        .day-badge.future { background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; }
         @media (max-width: 600px) {
             .scan-container { margin: 0; border-radius: 0; box-shadow: none; }
             .scan-body { padding: 12px 12px 20px; }
@@ -45,8 +49,55 @@
     </div>
     <div class="scan-body">
         @php
-            $canScan = isset($eventStarted) && $eventStarted && isset($registration) && $registration && $registration->status === 'active';
+            $todayQrData  = $todayQr ?? null;
+            $allDailyQrs  = $allDailyQrs ?? collect();
+            $isMultiDay   = $allDailyQrs->count() > 1;
+            $todayLabel   = $todayQrData ? 'Hari ke-' . $todayQrData->day_number : null;
+            $todayDate    = \Carbon\Carbon::now(config('app.timezone'))->format('d F Y');
+            $canScan      = isset($eventStarted) && $eventStarted && isset($registration) && $registration && $registration->status === 'active' && ($todayQrData !== null || !$isMultiDay);
         @endphp
+
+        {{-- Multi-day attendance strip --}}
+        @if($isMultiDay)
+        <div class="mb-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                @foreach($allDailyQrs as $dqr)
+                    @php
+                        $dqrDate   = $dqr->qr_date instanceof \Carbon\Carbon ? $dqr->qr_date : \Carbon\Carbon::parse($dqr->qr_date);
+                        $nowDay    = \Carbon\Carbon::now(config('app.timezone'))->startOfDay();
+                        $dqrStart  = $dqrDate->copy()->startOfDay();
+                        $isThisDay = $dqrStart->isSameDay($nowDay);
+                        $isPast    = $dqrStart->lt($nowDay);
+
+                        // Check if this user has attended on this day
+                        $attended  = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                            ->where('attendance_date', $dqrDate->format('Y-m-d'))
+                            ->exists();
+                    @endphp
+                    <span class="day-badge {{ $isThisDay ? 'today' : ($isPast ? 'past' : 'future') }}">
+                        @if($attended)
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        @elseif($isThisDay)
+                            <i class="bi bi-camera-video"></i>
+                        @else
+                            <i class="bi bi-circle"></i>
+                        @endif
+                        Hari {{ $dqr->day_number }}
+                        <span class="fw-normal opacity-75">{{ $dqrDate->format('d/m') }}</span>
+                        @if($attended) <span class="badge bg-success ms-1" style="font-size:0.6rem;">✓</span> @endif
+                    </span>
+                @endforeach
+            </div>
+            @if($todayQrData)
+                <div class="mt-2 small text-muted">
+                    Hari ini: <strong>{{ $todayLabel }}</strong> &bull; {{ $todayDate }}
+                </div>
+            @else
+                <div class="mt-2 alert alert-warning py-2 small">Hari ini bukan hari event — scan tidak tersedia.</div>
+            @endif
+        </div>
+        @endif
+
         @if(!$canScan)
             <div class="alert alert-warning" role="alert">
                 Camera scan is available when the event has started and you are an active registrant.
@@ -61,7 +112,7 @@
                 <circle class="circle" cx="60" cy="60" r="48"></circle>
                 <path class="check" d="M40 60 L55 75 L82 45"></path>
             </svg>
-            <div class="status ok mt-2">Attendance Recorded Successfully</div>
+            <div class="status ok mt-2" id="success-msg">Attendance Recorded Successfully</div>
         </div>
         <div class="mt-3 d-flex align-items-center" style="gap:12px;">
             <label class="btn btn-outline-primary btn-sm mb-0 {{ !$canScan ? 'disabled' : '' }}" for="file-input" title="Upload Photo to Scan" aria-label="Upload Photo to Scan">
@@ -234,6 +285,8 @@
                 try {
                     if (readerEl) readerEl.style.display = 'none';
                     if (successAnimEl) successAnimEl.style.display = 'flex';
+                    const successMsgEl = document.getElementById('success-msg');
+                    if (successMsgEl && data.message) successMsgEl.textContent = data.message;
                 } catch(_) {}
                 try {
                     await stopCamera();
