@@ -940,6 +940,83 @@
                 border-radius: 24px;
             }
         }
+
+        /* Trainer Status List styling */
+        .trainer-status-list {
+            margin-top: 14px;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 14px;
+        }
+        .trainer-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            margin-bottom: 6px;
+        }
+        .trainer-status-row:last-child {
+            margin-bottom: 0;
+        }
+        .trainer-status-row:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .btn-action-small {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-action-small.view {
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #e0e7ff;
+        }
+        .btn-action-small.view:hover {
+            background: #e0e7ff;
+            color: #3730a3;
+            transform: scale(1.05);
+        }
+        .btn-action-small.manage-icon {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+        .btn-action-small.manage-icon:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+            transform: scale(1.05);
+        }
+        .btn-action-manage-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
+        }
+        .btn-action-manage-pill:hover {
+            box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+            color: white;
+            transform: translateY(-1px);
+        }
     </style>
 @endpush
 
@@ -1055,10 +1132,7 @@
                         Reset Filter
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <div class="tab-content-container">
+               <div class="tab-content-container">
             <div class="custom-tab-pane {{ $tab === 'unsentItems' ? 'active' : '' }}" id="unsentItems-pane">
                 <div class="certificate-grid">
                     @forelse($unsentItems as $item)
@@ -1078,6 +1152,20 @@
                             
                             $metaLabel = $isEvent ? 'Peserta Terdaftar' : 'Siswa Terdaftar';
                             $metaCount = $isEvent ? ($item->registrations_count ?? 0) : ($item->enrollments_count ?? 0);
+
+                            // Extract all trainers associated with this program
+                            $itemTrainers = collect();
+                            if ($item->trainer) {
+                                $itemTrainers->push($item->trainer);
+                            }
+                            if ($isEvent && isset($item->speakers)) {
+                                foreach ($item->speakers as $speaker) {
+                                    if ($speaker->trainer) {
+                                        $itemTrainers->push($speaker->trainer);
+                                    }
+                                }
+                            }
+                            $itemTrainers = $itemTrainers->unique('id');
                         @endphp
 
                         <div class="certificate-card cert-row" data-title="{{ strtolower($title) }}"
@@ -1114,7 +1202,7 @@
                                 @endif
                             </div>
 
-                            <div class="card-inner">
+                            <div class="card-inner" style="padding-bottom: 22px;">
                                 {{-- Program info --}}
                                 <div class="program-main">
                                     <div class="program-icon-wrapper {{ $context }}">
@@ -1149,7 +1237,7 @@
 
                                     {{-- Asset Checklist --}}
                                     <div class="asset-checklist">
-                                        <div class="checklist-title">Kelengkapan Aset</div>
+                                        <div class="checklist-title">Kelengkapan Aset Desain</div>
                                         <div class="checklist-grid">
                                             <div class="check-item {{ $hasTemplate ? 'is-valid' : 'is-invalid' }}">
                                                 <div class="check-icon">
@@ -1167,24 +1255,80 @@
                                                 <div class="check-icon">
                                                     <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
                                                 </div>
-                                                <span class="check-label">Tanda Tangan</span>
+                                                <span class="check-label">Ttd Partner</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {{-- Tombol Kelola Template — full width --}}
-                            <a href="{{ route('admin.trainer.certificates.edit', [
-                                'trainer' => $item->trainer_id,
-                                'context' => $context,
-                                'id' => $item->id,
-                            ]) }}"
-                                class="btn-manage-template {{ $status === 'not-configured' ? 'warning' : ($status === 'configured' ? 'soft' : '') }}">
-                                <i class="bi bi-gear-fill"></i>
-                                Kelola Template
-                                <i class="bi bi-chevron-right ms-auto"></i>
-                            </a>
+                                {{-- Trainer & Certificate Status List --}}
+                                <div class="trainer-status-list">
+                                    <div class="checklist-title">Daftar Trainer & Sertifikat</div>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        @foreach($itemTrainers as $trn)
+                                            @php
+                                                $certKey = get_class($item) . ':' . $item->id . ':' . $trn->id;
+                                                $trnCert = $allCertificates->has($certKey) ? $allCertificates->get($certKey)->first() : null;
+                                                $trnStatus = $trnCert ? $trnCert->status : 'draft';
+                                                
+                                                // Get initials for avatar
+                                                $words = explode(' ', $trn->name);
+                                                $initials = '';
+                                                if (count($words) >= 2) {
+                                                    $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+                                                } else {
+                                                    $initials = strtoupper(substr($trn->name, 0, 2));
+                                                }
+                                                
+                                                $bgColors = ['#4f46e5', '#7c3aed', '#2563eb', '#06b6d4', '#ec4899'];
+                                                $colorIndex = abs(crc32($trn->name)) % count($bgColors);
+                                                $bgColor = $bgColors[$colorIndex];
+                                            @endphp
+                                            <div class="trainer-status-row">
+                                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                                                    <div style="width: 32px; height: 32px; border-radius: 50%; background-color: {{ $bgColor }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                                        {{ $initials }}
+                                                    </div>
+                                                    <div style="min-width: 0; flex: 1;">
+                                                        <span style="font-size: 0.82rem; font-weight: 700; color: #1e293b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $trn->name }}">{{ $trn->name }}</span>
+                                                        <span style="font-size: 0.72rem; display: block;">
+                                                            @if($trnStatus === 'published' || $trnStatus === 'sent')
+                                                                <span style="color: #10b981; font-weight: 600;"><i class="bi bi-patch-check-fill me-1"></i>Terkirim</span>
+                                                            @else
+                                                                <span style="color: #f59e0b; font-weight: 600;"><i class="bi bi-clock-history me-1"></i>Belum Terkirim</span>
+                                                            @endif
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style="flex-shrink: 0; margin-left: 8px;">
+                                                    @if($trnStatus === 'published' || $trnStatus === 'sent')
+                                                        <div style="display: flex; gap: 4px;">
+                                                            <a href="{{ route('admin.trainer.certificates.detail', ['certificate' => $trnCert->id]) }}" 
+                                                               class="btn-action-small view"
+                                                               title="Lihat Sertifikat">
+                                                                <i class="bi bi-eye-fill"></i>
+                                                            </a>
+                                                            <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
+                                                               class="btn-action-small manage-icon"
+                                                               title="Kelola & Kirim Ulang">
+                                                                <i class="bi bi-pencil-square"></i>
+                                                            </a>
+                                                        </div>
+                                                    @else
+                                                        <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
+                                                           class="btn-action-manage-pill"
+                                                           title="Kelola & Kirim">
+                                                            <i class="bi bi-gear-fill"></i>
+                                                            <span>Kelola</span>
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     @empty
                         <div class="empty-card">
@@ -1215,9 +1359,19 @@
                             $metaLabel = $isEvent ? 'Peserta Terdaftar' : 'Siswa Terdaftar';
                             $metaCount = $isEvent ? ($item->registrations_count ?? 0) : ($item->enrollments_count ?? 0);
 
-                            $key = get_class($item) . ':' . $item->id;
-                            $cert = $publishedKeys->has($key) ? $publishedKeys->get($key)->first() : null;
-                            $certificateId = $cert ? $cert->id : null;
+                            // Extract all trainers associated with this program
+                            $itemTrainers = collect();
+                            if ($item->trainer) {
+                                $itemTrainers->push($item->trainer);
+                            }
+                            if ($isEvent && isset($item->speakers)) {
+                                foreach ($item->speakers as $speaker) {
+                                    if ($speaker->trainer) {
+                                        $itemTrainers->push($speaker->trainer);
+                                    }
+                                }
+                            }
+                            $itemTrainers = $itemTrainers->unique('id');
                         @endphp
 
                         <div class="certificate-card cert-row" data-title="{{ strtolower($title) }}"
@@ -1244,7 +1398,7 @@
                                 </span>
                             </div>
 
-                            <div class="card-inner">
+                            <div class="card-inner" style="padding-bottom: 22px;">
                                 {{-- Program info --}}
                                 <div class="program-main">
                                     <div class="program-icon-wrapper {{ $context }}">
@@ -1279,7 +1433,7 @@
 
                                     {{-- Asset Checklist --}}
                                     <div class="asset-checklist">
-                                        <div class="checklist-title">Kelengkapan Aset</div>
+                                        <div class="checklist-title">Kelengkapan Aset Desain</div>
                                         <div class="checklist-grid">
                                             <div class="check-item {{ $hasTemplate ? 'is-valid' : 'is-invalid' }}">
                                                 <div class="check-icon">
@@ -1297,43 +1451,80 @@
                                                 <div class="check-icon">
                                                     <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
                                                 </div>
-                                                <span class="check-label">Tanda Tangan</span>
+                                                <span class="check-label">Ttd Partner</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            @if($certificateId)
-                                <div class="card-actions-row">
-                                    <a href="{{ route('admin.trainer.certificates.detail', ['certificate' => $certificateId]) }}"
-                                        class="btn-manage-template">
-                                        <i class="bi bi-eye-fill"></i>
-                                        Lihat
-                                    </a>
-                                    <a href="{{ route('admin.trainer.certificates.edit', [
-                                        'trainer' => $item->trainer_id,
-                                        'context' => $context,
-                                        'id' => $item->id,
-                                    ]) }}"
-                                        class="btn-manage-template btn-outline"
-                                        title="Kelola & Kirim Ulang">
-                                        <i class="bi bi-pencil-square"></i>
-                                        Kelola
-                                    </a>
+                                {{-- Trainer & Certificate Status List --}}
+                                <div class="trainer-status-list">
+                                    <div class="checklist-title">Daftar Trainer & Sertifikat</div>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        @foreach($itemTrainers as $trn)
+                                            @php
+                                                $certKey = get_class($item) . ':' . $item->id . ':' . $trn->id;
+                                                $trnCert = $allCertificates->has($certKey) ? $allCertificates->get($certKey)->first() : null;
+                                                $trnStatus = $trnCert ? $trnCert->status : 'draft';
+                                                
+                                                // Get initials for avatar
+                                                $words = explode(' ', $trn->name);
+                                                $initials = '';
+                                                if (count($words) >= 2) {
+                                                    $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+                                                } else {
+                                                    $initials = strtoupper(substr($trn->name, 0, 2));
+                                                }
+                                                
+                                                $bgColors = ['#4f46e5', '#7c3aed', '#2563eb', '#06b6d4', '#ec4899'];
+                                                $colorIndex = abs(crc32($trn->name)) % count($bgColors);
+                                                $bgColor = $bgColors[$colorIndex];
+                                            @endphp
+                                            <div class="trainer-status-row">
+                                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                                                    <div style="width: 32px; height: 32px; border-radius: 50%; background-color: {{ $bgColor }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                                        {{ $initials }}
+                                                    </div>
+                                                    <div style="min-width: 0; flex: 1;">
+                                                        <span style="font-size: 0.82rem; font-weight: 700; color: #1e293b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $trn->name }}">{{ $trn->name }}</span>
+                                                        <span style="font-size: 0.72rem; display: block;">
+                                                            @if($trnStatus === 'published' || $trnStatus === 'sent')
+                                                                <span style="color: #10b981; font-weight: 600;"><i class="bi bi-patch-check-fill me-1"></i>Terkirim</span>
+                                                            @else
+                                                                <span style="color: #f59e0b; font-weight: 600;"><i class="bi bi-clock-history me-1"></i>Belum Terkirim</span>
+                                                            @endif
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style="flex-shrink: 0; margin-left: 8px;">
+                                                    @if($trnStatus === 'published' || $trnStatus === 'sent')
+                                                        <div style="display: flex; gap: 4px;">
+                                                            <a href="{{ route('admin.trainer.certificates.detail', ['certificate' => $trnCert->id]) }}" 
+                                                               class="btn-action-small view"
+                                                               title="Lihat Sertifikat">
+                                                                <i class="bi bi-eye-fill"></i>
+                                                            </a>
+                                                            <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
+                                                               class="btn-action-small manage-icon"
+                                                               title="Kelola & Kirim Ulang">
+                                                                <i class="bi bi-pencil-square"></i>
+                                                            </a>
+                                                        </div>
+                                                    @else
+                                                        <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
+                                                           class="btn-action-manage-pill"
+                                                           title="Kelola & Kirim">
+                                                            <i class="bi bi-gear-fill"></i>
+                                                            <span>Kelola</span>
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
                                 </div>
-                            @else
-                                <a href="{{ route('admin.trainer.certificates.edit', [
-                                    'trainer' => $item->trainer_id,
-                                    'context' => $context,
-                                    'id' => $item->id,
-                                ]) }}"
-                                    class="btn-manage-template soft">
-                                    <i class="bi bi-gear-fill"></i>
-                                    Kelola Template
-                                    <i class="bi bi-chevron-right ms-auto"></i>
-                                </a>
-                            @endif
+                            </div>
                         </div>
                     @empty
                         <div class="empty-card">

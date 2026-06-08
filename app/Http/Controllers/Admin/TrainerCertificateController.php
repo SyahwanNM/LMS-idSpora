@@ -33,61 +33,104 @@ class TrainerCertificateController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $trainerIds = $trainers->pluck('id');
+        // All registered trainer IDs in the system
+        $allTrainerIds = User::query()->where('role', 'trainer')->pluck('id');
 
-        $publishedCounts = TrainerCertificate::query()
-            ->whereIn('trainer_id', $trainerIds)
-            ->selectRaw('trainer_id, COUNT(*) as total')
-            ->groupBy('trainer_id')
-            ->pluck('total', 'trainer_id');
+        // Fetch all published/sent certificates grouped by course/event and trainer
+        $publishedCertificates = TrainerCertificate::query()
+            ->whereIn('trainer_id', $allTrainerIds)
+            ->whereIn('status', ['sent', 'published'])
+            ->get()
+            ->groupBy(function ($cert) {
+                return $cert->certifiable_type . ':' . $cert->certifiable_id . ':' . $cert->trainer_id;
+            });
 
-        $trainers->getCollection()->transform(function ($trainer) use ($publishedCounts) {
-            $publishedKeys = $this->publishedKeys($trainer);
-
-            $pendingEvents = Event::query()
-                ->where('trainer_id', $trainer->id)
-                ->whereNotNull('event_date')
-                ->whereDate('event_date', '<=', now()->toDateString())
-                ->get()
-                ->filter(fn($event) => !$publishedKeys->has(Event::class . ':' . $event->id))
-                ->count();
-
-            $pendingCourses = Course::query()
-                ->where('trainer_id', $trainer->id)
-                ->whereIn('status', ['published', 'approved', 'active'])
-                ->get()
-                ->filter(fn($course) => !$publishedKeys->has(Course::class . ':' . $course->id))
-                ->count();
-
-            $trainer->pending_certificates_count = $pendingEvents + $pendingCourses;
-            $trainer->published_certificates_count = (int) ($publishedCounts[$trainer->id] ?? 0);
-
-            return $trainer;
-        });
-
-        $publishedKeys = TrainerCertificate::query()
-            ->whereIn('trainer_id', $trainerIds)
-            ->whereIn('status', ['sent', 'published', 'revoked'])
+        // Group by certifiable key for legacy view reference
+        $publishedKeysGlobal = TrainerCertificate::query()
+            ->whereIn('trainer_id', $allTrainerIds)
+            ->whereIn('status', ['sent', 'published'])
             ->get()
             ->groupBy(function ($cert) {
                 return $cert->certifiable_type . ':' . $cert->certifiable_id;
             });
 
+        // Fetch all certificates (including drafts) for lookup in blade
+        $allCertificates = TrainerCertificate::query()
+            ->whereIn('trainer_id', $allTrainerIds)
+            ->get()
+            ->groupBy(function ($cert) {
+                return $cert->certifiable_type . ':' . $cert->certifiable_id . ':' . $cert->trainer_id;
+            });
+
+        // Calculate pending and published counts for the 10 trainers on the current page
+        $pageTrainerIds = $trainers->pluck('id');
+        $pagePublishedCerts = TrainerCertificate::query()
+            ->whereIn('trainer_id', $pageTrainerIds)
+            ->whereIn('status', ['sent', 'published'])
+            ->get()
+            ->groupBy('trainer_id');
+
+        $trainers->getCollection()->transform(function ($trainer) use ($pagePublishedCerts) {
+            $myPublished = $pagePublishedCerts->get($trainer->id) ?: collect();
+            $myPublishedKeys = $myPublished->mapWithKeys(function ($cert) {
+                return [$cert->certifiable_type . ':' . $cert->certifiable_id => true];
+            });
+
+            // Pending events: trainer is primary OR speaker, and event is finished/past, and certificate not published
+            $pendingEvents = Event::query()
+                ->where(function ($query) use ($trainer) {
+                    $query->where('trainer_id', $trainer->id)
+                          ->orWhereIn('id', function ($sub) use ($trainer) {
+                              $sub->select('event_id')
+                                  ->from('event_speakers')
+                                  ->where('trainer_id', $trainer->id);
+                          });
+                })
+                ->whereNotNull('event_date')
+                ->whereDate('event_date', '<=', now()->toDateString())
+                ->get()
+                ->filter(fn($event) => !$myPublishedKeys->has(Event::class . ':' . $event->id))
+                ->count();
+
+            // Pending courses
+            $pendingCourses = Course::query()
+                ->where('trainer_id', $trainer->id)
+                ->whereIn('status', ['published', 'approved', 'active'])
+                ->get()
+                ->filter(fn($course) => !$myPublishedKeys->has(Course::class . ':' . $course->id))
+                ->count();
+
+            $trainer->pending_certificates_count = $pendingEvents + $pendingCourses;
+            $trainer->published_certificates_count = $myPublished->count();
+
+            return $trainer;
+        });
+
+        // Fetch all finished events that have at least one trainer associated (primary or speaker)
         $events = Event::query()
-            ->whereIn('trainer_id', $trainerIds)
             ->whereNotNull('event_date')
             ->whereDate('event_date', '<=', now()->toDateString())
+            ->with(['trainer', 'speakers.trainer'])
             ->withCount('registrations')
             ->get()
+            ->filter(function ($event) use ($allTrainerIds) {
+                if ($event->trainer_id && $allTrainerIds->contains($event->trainer_id)) {
+                    return true;
+                }
+                return $event->speakers->contains(function ($speaker) use ($allTrainerIds) {
+                    return $speaker->trainer_id && $allTrainerIds->contains($speaker->trainer_id);
+                });
+            })
             ->each(function ($item) {
                 $item->context = 'event';
                 $item->sort_date = $item->event_date;
             });
 
+        // Fetch all active/approved courses
         $courses = Course::query()
-            ->whereIn('trainer_id', $trainerIds)
+            ->whereIn('trainer_id', $allTrainerIds)
             ->whereIn('status', ['published', 'approved', 'active'])
-            ->with('category')
+            ->with(['category', 'trainer'])
             ->withCount('enrollments')
             ->get()
             ->each(function ($item) {
@@ -95,27 +138,72 @@ class TrainerCertificateController extends Controller
                 $item->sort_date = $item->updated_at;
             });
 
-        $allPrograms = $events->concat($courses);
+        // Helper to extract relevant registered trainers for an item
+        $getTrainers = function ($item) use ($allTrainerIds) {
+            $trainers = collect();
+            if ($item->trainer && $allTrainerIds->contains($item->trainer_id)) {
+                $trainers->push($item->trainer);
+            }
+            if ($item instanceof Event) {
+                foreach ($item->speakers as $speaker) {
+                    if ($speaker->trainer && $allTrainerIds->contains($speaker->trainer_id)) {
+                        $trainers->push($speaker->trainer);
+                    }
+                }
+            }
+            return $trainers->unique('id');
+        };
 
-        $unsentItems = $allPrograms->filter(function ($item) use ($publishedKeys) {
-            $key = get_class($item) . ':' . $item->id;
-            return !$publishedKeys->has($key);
-        })->sortByDesc('sort_date')->values();
+        // Categorize into unsent and sent items
+        $unsentItems = collect();
+        $sentItems = collect();
 
-        $sentItems = $allPrograms->filter(function ($item) use ($publishedKeys) {
-            $key = get_class($item) . ':' . $item->id;
-            return $publishedKeys->has($key);
-        })->sortByDesc(function ($item) use ($publishedKeys) {
-            $key = get_class($item) . ':' . $item->id;
-            $cert = $publishedKeys->get($key)->first();
-            return $cert ? ($cert->issued_at ?? $cert->created_at) : $item->sort_date;
-        })->values();
+        foreach ($events->concat($courses) as $item) {
+            $itemTrainers = $getTrainers($item);
+            if ($itemTrainers->isEmpty()) {
+                continue;
+            }
+
+            $allSent = true;
+            foreach ($itemTrainers as $trn) {
+                $key = get_class($item) . ':' . $item->id . ':' . $trn->id;
+                if (!$publishedCertificates->has($key)) {
+                    $allSent = false;
+                    break;
+                }
+            }
+
+            if ($allSent) {
+                $sentItems->push($item);
+            } else {
+                $unsentItems->push($item);
+            }
+        }
+
+        $unsentItems = $unsentItems->sortByDesc('sort_date')->values();
+        $sentItems = $sentItems->sortByDesc('sort_date')->values();
 
         $totalTrainers = User::query()
             ->where('role', 'trainer')
             ->count();
 
-        $totalPending = $trainers->getCollection()->sum('pending_certificates_count');
+        // Calculate total pending certificates for all trainers globally
+        $totalPending = 0;
+        foreach ($events->concat($courses) as $item) {
+            $itemTrainers = $getTrainers($item);
+            foreach ($itemTrainers as $trn) {
+                $key = get_class($item) . ':' . $item->id . ':' . $trn->id;
+                if (!$publishedCertificates->has($key)) {
+                    $totalPending++;
+                }
+            }
+        }
+
+        // Global total published certificates count
+        $totalPublished = TrainerCertificate::query()
+            ->whereIn('trainer_id', $allTrainerIds)
+            ->whereIn('status', ['sent', 'published'])
+            ->count();
 
         return view('admin.trainer.certificates.index', compact(
             'trainers',
@@ -123,20 +211,12 @@ class TrainerCertificateController extends Controller
             'sentItems',
             'totalTrainers',
             'totalPending',
-            'publishedKeys'
+            'totalPublished',
+            'allCertificates'
         ) + [
             'tab' => $request->query('tab', 'unsentItems'),
+            'publishedKeys' => $publishedKeysGlobal
         ]);
-    }
-
-    public function queue(Request $request)
-    {
-        $trainers = User::query()
-            ->where('role', 'trainer')
-            ->orderBy('name')
-            ->paginate(10);
-
-        return view('admin.trainer.certificates.queue', compact('trainers'));
     }
 
     public function show(User $trainer)
@@ -146,7 +226,14 @@ class TrainerCertificateController extends Controller
         $publishedKeys = $this->publishedKeys($trainer);
 
         $events = Event::query()
-            ->where('trainer_id', $trainer->id)
+            ->where(function ($query) use ($trainer) {
+                $query->where('trainer_id', $trainer->id)
+                      ->orWhereIn('id', function ($sub) use ($trainer) {
+                          $sub->select('event_id')
+                              ->from('event_speakers')
+                              ->where('trainer_id', $trainer->id);
+                      });
+            })
             ->whereNotNull('event_date')
             ->whereDate('event_date', '<=', now()->toDateString())
             ->withCount('registrations')
@@ -188,7 +275,7 @@ class TrainerCertificateController extends Controller
             ->values();
 
         $certificates = TrainerCertificate::query()
-            ->with(['certifiable', 'issuer'])
+            ->with(['trainer', 'issuer', 'certifiable'])
             ->where('trainer_id', $trainer->id)
             ->latest('issued_at')
             ->latest('created_at')
