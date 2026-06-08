@@ -11,8 +11,13 @@
     ];
 
     $materialStatus = (string) ($event->material_status ?? 'draft');
-    $hasUploadedModule = !empty($event->module_path);
-    $displayMaterialStatus = $hasUploadedModule ? $materialStatus : 'draft';
+    $hasUploadedModule = !empty($event->module_path)
+        || (isset($myModules) && $myModules->isNotEmpty());
+    // Prefer myMaterialStatus (from EventTrainerModule) as the authoritative source
+    $resolvedStatus = isset($myMaterialStatus) && $myMaterialStatus !== 'not_uploaded'
+        ? $myMaterialStatus
+        : $materialStatus;
+    $displayMaterialStatus = $hasUploadedModule ? $resolvedStatus : 'draft';
     $isRevisionWindow = $displayMaterialStatus === 'rejected';
     $deadline = $isRevisionWindow
         ? (!empty($event->material_revision_deadline)
@@ -32,9 +37,16 @@
         $eventRejectionReason = trim((string) ($event->module_rejection_reason ?? ''));
     }
     $showEventRejectionReason = $displayMaterialStatus === 'rejected' && $eventRejectionReason !== '';
-    $moduleFileUrl = $event->module_file_url;
-    $uploadedModuleName = $hasUploadedModule ? basename((string) $event->module_path) : null;
-    $canUploadMaterials = $materialStatus !== 'approved';
+    $moduleFileUrl = $event->module_file_url
+        ?? (isset($myModules) && $myModules->isNotEmpty()
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($myModules->first()->path)
+            : null);
+    $uploadedModuleName = $hasUploadedModule
+        ? (isset($myModules) && $myModules->isNotEmpty()
+            ? $myModules->first()->original_name
+            : basename((string) $event->module_path))
+        : null;
+    $canUploadMaterials = $displayMaterialStatus !== 'approved';
 @endphp
 
 @push('styles')
@@ -1321,4 +1333,3 @@
         </script>
     @endif
 @endsection
-

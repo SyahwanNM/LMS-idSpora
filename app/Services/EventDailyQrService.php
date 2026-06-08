@@ -40,13 +40,42 @@ class EventDailyQrService
     /**
      * Ensure all per-day QR rows exist for this event.
      * Creates missing rows and generates QR images; does NOT overwrite existing ones.
+     * Does NOT remove out-of-range rows — use syncDailyQrs() when dates may have changed.
      *
      * @return EventDailyQr[]
      */
     public function ensureAllDailyQrs(Event $event): array
     {
-        $dates = $this->getEventDates($event);
-        $qrs   = [];
+        return $this->syncDailyQrs($event, deleteOutOfRange: false);
+    }
+
+    /**
+     * Synchronise per-day QR rows to exactly match the current event date range.
+     * - Deletes rows whose qr_date is outside the new range (and their image files).
+     * - Re-numbers remaining rows so day_number stays 1-based and contiguous.
+     * - Creates + generates any missing rows for dates in range.
+     *
+     * @return EventDailyQr[]
+     */
+    public function syncDailyQrs(Event $event, bool $deleteOutOfRange = true): array
+    {
+        $dates      = $this->getEventDates($event);
+        $validDates = array_map(fn($d) => $d->format('Y-m-d'), $dates);
+
+        if ($deleteOutOfRange) {
+            $toDelete = EventDailyQr::where('event_id', $event->id)
+                ->whereNotIn('qr_date', $validDates)
+                ->get();
+
+            foreach ($toDelete as $old) {
+                if (!empty($old->qr_image)) {
+                    try { Storage::disk('public')->delete($old->qr_image); } catch (\Throwable $e) {}
+                }
+                $old->delete();
+            }
+        }
+
+        $qrs = [];
 
         foreach ($dates as $dayIndex => $date) {
             $qrDate    = $date->format('Y-m-d');
@@ -56,6 +85,12 @@ class EventDailyQrService
                 ['event_id' => $event->id, 'qr_date' => $qrDate],
                 ['day_number' => $dayNumber, 'token' => bin2hex(random_bytes(16))]
             );
+
+            // Keep day_number in sync if dates were reordered
+            if ($dailyQr->day_number !== $dayNumber) {
+                $dailyQr->day_number = $dayNumber;
+                $dailyQr->save();
+            }
 
             // Generate image if missing
             if (empty($dailyQr->qr_image)) {

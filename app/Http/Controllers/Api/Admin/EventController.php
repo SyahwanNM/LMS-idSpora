@@ -362,9 +362,9 @@ class EventController extends Controller
             $event->expenses()->create($row);
         }
 
-        // Ensure per-day QRs exist (adds new days if event_date/event_until_date changed)
+        // Ensure per-day QRs exist (removes out-of-range, adds missing when dates changed)
         try {
-            app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event->fresh());
+            app(\App\Services\EventDailyQrService::class)->syncDailyQrs($event->fresh());
         } catch (\Throwable $e) {
             \Log::warning('Failed to sync daily QRs on update', ['event_id' => $event->id, 'error' => $e->getMessage()]);
         }

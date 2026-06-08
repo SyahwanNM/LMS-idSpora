@@ -100,19 +100,23 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        // Count completed items for the UI-perceived requirements.
-        // Business rule (used across admin views):
-        // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
-        // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
         $hasVbg = !empty($this->vbg_path);
-        // Module: cek module_path ATAU approved trainer modules
-        $hasModule     = !empty($this->module_path)
-                         || $this->approvedTrainerModules()->exists();
+
+        // Module complete only when ALL registered speakers have an approved module.
+        // Fallback to legacy check when no speakers are registered in event_speakers table.
+        $speakerCount  = $this->speakers()->count();
+        $approvedCount = $this->approvedTrainerModules()->distinct('trainer_id')->count('trainer_id');
+
+        if ($speakerCount > 0) {
+            $hasModule = $approvedCount >= $speakerCount;
+        } else {
+            $hasModule = !empty($this->module_path) || $approvedCount > 0;
+        }
+
         $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
 
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
 
-        // Return the raw count of completed items (not the denominator-aware percent).
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {
             $count++;

@@ -273,7 +273,22 @@
                                                         <td>{{ $i+1 }}</td>
                                                         <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
                                                         <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
-                                                        <td class="text-muted">{{ $reg->user->phone ?? '-' }}</td>
+                                                         <td class="text-muted">
+                                                             <div class="fw-semibold text-dark">{{ $reg->user->phone ?? '-' }}</div>
+                                                             @if(!empty($reg->university_origin) || !empty($reg->study_program) || !empty($reg->position))
+                                                                 <div class="mt-1" style="font-size: 10.5px; line-height: 1.35; max-width: 220px;">
+                                                                     @if(!empty($reg->university_origin))
+                                                                         <div class="text-dark"><i class="bi bi-bank me-1 text-muted"></i>{{ $reg->university_origin }}</div>
+                                                                     @endif
+                                                                     @if(!empty($reg->study_program))
+                                                                         <div class="text-secondary"><i class="bi bi-journal-text me-1 text-muted"></i>{{ $reg->study_program }}</div>
+                                                                     @endif
+                                                                     @if(!empty($reg->position))
+                                                                         <div class="text-muted"><i class="bi bi-briefcase me-1 text-muted"></i>{{ $reg->position }}</div>
+                                                                     @endif
+                                                                 </div>
+                                                             @endif
+                                                         </td>
                                                         <td>
                                                             @php
                                                                 $st = strtolower((string)$reg->status);
@@ -320,33 +335,26 @@
                                                                 </div>
                                                             @elseif($st === 'active')
                                                                 <div class="d-flex align-items-center gap-1">
-                                                                    <div class="dropdown">
-                                                                        <button class="btn btn-xs btn-outline-primary dropdown-toggle py-0 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:11px;">
-                                                                            <i class="bi bi-calendar-check me-1"></i>Presensi
-                                                                        </button>
-                                                                        <ul class="dropdown-menu shadow border-0" style="font-size:11.5px; min-width:180px; z-index:1050;">
-                                                                            <li><h6 class="dropdown-header py-1">Presensi Harian</h6></li>
-                                                                            @php
-                                                                                $attendedDays = $reg->dailyAttendances->pluck('day_number')->toArray();
-                                                                                $totalEventDays = max(1, count($dailyQrs));
-                                                                            @endphp
-                                                                            @for($d = 1; $d <= $totalEventDays; $d++)
-                                                                                @php $hasAttended = in_array($d, $attendedDays) || ($totalEventDays === 1 && $reg->attendance_status === 'yes'); @endphp
-                                                                                <li class="px-3 py-1 d-flex justify-content-between align-items-center gap-2">
-                                                                                    <span>Hari {{ $d }}</span>
-                                                                                    @if($hasAttended)
-                                                                                        <button type="button" class="btn btn-xs btn-link text-danger p-0 border-0 text-decoration-none fw-semibold" onclick="toggleDailyPresence({{ $reg->id }}, {{ $d }}, 'cancel')">Batal</button>
-                                                                                    @else
-                                                                                        <button type="button" class="btn btn-xs btn-link text-success p-0 border-0 text-decoration-none fw-semibold" onclick="toggleDailyPresence({{ $reg->id }}, {{ $d }}, 'checkin')">Hadir</button>
-                                                                                    @endif
-                                                                                </li>
-                                                                            @endfor
-                                                                        </ul>
-                                                                    </div>
+                                                                    @php
+                                                                        $attendedDays = $reg->dailyAttendances->pluck('day_number')->toArray();
+                                                                        $totalEventDays = max(1, count($dailyQrs));
+                                                                    @endphp
+                                                                    <button class="btn btn-xs btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
+                                                                            type="button"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#presenceModal"
+                                                                            data-reg-id="{{ $reg->id }}"
+                                                                            data-user-name="{{ $reg->user->name ?? '-' }}"
+                                                                            data-attended-days="{{ json_encode($attendedDays) }}"
+                                                                            data-total-days="{{ $totalEventDays }}"
+                                                                            data-reg-status-yes="{{ $reg->attendance_status === 'yes' ? 1 : 0 }}"
+                                                                            style="font-size:11px; height: 22px; line-height: 22px;">
+                                                                        <i class="bi bi-calendar-check"></i> Presensi
+                                                                    </button>
                                                                     <form method="POST" action="{{ route('admin.events.registrations.cancel', [$event, $reg]) }}" class="d-inline m-0">
                                                                         @csrf
                                                                         @method('PATCH')
-                                                                        <button type="submit" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:11px;"
+                                                                        <button type="submit" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:11px; height: 22px; line-height: 22px;"
                                                                             onclick="return confirm('Batalkan approval ini? Status akan kembali ke pending.')">
                                                                             <i class="bi bi-arrow-counterclockwise"></i> Batal ACC
                                                                         </button>
@@ -1465,6 +1473,42 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 
+    <!-- Presence Modal (Modern & Interactive - Compact size) -->
+    <div class="modal fade" id="presenceModal" tabindex="-1" aria-labelledby="presenceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm" style="max-width: 440px;">
+            <div class="modal-content border-0 shadow-lg position-relative" style="border-radius: 14px; overflow: hidden;">
+                <div class="modal-header bg-white border-bottom py-2.5 px-3">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="p-2 rounded bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width:36px; height:36px; border-radius: 10px !important;">
+                            <i class="bi bi-calendar-check fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="modal-title fw-bold text-dark mb-0" id="presenceModalLabel">Presensi Harian</h6>
+                            <small class="text-muted" id="presenceModalSubTitle" style="font-size: 11px;">Kelola kehadiran peserta secara manual</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small text-uppercase tracking-wider mb-1" style="font-size: 10.5px;">Nama Peserta</label>
+                        <div class="p-2.5 rounded border bg-light d-flex align-items-center gap-2" style="border-radius: 8px !important;">
+                            <i class="bi bi-person-fill text-muted fs-6"></i>
+                            <strong id="presenceModalUserName" class="text-dark" style="font-size: 13.5px;"></strong>
+                        </div>
+                    </div>
+                    <label class="form-label fw-semibold text-muted small text-uppercase tracking-wider mb-1.5" style="font-size: 10.5px;">Daftar Kehadiran</label>
+                    <div class="d-flex flex-column gap-2" id="presenceDaysList">
+                        <!-- Dynamic daily presence items will be generated here -->
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light py-3 px-4 d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px;">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -1604,9 +1648,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Poll every 10 seconds
     setInterval(fetchAttendanceStats, 10000);
+
+    // Initialize Presence Modal setup
+    const presenceModal = document.getElementById('presenceModal');
+    if (presenceModal) {
+        presenceModal.addEventListener('show.bs.modal', function(e) {
+            const btn = e.relatedTarget;
+            if (!btn) return;
+            
+            const regId = btn.getAttribute('data-reg-id');
+            const userName = btn.getAttribute('data-user-name') || '-';
+            const totalDays = parseInt(btn.getAttribute('data-total-days')) || 1;
+            const attendedDays = JSON.parse(btn.getAttribute('data-attended-days') || '[]');
+            const regStatusYes = parseInt(btn.getAttribute('data-reg-status-yes')) || 0;
+            
+            document.getElementById('presenceModalUserName').textContent = userName;
+            
+            const listContainer = document.getElementById('presenceDaysList');
+            listContainer.innerHTML = '';
+            
+            for (let d = 1; d <= totalDays; d++) {
+                const hasAttended = attendedDays.includes(d) || (totalDays === 1 && regStatusYes === 1);
+                const action = hasAttended ? 'cancel' : 'checkin';
+                
+                const item = document.createElement('div');
+                item.className = 'd-flex align-items-center justify-content-between py-2 px-3 border bg-white shadow-sm';
+                item.style.borderRadius = '10px';
+                
+                let statusBadge = '';
+                let actionBtn = '';
+                
+                if (hasAttended) {
+                    statusBadge = '<span class="badge bg-success-subtle text-success border border-success fw-semibold py-1 px-2.5 d-inline-flex align-items-center gap-1" style="font-size: 10.5px; border-radius: 15px;"><i class="bi bi-check-circle-fill"></i> Hadir</span>';
+                    actionBtn = `
+                        <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 py-1 px-2.5 fw-semibold text-danger" 
+                                style="border-radius: 6px; font-size: 10.5px;" 
+                                onclick="toggleDailyPresenceModal(${regId}, ${d}, 'cancel', this)">
+                            <i class="bi bi-x-circle"></i> Batal Hadir
+                        </button>
+                    `;
+                } else {
+                    statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary fw-semibold py-1 px-2.5 d-inline-flex align-items-center gap-1" style="font-size: 10.5px; border-radius: 15px;"><i class="bi bi-dash-circle"></i> Absen</span>';
+                    actionBtn = `
+                        <button class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 py-1 px-2.5 fw-semibold text-white" 
+                                style="border-radius: 6px; font-size: 10.5px; background-color: #198754; border-color: #198754;" 
+                                onclick="toggleDailyPresenceModal(${regId}, ${d}, 'checkin', this)">
+                            <i class="bi bi-check-lg"></i> Set Hadir
+                        </button>
+                    `;
+                }
+                
+                item.innerHTML = `
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold text-dark fs-6" style="min-width: 60px;">Hari ${d}</span>
+                        ${statusBadge}
+                    </div>
+                    <div>
+                        ${actionBtn}
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            }
+        });
+    }
 });
 
-function toggleDailyPresence(regId, dayNumber, action) {
+function toggleDailyPresenceModal(regId, dayNumber, action, btnEl) {
+    btnEl.disabled = true;
+    const originalText = btnEl.innerHTML;
+    btnEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+
     const url = action === 'checkin' 
         ? `/admin/events/{{ $event->id }}/registrations/${regId}/check-in`
         : `/admin/events/{{ $event->id }}/registrations/${regId}/cancel-day`;
@@ -1630,19 +1741,22 @@ function toggleDailyPresence(regId, dayNumber, action) {
             } else {
                 alert(data.message);
             }
-            // Reload page after a brief delay to refresh the dropdown checkmark status in HTML
-            setTimeout(() => { window.location.reload(); }, 1000);
+            setTimeout(() => { window.location.reload(); }, 800);
         } else {
             if (window.adminNotify) {
                 window.adminNotify('error', data.message || 'Gagal mengubah status presensi.');
             } else {
                 alert(data.message || 'Gagal mengubah status presensi.');
             }
+            btnEl.disabled = false;
+            btnEl.innerHTML = originalText;
         }
     })
     .catch(err => {
         console.error(err);
         alert('Terjadi kesalahan koneksi.');
+        btnEl.disabled = false;
+        btnEl.innerHTML = originalText;
     });
 }
 </script>

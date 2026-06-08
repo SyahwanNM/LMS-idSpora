@@ -145,12 +145,12 @@
                                 </td>
                                 <td class="fw-semibold">{{ $event->title }}</td>
                                 <td class="text-truncate" style="max-width:220px;" title="{{ strip_tags($event->description) }}">{{ \Illuminate\Support\Str::limit(strip_tags($event->description), 60) }}</td>
-                                <td>{{ $event->speaker ?? '—' }}</td>
+                                <td>{{ $event->speaker ?? 'ï¿½' }}</td>
                                 <td>
                                     @if(!empty($event->event_date))
                                         {{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}
                                     @else
-                                        —
+                                        ï¿½
                                     @endif
                                 </td>
                                 
@@ -170,7 +170,7 @@
                                             @endif
                                         </div>
                                     @else
-                                        —
+                                        ï¿½
                                     @endif
                                 </td>
                                
@@ -182,7 +182,13 @@
                                         $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                         $hasVbg = !empty($event->vbg_path);
                                         $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
-                                        $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
+                                        $speakerCount  = isset($event->speakers) ? $event->speakers->count() : $event->speakers()->count();
+                                        $approvedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
+                                        if ($speakerCount > 0) {
+                                            $hasModule = $approvedCount >= $speakerCount;
+                                        } else {
+                                            $hasModule = $approvedCount > 0 || !empty($event->module_path);
+                                        }
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
@@ -358,7 +364,7 @@
                     const label = new Date(+y, +m-1, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
                     parts.push('Bulan: ' + label);
                 }
-                return parts.length ? parts.join(' · ') : 'All Events';
+                return parts.length ? parts.join(' ï¿½ ') : 'All Events';
             }
 
             function buildExportTable(){
@@ -471,7 +477,7 @@
 
                 const footer = document.createElement('div');
                 footer.style.cssText = 'margin-top:12px; padding-top:8px; border-top:1px solid #e5e7eb; font-size:9px; color:#9ca3af; display:flex; justify-content:space-between;';
-                footer.innerHTML = `<span>LMS IdSpora — Manage Event</span><span>${printDate}</span>`;
+                footer.innerHTML = `<span>LMS IdSpora ï¿½ Manage Event</span><span>${printDate}</span>`;
                 printable.appendChild(footer);
 
                 const offscreen = document.createElement('div');
@@ -559,7 +565,14 @@
                                     $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                     $hasVbg = !empty($event->vbg_path);
                                     $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
-                                    $hasModule = $eventTrainerModulesApproved->isNotEmpty() || !empty($event->module_path);
+                                    // Module complete only when ALL registered speakers have an approved module
+                                    $modalSpeakerCount  = $event->speakers()->count();
+                                    $modalApprovedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
+                                    if ($modalSpeakerCount > 0) {
+                                        $hasModule = $modalApprovedCount >= $modalSpeakerCount;
+                                    } else {
+                                        $hasModule = $modalApprovedCount > 0 || !empty($event->module_path);
+                                    }
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
@@ -1246,7 +1259,7 @@
             margin-right: auto !important;
         }
 
-        /* Fix asterisk position — inline with label title */
+        /* Fix asterisk position ï¿½ inline with label title */
         #addEventModal label.form-label,
         #editEventModal label.form-label {
             display: inline-flex !important;
@@ -1947,7 +1960,7 @@
             return unformatNumber(document.getElementById('hargaDisplay')?.value || '0') > 0;
         }
 
-        // Enable/disable discount input — callable from anywhere
+        // Enable/disable discount input ï¿½ callable from anywhere
         function syncDiscountEnabled() {
             const diskonInput = document.getElementById('diskon');
             const discountUntilInput = document.getElementById('discount_until');
@@ -3437,7 +3450,7 @@ document.addEventListener('click', async function(e){
 </script>
 
 <script>
-// Duplicate event button handler — opens confirmation modal
+// Duplicate event button handler ï¿½ opens confirmation modal
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('.duplicate-event-btn');
     if (!btn) return;

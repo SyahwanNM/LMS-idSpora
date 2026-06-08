@@ -145,7 +145,7 @@ class EventController extends Controller
     {
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
         $events = Event::query()
-            ->with(['approvedTrainerModules.trainer'])
+            ->with(['approvedTrainerModules.trainer', 'speakers'])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -606,10 +606,19 @@ class EventController extends Controller
             ->where('day_number', $dayNumber)
             ->first();
 
+        if (!$dailyQr) {
+            try {
+                app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event);
+                $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
+                    ->where('day_number', $dayNumber)
+                    ->first();
+            } catch (\Throwable $e) {}
+        }
+
         if ($dailyQr) {
             $qrDayDate = $dailyQr->qr_date instanceof \Carbon\Carbon
                 ? $dailyQr->qr_date->format('Y-m-d')
-                : (string) $dailyQr->qr_date;
+                : \Carbon\Carbon::parse((string) $dailyQr->qr_date)->format('Y-m-d');
 
             // Check if already checked in
             $attendance = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
@@ -624,6 +633,26 @@ class EventController extends Controller
                     'day_number'            => $dayNumber,
                     'scanned_at'            => \Carbon\Carbon::now(config('app.timezone')),
                 ]);
+            }
+        } else {
+            // Fallback: If still no dailyQr, just create the attendance directly if nullable (or fail gracefully)
+            // Assuming event_daily_qr_id might be nullable or we just update the top-level status
+            $attendance = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('day_number', $dayNumber)
+                ->first();
+            
+            if (!$attendance) {
+                try {
+                    \App\Models\EventDailyAttendance::create([
+                        'event_registration_id' => $registration->id,
+                        'event_daily_qr_id'     => null,
+                        'attendance_date'       => \Carbon\Carbon::now(config('app.timezone'))->format('Y-m-d'),
+                        'day_number'            => $dayNumber,
+                        'scanned_at'            => \Carbon\Carbon::now(config('app.timezone')),
+                    ]);
+                } catch (\Exception $e) {
+                    // Ignore if event_daily_qr_id is not nullable, it will rely on top-level status
+                }
             }
         }
 
@@ -656,20 +685,10 @@ class EventController extends Controller
 
         $dayNumber = (int) $request->day_number;
 
-        // If daily QR exists, delete the daily attendance record
-        $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
+        // Delete the daily attendance record directly
+        \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
             ->where('day_number', $dayNumber)
-            ->first();
-
-        if ($dailyQr) {
-            $qrDayDate = $dailyQr->qr_date instanceof \Carbon\Carbon
-                ? $dailyQr->qr_date->format('Y-m-d')
-                : (string) $dailyQr->qr_date;
-
-            \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
-                ->where('day_number', $dayNumber)
-                ->delete();
-        }
+            ->delete();
 
         // Count remaining daily attendances
         $remainingCount = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)->count();
@@ -999,9 +1018,9 @@ class EventController extends Controller
             ]);
         }
 
-        // Sync per-day QRs (adds new days if dates changed, keeps existing)
+        // Sync per-day QRs (removes out-of-range, adds missing when dates changed)
         try {
-            app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event->fresh());
+            app(\App\Services\EventDailyQrService::class)->syncDailyQrs($event->fresh());
         } catch (\Throwable $e) {
             \Log::warning('Failed to sync daily QRs on update', ['event_id' => $event->id, 'error' => $e->getMessage()]);
         }
@@ -1227,6 +1246,26 @@ class EventController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
+
+        // Sync profile fields
+        $profileUpdates = [];
+        $fullName = $request->input('full_name') ?: $user->name;
+        $email    = $request->input('email')     ?: $user->email;
+        $phone    = $request->input('whatsapp')  ?: $user->phone;
+        $university = $request->input('university_origin') ?: $user->institution;
+        $position   = $request->input('position')          ?: $user->profession;
+
+        if ($fullName !== $user->name)  $profileUpdates['name']  = $fullName;
+        if ($email    !== $user->email) $profileUpdates['email'] = $email;
+        if ($phone    !== $user->phone) $profileUpdates['phone'] = $phone;
+        if ($university !== $user->institution) $profileUpdates['institution'] = $university;
+        if ($position !== $user->profession)   $profileUpdates['profession']  = $position;
+
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
+
         $existing = EventRegistration::where('user_id', $user->id)->where('event_id', $event->id)->first();
         if ($existing) {
             if ($existing->status === 'rejected') {
@@ -1262,6 +1301,9 @@ class EventController extends Controller
                 'status' => 'active',
                 'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => 0.00,
+                'university_origin' => $request->input('university_origin'),
+                'study_program'     => $request->input('study_program'),
+                'position'          => $request->input('position'),
             ]);
 
             // Track in Finance (Amount 0)
@@ -1284,6 +1326,9 @@ class EventController extends Controller
                 'status' => 'pending',
                 'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => $event->discounted_price ?? $event->price,
+                'university_origin' => $request->input('university_origin'),
+                'study_program'     => $request->input('study_program'),
+                'position'          => $request->input('position'),
             ];
             // handle proof upload if present (this API used by web/mobile)
             if ($request->hasFile('payment_proof')) {

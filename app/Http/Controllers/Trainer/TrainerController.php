@@ -1626,6 +1626,19 @@ class TrainerController extends Controller
             }
         }
 
+        // Sync event->material_status so the blade $displayMaterialStatus is always accurate.
+        // EventTrainerModule status takes precedence (it's the per-trainer source of truth).
+        if ($myModules->isNotEmpty() && $myMaterialStatus !== 'not_uploaded') {
+            $event->setAttribute('material_status', $myMaterialStatus);
+            // Also sync module_path from the latest relevant module so $hasUploadedModule resolves correctly
+            $latestModule = $myModules->first();
+            if ($latestModule && empty($event->module_path)) {
+                $event->setAttribute('module_path', $latestModule->path);
+            }
+        } elseif ($assignment && !empty($assignment->material_status)) {
+            $event->setAttribute('material_status', (string) $assignment->material_status);
+        }
+
         $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId, $assignment);
 
         return view('trainer.event-studio', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));

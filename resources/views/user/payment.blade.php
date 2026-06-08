@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -181,15 +181,33 @@
                             </div>
                         </div>
 
-                        <div class="mb-custom" style="margin-bottom:0;"> <label class="form-label-custom">Whatsapp Number</label>
+                        <div class="mb-custom"> <label class="form-label-custom">Whatsapp Number</label>
                             <div class="wa-group">
                                 <input type="hidden" name="dial_code" value="">
                                 <input type="text" class="form-control-custom" name="whatsapp" placeholder="Contoh: 6281234567890" inputmode="numeric" required style="flex:1;min-width:0;">
                             </div>
                         </div>
+
+                        <!-- Asal Perguruan Tinggi -->
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Company Name/Organization <span style="color:#ef4444;">*</span></label>
+                            <input type="text" class="form-control-custom" name="university_origin" value="{{ auth()->user()->institution ?? '' }}" placeholder="Contoh: Universitas Indonesia" required>
+                        </div>
+
+                        <!-- Program Studi / Departemen / Unit Kerja -->
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Study Program / Department / Work Unit <span style="color:#ef4444;">*</span></label>
+                            <input type="text" class="form-control-custom" name="study_program" value="" placeholder="Contoh: Teknik Informatika / Departemen Ilmu Komputer" required>
+                        </div>
+
+                        <!-- Jabatan -->
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Position <span style="color:#ef4444;">*</span></label>
+                            <input type="text" class="form-control-custom" name="position" value="{{ auth()->user()->profession ?? '' }}" placeholder="Contoh: Dosen / Mahasiswa / Staff" required>
+                        </div>
                         @if(isset($event) && (bool) ($event->is_reseller_event ?? false))
                         <div class="mb-custom">
-                            <label class="form-label-custom">Kode Referral (opsional)</label>
+                            <label class="form-label-custom">Referral Code (opsional)</label>
                             <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Have a referral code? Enter it here" value="{{ request()->query('ref', '') }}">
                             <div id="referralMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
                             <div class="form-text small">Enter the reseller referral code to get a discount/commission.</div>
@@ -197,7 +215,7 @@
                         @endif
 
                         <div class="mb-custom">
-                            <label class="form-label-custom">Kode Voucher (opsional)</label>
+                            <label class="form-label-custom">Voucher Code (opsional)</label>
                             <input type="text" class="form-control-custom" name="voucher_code" id="voucherCodeInput" placeholder="Masukkan kode voucher penukaran Anda" autocomplete="off">
                             <div id="voucherMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
                             <div class="form-text small">Masukkan kode voucher yang telah ditukarkan di halaman profil untuk potongan harga.</div>
@@ -500,6 +518,9 @@
         if(!form) return;
         const fullName = form.querySelector('input[name="full_name"]');
         const wa = form.querySelector('input[name="whatsapp"]');
+        const universityInput = form.querySelector('input[name="university_origin"]');
+        const studyProgramInput = form.querySelector('input[name="study_program"]');
+        const positionInput = form.querySelector('input[name="position"]');
         const showQrisBtn = document.getElementById('showQrisBtn');
         const paymentProofInput = document.getElementById('paymentProofInput');
         const referralInput = form.querySelector('input[name="referral_code"]');
@@ -870,6 +891,9 @@
         function validate(){
             const nameOk = fullName && fullName.value.trim().length >= 3;
             const waOk = wa && isValidPhone(wa.value);
+            const univOk = !universityInput || universityInput.value.trim().length >= 2;
+            const studyOk = !studyProgramInput || studyProgramInput.value.trim().length >= 2;
+            const posOk = !positionInput || positionInput.value.trim().length >= 2;
             
             let refOk = true;
             if (referralInput && referralInput.value.trim() !== '') {
@@ -881,7 +905,7 @@
                 vchOk = (voucherState === 'valid');
             }
 
-            const allOk = nameOk && waOk && refOk && vchOk;
+            const allOk = nameOk && waOk && univOk && studyOk && posOk && refOk && vchOk;
 
             if(isFree){
                 const freeBtn = document.getElementById('freeRegBtn');
@@ -915,6 +939,9 @@
         ['input','change','keyup','blur'].forEach(evt => {
             if(fullName) fullName.addEventListener(evt, validate);
             if(wa) wa.addEventListener(evt, validate);
+            if(universityInput) universityInput.addEventListener(evt, validate);
+            if(studyProgramInput) studyProgramInput.addEventListener(evt, validate);
+            if(positionInput) positionInput.addEventListener(evt, validate);
             if(referralInput) referralInput.addEventListener(evt, updateReferralUI);
         });
 
