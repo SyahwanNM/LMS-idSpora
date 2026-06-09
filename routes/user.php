@@ -53,8 +53,9 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
         abort(403);
     }
 
-    if (!$event->isFinished()) {
-        return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi tersedia setelah acara selesai.');
+    $startAt = $event->start_at;
+    if (!$startAt || now()->lt($startAt)) {
+        return redirect()->route('events.registered.detail', $event)->with('warning', 'Module materi tersedia setelah acara dimulai.');
     }
 
     // Support per-trainer module download via ?module_id=X
@@ -67,6 +68,10 @@ Route::middleware('auth')->get('/events/{event}/modules/download', function (Eve
 
         if (!$module) {
             return redirect()->route('events.registered.detail', $event)->with('warning', 'Module tidak tersedia.');
+        }
+
+        if (preg_match('#^https?://#i', $module->path)) {
+            return redirect()->away($module->path);
         }
 
         if (!\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {

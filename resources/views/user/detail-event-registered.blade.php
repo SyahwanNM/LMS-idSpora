@@ -1643,7 +1643,7 @@
                         </svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Modules</h6>
+                        <h6>Modules Access</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
                         @elseif(!$eventStarted)
@@ -1682,33 +1682,117 @@
                                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
                                         <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
                                     </svg>
-                                    Download Modules 
+                                    Modules Access
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
-                                <div class="d-flex flex-column gap-2">
-                                    @foreach($approvedModules as $mod)
-                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
-                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
-                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
-                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
-                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                                                </svg>
-                                            </div>
-                                            <div style="overflow:hidden;">
-                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
-                                                @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
-                                                @endif
-                                            </div>
-                                        </a>
-                                    @endforeach
-                                </div>
+                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to access:</p>
+                                @php
+                                    $fileModules = [];
+                                    $linkModules = [];
+                                    foreach($approvedModules as $mod) {
+                                        if (preg_match('#^https?://#i', $mod->path)) {
+                                            $linkModules[] = $mod;
+                                        } else {
+                                            $fileModules[] = $mod;
+                                        }
+                                    }
+                                @endphp
+
+                                @if(!empty($fileModules))
+                                    <div class="mb-4">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+                                                <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zm-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">File Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($fileModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
+                                                                <path d="M.5 9.9a.5.5 0 0 1 .5-.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->feedback_link))
+                                                        <a href="{{ $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($linkModules))
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-link" viewBox="0 0 16 16">
+                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">Link Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($linkModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       target="_blank" rel="noopener noreferrer"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" class="bi bi-link" viewBox="0 0 16 16">
+                                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->feedback_link))
+                                                        <a href="{{ $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                             <div class="modal-footer border-0 pt-0">
                             </div>

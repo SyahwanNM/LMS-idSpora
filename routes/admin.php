@@ -208,6 +208,10 @@ Route::middleware(['admin'])->group(function () {
 });
 Route::middleware(['auth', 'admin'])->group(function () {
     // Remove the default create route; use /admin/add-event (named admin.add-event) instead
+    Route::post('/admin/events/{event}/materials', [\App\Http\Controllers\Admin\EventController::class, 'storeMaterials'])->name('admin.events.materials.store');
+    Route::delete('/admin/events/{event}/materials/{module}', [\App\Http\Controllers\Admin\EventController::class, 'destroyMaterial'])->name('admin.events.materials.destroy');
+    Route::patch('/admin/events/{event}/materials/{module}/feedback-link', [\App\Http\Controllers\Admin\EventController::class, 'updateFeedbackLink'])->name('admin.events.materials.update-feedback-link');
+
     Route::resource('admin/events', \App\Http\Controllers\Admin\EventController::class, [
         'except' => ['create'],
         'names' => [
