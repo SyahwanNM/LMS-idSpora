@@ -735,23 +735,18 @@
                     </thead>
 
                     <tbody>
-                        @forelse(($pendingEventModules ?? collect()) as $eventModule)
+                        @forelse(($pendingEventModules ?? collect()) as $event)
                             <tr>
                                 <td>
                                     <div class="course-info">
                                         <div>
                                             <h6 class="course-title">
-                                                {{ \Illuminate\Support\Str::limit($eventModule->display_title ?? $eventModule->event?->title ?? '-', 48) }}
+                                                {{ \Illuminate\Support\Str::limit($event->title ?? '-', 48) }}
                                             </h6>
                                             <div class="text-muted" style="font-size:.75rem;">
-                                                {{ $eventModule->event?->jenis ?? '' }}
-                                                @if($eventModule->event?->event_date)
-                                                    • {{ $eventModule->event->event_date->format('d M Y') }}
-                                                @endif
-                                                @if(empty($eventModule->event))
-                                                    <div class="text-muted" style="font-size:.75rem;">Sumber:
-                                                        {{ \Illuminate\Support\Str::limit($eventModule->original_name ?? '—', 40) }}
-                                                    </div>
+                                                {{ $event->jenis ?? 'Event' }}
+                                                @if($event->event_date)
+                                                    • {{ $event->event_date->format('d M Y') }}
                                                 @endif
                                             </div>
                                         </div>
@@ -760,15 +755,15 @@
 
                                 <td>
                                     <div class="trainer-info">
-                                        <img src="{{ $eventModule->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($eventModule->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
+                                        <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($event->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
                                             class="trainer-avatar" alt="Trainer">
 
                                         <div>
                                             <div class="trainer-name">
-                                                {{ $eventModule->trainer?->name ?? 'Anonim' }}
+                                                {{ $event->trainer?->name ?? 'Anonim' }}
                                             </div>
                                             <div style="font-size:.75rem;color:#64748b;">
-                                                {{ $eventModule->trainer?->email }}
+                                                {{ $event->trainer?->email }}
                                             </div>
                                         </div>
                                     </div>
@@ -776,16 +771,19 @@
 
                                 <td>
                                     <div style="font-weight:700;color:#334155;">
-                                        1 Dokumen Modul
+                                        {{ $event->trainerModules->count() }} Dokumen Modul
                                     </div>
                                 </td>
 
                                 <td>
+                                    @php
+                                        $latestSubmit = $event->trainerModules->max('created_at');
+                                    @endphp
                                     <div style="font-weight:700;color:#334155;">
-                                        {{ $eventModule->material_submitted_at?->format('d M Y') ?? ($eventModule->created_at?->format('d M Y') ?? '-') }}
+                                        {{ $latestSubmit ? \Carbon\Carbon::parse($latestSubmit)->format('d M Y') : ($event->updated_at?->format('d M Y') ?? '-') }}
                                     </div>
                                     <div style="font-size:.75rem;color:#64748b;">
-                                        {{ $eventModule->material_submitted_at?->diffForHumans() ?? '' }}
+                                        {{ $latestSubmit ? \Carbon\Carbon::parse($latestSubmit)->diffForHumans() : '' }}
                                     </div>
                                 </td>
 
@@ -797,7 +795,7 @@
 
                                 <td>
                                     @php
-                                        $eventDeadline = $eventModule->event?->material_deadline;
+                                        $eventDeadline = $event->material_deadline;
                                         $eventLate = $eventDeadline ? now()->gt($eventDeadline) : false;
                                     @endphp
 
@@ -811,51 +809,11 @@
                                 </td>
 
                                 <td class="text-end">
-                                    <div class="event-action-group">
-                                        <a href="{{ route('admin.event-material.stream', $eventModule->event_id) }}?assignment_id={{ $eventModule->id }}"
-                                            target="_blank" class="btn-action btn-icon-action" title="Lihat modul"
-                                            aria-label="Lihat modul">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-
-                                        <form action="{{ route('admin.event-material.approve', $eventModule->event_id) }}"
-                                            method="POST">
-                                            @csrf
-                                            <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
-
-                                            <button type="submit" class="btn-action btn-icon-action"
-                                                style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Setujui"
-                                                aria-label="Setujui">
-                                                <i class="bi bi-check2-circle"></i>
-                                            </button>
-                                        </form>
-
-                                        <button class="btn-action btn-icon-action" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#rejectEventModule-{{ $eventModule->id }}" aria-expanded="false"
-                                            aria-controls="rejectEventModule-{{ $eventModule->id }}"
-                                            style="color:#991b1b;border-color:#fecaca;background:#fef2f2;" title="Tolak"
-                                            aria-label="Tolak">
-                                            <i class="bi bi-x-circle"></i>
-                                        </button>
-                                    </div>
-
-                                    <div class="collapse mt-2" id="rejectEventModule-{{ $eventModule->id }}">
-                                        <form action="{{ route('admin.event-material.reject', $eventModule->event_id) }}"
-                                            method="POST" class="d-flex flex-column gap-2">
-                                            @csrf
-                                            <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
-
-                                            <textarea name="rejection_reason" rows="2" class="form-control"
-                                                placeholder="Alasan penolakan (wajib)" required></textarea>
-
-                                            <div class="d-flex justify-content-end">
-                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-send me-1"></i>
-                                                    Kirim Penolakan
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
+                                    <a href="{{ route('admin.event-material.show', $event->id) }}"
+                                        class="btn-action btn-primary-action">
+                                        Tinjau
+                                        <i class="bi bi-play-fill"></i>
+                                    </a>
                                 </td>
                             </tr>
                         @empty

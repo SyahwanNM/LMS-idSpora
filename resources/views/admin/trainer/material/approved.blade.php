@@ -528,79 +528,41 @@
             </thead>
 
             <tbody>
-                @forelse(($approvedEventModules ?? collect()) as $eventModule)
+                @forelse(($approvedEventModules ?? collect()) as $event)
                     @php
-                        $eventModel = $eventModule->event ?? null;
-
-                        $eventTitle =
-                            $eventModule->display_title
-                            ?? $eventModel?->title
-                            ?? $eventModel?->name
-                            ?? $eventModule->original_name
-                            ?? 'Event Tanpa Judul';
-
-                        $eventType =
-                            $eventModule->display_type
-                            ?? $eventModel?->jenis
-                            ?? $eventModel?->type
-                            ?? 'Event';
-
-                        $eventDate =
-                            $eventModule->display_date
-                            ?? $eventModel?->event_date
-                            ?? $eventModel?->start_date
-                            ?? null;
-
-                        $eventDeadline =
-                            $eventModule->material_deadline
-                            ?? $eventModel?->material_deadline
-                            ?? null;
-
-                        $approvedAt =
-                            $eventModule->module_verified_at
-                            ?? $eventModule->reviewed_at
-                            ?? $eventModule->updated_at
-                            ?? $eventModule->created_at;
-
+                        $eventDeadline = $event->material_deadline;
+                        $approvedAt = $event->material_approved_at ?? $event->updated_at;
                         $eventLate = $eventDeadline ? now()->gt(\Carbon\Carbon::parse($eventDeadline)) : false;
-
-                        $eventId = $eventModule->event_id ?? $eventModel?->id;
                     @endphp
 
                     <tr>
                         <td>
                             <h6 class="course-title">
-                                {{ \Illuminate\Support\Str::limit($eventTitle, 48) }}
+                                {{ \Illuminate\Support\Str::limit($event->title ?? 'Event Tanpa Judul', 48) }}
                             </h6>
 
                             <div class="text-muted" style="font-size:.72rem;">
-                                {{ $eventType }}
+                                {{ $event->jenis ?? 'Event' }}
 
-                                @if($eventDate)
-                                    • {{ \Carbon\Carbon::parse($eventDate)->format('d M Y') }}
+                                @if($event->event_date)
+                                    • {{ \Carbon\Carbon::parse($event->event_date)->format('d M Y') }}
                                 @endif
                             </div>
-
-                            @if(!empty($eventModule->original_name))
-                                <div class="text-muted mt-1" style="font-size:.7rem;">
-                                    File: {{ \Illuminate\Support\Str::limit($eventModule->original_name, 38) }}
-                                </div>
-                            @endif
                         </td>
 
                         <td>
                             <div class="trainer-info">
-                                <img src="{{ $eventModule->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($eventModule->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
+                                <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($event->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
                                      class="trainer-avatar"
                                      alt="Trainer">
 
                                 <div>
                                     <div class="trainer-name">
-                                        {{ $eventModule->trainer?->name ?? 'Anonim' }}
+                                        {{ $event->trainer?->name ?? 'Anonim' }}
                                     </div>
 
                                     <div style="font-size:.72rem;color:#64748b;">
-                                        {{ $eventModule->trainer?->email }}
+                                        {{ $event->trainer?->email }}
                                     </div>
                                 </div>
                             </div>
@@ -608,7 +570,7 @@
 
                         <td>
                             <div style="font-weight:600;color:#334155;">
-                                1 Dokumen Modul
+                                {{ $event->trainerModules->count() }} Dokumen Modul
                             </div>
                         </td>
 
@@ -637,23 +599,10 @@
                         </td>
 
                         <td class="text-end">
-                            <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                @if($eventId)
-                                    <a href="{{ route('admin.event-material.stream', $eventId) }}?assignment_id={{ $eventModule->id }}"
-                                       target="_blank"
-                                       class="btn-action"
-                                       style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-
-                                    <a href="{{ route('admin.event-material.show', $eventId) }}"
-                                       class="btn-action">
-                                        <i class="bi bi-arrow-right"></i>
-                                    </a>
-                                @else
-                                    <span class="text-muted" style="font-size:.75rem;">Event tidak tersedia</span>
-                                @endif
-                            </div>
+                            <a href="{{ route('admin.event-material.show', $event->id) }}"
+                               class="btn-action">
+                                Tinjau <i class="bi bi-arrow-right"></i>
+                            </a>
                         </td>
                     </tr>
                 @empty

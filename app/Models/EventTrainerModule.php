@@ -13,6 +13,7 @@ class EventTrainerModule extends Model
         'trainer_id',
         'original_name',
         'path',
+        'survey_link',
         'status',
         'rejection_reason',
         'reviewed_by',
@@ -40,6 +41,9 @@ class EventTrainerModule extends Model
 
     public function getDownloadUrlAttribute(): string
     {
+        if (preg_match('#^https?://#i', $this->path)) {
+            return $this->path;
+        }
         return Storage::disk('public')->url($this->path);
     }
 

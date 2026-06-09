@@ -134,13 +134,31 @@ class TrainerNotificationsController extends Controller
             $event = Event::query()->find($entityId);
             if ($event) {
                 if ($decision === 'accept') {
-                    // Multi-speaker support: don't block others if trainer_id is already set.
+                    // Multi-speaker support: ensure assignment exists and update it
+                    \App\Models\TrainerAssignment::updateOrCreate(
+                        ['trainer_id' => $uid, 'event_id' => $entityId],
+                        [
+                            'status' => 'accepted',
+                            'invitation_notification_id' => $notification->id,
+                            'sla_upload_deadline' => $event->material_deadline ?: now()->addDays(3),
+                        ]
+                    );
+
                     // Only update event->trainer_id if it's currently empty, to record at least one official trainer.
                     if (empty($event->trainer_id)) {
                         $event->trainer_id = $uid;
                         $event->save();
                     }
                 } else {
+                    // Update TrainerAssignment status to rejected
+                    \App\Models\TrainerAssignment::updateOrCreate(
+                        ['trainer_id' => $uid, 'event_id' => $entityId],
+                        [
+                            'status' => 'rejected',
+                            'invitation_notification_id' => $notification->id,
+                        ]
+                    );
+
                     // Only clear trainer_id if the current user was the one assigned.
                     if ((int) $event->trainer_id === (int) $uid) {
                         $event->trainer_id = null;

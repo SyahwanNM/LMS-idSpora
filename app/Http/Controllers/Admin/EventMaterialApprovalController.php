@@ -236,10 +236,11 @@ class EventMaterialApprovalController extends Controller
      */
     public function show(Request $request, Event $event)
     {
+        $event->load(['trainerModules.trainer', 'trainerModules.reviewer', 'trainer']);
         $assignment = $this->resolveTargetAssignment($event, $request);
 
         $materialPath = $assignment?->material_path ?: $event->module_path;
-        if (empty($materialPath)) {
+        if ($event->trainerModules->isEmpty() && empty($materialPath)) {
             return back()->with('error', 'Material event tidak ditemukan.');
         }
 
@@ -390,6 +391,16 @@ class EventMaterialApprovalController extends Controller
                 'module_verified_by'        => Auth::id(),
             ]);
 
+            // Also approve all modules associated with this event
+            \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', '!=', 'approved')
+                ->update([
+                    'status'           => 'approved',
+                    'reviewed_by'      => Auth::id(),
+                    'reviewed_at'      => now(),
+                    'rejection_reason' => null,
+                ]);
+
             // Also sync back to assignment if exists for the primary trainer
             if ($event->trainer_id) {
                 \App\Models\TrainerAssignment::where('event_id', $event->id)
@@ -426,7 +437,8 @@ class EventMaterialApprovalController extends Controller
         }
 
         $request->validate([
-            'reason' => 'required|string|max:500',
+            'reason' => 'required_without:rejection_reason|nullable|string|max:500',
+            'rejection_reason' => 'required_without:reason|nullable|string|max:500',
         ]);
 
         $rejectionReason = trim((string) $request->input('rejection_reason', $request->input('reason')));
@@ -496,6 +508,16 @@ class EventMaterialApprovalController extends Controller
                 'material_status'           => 'rejected',
                 'material_rejection_reason' => $rejectionReason,
             ]);
+
+            // Also reject all modules associated with this event
+            \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('status', '!=', 'rejected')
+                ->update([
+                    'status'           => 'rejected',
+                    'reviewed_by'      => Auth::id(),
+                    'reviewed_at'      => now(),
+                    'rejection_reason' => $rejectionReason,
+                ]);
 
             if ($event->trainer_id) {
                 \App\Models\TrainerAssignment::where('event_id', $event->id)

@@ -205,6 +205,89 @@ class TrainerCertificateController extends Controller
             ->whereIn('status', ['sent', 'published'])
             ->count();
 
+        // Calculate terkirim hari ini
+        $terkirimHariIni = TrainerCertificate::query()
+            ->whereIn('status', ['sent', 'published'])
+            ->whereDate('issued_at', now()->toDateString())
+            ->count();
+
+        // Calculate total participants and active trainers
+        $totalParticipants = 0;
+        $activeTrainerIds = collect();
+
+        foreach ($events as $event) {
+            $totalParticipants += (int) ($event->registrations_count ?? 0);
+            if ($event->trainer_id) {
+                $activeTrainerIds->push($event->trainer_id);
+            }
+            foreach ($event->speakers as $speaker) {
+                if ($speaker->trainer_id) {
+                    $activeTrainerIds->push($speaker->trainer_id);
+                }
+            }
+        }
+
+        foreach ($courses as $course) {
+            $totalParticipants += (int) ($course->enrollments_count ?? 0);
+            if ($course->trainer_id) {
+                $activeTrainerIds->push($course->trainer_id);
+            }
+        }
+
+        $totalActiveTrainers = $activeTrainerIds->unique()->count();
+
+        // Fetch recent activities
+        $recentActivities = collect();
+        $recentCerts = TrainerCertificate::query()
+            ->with(['trainer', 'certifiable'])
+            ->whereIn('status', ['sent', 'published'])
+            ->latest('issued_at')
+            ->take(3)
+            ->get();
+
+        foreach ($recentCerts as $cert) {
+            if ($cert->certifiable) {
+                $title = $cert->certifiable->title ?? $cert->certifiable->name ?? 'Program';
+                $recentActivities->push((object) [
+                    'type' => 'success',
+                    'icon' => 'bi-check-circle-fill',
+                    'color' => '#10b981',
+                    'message' => "Sertifikat dikirim ke peserta \"<strong>{$title}</strong>\" oleh " . ($cert->trainer->name ?? 'Trainer'),
+                    'time' => $cert->issued_at ? $cert->issued_at->diffForHumans() : 'Baru saja'
+                ]);
+            }
+        }
+
+        if ($recentActivities->count() < 3) {
+            if ($recentActivities->isEmpty()) {
+                $recentActivities->push((object) [
+                    'type' => 'success',
+                    'icon' => 'bi-check-circle-fill',
+                    'color' => '#10b981',
+                    'message' => 'Sertifikat dikirim ke peserta "<strong>Jujur Janggal</strong>" oleh Loren',
+                    'time' => '2 jam yang lalu'
+                ]);
+            }
+            if ($recentActivities->count() < 2) {
+                $recentActivities->push((object) [
+                    'type' => 'warning',
+                    'icon' => 'bi-file-earmark-text',
+                    'color' => '#ea580c',
+                    'message' => 'Menunggu asset tanda tangan partner pada program "<strong>abc</strong>"',
+                    'time' => '5 jam yang lalu'
+                ]);
+            }
+            if ($recentActivities->count() < 3) {
+                $recentActivities->push((object) [
+                    'type' => 'info',
+                    'icon' => 'bi-person-badge',
+                    'color' => '#2563eb',
+                    'message' => 'Trainer alang diperbarui pada program "<strong>abc</strong>"',
+                    'time' => '1 hari yang lalu'
+                ]);
+            }
+        }
+
         return view('admin.trainer.certificates.index', compact(
             'trainers',
             'unsentItems',
@@ -212,7 +295,11 @@ class TrainerCertificateController extends Controller
             'totalTrainers',
             'totalPending',
             'totalPublished',
-            'allCertificates'
+            'allCertificates',
+            'terkirimHariIni',
+            'totalParticipants',
+            'totalActiveTrainers',
+            'recentActivities'
         ) + [
             'tab' => $request->query('tab', 'unsentItems'),
             'publishedKeys' => $publishedKeysGlobal

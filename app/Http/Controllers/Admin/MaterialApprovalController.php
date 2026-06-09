@@ -255,68 +255,41 @@ class MaterialApprovalController extends Controller
 
         $pendingMaterials = $query->paginate(15);
 
-        $pendingEventModulesQuery = \App\Models\EventTrainerModule::query()
+        $pendingEventsQuery = \App\Models\Event::query()
+            ->whereHas('trainerModules', function ($q) {
+                $q->where('status', 'pending_review');
+            })
             ->with([
-                'event:id,title,jenis,event_date,material_deadline',
                 'trainer:id,name,email,avatar',
-            ])
-            ->where('status', 'pending_review');
+                'trainerModules' => function ($q) {
+                    $q->where('status', 'pending_review');
+                }
+            ]);
 
         if ($request->filled('search')) {
             $search = (string) $request->search;
-            $pendingEventModulesQuery->where(function ($q) use ($search) {
-                $q->whereHas('event', fn($q) => $q->where('title', 'like', "%{$search}%"))
+            $pendingEventsQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
                     ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
-        $pendingEventModules = $pendingEventModulesQuery
-            ->orderByDesc('created_at')
-            ->get();
-
-        // Compute a display title for each pending event module to avoid showing raw filenames
-        foreach ($pendingEventModules as $module) {
-            $titleText = null;
-
-            if (!empty($module->event?->title)) {
-                $evTitle = (string) $module->event->title;
-                if (!preg_match('/sertifikat/i', $evTitle) && trim($evTitle) !== '-') {
-                    $titleText = $evTitle;
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $pendingEventsQuery->where(function ($q) use ($deadlineFilter) {
+                if ($deadlineFilter === 'overdue') {
+                    $q->whereNotNull('material_deadline')->where('material_deadline', '<', now());
+                } elseif ($deadlineFilter === 'on_time') {
+                    $q->whereNotNull('material_deadline')->where('material_deadline', '>=', now());
+                } else { // no_deadline
+                    $q->whereNull('material_deadline');
                 }
-            }
-
-            if (empty($titleText) && !empty($module->original_name)) {
-                $filename = pathinfo($module->original_name, PATHINFO_FILENAME);
-                $candidate = preg_replace(['/^sertifikat[_\-\s]*/i', '/^certificate[_\-\s]*/i', '/^course[_\-\s]*/i', '/^event[_\-\s]*/i'], ['', '', '', ''], $filename);
-                $candidate = preg_replace(['/\(.+\)$/', '/_[^_]{1,50}$/'], ['', ''], $candidate);
-                $candidate = preg_replace(['/[_\-]+/', '/\s+/'], [' ', ' '], $candidate);
-                $candidate = trim($candidate);
-
-                if ($candidate !== '') {
-                    try {
-                        $found = Event::where('title', 'like', "%{$candidate}%")->first();
-                        if ($found && !empty($found->title)) {
-                            $titleText = $found->title;
-                        }
-                    } catch (\Throwable $e) {
-                        // ignore DB errors and fallback to cleaned filename
-                    }
-                }
-
-                if (empty($titleText)) {
-                    $clean = preg_replace(['/[_\-]+/', '/\s+/'], [' ', ' '], $filename);
-                    $titleText = \Illuminate\Support\Str::title(trim($clean));
-                }
-            }
-
-            if (empty($titleText)) {
-                $titleText = 'Untitled Event';
-            }
-
-            // Attach for view usage
-            $module->display_title = $titleText;
-            $module->display_source = empty($module->event) ? ($module->original_name ?? '') : '';
+            });
         }
+
+        $pendingEventModules = $pendingEventsQuery
+            ->orderByDesc('updated_at')
+            ->get();
 
         // Statistics
         $totalPending = Course::where(function ($q) {
@@ -865,25 +838,21 @@ class MaterialApprovalController extends Controller
             ->whereIn('status', ['approved', 'active'])
             ->withCount('modules');
 
-        $approvedEventModulesQuery = \App\Models\EventTrainerModule::query()
+        $approvedEventsQuery = \App\Models\Event::query()
+            ->whereHas('trainerModules', function ($q) {
+                $q->where('status', 'approved');
+            })
             ->with([
-                'event:id,title,jenis,event_date,material_deadline',
                 'trainer:id,name,email,avatar',
-                'reviewer:id,name',
-            ])
-            ->where('status', 'approved');
+                'trainerModules' => function ($q) {
+                    $q->where('status', 'approved');
+                }
+            ]);
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhereHas('trainer', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
-
-            $approvedEventModulesQuery->where(function ($q) use ($search) {
-                $q->whereHas('event', fn($q) => $q->where('title', 'like', "%{$search}%"))
+            $approvedEventsQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
                     ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
@@ -920,8 +889,8 @@ class MaterialApprovalController extends Controller
 
         $approvedMaterials = $query->orderByRaw('CASE WHEN approved_at IS NULL THEN created_at ELSE approved_at END DESC')->paginate(15);
 
-        $approvedEventModules = $approvedEventModulesQuery
-            ->orderByRaw('CASE WHEN reviewed_at IS NULL THEN created_at ELSE reviewed_at END DESC')
+        $approvedEventModules = $approvedEventsQuery
+            ->orderByRaw('CASE WHEN material_approved_at IS NULL THEN created_at ELSE material_approved_at END DESC')
             ->get();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
@@ -982,46 +951,41 @@ class MaterialApprovalController extends Controller
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($rejectedMaterials->getCollection());
 
-        $rejectedEventModulesQuery = \App\Models\EventTrainerModule::query()
+        $rejectedEventsQuery = \App\Models\Event::query()
+            ->whereHas('trainerModules', function ($q) {
+                $q->where('status', 'rejected');
+            })
             ->with([
-                'event:id,title,jenis,event_date,material_deadline',
                 'trainer:id,name,email,avatar',
-            ])
-            ->whereHas('event')
-            ->whereHas('trainer')
-            ->where('status', 'rejected');
+                'trainerModules' => function ($q) {
+                    $q->where('status', 'rejected');
+                }
+            ]);
 
         if ($request->filled('search')) {
             $search = $request->search;
-
-            $rejectedEventModulesQuery->where(function ($q) use ($search) {
-                $q->whereHas('event', function ($eventQuery) use ($search) {
-                    $eventQuery->where('title', 'like', "%{$search}%")
-                        ->orWhere('jenis', 'like', "%{$search}%");
-                })
-                    ->orWhereHas('trainer', function ($trainerQuery) use ($search) {
-                        $trainerQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    });
+            $rejectedEventsQuery->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
             });
         }
 
-        $rejectedEventModules = $rejectedEventModulesQuery
-            ->orderByDesc('updated_at')
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(function ($module) {
-                $module->display_title = $module->event?->title ?? '-';
-                $module->display_type = $module->event?->jenis ?? 'Event';
-                $module->display_date = $module->event?->event_date;
-                $module->module_rejected_at = $module->reviewed_at ?? $module->updated_at;
-                $module->module_rejection_reason = $module->rejection_reason ?? '-';
-                $module->module_submission_url = !empty($module->path)
-                    ? asset('storage/' . $module->path)
-                    : '#';
-
-                return $module;
+        $deadlineFilter = (string) $request->get('deadline_filter', 'all');
+        if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
+            $rejectedEventsQuery->where(function ($q) use ($deadlineFilter) {
+                if ($deadlineFilter === 'overdue') {
+                    $q->whereNotNull('material_deadline')->where('material_deadline', '<', now());
+                } elseif ($deadlineFilter === 'on_time') {
+                    $q->whereNotNull('material_deadline')->where('material_deadline', '>=', now());
+                } else { // no_deadline
+                    $q->whereNull('material_deadline');
+                }
             });
+        }
+
+        $rejectedEventModules = $rejectedEventsQuery
+            ->orderByDesc('updated_at')
+            ->get();
 
         $totalPending = Course::where('status', 'pending_review')->count();
         $totalApproved = Course::whereIn('status', ['approved', 'active'])->count();

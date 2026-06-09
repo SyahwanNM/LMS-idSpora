@@ -915,7 +915,7 @@
                                         <source src="{{ asset('storage/' . $material->media) }}" type="video/mp4">
                                     </video>
                                 @elseif($material->card_thumbnail)
-                                    <img src="{{ $material->card_thumbnail }}" style="width:100%;height:100%;object-fit:cover;">
+                                    <img src="{{ $material->card_thumbnail_url }}" style="width:100%;height:100%;object-fit:cover;">
                                 @else
                                     <div
                                         style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;opacity:0.45;">
@@ -1192,8 +1192,6 @@
                                     <div style="font-weight:700;color:#1e293b;font-size:0.85rem;">
                                         {{ $material->trainer?->name ?? 'Anonim' }}
                                     </div>
-                                        {{ $material->trainer?->name ?? 'Anonim' }}
-                                    </div>
                                     <div style="font-size:0.73rem;color:#64748b;">Instruktur</div>
                                     @if($material->trainer?->email)
                                         <div style="font-size:0.7rem;color:#94a3b8;">{{ $material->trainer->email }}</div>
@@ -1230,8 +1228,6 @@
                                     style="background:{{ $totalRejectedM > 0 ? '#fff1f2' : '#f8fafc' }};border-radius:10px;padding:10px 12px;text-align:center;">
                                     <div
                                         style="font-size:1.3rem;font-weight:800;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};">
-                                        {{ $totalRejectedM }}
-                                    </div>
                                         {{ $totalRejectedM }}
                                     </div>
                                     <div

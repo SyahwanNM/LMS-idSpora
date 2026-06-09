@@ -579,10 +579,14 @@
                 </thead>
                 <tbody>
                     @forelse(($rejectedEventModules ?? collect()) as $event)
+                        @php
+                            $rejectionReasons = $event->trainerModules->pluck('rejection_reason')->filter()->unique()->implode(', ');
+                            $latestRejectedAt = $event->trainerModules->max('reviewed_at');
+                        @endphp
                         <tr>
                             <td>
                                 <div>
-                                    <h6 class="course-title">{{ \Illuminate\Support\Str::limit($eventModule->event?->title ?? '-', 48) }}</h6>
+                                    <h6 class="course-title">{{ \Illuminate\Support\Str::limit($event->title ?? '-', 48) }}</h6>
                                     <div class="text-muted" style="font-size:0.72rem;">
                                         {{ $event->jenis ?? '-' }}{{ $event->event_date ? ' • ' . $event->event_date->format('d M Y') : '' }}
                                     </div>
@@ -591,7 +595,7 @@
                             <td>
                                 <div class="trainer-info">
                                     <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
-                                        class="trainer-avatar">
+                                        class="trainer-avatar" alt="Trainer">
                                     <div>
                                         <div class="trainer-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
                                         <div style="font-size: 0.72rem; color:#64748b;">{{ $event->trainer?->email }}</div>
@@ -601,34 +605,24 @@
                             <td style="max-width: 250px;">
                                 <div class="rejection-note">
                                     <i class="bi bi-chat-text-fill me-1"></i>
-                                    {{ Str::limit($event->module_rejection_reason, 60) }}
+                                    {{ Str::limit($rejectionReasons ?: $event->material_rejection_reason, 60) ?: '-' }}
                                 </div>
                             </td>
                             <td>
                                 <div style="font-weight: 600; color: #334155;">
-                                    {{ $event->module_rejected_at?->format('d M Y') ?? '-' }}
+                                    {{ $latestRejectedAt ? \Carbon\Carbon::parse($latestRejectedAt)->format('d M Y') : '-' }}
                                 </div>
                                 <div style="font-size: 0.72rem; color:#64748b;">
-                                    {{ $event->module_rejected_at?->diffForHumans() ?? '' }}
+                                    {{ $latestRejectedAt ? \Carbon\Carbon::parse($latestRejectedAt)->diffForHumans() : '' }}
                                 </div>
                             </td>
                             <td>
                                 <span class="badge-status badge-rejected-status">Revisi</span>
                             </td>
                             <td class="text-end">
-                                <div class="d-flex justify-content-end gap-2 flex-wrap">
-                                    <a href="{{ $event->module_submission_url }}" target="_blank" class="btn-action">
-                                        Lihat <i class="bi bi-eye"></i>
-                                    </a>
-                                    <form action="{{ route('admin.event-material.approve', $event) }}" method="POST"
-                                        class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn-action"
-                                            style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
-                                            Setujui <i class="bi bi-check2-circle"></i>
-                                        </button>
-                                    </form>
-                                </div>
+                                <a href="{{ route('admin.event-material.show', $event->id) }}" class="btn-action">
+                                    Tinjau <i class="bi bi-arrow-right"></i>
+                                </a>
                             </td>
                         </tr>
                     @empty

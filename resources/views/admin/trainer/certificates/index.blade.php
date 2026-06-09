@@ -1016,126 +1016,273 @@
             background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
             color: white;
             transform: translateY(-1px);
-        }
-    </style>
-@endpush
+      @section('admin-trainer-content')
+    <div class="cert-dashboard" style="font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafbfe; padding: 10px 10px 40px 10px; min-height: 100vh;">
 
-@section('admin-trainer-content')
-    <div class="cert-dashboard">
+        <!-- Header Section -->
+        <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 32px;">
+            <div class="row align-items-center g-4">
+                <!-- Left Title Block -->
+                <div class="col-xl-6">
+                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+                        <!-- Ribbon Icon Circle -->
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #eef2ff; display: flex; align-items: center; justify-content: center; color: #4f46e5; font-size: 24px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08); flex-shrink: 0;">
+                            <i class="bi bi-award-fill"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.72rem; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px;">Sistem Rekognisi</div>
+                            <h1 style="font-size: 2.1rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px;">Sertifikat & Penghargaan</h1>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.95rem; color: #64748b; line-height: 1.5; margin: 0; max-width: 560px;">Pantau program yang masih dalam proses pengiriman sertifikat dan lihat yang sudah berhasil diselesaikan.</p>
+                </div>
 
-        <section class="cert-hero">
-            <div class="cert-hero-content">
-                <div class="page-eyebrow">Sistem Rekognisi</div>
-                <h1>Sertifikat & Penghargaan</h1>
-                <p>Pantau program yang masih harus dikirim sertifikatnya dan lihat mana yang sudah selesai dikirim.</p>
+                <!-- Right Dark Blue Card Banner -->
+                <div class="col-xl-6">
+                    <div class="header-banner-card" style="background: linear-gradient(135deg, #1e1b4b 0%, #2e2a72 40%, #3b359c 100%); border-radius: 24px; padding: 24px; color: white; display: flex; position: relative; overflow: hidden; min-height: 140px; align-items: center; box-shadow: 0 12px 30px rgba(30, 27, 75, 0.2);">
+                        <!-- Stats Items -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 20px 32px; z-index: 2; flex: 1; justify-content: flex-start; padding-right: 140px;">
+                            <!-- Stat 1 -->
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(20, 184, 166, 0.15); display: flex; align-items: center; justify-content: center; color: #2dd4bf; font-size: 18px; flex-shrink: 0;">
+                                    <i class="bi bi-send-fill"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $siapDikirimCount }}</div>
+                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Siap Dikirim</div>
+                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
+                                </div>
+                            </div>
+                            <!-- Stat 2 -->
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: #fb923c; font-size: 18px; flex-shrink: 0;">
+                                    <i class="bi bi-folder-fill"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $menungguAssetCount }}</div>
+                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Menunggu Asset</div>
+                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
+                                </div>
+                            </div>
+                            <!-- Stat 3 -->
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 18px; flex-shrink: 0;">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $dalamProsesCount }}</div>
+                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Dalam Proses</div>
+                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
+                                </div>
+                            </div>
+                            <!-- Stat 4 -->
+                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
+                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; color: #c084fc; font-size: 18px; flex-shrink: 0;">
+                                    <i class="bi bi-award-fill"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $terkirimHariIni }}</div>
+                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Terkirim Hari Ini</div>
+                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Graphics (Certificate mockups) -->
+                        <div style="position: absolute; right: -20px; top: -10px; width: 180px; height: 160px; z-index: 1; pointer-events: none; opacity: 0.95;">
+                            <!-- Back Card -->
+                            <div style="position: absolute; right: 35px; top: 30px; width: 120px; height: 85px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(79, 70, 229, 0.35)); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; transform: rotate(15deg); backdrop-filter: blur(6px);"></div>
+                            <!-- Front Card -->
+                            <div style="position: absolute; right: 20px; top: 20px; width: 130px; height: 90px; background: rgba(255, 255, 255, 0.96); border-radius: 10px; transform: rotate(-5deg); box-shadow: 0 10px 25px rgba(0,0,0,0.25); padding: 10px; display: flex; flex-direction: column; justify-content: space-between; border: 1.5px solid white;">
+                                <div style="font-size: 0.62rem; font-weight: 900; color: #4338ca; text-transform: uppercase; letter-spacing: 0.5px;">Sertifikat</div>
+                                <div style="height: 2px; background: #e0e7ff; width: 60%; border-radius: 1px;"></div>
+                                <div style="height: 2px; background: #e0e7ff; width: 45%; border-radius: 1px;"></div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <div style="font-size: 0.48rem; font-weight: 700; color: #94a3b8; font-family: 'Georgia', serif; font-style: italic;">idSpora</div>
+                                    <div style="width: 14px; height: 14px; border-radius: 50%; background: #fbbf24; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+                                        <i class="bi bi-award-fill" style="font-size: 8px; color: white;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </section>
+        </div>
 
+        <!-- 4 Metrics Progress Cards Section -->
         <div class="row g-4 mb-4">
+            <!-- Card 1: Siap Dikirim -->
             <div class="col-md-6 col-xl-3">
-                <div class="metric-card">
-                    <div class="metric-icon orange">
-                        <i class="bi bi-send"></i>
+                <div class="metric-progress-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); transition: all 0.25s ease;">
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="bi bi-send-fill"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Siap Dikirim</div>
+                            <div style="display: flex; align-items: baseline; gap: 4px;">
+                                <span style="font-size: 1.50rem; font-weight: 800; color: #0f172a;">{{ $siapDikirimCount }}</span>
+                                <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Program</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="metric-label">Harus Dikirim</div>
-                        <div class="metric-value">{{ $totalPending }}</div>
-                        <div class="metric-desc">Belum diproses</div>
+                    <!-- Progress bar -->
+                    <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="height: 100%; width: {{ $siapDikirimPercent }}%; background: #10b981; border-radius: 10px;"></div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">
+                        <span style="font-weight: 700; color: #0f172a;">{{ $siapDikirimPercent }}%</span> dari total program
                     </div>
                 </div>
             </div>
 
+            <!-- Card 2: Menunggu Asset -->
             <div class="col-md-6 col-xl-3">
-                <div class="metric-card">
-                    <div class="metric-icon emerald">
-                        <i class="bi bi-check2-circle"></i>
+                <div class="metric-progress-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); transition: all 0.25s ease;">
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: #fff7ed; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="bi bi-folder-fill"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Menunggu Asset</div>
+                            <div style="display: flex; align-items: baseline; gap: 4px;">
+                                <span style="font-size: 1.50rem; font-weight: 800; color: #0f172a;">{{ $menungguAssetCount }}</span>
+                                <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Program</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="metric-label">Sudah Dikirim</div>
-                        <div class="metric-value">{{ $totalPublished }}</div>
-                        <div class="metric-desc">Selesai diproses</div>
+                    <!-- Progress bar -->
+                    <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="height: 100%; width: {{ $menungguAssetPercent }}%; background: #f59e0b; border-radius: 10px;"></div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">
+                        <span style="font-weight: 700; color: #0f172a;">{{ $menungguAssetPercent }}%</span> dari total program
                     </div>
                 </div>
             </div>
 
+            <!-- Card 3: Dalam Proses -->
             <div class="col-md-6 col-xl-3">
-                <div class="metric-card">
-                    <div class="metric-icon blue">
-                        <i class="bi bi-check-lg"></i>
+                <div class="metric-progress-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); transition: all 0.25s ease;">
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Dalam Proses</div>
+                            <div style="display: flex; align-items: baseline; gap: 4px;">
+                                <span style="font-size: 1.50rem; font-weight: 800; color: #0f172a;">{{ $dalamProsesCount }}</span>
+                                <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Program</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="metric-label">Siap Dikirim</div>
-                        <div class="metric-value">{{ $readyCount }}</div>
-                        <div class="metric-desc">Tinggal kirim</div>
+                    <!-- Progress bar -->
+                    <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="height: 100%; width: {{ $dalamProsesPercent }}%; background: #3b82f6; border-radius: 10px;"></div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">
+                        <span style="font-weight: 700; color: #0f172a;">{{ $dalamProsesPercent }}%</span> dari total program
                     </div>
                 </div>
             </div>
 
+            <!-- Card 4: Sudah Dikirim -->
             <div class="col-md-6 col-xl-3">
-                <div class="metric-card">
-                    <div class="metric-icon yellow">
-                        <i class="bi bi-clock"></i>
+                <div class="metric-progress-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); transition: all 0.25s ease;">
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: #faf5ff; color: #a855f7; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            <i class="bi bi-award-fill"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Sudah Dikirim</div>
+                            <div style="display: flex; align-items: baseline; gap: 4px;">
+                                <span style="font-size: 1.50rem; font-weight: 800; color: #0f172a;">{{ $sudahDikirimCount }}</span>
+                                <span style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Program</span>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="metric-label">Belum Siap</div>
-                        <div class="metric-value">{{ $notConfiguredCount }}</div>
-                        <div class="metric-desc">Masih perlu aset</div>
+                    <!-- Progress bar -->
+                    <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
+                        <div style="height: 100%; width: {{ $sudahDikirimPercent }}%; background: #a855f7; border-radius: 10px;"></div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">
+                        <span style="font-weight: 700; color: #0f172a;">{{ $sudahDikirimPercent }}%</span> dari total program
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="status-legend">
-            <div class="status-legend-item"><span class="status-dot ready"></span> Siap Dikirim</div>
-            <div class="status-legend-item"><span class="status-dot configured"></span> Perlu Dilengkapi</div>
-            <div class="status-legend-item"><span class="status-dot missing"></span> Belum Siap</div>
-        </div>
-
-        <div class="cert-tab-wrapper">
-            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'unsentItems' ? 'active' : '' }}"
-                data-target="unsentItems-pane">
-                <i class="bi bi-clock"></i>
-                Belum Terkirim
-                <span class="tab-count">{{ $unsentItems->count() }}</span>
-            </button>
-
-            <button type="button" class="cert-tab-btn custom-tab-btn {{ $tab === 'sentItems' ? 'active' : '' }}"
-                data-target="sentItems-pane">
-                <i class="bi bi-send-check"></i>
-                Sudah Terkirim
-                <span class="tab-count">{{ $sentItems->count() }}</span>
-            </button>
-        </div>
-
-        <div class="filter-card">
-            <div class="row g-3 align-items-center">
-                <div class="col-lg-5">
-                    <div class="search-wrap">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="certSearch" class="filter-input"
-                            placeholder="Cari berdasarkan nama program...">
-                    </div>
-                </div>
-
-                <div class="col-lg-4">
-                    <select id="certStatus" class="filter-input">
-                        <option value="all">Semua Status Kesiapan</option>
-                        <option value="ready">Siap Terbit</option>
-                        <option value="configured">Dikonfigurasi</option>
-                        <option value="not-configured">Belum Dikonfigurasi</option>
-                    </select>
-                </div>
-
-                <div class="col-lg-3">
-                    <button type="button" id="certReset" class="btn-reset-filter">
-                        <i class="bi bi-arrow-counterclockwise me-2"></i>
-                        Reset Filter
+        <!-- Layout Split Columns (Main Section) -->
+        <div class="row g-4">
+            
+            <!-- Left Column: Certificate Tabs, Filters & Grid -->
+            <div class="col-xl-9 col-lg-8">
+                
+                <!-- Tab Buttons Row -->
+                <div class="cert-tab-wrapper" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 0;">
+                    <button type="button" class="cert-tab-btn filter-tab active" data-tab-value="all" style="border: 1px solid #cbd5e1; background: #fff; color: #475569; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                        <i class="bi bi-grid-fill"></i> Semua
+                    </button>
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="ready" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                        <i class="bi bi-send-fill"></i> Siap Dikirim
+                        <span style="background: #d1fae5; color: #065f46; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $siapDikirimCount }}</span>
+                    </button>
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="not-configured" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                        <i class="bi bi-folder-fill"></i> Menunggu Asset
+                        <span style="background: #ffedd5; color: #9a3412; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $menungguAssetCount }}</span>
+                    </button>
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="configured" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                        <i class="bi bi-check-circle-fill"></i> Dalam Proses
+                        <span style="background: #dbeafe; color: #1e40af; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $dalamProsesCount }}</span>
+                    </button>
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="sent" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                        <i class="bi bi-award-fill"></i> Sudah Dikirim
+                        <span style="background: #f1f5f9; color: #475569; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $sudahDikirimCount }}</span>
                     </button>
                 </div>
-               <div class="tab-content-container">
-            <div class="custom-tab-pane {{ $tab === 'unsentItems' ? 'active' : '' }}" id="unsentItems-pane">
-                <div class="certificate-grid">
-                    @forelse($unsentItems as $item)
+
+                <!-- Filter Card Panel -->
+                <div class="filter-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 16px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); margin-top: 16px; margin-bottom: 24px;">
+                    <div class="row g-3 align-items-center">
+                        <!-- Search bar -->
+                        <div class="col-lg-5">
+                            <div class="search-wrap" style="position: relative;">
+                                <i class="bi bi-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
+                                <input type="text" id="certSearch" class="filter-input" placeholder="Cari program..." style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0 16px 0 44px; outline: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;">
+                            </div>
+                        </div>
+                        <!-- Status Dropdown -->
+                        <div class="col-lg-4">
+                            <div style="position: relative;">
+                                <select id="certStatus" class="filter-input" style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0 36px 0 16px; outline: none; font-size: 0.9rem; font-weight: 600; color: #475569; appearance: none; background: white;">
+                                    <option value="all">Semua Status</option>
+                                    <option value="ready">Siap Terbit</option>
+                                    <option value="configured">Dikonfigurasi</option>
+                                    <option value="not-configured">Belum Dikonfigurasi</option>
+                                    <option value="sent">Sudah Terbit</option>
+                                </select>
+                                <i class="bi bi-chevron-down" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none;"></i>
+                            </div>
+                        </div>
+                        <!-- Filter & Reset Button -->
+                        <div class="col-lg-3" style="display: flex; gap: 8px;">
+                            <button type="button" id="certFilterBtn" class="btn-reset-filter" style="height: 42px; flex: 1; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; font-weight: 700; font-size: 0.85rem; color: #475569; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; cursor: pointer;">
+                                <i class="bi bi-funnel"></i> Filter
+                            </button>
+                            <button type="button" id="certReset" class="btn-reset-filter" style="height: 42px; width: 42px; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; font-weight: 700; color: #475569; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer;" title="Reset Filter">
+                                <i class="bi bi-arrow-counterclockwise" style="font-size: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Certificate Program Cards Grid -->
+                <div class="certificate-grid" id="certificateGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px;">
+                    @php
+                        $allPrograms = $unsentItems->concat($sentItems);
+                    @endphp
+                    @forelse($allPrograms as $item)
                         @php
                             $assets = certAssets($item);
                             $status = certStatus($item);
@@ -1148,9 +1295,7 @@
                             $title = $isEvent ? ($item->title ?? '-') : ($item->name ?? '-');
                             $context = $isEvent ? 'event' : 'course';
                             $typeBadge = $isEvent ? 'ACARA' : 'KURSUS';
-                            $iconClass = $isEvent ? 'bi-calendar-event' : 'bi-mortarboard';
                             
-                            $metaLabel = $isEvent ? 'Peserta Terdaftar' : 'Siswa Terdaftar';
                             $metaCount = $isEvent ? ($item->registrations_count ?? 0) : ($item->enrollments_count ?? 0);
 
                             // Extract all trainers associated with this program
@@ -1166,375 +1311,377 @@
                                 }
                             }
                             $itemTrainers = $itemTrainers->unique('id');
+                            $trainerCount = $itemTrainers->count();
+
+                            $isSent = $sentItems->contains($item);
+                            $tabCategory = $isSent ? 'sent' : ($status === 'ready' ? 'ready' : ($status === 'configured' ? 'configured' : 'not-configured'));
                         @endphp
 
-                        <div class="certificate-card cert-row" data-title="{{ strtolower($title) }}"
-                            data-status="{{ $status }}">
+                        <div class="certificate-card cert-row" 
+                             data-title="{{ strtolower($title) }}"
+                             data-status="{{ $isSent ? 'sent' : $status }}"
+                             data-tab-cat="{{ $tabCategory }}"
+                             style="background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); transition: all 0.3s ease; display: flex; flex-direction: column; overflow: hidden;">
+                             
+                             <!-- Top Badge Header -->
+                             <div style="padding: 16px 20px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                                 <!-- Status badge -->
+                                 @if($isSent)
+                                     <span style="font-size: 0.68rem; font-weight: 800; background: #faf5ff; color: #a855f7; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
+                                         <i class="bi bi-check-circle-fill"></i> Sudah Dikirim
+                                     </span>
+                                 @elseif($status === 'ready')
+                                     <span style="font-size: 0.68rem; font-weight: 800; background: #ecfdf5; color: #10b981; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
+                                         <i class="bi bi-check-circle-fill"></i> Siap Dikirim
+                                     </span>
+                                 @elseif($status === 'configured')
+                                     <span style="font-size: 0.68rem; font-weight: 800; background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
+                                         <i class="bi bi-check-circle-fill"></i> Dalam Proses
+                                     </span>
+                                 @else
+                                     <span style="font-size: 0.68rem; font-weight: 800; background: #fff7ed; color: #f59e0b; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
+                                         <i class="bi bi-exclamation-circle-fill"></i> Menunggu Asset
+                                     </span>
+                                 @endif
 
-                            {{-- Card Header Banner with gradient --}}
-                            <div class="card-header-banner {{ $context }}">
-                                {{-- Mini certificate Mockup --}}
-                                <div class="mini-mockup">
-                                    <div class="mockup-frame">
-                                        <div class="mockup-seal"></div>
-                                        <div class="mockup-lines">
-                                            <div class="mockup-line-long"></div>
-                                            <div class="mockup-line-short"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                {{-- Header Content --}}
-                                <span class="type-badge">{{ $typeBadge }}</span>
-                                
-                                @if($status === 'ready')
-                                    <span class="status-badge ready">
-                                        <span class="pulse-dot ready"></span> Siap Dikirim
-                                    </span>
-                                @elseif($status === 'configured')
-                                    <span class="status-badge configured">
-                                        <span class="pulse-dot configured"></span> Perlu Dilengkapi
-                                    </span>
-                                @else
-                                    <span class="status-badge missing">
-                                        <span class="pulse-dot missing"></span> Belum Siap
-                                    </span>
-                                @endif
-                            </div>
+                                 <!-- Type badge (ACARA/KURSUS) -->
+                                 <span style="font-size: 0.68rem; font-weight: 800; background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                     {{ $typeBadge }}
+                                 </span>
+                             </div>
 
-                            <div class="card-inner" style="padding-bottom: 22px;">
-                                {{-- Program info --}}
-                                <div class="program-main">
-                                    <div class="program-icon-wrapper {{ $context }}">
-                                        <i class="bi {{ $iconClass }}"></i>
-                                    </div>
-                                    <div class="program-info">
-                                        <h5 class="program-title" title="{{ $title }}">{{ $title }}</h5>
-                                        <div class="program-date">
-                                            @if($isEvent)
-                                                @php
-                                                    $eventDate = $item->event_date ? \Carbon\Carbon::parse($item->event_date) : null;
-                                                @endphp
-                                                <i class="bi bi-calendar3"></i>
-                                                <span>{{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}</span>
-                                            @else
-                                                <i class="bi bi-folder2-open"></i>
-                                                <span>{{ $item->category->name ?? 'Umum' }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
+                             <!-- Inner card body -->
+                             <div class="card-inner" style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1;">
+                                 <!-- Title, Date and stats row -->
+                                 <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                                     <div style="display: flex; gap: 12px; min-width: 0;">
+                                         <!-- Left Calendar icon card -->
+                                         <div style="width: 42px; height: 42px; border-radius: 10px; background: #eef2ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                                             <i class="bi bi-calendar3"></i>
+                                         </div>
+                                         <div style="min-width: 0;">
+                                             <h5 class="program-title" style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $title }}">{{ $title }}</h5>
+                                             <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">
+                                                 @if($isEvent)
+                                                     @php
+                                                         $eventDate = $item->event_date ? \Carbon\Carbon::parse($item->event_date) : null;
+                                                     @endphp
+                                                     <span>{{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}</span>
+                                                 @else
+                                                     <span>{{ $item->category->name ?? 'Umum' }}</span>
+                                                 @endif
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <!-- Right stats -->
+                                     <div style="display: flex; gap: 10px; flex-shrink: 0; font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 4px;">
+                                         <span>Peserta <i class="bi bi-people-fill" style="margin-left: 2px; color: #94a3b8;"></i> <strong style="color: #0f172a;">{{ $metaCount }}</strong></span>
+                                         <span>Trainer <i class="bi bi-person-badge-fill" style="margin-left: 2px; color: #94a3b8;"></i> <strong style="color: #0f172a;">{{ $trainerCount }}</strong></span>
+                                     </div>
+                                 </div>
 
-                                {{-- Slate Box: Meta & Assets --}}
-                                <div class="meta-and-assets">
-                                    <div class="meta-item">
-                                        <span class="meta-label">{{ $metaLabel }}</span>
-                                        <span class="meta-val">
-                                            <i class="bi bi-people"></i>
-                                            {{ $metaCount }}
-                                        </span>
-                                    </div>
+                                 <!-- Kelengkapan Asset Desain checklist -->
+                                 <div class="asset-checklist" style="border-top: 1px dashed #e2e8f0; padding-top: 12px; margin-top: 4px;">
+                                     <div class="checklist-title" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 8px;">Kelengkapan Asset Desain</div>
+                                     <div class="checklist-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                                         <div class="check-item {{ $hasTemplate ? 'is-valid' : 'is-invalid' }}" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; border-radius: 8px; border: 1px solid {{ $hasTemplate ? '#d1fae5' : '#ffe4e6' }}; background: {{ $hasTemplate ? '#f0fdf4' : '#fff1f2' }}; transition: all 0.2s;">
+                                             <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}" style="color: {{ $hasTemplate ? '#10b981' : '#f43f5e' }}; font-size: 13px; display: inline-flex;"></i>
+                                             <span style="font-size: 0.72rem; font-weight: 700; color: {{ $hasTemplate ? '#065f46' : '#9f1239' }};">Template</span>
+                                         </div>
+                                         <div class="check-item {{ $hasLogo ? 'is-valid' : 'is-invalid' }}" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; border-radius: 8px; border: 1px solid {{ $hasLogo ? '#d1fae5' : '#ffe4e6' }}; background: {{ $hasLogo ? '#f0fdf4' : '#fff1f2' }}; transition: all 0.2s;">
+                                             <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}" style="color: {{ $hasLogo ? '#10b981' : '#f43f5e' }}; font-size: 13px; display: inline-flex;"></i>
+                                             <span style="font-size: 0.72rem; font-weight: 700; color: {{ $hasLogo ? '#065f46' : '#9f1239' }};">Logo</span>
+                                         </div>
+                                         <div class="check-item {{ $hasSignature ? 'is-valid' : 'is-invalid' }}" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; border-radius: 8px; border: 1px solid {{ $hasSignature ? '#d1fae5' : '#ffe4e6' }}; background: {{ $hasSignature ? '#f0fdf4' : '#fff1f2' }}; transition: all 0.2s;">
+                                             <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}" style="color: {{ $hasSignature ? '#10b981' : '#f43f5e' }}; font-size: 13px; display: inline-flex;"></i>
+                                             <span style="font-size: 0.72rem; font-weight: 700; color: {{ $hasSignature ? '#065f46' : '#9f1239' }}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ttd Partner</span>
+                                         </div>
+                                     </div>
+                                 </div>
 
-                                    {{-- Asset Checklist --}}
-                                    <div class="asset-checklist">
-                                        <div class="checklist-title">Kelengkapan Aset Desain</div>
-                                        <div class="checklist-grid">
-                                            <div class="check-item {{ $hasTemplate ? 'is-valid' : 'is-invalid' }}">
-                                                <div class="check-icon">
-                                                    <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                </div>
-                                                <span class="check-label">Template</span>
-                                            </div>
-                                            <div class="check-item {{ $hasLogo ? 'is-valid' : 'is-invalid' }}">
-                                                <div class="check-icon">
-                                                    <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                </div>
-                                                <span class="check-label">Logo</span>
-                                            </div>
-                                            <div class="check-item {{ $hasSignature ? 'is-valid' : 'is-invalid' }}">
-                                                <div class="check-icon">
-                                                    <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                </div>
-                                                <span class="check-label">Ttd Partner</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Trainer & Certificate Status List --}}
-                                <div class="trainer-status-list">
-                                    <div class="checklist-title">Daftar Trainer & Sertifikat</div>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                                        @foreach($itemTrainers as $trn)
-                                            @php
-                                                $certKey = get_class($item) . ':' . $item->id . ':' . $trn->id;
-                                                $trnCert = $allCertificates->has($certKey) ? $allCertificates->get($certKey)->first() : null;
-                                                $trnStatus = $trnCert ? $trnCert->status : 'draft';
-                                                
-                                                // Get initials for avatar
-                                                $words = explode(' ', $trn->name);
-                                                $initials = '';
-                                                if (count($words) >= 2) {
-                                                    $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
-                                                } else {
-                                                    $initials = strtoupper(substr($trn->name, 0, 2));
-                                                }
-                                                
-                                                $bgColors = ['#4f46e5', '#7c3aed', '#2563eb', '#06b6d4', '#ec4899'];
-                                                $colorIndex = abs(crc32($trn->name)) % count($bgColors);
-                                                $bgColor = $bgColors[$colorIndex];
-                                            @endphp
-                                            <div class="trainer-status-row">
-                                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-                                                    <div style="width: 32px; height: 32px; border-radius: 50%; background-color: {{ $bgColor }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
-                                                        {{ $initials }}
-                                                    </div>
-                                                    <div style="min-width: 0; flex: 1;">
-                                                        <span style="font-size: 0.82rem; font-weight: 700; color: #1e293b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $trn->name }}">{{ $trn->name }}</span>
-                                                        <span style="font-size: 0.72rem; display: block;">
-                                                            @if($trnStatus === 'published' || $trnStatus === 'sent')
-                                                                <span style="color: #10b981; font-weight: 600;"><i class="bi bi-patch-check-fill me-1"></i>Terkirim</span>
-                                                            @else
-                                                                <span style="color: #f59e0b; font-weight: 600;"><i class="bi bi-clock-history me-1"></i>Belum Terkirim</span>
-                                                            @endif
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div style="flex-shrink: 0; margin-left: 8px;">
-                                                    @if($trnStatus === 'published' || $trnStatus === 'sent')
-                                                        <div style="display: flex; gap: 4px;">
-                                                            <a href="{{ route('admin.trainer.certificates.detail', ['certificate' => $trnCert->id]) }}" 
-                                                               class="btn-action-small view"
-                                                               title="Lihat Sertifikat">
-                                                                <i class="bi bi-eye-fill"></i>
-                                                            </a>
-                                                            <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
-                                                               class="btn-action-small manage-icon"
-                                                               title="Kelola & Kirim Ulang">
-                                                                <i class="bi bi-pencil-square"></i>
-                                                            </a>
-                                                        </div>
-                                                    @else
-                                                        <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
-                                                           class="btn-action-manage-pill"
-                                                           title="Kelola & Kirim">
-                                                            <i class="bi bi-gear-fill"></i>
-                                                            <span>Kelola</span>
-                                                        </a>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
+                                 <!-- Trainer & Certificate List -->
+                                 <div class="trainer-status-list" style="margin-top: 2px;">
+                                     <div class="checklist-title" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 8px;">Daftar Trainer & Sertifikat</div>
+                                     <div style="display: flex; flex-direction: column; gap: 8px;">
+                                         @foreach($itemTrainers as $trn)
+                                             @php
+                                                 $certKey = get_class($item) . ':' . $item->id . ':' . $trn->id;
+                                                 $trnCert = $allCertificates->has($certKey) ? $allCertificates->get($certKey)->first() : null;
+                                                 $trnStatus = $trnCert ? $trnCert->status : 'draft';
+                                                 
+                                                 // Get initials for avatar
+                                                 $words = explode(' ', $trn->name);
+                                                 $initials = '';
+                                                 if (count($words) >= 2) {
+                                                     $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+                                                 } else {
+                                                     $initials = strtoupper(substr($trn->name, 0, 2));
+                                                 }
+                                                 
+                                                 $bgColors = ['#ec4899', '#3b82f6', '#06b6d4', '#8b5cf6', '#ea580c'];
+                                                 $colorIndex = abs(crc32($trn->name)) % count($bgColors);
+                                                 $bgColor = $bgColors[$colorIndex];
+                                             @endphp
+                                             <div class="trainer-status-row" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; transition: all 0.2s;">
+                                                 <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
+                                                     <!-- Initials Circle -->
+                                                     <div style="width: 28px; height: 28px; border-radius: 50%; background-color: {{ $bgColor }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 10px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                                         {{ $initials }}
+                                                     </div>
+                                                     <div style="min-width: 0; flex: 1;">
+                                                         <span style="font-size: 0.8rem; font-weight: 700; color: #1e293b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $trn->name }}">{{ $trn->name }}</span>
+                                                         <span style="font-size: 0.68rem; display: block; font-weight: 600;">
+                                                             @if($trnStatus === 'published' || $trnStatus === 'sent')
+                                                                 <span style="color: #10b981;"><span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; margin-right: 4px;"></span>Terkirim</span>
+                                                             @else
+                                                                 <span style="color: #f59e0b;"><span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; margin-right: 4px;"></span>Belum Terkirim</span>
+                                                             @endif
+                                                         </span>
+                                                     </div>
+                                                 </div>
+                                                 
+                                                 <div style="flex-shrink: 0; margin-left: 8px;">
+                                                     @if($trnStatus === 'published' || $trnStatus === 'sent')
+                                                         <div style="display: flex; gap: 4px;">
+                                                             <a href="{{ route('admin.trainer.certificates.detail', ['certificate' => $trnCert->id]) }}" 
+                                                                class="btn-action-small view"
+                                                                style="width: 28px; height: 28px; border-radius: 6px;"
+                                                                title="Lihat Sertifikat">
+                                                                 <i class="bi bi-eye-fill" style="font-size: 12px;"></i>
+                                                             </a>
+                                                             <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
+                                                                class="btn-action-small manage-icon"
+                                                                style="width: 28px; height: 28px; border-radius: 6px;"
+                                                                title="Kelola & Kirim Ulang">
+                                                                 <i class="bi bi-pencil-square" style="font-size: 12px;"></i>
+                                                             </a>
+                                                         </div>
+                                                     @else
+                                                         <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
+                                                            class="btn-action-manage-pill"
+                                                            style="padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; box-shadow: none;"
+                                                            title="Kelola & Kirim">
+                                                             <i class="bi bi-gear-fill" style="font-size: 10px;"></i>
+                                                             <span>Kelola</span>
+                                                         </a>
+                                                     @endif
+                                                 </div>
+                                             </div>
+                                         @endforeach
+                                     </div>
+                                 </div>
+                             </div>
                         </div>
                     @empty
-                        <div class="empty-card">
-                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                            Data program belum terkirim tidak ditemukan.
+                        <div class="empty-card" style="grid-column: 1 / -1; padding: 60px 20px;">
+                            <i class="bi bi-inbox fs-1 d-block mb-3" style="color: #cbd5e1;"></i>
+                            Data program tidak ditemukan.
                         </div>
                     @endforelse
                 </div>
             </div>
 
-            <div class="custom-tab-pane {{ $tab === 'sentItems' ? 'active' : '' }}" id="sentItems-pane">
-                <div class="certificate-grid">
-                    @forelse($sentItems as $item)
-                        @php
-                            $assets = certAssets($item);
-                            $status = certStatus($item);
-
-                            $hasTemplate = $assets->where('type', 'template')->isNotEmpty();
-                            $hasLogo = $assets->where('type', 'logo')->isNotEmpty();
-                            $hasSignature = $assets->where('type', 'signature')->isNotEmpty();
-
-                            $isEvent = $item instanceof \App\Models\Event;
-                            $title = $isEvent ? ($item->title ?? '-') : ($item->name ?? '-');
-                            $context = $isEvent ? 'event' : 'course';
-                            $typeBadge = $isEvent ? 'ACARA' : 'KURSUS';
-                            $iconClass = $isEvent ? 'bi-calendar-event' : 'bi-mortarboard';
-                            
-                            $metaLabel = $isEvent ? 'Peserta Terdaftar' : 'Siswa Terdaftar';
-                            $metaCount = $isEvent ? ($item->registrations_count ?? 0) : ($item->enrollments_count ?? 0);
-
-                            // Extract all trainers associated with this program
-                            $itemTrainers = collect();
-                            if ($item->trainer) {
-                                $itemTrainers->push($item->trainer);
-                            }
-                            if ($isEvent && isset($item->speakers)) {
-                                foreach ($item->speakers as $speaker) {
-                                    if ($speaker->trainer) {
-                                        $itemTrainers->push($speaker->trainer);
-                                    }
-                                }
-                            }
-                            $itemTrainers = $itemTrainers->unique('id');
-                        @endphp
-
-                        <div class="certificate-card cert-row" data-title="{{ strtolower($title) }}"
-                            data-status="{{ $status }}">
-
-                            {{-- Card Header Banner with gradient --}}
-                            <div class="card-header-banner {{ $context }}">
-                                {{-- Mini certificate Mockup --}}
-                                <div class="mini-mockup">
-                                    <div class="mockup-frame">
-                                        <div class="mockup-seal"></div>
-                                        <div class="mockup-lines">
-                                            <div class="mockup-line-long"></div>
-                                            <div class="mockup-line-short"></div>
-                                        </div>
-                                    </div>
+            <!-- Right Column: Sidebar (Quick Summary & Recent Activities) -->
+            <div class="col-xl-3 col-lg-4">
+                
+                <!-- Quick Summary Card -->
+                <div class="card" style="background: #white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); margin-bottom: 24px; border-top: none;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                        <i class="bi bi-bar-chart-line-fill" style="color: #4f46e5; font-size: 16px;"></i>
+                        <h5 style="font-size: 0.90rem; font-weight: 800; color: #0f172a; margin: 0;">Ringkasan Cepat</h5>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Item 1 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+                                    <i class="bi bi-send-fill"></i>
                                 </div>
-                                
-                                {{-- Header Content --}}
-                                <span class="type-badge">{{ $typeBadge }}</span>
-                                
-                                <span class="status-badge ready">
-                                    <span class="pulse-dot ready"></span> Terkirim
-                                </span>
+                                <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">Program Siap Dikirim</span>
                             </div>
-
-                            <div class="card-inner" style="padding-bottom: 22px;">
-                                {{-- Program info --}}
-                                <div class="program-main">
-                                    <div class="program-icon-wrapper {{ $context }}">
-                                        <i class="bi {{ $iconClass }}"></i>
-                                    </div>
-                                    <div class="program-info">
-                                        <h5 class="program-title" title="{{ $title }}">{{ $title }}</h5>
-                                        <div class="program-date">
-                                            @if($isEvent)
-                                                @php
-                                                    $eventDate = $item->event_date ? \Carbon\Carbon::parse($item->event_date) : null;
-                                                @endphp
-                                                <i class="bi bi-calendar3"></i>
-                                                <span>{{ $eventDate ? $eventDate->translatedFormat('d M Y') : 'Tanpa Tanggal' }}</span>
-                                            @else
-                                                <i class="bi bi-folder2-open"></i>
-                                                <span>{{ $item->category->name ?? 'Umum' }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Slate Box: Meta & Assets --}}
-                                <div class="meta-and-assets">
-                                    <div class="meta-item">
-                                        <span class="meta-label">{{ $metaLabel }}</span>
-                                        <span class="meta-val">
-                                            <i class="bi bi-people"></i>
-                                            {{ $metaCount }}
-                                        </span>
-                                    </div>
-
-                                    {{-- Asset Checklist --}}
-                                    <div class="asset-checklist">
-                                        <div class="checklist-title">Kelengkapan Aset Desain</div>
-                                        <div class="checklist-grid">
-                                            <div class="check-item {{ $hasTemplate ? 'is-valid' : 'is-invalid' }}">
-                                                <div class="check-icon">
-                                                    <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                </div>
-                                                <span class="check-label">Template</span>
-                                            </div>
-                                            <div class="check-item {{ $hasLogo ? 'is-valid' : 'is-invalid' }}">
-                                                <div class="check-icon">
-                                                    <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                </div>
-                                                <span class="check-label">Logo</span>
-                                            </div>
-                                            <div class="check-item {{ $hasSignature ? 'is-valid' : 'is-invalid' }}">
-                                                <div class="check-icon">
-                                                    <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}"></i>
-                                                </div>
-                                                <span class="check-label">Ttd Partner</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Trainer & Certificate Status List --}}
-                                <div class="trainer-status-list">
-                                    <div class="checklist-title">Daftar Trainer & Sertifikat</div>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                                        @foreach($itemTrainers as $trn)
-                                            @php
-                                                $certKey = get_class($item) . ':' . $item->id . ':' . $trn->id;
-                                                $trnCert = $allCertificates->has($certKey) ? $allCertificates->get($certKey)->first() : null;
-                                                $trnStatus = $trnCert ? $trnCert->status : 'draft';
-                                                
-                                                // Get initials for avatar
-                                                $words = explode(' ', $trn->name);
-                                                $initials = '';
-                                                if (count($words) >= 2) {
-                                                    $initials = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
-                                                } else {
-                                                    $initials = strtoupper(substr($trn->name, 0, 2));
-                                                }
-                                                
-                                                $bgColors = ['#4f46e5', '#7c3aed', '#2563eb', '#06b6d4', '#ec4899'];
-                                                $colorIndex = abs(crc32($trn->name)) % count($bgColors);
-                                                $bgColor = $bgColors[$colorIndex];
-                                            @endphp
-                                            <div class="trainer-status-row">
-                                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-                                                    <div style="width: 32px; height: 32px; border-radius: 50%; background-color: {{ $bgColor }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
-                                                        {{ $initials }}
-                                                    </div>
-                                                    <div style="min-width: 0; flex: 1;">
-                                                        <span style="font-size: 0.82rem; font-weight: 700; color: #1e293b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $trn->name }}">{{ $trn->name }}</span>
-                                                        <span style="font-size: 0.72rem; display: block;">
-                                                            @if($trnStatus === 'published' || $trnStatus === 'sent')
-                                                                <span style="color: #10b981; font-weight: 600;"><i class="bi bi-patch-check-fill me-1"></i>Terkirim</span>
-                                                            @else
-                                                                <span style="color: #f59e0b; font-weight: 600;"><i class="bi bi-clock-history me-1"></i>Belum Terkirim</span>
-                                                            @endif
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div style="flex-shrink: 0; margin-left: 8px;">
-                                                    @if($trnStatus === 'published' || $trnStatus === 'sent')
-                                                        <div style="display: flex; gap: 4px;">
-                                                            <a href="{{ route('admin.trainer.certificates.detail', ['certificate' => $trnCert->id]) }}" 
-                                                               class="btn-action-small view"
-                                                               title="Lihat Sertifikat">
-                                                                <i class="bi bi-eye-fill"></i>
-                                                            </a>
-                                                            <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
-                                                               class="btn-action-small manage-icon"
-                                                               title="Kelola & Kirim Ulang">
-                                                                <i class="bi bi-pencil-square"></i>
-                                                            </a>
-                                                        </div>
-                                                    @else
-                                                        <a href="{{ route('admin.trainer.certificates.edit', ['trainer' => $trn->id, 'context' => $context, 'id' => $item->id]) }}" 
-                                                           class="btn-action-manage-pill"
-                                                           title="Kelola & Kirim">
-                                                            <i class="bi bi-gear-fill"></i>
-                                                            <span>Kelola</span>
-                                                        </a>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">{{ $siapDikirimCount }}</span>
+                                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-left: 2px;">{{ $siapDikirimPercent }}%</span>
                             </div>
                         </div>
-                    @empty
-                        <div class="empty-card">
-                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                            Data program terkirim tidak ditemukan.
+
+                        <!-- Item 2 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+                                    <i class="bi bi-folder-fill"></i>
+                                </div>
+                                <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">Menunggu Asset</span>
+                            </div>
+                            <div style="text-align: right;">
+                                <span style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">{{ $menungguAssetCount }}</span>
+                                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-left: 2px;">{{ $menungguAssetPercent }}%</span>
+                            </div>
                         </div>
-                    @endforelse
+
+                        <!-- Item 3 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block;">Total Peserta</span>
+                                    <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 500; display: block; margin-top: -2px;">Seluruh program</span>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">
+                                {{ $totalParticipants }}
+                            </div>
+                        </div>
+
+                        <!-- Item 4 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+                                    <i class="bi bi-person-badge-fill"></i>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block;">Total Trainer</span>
+                                    <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 500; display: block; margin-top: -2px;">Aktif terlibat</span>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">
+                                {{ $totalActiveTrainers }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Recent Activities Card -->
+                <div class="card" style="background: #white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); border-top: none;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="bi bi-clock-history" style="color: #4f46e5; font-size: 16px;"></i>
+                            <h5 style="font-size: 0.90rem; font-weight: 800; color: #0f172a; margin: 0;">Aktivitas Terakhir</h5>
+                        </div>
+                        <a href="#" style="font-size: 0.75rem; font-weight: 700; color: #4f46e5; text-decoration: none; transition: color 0.2s;">Lihat Semua</a>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        @foreach($recentActivities as $act)
+                            <div style="display: flex; gap: 12px; align-items: flex-start;">
+                                <div style="width: 28px; height: 28px; border-radius: 8px; background: {{ $act->type === 'success' ? '#ecfdf5' : ($act->type === 'warning' ? '#fff7ed' : '#eff6ff') }}; color: {{ $act->color }}; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 2px;">
+                                    <i class="bi {{ $act->icon }}"></i>
+                                </div>
+                                <div style="min-width: 0; flex: 1;">
+                                    <p style="font-size: 0.78rem; color: #475569; margin: 0 0 4px 0; line-height: 1.4; font-weight: 500;">
+                                        {!! $act->message !!}
+                                    </p>
+                                    <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">{{ $act->time }}</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
             </div>
         </div>
+    </div>
+@endsection
+
+@push('admin-trainer-scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('certSearch');
+            const statusFilter = document.getElementById('certStatus');
+            const resetBtn = document.getElementById('certReset');
+            const tabBtns = document.querySelectorAll('.filter-tab');
+            let activeTabValue = 'all';
+
+            function runFilter() {
+                const term = (searchInput?.value || '').toLowerCase().trim();
+                const status = statusFilter?.value || 'all';
+
+                document.querySelectorAll('.cert-row').forEach(row => {
+                    const title = row.getAttribute('data-title') || '';
+                    const rowStatus = row.getAttribute('data-status') || '';
+                    const rowTabCat = row.getAttribute('data-tab-cat') || '';
+
+                    const matchSearch = term === '' || title.includes(term);
+                    
+                    // Match tab filter
+                    let matchTab = false;
+                    if (activeTabValue === 'all') {
+                        matchTab = true;
+                    } else if (activeTabValue === 'ready' && rowTabCat === 'ready') {
+                        matchTab = true;
+                    } else if (activeTabValue === 'not-configured' && rowTabCat === 'not-configured') {
+                        matchTab = true;
+                    } else if (activeTabValue === 'configured' && rowTabCat === 'configured') {
+                        matchTab = true;
+                    } else if (activeTabValue === 'sent' && rowTabCat === 'sent') {
+                        matchTab = true;
+                    }
+
+                    // Match dropdown status filter
+                    const matchStatus = status === 'all' || rowStatus === status;
+
+                    if (matchSearch && matchTab && matchStatus) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Bind tab buttons
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    tabBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.style.borderColor = '#e2e8f0';
+                        b.style.color = '#64748b';
+                        b.style.background = '#fff';
+                    });
+                    this.classList.add('active');
+                    this.style.borderColor = '#cbd5e1';
+                    this.style.color = '#475569';
+                    this.style.background = '#f8fafc';
+
+                    activeTabValue = this.getAttribute('data-tab-value');
+                    runFilter();
+                });
+            });
+
+            // Bind search and select inputs
+            searchInput?.addEventListener('input', runFilter);
+            statusFilter?.addEventListener('change', function() {
+                // If dropdown changes, reflect it as the search filter
+                runFilter();
+            });
+
+            // Bind reset button
+            resetBtn?.addEventListener('click', function () {
+                if (searchInput) searchInput.value = '';
+                if (statusFilter) statusFilter.value = 'all';
+                
+                // Reset active tab to "All"
+                tabBtns.forEach((b, index) => {
+                    if (index === 0) {
+                        b.classList.add('active');
+                        b.style.borderColor = '#cbd5e1';
+                        b.style.color = '#475569';
+                        b.style.background = '#f8fafc';
+                    } else {
+                        b.classList.remove('active');
+                        b.style.borderColor = '#e2e8f0';
+                        b.style.color = '#64748b';
+                        b.style.background = '#fff';
+                    }
+                });
+                activeTabValue = 'all';
+                runFilter();
+            });
+        });
+    </script>
+@endpush/div>
     </div>
 @endsection
 

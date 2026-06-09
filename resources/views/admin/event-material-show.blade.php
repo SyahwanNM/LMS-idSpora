@@ -315,10 +315,98 @@
                 </div>
 
                 <div class="material-panel" style="margin-top: 24px;">
-                    <div class="material-section-title">Uploaded Material</div>
+                    <div class="material-section-title">Uploaded Material ({{ $event->trainerModules->count() }})</div>
 
-                    @if ($event->module_path)
-                        <div class="material-file" target="_blank">
+                    @if ($event->trainerModules->isNotEmpty())
+                        @foreach ($event->trainerModules as $module)
+                            <div class="card p-3 mb-3 border" style="border-radius: 10px; background: #fafafa;">
+                                <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fs-4">
+                                            @if($module->survey_link) 🔗 @else 📄 @endif
+                                        </span>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold" style="font-size: 14px; word-break: break-all; color: var(--admin-text-main);">
+                                                {{ $module->original_name ?: basename($module->path) }}
+                                            </h6>
+                                            <span style="font-size: 11px; color: var(--admin-text-muted);">
+                                                Diupload: {{ $module->created_at ? $module->created_at->format('d M Y H:i') : '-' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="badge {{ $module->status === 'approved' ? 'bg-success' : ($module->status === 'rejected' ? 'bg-danger' : 'bg-warning text-dark') }}" style="font-size: 11px; border-radius: 6px; padding: 4px 8px;">
+                                            {{ $module->status === 'approved' ? 'Disetujui' : ($module->status === 'rejected' ? 'Revisi' : 'Menunggu Review') }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                @if($module->rejection_reason)
+                                    <div class="alert alert-danger py-1 px-2 mb-2" style="font-size: 12px; border-radius: 6px; margin-top: 8px;">
+                                        <strong>Catatan Revisi:</strong> {{ $module->rejection_reason }}
+                                    </div>
+                                @endif
+
+                                @if($module->survey_link)
+                                    <div class="mb-2 py-1 px-2 border rounded" style="font-size: 12px; background: #eef2ff; margin-top: 8px;">
+                                        <strong>Link Survei Kepuasan:</strong> 
+                                        <a href="{{ $module->survey_link }}" target="_blank" rel="noopener noreferrer" style="text-decoration: underline; color: #4338ca;">{{ $module->survey_link }}</a>
+                                    </div>
+                                @endif
+
+                                <div class="d-flex gap-2 flex-wrap mt-2 pt-2 border-top">
+                                    @if(preg_match('#^https?://#i', $module->path))
+                                        <a href="{{ $module->path }}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-3" style="width: auto; font-size: 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-box-arrow-up-right"></i> Buka Link
+                                        </a>
+                                    @else
+                                        <a href="{{ route('admin.event-material.stream', $event->id) }}?assignment_id={{ $module->id }}&download=0" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-3" style="width: auto; font-size: 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-eye"></i> Preview File
+                                        </a>
+                                        <a href="{{ route('admin.event-material.stream', $event->id) }}?assignment_id={{ $module->id }}&download=1" class="btn btn-sm btn-outline-secondary py-1 px-3" style="width: auto; font-size: 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-download"></i> Download File
+                                        </a>
+                                    @endif
+
+                                    @if($module->status === 'pending_review' || $module->status === 'pending')
+                                        <div class="ms-auto d-flex gap-2 align-items-center">
+                                            <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" style="margin: 0;">
+                                                @csrf
+                                                <input type="hidden" name="module_id" value="{{ $module->id }}">
+                                                <button type="submit" class="btn btn-sm btn-success py-1 px-3" style="width: auto; font-size: 12px; border-radius: 6px;">
+                                                    Setujui
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-danger py-1 px-3" style="width: auto; font-size: 12px; border-radius: 6px;" onclick="toggleModuleRejectForm({{ $module->id }})">
+                                                Tolak
+                                            </button>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- Individual Module Reject Form -->
+                                <div id="moduleRejectForm-{{ $module->id }}" class="mt-3 border-top pt-3" style="display: none;">
+                                    <form method="POST" action="{{ route('admin.event-material.reject', $event->id) }}">
+                                        @csrf
+                                        <input type="hidden" name="module_id" value="{{ $module->id }}">
+                                        <div class="mb-2">
+                                            <label class="form-label" style="font-size: 12px; font-weight: bold; color: var(--admin-text-main);">Alasan Penolakan Modul</label>
+                                            <textarea name="rejection_reason" class="form-textarea py-1 px-2" style="font-size: 12px; min-height: 60px;" placeholder="Tulis alasan penolakan untuk modul ini..." required></textarea>
+                                        </div>
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="width: auto; font-size: 12px;" onclick="toggleModuleRejectForm({{ $module->id }})">
+                                                Batal
+                                            </button>
+                                            <button type="submit" class="btn btn-sm btn-danger py-1 px-2" style="width: auto; font-size: 12px;">
+                                                Kirim Penolakan
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+                    @elseif ($event->module_path)
+                        <div class="material-file">
                             <div class="material-file-icon">📄</div>
                             <div class="material-file-info">
                                 <div class="material-file-name">
@@ -352,8 +440,8 @@
                             <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}"
                                 style="margin-bottom: 8px;">
                                 @csrf
-                                <button type="submit" class="btn btn-approve" onclick="return confirm('Approve material ini?')">
-                                    ✓ Approve Material
+                                <button type="submit" class="btn btn-approve" onclick="return confirm('Setujui semua materi event ini?')">
+                                    ✓ Setujui Semua Materi
                                 </button>
                             </form>
 
@@ -364,11 +452,11 @@
                                     <div class="form-group">
                                         <label class="form-label">Alasan Penolakan</label>
                                         <textarea name="rejection_reason" class="form-textarea"
-                                            placeholder="Jelaskan mengapa materi ini ditolak..." required></textarea>
+                                            placeholder="Jelaskan mengapa materi ini ditolak secara massal..." required></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-reject"
-                                        onclick="return confirm('Reject material ini?')">
-                                        ✗ Reject Material
+                                        onclick="return confirm('Tolak semua materi event ini?')">
+                                        ✗ Tolak Semua Materi
                                     </button>
                                     <button type="button" class="btn"
                                         style="background: var(--admin-border); color: var(--admin-text-main); margin-top: 8px;"
@@ -379,7 +467,7 @@
                             </div>
 
                             <button type="button" class="btn btn-reject" onclick="toggleRejectForm()">
-                                ✗ Reject Material
+                                ✗ Tolak Semua Materi
                             </button>
                         </div>
                     @else
@@ -397,6 +485,12 @@
         function toggleRejectForm() {
             const form = document.getElementById('rejectForm');
             form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+        function toggleModuleRejectForm(moduleId) {
+            const form = document.getElementById('moduleRejectForm-' + moduleId);
+            if (form) {
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            }
         }
     </script>
 @endsection
