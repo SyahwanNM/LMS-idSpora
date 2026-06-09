@@ -93,8 +93,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
     Route::get('/reseller/withdraw/download', [ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
 
-    // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
+    // --- BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
     Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
+    
+    // Route Baru untuk Update Kode Afiliasi / Kustomisasi Kode Referral
+    Route::post('/reseller/update-code', [ResellerController::class, 'updateReferralCode'])->name('reseller.update-code');
 });
 
 

@@ -363,7 +363,8 @@ $validator = Validator::make($request->all(), $rules, $messages);
             }
 
             $user = User::where('email', $registerEmail)->first();
-            if (!$user) {
+            $isNewUser = !$user;
+            if ($isNewUser) {
                 $user = User::create([
                     'name' => $payload['name'],
                     'email' => $payload['email'],
@@ -373,10 +374,52 @@ $validator = Validator::make($request->all(), $rules, $messages);
                     'referrer_id' => $payload['referrer_id'] ?? null,
                     'email_verified_at' => now(),
                 ]);
+
+                if ($user->referrer_id) {
+                    try {
+                        $referrer = User::find($user->referrer_id);
+                        if ($referrer) {
+                            $msg = "Pendaftaran Baru! " . $user->name . " telah mendaftar menggunakan link referral Anda.";
+                            \App\Models\UserNotification::create([
+                                'user_id' => $referrer->id,
+                                'type' => 'reseller',
+                                'title' => 'Pendaftaran Baru!',
+                                'message' => $msg,
+                                'data' => ['url' => route('reseller.index')],
+                            ]);
+                            if ($referrer->phone) {
+                                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::error('Standard registration referral notify failed: ' . $e->getMessage());
+                    }
+                }
             } else {
                 if (is_null($user->email_verified_at)) {
                     $user->email_verified_at = now();
                     $user->save();
+
+                    if ($user->referrer_id) {
+                        try {
+                            $referrer = User::find($user->referrer_id);
+                            if ($referrer) {
+                                $msg = "Pendaftaran Baru! " . $user->name . " telah mendaftar menggunakan link referral Anda.";
+                                \App\Models\UserNotification::create([
+                                    'user_id' => $referrer->id,
+                                    'type' => 'reseller',
+                                    'title' => 'Pendaftaran Baru!',
+                                    'message' => $msg,
+                                    'data' => ['url' => route('reseller.index')],
+                                ]);
+                                if ($referrer->phone) {
+                                    \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+                                }
+                            }
+                        } catch (\Throwable $e) {
+                            \Log::error('Standard registration referral notify failed: ' . $e->getMessage());
+                        }
+                    }
                 }
             }
             $resetToken->update(['is_used' => true]);

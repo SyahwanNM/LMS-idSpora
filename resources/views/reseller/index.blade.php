@@ -15,6 +15,83 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        /* Typography & layout consistency */
+        body {
+            background-color: #f8f9fa !important;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Subtle transition & hover animations */
+        .hover-card-up {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+            border-radius: 16px !important;
+        }
+        .hover-card-up:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Hover scale for button */
+        .hover-scale {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.015);
+            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.2) !important;
+        }
+
+        /* Fade-in animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in {
+            animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        /* FAQ Section Hover Fix (Remove yellow hover background/color) */
+        .accordion-button {
+            transition: background-color 0.2s ease, color 0.2s ease;
+            color: #212529 !important;
+            font-weight: 500 !important;
+            background-color: #ffffff !important;
+            border: 1px solid rgba(0,0,0,.08) !important;
+        }
+        .accordion-button:hover {
+            background-color: #f8f9fa !important; 
+            color: #212529 !important;
+        }
+        .accordion-button:focus {
+            box-shadow: none !important;
+            border-color: rgba(0, 0, 0, 0.08) !important;
+            background-color: #ffffff !important;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #fffaf0 !important; 
+            color: #ffc107 !important;
+            border-color: #fcd34d !important;
+        }
+
+        /* Table UI cleanups */
+        .table thead th {
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            border-bottom: 2px solid #dee2e6 !important;
+        }
+
         .reseller-action-btn {
             width: 44px;
             height: 44px;
@@ -23,6 +100,10 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .reseller-action-btn:hover {
+            transform: scale(1.05);
         }
 
         @media (max-width: 576px) {
@@ -99,37 +180,45 @@
             <!-- End of Card for Target Komisi Bulan Ini -->
 
             <!-- Withdraw Komisi Content -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body p-4 mt-2">
-                    <h5 class="mb-3 d-flex align-items-start gap-2">
-                        <i class="bi bi-cash-coin text-warning fs-2"></i>
-                        <span class="fw-bold">Withdraw Komisi</span>
+            <div class="card mb-4 border-0 shadow-sm animate-fade-in" style="border-radius: 16px;">
+                <div class="card-body p-4">
+                    <h5 class="mb-4 d-flex align-items-center gap-2 text-dark">
+                        <i class="bi bi-cash-coin text-warning fs-3"></i>
+                        <span class="fw-semibold" style="letter-spacing: -0.2px;">Withdraw Komisi</span>
                     </h5>
 
-                    <div class="row g-4 align-items-end">
+                    <div class="row g-4 align-items-center">
+                        <!-- Saldo Bisa Ditarik -->
                         <div class="col-md-4">
-                            <div class="border rounded-3 p-3 h-100">
-                                <small class="text-muted">Saldo Bisa Ditarik</small>
-                                <h3 class="text-success mb-0">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}
+                            <div class="border rounded-3 p-3 bg-white" style="border-color: #e5e7eb !important;">
+                                <div class="text-muted small mb-1" style="font-size: 0.85rem; font-weight: 400;">Saldo Bisa Ditarik</div>
+                                <h3 class="mb-0 text-success" style="font-weight: 500; font-size: 2.1rem; letter-spacing: -0.5px;">
+                                    Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}
                                 </h3>
                             </div>
                         </div>
 
+                        <!-- Saldo Pending -->
                         <div class="col-md-4">
-                            <div class="border rounded-3 p-3 h-100 bg-light">
-                                <small class="text-muted">Saldo Pending</small>
-                                <h3 class="text-warning mb-0">Rp {{ number_format($pendingEarnings, 0, ',', '.') }}</h3>
+                            <div class="border rounded-3 p-3 bg-light" style="border-color: #e5e7eb !important; background-color: #f9fafb !important;">
+                                <div class="text-muted small mb-1" style="font-size: 0.85rem; font-weight: 400;">Saldo Pending</div>
+                                <h3 class="mb-0 text-warning" style="font-weight: 500; font-size: 2.1rem; letter-spacing: -0.5px;">
+                                    Rp {{ number_format($pendingEarnings, 0, ',', '.') }}
+                                </h3>
                             </div>
                         </div>
 
-                        <div class="col-md-4">
-                            <div class="text-muted mt-2 mb-2 border border-warning rounded-3 p-2 text-center">
+                        <!-- Aksi Penarikan -->
+                        <div class="col-md-4 d-flex flex-column gap-2">
+                            <div class="py-2 px-3 border border-warning rounded-pill text-center small bg-white text-muted" 
+                                 style="font-size: 0.85rem; font-weight: 500;">
                                 Minimal penarikan Rp 50.000
                             </div>
-                            <button class="btn btn-warning px-5 py-2 w-100 fw-bold" data-bs-toggle="modal"
-                                data-bs-target="#withdrawModal">
-                                <i class="bi bi-wallet-fill me-1"></i>
-                                Tarik Komisi
+                            <button class="btn btn-warning py-2 w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 text-dark rounded-3 hover-scale" 
+                                    data-bs-toggle="modal" data-bs-target="#withdrawModal"
+                                    style="font-size: 0.95rem;">
+                                <i class="bi bi-briefcase-fill"></i>
+                                <span>Tarik Komisi</span>
                             </button>
                         </div>
                     </div>
@@ -137,80 +226,127 @@
             </div>
 
             <!-- Cards Section -->
-            <div class="row row-cols-1 row-cols-md-3">
-                <div class="col mb-3">
-                    <div class="card h-100  shadow-sm">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary d-flex align-items-center gap-1">Total Earnings (All Time)
-                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Total keseluruhan komisi yang sudah Anda dapatkan." style="font-size: 0.85rem; cursor: help;"></i>
-                                </h6>
-                                <h3 class="card-title">Rp {{ number_format($totalEarnings, 0, ',', '.') }}</h3>
-                                <p class="card-text text-success mb-0">+Rp {{ number_format($earningsThisMonth/1000, 0)
-                                    }}k bulan ini</p>
-                            </div>
-                            <i class="bi bi-cash-stack fs-1 text-warning"></i>
-                        </div>
-                        <div class="card-footer">
-                            {{-- Jam Pembaruan Realtime --}}
-                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i:s') }}
-                                WIB</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary mb-1 d-flex align-items-center gap-1">Total Referrals
-                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Jumlah total orang yang telah membeli menggunakan kode referral Anda." style="font-size: 0.85rem; cursor: help;"></i>
-                                </h6>
-
-                                {{-- Angka Total Referrals Dinamis --}}
-                                <h3 class="card-title mb-1">{{ number_format($totalReferrals, 0, ',', '.') }}</h3>
-
-                                <div class="d-flex align-items-center">
-                                    {{-- Angka Referral Bulan Ini --}}
-                                    <p class="card-text text-success mb-0">
-                                        +{{ $referralsThisMonth }} bulan ini
-                                    </p>
-
-                                    {{-- Icon Panah (Muncul kalau ada referral bulan ini) --}}
-                                    @if($referralsThisMonth > 0)
-                                    <i class="bi bi-arrow-up-right text-success ms-3"></i>
-                                    @else
-                                    <i class="bi bi-dash text-secondary ms-3"></i>
-                                    @endif
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+                <!-- Card 1: Total Earnings -->
+                <div class="col animate-fade-in">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Total Earnings
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Total komisi lunas yang Anda peroleh." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">Rp {{ number_format($totalEarnings, 0, ',', '.') }}</h4>
                                 </div>
-
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-cash-stack fs-5"></i>
+                                </div>
                             </div>
-                            <i class="bi bi-person-circle fs-1 text-warning"></i>
-
-                        </div>
-                        <div class="card-footer">
-                            {{-- Jam Pembaruan Realtime --}}
-                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i:s') }}
-                                WIB</small>
+                            <div class="mt-auto">
+                                <span class="text-success small fw-medium">+Rp {{ number_format($earningsThisMonth/1000, 0) }}k bulan ini</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary d-flex align-items-center gap-1">Conversion Rate
-                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Persentase orang yang daftar setelah membuka link referralmu." style="font-size: 0.85rem; cursor: help;"></i>
-                                </h6>
-                                {{-- Angka Dinamis --}}
-                                <h3 class="card-title">{{ number_format($conversionRate, 1) }}%</h3>
-                                <p class="card-text text-success mb-0">Berdasarkan data transaksi</p>
+
+                <!-- Card 2: Total Klik Link -->
+                <div class="col animate-fade-in delay-1">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Total Klik Link
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Jumlah total klik pada link referral Anda." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($totalClicks, 0, ',', '.') }}</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-cursor-fill fs-5"></i>
+                                </div>
                             </div>
-                            <i class="bi bi-graph-up fs-1 text-warning"></i>
+                            <div class="mt-auto">
+                                <span class="text-muted small">Klik unik terdeteksi</span>
+                            </div>
                         </div>
-                        <div class="card-footer">
-                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i') }}
-                                WIB</small>
+                    </div>
+                </div>
+
+                <!-- Card 3: Pendaftar Baru -->
+                <div class="col animate-fade-in delay-2">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Pendaftar Baru
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Jumlah pengguna yang mendaftar melalui link Anda." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($totalSignups, 0, ',', '.') }}</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-person-plus-fill fs-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <span class="text-muted small">Registrasi akun baru</span>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Pembelian -->
+                <div class="col animate-fade-in delay-3">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Pembelian
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Transaksi pembelian event/course yang menggunakan kode Anda (settled/pending)." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($totalPurchases, 0, ',', '.') }}</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-cart-check-fill fs-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <span class="text-success small fw-medium">+{{ $referralsThisMonth }} transaksi bulan ini</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Conversion Rate -->
+                <div class="col animate-fade-in delay-4">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Conversion Rate
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Rasio pembelian dibanding total klik link." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($conversionRate, 1) }}%</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-graph-up fs-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <span class="text-muted small">Rasio Klik-ke-Beli</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Performance Chart Card -->
+            <div class="card mb-4 border-0 shadow-sm animate-fade-in delay-1" style="border-radius: 16px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-4 d-flex align-items-center gap-2 text-dark">
+                        <i class="bi bi-graph-up-arrow text-warning fs-3"></i>
+                        <span>Grafik Performa Reseller (6 Bulan Terakhir)</span>
+                    </h5>
+                    <div style="position: relative; height: 320px; width: 100%;">
+                        <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -237,6 +373,15 @@
                                     onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
+                                @if($totalPurchases >= 5)
+                                    <button class="btn btn-outline-warning" type="button" data-bs-toggle="modal" data-bs-target="#editReferralCodeModal" title="Kustomisasi Kode">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </button>
+                                @else
+                                    <button class="btn btn-outline-secondary" type="button" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Minimal 5 pembelian untuk ganti kode (Saat ini baru {{ $totalPurchases }} pembelian)">
+                                        <i class="bi bi-lock-fill"></i> Edit
+                                    </button>
+                                @endif
                             </div>
                         </div>
 
@@ -524,9 +669,9 @@
                                     </div>
 
                                     {{-- FOTO PROFIL --}}
-                                    @if(!empty($reseller->profile_photo_path))
+                                    @if(!empty($reseller->avatar))
                                     {{-- Jika punya foto di database --}}
-                                    <img src="{{ asset('storage/' . $reseller->profile_photo_path) }}"
+                                    <img src="{{ $reseller->avatar_url }}"
                                         alt="{{ $reseller->name }}"
                                         class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
                                         style="width: 40px; height: 40px; object-fit: cover;">
@@ -578,8 +723,8 @@
                                 <div class="text-dark fst-italic me-2" style="min-width: 30px;">#{{ $userRank }}</div>
 
                                 {{-- FOTO PROFIL USER SENDIRI --}}
-                                @if(!empty($user->profile_photo_path))
-                                <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name }}"
+                                @if(!empty($user->avatar))
+                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}"
                                     class="rounded-circle border border-warning me-3"
                                     style="width: 40px; height: 40px; object-fit: cover;">
                                 @else
@@ -612,18 +757,10 @@
                         <div class="card-body p-4 d-flex flex-column gap-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <h5 class="fw-bold mb-0">Riwayat Referral</h5>
-
-                                <div class="d-flex gap-2">
                                     <a href="{{ route('reseller.history') }}"
                                         class="btn btn-sm btn-outline-dark fw-bold px-3 shadow-sm" title="Lihat semua">
                                         <i class="bi bi-clock-history me-1"></i> Lihat Semua
                                     </a>
-                                    <a href="{{ route('reseller.history.download') }}"
-                                        class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
-                                        title="Download Riwayat">
-                                        <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
-                                    </a>
-                                </div>
                             </div>
 
                             @forelse($history as $item)
@@ -697,63 +834,67 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle border-top mb-0">
+                        <table class="table align-middle table-hover mb-0">
                             <thead>
                                 <tr class="text-muted small">
-                                    <th class="py-3 border-0">ID Penarikan</th>
-                                    <th class="py-3 border-0">Tanggal Pengajuan</th>
-                                    <th class="py-3 border-0">Total</th>
-                                    <th class="py-3 border-0">Status</th>
-                                    <th class="py-3 border-0">Tanggal Diproses</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">ID Penarikan</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Nama Pemilik</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Tanggal Pengajuan</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Total</th>
+                                    <th class="border-0 py-3 text-center text-secondary" style="background-color: #f8fafc; font-weight: 600; width: 150px;">Status</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Tanggal Diproses</th>
                                 </tr>
                             </thead>
                             <tbody>
-
-                                @forelse($user->withdrawals()->latest()->get() as $wd)
-                                <tr>
-                                    <td class="py-3">
-                                        <div class="fw-bold text-dark">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}
-                                        </div>
-                                        <small class="text-muted">{{ $wd->bank_name }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="text-dark">{{ $wd->created_at->format('d M Y') }}</div>
-                                        <small class="text-muted">{{ $wd->created_at->format('H:i') }} WIB</small>
-                                    </td>
-                                    <td class="fw-bold text-dark">
-                                        Rp {{ number_format($wd->amount, 0, ',', '.') }}
-                                    </td>
-                                    <td>
-                                        @if($wd->status == 'approved')
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3">
-                                            <i class="bi bi-check-circle-fill me-1"></i> Approved
-                                        </span>
-                                        @elseif($wd->status == 'rejected')
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3">
-                                            <i class="bi bi-x-circle-fill me-1"></i> Rejected
-                                        </span>
-                                        @else
-                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis px-3">
-                                            <i class="bi bi-clock-fill me-1"></i> Pending
-                                        </span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($wd->status != 'pending')
-                                        <div class="text-dark">{{ $wd->updated_at->format('d M Y') }}</div>
-                                        <small class="text-muted">{{ $wd->updated_at->format('H:i') }} WIB</small>
-                                        @else
-                                        <span class="text-muted small fst-italic">Belum diproses</span>
-                                        @endif
-                                    </td>
-                                </tr>
+                                @forelse($user->withdrawals()->latest()->take(5)->get() as $wd)
+                                    @php
+                                        $status = strtolower($wd->status);
+                                        $isRejected = $status === 'rejected';
+                                        
+                                        // Set status badge style
+                                        if ($status === 'approved') {
+                                            $statusBadge = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1.5 small d-inline-flex align-items-center gap-1" style="font-weight: 500;"><i class="bi bi-check-circle-fill"></i> Approved</span>';
+                                        } elseif ($isRejected) {
+                                            $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1.5 small d-inline-flex align-items-center gap-1" style="font-weight: 500;"><i class="bi bi-x-circle-fill"></i> Rejected</span>';
+                                        } else {
+                                            $statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-2.5 py-1.5 small d-inline-flex align-items-center gap-1" style="font-weight: 500;"><i class="bi bi-clock-fill"></i> Pending</span>';
+                                        }
+                                    @endphp
+                                    <tr>
+                                        <td class="py-3">
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'text-decoration-line-through opacity-75' : '' }}">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
+                                            <small class="text-muted">{{ $wd->bank_name }}</small>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'text-decoration-line-through opacity-75' : '' }}">{{ $wd->account_holder }}</div>
+                                            <small class="text-muted">{{ $wd->account_number }}</small>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="text-dark {{ $isRejected ? 'text-decoration-line-through opacity-75' : '' }}">{{ $wd->created_at->format('d M Y') }}</div>
+                                            <small class="text-muted">{{ $wd->created_at->format('H:i') }} WIB</small>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-semibold {{ $isRejected ? 'text-danger text-decoration-line-through opacity-75' : 'text-dark' }}">Rp {{ number_format($wd->amount, 0, ',', '.') }}</div>
+                                        </td>
+                                        <td class="py-3 text-center">
+                                            {!! $statusBadge !!}
+                                        </td>
+                                        <td class="py-3">
+                                            @if($wd->status !== 'pending')
+                                                <div class="text-dark">{{ $wd->updated_at->format('d M Y') }}</div>
+                                                <small class="text-muted">{{ $wd->updated_at->format('H:i') }} WIB</small>
+                                            @else
+                                                <span class="text-muted fst-italic small">Belum diproses</span>
+                                            @endif
+                                        </td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted small">
-                                        <i class="bi bi-wallet2 fs-1 opacity-25 d-block mb-3"></i>
-                                        Belum ada riwayat penarikan dana.
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            <i class="bi bi-wallet2 fs-1 d-block mb-3 opacity-25"></i>
+                                            Belum ada riwayat penarikan dana.
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -870,6 +1011,218 @@
 
     @include('partials.withdraw-modal')
     @include ('partials.footer-after-login')
+
+    <!-- Modal Edit Kode Referral -->
+    <div class="modal fade" id="editReferralCodeModal" tabindex="-1" aria-labelledby="editReferralCodeModalLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content overflow-hidden border-0 shadow-lg" style="border-radius: 20px; background-color: #1a182e; color: #fff;">
+                <div class="modal-header border-0 p-3" style="background: radial-gradient(circle at 10% 10%, #51376c 0%, #2e2050 100%);">
+                    <h5 class="modal-title fw-bold text-white" id="editReferralCodeModalLabel">Kustomisasi Kode Referral</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('reseller.update-code') }}" method="POST">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning border-0 small d-flex gap-2" style="background-color: rgba(251, 189, 35, 0.15); color: #ffca2c;">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+                            <div>
+                                <strong>Peringatan:</strong> Kode referral hanya dapat diganti **sekali dalam seminggu (7 hari)**. Pastikan kode baru Anda sudah profesional dan mudah diingat sebelum menyimpan.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                           <label for="newReferralCodeInput" class="form-label fw-bold small text-white-50">Kode Referral Baru</label>
+                           <input type="text" class="form-control bg-dark border-secondary text-white" id="newReferralCodeInput" name="referral_code" 
+                               value="{{ $user->referral_code }}" placeholder="Contoh: SPORABUDI" required 
+                               style="text-transform: uppercase;">
+                           <div class="form-text text-white-50" style="font-size: 11px;">
+                               Gunakan huruf besar dan angka saja (minimal 3 karakter, maksimal 20 karakter, tanpa spasi/simbol).
+                           </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 p-3" style="background-color: rgba(255, 255, 255, 0.02);">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">Batal</button>
+                        <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4">Simpan Kode</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Toast Notifikasi Real-time -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+        <div id="resellerToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 12px; background: linear-gradient(135deg, #FF9F1C 0%, #FF6B6B 100%) !important;">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="bi bi-bell-fill fs-5"></i>
+                    <div>
+                        <strong id="toastTitle" class="d-block text-white" style="font-size: 13px;">Notifikasi Baru</strong>
+                        <span id="toastMessage" style="font-size: 12px; opacity: 0.95;">Pesan notifikasi.</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Inisialisasi Grafik Chart.js
+            const ctx = document.getElementById('performanceChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($chartLabels) !!},
+                        datasets: [
+                            {
+                                label: 'Klik Link',
+                                data: {!! json_encode($clicksData) !!},
+                                borderColor: '#FF9F1C',
+                                backgroundColor: 'rgba(255, 159, 28, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            },
+                            {
+                                label: 'Pendaftar Baru',
+                                data: {!! json_encode($signupsData) !!},
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            },
+                            {
+                                label: 'Pembelian (Referral)',
+                                data: {!! json_encode($purchasesData) !!},
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    font: {
+                                        family: 'Plus Jakarta Sans',
+                                        weight: '600'
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Real-time Notification Polling
+            @php 
+                $latestNotifId = \App\Models\UserNotification::where('user_id', Auth::id())->orderByDesc('id')->first()?->id ?? 0;
+            @endphp
+            let latestSeenId = {{ $latestNotifId }};
+            const resellerToastEl = document.getElementById('resellerToast');
+            const resellerToast = resellerToastEl ? new bootstrap.Toast(resellerToastEl, { delay: 10000 }) : null;
+
+            function pollNotifications() {
+                fetch('{{ route("notifications.index") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.items && data.items.length > 0) {
+                            let newNotifications = data.items.filter(item => item.id > latestSeenId);
+                            
+                            // Urutkan dari terlama ke terbaru agar toast muncul berurutan
+                            newNotifications.sort((a, b) => a.id - b.id);
+
+                            const notifList = document.getElementById('notificationList');
+
+                            newNotifications.forEach(notif => {
+                                // Tampilkan toast jika tipenya reseller
+                                if (notif.type === 'reseller' && resellerToast) {
+                                    document.getElementById('toastTitle').innerText = notif.title;
+                                    document.getElementById('toastMessage').innerText = notif.message;
+                                    resellerToast.show();
+                                }
+
+                                // Prepend ke daftar notifikasi di navbar
+                                if (notifList) {
+                                    // Hapus state kosong jika ada
+                                    const emptyPlaceholder = notifList.querySelector('.text-muted') || (notifList.innerText.includes('Tidak ada notifikasi') ? notifList : null);
+                                    if (emptyPlaceholder && emptyPlaceholder.innerText.includes('Tidak ada notifikasi')) {
+                                        notifList.innerHTML = '';
+                                    }
+
+                                    const notifEl = document.createElement('div');
+                                    notifEl.className = `dropdown-item p-3 border-bottom js-notif-item ${notif.read_at ? '' : 'bg-opacity-10 bg-primary'}`;
+                                    notifEl.style.whiteSpace = 'normal';
+                                    notifEl.style.cursor = 'pointer';
+                                    notifEl.setAttribute('role', 'button');
+                                    notifEl.setAttribute('tabindex', '0');
+                                    notifEl.setAttribute('aria-expanded', 'false');
+
+                                    notifEl.innerHTML = `
+                                        <div class="d-flex w-100 justify-content-between align-items-start">
+                                            <div class="d-flex align-items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill text-warning me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                                </svg>
+                                                <h6 class="mb-1 fw-bold text-white small">${notif.title}</h6>
+                                            </div>
+                                            <small class="text-white-50 ms-2" style="font-size: 0.7rem; white-space: nowrap;">${notif.time_ago || 'Baru saja'}</small>
+                                        </div>
+                                        <p class="mb-1 small text-white-50 ms-4 notif-message-short">${notif.message.length > 80 ? notif.message.substring(0, 80) + '...' : notif.message}</p>
+                                        <p class="mb-1 small text-white-50 ms-4 notif-message-full" style="display: none;">${notif.message}</p>
+                                    `;
+                                    
+                                    notifList.insertBefore(notifEl, notifList.firstChild);
+                                }
+                                
+                                // Update ID notifikasi terakhir yang dilihat
+                                if (notif.id > latestSeenId) {
+                                    latestSeenId = notif.id;
+                                }
+                            });
+
+                            // Update badge jumlah notifikasi di navbar jika unread berubah
+                            const desktopBadge = document.getElementById('notificationBadge');
+                            const mobileBadge = document.getElementById('notificationBadgeMobile');
+                            
+                            if (data.unread > 0) {
+                                if (desktopBadge) {
+                                    desktopBadge.innerText = data.unread;
+                                    desktopBadge.style.display = 'block';
+                                }
+                                if (mobileBadge) {
+                                    mobileBadge.innerText = data.unread;
+                                    mobileBadge.style.display = 'block';
+                                }
+                            } else {
+                                if (desktopBadge) desktopBadge.style.display = 'none';
+                                if (mobileBadge) mobileBadge.style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error polling notifications:', error));
+            }
+
+            // Jalankan polling setiap 30 detik
+            setInterval(pollNotifications, 30000);
+        });
+    </script>
+
     <script>
         function animateCopyIcon(button) {
             var icon = button.querySelector('i');
@@ -899,7 +1252,7 @@
             // Simpan class asli (bi-clipboard)
             var originalClass = "bi bi-clipboard";
             // Class untuk checklist
-            var successClass = "bi bi-check-lg"; // Bootstrap icon checklist tebal
+            var successClass = "bi bi-check-lg";
 
             // Ubah ikon jadi checklist
             icon.className = successClass;

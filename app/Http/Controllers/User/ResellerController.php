@@ -82,12 +82,22 @@ class ResellerController extends Controller
             return view('reseller.join');
         }
 
-        // --- 1. Statistik Dasar ---
-        // Eager load referrals untuk performa
+        // --- 1. Statistik Dasar & Funnel ---
         $allReferrals = $user->referrals()->get();
 
         $totalEarnings = $allReferrals->where('status', 'paid')->sum('amount');
         $pendingEarnings = $allReferrals->where('status', 'pending')->sum('amount');
+        
+        // Total Klik Link
+        $totalClicks = \DB::table('referral_clicks')->where('user_id', $user->id)->count();
+        
+        // Pendaftar Baru (Registrasi)
+        $totalSignups = User::where('referrer_id', $user->id)->count();
+        
+        // Pembelian (Paid + Pending referrals)
+        $totalPurchases = $allReferrals->whereIn('status', ['paid', 'pending'])->count();
+        
+        // Total referrals all time (for badge level calculations)
         $totalReferrals = $allReferrals->count();
 
         // Earnings & Referral Bulan Ini
@@ -97,22 +107,39 @@ class ResellerController extends Controller
             ->sum('amount');
 
         // --- 2. Hitung Conversion Rate ---
-        // Rumus: Conversion Rate = (Lunas / (Lunas + Ditolak)) x 100%
+        // Rumus: Conversion Rate = (Pembelian / Total Klik) x 100%
+        $conversionRate = $totalClicks > 0 ? ($totalPurchases / $totalClicks) * 100 : 0;
 
-        // Yang SUDAH DICEK ADMIN (Paid & Rejected)
-        $processedReferrals = $allReferrals->filter(function ($item) {
-            return in_array(strtolower($item->status), ['paid', 'rejected']);
-        });
+        // --- 2.5. Grafik Performa Reseller (6 Bulan Terakhir) ---
+        $chartLabels = [];
+        $clicksData = [];
+        $signupsData = [];
+        $purchasesData = [];
 
-        $totalProcessed = $processedReferrals->count();
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = now()->subMonths($i);
+            $year = $monthDate->year;
+            $monthNum = $monthDate->month;
 
-        // Hitung yang SUKSES saja (Paid)
-        $successfulReferrals = $processedReferrals->filter(function ($item) {
-            return strtolower($item->status) === 'paid';
-        })->count();
+            $chartLabels[] = $monthDate->translatedFormat('F Y');
 
-        // Hitung persentase
-        $conversionRate = $totalProcessed > 0 ? ($successfulReferrals / $totalProcessed) * 100 : 0;
+            $clicksData[] = \DB::table('referral_clicks')
+                ->where('user_id', $user->id)
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $monthNum)
+                ->count();
+
+            $signupsData[] = User::where('referrer_id', $user->id)
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $monthNum)
+                ->count();
+
+            $purchasesData[] = Referral::where('user_id', $user->id)
+                ->whereIn('status', ['paid', 'pending'])
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $monthNum)
+                ->count();
+        }
 
         // --- 3. Logika Level ---
         if ($totalReferrals >= 151) {
@@ -257,6 +284,9 @@ class ResellerController extends Controller
             'user',
             'totalEarnings',
             'pendingEarnings',
+            'totalClicks',
+            'totalSignups',
+            'totalPurchases',
             'totalReferrals',
             'referralsThisMonth',
             'earningsThisMonth',
@@ -270,7 +300,11 @@ class ResellerController extends Controller
             'registrations',
             'commissionRate',
             'commissionProducts',
-            'search'
+            'search',
+            'chartLabels',
+            'clicksData',
+            'signupsData',
+            'purchasesData'
         ));
     }
 
@@ -294,6 +328,66 @@ class ResellerController extends Controller
 
         // Ngebalikin ke halaman dashboard dengan pesan sukses
         return redirect()->route('reseller.index')->with('success', 'Selamat! Akun Reseller Anda telah aktif.');
+    }
+
+    public function updateReferralCode(Request $request)
+    {
+        $user = Auth::user();
+        if (empty($user->referral_code)) {
+            return back()->with('error', 'Silakan aktifkan akun reseller Anda terlebih dahulu.');
+        }
+
+        // 1. Check if user has at least 5 successful referrals (purchases)
+        $totalPurchases = Referral::where('user_id', $user->id)
+            ->whereIn('status', ['paid', 'pending'])
+            ->count();
+        if ($totalPurchases < 5) {
+            return back()->with('error', 'Fitur kustomisasi kode referral hanya tersedia jika kode Anda telah digunakan minimal 5 kali.');
+        }
+
+        // 2. Check if user has updated their code in the last 7 days (cooldown check)
+        if ($user->referral_code_updated_at && $user->referral_code_updated_at->gt(now()->subDays(7))) {
+            $nextAvailableDate = $user->referral_code_updated_at->copy()->addDays(7);
+            $daysLeft = (int) ceil(now()->diffInDays($nextAvailableDate, false));
+            $daysText = $daysLeft > 0 ? "dalam {$daysLeft} hari lagi" : "nanti";
+            return back()->with('error', "Anda hanya dapat mengubah kode referral sekali seminggu. Silakan coba kembali {$daysText}.");
+        }
+
+        // 3. Validate code formatting (alphanumeric, 3-20 chars)
+        $request->validate([
+            'referral_code' => [
+                'required',
+                'string',
+                'min:3',
+                'max:20',
+                'regex:/^[A-Z0-9]+$/i', // Alphanumeric only, no spaces or symbols
+            ]
+        ], [
+            'referral_code.required' => 'Kode referral baru harus diisi.',
+            'referral_code.min' => 'Kode referral minimal terdiri dari 3 karakter.',
+            'referral_code.max' => 'Kode referral maksimal terdiri dari 20 karakter.',
+            'referral_code.regex' => 'Kode referral hanya boleh berisi huruf dan angka (tanpa spasi atau simbol).',
+        ]);
+
+        $newCode = strtoupper(trim((string)$request->input('referral_code')));
+
+        // 4. Ensure it's not the same code
+        if ($newCode === $user->referral_code) {
+            return back()->with('error', 'Kode baru tidak boleh sama dengan kode saat ini.');
+        }
+
+        // 5. Ensure the new code is unique across all users
+        $codeExists = User::where('referral_code', $newCode)->exists();
+        if ($codeExists) {
+            return back()->with('error', 'Kode referral ini sudah digunakan oleh pengguna lain. Silakan pilih kode lain.');
+        }
+
+        // 6. Save changes
+        $user->referral_code = $newCode;
+        $user->referral_code_updated_at = now();
+        $user->save();
+
+        return back()->with('success', 'Kode referral Anda berhasil diubah menjadi: ' . $newCode);
     }
 
     public function checkReferral(Request $request)
@@ -362,25 +456,29 @@ class ResellerController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Ambil data history KECUALI yang statusnya 'rejected'
+        // Ambil semua data history referral (termasuk yang rejected)
         $history = $user->referrals()
-            ->where('status', '!=', 'rejected')
             ->with(['referredUser'])
             ->latest()
             ->get();
 
-        // 2. Hitung total komisi LUNAS (paid) 
+        // Hitung total komisi LUNAS (paid) 
         $totalKomisi = $history->filter(function ($item) {
             return trim(strtolower($item->status)) === 'paid';
         })->sum('amount');
 
-        // 3. Hitung total komisi PENDING
+        // Hitung total komisi PENDING
         $pendingKomisi = $history->filter(function ($item) {
             return trim(strtolower($item->status)) === 'pending';
         })->sum('amount');
 
+        // Hitung total komisi DITOLAK (rejected)
+        $rejectedKomisi = $history->filter(function ($item) {
+            return trim(strtolower($item->status)) === 'rejected';
+        })->sum('amount');
+
         // Tampilkan view report
-        return view('reseller.report', compact('user', 'history', 'totalKomisi', 'pendingKomisi'));
+        return view('reseller.report', compact('user', 'history', 'totalKomisi', 'pendingKomisi', 'rejectedKomisi'));
     }
 
     public function history()

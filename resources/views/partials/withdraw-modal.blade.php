@@ -29,7 +29,7 @@
                     <i class="bi bi-wallet-fill"></i>
                     Tarik Komisi
                 </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="background: transparent url('data:image/svg+xml,%3csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22%23000%22%3e%3cpath d=%22M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z%22/%3e%3c/svg%3e') center/1em auto no-repeat !important;"></button>
             </div>
 
             {{-- Body --}}
@@ -148,7 +148,7 @@
                         <h1 class="modal-title fs-5 fw-bold text-center w-100">
                             Konfirmasi Penarikan
                         </h1>
-                        <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close" style="background: transparent url('data:image/svg+xml,%3csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22%23000%22%3e%3cpath d=%22M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z%22/%3e%3c/svg%3e') center/1em auto no-repeat !important; border: none !important; padding: 0.5rem !important; opacity: 0.5 !important; box-shadow: none !important; width: 1em !important; height: 1em !important; min-width: auto !important; min-height: auto !important; box-sizing: content-box !important;"></button>
                     </div>
 
                     <div class="modal-body text-center pt-3">

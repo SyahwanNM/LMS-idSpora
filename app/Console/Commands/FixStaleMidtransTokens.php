@@ -22,6 +22,13 @@ class FixStaleMidtransTokens extends Command
         \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
         \Midtrans\Config::$isSanitized  = (bool) config('midtrans.sanitize', true);
         \Midtrans\Config::$is3ds        = (bool) config('midtrans.3ds', true);
+
+        if (!\Midtrans\Config::$isProduction) {
+            \Midtrans\Config::$curlOptions = [
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER => [],
+            ];
+        }
     }
 
     private function mapStatus(?string $ts, ?string $fs = null): string

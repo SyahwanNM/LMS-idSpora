@@ -20,8 +20,37 @@ class CheckReferralCode
 
         // Cek apakah ada parameter 'ref' di URL
         if ($request->has('ref')) {
+            $refCode = $request->query('ref');
             // Simpan ke cookie selama 7 hari (10080 menit)
-            $response->withCookie(cookie('referral_code', $request->query('ref'), 10080));
+            $response->withCookie(cookie('referral_code', $refCode, 10080));
+
+            try {
+                // Cari reseller berdasarkan kode referral
+                $reseller = \App\Models\User::where('referral_code', $refCode)->first();
+                if ($reseller) {
+                    $ip = $request->ip();
+                    $userAgent = $request->userAgent();
+
+                    // Check throttle: 15 menit per IP untuk reseller yang sama
+                    $recentClick = \Illuminate\Support\Facades\DB::table('referral_clicks')
+                        ->where('user_id', $reseller->id)
+                        ->where('ip_address', $ip)
+                        ->where('created_at', '>=', now()->subMinutes(15))
+                        ->exists();
+
+                    if (!$recentClick) {
+                        \Illuminate\Support\Facades\DB::table('referral_clicks')->insert([
+                            'user_id' => $reseller->id,
+                            'ip_address' => $ip,
+                            'user_agent' => $userAgent,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Failed to log referral click: ' . $e->getMessage());
+            }
         }
 
         return $response;

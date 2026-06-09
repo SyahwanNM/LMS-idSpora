@@ -255,6 +255,26 @@
         .btn_bayar_payment:hover {
             background-color: #e0b120;
         }
+        .btn_cek_promo {
+            padding: 12px 20px;
+            background-color: #f4c430; /* Matches course payment button theme */
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            white-space: nowrap;
+            height: 45px;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn_cek_promo:hover {
+            background-color: #e0b120;
+        }
 
         /* Disabled state: keep neutral + prevent hover effect */
         .btn_bayar_payment:disabled,
@@ -328,38 +348,29 @@
                         <input class="input_nomor" type="text" placeholder="Example: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
                     </div>
                 </div>
-                @if((bool) ($course->is_reseller_course ?? false))
-                    <div class="input_biodata">
-                        <p>Referral Code</p>
+                <div class="input_biodata">
+                    <p>Kode Promo / Referral</p>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
                         <input
                             class="kolom_input_biodata"
                             type="text"
-                            id="referralCodeInput"
-                            placeholder="Enter the reseller referral code if any"
-                            value="{{ request()->query('ref', '') }}"
+                            id="promoCodeInput"
+                            placeholder="Masukkan Kode Voucher atau Referral jika ada"
+                            value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}"
                             autocomplete="off"
+                            style="flex: 1; margin-bottom: 0;"
                         >
-                        <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
-                        <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-                            Valid code will give 10% discount.
-                        </div>
+                        <button type="button" id="checkPromoBtn" class="btn_cek_promo">Cek Kode</button>
                     </div>
-                @endif
-
-                <div class="input_biodata">
-                    <p>Voucher Code</p>
-                    <input
-                        class="kolom_input_biodata"
-                        type="text"
-                        id="voucherCodeInput"
-                        placeholder="Masukkan kode voucher penukaran Anda"
-                        autocomplete="off"
-                    >
-                    <div id="voucherMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
+                    <div id="promoMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
                     <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-                        Masukkan kode voucher yang telah ditukarkan di halaman profil untuk potongan harga.
+                        Masukkan Kode Voucher (dari Poin) atau Kode Referral Reseller untuk mendapatkan potongan harga.
                     </div>
                 </div>
+
+                <!-- Hidden inputs for validation state and submission -->
+                <input type="hidden" id="referralCodeInput" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
+                <input type="hidden" id="voucherCodeInput" value="">
 
 
 
@@ -400,6 +411,18 @@
 
                     <div class="ticket-divider"></div>
 
+                    <!-- Detail rincian potongan harga -->
+                    <div style="margin: 15px 0; padding-bottom: 10px; border-bottom: 1px dashed #e5e7eb; font-family: sans-serif;">
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; margin-bottom: 8px;">
+                            <span>Harga Asli</span>
+                            <span id="originalPriceText">Rp {{ number_format($course->hasDiscount() ? $course->discounted_price : ($course->price ?? 0), 0, ',', '.') }}</span>
+                        </div>
+                        <div id="discountRow" style="display: none; justify-content: space-between; font-size: 13px; color: #16a34a; margin-bottom: 8px; font-weight: 500;">
+                            <span id="discountLabel">Diskon Promo</span>
+                            <span id="discountValueText">-Rp 0</span>
+                        </div>
+                    </div>
+
                     <div class="harga_teks_payment">
                         <div class="teks_payment">
                             <p>Total</p>
@@ -431,7 +454,7 @@
                     <input type="hidden" name="name" id="hiddenNameInput" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
-                    <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', '') }}">
+                    <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
 
                     @if($isFreeCourse)
                         <button type="submit" id="freeEnrollBtn" class="btn_bayar_payment" disabled>Study Now!</button>
@@ -469,19 +492,19 @@
             var freeEnrollBtn = document.getElementById('freeEnrollBtn');
             var midtransPayBtn = document.getElementById('midtransPayBtnCourse');
             var manualPaymentForm = document.getElementById('manualPaymentForm');
-            var referralInput = document.getElementById('referralCodeInput');
-            var referralMessageEl = document.getElementById('referralMessage');
+            var promoInput = document.getElementById('promoCodeInput');
+            var promoMessageEl = document.getElementById('promoMessage');
+            var referralInput = document.getElementById('referralCodeInput'); // hidden
+            var voucherInput = document.getElementById('voucherCodeInput'); // hidden
             var formReferralCodeInput = document.getElementById('formReferralCodeInput');
-            var checkReferralUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-referral', $course) : '');
+            
+            var checkCodeUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-code', $course) : '');
             var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
-            var referralState = referralInput ? 'idle' : 'disabled';
-            var referralTimer = null;
-
-            var voucherInput = document.getElementById('voucherCodeInput');
-            var voucherMessageEl = document.getElementById('voucherMessage');
-            var voucherState = voucherInput ? 'idle' : 'disabled';
-            var voucherTimer = null;
+            
+            var referralState = 'idle';
+            var voucherState = 'idle';
             var currentDiscount = 0;
+            var promoTimer = null;
 
             var isFreeCourse = false;
             if (manualPaymentForm) {
@@ -514,30 +537,17 @@
                 }
             }
 
-            function setReferralMessage(message, kind) {
-                if (!referralMessageEl) return;
+            function setPromoMessage(message, kind) {
+                if (!promoMessageEl) return;
                 if (!message) {
-                    referralMessageEl.style.display = 'none';
-                    referralMessageEl.textContent = '';
-                    referralMessageEl.style.color = '';
+                    promoMessageEl.style.display = 'none';
+                    promoMessageEl.textContent = '';
+                    promoMessageEl.style.color = '';
                     return;
                 }
-                referralMessageEl.style.display = '';
-                referralMessageEl.textContent = message;
-                referralMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
-            }
-
-            function setVoucherMessage(message, kind) {
-                if (!voucherMessageEl) return;
-                if (!message) {
-                    voucherMessageEl.style.display = 'none';
-                    voucherMessageEl.textContent = '';
-                    voucherMessageEl.style.color = '';
-                    return;
-                }
-                voucherMessageEl.style.display = '';
-                voucherMessageEl.textContent = message;
-                voucherMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
+                promoMessageEl.style.display = '';
+                promoMessageEl.textContent = message;
+                promoMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
             }
 
             function setTotalAmount(amount) {
@@ -558,6 +568,28 @@
                 }
                 setTotalAmount(finalAmount);
 
+                // Update discount row
+                var discountRow = document.getElementById('discountRow');
+                var discountLabel = document.getElementById('discountLabel');
+                var discountValueText = document.getElementById('discountValueText');
+                
+                var discountAmount = baseAmount - finalAmount;
+                if (discountAmount > 0) {
+                    if (discountRow) discountRow.style.display = 'flex';
+                    if (discountLabel) {
+                        if (referralState === 'valid') {
+                            discountLabel.textContent = 'Diskon Referral (10%)';
+                        } else if (voucherState === 'valid') {
+                            discountLabel.textContent = 'Diskon Voucher';
+                        } else {
+                            discountLabel.textContent = 'Potongan Harga';
+                        }
+                    }
+                    if (discountValueText) discountValueText.textContent = '-Rp ' + formatIdrNumber(discountAmount);
+                } else {
+                    if (discountRow) discountRow.style.display = 'none';
+                }
+
                 if (midtransPayBtn) {
                     if (finalAmount === 0) {
                         midtransPayBtn.textContent = 'Study Now (Free)';
@@ -576,32 +608,11 @@
                 return (value || '').replace(/[^0-9]/g, '');
             }
 
-            async function validateReferralServer(code) {
-                if (!checkReferralUrl || !code) return null;
+            async function validatePromoCodeServer(code) {
+                if (!checkCodeUrl || !code) return null;
                 try {
-                    var url = new URL(checkReferralUrl, window.location.origin);
+                    var url = new URL(checkCodeUrl, window.location.origin);
                     url.searchParams.set('code', code);
-                    var res = await fetch(url.toString(), {
-                        method: 'GET',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        credentials: 'same-origin'
-                    });
-                    if (!res.ok) return null;
-                    return await res.json();
-                } catch (_e) {
-                    return null;
-                }
-            }
-
-            async function validateVoucherServer(code) {
-                if (!code) return null;
-                try {
-                    var url = new URL(@json(route('courses.check-voucher', $course)), window.location.origin);
-                    url.searchParams.set('code', code);
-                    var referralVal = getReferralCode();
-                    if (referralVal && referralState === 'valid') {
-                        url.searchParams.set('referral_code', referralVal);
-                    }
                     var res = await fetch(url.toString(), {
                         method: 'GET',
                         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -618,15 +629,9 @@
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 var fullName = (fullNameInput ? fullNameInput.value : '').trim();
                 var disable = wa.length < 8 || fullName.length === 0;
-                if (referralInput) {
-                    var code = getReferralCode();
-                    if (code !== '' && referralState !== 'valid') {
-                        disable = true;
-                    }
-                }
-                if (voucherInput) {
-                    var vCode = getVoucherCode();
-                    if (vCode !== '' && voucherState !== 'valid') {
+                var code = promoInput ? promoInput.value.trim() : '';
+                if (code !== '') {
+                    if (referralState !== 'valid' && voucherState !== 'valid') {
                         disable = true;
                     }
                 }
@@ -634,164 +639,93 @@
                 if (midtransPayBtn) midtransPayBtn.disabled = disable;
             }
 
-            if (whatsappInput) {
-                whatsappInput.addEventListener('input', updatePayButtonState);
-            }
-
-            function updateReferralUIFromResult(data) {
+            function handlePromoCodeUI(data, code) {
                 var baseAmount = getBaseAmount();
-                if (!referralInput) {
-                    referralFinalAmount = baseAmount;
-                    updateTotalDisplay();
-                    updatePayButtonState();
-                    return;
-                }
-
-                var code = getReferralCode();
-                syncReferralInput();
-
+                
                 if (code === '') {
                     referralState = 'idle';
-                    setReferralMessage('', 'info');
-                    referralFinalAmount = baseAmount;
-                    if (getVoucherCode() !== '') {
-                        scheduleVoucherValidation();
-                    } else {
-                        updateTotalDisplay();
-                        updatePayButtonState();
-                    }
-                    return;
-                }
-
-                if (currentUserReferral && code.toUpperCase() === String(currentUserReferral).trim().toUpperCase()) {
-                    referralState = 'invalid';
-                    setReferralMessage('Kode referral tidak boleh menggunakan kode milik sendiri.', 'error');
-                    referralFinalAmount = baseAmount;
-                    if (getVoucherCode() !== '') {
-                        scheduleVoucherValidation();
-                    } else {
-                        updateTotalDisplay();
-                        updatePayButtonState();
-                    }
-                    return;
-                }
-
-                if (!data) {
-                    referralState = 'invalid';
-                    setReferralMessage('Gagal memeriksa kode referral. Coba lagi.', 'error');
-                    referralFinalAmount = baseAmount;
-                    if (getVoucherCode() !== '') {
-                        scheduleVoucherValidation();
-                    } else {
-                        updateTotalDisplay();
-                        updatePayButtonState();
-                    }
-                    return;
-                }
-
-                if (data.valid) {
-                    referralState = 'valid';
-                    setReferralMessage(data.message || 'Kode referral valid. Diskon 10% diterapkan.', 'success');
-                    referralFinalAmount = data.final_amount || baseAmount;
-                } else {
-                    referralState = 'invalid';
-                    setReferralMessage(data.message || 'Kode referral tidak valid.', 'error');
-                    referralFinalAmount = baseAmount;
-                }
-
-                if (getVoucherCode() !== '') {
-                    scheduleVoucherValidation();
-                } else {
-                    updateTotalDisplay();
-                    updatePayButtonState();
-                }
-            }
-
-            function scheduleReferralValidation() {
-                if (!referralInput) return;
-                if (referralTimer) {
-                    clearTimeout(referralTimer);
-                }
-
-                var code = getReferralCode();
-                syncReferralInput();
-
-                if (code === '') {
-                    updateReferralUIFromResult({ valid: false, message: '' });
-                    return;
-                }
-
-                referralState = 'checking';
-                setReferralMessage('Memeriksa kode referral...', 'info');
-                updatePayButtonState();
-
-                referralTimer = setTimeout(async function() {
-                    var data = await validateReferralServer(code);
-                    if (code !== getReferralCode()) {
-                        return;
-                    }
-                    updateReferralUIFromResult(data);
-                }, 400);
-            }
-
-            function updateVoucherUIFromResult(data) {
-                var code = getVoucherCode();
-
-                if (code === '') {
                     voucherState = 'idle';
                     currentDiscount = 0;
-                    setVoucherMessage('', 'info');
+                    referralFinalAmount = baseAmount;
+                    if (referralInput) referralInput.value = '';
+                    if (voucherInput) voucherInput.value = '';
+                    syncReferralInput();
+                    setPromoMessage('', 'info');
                     updateTotalDisplay();
                     updatePayButtonState();
                     return;
                 }
 
                 if (!data) {
+                    referralState = 'invalid';
                     voucherState = 'invalid';
                     currentDiscount = 0;
-                    setVoucherMessage('Gagal memeriksa kode voucher. Coba lagi.', 'error');
+                    referralFinalAmount = baseAmount;
+                    if (referralInput) referralInput.value = '';
+                    if (voucherInput) voucherInput.value = '';
+                    syncReferralInput();
+                    setPromoMessage('Gagal memvalidasi kode. Coba lagi.', 'error');
                     updateTotalDisplay();
                     updatePayButtonState();
                     return;
                 }
 
                 if (data.valid) {
-                    voucherState = 'valid';
-                    currentDiscount = data.discount || 0;
-                    setVoucherMessage(data.message || 'Voucher berhasil diterapkan.', 'success');
+                    if (data.type === 'referral') {
+                        referralState = 'valid';
+                        voucherState = 'idle';
+                        currentDiscount = 0;
+                        referralFinalAmount = data.final_amount || baseAmount;
+                        if (referralInput) referralInput.value = code;
+                        if (voucherInput) voucherInput.value = '';
+                    } else if (data.type === 'voucher') {
+                        referralState = 'idle';
+                        voucherState = 'valid';
+                        currentDiscount = data.discount || 0;
+                        referralFinalAmount = baseAmount;
+                        if (referralInput) referralInput.value = '';
+                        if (voucherInput) voucherInput.value = code;
+                    }
+                    syncReferralInput();
+                    setPromoMessage(data.message, 'success');
                 } else {
+                    referralState = 'invalid';
                     voucherState = 'invalid';
                     currentDiscount = 0;
-                    setVoucherMessage(data.message || 'Voucher tidak valid.', 'error');
+                    referralFinalAmount = baseAmount;
+                    if (referralInput) referralInput.value = '';
+                    if (voucherInput) voucherInput.value = '';
+                    syncReferralInput();
+                    setPromoMessage(data.message || 'Kode tidak valid.', 'error');
                 }
 
                 updateTotalDisplay();
                 updatePayButtonState();
             }
 
-            function scheduleVoucherValidation() {
-                if (!voucherInput) return;
-                if (voucherTimer) {
-                    clearTimeout(voucherTimer);
+            function schedulePromoValidation() {
+                if (promoTimer) {
+                    clearTimeout(promoTimer);
                 }
 
-                var code = getVoucherCode();
+                var code = promoInput ? promoInput.value.trim() : '';
 
                 if (code === '') {
-                    updateVoucherUIFromResult({ valid: false, message: '' });
+                    handlePromoCodeUI({ valid: false, message: '' }, '');
                     return;
                 }
 
+                referralState = 'checking';
                 voucherState = 'checking';
-                setVoucherMessage('Memeriksa kode voucher...', 'info');
+                setPromoMessage('Memeriksa kode...', 'info');
                 updatePayButtonState();
 
-                voucherTimer = setTimeout(async function() {
-                    var data = await validateVoucherServer(code);
-                    if (code !== getVoucherCode()) {
+                promoTimer = setTimeout(async function() {
+                    var data = await validatePromoCodeServer(code);
+                    if (promoInput && code !== promoInput.value.trim()) {
                         return;
                     }
-                    updateVoucherUIFromResult(data);
+                    handlePromoCodeUI(data, code);
                 }, 400);
             }
 
@@ -803,15 +737,10 @@
                     return;
                 }
 
-                if (referralInput && getReferralCode() !== '' && referralState !== 'valid') {
-                    alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
-                    try { referralInput.focus(); } catch (_e) {}
-                    return;
-                }
-
-                if (voucherInput && getVoucherCode() !== '' && voucherState !== 'valid') {
-                    alert('Kode voucher belum valid. Silakan cek kembali kode voucher Anda.');
-                    try { voucherInput.focus(); } catch (_e) {}
+                var code = promoInput ? promoInput.value.trim() : '';
+                if (code !== '' && referralState !== 'valid' && voucherState !== 'valid') {
+                    alert('Kode belum valid. Silakan periksa kembali kode Anda.');
+                    try { promoInput.focus(); } catch (_e) {}
                     return;
                 }
             }
@@ -822,17 +751,34 @@
                 whatsappInput.addEventListener('input', updatePayButtonState);
                 whatsappInput.addEventListener('blur', updatePayButtonState);
             }
-            if (referralInput) {
-                referralInput.addEventListener('input', scheduleReferralValidation);
-                referralInput.addEventListener('blur', scheduleReferralValidation);
-                scheduleReferralValidation();
+            var checkPromoBtn = document.getElementById('checkPromoBtn');
+            if (checkPromoBtn) {
+                checkPromoBtn.addEventListener('click', function() {
+                    if (promoTimer) clearTimeout(promoTimer);
+                    var code = promoInput ? promoInput.value.trim() : '';
+                    if (code === '') {
+                        handlePromoCodeUI({ valid: false, message: 'Silakan masukkan kode terlebih dahulu.' }, '');
+                        return;
+                    }
+                    referralState = 'checking';
+                    voucherState = 'checking';
+                    setPromoMessage('Memeriksa kode...', 'info');
+                    updatePayButtonState();
+                    validatePromoCodeServer(code).then(function(data) {
+                        handlePromoCodeUI(data, code);
+                    });
+                });
+            }
+
+            if (promoInput) {
+                promoInput.addEventListener('input', schedulePromoValidation);
+                promoInput.addEventListener('blur', schedulePromoValidation);
+                if (promoInput.value.trim() !== '') {
+                    schedulePromoValidation();
+                }
             } else {
                 referralFinalAmount = getBaseAmount();
                 updateTotalDisplay();
-            }
-            if (voucherInput) {
-                voucherInput.addEventListener('input', scheduleVoucherValidation);
-                voucherInput.addEventListener('blur', scheduleVoucherValidation);
             }
 
             // Handle free registration submit

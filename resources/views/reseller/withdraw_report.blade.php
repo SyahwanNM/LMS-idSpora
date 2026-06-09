@@ -84,6 +84,7 @@
             <thead>
                 <tr>
                     <th>ID & Bank</th>
+                    <th>Penerima / Rekening</th>
                     <th>Tanggal Pengajuan</th>
                     <th>Status</th>
                     <th>Tanggal Proses</th>
@@ -100,6 +101,10 @@
                     <td>
                         <div style="font-weight: bold; {{ $strikeStyle }}">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
                         <div style="color: #666; font-size: 11px; {{ $strikeStyle }}">{{ $wd->bank_name }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: bold; {{ $strikeStyle }}">{{ $wd->account_holder }}</div>
+                        <div style="color: #666; font-size: 11px; {{ $strikeStyle }}">{{ $wd->account_number }}</div>
                     </td>
                     <td style="color: #666; font-size: 11px; {{ $strikeStyle }}">{{ $wd->created_at->format('d/m/Y H:i') }}</td>
                     <td>
@@ -124,16 +129,23 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; color: #999;">Belum ada riwayat penarikan dana.</td>
+                    <td colspan="6" style="text-align: center; color: #999;">Belum ada riwayat penarikan dana.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
 
+        @php
+            $totalRejected = $withdrawals->filter(fn($item) => strtolower($item->status) === 'rejected')->sum('amount');
+        @endphp
         <div class="summary">
             <div class="summary-row">
                 <div class="summary-label">Dana Pending</div>
                 <div class="summary-value" style="color: #b4b4b4;">Rp {{ number_format($totalPending, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row">
+                <div class="summary-label">Dana Ditolak</div>
+                <div class="summary-value" style="color: #ef4444;">Rp {{ number_format($totalRejected, 0, ',', '.') }}</div>
             </div>
             <div class="summary-row summary-total">
                 <div class="summary-label">TOTAL CAIR</div>

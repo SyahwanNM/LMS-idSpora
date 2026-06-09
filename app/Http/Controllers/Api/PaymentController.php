@@ -195,6 +195,13 @@ class PaymentController extends Controller
         \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
         \Midtrans\Config::$isSanitized = (bool) config('midtrans.sanitize', true);
         \Midtrans\Config::$is3ds = (bool) config('midtrans.3ds', true);
+
+        if (!\Midtrans\Config::$isProduction) {
+            \Midtrans\Config::$curlOptions = [
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HTTPHEADER => [],
+            ];
+        }
     }
 
     private function getMidtransClientKey(): string
@@ -329,6 +336,22 @@ class PaymentController extends Controller
         ]);
 
         $referrer->increment('wallet_balance', $commissionAmount);
+
+        try {
+            $msg = "Komisi Baru Masuk! Anda mendapatkan komisi sebesar Rp " . number_format($commissionAmount, 0, ',', '.') . " dari pembelian event '" . $event->title . "'.";
+            \App\Models\UserNotification::create([
+                'user_id' => $referrer->id,
+                'type' => 'reseller',
+                'title' => 'Komisi Baru Masuk!',
+                'message' => $msg,
+                'data' => ['url' => route('reseller.index')],
+            ]);
+            if ($referrer->phone) {
+                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Event referral commission notification failed: ' . $e->getMessage());
+        }
     }
 
     private function processCourseReferralCommission(Course $course, ManualPayment $payment): void
@@ -369,6 +392,22 @@ class PaymentController extends Controller
         ]);
 
         $referrer->increment('wallet_balance', $commissionAmount);
+
+        try {
+            $msg = "Komisi Baru Masuk! Anda mendapatkan komisi sebesar Rp " . number_format($commissionAmount, 0, ',', '.') . " dari pembelian kursus '" . $course->name . "'.";
+            \App\Models\UserNotification::create([
+                'user_id' => $referrer->id,
+                'type' => 'reseller',
+                'title' => 'Komisi Baru Masuk!',
+                'message' => $msg,
+                'data' => ['url' => route('reseller.index')],
+            ]);
+            if ($referrer->phone) {
+                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Course referral commission notification failed: ' . $e->getMessage());
+        }
     }
 
     private function markVoucherUsedIfApplicable(ManualPayment $payment): void
