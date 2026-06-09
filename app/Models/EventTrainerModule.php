@@ -18,6 +18,7 @@ class EventTrainerModule extends Model
         'rejection_reason',
         'reviewed_by',
         'reviewed_at',
+        'feedback_link',
     ];
 
     protected $casts = [

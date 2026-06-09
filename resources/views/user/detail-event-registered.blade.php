@@ -886,6 +886,11 @@
                         $eventStarted = $startTime ? $nowTs->gte($startTime) : $nowTs->isSameDay($eventDate);
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                     }
+                    $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    $isFeedbackDay = false;
+                    if ($eventEndDate) {
+                        $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
+                    }
                     // Attendance via QR verification (check-in)
                     $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
                     $hasCertificate = $registration && $registration->certificate_issued_at;
@@ -898,6 +903,24 @@
                             || !empty($registration->attendance_code_used_at)
                         );
                     }
+
+                    // Multi-day attendance progress
+                    $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('qr_date')->get();
+                    $isMultiDayEvent = $dailyQrs->count() > 1;
+                    $dailyAttendedDates = [];
+                    if ($registration && $dailyQrs->isNotEmpty()) {
+                        $dailyAttendedDates = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                            ->pluck('attendance_date')
+                            ->map(fn($d) => $d instanceof \Carbon\Carbon ? $d->format('Y-m-d') : \Carbon\Carbon::parse($d)->format('Y-m-d'))
+                            ->toArray();
+                        // If any daily attendance exists, mark attendanceSubmitted = true
+                        if (count($dailyAttendedDates) > 0) {
+                            $attendanceSubmitted = true;
+                        }
+                    }
+                    $totalDays    = $dailyQrs->count();
+                    $attendedDays = count($dailyAttendedDates);
+                    $allDaysAttended = $totalDays > 0 && $attendedDays >= $totalDays;
                     $stepStates = [
                         'Registered' => $isRegistered,
                         'Attendance' => $attendanceSubmitted,
@@ -943,6 +966,11 @@
                     if ($eventDate) {
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                         $eventStarted = $nowTs->gte($startTime ? $startTime : $eventDate->copy()->startOfDay());
+                    }
+                    $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    $isFeedbackDay = false;
+                    if ($eventEndDate) {
+                        $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
                     }
                     // Pricing state
                     $hasActiveDiscount = false;
@@ -1597,8 +1625,10 @@
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
                     $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    // Unlock saat user selesai mengisi feedback (sertifikat dan modul)
-                    $moduleUnlocked = $isRegistered && isset($hasFeedback) && $hasFeedback;
+                    // Unlock materi saat event sudah mulai (hari H) DAN user sudah terdaftar aktif
+                    // Tidak perlu menunggu event selesai atau feedback diisi
+                    $eventStarted = isset($event) && $event->start_at && $event->start_at->lte(\Carbon\Carbon::now());
+                    $moduleUnlocked = $isRegistered && $eventStarted;
                 @endphp
                 @if($isRegistered || $approvedModules->isNotEmpty())
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
@@ -1613,11 +1643,11 @@
                         </svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Modules</h6>
+                        <h6>Modules Access</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
-                        @elseif(!isset($hasFeedback) || !$hasFeedback)
-                            <p>Available after send feedback.</p>
+                        @elseif(!$eventStarted)
+                            <p>Available when event starts</p>
                         @elseif($approvedModules->isEmpty())
                             <p>Not available</p>
                         @else
@@ -1652,33 +1682,117 @@
                                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
                                         <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
                                     </svg>
-                                    Download Modules 
+                                    Modules Access
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
-                                <div class="d-flex flex-column gap-2">
-                                    @foreach($approvedModules as $mod)
-                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
-                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
-                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
-                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
-                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                                                </svg>
-                                            </div>
-                                            <div style="overflow:hidden;">
-                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
-                                                @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
-                                                @endif
-                                            </div>
-                                        </a>
-                                    @endforeach
-                                </div>
+                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to access:</p>
+                                @php
+                                    $fileModules = [];
+                                    $linkModules = [];
+                                    foreach($approvedModules as $mod) {
+                                        if (preg_match('#^https?://#i', $mod->path)) {
+                                            $linkModules[] = $mod;
+                                        } else {
+                                            $fileModules[] = $mod;
+                                        }
+                                    }
+                                @endphp
+
+                                @if(!empty($fileModules))
+                                    <div class="mb-4">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+                                                <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zm-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">File Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($fileModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
+                                                                <path d="M.5 9.9a.5.5 0 0 1 .5-.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->feedback_link))
+                                                        <a href="{{ $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($linkModules))
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-link" viewBox="0 0 16 16">
+                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">Link Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($linkModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       target="_blank" rel="noopener noreferrer"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" class="bi bi-link" viewBox="0 0 16 16">
+                                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->feedback_link))
+                                                        <a href="{{ $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                             <div class="modal-footer border-0 pt-0">
                             </div>
@@ -1687,8 +1801,7 @@
                 </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
-                    <div class="img-resource">
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">                    <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
                             <path d="M2 2h2v2H2V2Z" />
@@ -1719,15 +1832,52 @@
                     </div>
                     <div class="resource-value">
                         <h6>Attendance QR Event</h6>
-                        @if(isset($attendanceSubmitted) && $attendanceSubmitted)
-                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                        @if($isMultiDayEvent)
+                            {{-- Multi-day: show day-by-day progress --}}
+                            <div class="mt-1" style="display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
+                                @foreach($dailyQrs as $dqr)
+                                    @php
+                                        $dqrDateStr = $dqr->qr_date instanceof \Carbon\Carbon ? $dqr->qr_date->format('Y-m-d') : \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d');
+                                        $isAttendedDay = in_array($dqrDateStr, $dailyAttendedDates);
+                                        $nowDay = \Carbon\Carbon::now(config('app.timezone'))->startOfDay();
+                                        $dqrDay = \Carbon\Carbon::parse($dqrDateStr)->startOfDay();
+                                        $isPastDay = $dqrDay->lt($nowDay);
+                                        $isTodayDay = $dqrDay->isSameDay($nowDay);
+                                    @endphp
+                                    <span style="
+                                        display:inline-flex; align-items:center; gap:4px;
+                                        padding:3px 8px; border-radius:20px; font-size:11px; font-weight:600;
+                                        background:{{ $isAttendedDay ? '#dcfce7' : ($isTodayDay ? '#eff6ff' : '#f3f4f6') }};
+                                        color:{{ $isAttendedDay ? '#15803d' : ($isTodayDay ? '#1d4ed8' : '#6b7280') }};
+                                        border:1.5px solid {{ $isAttendedDay ? '#86efac' : ($isTodayDay ? '#bfdbfe' : '#d1d5db') }};
+                                    ">
+                                        @if($isAttendedDay)
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 10"/></svg>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="{{ $isTodayDay ? '#1d4ed8' : '#9ca3af' }}" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+                                        @endif
+                                        Hari {{ $dqr->day_number }}
+                                    </span>
+                                @endforeach
+                            </div>
+                            <p class="mb-0 mt-1" style="font-size:11px; color:{{ $allDaysAttended ? '#15803d' : '#6b7280' }}; font-weight:{{ $allDaysAttended ? '600' : '400' }};">
+                                {{ $attendedDays }}/{{ $totalDays }} hari hadir
+                                @if($allDaysAttended) &nbsp;✓ Selesai @endif
+                            </p>
+                        @elseif($attendanceSubmitted)
+                            <p class="text-success mb-0" style="font-weight:600;">Done Successfully</p>
                         @else
-                            <p>Scan the event QR for attendance.</p>
+                            <p class="mb-0">Scan the event QR for attendance.</p>
                         @endif
                     </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
-                        <span class="d-inline-flex align-items-center""
-                            title="Berhasil Dilakukan">
+                    @php
+                        // Show checkmark only if ALL days attended (multi-day) or single-day attended
+                        $showCheckmark = $isRegistered && ($isMultiDayEvent ? $allDaysAttended : $attendanceSubmitted);
+                        // Show scan link if registered, event started, and not all days attended yet
+                        $showScanLink  = $isRegistered && $eventStarted && !($isMultiDayEvent ? $allDaysAttended : $attendanceSubmitted);
+                    @endphp
+                    @if($showCheckmark)
+                        <span class="d-inline-flex align-items-center" title="Berhasil Dilakukan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                 stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                 aria-label="Attendance Successful">
@@ -1735,7 +1885,7 @@
                                 <polyline points="8 12 11 15 16 10"></polyline>
                             </svg>
                         </span>
-                    @elseif(isset($isRegistered) && $isRegistered && isset($eventStarted) && $eventStarted)
+                    @elseif($showScanLink)
                         <a class="link-share" href="{{ route('events.scan', $event) }}" title="Buka Halaman Scan"
                             style="position:absolute; top:24px; right:10px; text-decoration:none;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -1860,7 +2010,7 @@
                     @endif
                 </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventFinished) ? '' : 'locked' }}"
+                 <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay)) ? '' : 'locked' }}"
                     style="position:relative;">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -1873,12 +2023,14 @@
                         <h6>Feedback and Ratings</h6>
                         @if(isset($hasFeedback) && $hasFeedback)
                             <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                        @elseif($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
+                            <p style="width: 70%;" class="text-primary">Please submit your feedback</p>
                         @else
                             <p style="width: 70%;">Available after the event ends</p>
                         @endif
                     </div>
 
-                    @if($isRegistered && $attendanceSubmitted && $eventFinished)
+                    @if($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
                             @if(isset($hasFeedback) && $hasFeedback)
@@ -1905,7 +2057,7 @@
             </div>
         </section>
 
-        @if($isRegistered && $attendanceSubmitted && $eventFinished)
+        @if($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
                     <div class="d-flex justify-content-between align-items-center"

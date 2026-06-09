@@ -7,17 +7,21 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $concatSql = DB::getDriverName() === 'sqlite'
+            ? "'Module ' || order_no || ' - Material'"
+            : "CONCAT('Module ', order_no, ' - Material')";
+
         // Fix modules with bare "Material" title (no Module N prefix)
         DB::table('course_module')
             ->where('title', 'Material')
             ->update([
-                'title' => DB::raw("CONCAT('Module ', order_no, ' - Material')")
+                'title' => DB::raw($concatSql)
             ]);
 
         DB::table('course_template_modules')
             ->where('title', 'Material')
             ->update([
-                'title' => DB::raw("CONCAT('Module ', order_no, ' - Material')")
+                'title' => DB::raw($concatSql)
             ]);
     }
 

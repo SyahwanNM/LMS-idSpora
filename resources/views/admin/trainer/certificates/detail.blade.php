@@ -16,8 +16,8 @@
     $context = $model && strtolower(class_basename(get_class($model))) === 'course' ? 'course' : 'event';
 
     $templateAsset = $assets->where('type', 'template')->first();
-    $templateName = $templateAsset?->name
-        ?? $model?->certificate_template
+    $templateName = $model?->certificate_template
+        ?? $templateAsset?->name
         ?? 'template_1';
 
     $logos = $assets->where('type', 'logo')->values();
@@ -465,6 +465,108 @@
         #cert-preview-scaler .template_3 .verification-tag { left: 70px; bottom: 25px; }
         #cert-preview-scaler .template_3 .cert-id { right: 70px; bottom: 25px; }
 
+        #cert-preview-scaler .template_4 {
+            padding: 0;
+            height: 642px;
+            width: 1020px;
+            box-sizing: border-box;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        #cert-preview-scaler .template_4 .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1020px;
+            height: 642px;
+            z-index: 1;
+        }
+        #cert-preview-scaler .template_4 .logo-banner-container {
+            position: absolute;
+            top: 0;
+            left: 28%;
+            width: 44%;
+            background-color: #ffffff;
+            border-radius: 0 0 15px 15px;
+            padding: 8px 20px;
+            text-align: center;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        #cert-preview-scaler .template_4 .logo-poster-img {
+            height: 45px;
+            width: auto;
+        }
+        #cert-preview-scaler .template_4 .logo-item-top {
+            height: 38px;
+            width: auto;
+            margin: 0 5px;
+        }
+        #cert-preview-scaler .template_4 .content-blue {
+            position: absolute;
+            top: 136px;
+            left: 0;
+            width: 1020px;
+            text-align: center;
+            z-index: 5;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        #cert-preview-scaler .template_4 .recipient-underline {
+            width: 604px;
+            height: 1.5px;
+            background-color: #ffffff;
+            margin: 8px auto 15px auto;
+        }
+        #cert-preview-scaler .template_4 .cert-footer {
+            position: absolute !important;
+            bottom: 45px !important;
+            left: 75px !important;
+            right: 75px !important;
+            text-align: center !important;
+            width: auto !important;
+            z-index: 6 !important;
+            padding: 0 !important;
+        }
+        #cert-preview-scaler .template_4 .sig-box {
+            display: inline-block !important;
+            float: none !important;
+            width: 264px !important;
+            margin: 0 30px !important;
+        }
+        #cert-preview-scaler .template_4 .sig-position {
+            font-weight: bold;
+            margin: 0 0 4px 0;
+            font-size: 8pt;
+            color: #1a1a1a;
+        }
+        #cert-preview-scaler .template_4 .sig-image-wrap {
+            height: 48px;
+            margin: 4px auto;
+        }
+        #cert-preview-scaler .template_4 .sig-img {
+            height: 48px;
+            width: auto;
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+        #cert-preview-scaler .template_4 .sig-line {
+            width: 208px;
+            border-bottom: 1.5px solid #1a1a1a;
+            margin: 2px auto;
+        }
+        #cert-preview-scaler .template_4 .sig-name {
+            font-weight: bold;
+            margin: 6px 0 0 0;
+            font-size: 8.5pt;
+            color: #1a1a1a;
+        }
+
         .preview-actions {
             display: flex;
             justify-content: center;
@@ -815,6 +917,35 @@
                                         <img src="{{ asset('aset/bg-creative.png') }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
                                     </div>
 
+                                    <!-- Template 4 Decorations: Blue Shield (CRM) -->
+                                    <div class="template-decorations-4" style="{{ $templateName === 'template_4' ? '' : 'display: none;' }}">
+                                        <img src="{{ asset('aset/bg-blue-shield.png') }}" class="bg-image" alt="">
+                                    </div>
+
+                                    <div id="preview-t4-top" style="{{ $templateName === 'template_4' ? '' : 'display: none;' }}" class="logo-banner-container">
+                                        <img src="{{ asset('aset/logo poster.png') }}" class="logo-poster-img" alt="idSpora">
+                                        @foreach($logos as $logo)
+                                            @php $logoUrl = $assetUrl($logo->image_path); @endphp
+                                            @if($logoUrl)
+                                                <img class="logo-item-top" src="{{ $logoUrl }}" alt="Logo">
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                    <div id="preview-t4-bottom" style="{{ $templateName === 'template_4' ? '' : 'display: none;' }}" class="content-blue">
+                                        <h1 style="font-size: 22pt; font-weight: 900; margin: 0; letter-spacing: 3px;">SERTIFIKAT</h1>
+                                        <p style="font-size: 8.5pt; font-weight: bold; letter-spacing: 4px; margin: 9px 0 4px 0;">DIBERIKAN KEPADA</p>
+                                        <div style="font-size: 20pt; font-weight: bold; margin: 11px 0 4px 0;">{{ strtoupper($trainerName) }}</div>
+                                        <div class="recipient-underline"></div>
+                                        <p style="font-size: 8.5pt; margin: 8px 0 4px 0;">Atas Kontribusinya Sebagai</p>
+                                        <p style="font-size: 13pt; font-weight: bold; margin: 4px 0 8px 0;">NARASUMBER</p>
+                                        <p style="font-size: 8.5pt; margin: 8px 0 4px 0;">Dalam Program</p>
+                                        <h2 style="font-size: 14pt; font-weight: bold; margin: 4px 0 4px 0;">"{{ $modelTitle }}"</h2>
+                                        <p style="font-size: 8pt; margin: 9px 0 0 0;">
+                                            Diterbitkan pada <strong>{{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d F Y') : now()->format('d F Y') }}</strong>
+                                        </p>
+                                    </div>
+
                                     <!-- Template 3 Header Area -->
                                     <div class="header-bg" id="preview-t3-header" style="{{ $templateName === 'template_3' ? '' : 'display: none;' }}">
                                         <div style="float: right;" class="preview-logo-container-t3">
@@ -831,7 +962,7 @@
                                     </div>
 
                                     <!-- Template 1 & 2 Header Area -->
-                                    <div class="header" id="preview-t12-header" style="{{ $templateName !== 'template_3' ? '' : 'display: none;' }}">
+                                    <div class="header" id="preview-t12-header" style="{{ !in_array($templateName, ['template_3', 'template_4'], true) ? '' : 'display: none;' }}">
                                         <div class="logo-row">
                                             <div class="logo-container preview-logo-container-t12">
                                                 <img src="{{ asset('aset/logo idspora_dark.png') }}" class="logo-item" id="preview-main-logo-t12">
@@ -849,7 +980,7 @@
                                     </div>
 
                                     <!-- Content Box -->
-                                    <div class="content" id="preview-content-box" style="{{ $templateName === 'template_2' ? 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;' : ($templateName === 'template_3' ? 'padding: 10px 70px; text-align: center; margin-top: 0;' : 'margin-top: 40px; text-align: center;') }}">
+                                    <div class="content" id="preview-content-box" style="{{ $templateName === 'template_4' ? 'display: none;' : ($templateName === 'template_2' ? 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;' : ($templateName === 'template_3' ? 'padding: 10px 70px; text-align: center; margin-top: 0;' : 'margin-top: 40px; text-align: center;')) }}">
                                         <p style="font-size: 16pt; color: #64748b; font-style: italic; margin-bottom: 5px;" id="preview-certify-text">Diberikan kepada:</p>
                                         <div class="recipient-name" style="font-family: inherit;">{{ $templateName === 'template_1' ? $trainerName : strtoupper($trainerName) }}</div>
                                         <div id="preview-name-divider-t1" style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 15px auto; display: {{ $templateName === 'template_1' ? 'block' : 'none' }};"></div>
@@ -863,16 +994,29 @@
                                         <div style="float: right; text-align: center; width: 100%;" id="preview-signatures-container">
                                             @foreach($signatures->take(3) as $signature)
                                                 @php $sigUrl = $assetUrl($signature->image_path); @endphp
-                                                <div class="sig-box" style="{{ $templateName === 'template_3' ? 'display: inline-block !important; float: none !important; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.8); padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); backdrop-filter: blur(6px); margin: 0 20px !important;' : 'display: inline-block !important; float: none !important; text-align: center !important; margin: 0 30px !important; width: ' . ($templateName === 'template_2' ? '250px' : '230px') . ' !important;' }}">
-                                                    @if($sigUrl)
-                                                        <img src="{{ $sigUrl }}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">
-                                                    @else
-                                                        <div style="height: 90px;"></div>
-                                                    @endif
-                                                    <div class="sig-line" style="width: 170px; border-bottom: 1.5px {{ $templateName === 'template_1' ? 'dashed #7f1d1d' : ($templateName === 'template_3' ? 'solid #4f46e5' : 'solid #0f172a') }}; margin: 8px auto;"></div>
-                                                    <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $signature->name ?? 'Authorized Signature' }}</p>
-                                                    <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $signature->position ?? 'Authorized Position' }}</p>
-                                                </div>
+                                                @if($templateName === 'template_4')
+                                                    <div class="sig-box">
+                                                        <p class="sig-position">{{ $signature->position ?? 'Authorized Position' }}</p>
+                                                        <div class="sig-image-wrap">
+                                                            @if($sigUrl)
+                                                                <img src="{{ $sigUrl }}" class="sig-img" alt="">
+                                                            @endif
+                                                        </div>
+                                                        <div class="sig-line"></div>
+                                                        <p class="sig-name">{{ $signature->name ?? 'Authorized Signature' }}</p>
+                                                    </div>
+                                                @else
+                                                    <div class="sig-box" style="{{ $templateName === 'template_3' ? 'display: inline-block !important; float: none !important; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.8); padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); backdrop-filter: blur(6px); margin: 0 20px !important;' : 'display: inline-block !important; float: none !important; text-align: center !important; margin: 0 30px !important; width: ' . ($templateName === 'template_2' ? '250px' : '230px') . ' !important;' }}">
+                                                        @if($sigUrl)
+                                                            <img src="{{ $sigUrl }}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">
+                                                        @else
+                                                            <div style="height: 90px;"></div>
+                                                        @endif
+                                                        <div class="sig-line" style="width: 170px; border-bottom: 1.5px {{ $templateName === 'template_1' ? 'dashed #7f1d1d' : ($templateName === 'template_3' ? 'solid #4f46e5' : 'solid #0f172a') }}; margin: 8px auto;"></div>
+                                                        <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $signature->name ?? 'Authorized Signature' }}</p>
+                                                        <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $signature->position ?? 'Authorized Position' }}</p>
+                                                    </div>
+                                                @endif
                                             @endforeach
                                         </div>
                                     </div>

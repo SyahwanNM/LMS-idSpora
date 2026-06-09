@@ -346,6 +346,22 @@
                     </div>
                 @endif
 
+                <div class="input_biodata">
+                    <p>Voucher Code</p>
+                    <input
+                        class="kolom_input_biodata"
+                        type="text"
+                        id="voucherCodeInput"
+                        placeholder="Masukkan kode voucher penukaran Anda"
+                        autocomplete="off"
+                    >
+                    <div id="voucherMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
+                    <div style="margin-top:6px; font-size:12px; color:#6b7280;">
+                        Masukkan kode voucher yang telah ditukarkan di halaman profil untuk potongan harga.
+                    </div>
+                </div>
+
+
 
             </div>
 
@@ -461,10 +477,18 @@
             var referralState = referralInput ? 'idle' : 'disabled';
             var referralTimer = null;
 
+            var voucherInput = document.getElementById('voucherCodeInput');
+            var voucherMessageEl = document.getElementById('voucherMessage');
+            var voucherState = voucherInput ? 'idle' : 'disabled';
+            var voucherTimer = null;
+            var currentDiscount = 0;
+
             var isFreeCourse = false;
             if (manualPaymentForm) {
                 isFreeCourse = (manualPaymentForm.getAttribute('data-is-free') || '0') === '1';
             }
+
+            var referralFinalAmount = getBaseAmount();
 
             function formatIdrNumber(amount) {
                 var n = Math.max(0, parseInt(amount || 0, 10));
@@ -478,6 +502,10 @@
 
             function getReferralCode() {
                 return referralInput ? String(referralInput.value || '').trim() : '';
+            }
+
+            function getVoucherCode() {
+                return voucherInput ? String(voucherInput.value || '').trim() : '';
             }
 
             function syncReferralInput() {
@@ -499,6 +527,19 @@
                 referralMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
             }
 
+            function setVoucherMessage(message, kind) {
+                if (!voucherMessageEl) return;
+                if (!message) {
+                    voucherMessageEl.style.display = 'none';
+                    voucherMessageEl.textContent = '';
+                    voucherMessageEl.style.color = '';
+                    return;
+                }
+                voucherMessageEl.style.display = '';
+                voucherMessageEl.textContent = message;
+                voucherMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
+            }
+
             function setTotalAmount(amount) {
                 if (!totalAmountText) return;
                 var n = Math.max(0, parseInt(amount || 0, 10));
@@ -507,6 +548,28 @@
                     return;
                 }
                 totalAmountText.textContent = 'Rp ' + formatIdrNumber(n);
+            }
+
+            function updateTotalDisplay() {
+                var baseAmount = getBaseAmount();
+                var finalAmount = referralFinalAmount;
+                if (voucherState === 'valid' && currentDiscount > 0) {
+                    finalAmount = Math.max(0, referralFinalAmount - currentDiscount);
+                }
+                setTotalAmount(finalAmount);
+
+                if (midtransPayBtn) {
+                    if (finalAmount === 0) {
+                        midtransPayBtn.textContent = 'Study Now (Free)';
+                    } else {
+                        var pending = cachedPending;
+                        if (pending && pending.pending) {
+                            midtransPayBtn.textContent = 'Continue Payment';
+                        } else {
+                            midtransPayBtn.textContent = 'Pay Now';
+                        }
+                    }
+                }
             }
 
             function normalizePhone(value) {
@@ -530,6 +593,27 @@
                 }
             }
 
+            async function validateVoucherServer(code) {
+                if (!code) return null;
+                try {
+                    var url = new URL(@json(route('courses.check-voucher', $course)), window.location.origin);
+                    url.searchParams.set('code', code);
+                    var referralVal = getReferralCode();
+                    if (referralVal && referralState === 'valid') {
+                        url.searchParams.set('referral_code', referralVal);
+                    }
+                    var res = await fetch(url.toString(), {
+                        method: 'GET',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin'
+                    });
+                    if (!res.ok) return null;
+                    return await res.json();
+                } catch (_e) {
+                    return null;
+                }
+            }
+
             function updatePayButtonState() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 var fullName = (fullNameInput ? fullNameInput.value : '').trim();
@@ -537,6 +621,12 @@
                 if (referralInput) {
                     var code = getReferralCode();
                     if (code !== '' && referralState !== 'valid') {
+                        disable = true;
+                    }
+                }
+                if (voucherInput) {
+                    var vCode = getVoucherCode();
+                    if (vCode !== '' && voucherState !== 'valid') {
                         disable = true;
                     }
                 }
@@ -551,7 +641,8 @@
             function updateReferralUIFromResult(data) {
                 var baseAmount = getBaseAmount();
                 if (!referralInput) {
-                    setTotalAmount(baseAmount);
+                    referralFinalAmount = baseAmount;
+                    updateTotalDisplay();
                     updatePayButtonState();
                     return;
                 }
@@ -562,38 +653,58 @@
                 if (code === '') {
                     referralState = 'idle';
                     setReferralMessage('', 'info');
-                    setTotalAmount(baseAmount);
-                    updatePayButtonState();
+                    referralFinalAmount = baseAmount;
+                    if (getVoucherCode() !== '') {
+                        scheduleVoucherValidation();
+                    } else {
+                        updateTotalDisplay();
+                        updatePayButtonState();
+                    }
                     return;
                 }
 
                 if (currentUserReferral && code.toUpperCase() === String(currentUserReferral).trim().toUpperCase()) {
                     referralState = 'invalid';
                     setReferralMessage('Kode referral tidak boleh menggunakan kode milik sendiri.', 'error');
-                    setTotalAmount(baseAmount);
-                    updatePayButtonState();
+                    referralFinalAmount = baseAmount;
+                    if (getVoucherCode() !== '') {
+                        scheduleVoucherValidation();
+                    } else {
+                        updateTotalDisplay();
+                        updatePayButtonState();
+                    }
                     return;
                 }
 
                 if (!data) {
                     referralState = 'invalid';
                     setReferralMessage('Gagal memeriksa kode referral. Coba lagi.', 'error');
-                    setTotalAmount(baseAmount);
-                    updatePayButtonState();
+                    referralFinalAmount = baseAmount;
+                    if (getVoucherCode() !== '') {
+                        scheduleVoucherValidation();
+                    } else {
+                        updateTotalDisplay();
+                        updatePayButtonState();
+                    }
                     return;
                 }
 
                 if (data.valid) {
                     referralState = 'valid';
                     setReferralMessage(data.message || 'Kode referral valid. Diskon 10% diterapkan.', 'success');
-                    setTotalAmount(data.final_amount || baseAmount);
+                    referralFinalAmount = data.final_amount || baseAmount;
                 } else {
                     referralState = 'invalid';
                     setReferralMessage(data.message || 'Kode referral tidak valid.', 'error');
-                    setTotalAmount(baseAmount);
+                    referralFinalAmount = baseAmount;
                 }
 
-                updatePayButtonState();
+                if (getVoucherCode() !== '') {
+                    scheduleVoucherValidation();
+                } else {
+                    updateTotalDisplay();
+                    updatePayButtonState();
+                }
             }
 
             function scheduleReferralValidation() {
@@ -612,7 +723,6 @@
 
                 referralState = 'checking';
                 setReferralMessage('Memeriksa kode referral...', 'info');
-                setTotalAmount(getBaseAmount());
                 updatePayButtonState();
 
                 referralTimer = setTimeout(async function() {
@@ -621,6 +731,67 @@
                         return;
                     }
                     updateReferralUIFromResult(data);
+                }, 400);
+            }
+
+            function updateVoucherUIFromResult(data) {
+                var code = getVoucherCode();
+
+                if (code === '') {
+                    voucherState = 'idle';
+                    currentDiscount = 0;
+                    setVoucherMessage('', 'info');
+                    updateTotalDisplay();
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (!data) {
+                    voucherState = 'invalid';
+                    currentDiscount = 0;
+                    setVoucherMessage('Gagal memeriksa kode voucher. Coba lagi.', 'error');
+                    updateTotalDisplay();
+                    updatePayButtonState();
+                    return;
+                }
+
+                if (data.valid) {
+                    voucherState = 'valid';
+                    currentDiscount = data.discount || 0;
+                    setVoucherMessage(data.message || 'Voucher berhasil diterapkan.', 'success');
+                } else {
+                    voucherState = 'invalid';
+                    currentDiscount = 0;
+                    setVoucherMessage(data.message || 'Voucher tidak valid.', 'error');
+                }
+
+                updateTotalDisplay();
+                updatePayButtonState();
+            }
+
+            function scheduleVoucherValidation() {
+                if (!voucherInput) return;
+                if (voucherTimer) {
+                    clearTimeout(voucherTimer);
+                }
+
+                var code = getVoucherCode();
+
+                if (code === '') {
+                    updateVoucherUIFromResult({ valid: false, message: '' });
+                    return;
+                }
+
+                voucherState = 'checking';
+                setVoucherMessage('Memeriksa kode voucher...', 'info');
+                updatePayButtonState();
+
+                voucherTimer = setTimeout(async function() {
+                    var data = await validateVoucherServer(code);
+                    if (code !== getVoucherCode()) {
+                        return;
+                    }
+                    updateVoucherUIFromResult(data);
                 }, 400);
             }
 
@@ -635,6 +806,13 @@
                 if (referralInput && getReferralCode() !== '' && referralState !== 'valid') {
                     alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
                     try { referralInput.focus(); } catch (_e) {}
+                    return;
+                }
+
+                if (voucherInput && getVoucherCode() !== '' && voucherState !== 'valid') {
+                    alert('Kode voucher belum valid. Silakan cek kembali kode voucher Anda.');
+                    try { voucherInput.focus(); } catch (_e) {}
+                    return;
                 }
             }
 
@@ -649,7 +827,12 @@
                 referralInput.addEventListener('blur', scheduleReferralValidation);
                 scheduleReferralValidation();
             } else {
-                setTotalAmount(getBaseAmount());
+                referralFinalAmount = getBaseAmount();
+                updateTotalDisplay();
+            }
+            if (voucherInput) {
+                voucherInput.addEventListener('input', scheduleVoucherValidation);
+                voucherInput.addEventListener('blur', scheduleVoucherValidation);
             }
 
             // Handle free registration submit
@@ -739,6 +922,7 @@
                     var dialVal = '+62';
                     var waVal = whatsappInput ? (whatsappInput.value || '').trim() : '';
                     var referralVal = getReferralCode();
+                    var voucherVal = getVoucherCode();
 
                     var snapTokenUrl = @json(route('courses.payment.snap-token', $course));
                     var refreshUrl = @json(route('payment.refresh-course', ['orderId' => 'ORDER_ID']));
@@ -748,7 +932,8 @@
                         var pending = cachedPending || await fetchPendingCourseOrder();
                         cachedPending = pending;
                         var pendingReferral = pending && pending.referral_code ? String(pending.referral_code).trim() : '';
-                        if (!forceNew && pending && pending.pending && pending.order_id && pending.snap_token && pendingReferral === referralVal) {
+                        var pendingVoucher = pending && pending.metadata && pending.metadata.voucher_code ? String(pending.metadata.voucher_code).trim() : '';
+                        if (!forceNew && pending && pending.pending && pending.order_id && pending.snap_token && pendingReferral === referralVal && pendingVoucher === voucherVal) {
                             return { snap_token: pending.snap_token, order_id: pending.order_id };
                         }
 
@@ -756,6 +941,7 @@
                         if (dialVal) url.searchParams.set('dial_code', dialVal);
                         if (waVal) url.searchParams.set('whatsapp', waVal);
                         if (referralVal) url.searchParams.set('referral_code', referralVal);
+                        if (voucherVal) url.searchParams.set('voucher_code', voucherVal);
                         if (forceNew) url.searchParams.set('force_new', '1');
 
                         var res = await fetch(url.toString(), {
@@ -764,7 +950,7 @@
                             credentials: 'same-origin'
                         });
                         var data = await res.json();
-                        if (!res.ok || !data || !data.snap_token) {
+                        if (!res.ok || !data || (!data.snap_token && !data.redirect_url)) {
                             throw new Error((data && data.message) ? data.message : 'Gagal membuat token Midtrans');
                         }
                         return data;
@@ -787,6 +973,11 @@
                             } catch(_e) {
                                 data = await getOrCreateSnapToken(true);
                             }
+                        }
+
+                        if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                            return;
                         }
 
                         window.snap.pay(data.snap_token, {

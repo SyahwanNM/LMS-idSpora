@@ -273,8 +273,23 @@ class EventMaterialApprovalController extends Controller
             abort(403, 'Hanya admin yang dapat mengakses materi event.');
         }
 
-        $assignment = $this->resolveTargetAssignment($event, $request);
-        $materialPath = (string) ($assignment?->material_path ?: $event->module_path ?: '');
+        $moduleId = (int) $request->query('module_id', 0);
+        $materialPath = '';
+
+        if ($moduleId > 0) {
+            $module = \App\Models\EventTrainerModule::query()
+                ->where('event_id', $event->id)
+                ->where('id', $moduleId)
+                ->firstOrFail();
+            $materialPath = (string) ($module->path ?? '');
+            if ($materialPath === '' || preg_match('#^https?://#i', $materialPath)) {
+                abort(404, 'File modul tidak ditemukan.');
+            }
+        } else {
+            $assignment = $this->resolveTargetAssignment($event, $request);
+            $materialPath = (string) ($assignment?->material_path ?: $event->module_path ?: '');
+        }
+
         if ($materialPath === '') {
             abort(404, 'Material event tidak ditemukan.');
         }

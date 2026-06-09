@@ -1,5 +1,8 @@
+@php
+    $template = $event->certificate_template ?? 'template_1';
+@endphp
 @if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat</title>@endif<style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
-@if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;height:210mm;overflow:hidden;background:white;font-family:'Helvetica','Arial',sans-serif;}@endif
+@if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;@if($template != 'template_4')height:210mm;overflow:hidden;@endif background:white;font-family:'Helvetica','Arial',sans-serif;}@endif
         
         .certificate-page { 
             width: 270mm; 
@@ -19,6 +22,52 @@
                 --cert-font-scale: 0.82;
                 transform-origin: top left;
             @endif
+        }
+
+        @if(!isset($is_preview) || !$is_preview)
+            .template_4.certificate-page {
+                position: relative !important;
+                top: 20mm !important;
+                left: 13.5mm !important;
+                display: block !important;
+                float: none !important;
+            }
+            .template_4.page-1 {
+                page-break-after: always !important;
+                margin-bottom: 40mm !important;
+            }
+            .template_4.page-2 {
+                page-break-after: avoid !important;
+            }
+        @endif
+
+        /* Curriculum Table styling for Template 4 Page 2 */
+        .template_4 .curriculum-table {
+            width: 85%;
+            margin: 5px auto;
+            border-collapse: collapse;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 9.5pt;
+            z-index: 10;
+            position: relative;
+        }
+        .template_4 .curriculum-table th {
+            background-color: #7cc2f7;
+            color: #000000;
+            border: 1.5px solid #000000;
+            padding: 8px 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .template_4 .curriculum-table td {
+            background-color: #faf9f6;
+            color: #000000;
+            border: 1.5px solid #000000;
+            padding: 6px 12px;
+            font-weight: bold;
+        }
+        .template_4 .curriculum-table td.center {
+            text-align: center;
         }
 
         /* Preview-only adjustments for browser rendering */
@@ -269,10 +318,295 @@
         .template_2 .verification-tag { left: 160px; } /* Offset for sidebar in modern template */
         .template_3 .verification-tag { left: 70px; bottom: 25px; }
         .template_3 .cert-id { right: 70px; bottom: 25px; }
+
+        /* Template 4: Blue Shield (Navy Blue & Gold Pentagon) */
+        .template_4 { 
+            padding: 0; 
+            height: 170mm; 
+            width: 270mm;
+            box-sizing: border-box;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        .template_4 .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 270mm;
+            height: 170mm;
+            z-index: 1;
+        }
+        .template_4 .logo-banner-container {
+            position: absolute;
+            top: 0;
+            left: 28%;
+            width: 44%;
+            background-color: #ffffff;
+            border-radius: 0 0 15px 15px;
+            padding: 8px 20px;
+            text-align: center;
+            z-index: 10;
+        }
+        .template_4 .logo-poster-img {
+            height: 45px;
+            width: auto;
+            vertical-align: middle;
+            display: inline-block;
+        }
+        .template_4 .logo-item-top {
+            height: 38px;
+            width: auto;
+            vertical-align: middle;
+            display: inline-block;
+            margin: 0 5px;
+        }
+        .template_4 .content-blue {
+            position: absolute;
+            top: 36mm;
+            left: 0;
+            width: 270mm;
+            text-align: center;
+            z-index: 5;
+            padding: 0;
+            box-sizing: border-box;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .template_4 .recipient-underline {
+            width: 160mm;
+            height: 1.5px;
+            background-color: #ffffff;
+            margin: 2mm auto 4mm auto;
+        }
+        .template_4 .cert-footer {
+            position: absolute !important;
+            bottom: 12mm !important;
+            left: 20mm !important;
+            right: 20mm !important;
+            text-align: center !important;
+            width: auto !important;
+            z-index: 6 !important;
+            padding: 0 !important;
+        }
+        .template_4 .sig-box {
+            display: inline-block !important;
+            vertical-align: bottom !important;
+            float: none !important;
+            text-align: center !important;
+            width: 70mm !important;
+            margin: 0 8mm !important;
+        }
+        .template_4 .sig-position {
+            font-weight: bold;
+            margin: 0 0 1mm 0;
+            font-size: 8pt;
+            color: #1a1a1a;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .template_4 .sig-image-wrap {
+            height: 48px;
+            margin: 1mm auto;
+            text-align: center;
+        }
+        .template_4 .sig-img {
+            height: 48px;
+            width: auto;
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+        .template_4 .sig-line {
+            width: 55mm;
+            border-bottom: 1.5px solid #1a1a1a;
+            margin: 2px auto;
+        }
+        .template_4 .sig-name {
+            font-weight: bold;
+            margin: 1.5mm 0 0 0;
+            font-size: 8.5pt;
+            color: #1a1a1a;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .curriculum-table { width: 220mm; margin: 0 auto; border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; }
+        .curriculum-table th { background-color: #1e3a8a; color: white; padding: 8px; border: 1px solid #1e3a8a; font-size: 9pt; }
+        .curriculum-table td { background-color: #ffffff; color: #1a1a1a; padding: 6px; border: 1px solid #d1d5db; font-size: 9pt; }
+        .curriculum-table .center { text-align: center; }
     </style>
 @if(!isset($is_preview) || !$is_preview)</head><body>@endif
 
     @php $template = $event->certificate_template ?? 'template_1'; @endphp
+    
+    @if($template == 'template_4')
+        {{-- Template 4: Blue Shield - 2-page layout --}}
+        @php 
+            $bgBlueShieldUrl = request()->schemeAndHttpHost() . '/aset/bg-blue-shield.png';
+            $logoPosterUrl = request()->schemeAndHttpHost() . '/aset/logo poster.png';
+            $logosToRender4 = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64;
+        @endphp
+
+        {{-- PAGE 1 --}}
+        <div class="certificate-page template_4 page-1">
+            <img src="{{ $bgBlueShieldUrl }}" class="bg-image">
+
+            {{-- Top content: Logo Header Banner --}}
+            <div class="logo-banner-container">
+                <img src="{{ $logoPosterUrl }}" class="logo-poster-img">
+                @foreach(array_slice($logosToRender4, 0, 2) as $logo)
+                    <img src="{{ $logo }}" class="logo-item-top">
+                @endforeach
+            </div>
+
+            {{-- Blue Area Content --}}
+            <div class="content-blue">
+                <h1 style="font-size: 22pt; font-weight: 900; margin: 0; letter-spacing: 3px; font-family: Arial, Helvetica, sans-serif;">SERTIFIKAT</h1>
+                <p style="font-size: 8.5pt; font-weight: bold; letter-spacing: 4px; margin: 2.5mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">DIBERIKAN KEPADA</p>
+                
+                <div style="font-size: 20pt; font-weight: bold; margin: 3mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    {{ strtoupper($user->name) }}
+                </div>
+                <div class="recipient-underline"></div>
+
+                <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Atas Partisipasinya Sebagai</p>
+                <p style="font-size: 13pt; font-weight: bold; margin: 1mm 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">PESERTA</p>
+                <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Dalam Kegiatan Workshop</p>
+                
+                <h2 style="font-size: 14pt; font-weight: bold; margin: 1mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    "{{ $event->title }}"
+                </h2>
+                <p style="font-size: 8.5pt; margin: 0 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    Designing Learning Experiences to Develop Real Competencies and Professional Portfolios
+                </p>
+                
+                <p style="font-size: 8pt; margin: 2.5mm 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+                    Yang diselenggarakan pada: 
+                    <strong>
+                        @if($event->event_until_date && $event->event_date->format('m Y') == $event->event_until_date->format('m Y'))
+                            {{ $event->event_date->format('d') }}-{{ $event->event_until_date->format('d F Y') }}
+                        @else
+                            {{ $event->event_date?->format('d F Y') }}
+                        @endif
+                    </strong> 
+                    di 
+                    <strong>{{ $event->location }}</strong>
+                </p>
+            </div>
+
+            {{-- Signature footer for template_4 inside the white area --}}
+            <div class="cert-footer">
+                <div style="text-align: center; width: 100%;">
+                    @php 
+                        $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64' => $b, 'name' => '', 'position' => ''], $signaturesBase64);
+                    @endphp
+                    @forelse($sigsToRender as $sig)
+                        <div class="sig-box">
+                            <p class="sig-position">{{ $sig['position'] ?? 'Authorized Position' }}</p>
+                            <div class="sig-image-wrap">
+                                @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
+                                <img src="{{ $sigSrc }}" class="sig-img">
+                            </div>
+                            <div class="sig-line"></div>
+                            <p class="sig-name">{{ $sig['name'] ?? 'Authorized Signature' }}</p>
+                        </div>
+                    @empty
+                        <div class="sig-box">
+                            <p class="sig-position">Authorized Position</p>
+                            <div class="sig-image-wrap">
+                                <div style="height:48px;"></div>
+                            </div>
+                            <div class="sig-line"></div>
+                            <p class="sig-name">Authorized Signature</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="verification-tag">VERIFIED BY IDSPORA.COM</div>
+            <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
+        </div>
+
+        {{-- PAGE 2 --}}
+        <div class="certificate-page template_4 page-2">
+            <img src="{{ $bgBlueShieldUrl }}" class="bg-image">
+
+            {{-- Top content: Logo Header Banner --}}
+            <div class="logo-banner-container">
+                <img src="{{ $logoPosterUrl }}" class="logo-poster-img">
+                @foreach(array_slice($logosToRender4, 0, 2) as $logo)
+                    <img src="{{ $logo }}" class="logo-item-top">
+                @endforeach
+            </div>
+
+            {{-- Table Content --}}
+            <div class="content-blue" style="top: 36mm;">
+                <h2 style="font-size: 14pt; font-weight: bold; margin: 0 0 1mm 0; font-family: Arial, Helvetica, sans-serif; color: #ffffff;">
+                    {{ $event->title }}
+                </h2>
+                <p style="font-size: 9.5pt; margin: 0 0 4mm 0; font-family: Arial, Helvetica, sans-serif; color: #ffffff; font-weight: bold;">
+                    Designing Learning Experiences to Develop Real Competencies and Professional Portfolios
+                </p>
+
+                <table class="curriculum-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">No.</th>
+                            <th style="width: 74%; text-align: left; padding-left: 15px;">Materi</th>
+                            <th style="width: 18%;">Jam Pelajaran (JP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="center">1.</td>
+                            <td style="text-align: left; padding-left: 15px;">OBE Canvas</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">2.</td>
+                            <td style="text-align: left; padding-left: 15px;">Transforming Teaching: From Content Delivery to Active Learning Design</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">3.</td>
+                            <td style="text-align: left; padding-left: 15px;">Design Thinking for OBE: From Learning to Real-World Product & Portfolio</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">4.</td>
+                            <td style="text-align: left; padding-left: 15px;">Meningkatkan Engagement di Ruang Kelas</td>
+                            <td class="center">3</td>
+                        </tr>
+                        <tr>
+                            <td class="center">5.</td>
+                            <td style="text-align: left; padding-left: 15px;">Project-Based Learning for Outcome Based Education</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">6.</td>
+                            <td style="text-align: left; padding-left: 15px;">Pemetaan KKNI dan SKKNI ke dalam OBE</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">7.</td>
+                            <td style="text-align: left; padding-left: 15px;">Penggunaan AI untuk Pembelajaran</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">8.</td>
+                            <td style="text-align: left; padding-left: 15px;">From Learning to Real Output: Membuat Portfolio + Showcase</td>
+                            <td class="center">3</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="text-align: center; font-weight: bold; background-color: #faf9f6; color: #000000; border: 1.5px solid #000000; padding: 6px 12px;">Total Jam Pelajaran</td>
+                            <td class="center" style="font-weight: bold; background-color: #faf9f6; color: #000000; border: 1.5px solid #000000; padding: 6px 12px;">18 JP</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="verification-tag">VERIFIED BY IDSPORA.COM</div>
+            <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
+        </div>
+    @else
     <div class="certificate-page {{ $template }}">
         @if($template == 'template_1') 
             <!-- Top Left Gold Bar -->
@@ -419,19 +753,31 @@
                     $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64' => $b, 'name' => '', 'position' => ''], $signaturesBase64);
                 @endphp
                 @forelse($sigsToRender as $sig)
-                    <div class="sig-box">
-                        @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
-                        <img src="{{ $sigSrc }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
-                        <div class="sig-line"></div>
-                        @if(!empty($sig['name']))
-                            <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $sig['name'] }}</p>
-                            @if(!empty($sig['position']))
-                                <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $sig['position'] }}</p>
+                    @if($template == 'template_4')
+                        <div class="sig-box">
+                            <p class="sig-position">{{ $sig['position'] ?? 'Authorized Position' }}</p>
+                            <div class="sig-image-wrap">
+                                @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
+                                <img src="{{ $sigSrc }}" class="sig-img">
+                            </div>
+                            <div class="sig-line"></div>
+                            <p class="sig-name">{{ $sig['name'] ?? 'Authorized Signature' }}</p>
+                        </div>
+                    @else
+                        <div class="sig-box">
+                            @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
+                            <img src="{{ $sigSrc }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
+                            <div class="sig-line"></div>
+                            @if(!empty($sig['name']))
+                                <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $sig['name'] }}</p>
+                                @if(!empty($sig['position']))
+                                    <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $sig['position'] }}</p>
+                                @endif
+                            @else
+                                <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
                             @endif
-                        @else
-                            <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
-                        @endif
-                    </div>
+                        </div>
+                    @endif
                 @empty
                     <div class="sig-box">
                         <div style="height: 90px;"></div>
@@ -445,6 +791,7 @@
         <div class="verification-tag">VERIFIED BY IDSPORA.COM</div>
         <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
     </div>
+    @endif
 
 @if(!isset($is_preview) || !$is_preview)
 </body>

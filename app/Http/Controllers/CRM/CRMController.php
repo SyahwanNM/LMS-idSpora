@@ -178,7 +178,9 @@ class CRMController extends Controller
         // Load customer data with relationships
         $customer->load([
             'eventRegistrations.event',
-            'enrollments.course'
+            'enrollments.course',
+            'pointTransactions',
+            'voucherRedemptions.voucher'
         ]);
 
         $registrations = $customer->eventRegistrations()
@@ -192,7 +194,10 @@ class CRMController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.crm.customers.show', compact('customer', 'registrations', 'enrollments'));
+        $pointTransactions = $customer->pointTransactions()->orderBy('created_at', 'desc')->get();
+        $voucherRedemptions = $customer->voucherRedemptions()->with('voucher')->orderBy('created_at', 'desc')->get();
+
+        return view('admin.crm.customers.show', compact('customer', 'registrations', 'enrollments', 'pointTransactions', 'voucherRedemptions'));
     }
 
     /**
@@ -699,5 +704,139 @@ class CRMController extends Controller
             \Log::error('Gagal mengirim WhatsApp ke ' . $phone . ': ' . $e->getMessage());
             return false;
         }
+    }
+
+    public function adjustPoints(Request $request, User $customer)
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $request->validate([
+            'amount' => 'required|integer',
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $amount = (int) $request->amount;
+        $reason = $request->reason;
+        $admin = Auth::user();
+
+        $pointsService = app(\App\Services\UserPointsService::class);
+        $pointsService->adjustPointsManual($customer, $amount, $reason, $admin);
+
+        return back()->with('success', 'Poin customer berhasil disesuaikan.');
+    }
+
+    public function vouchersIndex()
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $vouchers = \App\Models\Voucher::orderBy('created_at', 'desc')->get();
+        $redemptions = \App\Models\VoucherRedemption::with(['user', 'voucher'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('admin.crm.vouchers.index', compact('vouchers', 'redemptions'));
+    }
+
+    public function vouchersCreate()
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        return view('admin.crm.vouchers.create');
+    }
+
+    public function vouchersStore(Request $request)
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $request->validate([
+            'code' => 'required|string|max:50|unique:vouchers,code',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'points_required' => 'required|integer|min:0',
+            'discount_type' => 'required|in:fixed,percentage',
+            'discount_value' => 'required|integer|min:1',
+            'min_purchase' => 'required|integer|min:0',
+            'expires_at' => 'nullable|date',
+            'usage_limit' => 'nullable|integer|min:1',
+            'active' => 'boolean',
+        ]);
+
+        \App\Models\Voucher::create([
+            'code' => strtoupper($request->code),
+            'name' => $request->name,
+            'description' => $request->description,
+            'points_required' => $request->points_required,
+            'discount_type' => $request->discount_type,
+            'discount_value' => $request->discount_value,
+            'min_purchase' => $request->min_purchase,
+            'expires_at' => $request->expires_at,
+            'usage_limit' => $request->usage_limit,
+            'active' => $request->has('active') ? (bool) $request->active : true,
+        ]);
+
+        return redirect()->route('admin.crm.vouchers.index')->with('success', 'Voucher berhasil dibuat.');
+    }
+
+    public function vouchersEdit(\App\Models\Voucher $voucher)
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        return view('admin.crm.vouchers.edit', compact('voucher'));
+    }
+
+    public function vouchersUpdate(Request $request, \App\Models\Voucher $voucher)
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $request->validate([
+            'code' => 'required|string|max:50|unique:vouchers,code,' . $voucher->id,
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'points_required' => 'required|integer|min:0',
+            'discount_type' => 'required|in:fixed,percentage',
+            'discount_value' => 'required|integer|min:1',
+            'min_purchase' => 'required|integer|min:0',
+            'expires_at' => 'nullable|date',
+            'usage_limit' => 'nullable|integer|min:1',
+            'active' => 'boolean',
+        ]);
+
+        $voucher->update([
+            'code' => strtoupper($request->code),
+            'name' => $request->name,
+            'description' => $request->description,
+            'points_required' => $request->points_required,
+            'discount_type' => $request->discount_type,
+            'discount_value' => $request->discount_value,
+            'min_purchase' => $request->min_purchase,
+            'expires_at' => $request->expires_at,
+            'usage_limit' => $request->usage_limit,
+            'active' => $request->has('active') ? (bool) $request->active : false,
+        ]);
+
+        return redirect()->route('admin.crm.vouchers.index')->with('success', 'Voucher berhasil diperbarui.');
+    }
+
+    public function vouchersDestroy(\App\Models\Voucher $voucher)
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            abort(403, 'Hanya admin yang dapat mengakses fitur ini');
+        }
+
+        $voucher->delete();
+
+        return redirect()->route('admin.crm.vouchers.index')->with('success', 'Voucher berhasil dihapus.');
     }
 }

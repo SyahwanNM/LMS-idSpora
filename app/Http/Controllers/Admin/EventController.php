@@ -145,7 +145,7 @@ class EventController extends Controller
     {
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
         $events = Event::query()
-            ->with(['approvedTrainerModules.trainer'])
+            ->with(['approvedTrainerModules.trainer', 'speakers'])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -319,7 +319,7 @@ class EventController extends Controller
 
         $normalizedSpeaker = trim((string) $request->input('speaker', ''));
         if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
-            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+            $normalizedSpeaker = $submittedSpeakers->implode('|');
         }
 
         $event = Event::create([
@@ -460,7 +460,13 @@ class EventController extends Controller
         } catch (\Throwable $e) { /* ignore QR errors */
         }
 
-        // If the newly created event is already finished based on end time, pre-select the Finished filter
+        // Auto-generate per-day QR codes (supports multi-day via event_until_date)
+        try {
+            app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event->fresh());
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to auto-generate daily QRs', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+        }
+
         $statusFilter = $event->isFinished() ? 'finished' : null;
 
         return redirect()
@@ -478,7 +484,231 @@ class EventController extends Controller
         }
 
         $event->load(['trainerModules.trainer', 'approvedTrainerModules.trainer']);
+
+        // Lazy-generate per-day QRs if they don't exist yet (covers events created before this feature)
+        try {
+            $existingCount = \App\Models\EventDailyQr::where('event_id', $event->id)->count();
+            if ($existingCount === 0 && !empty($event->event_date)) {
+                app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event);
+            }
+        } catch (\Throwable $e) {
+            // Non-critical — don't block the page
+        }
+
         return view('admin.events.show', compact('event'));
+    }
+
+    public function getAttendanceStats(Event $event)
+    {
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Forbidden'], 403);
+        }
+
+        $totalActiveReg = $event->registrations()->where('status', 'active')->count();
+        $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('day_number')->get();
+        $daysData = [];
+        $logs = [];
+
+        if ($dailyQrs->isNotEmpty()) {
+            foreach ($dailyQrs as $dqr) {
+                $checkedInCount = \App\Models\EventDailyAttendance::where('event_daily_qr_id', $dqr->id)
+                    ->whereHas('registration', function($q) {
+                        $q->where('status', 'active');
+                    })
+                    ->count();
+                $percent = $totalActiveReg > 0 ? round(($checkedInCount / $totalActiveReg) * 100) : 0;
+                $daysData[] = [
+                    'day_number' => $dqr->day_number,
+                    'date' => \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y'),
+                    'date_raw' => \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d'),
+                    'checked_in' => $checkedInCount,
+                    'total' => $totalActiveReg,
+                    'percent' => $percent
+                ];
+            }
+
+            // Fetch recent check-ins
+            $recentAttendances = \App\Models\EventDailyAttendance::whereIn('event_registration_id', function($q) use ($event) {
+                    $q->select('id')->from('event_registrations')->where('event_id', $event->id)->where('status', 'active');
+                })
+                ->with('registration.user')
+                ->latest('scanned_at')
+                ->limit(15)
+                ->get();
+
+            $logs = $recentAttendances->map(function($att) {
+                return [
+                    'id' => $att->id,
+                    'name' => $att->registration->user->name ?? 'User',
+                    'email' => $att->registration->user->email ?? '-',
+                    'day_number' => $att->day_number,
+                    'scanned_at' => $att->scanned_at->format('H:i:s'),
+                    'date' => $att->scanned_at->format('d F Y')
+                ];
+            });
+        } else {
+            // Fallback for single day / legacy check-ins
+            $checkedInCount = $event->registrations()->where('status', 'active')->where(function($q) {
+                $q->whereNotNull('attended_at')
+                  ->orWhere('attendance_status', 'yes');
+            })->count();
+            $percent = $totalActiveReg > 0 ? round(($checkedInCount / $totalActiveReg) * 100) : 0;
+            $daysData[] = [
+                'day_number' => 1,
+                'date' => $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('d M Y') : '-',
+                'date_raw' => $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') : '',
+                'checked_in' => $checkedInCount,
+                'total' => $totalActiveReg,
+                'percent' => $percent
+            ];
+
+            // Fetch recent check-ins based on event_registrations.attended_at
+            $recentRegs = $event->registrations()
+                ->where('status', 'active')
+                ->whereNotNull('attended_at')
+                ->with('user')
+                ->latest('attended_at')
+                ->limit(15)
+                ->get();
+
+            $logs = $recentRegs->map(function($reg) {
+                return [
+                    'id' => $reg->id,
+                    'name' => $reg->user->name ?? 'User',
+                    'email' => $reg->user->email ?? '-',
+                    'day_number' => 1,
+                    'scanned_at' => $reg->attended_at->format('H:i:s'),
+                    'date' => $reg->attended_at->format('d F Y')
+                ];
+            });
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'total_active_participants' => $totalActiveReg,
+            'days' => $daysData,
+            'logs' => $logs
+        ]);
+    }
+
+    public function manualCheckIn(Event $event, EventRegistration $registration, Request $request)
+    {
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Forbidden'], 403);
+        }
+
+        $request->validate([
+            'day_number' => 'required|integer|min:1',
+        ]);
+
+        $dayNumber = (int) $request->day_number;
+
+        // Try to find the daily QR record
+        $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
+            ->where('day_number', $dayNumber)
+            ->first();
+
+        if (!$dailyQr) {
+            try {
+                app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event);
+                $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
+                    ->where('day_number', $dayNumber)
+                    ->first();
+            } catch (\Throwable $e) {}
+        }
+
+        if ($dailyQr) {
+            $qrDayDate = $dailyQr->qr_date instanceof \Carbon\Carbon
+                ? $dailyQr->qr_date->format('Y-m-d')
+                : \Carbon\Carbon::parse((string) $dailyQr->qr_date)->format('Y-m-d');
+
+            // Check if already checked in
+            $attendance = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('day_number', $dayNumber)
+                ->first();
+
+            if (!$attendance) {
+                \App\Models\EventDailyAttendance::create([
+                    'event_registration_id' => $registration->id,
+                    'event_daily_qr_id'     => $dailyQr->id,
+                    'attendance_date'       => $qrDayDate,
+                    'day_number'            => $dayNumber,
+                    'scanned_at'            => \Carbon\Carbon::now(config('app.timezone')),
+                ]);
+            }
+        } else {
+            // Fallback: If still no dailyQr, just create the attendance directly if nullable (or fail gracefully)
+            // Assuming event_daily_qr_id might be nullable or we just update the top-level status
+            $attendance = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('day_number', $dayNumber)
+                ->first();
+            
+            if (!$attendance) {
+                try {
+                    \App\Models\EventDailyAttendance::create([
+                        'event_registration_id' => $registration->id,
+                        'event_daily_qr_id'     => null,
+                        'attendance_date'       => \Carbon\Carbon::now(config('app.timezone'))->format('Y-m-d'),
+                        'day_number'            => $dayNumber,
+                        'scanned_at'            => \Carbon\Carbon::now(config('app.timezone')),
+                    ]);
+                } catch (\Exception $e) {
+                    // Ignore if event_daily_qr_id is not nullable, it will rely on top-level status
+                }
+            }
+        }
+
+        // Always update the top-level registration status
+        $registration->attendance_status = 'yes';
+        if (empty($registration->attended_at)) {
+            $registration->attended_at = \Carbon\Carbon::now(config('app.timezone'));
+        }
+        if (empty($registration->attendance_scan_qr)) {
+            $registration->attendance_scan_qr = \Carbon\Carbon::now(config('app.timezone'));
+        }
+        $registration->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kehadiran Hari ' . $dayNumber . ' berhasil dicatat secara manual.',
+        ]);
+    }
+
+    public function cancelDailyAttendance(Event $event, EventRegistration $registration, Request $request)
+    {
+        $user = auth()->user();
+        if ($user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Forbidden'], 403);
+        }
+
+        $request->validate([
+            'day_number' => 'required|integer|min:1',
+        ]);
+
+        $dayNumber = (int) $request->day_number;
+
+        // Delete the daily attendance record directly
+        \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+            ->where('day_number', $dayNumber)
+            ->delete();
+
+        // Count remaining daily attendances
+        $remainingCount = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)->count();
+
+        if ($remainingCount === 0) {
+            // If no daily attendances left, revert top-level status
+            $registration->attendance_status = 'no';
+            $registration->attended_at = null;
+            $registration->attendance_scan_qr = null;
+            $registration->save();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kehadiran Hari ' . $dayNumber . ' berhasil dibatalkan.',
+        ]);
     }
 
     public function edit(Event $event)
@@ -511,7 +741,7 @@ class EventController extends Controller
 
         $normalizedSpeaker = trim((string) $request->input('speaker', ''));
         if ($normalizedSpeaker === '' && $submittedSpeakers->isNotEmpty()) {
-            $normalizedSpeaker = $submittedSpeakers->implode(', ');
+            $normalizedSpeaker = $submittedSpeakers->implode('|');
         }
 
         $normalizedLocationMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
@@ -792,6 +1022,13 @@ class EventController extends Controller
             ]);
         }
 
+        // Sync per-day QRs (removes out-of-range, adds missing when dates changed)
+        try {
+            app(\App\Services\EventDailyQrService::class)->syncDailyQrs($event->fresh());
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to sync daily QRs on update', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+        }
+
         return redirect()->route('admin.add-event')->with('success', 'Event updated successfully!');
     }
 
@@ -1013,6 +1250,26 @@ class EventController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
+
+        // Sync profile fields
+        $profileUpdates = [];
+        $fullName = $request->input('full_name') ?: $user->name;
+        $email    = $request->input('email')     ?: $user->email;
+        $phone    = $request->input('whatsapp')  ?: $user->phone;
+        $university = $request->input('university_origin') ?: $user->institution;
+        $position   = $request->input('position')          ?: $user->profession;
+
+        if ($fullName !== $user->name)  $profileUpdates['name']  = $fullName;
+        if ($email    !== $user->email) $profileUpdates['email'] = $email;
+        if ($phone    !== $user->phone) $profileUpdates['phone'] = $phone;
+        if ($university !== $user->institution) $profileUpdates['institution'] = $university;
+        if ($position !== $user->profession)   $profileUpdates['profession']  = $position;
+
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
+
         $existing = EventRegistration::where('user_id', $user->id)->where('event_id', $event->id)->first();
         if ($existing) {
             if ($existing->status === 'rejected') {
@@ -1048,6 +1305,9 @@ class EventController extends Controller
                 'status' => 'active',
                 'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => 0.00,
+                'university_origin' => $request->input('university_origin'),
+                'study_program'     => $request->input('study_program'),
+                'position'          => $request->input('position'),
             ]);
 
             // Track in Finance (Amount 0)
@@ -1070,6 +1330,9 @@ class EventController extends Controller
                 'status' => 'pending',
                 'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => $event->discounted_price ?? $event->price,
+                'university_origin' => $request->input('university_origin'),
+                'study_program'     => $request->input('study_program'),
+                'position'          => $request->input('position'),
             ];
             // handle proof upload if present (this API used by web/mobile)
             if ($request->hasFile('payment_proof')) {
@@ -1375,46 +1638,46 @@ class EventController extends Controller
     public function generateQr(Event $event)
     {
         try {
-            // Generate new token and QR image (PNG preferred, SVG fallback)
-            $token = bin2hex(random_bytes(16));
-            $content = url('/events/' . $event->id . '?t=' . $token);
-            $png = null;
-            $svg = null;
-            $filename = null;
-            try {
-                if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
-                    $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
-                }
-            } catch (\Throwable $e) {
-                $png = null;
+            /** @var \App\Services\EventDailyQrService $qrService */
+            $qrService = app(\App\Services\EventDailyQrService::class);
+
+            // Check if a specific day is being regenerated (POST param: day_id)
+            $dayId = request()->input('day_id');
+            if ($dayId) {
+                $dailyQr = \App\Models\EventDailyQr::where('id', $dayId)
+                    ->where('event_id', $event->id)
+                    ->firstOrFail();
+                $qrService->regenerateDailyQr($dailyQr, $event);
+                return back()->with('success', 'QR Hari ke-' . $dailyQr->day_number . ' berhasil di-regenerate.');
             }
-            if ($png) {
-                $filename = 'events/qr/event-' . $event->id . '-qr.png';
-                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
-            } else {
+
+            // Generate / ensure all daily QRs for the event
+            $qrService->ensureAllDailyQrs($event);
+
+            // Also keep legacy single QR (for backward compat with older scan views)
+            if (empty($event->attendance_qr_token)) {
+                $token   = bin2hex(random_bytes(16));
+                $content = url('/events/' . $event->id . '?t=' . $token);
+                $png = null;
                 try {
                     if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
-                        $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(600)->margin(1)->generate($content);
+                        $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
                     }
-                } catch (\Throwable $e) {
-                    $svg = null;
-                }
-                if ($svg) {
-                    $filename = 'events/qr/event-' . $event->id . '-qr.svg';
-                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $svg);
-                } else {
-                    $filename = 'events/qr/event-' . $event->id . '-qr.png';
-                    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII=');
-                    \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png);
-                }
+                } catch (\Throwable $e) {}
+
+                $filename = 'events/qr/event-' . $event->id . '-qr.png';
+                \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png ?: base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII='));
+
+                $event->attendance_qr_token        = $token;
+                $event->attendance_qr_image        = $filename;
+                $event->attendance_qr_generated_at = now();
+                $event->save();
             }
-            $event->attendance_qr_token = $token;
-            $event->attendance_qr_image = $filename;
-            $event->attendance_qr_generated_at = now();
-            $event->save();
-            return back()->with('success', 'Attendance QR generated successfully.');
+
+            return back()->with('success', 'QR Attendance per hari berhasil di-generate.');
         } catch (\Throwable $e) {
-            return back()->with('error', 'Gagal generate QR Absensi.');
+            \Log::error('generateQr failed: ' . $e->getMessage());
+            return back()->with('error', 'Gagal generate QR Absensi: ' . $e->getMessage());
         }
     }
 
@@ -1543,6 +1806,45 @@ class EventController extends Controller
     }
 
     /**
+     * Admin: Cancel an approved registration — set back to pending.
+     */
+    public function cancelApprovalRegistration(Request $request, Event $event, EventRegistration $registration)
+    {
+        if ($registration->event_id !== $event->id) {
+            return back()->with('error', 'Data tidak valid.');
+        }
+
+        if ($registration->status !== 'active') {
+            return back()->with('error', 'Hanya registrasi aktif yang bisa dibatalkan.');
+        }
+
+        $registration->update([
+            'status'               => 'pending',
+            'payment_verified_at'  => null,
+            'payment_verified_by'  => null,
+        ]);
+
+        // Reset ManualPayment back to pending
+        \App\Models\ManualPayment::where('event_registration_id', $registration->id)
+            ->where('status', 'settled')
+            ->update(['status' => 'pending']);
+
+        // Notify user
+        try {
+            \App\Models\UserNotification::create([
+                'user_id'    => $registration->user_id,
+                'type'       => 'event_registration_cancelled',
+                'title'      => 'Konfirmasi Pembayaran Dibatalkan',
+                'message'    => 'Konfirmasi pembayaran Anda untuk event "' . ($event->title ?? 'Event') . '" telah dibatalkan oleh admin. Silakan hubungi admin untuk informasi lebih lanjut.',
+                'data'       => ['event_id' => $event->id],
+                'expires_at' => now()->addDays(14),
+            ]);
+        } catch (\Throwable $e) {}
+
+        return back()->with('success', 'Approval berhasil dibatalkan. Status kembali ke pending.');
+    }
+
+    /**
      * Delete an event registration and cleanup related data/files.
      */
     public function destroyRegistration(Event $event, EventRegistration $registration)
@@ -1573,6 +1875,126 @@ class EventController extends Controller
             \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Admin: Store multiple event materials (files and links)
+     */
+    public function storeMaterials(Request $request, Event $event)
+    {
+        $trainerId = $event->trainer_id ?? auth()->id();
+
+        if (!$request->hasFile('files') && (empty($request->input('links')) || !is_array($request->input('links')))) {
+            return back()->with('error', 'Harap sertakan setidaknya satu file atau satu link materi.');
+        }
+
+        $request->validate([
+            'files' => 'nullable|array',
+            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000',
+            'links' => 'nullable|array',
+            'links.*.url' => 'required|url|max:2048',
+            'links.*.name' => 'nullable|string|max:255',
+        ]);
+
+        $primaryMaterialPath = null;
+
+        // Process files
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $filepath = $file->storeAs('events/' . $event->id . '/materials', $filename, 'public');
+
+                \App\Models\EventTrainerModule::create([
+                    'event_id' => $event->id,
+                    'trainer_id' => $trainerId,
+                    'original_name' => $file->getClientOriginalName(),
+                    'path' => $filepath,
+                    'status' => 'approved', // Admin uploads are auto-approved!
+                ]);
+
+                if ($primaryMaterialPath === null) {
+                    $primaryMaterialPath = $filepath;
+                }
+            }
+        }
+
+        // Process links
+        if (!empty($request->input('links')) && is_array($request->input('links'))) {
+            foreach ($request->input('links') as $link) {
+                if (empty($link['url'])) continue;
+                $linkUrl = $link['url'];
+                $linkName = !empty($link['name']) ? $link['name'] : $linkUrl;
+
+                \App\Models\EventTrainerModule::create([
+                    'event_id' => $event->id,
+                    'trainer_id' => $trainerId,
+                    'original_name' => $linkName,
+                    'path' => $linkUrl,
+                    'status' => 'approved', // Admin uploads are auto-approved!
+                ]);
+
+                if ($primaryMaterialPath === null) {
+                    $primaryMaterialPath = $linkUrl;
+                }
+            }
+        }
+
+        if ($primaryMaterialPath) {
+            $event->update([
+                'module_path' => $primaryMaterialPath,
+                'material_status' => 'approved',
+            ]);
+        }
+
+        return back()->with('success', 'Materi event berhasil disimpan.');
+    }
+
+    /**
+     * Admin: Delete specific event material
+     */
+    public function destroyMaterial(Event $event, \App\Models\EventTrainerModule $module)
+    {
+        if ($module->event_id !== $event->id) {
+            return back()->with('error', 'Aksi tidak valid.');
+        }
+
+        if (!preg_match('#^https?://#i', $module->path)) {
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($module->path);
+            }
+        }
+
+        $module->delete();
+
+        if ($event->module_path === $module->path) {
+            $nextModule = \App\Models\EventTrainerModule::where('event_id', $event->id)->first();
+            $event->update([
+                'module_path' => $nextModule ? $nextModule->path : null,
+                'material_status' => $nextModule ? $event->material_status : 'draft',
+            ]);
+        }
+
+        return back()->with('success', 'Materi event berhasil dihapus.');
+    }
+
+    /**
+     * Admin: Update specific event material feedback link
+     */
+    public function updateFeedbackLink(Request $request, Event $event, \App\Models\EventTrainerModule $module)
+    {
+        if ($module->event_id !== $event->id) {
+            return back()->with('error', 'Aksi tidak valid.');
+        }
+
+        $validated = $request->validate([
+            'feedback_link' => 'nullable|url|max:2048',
+        ]);
+
+        $module->update([
+            'feedback_link' => $validated['feedback_link']
+        ]);
+
+        return back()->with('success', 'Link feedback materi berhasil diperbarui.');
     }
 }
 

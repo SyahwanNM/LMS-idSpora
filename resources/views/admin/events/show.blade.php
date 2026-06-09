@@ -128,7 +128,25 @@
                                             <i class="bi bi-calendar-date text-info me-2"></i>
                                             <div>
                                                 <small class="text-muted d-block">Date</small>
-                                                <strong>{{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}</strong>
+                                                @php
+                                                    $startDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+                                                    $untilDate = !empty($event->event_until_date) ? \Carbon\Carbon::parse($event->event_until_date) : null;
+                                                @endphp
+                                                <strong>
+                                                    @if($startDate)
+                                                        @if($untilDate && $untilDate->ne($startDate))
+                                                            @if($startDate->format('F Y') === $untilDate->format('F Y'))
+                                                                {{ $startDate->format('d') }} – {{ $untilDate->format('d F Y') }}
+                                                            @else
+                                                                {{ $startDate->format('d F Y') }} – {{ $untilDate->format('d F Y') }}
+                                                            @endif
+                                                        @else
+                                                            {{ $startDate->format('d F Y') }}
+                                                        @endif
+                                                    @else
+                                                        TBA
+                                                    @endif
+                                                </strong>
                                             </div>
                                         </div>
                                     </div>
@@ -137,9 +155,20 @@
                                             <i class="bi bi-clock text-warning me-2"></i>
                                             <div>
                                                 <small class="text-muted d-block">Time</small>
+                                                @php
+                                                    $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : null;
+                                                    $endTime = !empty($event->event_until_time) 
+                                                        ? \Carbon\Carbon::parse($event->event_until_time)->format('H:i') 
+                                                        : (!empty($event->event_time_end) ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : null);
+                                                @endphp
                                                 <strong>
-                                                    {{ \Carbon\Carbon::parse($event->event_time)->format('H:i') }}
-                                                    @if(!empty($event->event_time_end)) - {{ \Carbon\Carbon::parse($event->event_time_end)->format('H:i') }} @endif WIB
+                                                    @if($startTime)
+                                                        {{ $startTime }}
+                                                        @if($endTime) - {{ $endTime }} @endif
+                                                        WIB
+                                                    @else
+                                                        TBA
+                                                    @endif
                                                 </strong>
                                             </div>
                                         </div>
@@ -151,327 +180,274 @@
                         </div>
                     </div>
 
-                    <!-- Extra Details and Documents -->
-                    <div class="row mt-3 g-3">
-                        <div class="col-lg-6">
-                            <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-3"><i class="bi bi-tag me-2"></i>Price</h6>
-                                <div class="mb-3">
-                                    @php $isFree = (int)$event->price === 0; @endphp
-                                    @if($isFree)
-                                        <h3 class="text-success mb-0 fw-bold">Free</h3>
-                                    @elseif($event->hasDiscount())
-                                        <div class="d-flex flex-column">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <h3 class="text-success mb-0 fw-bold">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</h3>
-                                                <span class="badge bg-danger">-{{ $event->discount_percentage }}%</span>
-                                            </div>
-                                            <small class="text-muted text-decoration-line-through">Rp{{ number_format($event->price, 0, ',', '.') }}</small>
-                                        </div>
-                                    @else
-                                        <h3 class="text-success mb-0 fw-bold">Rp{{ number_format($event->price, 0, ',', '.') }}</h3>
-                                    @endif
-                                </div>
-                                <hr class="my-3 text-muted opacity-25">
-                                <ul class="list-unstyled mb-0">
-                                    {{-- Level removed per request --}}
-                                    @if(!empty($event->discount_until))
-                                    <li class="mb-2 d-flex align-items-center"><i class="bi bi-calendar-check text-success me-2"></i> <span><strong>Discount until:</strong> {{ \Carbon\Carbon::parse($event->discount_until)->format('d F Y') }}</span></li>
-                                    @endif
-                                    @if(!empty($event->zoom_link))
-                                    <li class="mb-2 d-flex align-items-center"><i class="bi bi-camera-video text-primary me-2"></i> <a href="{{ $event->zoom_link }}" target="_blank" class="link-primary">Open Zoom Link</a></li>
-                                    @endif
-                                    
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-3"><i class="bi bi-folder2-open me-2"></i>Documents</h6>
-                                <ul class="list-group list-group-flush small">
-                                    @if(!empty($event->zoom_link) || empty($event->maps_url))
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span><i class="bi {{ !empty($event->vbg_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Virtual Background</span>
-                                            <span>
-                                                @if(!empty($event->vbg_path))
-                                                    @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
-                                                    @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
-                                                            <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
-                                                        </a>
-                                                    @elseif($vExt === 'pdf')
-                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
-                                                    @else
-                                                        <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">View</a>
-                                                    @endif
-                                                @else <span class="text-muted">Empty</span> @endif
-                                            </span>
-                                        </li>
-                                    @endif
-                                    <li class="list-group-item">
-                                        @php
-                                            $trainerModules = $event->trainerModules()->with('trainer')->orderByDesc('created_at')->get();
-                                            $hasModuleItems = $trainerModules->isNotEmpty();
-                                            $moduleApproved = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'approved');
-                                            $moduleRejected = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'rejected');
-                                            $modulePending  = $trainerModules->contains('status', 'pending_review');
-                                            $moduleIcon = $moduleApproved
-                                                ? 'bi-check-circle text-success'
-                                                : ($moduleRejected ? 'bi-x-circle text-danger'
-                                                    : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
-                                        @endphp
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
-                                            @if(!$hasModuleItems)
-                                                <span class="text-muted small">Belum ada</span>
-                                            @endif
-                                        </div>
+                    @php
+                        $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('qr_date')->get();
+                        $isMultiDay = !empty($event->event_until_date)
+                            && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                    @endphp
 
-                                        @if($hasModuleItems)
-                                            <div class="mt-2">
-                                                @foreach($trainerModules as $tm)
-                                                    @php
-                                                        $borderClass = $tm->status === 'approved' ? 'border-success' : ($tm->status === 'rejected' ? 'border-danger' : 'border-warning');
-                                                    @endphp
-                                                    <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 border-start border-4 {{ $borderClass }}">
-                                                        <div class="d-flex align-items-center gap-2">
-                                                            <i class="bi bi-file-earmark-text"></i>
-                                                            <div>
-                                                                <div class="fw-bold" style="font-size:0.75rem;">{{ $tm->original_name }}</div>
-                                                                <div class="text-muted" style="font-size:0.7rem;">
-                                                                    {{ $tm->trainer?->name ?? 'Trainer' }} &bull; {{ $tm->created_at?->format('d/m/Y H:i') }}
-                                                                </div>
+                    <!-- Tab Navigation Menu -->
+                    <div class="mt-4 mb-4">
+                        <ul class="nav nav-tabs nav-tabs-custom border-bottom pb-0 gap-1" id="eventDetailTabs" role="tablist" style="border-bottom: 2px solid #dee2e6 !important;">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active px-4 py-2.5 fw-semibold d-flex align-items-center gap-2" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-pane" type="button" role="tab" aria-controls="dashboard-pane" aria-selected="true">
+                                    <i class="bi bi-broadcast text-primary"></i>Dasbor Kehadiran & Peserta
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-4 py-2.5 fw-semibold d-flex align-items-center gap-2" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-pane" type="button" role="tab" aria-controls="info-pane" aria-selected="false">
+                                    <i class="bi bi-info-circle text-success"></i>Informasi Event & Rundown
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link px-4 py-2.5 fw-semibold d-flex align-items-center gap-2" id="docs-tab" data-bs-toggle="tab" data-bs-target="#docs-pane" type="button" role="tab" aria-controls="docs-pane" aria-selected="false">
+                                    <i class="bi bi-folder2-open text-warning"></i>Dokumen & QR Absensi
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="tab-content" id="eventDetailTabsContent">
+                        <!-- TAB 1: Dasbor Kehadiran & Peserta -->
+                        <div class="tab-pane fade show active" id="dashboard-pane" role="tabpanel" aria-labelledby="dashboard-tab" tabindex="0">
+                            <!-- Real-time Attendance Dashboard -->
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="card border shadow-sm rounded-3">
+                                        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="live-dot-ring me-1">
+                                                    <span class="live-dot"></span>
+                                                </div>
+                                                <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-broadcast text-primary me-2"></i>Live Monitoring Kehadiran (Real-time)</h5>
+                                            </div>
+                                            <span class="badge bg-light text-dark border small" id="lastUpdatedBadge">Terakhir diupdate: -</span>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            <div class="row g-4">
+                                                <!-- Stats and Chart Column -->
+                                                <div class="col-xl-8">
+                                                    <!-- Stats Cards -->
+                                                    <div class="row g-3 mb-4" id="dailyStatsGrid">
+                                                        <div class="col-md-4">
+                                                            <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm stats-card stats-card-primary">
+                                                                <small class="text-muted d-block mb-1">Total Pendaftar Aktif</small>
+                                                                <h3 class="mb-0 fw-bold text-dark" id="activeParticipantsCount">-</h3>
                                                             </div>
-                                                        </div>
-                                                        <div class="d-flex align-items-center gap-1">
-                                                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tm->path) }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
-                                                            @if($tm->status === 'approved')
-                                                                <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
-                                                            @elseif($tm->status === 'rejected')
-                                                                <span class="badge bg-danger" style="font-size:0.65rem;">Ditolak</span>
-                                                            @else
-                                                                <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Pending</span>
-                                                            @endif
                                                         </div>
                                                     </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </li>
-                                    @if($modulePending ?? false)
-                                        <li class="list-group-item">
-                                            <div class="mt-2 small text-warning">
-                                                <i class="bi bi-info-circle me-1"></i>Ada modul yang menunggu review. Approve di halaman <a href="{{ route('admin.trainer.show', $event->trainer ?? 1) }}">Admin Trainer</a>.
-                                            </div>
-                                        </li>
-                                    @endif
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><i class="bi {{ !empty($event->attendance_qr_image) ? 'bi-qr-code text-success' : 'bi-qr-code text-muted' }} me-2"></i> QR Attendance</span>
-                                        <span class="d-flex align-items-center gap-2">
-                                            @if(!empty($event->attendance_qr_image))
-                                                @php $qExt = strtolower(pathinfo($event->attendance_qr_image, PATHINFO_EXTENSION)); $qrUrl = $event->attendance_qr_image_url; @endphp
-                                                <a href="{{ $qrUrl }}" target="_blank" class="d-inline-block">
-                                                    <img src="{{ $qrUrl }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;">
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-success" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrPng"><i class="bi bi-filetype-png me-1"></i>Download PNG</button>
-                                                <button type="button" class="btn btn-sm btn-outline-info" data-qr-src="{{ $qrUrl }}" data-qr-ext="{{ $qExt }}" data-qr-name="event-{{ $event->id }}-qr" id="btnDownloadQrJpg"><i class="bi bi-filetype-jpg me-1"></i>Download JPG</button>
-                                                <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-repeat me-1"></i>Regenerate</button>
-                                                </form>
-                                            @else
-                                                <span class="text-muted">Belum tersedia</span>
-                                                <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-qr-code me-1"></i>Generate</button>
-                                                </form>
-                                            @endif
-                                        </span>
-                                    </li>
-                                </ul>
-
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Registered Participants -->
-                    @php
-                        // Eager-load users for participant list
-                        try {
-                            $registrations = $event->registrations()->with(['user', 'paymentProofs'])->latest()->get();
-                        } catch (\Throwable $e) {
-                            $registrations = collect();
-                        }
-                    @endphp
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="border rounded p-4 {{ $registrations->count() ? 'bg-light' : 'bg-warning-subtle' }}">
-                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                        <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Registered Participants</h6>
-                                        <span id="participantsCountBadge" class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
-                                    </div>
-                                    <div class="input-group input-group-sm" style="max-width: 320px;">
-                                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                                        <input type="text" id="participantSearch" class="form-control" placeholder="Search participants (name/email)">
-                                    </div>
-                                </div>
-                                @if($registrations->count())
-                                <div id="participantsTableWrapper" class="table-responsive">
-                                    <table id="participantsTable" class="table table-sm table-striped align-middle mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th style="width:48px;">No</th>
-                                                <th style="width:200px;">Name</th>
-                                                <th style="width:200px;">Email</th>
-                                                <th style="width:140px;">Phone</th>
-                                                <th style="width:120px;">Status</th>
-                                                <th style="width:160px;">Registered</th>
-                                                <th style="width:160px;">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($registrations as $i => $reg)
-                                            <tr data-reg-code="{{ $reg->registration_code ?? '' }}">
-                                                <td>{{ $i+1 }}</td>
-                                                <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
-                                                <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
-                                                <td class="text-muted">{{ $reg->user->phone ?? '-' }}</td>
-                                                <td>
-                                                    @php
-                                                        $st = strtolower((string)$reg->status);
-                                                        $eventFinished = method_exists($event, 'isFinished') && $event->isFinished();
-                                                        $isAlpha = $eventFinished && $st === 'active' && empty($reg->attended_at);
-                                                        $displayStatus = $isAlpha ? 'alpha' : $st;
-                                                    @endphp
-                                                    <span class="badge {{
-                                                        $displayStatus === 'active' ? 'bg-success' :
-                                                        ($displayStatus === 'alpha' ? 'bg-warning text-dark' :
-                                                        ($displayStatus === 'rejected' ? 'bg-danger' : 'bg-secondary'))
-                                                    }}">{{ strtoupper($displayStatus) }}</span>
-                                                    @if($st === 'pending' && !empty($reg->payment_proof))
-                                                        <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">PROOF</span>
-                                                    @endif
-                                                </td>
-                                                <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
-                                                <td>
-                                                    @if($st === 'pending' && !empty($reg->payment_proof))
-                                                        <div class="d-flex flex-column gap-1" style="width:fit-content;">
-                                                            <a href="{{ Storage::disk('public')->url($reg->payment_proof) }}"
-                                                               target="_blank"
-                                                               class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:11px;width:fit-content;">
-                                                                <i class="bi bi-image me-1"></i>Bukti
-                                                            </a>
-                                                            <div class="d-flex gap-1">
-                                                                <form method="POST" action="{{ route('admin.events.registrations.approve', [$event, $reg]) }}" class="d-inline m-0">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
-                                                                        onclick="return confirm('Konfirmasi pembayaran ini?')">
-                                                                        <i class="bi bi-check2"></i> OK
-                                                                    </button>
-                                                                </form>
-                                                                <button type="button" class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#rejectModal"
-                                                                    data-reg-id="{{ $reg->id }}"
-                                                                    data-event-id="{{ $event->id }}"
-                                                                    data-user-name="{{ $reg->user->name ?? '-' }}">
-                                                                    <i class="bi bi-x"></i> Reject
-                                                                </button>
-                                                            </div>
+                                                    <!-- Chart Container -->
+                                                    <div class="bg-light p-3 border rounded shadow-sm">
+                                                        <h6 class="text-dark fw-semibold mb-3"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Grafik Persentase Kehadiran per Hari</h6>
+                                                        <div style="position: relative; height: 260px;">
+                                                            <canvas id="attendanceChart"></canvas>
                                                         </div>
-                                                    @else
-                                                        <span class="text-muted small">-</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                                    <div id="participantsEmpty" class="alert alert-light border small mb-0 d-none">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-emoji-frown fs-4 text-muted" aria-hidden="true"></i>
-                                            <div>
-                                                <div id="participantsEmptyMessage">Oopss, data peserta tidak ada.</div>
-                                                <div id="participantsEmptyQuery" class="small text-muted"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Live Check-in Feed Column -->
+                                                <div class="col-xl-4">
+                                                    <div class="border rounded p-3 h-100 bg-white d-flex flex-column shadow-sm" style="max-height: 400px;">
+                                                        <h6 class="text-dark fw-semibold mb-3 border-bottom pb-2"><i class="bi bi-activity me-2 text-success"></i>Feed Check-in Terbaru</h6>
+                                                        <div class="overflow-y-auto flex-grow-1" id="liveCheckinFeed" style="max-height: 320px;">
+                                                            <div class="text-center text-muted py-5 small">Memuat aktivitas...</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                @else
-                                <div class="alert alert-light border small mb-0">Belum ada peserta terdaftar.</div>
-                                @endif
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Location map and Benefit -->
-                    <div class="row mt-3 g-3">
-                        @if(!empty($event->latitude) && !empty($event->longitude))
-                        <div class="col-lg-6">
-                            <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-3"><i class="bi bi-geo-alt me-2"></i>Lokasi Peta</h6>
-                                <div id="eventMap" style="height:260px; border-radius:12px; overflow:hidden;"></div>
-                                @if(!empty($event->maps_url))
-                                    <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-box-arrow-up-right me-1"></i>Open Google Maps</a>
-                                @endif
-                            </div>
-                        </div>
-                        @elseif(!empty($event->maps_url))
-                        <div class="col-lg-6">
-                            <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-2"><i class="bi bi-geo-alt me-2"></i>Lokasi</h6>
-                                <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-box-arrow-up-right me-1"></i>Open Google Maps</a>
-                            </div>
-                        </div>
-                        @endif
-                        @php
-                            $benefitItems = is_array($event->benefit)
-                                ? $event->benefit
-                                : array_values(array_filter(array_map('trim', preg_split('/\|\s*|\r\n|\n/', (string)($event->benefit ?? ''))), fn($s) => $s !== ''));
-                        @endphp
-                        @if(!empty($benefitItems))
-                        <div class="col-lg-6">
-                            <div class="border rounded p-3 h-100">
-                                <h6 class="text-dark mb-2"><i class="bi bi-gift me-2"></i>Benefit</h6>
-                                <ul class="mb-0 ps-3 small">
-                                    @foreach($benefitItems as $b)
-                                        <li>{{ $b }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-
-                    <!-- Event Description -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="border-top pt-4">
-                                <h5 class="text-dark mb-3">
-                                    <i class="bi bi-file-text me-2"></i>Description
-                                </h5>
-                                <div class="bg-light rounded p-4">
-                                    <div class="event-description">
-                                        {!! $event->description !!}
+                            <!-- Registered Participants -->
+                            @php
+                                // Eager-load users for participant list
+                                try {
+                                    $registrations = $event->registrations()->with(['user', 'paymentProofs', 'dailyAttendances'])->latest()->get();
+                                } catch (\Throwable $e) {
+                                    $registrations = collect();
+                                }
+                            @endphp
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="border rounded p-4 {{ $registrations->count() ? 'bg-light' : 'bg-warning-subtle' }}">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                                <div class="d-flex align-items-center gap-2">
+                                                <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Registered Participants</h6>
+                                                <span id="participantsCountBadge" class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
+                                            </div>
+                                            <div class="input-group input-group-sm" style="max-width: 320px;">
+                                                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                                                <input type="text" id="participantSearch" class="form-control" placeholder="Search participants (name/email)">
+                                            </div>
+                                        </div>
+                                        @if($registrations->count())
+                                        <div id="participantsTableWrapper" class="table-responsive">
+                                            <table id="participantsTable" class="table table-sm table-striped align-middle mb-0">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th style="width:48px;">No</th>
+                                                        <th style="width:200px;">Name</th>
+                                                        <th style="width:200px;">Email</th>
+                                                        <th style="width:140px;">Phone</th>
+                                                        <th style="width:120px;">Status</th>
+                                                        <th style="width:160px;">Registered</th>
+                                                        <th style="width:160px;">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($registrations as $i => $reg)
+                                                    <tr data-reg-code="{{ $reg->registration_code ?? '' }}">
+                                                        <td>{{ $i+1 }}</td>
+                                                        <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
+                                                        <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
+                                                         <td class="text-muted">
+                                                             <div class="fw-semibold text-dark">{{ $reg->user->phone ?? '-' }}</div>
+                                                             @if(!empty($reg->university_origin) || !empty($reg->study_program) || !empty($reg->position))
+                                                                 <div class="mt-1" style="font-size: 10.5px; line-height: 1.35; max-width: 220px;">
+                                                                     @if(!empty($reg->university_origin))
+                                                                         <div class="text-dark"><i class="bi bi-bank me-1 text-muted"></i>{{ $reg->university_origin }}</div>
+                                                                     @endif
+                                                                     @if(!empty($reg->study_program))
+                                                                         <div class="text-secondary"><i class="bi bi-journal-text me-1 text-muted"></i>{{ $reg->study_program }}</div>
+                                                                     @endif
+                                                                     @if(!empty($reg->position))
+                                                                         <div class="text-muted"><i class="bi bi-briefcase me-1 text-muted"></i>{{ $reg->position }}</div>
+                                                                     @endif
+                                                                 </div>
+                                                             @endif
+                                                         </td>
+                                                        <td>
+                                                            @php
+                                                                $st = strtolower((string)$reg->status);
+                                                                $eventFinished = method_exists($event, 'isFinished') && $event->isFinished();
+                                                                $isAlpha = $eventFinished && $st === 'active' && empty($reg->attended_at);
+                                                                $displayStatus = $isAlpha ? 'alpha' : $st;
+                                                            @endphp
+                                                            <span class="badge {{
+                                                                $displayStatus === 'active' ? 'bg-success' :
+                                                                ($displayStatus === 'alpha' ? 'bg-warning text-dark' :
+                                                                ($displayStatus === 'rejected' ? 'bg-danger' : 'bg-secondary'))
+                                                            }}">{{ strtoupper($displayStatus) }}</span>
+                                                            @if($st === 'pending' && !empty($reg->payment_proof))
+                                                                <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">PROOF</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
+                                                        <td>
+                                                            @if($st === 'pending' && !empty($reg->payment_proof))
+                                                                <div class="d-flex flex-column gap-1" style="width:fit-content;">
+                                                                    <a href="{{ Storage::disk('public')->url($reg->payment_proof) }}"
+                                                                       target="_blank"
+                                                                       class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:11px;width:fit-content;">
+                                                                        <i class="bi bi-image me-1"></i>Bukti
+                                                                    </a>
+                                                                    <div class="d-flex gap-1">
+                                                                        <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#approveModal"
+                                                                            data-reg-id="{{ $reg->id }}"
+                                                                            data-event-id="{{ $event->id }}"
+                                                                            data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                            <i class="bi bi-check2"></i> OK
+                                                                        </button>
+                                                                        <button type="button" class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#rejectModal"
+                                                                            data-reg-id="{{ $reg->id }}"
+                                                                            data-event-id="{{ $event->id }}"
+                                                                            data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                            <i class="bi bi-x"></i> Reject
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            @elseif($st === 'active')
+                                                                <div class="d-flex align-items-center gap-1">
+                                                                    @php
+                                                                        $attendedDays = $reg->dailyAttendances->pluck('day_number')->toArray();
+                                                                        $totalEventDays = max(1, count($dailyQrs));
+                                                                    @endphp
+                                                                    <button class="btn btn-xs btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
+                                                                            type="button"
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#presenceModal"
+                                                                            data-reg-id="{{ $reg->id }}"
+                                                                            data-user-name="{{ $reg->user->name ?? '-' }}"
+                                                                            data-attended-days="{{ json_encode($attendedDays) }}"
+                                                                            data-total-days="{{ $totalEventDays }}"
+                                                                            data-reg-status-yes="{{ $reg->attendance_status === 'yes' ? 1 : 0 }}"
+                                                                            style="font-size:11px; height: 22px; line-height: 22px;">
+                                                                        <i class="bi bi-calendar-check"></i> Presensi
+                                                                    </button>
+                                                                    <form method="POST" action="{{ route('admin.events.registrations.cancel', [$event, $reg]) }}" class="d-inline m-0">
+                                                                        @csrf
+                                                                        @method('PATCH')
+                                                                        <button type="submit" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:11px; height: 22px; line-height: 22px;"
+                                                                            onclick="return confirm('Batalkan approval ini? Status akan kembali ke pending.')">
+                                                                            <i class="bi bi-arrow-counterclockwise"></i> Batal ACC
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            @else
+                                                                <span class="text-muted small">-</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                            <div id="participantsEmpty" class="alert alert-light border small mb-0 d-none">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <i class="bi bi-emoji-frown fs-4 text-muted" aria-hidden="true"></i>
+                                                    <div>
+                                                        <div id="participantsEmptyMessage">Oopss, data peserta tidak ada.</div>
+                                                        <div id="participantsEmptyQuery" class="small text-muted"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @else
+                                        <div class="alert alert-light border small mb-0">Belum ada peserta terdaftar.</div>
+                                        @endif
                                     </div>
                                 </div>
-                                <!-- Jadwal Event (Schedule) -->
-                                @php
-                                    // Kumpulkan jadwal dari relasi atau legacy JSON
-                                    $scheduleRows = collect();
-                                    if($event->relationLoaded('scheduleItems')) {
-                                        $scheduleRows = $event->scheduleItems->sortBy('start');
-                                    } elseif(is_array($event->schedule_json) && count($event->schedule_json)) {
-                                        $scheduleRows = collect($event->schedule_json)->sortBy('start');
-                                    } else {
-                                        try { $scheduleRows = $event->scheduleItems()->orderBy('start')->get(); } catch(\Throwable $e) { $scheduleRows = collect(); }
-                                    }
-                                @endphp
-                                @if($scheduleRows->count())
-                                <div class="mt-4">
-                                    <h5 class="text-dark mb-3"><i class="bi bi-clock-history me-2"></i>Schedule</h5>
-                                    <div class="table-responsive">
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: Informasi Event & Rundown -->
+                        <div class="tab-pane fade" id="info-pane" role="tabpanel" aria-labelledby="info-tab" tabindex="0">
+                            <!-- Event Description -->
+                            <div class="row mt-3">
+                                <div class="col-12 mb-4">
+                                    <h5 class="text-dark mb-3">
+                                        <i class="bi bi-file-text me-2 text-success"></i>Description
+                                    </h5>
+                                    <div class="bg-light rounded p-4 border bg-white">
+                                        <div class="event-description">
+                                            {!! $event->description !!}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Jadwal Event (Schedule) -->
+                            @php
+                                // Kumpulkan jadwal dari relasi atau legacy JSON
+                                $scheduleRows = collect();
+                                if($event->relationLoaded('scheduleItems')) {
+                                    $scheduleRows = $event->scheduleItems->sortBy('start');
+                                } elseif(is_array($event->schedule_json) && count($event->schedule_json)) {
+                                    $scheduleRows = collect($event->schedule_json)->sortBy('start');
+                                } else {
+                                    try { $scheduleRows = $event->scheduleItems()->orderBy('start')->get(); } catch(\Throwable $e) { $scheduleRows = collect(); }
+                                }
+                            @endphp
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-dark mb-3"><i class="bi bi-clock-history me-2 text-success"></i>Schedule</h5>
+                                    @if($scheduleRows->count())
+                                    <div class="table-responsive border rounded bg-white">
                                         <table class="table table-sm table-striped align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
@@ -524,26 +500,19 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                </div>
-                                @else
-                                <div class="mt-4">
-                                    <h5 class="text-dark mb-2"><i class="bi bi-clock-history me-2"></i>Schedule</h5>
+                                    @else
                                     <div class="alert alert-light border small mb-0">No schedule added yet.</div>
+                                    @endif
                                 </div>
-                                @endif
-                                <!-- Link Zoom -->
-                                @if(!empty($event->zoom_link))
-                                <div class="mt-4">
-                                    <h5 class="text-dark mb-3"><i class="bi bi-camera-video me-2"></i>Link Zoom</h5>
-                                    <a href="{{ $event->zoom_link }}" target="_blank" class="btn btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i> Buka Link Zoom</a>
-                                </div>
-                                @endif
-                                <!-- Pengeluaran (Expenses) -->
-                                @if(isset($event->expenses) && count($event->expenses))
-                                <div class="mt-4">
-                                    <h5 class="text-dark mb-3"><i class="bi bi-cash-stack me-2"></i>Expenses</h5>
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered align-middle">
+                            </div>
+
+                            <!-- Pengeluaran (Expenses) -->
+                            @if(isset($event->expenses) && count($event->expenses))
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-dark mb-3"><i class="bi bi-cash-stack me-2 text-success"></i>Expenses</h5>
+                                    <div class="table-responsive border rounded bg-white">
+                                        <table class="table table-bordered align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
                                                     <th>Item</th>
@@ -571,28 +540,301 @@
                                         </table>
                                     </div>
                                 </div>
+                            </div>
+                            @endif
+
+                            <!-- Location map and Benefit -->
+                            <div class="row g-3 mb-4">
+                                @if(!empty($event->latitude) && !empty($event->longitude))
+                                <div class="col-lg-6">
+                                    <div class="border rounded p-3 h-100 bg-white shadow-sm">
+                                        <h6 class="text-dark mb-3"><i class="bi bi-geo-alt me-2 text-success"></i>Lokasi Peta</h6>
+                                        <div id="eventMap" style="height:260px; border-radius:12px; overflow:hidden;"></div>
+                                        @if(!empty($event->maps_url))
+                                            <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-box-arrow-up-right me-1"></i>Open Google Maps</a>
+                                        @endif
+                                    </div>
+                                </div>
+                                @elseif(!empty($event->maps_url))
+                                <div class="col-lg-6">
+                                    <div class="border rounded p-3 h-100 bg-white shadow-sm">
+                                        <h6 class="text-dark mb-2"><i class="bi bi-geo-alt me-2 text-success"></i>Lokasi</h6>
+                                        <a href="{{ $event->maps_url }}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-box-arrow-up-right me-1"></i>Open Google Maps</a>
+                                    </div>
+                                </div>
+                                @endif
+                                @php
+                                    $benefitItems = is_array($event->benefit)
+                                        ? $event->benefit
+                                        : array_values(array_filter(array_map('trim', preg_split('/\|\s*|\r\n|\n/', (string)($event->benefit ?? ''))), fn($s) => $s !== ''));
+                                @endphp
+                                @if(!empty($benefitItems))
+                                <div class="col-lg-6">
+                                    <div class="border rounded p-3 h-100 bg-white shadow-sm">
+                                        <h6 class="text-dark mb-2"><i class="bi bi-gift me-2 text-success"></i>Benefit</h6>
+                                        <ul class="mb-0 ps-3 small">
+                                            @foreach($benefitItems as $b)
+                                                <li>{{ $b }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
                                 @endif
                             </div>
-                        </div>
-                    </div>
 
-                    @if(!empty($event->terms_and_conditions))
-                    <!-- Terms & Conditions -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="border-top pt-4">
-                                <h5 class="text-dark mb-3">
-                                    <i class="bi bi-shield-check me-2"></i>Terms & Conditions
-                                </h5>
-                                <div class="bg-light rounded p-4">
-                                    <div class="event-description">
-                                        {!! $event->terms_and_conditions !!}
+                            @if(!empty($event->terms_and_conditions))
+                            <!-- Terms & Conditions -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <h5 class="text-dark mb-3">
+                                        <i class="bi bi-shield-check me-2 text-success"></i>Terms & Conditions
+                                    </h5>
+                                    <div class="bg-light rounded p-4 border bg-white">
+                                        <div class="event-description">
+                                            {!! $event->terms_and_conditions !!}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            @endif
+                        </div>
+
+                        <!-- TAB 3: Dokumen & QR Absensi -->
+                        <div class="tab-pane fade" id="docs-pane" role="tabpanel" aria-labelledby="docs-tab" tabindex="0">
+                            <!-- Extra Details and Documents -->
+                            <div class="row mt-3 g-3">
+                                <div class="col-lg-6">
+                                    <div class="border rounded p-3 h-100 bg-white shadow-sm">
+                                        <h6 class="text-dark mb-3"><i class="bi bi-tag me-2 text-warning"></i>Price</h6>
+                                        <div class="mb-3">
+                                            @php $isFree = (int)$event->price === 0; @endphp
+                                            @if($isFree)
+                                                <h3 class="text-success mb-0 fw-bold">Free</h3>
+                                            @elseif($event->hasDiscount())
+                                                <div class="d-flex flex-column">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <h3 class="text-success mb-0 fw-bold">Rp{{ number_format($event->discounted_price, 0, ',', '.') }}</h3>
+                                                        <span class="badge bg-danger">-{{ $event->discount_percentage }}%</span>
+                                                    </div>
+                                                    <small class="text-muted text-decoration-line-through">Rp{{ number_format($event->price, 0, ',', '.') }}</small>
+                                                </div>
+                                            @else
+                                                <h3 class="text-success mb-0 fw-bold">Rp{{ number_format($event->price, 0, ',', '.') }}</h3>
+                                            @endif
+                                        </div>
+                                        <hr class="my-3 text-muted opacity-25">
+                                        <ul class="list-unstyled mb-0">
+                                            @if(!empty($event->discount_until))
+                                            <li class="mb-2 d-flex align-items-center"><i class="bi bi-calendar-check text-success me-2"></i> <span><strong>Discount until:</strong> {{ \Carbon\Carbon::parse($event->discount_until)->format('d F Y') }}</span></li>
+                                            @endif
+                                            @if(!empty($event->zoom_link))
+                                            <li class="mb-2 d-flex align-items-center"><i class="bi bi-camera-video text-primary me-2"></i> <a href="{{ $event->zoom_link }}" target="_blank" class="link-primary">Open Zoom Link</a></li>
+                                            @endif
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="border rounded p-3 h-100 bg-white shadow-sm">
+                                        <h6 class="text-dark mb-3"><i class="bi bi-folder2-open me-2 text-warning"></i>Documents</h6>
+                                        <ul class="list-group list-group-flush small">
+                                            @if(!empty($event->zoom_link) || empty($event->maps_url))
+                                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                                    <span><i class="bi {{ !empty($event->vbg_path) ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }} me-2"></i> Virtual Background</span>
+                                                    <span>
+                                                        @if(!empty($event->vbg_path))
+                                                            @php $vExt = strtolower(pathinfo($event->vbg_path, PATHINFO_EXTENSION)); @endphp
+                                                            @if(in_array($vExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                                <a href="{{ $event->vbg_file_url }}" target="_blank" class="d-inline-block">
+                                                                    <img src="{{ $event->vbg_file_url }}" alt="VBG" class="rounded border" style="width:56px;height:36px;object-fit:cover;">
+                                                                </a>
+                                                            @elseif($vExt === 'pdf')
+                                                                <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                            @else
+                                                                <a href="{{ $event->vbg_file_url }}" target="_blank" class="link-primary">View</a>
+                                                            @endif
+                                                        @else <span class="text-muted">Empty</span> @endif
+                                                    </span>
+                                                </li>
+                                            @endif
+                                            <li class="list-group-item px-0">
+                                                @php
+                                                    $trainerModules = $event->trainerModules()->with('trainer')->orderByDesc('created_at')->get();
+                                                    $hasModuleItems = $trainerModules->isNotEmpty();
+                                                    $moduleApproved = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'approved');
+                                                    $moduleRejected = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'rejected');
+                                                    $modulePending  = $trainerModules->contains('status', 'pending_review');
+                                                    $moduleIcon = $moduleApproved
+                                                        ? 'bi-check-circle text-success'
+                                                        : ($moduleRejected ? 'bi-x-circle text-danger'
+                                                            : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
+                                                @endphp
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
+                                                    @if(!$hasModuleItems)
+                                                        <span class="text-muted small">Belum ada</span>
+                                                    @endif
+                                                </div>
+
+                                                @if($hasModuleItems)
+                                                    <div class="mt-2">
+                                                        @foreach($trainerModules as $tm)
+                                                            @php
+                                                                $borderClass = $tm->status === 'approved' ? 'border-success' : ($tm->status === 'rejected' ? 'border-danger' : 'border-warning');
+                                                                $isLink = preg_match('#^https?://#i', $tm->path);
+                                                            @endphp
+                                                            <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 border-start border-4 {{ $borderClass }}">
+                                                                <div class="d-flex align-items-center gap-2 truncate" style="max-width: 65%;">
+                                                                    <i class="bi {{ $isLink ? 'bi-link-45deg text-primary' : 'bi-file-earmark-text text-secondary' }}" style="font-size: 1.1rem;"></i>
+                                                                    <div class="truncate">
+                                                                        <div class="fw-bold text-truncate" style="font-size:0.75rem;" title="{{ $tm->original_name }}">{{ $tm->original_name }}</div>
+                                                                        <div class="text-muted text-truncate" style="font-size:0.7rem;">
+                                                                            {{ $tm->trainer?->name ?? 'Trainer' }} &bull; {{ $tm->created_at?->format('d/m/Y H:i') }}
+                                                                        </div>
+                                                                        @if(!empty($tm->feedback_link))
+                                                                            <div class="text-warning text-truncate mt-1" style="font-size:0.7rem;">
+                                                                                <i class="bi bi-chat-left-text me-1"></i> Feedback: <a href="{{ $tm->feedback_link }}" target="_blank" class="text-warning text-decoration-underline">{{ $tm->feedback_link }}</a>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                                <div class="d-flex align-items-center gap-1">
+                                                                    <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" title="Set Link Feedback"
+                                                                            data-bs-toggle="modal" data-bs-target="#editFeedbackLinkModal"
+                                                                            data-module-id="{{ $tm->id }}" data-event-id="{{ $event->id }}"
+                                                                            data-module-name="{{ $tm->original_name }}" data-feedback-link="{{ $tm->feedback_link ?? '' }}">
+                                                                        <i class="bi bi-link-45deg"></i>
+                                                                    </button>
+                                                                    <a href="{{ $tm->download_url }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2" title="{{ $isLink ? 'Buka Link' : 'Download File' }}">
+                                                                        <i class="bi {{ $isLink ? 'bi-box-arrow-up-right' : 'bi-download' }}"></i>
+                                                                    </a>
+                                                                    @if($tm->status === 'approved')
+                                                                        <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
+                                                                    @elseif($tm->status === 'rejected')
+                                                                        <span class="badge bg-danger" style="font-size:0.65rem;">Ditolak</span>
+                                                                    @else
+                                                                        <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Pending</span>
+                                                                    @endif
+                                                                    
+                                                                    <!-- Delete Material Form -->
+                                                                    <form action="{{ route('admin.events.materials.destroy', [$event, $tm]) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Hapus materi ini?')">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-xs btn-outline-danger py-0 px-2" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+
+
+                                            </li>
+                                            @if($modulePending ?? false)
+                                                <li class="list-group-item px-0">
+                                                    <div class="mt-2 small text-warning">
+                                                        <i class="bi bi-info-circle me-1"></i>Ada modul yang menunggu review. Approve di halaman <a href="{{ route('admin.trainer.show', $event->trainer ?? 1) }}">Admin Trainer</a>.
+                                                    </div>
+                                                </li>
+                                            @endif
+                                            <li class="list-group-item px-0">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span>
+                                                        <i class="bi bi-qr-code {{ $dailyQrs->isNotEmpty() ? 'text-success' : 'text-muted' }} me-2"></i>
+                                                        QR Attendance
+                                                        @if($isMultiDay)
+                                                            <span class="badge bg-info ms-1" style="font-size:0.65rem;">Multi-Hari</span>
+                                                        @endif
+                                                    </span>
+                                                    <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm {{ $dailyQrs->isNotEmpty() ? 'btn-outline-warning' : 'btn-outline-success' }}">
+                                                            <i class="bi bi-{{ $dailyQrs->isNotEmpty() ? 'arrow-repeat' : 'qr-code' }} me-1"></i>
+                                                            {{ $dailyQrs->isNotEmpty() ? 'Generate Ulang Semua' : 'Generate QR' }}
+                                                        </button>
+                                                    </form>
+                                                </div>
+
+                                                @if($dailyQrs->isNotEmpty())
+                                                    <div class="row g-2">
+                                                        @foreach($dailyQrs as $dqr)
+                                                            @php
+                                                                $qrUrl = $dqr->qr_image_url;
+                                                                $qExt  = $dqr->qr_image ? strtolower(pathinfo($dqr->qr_image, PATHINFO_EXTENSION)) : 'png';
+                                                                $today = \Carbon\Carbon::now(config('app.timezone'))->format('Y-m-d');
+                                                                $isToday = ($dqr->qr_date instanceof \Carbon\Carbon ? $dqr->qr_date->format('Y-m-d') : (string)$dqr->qr_date) === $today;
+                                                            @endphp
+                                                            <div class="col-auto">
+                                                                <div class="border rounded p-2 text-center {{ $isToday ? 'border-success border-2' : '' }}" style="min-width:120px;">
+                                                                    <div class="fw-bold small mb-1">
+                                                                        Hari {{ $dqr->day_number }}
+                                                                        @if($isToday)
+                                                                            <span class="badge bg-success ms-1" style="font-size:0.6rem;">Hari Ini</span>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="text-muted" style="font-size:0.7rem;">
+                                                                        {{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }}
+                                                                    </div>
+                                                                    @if($qrUrl)
+                                                                        <a href="{{ $qrUrl }}" target="_blank" class="d-block my-1">
+                                                                            <img src="{{ $qrUrl }}" alt="QR Hari {{ $dqr->day_number }}"
+                                                                                 class="rounded border" style="width:80px;height:80px;object-fit:cover;">
+                                                                        </a>
+                                                                        <div class="d-flex flex-wrap gap-1 justify-content-center mt-1">
+                                                                            <button type="button"
+                                                                                class="btn btn-xs btn-outline-success py-0 px-1 btn-dl-qr-png"
+                                                                                style="font-size:10px;"
+                                                                                data-qr-src="{{ $qrUrl }}"
+                                                                                data-filename="event-{{ $event->id }}-day{{ $dqr->day_number }}-{{ \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d') }}.png">
+                                                                                <i class="bi bi-download"></i> PNG
+                                                                            </button>
+                                                                            <form action="{{ route('admin.events.qr.generate', $event) }}" method="POST" class="d-inline">
+                                                                                @csrf
+                                                                                <input type="hidden" name="day_id" value="{{ $dqr->id }}">
+                                                                                <button type="submit" class="btn btn-xs btn-outline-warning py-0 px-1" style="font-size:10px;">
+                                                                                    <i class="bi bi-arrow-repeat"></i>
+                                                                                </button>
+                                                                            </form>
+                                                                        </div>
+                                                                    @else
+                                                                        <div class="text-muted small my-2">Belum ada gambar</div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <div class="text-muted small">
+                                                        Belum ada QR. Klik "Generate QR" untuk membuat QR per hari.
+                                                    </div>
+                                                @endif
+                                            </li>
+                                        </ul>
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Link Zoom -->
+                            @if(!empty($event->zoom_link))
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="border rounded p-3 bg-white shadow-sm">
+                                        <h6 class="text-dark mb-3"><i class="bi bi-camera-video me-2 text-warning"></i>Link Zoom Meeting</h6>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="p-3 bg-primary-subtle text-primary rounded-3" style="width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="bi bi-camera-video-fill fs-4 text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <p class="mb-1 text-muted small">Link zoom untuk meeting online/hybrid event ini:</p>
+                                                <a href="{{ $event->zoom_link }}" target="_blank" class="btn btn-primary btn-sm"><i class="bi bi-box-arrow-up-right me-1"></i> Buka Link Zoom</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
-                    @endif
 
                     <!-- Certificate Generation Section -->
                   
@@ -623,6 +865,37 @@
 @section('styles')
 <style>
 .btn-close.btn-close-sm { background-size: .75em .75em; }
+
+/* Bootstrap tabs: pastikan kontainer tab selalu terlihat (visibility diatur oleh .tab-pane) */
+#eventDetailTabsContent {
+    display: block !important;
+}
+
+/* Custom premium style for Tabs */
+.nav-tabs-custom {
+    border-bottom: 2px solid #e5e7eb !important;
+}
+.nav-tabs-custom .nav-link {
+    color: #4b5563;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    border-bottom: 3px solid transparent;
+    padding: 0.75rem 1.25rem;
+    transition: all 0.25s ease;
+    margin-bottom: -2px;
+}
+.nav-tabs-custom .nav-link:hover {
+    color: #111827;
+    border-bottom-color: #d1d5db;
+    background-color: rgba(243, 244, 246, 0.4);
+}
+.nav-tabs-custom .nav-link.active {
+    color: #4f46e5;
+    background: transparent;
+    border-bottom-color: #4f46e5;
+    font-weight: 600;
+}
 
 .event-description {
     line-height: 1.6;
@@ -800,6 +1073,34 @@ document.addEventListener('DOMContentLoaded', function(){
 .image-preview-container::-webkit-scrollbar { width:10px; height:10px; }
 .image-preview-container::-webkit-scrollbar-thumb { background:#334155; border-radius:20px; }
 .image-preview-container::-webkit-scrollbar-track { background:transparent; }
+
+/* Live pulse indicator */
+.live-dot-ring {
+    position: relative;
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+}
+.live-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #10b981;
+    border-radius: 50%;
+}
+.live-dot::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #10b981;
+    border-radius: 50%;
+    animation: live-pulse 1.6s infinite ease-in-out;
+}
+@keyframes live-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(2.8); opacity: 0; }
+}
 </style>
 @endif
 @if(!empty($event->latitude) && !empty($event->longitude))
@@ -807,17 +1108,30 @@ document.addEventListener('DOMContentLoaded', function(){
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
+let eventMapInstance = null;
 document.addEventListener('DOMContentLoaded', function(){
     try{
         var lat = {{ (float) $event->latitude }};
         var lng = {{ (float) $event->longitude }};
-        var map = L.map('eventMap').setView([lat, lng], 15);
+        eventMapInstance = L.map('eventMap').setView([lat, lng], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-        L.marker([lat, lng]).addTo(map).bindPopup(`{{ addslashes($event->title) }}`);
+        }).addTo(eventMapInstance);
+        L.marker([lat, lng]).addTo(eventMapInstance).bindPopup(`{{ addslashes($event->title) }}`);
     }catch(e){ console.error(e); }
+
+    // Fix for Leaflet map inside initially hidden Bootstrap tab
+    const infoTabButton = document.getElementById('info-tab');
+    if (infoTabButton) {
+        infoTabButton.addEventListener('shown.bs.tab', function () {
+            if (eventMapInstance) {
+                setTimeout(function() {
+                    eventMapInstance.invalidateSize();
+                }, 150);
+            }
+        });
+    }
 });
 </script>
 @endif
@@ -948,6 +1262,41 @@ document.addEventListener('DOMContentLoaded', function(){
     const btnJpg = document.getElementById('btnDownloadQrJpg');
     if(btnPng) btnPng.addEventListener('click', ()=> handleDownload('png'));
     if(btnJpg) btnJpg.addEventListener('click', ()=> handleDownload('jpg'));
+
+    // Per-day QR download buttons (.btn-dl-qr-png)
+    document.querySelectorAll('.btn-dl-qr-png').forEach(function(btn){
+        btn.addEventListener('click', async function(){
+            const src      = this.getAttribute('data-qr-src');
+            const filename = this.getAttribute('data-filename') || 'qr.png';
+            const ext      = (src || '').split('.').pop().toLowerCase();
+            const origText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.75rem;height:.75rem;"></span>';
+            try {
+                let img;
+                if (ext === 'svg') {
+                    const res    = await fetch(src, { cache: 'no-store' });
+                    const svgTxt = await res.text();
+                    img = await loadImageFromSvgText(svgTxt);
+                } else {
+                    img = await loadImageFromUrl(src);
+                }
+                const dataUrl = drawToCanvas(img, 'image/png', 800, 800);
+                const a = document.createElement('a');
+                a.href     = dataUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch(err) {
+                console.error('Download QR PNG failed', err);
+                alert('Gagal mengunduh QR sebagai PNG.');
+            } finally {
+                this.disabled  = false;
+                this.innerHTML = origText;
+            }
+        });
+    });
 });
 </script>
 <script>
@@ -1027,6 +1376,54 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         });
     }
+});
+</script>
+
+<!-- Approve Registration Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0" style="background:#f0fdf4;">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                    </div>
+                    <h5 class="modal-title fw-semibold mb-0" id="approveModalLabel">Konfirmasi Pembayaran</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2 pb-1">
+                <p class="text-muted small mb-1">Anda akan mengonfirmasi pembayaran dari:</p>
+                <p class="fw-semibold mb-3" id="approveUserName" style="color:#15803d;"></p>
+                <p class="text-muted small">Peserta akan otomatis mendapatkan status <strong>Active</strong> dan notifikasi konfirmasi.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <form id="approveForm" method="POST" action="" class="d-inline m-0">
+                    @csrf
+                    <button type="submit" class="btn btn-success btn-sm px-4">
+                        <i class="bi bi-check2 me-1"></i>Konfirmasi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const approveModal = document.getElementById('approveModal');
+    if (!approveModal) return;
+    approveModal.addEventListener('show.bs.modal', function(e) {
+        const btn = e.relatedTarget;
+        if (!btn) return;
+        const regId   = btn.getAttribute('data-reg-id');
+        const eventId = btn.getAttribute('data-event-id');
+        const name    = btn.getAttribute('data-user-name') || '-';
+        document.getElementById('approveUserName').textContent = name;
+        document.getElementById('approveForm').action =
+            '/admin/events/' + eventId + '/registrations/' + regId + '/approve';
+    });
 });
 </script>
 
@@ -1132,4 +1529,346 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     </div>
+
+    <!-- Presence Modal (Modern & Interactive - Compact size) -->
+    <div class="modal fade" id="presenceModal" tabindex="-1" aria-labelledby="presenceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm" style="max-width: 440px;">
+            <div class="modal-content border-0 shadow-lg position-relative" style="border-radius: 14px; overflow: hidden;">
+                <div class="modal-header bg-white border-bottom py-2.5 px-3">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="p-2 rounded bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width:36px; height:36px; border-radius: 10px !important;">
+                            <i class="bi bi-calendar-check fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="modal-title fw-bold text-dark mb-0" id="presenceModalLabel">Presensi Harian</h6>
+                            <small class="text-muted" id="presenceModalSubTitle" style="font-size: 11px;">Kelola kehadiran peserta secara manual</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted small text-uppercase tracking-wider mb-1" style="font-size: 10.5px;">Nama Peserta</label>
+                        <div class="p-2.5 rounded border bg-light d-flex align-items-center gap-2" style="border-radius: 8px !important;">
+                            <i class="bi bi-person-fill text-muted fs-6"></i>
+                            <strong id="presenceModalUserName" class="text-dark" style="font-size: 13.5px;"></strong>
+                        </div>
+                    </div>
+                    <label class="form-label fw-semibold text-muted small text-uppercase tracking-wider mb-1.5" style="font-size: 10.5px;">Daftar Kehadiran</label>
+                    <div class="d-flex flex-column gap-2" id="presenceDaysList">
+                        <!-- Dynamic daily presence items will be generated here -->
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light py-3 px-4 d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px;">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let attendanceChart = null;
+
+    function initChart(labels, data) {
+        const canvas = document.getElementById('attendanceChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (attendanceChart) {
+            attendanceChart.destroy();
+        }
+        attendanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Persentase Kehadiran (%)',
+                    data: data,
+                    backgroundColor: 'rgba(99, 102, 241, 0.85)',
+                    borderColor: 'rgba(99, 102, 241, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    maxBarThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) { return value + "%"; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return context.parsed.y + "% Kehadiran"; }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function fetchAttendanceStats() {
+        fetch('{{ route("admin.events.attendance.stats", $event) }}')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update Active Participants count
+                    const activeParticipantsCount = document.getElementById('activeParticipantsCount');
+                    if (activeParticipantsCount) {
+                        activeParticipantsCount.textContent = data.total_active_participants;
+                    }
+                    
+                    // Update Stats Grid
+                    const statsGrid = document.getElementById('dailyStatsGrid');
+                    if (statsGrid && statsGrid.firstElementChild) {
+                        const staticCard = statsGrid.firstElementChild.cloneNode(true);
+                        statsGrid.innerHTML = '';
+                        statsGrid.appendChild(staticCard);
+                        
+                        const labels = [];
+                        const chartData = [];
+                        
+                        data.days.forEach(day => {
+                            labels.push('Hari ' + day.day_number);
+                            chartData.push(day.percent);
+                            
+                            const col = document.createElement('div');
+                            col.className = 'col-md-4';
+                            col.innerHTML = `
+                                <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm">
+                                    <small class="text-muted d-block mb-1">Kehadiran Hari ${day.day_number}</small>
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        <h3 class="mb-0 fw-bold text-dark">${day.checked_in}/${day.total}</h3>
+                                        <span class="badge bg-success-subtle text-success small">${day.percent}%</span>
+                                    </div>
+                                    <small class="text-muted mt-1" style="font-size: 11px;">Tanggal: ${day.date}</small>
+                                </div>
+                            `;
+                            statsGrid.appendChild(col);
+                        });
+                        
+                        // Draw / Update Chart
+                        initChart(labels, chartData);
+                    }
+                    
+                    // Update Live Feed
+                    const feed = document.getElementById('liveCheckinFeed');
+                    if (feed) {
+                        if (data.logs.length === 0) {
+                            feed.innerHTML = '<div class="text-center text-muted py-5 small">Belum ada riwayat check-in.</div>';
+                        } else {
+                            feed.innerHTML = '';
+                            data.logs.forEach(log => {
+                                const item = document.createElement('div');
+                                item.className = 'd-flex align-items-start gap-2 mb-3 border-bottom pb-2';
+                                item.innerHTML = `
+                                    <div class="p-2 bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; flex-shrink:0;">
+                                        <i class="bi bi-person-check-fill" style="font-size:14px;"></i>
+                                    </div>
+                                    <div class="flex-grow-1 min-w-0" style="line-height:1.35;">
+                                        <div class="fw-semibold text-dark text-truncate small">${log.name}</div>
+                                        <div class="text-muted text-truncate" style="font-size:10.5px;">${log.email}</div>
+                                        <div class="text-muted mt-1" style="font-size:10px;">
+                                            <span class="badge bg-primary-subtle text-primary" style="font-size:8.5px;">Hari ${log.day_number}</span>
+                                            &bull; ${log.scanned_at}
+                                        </div>
+                                    </div>
+                                `;
+                                feed.appendChild(item);
+                            });
+                        }
+                    }
+                    
+                    // Update Last Updated time
+                    const lastUpdatedBadge = document.getElementById('lastUpdatedBadge');
+                    if (lastUpdatedBadge) {
+                        const now = new Date();
+                        lastUpdatedBadge.textContent = 'Terakhir diupdate: ' + now.toLocaleTimeString();
+                    }
+                }
+            })
+            .catch(err => console.error('Gagal mengambil statistik kehadiran:', err));
+    }
+
+    // Trigger on load
+    fetchAttendanceStats();
+
+    // Poll every 10 seconds
+    setInterval(fetchAttendanceStats, 10000);
+
+    // Initialize Presence Modal setup
+    const presenceModal = document.getElementById('presenceModal');
+    if (presenceModal) {
+        presenceModal.addEventListener('show.bs.modal', function(e) {
+            const btn = e.relatedTarget;
+            if (!btn) return;
+            
+            const regId = btn.getAttribute('data-reg-id');
+            const userName = btn.getAttribute('data-user-name') || '-';
+            const totalDays = parseInt(btn.getAttribute('data-total-days')) || 1;
+            const attendedDays = JSON.parse(btn.getAttribute('data-attended-days') || '[]');
+            const regStatusYes = parseInt(btn.getAttribute('data-reg-status-yes')) || 0;
+            
+            document.getElementById('presenceModalUserName').textContent = userName;
+            
+            const listContainer = document.getElementById('presenceDaysList');
+            listContainer.innerHTML = '';
+            
+            for (let d = 1; d <= totalDays; d++) {
+                const hasAttended = attendedDays.includes(d) || (totalDays === 1 && regStatusYes === 1);
+                const action = hasAttended ? 'cancel' : 'checkin';
+                
+                const item = document.createElement('div');
+                item.className = 'd-flex align-items-center justify-content-between py-2 px-3 border bg-white shadow-sm';
+                item.style.borderRadius = '10px';
+                
+                let statusBadge = '';
+                let actionBtn = '';
+                
+                if (hasAttended) {
+                    statusBadge = '<span class="badge bg-success-subtle text-success border border-success fw-semibold py-1 px-2.5 d-inline-flex align-items-center gap-1" style="font-size: 10.5px; border-radius: 15px;"><i class="bi bi-check-circle-fill"></i> Hadir</span>';
+                    actionBtn = `
+                        <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 py-1 px-2.5 fw-semibold text-danger" 
+                                style="border-radius: 6px; font-size: 10.5px;" 
+                                onclick="toggleDailyPresenceModal(${regId}, ${d}, 'cancel', this)">
+                            <i class="bi bi-x-circle"></i> Batal Hadir
+                        </button>
+                    `;
+                } else {
+                    statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary fw-semibold py-1 px-2.5 d-inline-flex align-items-center gap-1" style="font-size: 10.5px; border-radius: 15px;"><i class="bi bi-dash-circle"></i> Absen</span>';
+                    actionBtn = `
+                        <button class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 py-1 px-2.5 fw-semibold text-white" 
+                                style="border-radius: 6px; font-size: 10.5px; background-color: #198754; border-color: #198754;" 
+                                onclick="toggleDailyPresenceModal(${regId}, ${d}, 'checkin', this)">
+                            <i class="bi bi-check-lg"></i> Set Hadir
+                        </button>
+                    `;
+                }
+                
+                item.innerHTML = `
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold text-dark fs-6" style="min-width: 60px;">Hari ${d}</span>
+                        ${statusBadge}
+                    </div>
+                    <div>
+                        ${actionBtn}
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            }
+        });
+    }
+});
+
+function toggleDailyPresenceModal(regId, dayNumber, action, btnEl) {
+    btnEl.disabled = true;
+    const originalText = btnEl.innerHTML;
+    btnEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+
+    const url = action === 'checkin' 
+        ? `/admin/events/{{ $event->id }}/registrations/${regId}/check-in`
+        : `/admin/events/{{ $event->id }}/registrations/${regId}/cancel-day`;
+        
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrf,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ day_number: dayNumber })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            if (window.adminNotify) {
+                window.adminNotify('success', data.message);
+            } else {
+                alert(data.message);
+            }
+            setTimeout(() => { window.location.reload(); }, 800);
+        } else {
+            if (window.adminNotify) {
+                window.adminNotify('error', data.message || 'Gagal mengubah status presensi.');
+            } else {
+                alert(data.message || 'Gagal mengubah status presensi.');
+            }
+            btnEl.disabled = false;
+            btnEl.innerHTML = originalText;
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Terjadi kesalahan koneksi.');
+        btnEl.disabled = false;
+        btnEl.innerHTML = originalText;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const feedbackModal = document.getElementById('editFeedbackLinkModal');
+    if (feedbackModal) {
+        feedbackModal.addEventListener('show.bs.modal', function(e) {
+            const btn = e.relatedTarget;
+            if (!btn) return;
+            const moduleId = btn.getAttribute('data-module-id');
+            const eventId  = btn.getAttribute('data-event-id');
+            const name     = btn.getAttribute('data-module-name') || '-';
+            const link     = btn.getAttribute('data-feedback-link') || '';
+            
+            document.getElementById('feedbackLinkModuleName').textContent = name;
+            document.getElementById('feedback_link_input').value = link;
+            document.getElementById('editFeedbackLinkForm').action =
+                '/admin/events/' + eventId + '/materials/' + moduleId + '/feedback-link';
+        });
+    }
+});
+</script>
+
+<!-- Edit Feedback Link Modal -->
+<div class="modal fade" id="editFeedbackLinkModal" tabindex="-1" aria-labelledby="editFeedbackLinkLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:450px;">
+        <div class="modal-content" style="border-radius: 14px;">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-link-45deg text-warning" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <h5 class="modal-title fw-semibold mb-0" id="editFeedbackLinkLabel">Link Feedback Materi</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editFeedbackLinkForm" method="POST" action="">
+                @csrf
+                @method('PATCH')
+                <div class="modal-body pt-2 pb-1">
+                    <p class="text-muted small mb-3">Masukkan link feedback untuk materi <strong id="feedbackLinkModuleName"></strong>:</p>
+                    <div class="mb-3">
+                        <label for="feedback_link_input" class="form-label small fw-semibold text-muted">Link URL Feedback</label>
+                        <input type="url" class="form-control form-control-sm" id="feedback_link_input" name="feedback_link" placeholder="https://example.com/feedback">
+                        <div class="form-text small text-muted">Kosongkan jika ingin menghapus link feedback.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning btn-sm text-dark px-4 fw-semibold">
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

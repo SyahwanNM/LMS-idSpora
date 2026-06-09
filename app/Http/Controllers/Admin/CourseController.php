@@ -99,6 +99,8 @@ class CourseController extends Controller
             ['completed' => true, 'video_watched' => true]
         );
 
+        $enrollment->checkAndComplete($user);
+
         return response()->json(['ok' => true]);
     }
 
@@ -312,6 +314,8 @@ class CourseController extends Controller
                         'completed' => true,
                     ]
                 );
+
+                $enrollment->checkAndComplete($user);
             }
         }
 

@@ -256,6 +256,13 @@ class EventController extends Controller
         // Auto-generate attendance QR code for the new event
         $this->generateAttendanceQr($event);
 
+        // Auto-generate per-day QR codes (multi-day support)
+        try {
+            app(\App\Services\EventDailyQrService::class)->ensureAllDailyQrs($event);
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to auto-generate daily QRs on store', ['event_id' => $event->id, 'error' => $e->getMessage()]);
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Event berhasil dibuat',
@@ -353,6 +360,13 @@ class EventController extends Controller
         $event->expenses()->delete();
         foreach ($expenseRows as $row) {
             $event->expenses()->create($row);
+        }
+
+        // Ensure per-day QRs exist (removes out-of-range, adds missing when dates changed)
+        try {
+            app(\App\Services\EventDailyQrService::class)->syncDailyQrs($event->fresh());
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to sync daily QRs on update', ['event_id' => $event->id, 'error' => $e->getMessage()]);
         }
 
         return response()->json([

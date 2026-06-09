@@ -71,7 +71,7 @@ class CertificateController extends Controller
         }
 
         $request->validate([
-            'certificate_template'        => 'required|string|in:template_1,template_2,template_3',
+            'certificate_template'        => 'required|string|in:template_1,template_2,template_3,template_4',
             'certificate_logo'            => 'nullable|array',
             'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
             'delete_logos'                => 'nullable|array',
@@ -133,7 +133,7 @@ class CertificateController extends Controller
         }
 
         $request->validate([
-            'certificate_template'        => 'required|string|in:template_1,template_2,template_3',
+            'certificate_template'        => 'required|string|in:template_1,template_2,template_3,template_4',
             'certificate_logo'            => 'nullable|array',
             'certificate_logo.*'          => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
             'delete_logos'                => 'nullable|array',

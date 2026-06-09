@@ -9,7 +9,9 @@
 
     $selectedTemplate = old(
         'certificate_template',
-        optional($assets->where('type', 'template')->first())->name ?? 'template_1'
+        $model->certificate_template
+            ?? optional($assets->where('type', 'template')->first())->name
+            ?? 'template_1'
     );
 
     $logos = $assets->where('type', 'logo')->values();
@@ -217,8 +219,44 @@
 
     .template-grid {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 22px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    @media (max-width: 575px) {
+        .template-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .template-preview-icon {
+        width: 76px;
+        min-width: 76px;
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 28px;
+        flex-shrink: 0;
+    }
+
+    .template-card-body {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+    }
+
+    .template-desc {
+        text-align: left;
+        font-size: 11px;
+        color: var(--cert-muted);
+        line-height: 1.45;
+        margin: 0;
     }
 
     .template-option {
@@ -232,11 +270,16 @@
 
     .template-card {
         border: 1px solid var(--cert-border);
-        border-radius: 16px;
-        padding: 10px;
+        border-radius: 14px;
+        padding: 0;
         background: #fff;
         position: relative;
         transition: .2s;
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        overflow: hidden;
+        min-height: 84px;
     }
 
     .template-option input:checked + .template-card {
@@ -246,10 +289,10 @@
 
     .template-check {
         position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 30px;
-        height: 30px;
+        top: 8px;
+        right: 8px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
         background: var(--cert-primary);
         color: #fff;
@@ -257,6 +300,8 @@
         align-items: center;
         justify-content: center;
         z-index: 2;
+        font-size: 12px;
+        box-shadow: 0 2px 6px rgba(47, 63, 203, .25);
     }
 
     .template-option input:checked + .template-card .template-check {
@@ -315,11 +360,13 @@
     }
 
     .template-name {
-        text-align: center;
-        font-weight: 900;
+        text-align: left;
+        font-weight: 800;
         font-size: 13px;
         color: #0f172a;
-        padding: 12px 0 2px;
+        padding: 0;
+        margin: 0;
+        line-height: 1.3;
     }
 
     .template-option input:checked + .template-card .template-name {
@@ -815,6 +862,120 @@
     #cert-preview-scaler .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
     #cert-preview-scaler .template_3 .verification-tag { left: 70px; bottom: 25px; }
     #cert-preview-scaler .template_3 .cert-id { right: 70px; bottom: 25px; }
+
+    /* Template 4: Blue Shield (CRM) */
+    #cert-preview-scaler .template_4 {
+        padding: 0;
+        height: 642px;
+        width: 1020px;
+        box-sizing: border-box;
+        background: #ffffff;
+        position: relative;
+        overflow: hidden;
+    }
+    #cert-preview-scaler .template_4 .bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1020px;
+        height: 642px;
+        z-index: 1;
+    }
+    #cert-preview-scaler .template_4 .logo-banner-container {
+        position: absolute;
+        top: 0;
+        left: 28%;
+        width: 44%;
+        background-color: #ffffff;
+        border-radius: 0 0 15px 15px;
+        padding: 8px 20px;
+        text-align: center;
+        z-index: 10;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+    #cert-preview-scaler .template_4 .logo-poster-img {
+        height: 45px;
+        width: auto;
+        vertical-align: middle;
+        display: inline-block;
+    }
+    #cert-preview-scaler .template_4 .logo-item-top {
+        height: 38px;
+        width: auto;
+        vertical-align: middle;
+        display: inline-block;
+        margin: 0 5px;
+    }
+    #cert-preview-scaler .template_4 .content-blue {
+        position: absolute;
+        top: 136px;
+        left: 0;
+        width: 1020px;
+        text-align: center;
+        z-index: 5;
+        padding: 0;
+        box-sizing: border-box;
+        color: #ffffff;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    #cert-preview-scaler .template_4 .recipient-underline {
+        width: 604px;
+        height: 1.5px;
+        background-color: #ffffff;
+        margin: 8px auto 15px auto;
+    }
+    #cert-preview-scaler .template_4 .cert-footer {
+        position: absolute !important;
+        bottom: 45px !important;
+        left: 75px !important;
+        right: 75px !important;
+        text-align: center !important;
+        width: auto !important;
+        z-index: 6 !important;
+        padding: 0 !important;
+    }
+    #cert-preview-scaler .template_4 .sig-box {
+        display: inline-block !important;
+        vertical-align: bottom !important;
+        float: none !important;
+        text-align: center !important;
+        width: 264px !important;
+        margin: 0 30px !important;
+    }
+    #cert-preview-scaler .template_4 .sig-position {
+        font-weight: bold;
+        margin: 0 0 4px 0;
+        font-size: 8pt;
+        color: #1a1a1a;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    #cert-preview-scaler .template_4 .sig-image-wrap {
+        height: 48px;
+        margin: 4px auto;
+        text-align: center;
+    }
+    #cert-preview-scaler .template_4 .sig-img {
+        height: 48px;
+        width: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+    #cert-preview-scaler .template_4 .sig-line {
+        width: 208px;
+        border-bottom: 1.5px solid #1a1a1a;
+        margin: 2px auto;
+    }
+    #cert-preview-scaler .template_4 .sig-name {
+        font-weight: bold;
+        margin: 6px 0 0 0;
+        font-size: 8.5pt;
+        color: #1a1a1a;
+        font-family: Arial, Helvetica, sans-serif;
+    }
 </style>
 @endpush
 
@@ -874,9 +1035,10 @@
                         <div class="section-content">
                             <div class="template-grid">
                                 @foreach([
-                                    'template_1' => ['Template 1', 't1'],
-                                    'template_2' => ['Template 2', 't2'],
-                                    'template_3' => ['Template 3', 't3'],
+                                    'template_1' => ['Classic Royal', 'Elegan dengan aksen emas dan navy.', 'bi-award', 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', '#fff'],
+                                    'template_2' => ['Modern Minimal', 'Bersih, fokus pada tipografi modern.', 'bi-file-earmark-text', '#f1f5f9', '#1e293b'],
+                                    'template_3' => ['Creative Dynamic', 'Enerjik dengan gradien dan pola.', 'bi-palette', 'linear-gradient(135deg, #6d28d9 0%, #db2777 100%)', '#fff'],
+                                    'template_4' => ['Blue Shield', 'Biru navy elegan dengan aksen emas.', 'bi-shield-fill-check', 'linear-gradient(155deg, #001060 0%, #0033cc 60%, #0050ff 100%)', '#fff'],
                                 ] as $value => $data)
                                     <label class="template-option">
                                         <input type="radio"
@@ -889,15 +1051,14 @@
                                                 <i class="bi bi-check-lg"></i>
                                             </div>
 
-                                            <div class="template-preview">
-                                                <div class="template-paper {{ $data[1] }}">
-                                                    <h6>SERTIFIKAT<br>PENGHARGAAN</h6>
-                                                    <small>Nama Penerima</small>
-                                                    <div class="line"></div>
-                                                </div>
+                                            <div class="template-preview-icon" style="background: {{ $data[3] }}; color: {{ $data[4] }};">
+                                                <i class="bi {{ $data[2] }}"></i>
                                             </div>
 
-                                            <div class="template-name">{{ $data[0] }}</div>
+                                            <div class="template-card-body">
+                                                <div class="template-name">{{ $data[0] }}</div>
+                                                <div class="template-desc">{{ $data[1] }}</div>
+                                            </div>
                                         </div>
                                     </label>
                                 @endforeach
@@ -1093,6 +1254,31 @@
                                         <img src="{{ asset('aset/bg-creative.png') }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
                                     </div>
 
+                                    <!-- Template 4 Decorations: Blue Shield (CRM) -->
+                                    <div class="template-decorations-4" style="{{ $selectedTemplate === 'template_4' ? '' : 'display: none;' }}">
+                                        <img src="{{ asset('aset/bg-blue-shield.png') }}" class="bg-image" alt="">
+                                    </div>
+
+                                    <div id="preview-t4-top" style="{{ $selectedTemplate === 'template_4' ? '' : 'display: none;' }}" class="logo-banner-container preview-logo-container-t4">
+                                        <img src="{{ asset('aset/logo poster.png') }}" class="logo-poster-img" alt="idSpora">
+                                    </div>
+
+                                    <div id="preview-t4-bottom" style="{{ $selectedTemplate === 'template_4' ? '' : 'display: none;' }}" class="content-blue">
+                                        <h1 style="font-size: 22pt; font-weight: 900; margin: 0; letter-spacing: 3px; font-family: Arial, Helvetica, sans-serif;">SERTIFIKAT</h1>
+                                        <p style="font-size: 8.5pt; font-weight: bold; letter-spacing: 4px; margin: 9px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">DIBERIKAN KEPADA</p>
+                                        <div style="font-size: 20pt; font-weight: bold; margin: 11px 0 4px 0; font-family: Arial, Helvetica, sans-serif;" id="preview-t4-name">
+                                            {{ strtoupper($trainer->name) }}
+                                        </div>
+                                        <div class="recipient-underline"></div>
+                                        <p style="font-size: 8.5pt; margin: 8px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">Atas Kontribusinya Sebagai</p>
+                                        <p style="font-size: 13pt; font-weight: bold; margin: 4px 0 8px 0; font-family: Arial, Helvetica, sans-serif;">NARASUMBER</p>
+                                        <p style="font-size: 8.5pt; margin: 8px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">Dalam Program</p>
+                                        <h2 style="font-size: 14pt; font-weight: bold; margin: 4px 0 4px 0; font-family: Arial, Helvetica, sans-serif;">"{{ $modelTitle }}"</h2>
+                                        <p style="font-size: 8pt; margin: 9px 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+                                            Diterbitkan pada <strong>{{ now()->format('d F Y') }}</strong>
+                                        </p>
+                                    </div>
+
                                     <!-- Template 3 Header Area -->
                                     <div class="header-bg" id="preview-t3-header" style="{{ $selectedTemplate === 'template_3' ? '' : 'display: none;' }}">
                                         <div style="float: right;" class="preview-logo-container-t3">
@@ -1103,7 +1289,7 @@
                                     </div>
 
                                     <!-- Template 1 & 2 Header Area -->
-                                    <div class="header" id="preview-t12-header" style="{{ $selectedTemplate !== 'template_3' ? '' : 'display: none;' }}">
+                                    <div class="header" id="preview-t12-header" style="{{ !in_array($selectedTemplate, ['template_3', 'template_4'], true) ? '' : 'display: none;' }}">
                                         <div class="logo-row">
                                             <div class="logo-container preview-logo-container-t12">
                                                 <img src="{{ asset('aset/logo idspora_dark.png') }}" class="logo-item" id="preview-main-logo-t12">
@@ -1354,16 +1540,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const decor1 = document.querySelector('.template-decorations-1');
         const decor2 = document.querySelector('.template-decorations-2');
         const decor3 = document.querySelector('.template-decorations-3');
+        const decor4 = document.querySelector('.template-decorations-4');
         if (decor1) decor1.style.display = (template === 'template_1') ? 'block' : 'none';
         if (decor2) decor2.style.display = (template === 'template_2') ? 'block' : 'none';
         if (decor3) decor3.style.display = (template === 'template_3') ? 'block' : 'none';
+        if (decor4) decor4.style.display = (template === 'template_4') ? 'block' : 'none';
 
         // Toggle headers
         const headerT3 = document.getElementById('preview-t3-header');
         const headerT12 = document.getElementById('preview-t12-header');
+        const headerT4top = document.getElementById('preview-t4-top');
+        const headerT4bot = document.getElementById('preview-t4-bottom');
         if (headerT3) headerT3.style.display = (template === 'template_3') ? 'block' : 'none';
+        if (headerT4top) headerT4top.style.display = (template === 'template_4') ? 'flex' : 'none';
+        if (headerT4bot) headerT4bot.style.display = (template === 'template_4') ? 'block' : 'none';
         if (headerT12) {
-            headerT12.style.display = (template !== 'template_3') ? 'block' : 'none';
+            headerT12.style.display = (template !== 'template_3' && template !== 'template_4') ? 'block' : 'none';
             if (template === 'template_2') {
                 headerT12.style.cssText = 'padding: 40px 10px 0 10px; text-align: center;';
             } else {
@@ -1375,13 +1567,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const contentBox = document.getElementById('preview-content-box');
         const sigContainer = document.getElementById('preview-signatures-container');
         if (contentBox) {
-            if (template === 'template_2') {
+            if (template === 'template_4') {
+                contentBox.style.display = 'none';
+            } else if (template === 'template_2') {
+                contentBox.style.display = '';
                 contentBox.removeAttribute('style');
                 contentBox.style.cssText = 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;';
             } else if (template === 'template_3') {
+                contentBox.style.display = '';
                 contentBox.removeAttribute('style');
                 contentBox.style.cssText = 'padding: 10px 70px; text-align: center; margin-top: 0;';
             } else {
+                contentBox.style.display = '';
                 contentBox.removeAttribute('style');
                 contentBox.style.cssText = 'margin-top: 40px; text-align: center;';
             }
@@ -1407,6 +1604,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        const t4NameDiv = document.getElementById('preview-t4-name');
+        if (t4NameDiv) {
+            t4NameDiv.textContent = trainerName.toUpperCase();
+        }
+
         // Render Logos
         renderLogos(template);
 
@@ -1420,38 +1622,49 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderLogos(template) {
         const containerT12 = document.querySelector('.preview-logo-container-t12');
         const containerT3 = document.querySelector('.preview-logo-container-t3');
-        if (!containerT12 && !containerT3) return;
+        const containerT4 = document.querySelector('.preview-logo-container-t4');
+        if (!containerT12 && !containerT3 && !containerT4) return;
 
         const assetPath = "{{ asset('aset') }}";
-        const mainLogoUrl = template === 'template_3' ? `${assetPath}/logo-idspora.png` : `${assetPath}/logo idspora_dark.png`;
+        const mainLogoUrl = (template === 'template_3' || template === 'template_4')
+            ? `${assetPath}/logo-idspora.png`
+            : `${assetPath}/logo idspora_dark.png`;
 
         const renderIn = (container, mainId) => {
             if (!container) return;
             container.innerHTML = '';
 
             const mainImg = document.createElement('img');
-            mainImg.src = mainLogoUrl;
-            mainImg.className = 'logo-item';
-            mainImg.id = mainId;
+            if (template === 'template_4') {
+                mainImg.src = `${assetPath}/logo poster.png`;
+                mainImg.className = 'logo-poster-img';
+            } else {
+                mainImg.src = mainLogoUrl;
+                mainImg.className = 'logo-item';
+                mainImg.id = mainId;
+            }
             container.appendChild(mainImg);
 
-            // Read logos from has-preview cards
             document.querySelectorAll('.logo-card.has-preview img.upload-preview').forEach(img => {
                 const partnerImg = document.createElement('img');
                 partnerImg.src = img.src;
-                partnerImg.className = 'logo-item';
+                partnerImg.className = (template === 'template_4') ? 'logo-item-top' : 'logo-item';
                 container.appendChild(partnerImg);
             });
         };
 
         renderIn(containerT12, 'preview-main-logo-t12');
         renderIn(containerT3, 'preview-main-logo-t3');
+        renderIn(containerT4, 'preview-main-logo-t4');
     }
 
     function renderSignatures() {
         const container = document.getElementById('preview-signatures-container');
         if (!container) return;
         container.innerHTML = '';
+
+        const templateInput = document.querySelector('input[name="certificate_template"]:checked');
+        const template = templateInput ? templateInput.value : 'template_1';
 
         for (let i = 0; i < 3; i++) {
             const card = document.querySelector(`.signature-card[data-index="${i}"]`);
@@ -1471,17 +1684,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 const sigBox = document.createElement('div');
                 sigBox.className = 'sig-box';
 
-                let imgHtml = '<div style="height: 90px;"></div>';
-                if (imgSrc) {
-                    imgHtml = `<img src="${imgSrc}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">`;
+                if (template === 'template_4') {
+                    let imgHtml = '<div class="sig-image-wrap"></div>';
+                    if (imgSrc) {
+                        imgHtml = `<div class="sig-image-wrap"><img src="${imgSrc}" class="sig-img" alt=""></div>`;
+                    }
+                    sigBox.innerHTML = `
+                        <p class="sig-position">${posValue || 'Authorized Position'}</p>
+                        ${imgHtml}
+                        <div class="sig-line"></div>
+                        <p class="sig-name">${nameValue || 'Authorized Signature'}</p>
+                    `;
+                } else {
+                    let imgHtml = '<div style="height: 90px;"></div>';
+                    if (imgSrc) {
+                        imgHtml = `<img src="${imgSrc}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;" alt="">`;
+                    }
+                    sigBox.innerHTML = `
+                        ${imgHtml}
+                        <div class="sig-line"></div>
+                        <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">${nameValue || 'Authorized Signature'}</p>
+                        <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">${posValue || 'Authorized Position'}</p>
+                    `;
                 }
-
-                sigBox.innerHTML = `
-                    ${imgHtml}
-                    <div class="sig-line"></div>
-                    <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">${nameValue || 'Authorized Signature'}</p>
-                    <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">${posValue || 'Authorized Position'}</p>
-                `;
 
                 container.appendChild(sigBox);
             }

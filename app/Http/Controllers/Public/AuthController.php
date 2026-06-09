@@ -91,6 +91,10 @@ $validator = Validator::make($request->all(), $rules, $messages);
         // For regular users, redirect back to intended URL (protected page) when available.
         // Also honor explicit internal redirect param (used by guest-only links).
         $redirect = trim((string) $request->input('redirect', ''));
+        // Fallback: some pages pass 'return' instead of 'redirect' (e.g. Save button on event detail)
+        if ($redirect === '') {
+            $redirect = trim((string) $request->input('return', ''));
+        }
         if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
             return redirect($redirect)->with('login_success', 'Success, Welcome to IdSpora LMS!');
         }

@@ -7653,18 +7653,12 @@ textarea::placeholder {
     border-radius: 10px;
 }
 
-/* Sembunyikan semua tab content secara default, kecuali yang aktif */
-.tab-content {
+/* Custom tab panels (tanpa Bootstrap .tab-pane): sembunyikan kecuali .active */
+.tab-content:not(:has(.tab-pane)) {
     display: none;
 }
 
-/* Bootstrap tabs compatibility: show tab-content container.
-       (Bootstrap controls visibility via .tab-pane, not .tab-content.active) */
-.nav-tabs+.tab-content {
-    display: block;
-}
-
-.tab-content.active {
+.tab-content:not(:has(.tab-pane)).active {
     display: block;
     background-color: transparent;
 }

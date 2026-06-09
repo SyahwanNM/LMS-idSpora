@@ -463,6 +463,10 @@
                 <i class="bi bi-megaphone"></i>
                 <span>Blast Broadcast</span>
             </a>
+            <a class="crm-nav-item {{ request()->routeIs('admin.crm.vouchers.*') ? 'active' : '' }}" href="{{ route('admin.crm.vouchers.index') }}">
+                <i class="bi bi-ticket-perforated"></i>
+                <span>Loyalty & Voucher</span>
+            </a>
         </nav>
         
         <div class="crm-nav-group-title">Bantuan & Support</div>

@@ -10,6 +10,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2Pkf3BD3vO5e5pSxb6YV9jwWTA/gG05Jg9TLEbiFU6BxZ1S3XmGmGC3w9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
@@ -573,6 +574,12 @@
                 min-width: 35px;
             }
         }
+        
+        #modalVoucherTabs .nav-link.active {
+            background-color: #ffffff !important;
+            color: #4f46e5 !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
     </style>
 </head>
 <body>
@@ -700,6 +707,13 @@
         @if(session('success'))
             <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200">
                 <p class="text-green-800 text-sm font-medium mb-0">{{ session('success') }}</p>
+            </div>
+        @endif
+
+        {{-- Error Message --}}
+        @if(session('error'))
+            <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
+                <p class="text-red-800 text-sm font-medium mb-0">{{ session('error') }}</p>
             </div>
         @endif
 
@@ -876,7 +890,7 @@
                     </p>
                 @endif
 
-                <button type="button" onclick="openBadgeInfoModal()" class="w-full mt-4 py-3 rounded-2xl font-extrabold tracking-widest"
+                <button type="button" onclick="openRedeemVoucherModal()" class="w-full mt-4 py-3 rounded-2xl font-extrabold tracking-widest"
                         style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#111827; border:none;">
                     REDEEM REWARDS
                 </button>
@@ -1067,11 +1081,238 @@
             </div>
         </div>
     </div>
+
+    <!-- Redeem Voucher Modal -->
+    <div class="modal fade" id="redeemVoucherModal" tabindex="-1" aria-labelledby="redeemVoucherModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; background: #ffffff;">
+                <div class="modal-header border-b border-slate-100 p-4">
+                    <h5 class="modal-title font-bold text-slate-800 text-xl" id="redeemVoucherModalLabel">
+                        Redeem Rewards & Voucher
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-slate-50/50">
+                    <!-- Nav Tabs -->
+                    <ul class="nav nav-pills nav-justified mb-4" id="voucherTab" role="tablist" style="border-radius: 12px; background: #f1f5f9; padding: 4px;">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active font-bold py-2.5 rounded-lg text-sm" id="available-tab" data-bs-toggle="pill" data-bs-target="#available-vouchers" type="button" role="tab" aria-controls="available-vouchers" aria-selected="true" style="color: #475569;">
+                                Voucher Tersedia
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link font-bold py-2.5 rounded-lg text-sm" id="my-tab" data-bs-toggle="pill" data-bs-target="#my-vouchers" type="button" role="tab" aria-controls="my-vouchers" aria-selected="false" style="color: #475569;">
+                                Voucher Saya
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="voucherTabContent">
+                        <!-- Available Vouchers Tab -->
+                        <div class="tab-pane fade show active" id="available-vouchers" role="tabpanel" aria-labelledby="available-tab">
+                            <div class="mb-4 flex items-center justify-between p-3 rounded-2xl bg-indigo-50 border border-indigo-100">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
+                                        <i class="bi bi-lightning-charge-fill"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-indigo-600 font-bold uppercase tracking-wider">Poin Anda</div>
+                                        <div class="text-xl font-black text-indigo-950">{{ number_format($currentPoints, 0, ',', '.') }} Poin</div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="openBadgeInfoModalFromRedeem()" class="text-xs font-bold text-indigo-600 hover:underline">
+                                    Lihat Panduan Poin &rarr;
+                                </button>
+                            </div>
+
+                            @if($vouchers->isEmpty())
+                                <div class="text-center py-8">
+                                    <div class="text-slate-300 text-4xl mb-2"><i class="bi bi-ticket-perforated"></i></div>
+                                    <p class="text-slate-500 font-medium">Belum ada voucher yang tersedia saat ini.</p>
+                                </div>
+                            @else
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    @foreach($vouchers as $voucher)
+                                        @php
+                                            $hasRedeemed = $myVouchers->contains('voucher_id', $voucher->id);
+                                            $isPointsEnough = $currentPoints >= $voucher->points_required;
+                                            $isValid = $voucher->isValid();
+                                            $canRedeem = !$hasRedeemed && $isPointsEnough && $isValid;
+
+                                            if ($hasRedeemed) {
+                                                $buttonText = 'Sudah Ditukarkan';
+                                            } elseif (!$isValid) {
+                                                $buttonText = 'Batas Penukaran Habis';
+                                            } elseif (!$isPointsEnough) {
+                                                $buttonText = 'Poin Tidak Cukup';
+                                            } else {
+                                                $buttonText = 'Redeem Voucher';
+                                            }
+                                        @endphp
+                                        <div class="relative rounded-2xl bg-white border border-slate-200 p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between" style="border-left: 5px solid {{ $canRedeem ? '#fbbf24' : '#cbd5e1' }};">
+                                            <div>
+                                                <div class="flex items-center justify-between gap-2 mb-2">
+                                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider text-amber-800 bg-amber-100">
+                                                        {{ $voucher->discount_type === 'percentage' ? $voucher->discount_value . '% OFF' : 'Rp' . number_format($voucher->discount_value, 0, ',', '.') . ' OFF' }}
+                                                    </span>
+                                                    <span class="text-sm font-bold text-indigo-600">
+                                                        {{ $voucher->points_required }} PTS
+                                                    </span>
+                                                </div>
+                                                <h6 class="font-bold text-slate-800 text-base mb-1">{{ $voucher->name }}</h6>
+                                                <p class="text-xs text-slate-500 mb-3 leading-relaxed">{{ $voucher->description }}</p>
+                                                @if($voucher->min_purchase > 0)
+                                                    <div class="text-[10px] text-slate-400 font-semibold mb-2">
+                                                        Min. Pembelian: Rp{{ number_format($voucher->min_purchase, 0, ',', '.') }}
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <form action="{{ route('profile.redeem-voucher', $voucher->id) }}" method="POST" class="mt-2" onsubmit="confirmRedeem(event, '{{ addslashes($voucher->name) }}', {{ $voucher->points_required }})">
+                                                @csrf
+                                                <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold transition-all text-center"
+                                                        {{ $canRedeem ? '' : 'disabled' }}
+                                                        style="background: {{ $canRedeem ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : '#e2e8f0' }}; color: {{ $canRedeem ? '#111827' : '#94a3b8' }}; border: none;">
+                                                    {{ $buttonText }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
+                        <!-- My Vouchers Tab -->
+                        <div class="tab-pane fade" id="my-vouchers" role="tabpanel" aria-labelledby="my-tab">
+                            @if($myVouchers->isEmpty())
+                                <div class="text-center py-12">
+                                    <div class="text-slate-300 text-5xl mb-3"><i class="bi bi-ticket-perforated-fill"></i></div>
+                                    <p class="text-slate-500 font-bold">Anda belum menukarkan voucher apapun.</p>
+                                    <p class="text-xs text-slate-400">Tukarkan poin Anda di tab 'Voucher Tersedia'.</p>
+                                </div>
+                            @else
+                                <div class="space-y-3" style="max-height: 400px; overflow-y: auto; padding-right: 4px;">
+                                    @foreach($myVouchers as $redemption)
+                                        @php
+                                            $isExpired = $redemption->expires_at && $redemption->expires_at->isPast();
+                                            $isUsable = !$redemption->is_used && !$isExpired;
+                                        @endphp
+                                        <div class="flex items-center justify-between p-3 rounded-2xl border transition-all bg-white {{ $isUsable ? 'border-slate-200' : 'border-slate-100 opacity-60 bg-slate-50/50' }}">
+                                            <div class="flex items-center gap-3 flex-wrap">
+                                                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-lg {{ $isUsable ? 'bg-amber-50 text-amber-500' : 'bg-slate-100 text-slate-400' }}">
+                                                    <i class="bi bi-ticket-detailed-fill"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                                                        <h6 class="font-bold text-slate-800 text-sm mb-0">{{ $redemption->voucher->name ?? 'Voucher Discount' }}</h6>
+                                                        @if($redemption->is_used)
+                                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-gray-500 bg-gray-100">Used</span>
+                                                        @elseif($isExpired)
+                                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-red-500 bg-red-100">Expired</span>
+                                                        @else
+                                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-green-500 bg-green-100">Active</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="text-[10px] text-slate-400 font-semibold">
+                                                        Tukarkan s/d: {{ $redemption->expires_at ? $redemption->expires_at->format('d M Y') : 'Tanpa batas' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            @if($isUsable)
+                                                <div class="flex items-center gap-2">
+                                                    <code class="px-2.5 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-700 select-all" id="code-{{ $redemption->id }}">{{ $redemption->code }}</code>
+                                                    <button type="button" onclick="copyVoucherCode('{{ $redemption->code }}', this)" class="btn btn-sm btn-outline-primary rounded-lg text-xs font-bold py-1.5 px-2.5">
+                                                        <i class="bi bi-copy"></i> Copy
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <code class="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-xs font-mono font-bold text-slate-400 line-through">{{ $redemption->code }}</code>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // reserved for future profile interactions
         });
+
+        function openRedeemVoucherModal() {
+            const modalEl = document.getElementById('redeemVoucherModal');
+            if (!modalEl) return;
+            const m = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+            m.show();
+        }
+
+        function openBadgeInfoModalFromRedeem() {
+            const redeemModal = document.getElementById('redeemVoucherModal');
+            if (redeemModal) {
+                window.bootstrap.Modal.getOrCreateInstance(redeemModal).hide();
+            }
+            setTimeout(openBadgeInfoModal, 400);
+        }
+
+        function copyVoucherCode(code, btn) {
+            navigator.clipboard.writeText(code).then(() => {
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-success', 'text-white');
+                setTimeout(() => {
+                    btn.innerHTML = origText;
+                    btn.classList.remove('btn-success', 'text-white');
+                    btn.classList.add('btn-outline-primary');
+                }, 1500);
+            });
+        }
+
+        function confirmRedeem(event, voucherName, pointsRequired) {
+            event.preventDefault();
+            const form = event.target;
+            
+            const modalEl = document.getElementById('redeemVoucherModal');
+            let modalInstance = null;
+            if (modalEl && window.bootstrap) {
+                modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+
+            Swal.fire({
+                title: 'Konfirmasi Penukaran',
+                text: `Apakah Anda yakin ingin menukarkan ${pointsRequired} poin untuk voucher "${voucherName}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#fbbf24',
+                cancelButtonColor: '#94a3b8',
+                confirmButtonText: 'Ya, Tukarkan',
+                cancelButtonText: 'Batal',
+                allowOutsideClick: false,
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                } else {
+                    if (modalInstance) {
+                        modalInstance.show();
+                    }
+                }
+            });
+        }
+        
         
         // Avatar preview function
         function previewAvatar(input) {
@@ -1255,6 +1496,8 @@
             }
         }
     </script>
+
+
     @include('partials.footer-after-login')
 </body>
 </html>

@@ -413,7 +413,7 @@ class TrainerCertificateController extends Controller
         $model = $this->getCertifiableModel($context, $id);
 
         $request->validate([
-            'certificate_template' => ['required', 'in:template_1,template_2,template_3'],
+            'certificate_template' => ['required', 'in:template_1,template_2,template_3,template_4'],
 
             'certificate_logo' => ['nullable', 'array', 'max:3'],
             'certificate_logo.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
@@ -469,6 +469,8 @@ class TrainerCertificateController extends Controller
                 }
             }
 
+            $selectedTemplate = (string) $request->input('certificate_template');
+
             TrainerCertificateAsset::updateOrCreate(
                 [
                     'certifiable_type' => $certifiableType,
@@ -476,12 +478,14 @@ class TrainerCertificateController extends Controller
                     'type' => 'template',
                 ],
                 [
-                    'name' => $request->input('certificate_template'),
+                    'name' => $selectedTemplate,
                     'position' => null,
                     'image_path' => '-',
                     'order_no' => 0,
                 ]
             );
+
+            $model->update(['certificate_template' => $selectedTemplate]);
 
             if ($request->hasFile('certificate_logo')) {
                 foreach ($request->file('certificate_logo') as $logo) {
@@ -664,8 +668,8 @@ class TrainerCertificateController extends Controller
                 ->orderBy('order_no')
                 ->get();
 
-            $template = $assets->where('type', 'template')->first()?->name
-                ?? $model->certificate_template
+            $template = $model->certificate_template
+                ?? $assets->where('type', 'template')->first()?->name
                 ?? 'template_1';
 
             $logos = $assets->where('type', TrainerCertificateAsset::TYPE_LOGO)->values();

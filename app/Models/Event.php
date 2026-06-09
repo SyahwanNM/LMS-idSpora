@@ -100,19 +100,23 @@ class Event extends Model
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        // Count completed items for the UI-perceived requirements.
-        // Business rule (used across admin views):
-        // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
-        // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
         $hasVbg = !empty($this->vbg_path);
-        // Module: cek module_path ATAU approved trainer modules
-        $hasModule     = !empty($this->module_path)
-                         || $this->approvedTrainerModules()->exists();
+
+        // Module complete only when ALL registered speakers have an approved module.
+        // Fallback to legacy check when no speakers are registered in event_speakers table.
+        $speakerCount  = $this->speakers()->count();
+        $approvedCount = $this->approvedTrainerModules()->distinct('trainer_id')->count('trainer_id');
+
+        if ($speakerCount > 0) {
+            $hasModule = $approvedCount >= $speakerCount;
+        } else {
+            $hasModule = !empty($this->module_path) || $approvedCount > 0;
+        }
+
         $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
 
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
 
-        // Return the raw count of completed items (not the denominator-aware percent).
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {
             $count++;
@@ -282,6 +286,11 @@ class Event extends Model
         return $this->hasMany(\App\Models\EventTrainerModule::class);
     }
 
+    public function trainerAssignments()
+    {
+        return $this->hasMany(\App\Models\TrainerAssignment::class);
+    }
+
     public function approvedTrainerModules()
     {
         return $this->hasMany(\App\Models\EventTrainerModule::class)->where('status', 'approved');
@@ -290,6 +299,18 @@ class Event extends Model
     public function speakers()
     {
         return $this->hasMany(\App\Models\EventSpeaker::class)->orderBy('order');
+    }
+
+    public function dailyAttendances()
+    {
+        return $this->hasManyThrough(
+            EventDailyAttendance::class,
+            EventRegistration::class,
+            'event_id',
+            'event_registration_id',
+            'id',
+            'id'
+        );
     }
 
     public function getStartAtAttribute(): ?Carbon
@@ -407,12 +428,12 @@ class Event extends Model
     public function scopeActive($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
-        return $query->where(function ($q) use ($now) {
+        $rawSql = \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite'
+            ? "COALESCE(event_until_date, event_date) || ' ' || COALESCE(event_until_time, event_time_end, event_time, '23:59:59')"
+            : "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59'))";
+        return $query->where(function ($q) use ($now, $rawSql) {
             $q->whereNull('event_date')
-                ->orWhereRaw(
-                    "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) >= ?",
-                    [$now]
-                );
+                ->orWhereRaw("{$rawSql} >= ?", [$now]);
         });
     }
 
@@ -422,11 +443,11 @@ class Event extends Model
     public function scopeFinished($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
+        $rawSql = \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite'
+            ? "COALESCE(event_until_date, event_date) || ' ' || COALESCE(event_until_time, event_time_end, event_time, '23:59:59')"
+            : "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59'))";
         return $query->whereNotNull('event_date')
-            ->whereRaw(
-                "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59')) < ?",
-                [$now]
-            );
+            ->whereRaw("{$rawSql} < ?", [$now]);
     }
 
     /**

@@ -6,8 +6,10 @@
     <style>
         :root {
             --admin-primary: #1e1b4b;
-            --admin-secondary: #4f46e5;
-            --admin-accent: #6366f1;
+            --admin-secondary: #3949ab;
+            --admin-accent: #5c6bc0;
+            --admin-accent-soft: #eef1ff;
+            --admin-accent-border: #dce3ff;
             --admin-bg: #f8fafc;
             --admin-card-bg: #ffffff;
             --admin-border: #e2e8f0;
@@ -151,7 +153,7 @@
             justify-content: space-between;
             margin-bottom: 20px;
             padding-bottom: 14px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 2px solid var(--admin-accent-soft);
         }
 
         .card-title-text {
@@ -398,8 +400,8 @@
             width: 46px;
             height: 46px;
             border-radius: 12px;
-            background: #eef2ff;
-            color: #4945ff;
+            background: var(--admin-accent-soft);
+            color: var(--admin-secondary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -476,8 +478,8 @@
 
         .module-icon-btn.preview {
             color: var(--admin-secondary);
-            background: #f0f3ff;
-            border-color: #dbe0ff;
+            background: var(--admin-accent-soft);
+            border-color: var(--admin-accent-border);
         }
 
         .module-icon-btn.preview:hover {
@@ -674,13 +676,13 @@
         }
 
         .side-card-title {
-            color: var(--admin-text-muted);
+            color: var(--admin-secondary);
             font-size: 0.76rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             margin-bottom: 16px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 2px solid var(--admin-accent-soft);
             padding-bottom: 8px;
         }
 
@@ -735,14 +737,14 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.24);
+            box-shadow: 0 8px 20px rgba(57, 73, 171, 0.22);
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
         }
 
         .btn-approve:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.35);
+            box-shadow: 0 12px 24px rgba(57, 73, 171, 0.32);
         }
 
         .btn-approve:disabled {
@@ -792,7 +794,7 @@
 
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #22c55e 0%, #4f46e5 100%);
+            background: linear-gradient(90deg, #22c55e 0%, var(--admin-secondary) 100%);
             border-radius: 999px;
             transition: width 0.4s ease;
         }
@@ -856,7 +858,7 @@
 
         .reject-modal .form-control:focus {
             border-color: var(--admin-secondary);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+            box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.12);
             outline: none;
         }
 
@@ -892,6 +894,221 @@
         .reject-modal .btn-submit-reject:hover {
             background: #b91c1c;
             box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        }
+
+        .page-header {
+            background: var(--admin-card-bg);
+            border: 1px solid var(--admin-border);
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+        }
+
+        .review-alert {
+            border: 1px solid transparent;
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+
+        .review-alert--success {
+            background: var(--status-approved-bg);
+            border-color: var(--status-approved-border);
+            color: var(--status-approved-text);
+        }
+
+        .review-alert--danger {
+            background: var(--status-rejected-bg);
+            border-color: var(--status-rejected-border);
+            color: var(--status-rejected-text);
+        }
+
+        .review-hero-header { margin-bottom: 16px; }
+
+        .review-hero-title {
+            font-size: 1.12rem;
+            font-weight: 800;
+            color: var(--admin-text-main);
+            margin: 0 0 6px;
+            line-height: 1.35;
+        }
+
+        .review-meta-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--admin-text-muted);
+            margin: 0;
+        }
+
+        .review-type-chip {
+            display: inline-flex;
+            align-items: center;
+            background: var(--admin-accent-soft);
+            color: var(--admin-secondary);
+            font-weight: 700;
+            font-size: 0.72rem;
+            border: 1px solid var(--admin-accent-border);
+            border-radius: 999px;
+            padding: 3px 10px;
+        }
+
+        .review-preview-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .review-preview-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #475569;
+            flex: 1;
+        }
+
+        .review-preview-meta {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .card-title-text i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--admin-accent-soft);
+            color: var(--admin-secondary);
+            font-size: 0.95rem;
+        }
+
+        .review-count-badge {
+            font-size: 0.78rem;
+            color: var(--admin-text-muted);
+            font-weight: 700;
+            background: #f8fafc;
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--admin-border);
+        }
+
+        .trainer-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trainer-profile-name {
+            font-weight: 800;
+            color: var(--admin-text-main);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .trainer-profile-role {
+            font-size: 0.75rem;
+            color: var(--admin-text-muted);
+            font-weight: 600;
+            margin-top: 1px;
+        }
+
+        .trainer-profile-email {
+            font-size: 0.72rem;
+            color: var(--admin-text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-mini-item--success {
+            border-left: 3px solid var(--status-approved-text);
+        }
+
+        .stat-mini-item--success .stat-mini-num {
+            color: var(--status-approved-text);
+        }
+
+        .stat-mini-item--danger {
+            border-left: 3px solid var(--status-rejected-text);
+        }
+
+        .stat-mini-item--danger .stat-mini-num {
+            color: var(--status-rejected-text);
+        }
+
+        .stat-mini-item--muted .stat-mini-num {
+            color: var(--admin-text-muted);
+        }
+
+        .review-pending-banner {
+            margin-top: 14px;
+            background: var(--status-pending-bg);
+            border: 1px solid var(--status-pending-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: var(--status-pending-text);
+            font-weight: 750;
+        }
+
+        .review-rejection-box {
+            font-size: 0.78rem;
+            color: var(--status-rejected-text);
+            background: var(--status-rejected-bg);
+            border: 1px solid var(--status-rejected-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 6px;
+        }
+
+        .review-rejection-box strong {
+            font-weight: 800;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .review-empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--admin-text-muted);
+        }
+
+        .review-empty-state i {
+            font-size: 2.5rem;
+            color: #cbd5e1;
+        }
+
+        .review-empty-state h5 {
+            color: var(--admin-text-main);
+            font-weight: 800;
+            margin: 0.75rem 0 0.25rem;
+        }
+
+        .action-box {
+            position: sticky;
+            top: 90px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         @media (max-width: 1200px) {
@@ -961,17 +1178,13 @@
                 {{-- Preview Card (Sticky at top of content area on desktop scroll) --}}
                 <div style="position: sticky; top: 90px; z-index: 10;">
                     <div class="card-custom" style="margin-bottom:0;">
-                        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;">
-                            <div>
-                                <h1 class="fw-bold text-dark mb-1 fs-5">{{ $material->name }}</h1>
-                                <p class="text-muted mb-0" style="font-size:0.8rem; display:flex; align-items:center; gap:8px;">
-                                    <span class="badge" style="background:#eef2ff; color:#4f46e5; font-weight:700; font-size:0.72rem; border:1px solid #e0e7ff;">
-                                        {{ $material->category->name ?? 'Kategori Umum' }}
-                                    </span>
-                                    <span>·</span>
-                                    <span>Diunggah {{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}</span>
-                                </p>
-                            </div>
+                        <div class="review-hero-header">
+                            <h1 class="review-hero-title">{{ $material->name }}</h1>
+                            <p class="review-meta-row">
+                                <span class="review-type-chip">{{ $material->category->name ?? 'Kategori Umum' }}</span>
+                                <span>·</span>
+                                <span>Diunggah {{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}</span>
+                            </p>
                         </div>
 
                         {{-- Player Container --}}
@@ -991,11 +1204,9 @@
                             @endif
                         </div>
 
-                        <div style="display:flex; align-items:center; gap:8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;">
-                            <div id="topReviewTitle" style="font-size:0.8rem; font-weight:800; color:#475569; flex:1;">
-                                Preview Materi Course
-                            </div>
-                            <div id="topReviewMeta" style="font-size:0.75rem; color:#94a3b8; font-weight: 600;"></div>
+                        <div class="review-preview-footer">
+                            <div id="topReviewTitle" class="review-preview-title">Preview Materi Course</div>
+                            <div id="topReviewMeta" class="review-preview-meta"></div>
                         </div>
                     </div>
                 </div>
@@ -1004,12 +1215,10 @@
                 <div class="card-custom" style="margin-bottom:0;">
                     <div class="card-title-bar">
                         <h5 class="card-title-text">
-                            <i class="bi bi-list-task text-primary"></i>
+                            <i class="bi bi-list-task"></i>
                             Struktur Modul Pembelajaran
                         </h5>
-                        <span style="font-size:0.78rem; color:var(--admin-text-muted); font-weight:700; background: #f8fafc; padding: 4px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            {{ $uploadedModulesCount ?? 0 }} Modul Aktif
-                        </span>
+                        <span class="review-count-badge">{{ $uploadedModulesCount ?? 0 }} Modul Aktif</span>
                     </div>
 
                     {{-- Scrollable List --}}
@@ -1164,8 +1373,8 @@
                                                     </div>
 
                                                     @if($reviewStatus === 'rejected' && !empty($module->review_rejection_reason))
-                                                        <div style="font-size:0.78rem; color:var(--status-rejected-text); background:var(--status-rejected-bg); border:1px solid var(--status-rejected-border); border-radius:10px; padding:10px 14px; margin-top:6px;">
-                                                            <div style="font-weight:800; margin-bottom:2px;"><i class="bi bi-chat-left-text-fill me-1"></i>Catatan Revisi:</div>
+                                                        <div class="review-rejection-box">
+                                                            <strong><i class="bi bi-chat-left-text-fill me-1"></i>Catatan Revisi:</strong>
                                                             {{ $module->review_rejection_reason }}
                                                         </div>
                                                     @endif
@@ -1207,12 +1416,10 @@
                             </div>
 
                         @empty
-                            <div class="text-center py-5 text-muted">
-                                <div class="empty-state-icon">
-                                    <i class="bi bi-folder-x" style="font-size:2.5rem; color:#cbd5e1;"></i>
-                                </div>
-                                <h5 class="fw-bold mt-3 mb-1" style="color:var(--admin-text-main);">Tidak ada modul</h5>
-                                <p class="text-muted mb-0 small">Belum ada modul yang ditambahkan untuk course ini.</p>
+                            <div class="review-empty-state">
+                                <i class="bi bi-folder-x"></i>
+                                <h5>Tidak ada modul</h5>
+                                <p class="mb-0 small">Belum ada modul yang ditambahkan untuk course ini.</p>
                             </div>
                         @endforelse
 
@@ -1228,17 +1435,15 @@
                     {{-- Trainer Card Info --}}
                     <div class="card-custom side-card">
                         <div class="side-card-title">Instruktur</div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($material->trainer?->name ?? 'T') . '&background=4f46e5&color=fff&bold=true' }}"
+                        <div class="trainer-profile-row">
+                            <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($material->trainer?->name ?? 'T') . '&background=3949ab&color=fff&bold=true' }}"
                                 class="trainer-avatar"
                                 alt="Avatar {{ $material->trainer?->name ?? 'Trainer' }}">
                             <div style="min-width:0;">
-                                <div style="font-weight:800; color:var(--admin-text-main); font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                    {{ $material->trainer?->name ?? 'Anonim' }}
-                                </div>
-                                <div style="font-size:0.75rem; color:var(--admin-text-muted); font-weight:600; margin-top: 1px;">Trainer Resmi</div>
+                                <div class="trainer-profile-name">{{ $material->trainer?->name ?? 'Anonim' }}</div>
+                                <div class="trainer-profile-role">Trainer Resmi</div>
                                 @if($material->trainer?->email)
-                                    <div style="font-size:0.72rem; color:var(--admin-text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    <div class="trainer-profile-email">
                                         <i class="bi bi-envelope me-1"></i>{{ $material->trainer->email }}
                                     </div>
                                 @endif
@@ -1269,12 +1474,12 @@
                                 <div class="stat-mini-num">{{ $totalUploaded }}</div>
                                 <div class="stat-mini-label">Modul Aktif</div>
                             </div>
-                            <div class="stat-mini-item" style="border-left: 3px solid var(--status-approved-text);">
-                                <div class="stat-mini-num" style="color:var(--status-approved-text);">{{ $totalApprovedM }}</div>
+                            <div class="stat-mini-item stat-mini-item--success">
+                                <div class="stat-mini-num">{{ $totalApprovedM }}</div>
                                 <div class="stat-mini-label">Disetujui</div>
                             </div>
-                            <div class="stat-mini-item" style="border-left: 3px solid {{ $totalRejectedM > 0 ? 'var(--status-rejected-text)' : '#f1f5f9' }};">
-                                <div class="stat-mini-num" style="color:{{ $totalRejectedM > 0 ? 'var(--status-rejected-text)' : 'var(--admin-text-muted)' }};">{{ $totalRejectedM }}</div>
+                            <div class="stat-mini-item {{ $totalRejectedM > 0 ? 'stat-mini-item--danger' : 'stat-mini-item--muted' }}">
+                                <div class="stat-mini-num">{{ $totalRejectedM }}</div>
                                 <div class="stat-mini-label">Ditolak</div>
                             </div>
                         </div>
@@ -1291,8 +1496,8 @@
                         </div>
 
                         @if($totalPending > 0)
-                            <div style="margin-top:14px; background:var(--status-pending-bg); border: 1px solid var(--status-pending-border); border-radius:10px; padding:10px 12px; display:flex; align-items:center; gap:8px; font-size:0.78rem; color:var(--status-pending-text); font-weight:750;">
-                                <i class="bi bi-hourglass-split animate-pulse" style="font-size:0.95rem;"></i>
+                            <div class="review-pending-banner">
+                                <i class="bi bi-hourglass-split"></i>
                                 {{ $totalPending }} Modul Menunggu Tinjauan
                             </div>
                         @endif

@@ -6,8 +6,10 @@
     <style>
         :root {
             --admin-primary: #1e1b4b;
-            --admin-secondary: #4f46e5;
-            --admin-accent: #6366f1;
+            --admin-secondary: #3949ab;
+            --admin-accent: #5c6bc0;
+            --admin-accent-soft: #eef1ff;
+            --admin-accent-border: #dce3ff;
             --admin-bg: #f8fafc;
             --admin-card-bg: #ffffff;
             --admin-border: #e2e8f0;
@@ -149,7 +151,7 @@
             justify-content: space-between;
             margin-bottom: 20px;
             padding-bottom: 14px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 2px solid var(--admin-accent-soft);
         }
 
         .card-title-text {
@@ -182,6 +184,35 @@
             height: 100%;
             object-fit: contain;
             background: #000;
+        }
+
+        .video-container.is-image,
+        .video-container.is-link,
+        .video-container.is-file {
+            background: #fff;
+            color: var(--admin-text-main);
+            border-color: var(--admin-border);
+            box-shadow: inset 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+
+        .video-container.is-image img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .video-container.is-link iframe,
+        .video-container.is-file iframe {
+            background: #fff;
+        }
+
+        .module-item.is-preview-active {
+            border-color: var(--admin-secondary);
+            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.12);
         }
 
         .module-item {
@@ -223,8 +254,8 @@
             width: 46px;
             height: 46px;
             border-radius: 12px;
-            background: #eef2ff;
-            color: #4945ff;
+            background: var(--admin-accent-soft);
+            color: var(--admin-secondary);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -301,8 +332,8 @@
 
         .module-icon-btn.preview {
             color: var(--admin-secondary);
-            background: #f0f3ff;
-            border-color: #dbe0ff;
+            background: var(--admin-accent-soft);
+            border-color: var(--admin-accent-border);
         }
 
         .module-icon-btn.preview:hover {
@@ -465,13 +496,13 @@
         }
 
         .side-card-title {
-            color: var(--admin-text-muted);
+            color: var(--admin-secondary);
             font-size: 0.76rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             margin-bottom: 16px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 2px solid var(--admin-accent-soft);
             padding-bottom: 8px;
         }
 
@@ -524,7 +555,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.24);
+            box-shadow: 0 8px 20px rgba(57, 73, 171, 0.22);
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
         }
@@ -615,7 +646,7 @@
 
         .reject-modal .form-control:focus {
             border-color: var(--admin-secondary);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+            box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.12);
             outline: none;
         }
 
@@ -679,6 +710,245 @@
             color: var(--admin-text-main);
         }
 
+        .page-header {
+            background: var(--admin-card-bg);
+            border: 1px solid var(--admin-border);
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+        }
+
+        .review-alert {
+            border: 1px solid transparent;
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+
+        .review-alert--success {
+            background: var(--status-approved-bg);
+            border-color: var(--status-approved-border);
+            color: var(--status-approved-text);
+        }
+
+        .review-alert--danger {
+            background: var(--status-rejected-bg);
+            border-color: var(--status-rejected-border);
+            color: var(--status-rejected-text);
+        }
+
+        .review-hero-header {
+            margin-bottom: 16px;
+        }
+
+        .review-hero-title {
+            font-size: 1.12rem;
+            font-weight: 800;
+            color: var(--admin-text-main);
+            margin: 0 0 6px;
+            line-height: 1.35;
+        }
+
+        .review-meta-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--admin-text-muted);
+            margin: 0;
+        }
+
+        .review-type-chip {
+            display: inline-flex;
+            align-items: center;
+            background: var(--admin-accent-soft);
+            color: var(--admin-secondary);
+            font-weight: 700;
+            font-size: 0.72rem;
+            border: 1px solid var(--admin-accent-border);
+            border-radius: 999px;
+            padding: 3px 10px;
+        }
+
+        .review-preview-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .review-preview-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #475569;
+            flex: 1;
+        }
+
+        .review-preview-meta {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .card-title-text i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--admin-accent-soft);
+            color: var(--admin-secondary);
+            font-size: 0.95rem;
+        }
+
+        .review-count-badge {
+            font-size: 0.78rem;
+            color: var(--admin-text-muted);
+            font-weight: 700;
+            background: #f8fafc;
+            padding: 5px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--admin-border);
+        }
+
+        .trainer-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trainer-profile-name {
+            font-weight: 800;
+            color: var(--admin-text-main);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .trainer-profile-role {
+            font-size: 0.75rem;
+            color: var(--admin-text-muted);
+            font-weight: 600;
+            margin-top: 1px;
+        }
+
+        .trainer-profile-email {
+            font-size: 0.72rem;
+            color: var(--admin-text-muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-mini-item--success {
+            border-left: 3px solid var(--status-approved-text);
+        }
+
+        .stat-mini-item--success .stat-mini-num {
+            color: var(--status-approved-text);
+        }
+
+        .stat-mini-item--danger {
+            border-left: 3px solid var(--status-rejected-text);
+        }
+
+        .stat-mini-item--danger .stat-mini-num {
+            color: var(--status-rejected-text);
+        }
+
+        .stat-mini-item--muted .stat-mini-num {
+            color: var(--admin-text-muted);
+        }
+
+        .review-pending-banner {
+            margin-top: 14px;
+            background: var(--status-pending-bg);
+            border: 1px solid var(--status-pending-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: var(--status-pending-text);
+            font-weight: 750;
+        }
+
+        .review-survey-box {
+            font-size: 0.78rem;
+            background: var(--admin-accent-soft);
+            border: 1px solid var(--admin-accent-border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-top: 6px;
+            font-weight: 700;
+        }
+
+        .review-survey-box a {
+            color: var(--admin-secondary);
+            text-decoration: underline;
+        }
+
+        .review-rejection-box {
+            font-size: 0.78rem;
+            color: var(--status-rejected-text);
+            background: var(--status-rejected-bg);
+            border: 1px solid var(--status-rejected-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 6px;
+        }
+
+        .review-rejection-box strong {
+            font-weight: 800;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .review-empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--admin-text-muted);
+        }
+
+        .review-empty-state i {
+            font-size: 2.5rem;
+            color: #cbd5e1;
+        }
+
+        .review-empty-state h5 {
+            color: var(--admin-text-main);
+            font-weight: 800;
+            margin: 0.75rem 0 0.25rem;
+        }
+
+        .review-locked-notice {
+            font-size: 0.8rem;
+            padding: 14px;
+            text-align: center;
+            color: var(--admin-text-muted);
+        }
+
+        .action-box {
+            position: sticky;
+            top: 90px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
         @media (max-width: 1200px) {
             .action-box {
                 position: static !important;
@@ -738,14 +1008,14 @@
 
         {{-- Notifications --}}
         @if (session('success'))
-            <div class="alert alert-success border-0 rounded-4 p-3 mb-4 d-flex align-items-center gap-2" style="background:#e6fcf5; color:#0ca678; font-weight:700;">
+            <div class="review-alert review-alert--success">
                 <i class="bi bi-check-circle-fill fs-5"></i>
                 <div>{{ session('success') }}</div>
             </div>
         @endif
 
         @if (session('error'))
-            <div class="alert alert-danger border-0 rounded-4 p-3 mb-4 d-flex align-items-center gap-2" style="background:#fff5f5; color:#e03131; font-weight:700;">
+            <div class="review-alert review-alert--danger">
                 <i class="bi bi-exclamation-triangle-fill fs-5"></i>
                 <div>{{ session('error') }}</div>
             </div>
@@ -760,17 +1030,13 @@
                 {{-- Sticky Preview Card at top of content area on desktop scroll --}}
                 <div style="position: sticky; top: 90px; z-index: 10;">
                     <div class="card-custom" style="margin-bottom:0;">
-                        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;">
-                            <div>
-                                <h1 class="fw-bold text-dark mb-1 fs-5">{{ $event->title }}</h1>
-                                <p class="text-muted mb-0" style="font-size:0.8rem; display:flex; align-items:center; gap:8px;">
-                                    <span class="badge" style="background:#eef2ff; color:#4f46e5; font-weight:700; font-size:0.72rem; border:1px solid #e0e7ff;">
-                                        {{ $event->jenis ?? 'Event' }}
-                                    </span>
-                                    <span>·</span>
-                                    <span>Diajukan oleh {{ $event->trainer->name ?? 'Trainer' }}</span>
-                                </p>
-                            </div>
+                        <div class="review-hero-header">
+                            <h1 class="review-hero-title">{{ $event->title }}</h1>
+                            <p class="review-meta-row">
+                                <span class="review-type-chip">{{ $event->jenis ?? 'Event' }}</span>
+                                <span>·</span>
+                                <span>Diajukan oleh {{ $event->trainer->name ?? 'Trainer' }}</span>
+                            </p>
                         </div>
 
                         {{-- Player Container --}}
@@ -782,11 +1048,9 @@
                             </div>
                         </div>
 
-                        <div style="display:flex; align-items:center; gap:8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;">
-                            <div id="topReviewTitle" style="font-size:0.8rem; font-weight:800; color:#475569; flex:1;">
-                                Preview Materi Event
-                            </div>
-                            <div id="topReviewMeta" style="font-size:0.75rem; color:#94a3b8; font-weight: 600;"></div>
+                        <div class="review-preview-footer">
+                            <div id="topReviewTitle" class="review-preview-title">Preview Materi Event</div>
+                            <div id="topReviewMeta" class="review-preview-meta"></div>
                         </div>
                     </div>
                 </div>
@@ -795,12 +1059,10 @@
                 <div class="card-custom" style="margin-bottom:0;">
                     <div class="card-title-bar">
                         <h5 class="card-title-text">
-                            <i class="bi bi-folder2-open text-primary"></i>
+                            <i class="bi bi-folder2-open"></i>
                             Daftar Modul Event
                         </h5>
-                        <span style="font-size:0.78rem; color:var(--admin-text-muted); font-weight:700; background: #f8fafc; padding: 4px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            {{ $event->trainerModules->count() }} Modul / Dokumen
-                        </span>
+                        <span class="review-count-badge">{{ $event->trainerModules->count() }} Modul / Dokumen</span>
                     </div>
 
                     <div class="scrollable-content" style="max-height: 52vh; overflow-y: auto; padding-right: 4px;">
@@ -808,19 +1070,33 @@
                             @foreach ($event->trainerModules as $module)
                                 @php
                                     $rawContent = trim((string) ($module->path ?? ''));
-                                    $isHttp = preg_match('#^https?://#i', $rawContent);
-                                    
+                                    $isHttp = (bool) preg_match('#^https?://#i', $rawContent);
+                                    $surveyUrl = trim((string) ($module->survey_link ?? ''));
+                                    $ext = strtolower(pathinfo($rawContent, PATHINFO_EXTENSION));
+
                                     $previewKind = 'file';
-                                    if ($module->survey_link || $isHttp) {
+                                    $previewUrl = '';
+
+                                    if ($surveyUrl !== '') {
+                                        $previewUrl = $surveyUrl;
                                         $previewKind = 'link';
-                                    } elseif (str_ends_with(strtolower($rawContent), '.pdf')) {
-                                        $previewKind = 'pdf';
-                                    } elseif (str_ends_with(strtolower($rawContent), '.mp4') || str_ends_with(strtolower($rawContent), '.mov')) {
-                                        $previewKind = 'video';
+                                    } elseif ($isHttp) {
+                                        $previewUrl = $rawContent;
+                                        $previewKind = 'link';
+                                    } elseif ($rawContent !== '') {
+                                        $previewUrl = route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=0';
+                                        if (in_array($ext, ['mp4', 'mov', 'webm', 'm4v'], true)) {
+                                            $previewKind = 'video';
+                                        } elseif ($ext === 'pdf') {
+                                            $previewKind = 'pdf';
+                                        } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                                            $previewKind = 'image';
+                                        }
                                     }
-                                    
-                                    $contentUrl = $isHttp ? $rawContent : route('admin.event-material.stream', $event->id) . '?assignment_id=' . $module->id . '&download=0';
-                                    $downloadUrl = route('admin.event-material.stream', $event->id) . '?assignment_id=' . $module->id . '&download=1';
+
+                                    $downloadUrl = $rawContent !== '' && !$isHttp
+                                        ? route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=1'
+                                        : null;
                                     
                                     $reviewStatus = in_array(($module->status ?? ''), ['approved', 'rejected', 'pending_review', 'pending'], true)
                                         ? ($module->status === 'pending' ? 'pending_review' : $module->status) : 'pending_review';
@@ -850,15 +1126,17 @@
                                             </div>
 
                                             <div class="module-quick-actions">
-                                                <button type="button" class="module-review-trigger module-icon-btn preview"
-                                                    data-review-title="{{ e($module->original_name ?: basename($module->path)) }}"
-                                                    data-review-url="{{ $module->survey_link ?: $contentUrl }}"
-                                                    data-review-kind="{{ $previewKind }}"
-                                                    data-review-file="{{ e($module->original_name ?: basename($module->path)) }}"
-                                                    title="Preview Modul">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                @if(!$module->survey_link && !$isHttp)
+                                                @if($previewUrl !== '')
+                                                    <button type="button" class="module-review-trigger module-icon-btn preview"
+                                                        data-review-title="{{ e($module->original_name ?: basename($module->path)) }}"
+                                                        data-review-url="{{ $previewUrl }}"
+                                                        data-review-kind="{{ $previewKind }}"
+                                                        data-review-file="{{ e($module->original_name ?: basename($module->path)) }}"
+                                                        title="Preview Modul">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                @endif
+                                                @if($downloadUrl)
                                                     <a href="{{ $downloadUrl }}" class="module-icon-btn download" title="Download File">
                                                         <i class="bi bi-download"></i>
                                                     </a>
@@ -868,16 +1146,15 @@
 
                                         {{-- Link Survey info box --}}
                                         @if($module->survey_link)
-                                            <div style="font-size:0.78rem; background:#f0f3ff; border:1px solid #dbe0ff; border-radius:10px; padding:8px 12px; margin-top:6px; font-weight:700;">
-                                                <i class="bi bi-link-45deg me-1"></i>Link Survei Kepuasan: 
-                                                <a href="{{ $module->survey_link }}" target="_blank" style="color:var(--admin-secondary); text-decoration:underline;">{{ $module->survey_link }}</a>
+                                            <div class="review-survey-box">
+                                                <i class="bi bi-link-45deg me-1"></i>Link Survei Kepuasan:
+                                                <a href="{{ $module->survey_link }}" target="_blank">{{ $module->survey_link }}</a>
                                             </div>
                                         @endif
 
-                                        {{-- Rejection reasoning --}}
                                         @if($module->rejection_reason)
-                                            <div style="font-size:0.78rem; color:var(--status-rejected-text); background:var(--status-rejected-bg); border:1px solid var(--status-rejected-border); border-radius:10px; padding:10px 14px; margin-top:6px;">
-                                                <div style="font-weight:800; margin-bottom:2px;"><i class="bi bi-chat-left-text-fill me-1"></i>Catatan Revisi:</div>
+                                            <div class="review-rejection-box">
+                                                <strong><i class="bi bi-chat-left-text-fill me-1"></i>Catatan Revisi:</strong>
                                                 {{ $module->rejection_reason }}
                                             </div>
                                         @endif
@@ -925,30 +1202,49 @@
                                 </div>
                             @endforeach
                         @elseif ($event->module_path)
-                            {{-- Legacy single module path fallback --}}
+                            @php
+                                $legacyName = basename($event->module_path);
+                                $legacyExt = strtolower(pathinfo($legacyName, PATHINFO_EXTENSION));
+                                $legacyKind = 'file';
+                                if (in_array($legacyExt, ['mp4', 'mov', 'webm', 'm4v'], true)) {
+                                    $legacyKind = 'video';
+                                } elseif ($legacyExt === 'pdf') {
+                                    $legacyKind = 'pdf';
+                                } elseif (in_array($legacyExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                                    $legacyKind = 'image';
+                                }
+                                $legacyPreviewUrl = route('admin.event-material.stream', $event->id) . '?download=0';
+                                $legacyDownloadUrl = route('admin.event-material.stream', $event->id) . '?download=1';
+                            @endphp
                             <div class="module-item pending">
                                 <div class="module-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
                                 <div class="module-desc">
                                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                                         <div>
-                                            <h6>{{ basename($event->module_path) }}</h6>
+                                            <h6>{{ $legacyName }}</h6>
                                             <span class="module-type-tag">DOKUMEN MODUL EVENT (SINGLE FILE)</span>
                                         </div>
                                         <div class="module-quick-actions">
-                                            <a href="{{ Storage::url($event->module_path) }}" target="_blank" class="module-icon-btn preview" title="Buka File">
-                                                <i class="bi bi-box-arrow-up-right"></i>
+                                            <button type="button" class="module-review-trigger module-icon-btn preview"
+                                                data-review-title="{{ e($legacyName) }}"
+                                                data-review-url="{{ $legacyPreviewUrl }}"
+                                                data-review-kind="{{ $legacyKind }}"
+                                                data-review-file="{{ e($legacyName) }}"
+                                                title="Preview Modul">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <a href="{{ $legacyDownloadUrl }}" class="module-icon-btn download" title="Download File">
+                                                <i class="bi bi-download"></i>
                                             </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @else
-                            <div class="text-center py-5 text-muted">
-                                <div class="empty-state-icon">
-                                    <i class="bi bi-folder-x" style="font-size:2.5rem; color:#cbd5e1;"></i>
-                                </div>
-                                <h5 class="fw-bold mt-3 mb-1" style="color:var(--admin-text-main);">Tidak ada modul</h5>
-                                <p class="text-muted mb-0 small">Belum ada modul yang diunggah trainer untuk event ini.</p>
+                            <div class="review-empty-state">
+                                <i class="bi bi-folder-x"></i>
+                                <h5>Tidak ada modul</h5>
+                                <p class="mb-0 small">Belum ada modul yang diunggah trainer untuk event ini.</p>
                             </div>
                         @endif
                     </div>
@@ -963,17 +1259,15 @@
                     {{-- Trainer Card Info --}}
                     <div class="card-custom side-card">
                         <div class="side-card-title">Instruktur</div>
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($event->trainer?->name ?? 'T') . '&background=4f46e5&color=fff&bold=true' }}"
+                        <div class="trainer-profile-row">
+                            <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($event->trainer?->name ?? 'T') . '&background=3949ab&color=fff&bold=true' }}"
                                 class="trainer-avatar"
                                 alt="Avatar {{ $event->trainer?->name ?? 'Trainer' }}">
                             <div style="min-width:0;">
-                                <div style="font-weight:800; color:var(--admin-text-main); font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                                    {{ $event->trainer?->name ?? 'Anonim' }}
-                                </div>
-                                <div style="font-size:0.75rem; color:var(--admin-text-muted); font-weight:600; margin-top: 1px;">Trainer / Instruktur Event</div>
+                                <div class="trainer-profile-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
+                                <div class="trainer-profile-role">Trainer / Instruktur Event</div>
                                 @if($event->trainer?->email)
-                                    <div style="font-size:0.72rem; color:var(--admin-text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    <div class="trainer-profile-email">
                                         <i class="bi bi-envelope me-1"></i>{{ $event->trainer->email }}
                                     </div>
                                 @endif
@@ -1022,12 +1316,12 @@
                                 <div class="stat-mini-num">{{ $etmCount }}</div>
                                 <div class="stat-mini-label">Total Modul</div>
                             </div>
-                            <div class="stat-mini-item" style="border-left: 3px solid var(--status-approved-text);">
-                                <div class="stat-mini-num" style="color:var(--status-approved-text);">{{ $etmApproved }}</div>
+                            <div class="stat-mini-item stat-mini-item--success">
+                                <div class="stat-mini-num">{{ $etmApproved }}</div>
                                 <div class="stat-mini-label">Disetujui</div>
                             </div>
-                            <div class="stat-mini-item" style="border-left: 3px solid {{ $etmRejected > 0 ? 'var(--status-rejected-text)' : '#f1f5f9' }};">
-                                <div class="stat-mini-num" style="color:{{ $etmRejected > 0 ? 'var(--status-rejected-text)' : 'var(--admin-text-muted)' }};">{{ $etmRejected }}</div>
+                            <div class="stat-mini-item {{ $etmRejected > 0 ? 'stat-mini-item--danger' : 'stat-mini-item--muted' }}">
+                                <div class="stat-mini-num">{{ $etmRejected }}</div>
                                 <div class="stat-mini-label">Ditolak</div>
                             </div>
                             <div class="stat-mini-item">
@@ -1048,8 +1342,8 @@
                         </div>
 
                         @if($etmPending > 0)
-                            <div style="margin-top:14px; background:var(--status-pending-bg); border: 1px solid var(--status-pending-border); border-radius:10px; padding:10px 12px; display:flex; align-items:center; gap:8px; font-size:0.78rem; color:var(--status-pending-text); font-weight:750;">
-                                <i class="bi bi-hourglass-split animate-pulse" style="font-size:0.95rem;"></i>
+                            <div class="review-pending-banner">
+                                <i class="bi bi-hourglass-split"></i>
                                 {{ $etmPending }} Modul Menunggu Tinjauan
                             </div>
                         @endif
@@ -1072,7 +1366,7 @@
                             </button>
                         </div>
                     @else
-                        <div class="card-custom side-card text-center text-muted" style="font-size: 0.8rem; padding: 14px;">
+                        <div class="card-custom side-card review-locked-notice">
                             <i class="bi bi-lock-fill me-1"></i> Materi event ini sudah di-review.
                         </div>
                     @endif
@@ -1121,8 +1415,15 @@
             const viewerTitle = document.getElementById('topReviewTitle');
             const viewerMeta = document.getElementById('topReviewMeta');
 
-            function showPreviewContent(content, title, meta) {
+            function setViewerMode(mode) {
                 if (!viewer) return;
+                viewer.classList.remove('is-image', 'is-link', 'is-file', 'is-video', 'is-pdf');
+                if (mode) viewer.classList.add(mode);
+            }
+
+            function showPreviewContent(content, title, meta, mode) {
+                if (!viewer) return;
+                setViewerMode(mode || '');
                 viewer.innerHTML = '';
                 if (content instanceof HTMLElement) {
                     viewer.appendChild(content);
@@ -1147,41 +1448,66 @@
             }
 
             function renderPreview(url, kind) {
-                if (!url) return '<div class="text-center opacity-50 py-4"><i class="bi bi-file-earmark-x" style="font-size:3rem;"></i><p class="mt-2 mb-0">File tidak tersedia</p></div>';
+                if (!url) {
+                    return '<div class="text-center opacity-50 py-4"><i class="bi bi-file-earmark-x" style="font-size:3rem;"></i><p class="mt-2 mb-0">File tidak tersedia</p></div>';
+                }
                 if (kind === 'video') {
-                    return `<video controls controlsList="nodownload" style="width:100%; height:100%;"><source src="${url}" type="video/mp4"></video>`;
+                    return `<video controls controlsList="nodownload" style="width:100%; height:100%;"><source src="${url}"></video>`;
                 }
                 if (kind === 'pdf') {
-                    return `<iframe src="${url}#toolbar=1&navpanes=0" style="width:100%; height:100%; border:none;"></iframe>`;
+                    return `<iframe src="${url}#toolbar=1&navpanes=0" title="Preview PDF"></iframe>`;
                 }
-                return `<iframe src="${url}" style="width:100%; height:100%; border:none;"></iframe>`;
+                if (kind === 'image') {
+                    return `<img src="${url}" alt="Preview gambar">`;
+                }
+                if (kind === 'link') {
+                    return `<iframe src="${url}" title="Preview tautan" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+                }
+                return `<iframe src="${url}" title="Preview file"></iframe>`;
             }
 
-            // Click event delegation to support dynamically loaded content previewing
-            document.addEventListener('click', function (e) {
-                const trigger = e.target.closest('.module-review-trigger');
-                if (!trigger) return;
+            function previewModeClass(kind) {
+                if (kind === 'video') return 'is-video';
+                if (kind === 'pdf') return 'is-pdf';
+                if (kind === 'image') return 'is-image';
+                if (kind === 'link') return 'is-link';
+                return 'is-file';
+            }
 
+            function openModulePreview(trigger) {
                 const fileUrl = trigger.getAttribute('data-review-url') || '';
                 const fileKind = trigger.getAttribute('data-review-kind') || 'file';
                 const moduleTitle = trigger.getAttribute('data-review-title') || 'Materi';
                 const fileName = trigger.getAttribute('data-review-file') || 'File';
 
-                if (fileKind === 'link') {
-                    showPreviewContent(
-                        `<div class="d-flex flex-column align-items-center justify-content-center h-100 p-4 text-center">
-                            <i class="bi bi-link-45deg mb-2 text-primary" style="font-size: 3.5rem;"></i>
-                            <h6 class="fw-bold mb-1">${moduleTitle}</h6>
-                            <p class="text-muted small mb-3">Tautan Eksternal / Link Survei</p>
-                            <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm px-4" style="width: auto; border-radius: 8px;">Buka di Tab Baru <i class="bi bi-box-arrow-up-right ms-1"></i></a>
-                         </div>`,
-                        'Tinjau Tautan: ' + moduleTitle,
-                        'Tautan Eksternal'
-                    );
-                } else {
-                    showPreviewContent(renderPreview(fileUrl, fileKind), 'Tinjau File: ' + moduleTitle, fileName);
-                }
+                document.querySelectorAll('.module-item.is-preview-active').forEach((el) => {
+                    el.classList.remove('is-preview-active');
+                });
+                const moduleItem = trigger.closest('.module-item');
+                if (moduleItem) moduleItem.classList.add('is-preview-active');
+
+                const titlePrefix = fileKind === 'link' ? 'Tinjau Tautan: ' : 'Tinjau File: ';
+                const metaLabel = fileKind === 'link' ? 'Tautan Eksternal' : fileName;
+
+                showPreviewContent(
+                    renderPreview(fileUrl, fileKind),
+                    titlePrefix + moduleTitle,
+                    metaLabel,
+                    previewModeClass(fileKind)
+                );
+            }
+
+            document.addEventListener('click', function (e) {
+                const trigger = e.target.closest('.module-review-trigger');
+                if (!trigger) return;
+                e.preventDefault();
+                openModulePreview(trigger);
             });
+
+            const firstPreviewTrigger = document.querySelector('.module-review-trigger');
+            if (firstPreviewTrigger) {
+                openModulePreview(firstPreviewTrigger);
+            }
         });
     </script>
 @endpush

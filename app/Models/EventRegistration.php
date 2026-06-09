@@ -27,6 +27,9 @@ class EventRegistration extends Model
         'payment_verified_by',
         'payment_url',
         'rejection_reason',
+        'university_origin',
+        'study_program',
+        'position',
     ];
 
     protected $casts = [
@@ -62,5 +65,10 @@ class EventRegistration extends Model
     public function paymentProofs()
     {
         return $this->hasMany(PaymentProof::class, 'event_registration_id');
+    }
+
+    public function dailyAttendances()
+    {
+        return $this->hasMany(EventDailyAttendance::class, 'event_registration_id');
     }
 }
