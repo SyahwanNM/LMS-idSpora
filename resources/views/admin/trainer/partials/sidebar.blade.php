@@ -1,5 +1,6 @@
 @php
-    $isMaterialActive = request()->routeIs('admin.trainer.material.*');
+    $isMaterialActive = request()->routeIs('admin.trainer.material.*')
+        || request()->routeIs('admin.event-material*');
     $isCertificateActive = request()->routeIs('admin.trainer.certificates.*');
 @endphp
 

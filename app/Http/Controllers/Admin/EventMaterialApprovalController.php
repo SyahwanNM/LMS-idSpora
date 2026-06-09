@@ -225,7 +225,7 @@ class EventMaterialApprovalController extends Controller
             return $assignment;
         });
 
-        return view('admin.event-material-approvals', [
+        return view('admin.trainer.material.event-material-approvals', [
             'materials' => $pendingMaterials,
             'sort' => $sort,
         ]);
@@ -252,7 +252,7 @@ class EventMaterialApprovalController extends Controller
         $materialRejectionReason = $assignment?->material_rejection_reason ?: $event->material_rejection_reason;
         $materialTrainer = $assignment?->trainer ?: $event->trainer;
 
-        return view('admin.event-material-show', compact(
+        return view('admin.trainer.material.event-material-show', compact(
             'event',
             'assignment',
             'materialPath',

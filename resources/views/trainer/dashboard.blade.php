@@ -882,21 +882,31 @@ body {
                         <div class="invite-desc">
                             {{ $inviteEntityType === 'event' ? 'Anda diundang sebagai pembicara untuk sesi ' . Str::limit($invite->title, 20) . '.' : 'Anda diundang sebagai pengajar untuk menyampaikan materi dalam kelas ini.' }}
                         </div>
-                        <div style="display: flex; gap: 8px; margin-top: 12px;">
-                            @if($inviteEntityType === 'course')
-                                <button type="button" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
-                            @else
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                            @if($inviteEntityType === 'event' && $entityId > 0)
+                                <a href="{{ route('trainer.events.show', $entityId) }}"
+                                   class="btn btn-sm"
+                                   style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #cbd5e1; color:#475569; background:#fff; padding:8px; text-decoration:none; text-align:center;"
+                                   onclick="event.stopPropagation();">
+                                    Lihat Detail
+                                </a>
+                            @endif
+                            <div style="display: flex; gap: 8px;">
+                                @if($inviteEntityType === 'course')
+                                    <button type="button" class="btn btn-sm" style="flex:1; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
+                                @else
+                                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="decision" value="accept">
+                                        <button type="submit" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation();">Terima</button>
+                                    </form>
+                                @endif
                                 <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
                                     @csrf
-                                    <input type="hidden" name="decision" value="accept">
-                                    <button type="submit" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation();">Terima</button>
+                                    <input type="hidden" name="decision" value="reject">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation(); return confirm('Apakah Anda yakin ingin menolak undangan ini?');">Tolak</button>
                                 </form>
-                            @endif
-                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
-                                @csrf
-                                <input type="hidden" name="decision" value="reject">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation(); return confirm('Apakah Anda yakin ingin menolak undangan ini?');">Tolak</button>
-                            </form>
+                            </div>
                         </div>
                     </div>
                 </div>

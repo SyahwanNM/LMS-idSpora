@@ -53,6 +53,34 @@ class TrainerController extends Controller
             ->first();
     }
 
+    private function resolveEventSpeakerSalary(Event $event, int $trainerId): float
+    {
+        if ($trainerId <= 0) {
+            return 0;
+        }
+
+        $speakers = $event->relationLoaded('speakers')
+            ? $event->speakers
+            : $event->speakers()->get();
+
+        $byTrainer = $speakers->first(fn ($speaker) => (int) ($speaker->trainer_id ?? 0) === $trainerId);
+        if ($byTrainer && (float) ($byTrainer->salary ?? 0) > 0) {
+            return (float) $byTrainer->salary;
+        }
+
+        $trainerName = mb_strtolower(trim((string) (\App\Models\User::query()->whereKey($trainerId)->value('name') ?? '')));
+        if ($trainerName !== '') {
+            $byName = $speakers->first(
+                fn ($speaker) => mb_strtolower(trim((string) ($speaker->name ?? ''))) === $trainerName
+            );
+            if ($byName && (float) ($byName->salary ?? 0) > 0) {
+                return (float) $byName->salary;
+            }
+        }
+
+        return 0;
+    }
+
     private function resolveEventCompensation(Event $event, int $trainerId, ?TrainerAssignment $assignment = null): array
     {
         $activeParticipants = (int) ($event->active_participants_count ?? $event->participants_count ?? 0);
@@ -97,15 +125,22 @@ class TrainerController extends Controller
         $feePerParticipant = ($eventPrice > 0 && $schemePercent > 0)
             ? round(($eventPrice * $schemePercent) / 100, 2)
             : ($isFallbackToEventPrice ? round($eventPrice, 2) : 0);
-        $estimatedFee = ($activeParticipants > 0 && $feePerParticipant > 0)
-            ? round($activeParticipants * $feePerParticipant, 2)
-            : 0;
+        $speakerSalary = $this->resolveEventSpeakerSalary($event, $trainerId);
+        $feeTrainer = $speakerSalary > 0 ? $speakerSalary : $feePerParticipant;
+        $estimatedFee = $speakerSalary > 0
+            ? round($speakerSalary, 2)
+            : (($activeParticipants > 0 && $feePerParticipant > 0)
+                ? round($activeParticipants * $feePerParticipant, 2)
+                : 0);
 
         return [
             'scheme_percent' => $schemePercent,
             'event_price' => $eventPrice,
             'active_participants_count' => $activeParticipants,
+            'speaker_salary' => $speakerSalary,
             'fee_per_participant' => $feePerParticipant,
+            'fee_trainer' => $feeTrainer,
+            'fee_trainer_type' => $speakerSalary > 0 ? 'flat' : 'per_participant',
             'estimated_fee' => $estimatedFee,
             'is_fallback_to_event_price' => $isFallbackToEventPrice,
         ];
@@ -1114,7 +1149,8 @@ class TrainerController extends Controller
             ->with([
                 'scheduleItems' => function ($q) {
                     $q->orderBy('start', 'asc');
-                }
+                },
+                'speakers',
             ])
             ->firstOrFail();
 
@@ -2766,7 +2802,9 @@ class TrainerController extends Controller
             app(TrainerActivityService::class)->resetExpiredInvitationStreak($trainer);
         }
 
-        return back()->with('success', 'Undangan event berhasil diterima. Silakan upload materi untuk event ini.');
+        return redirect()
+            ->route('trainer.events.show', $event->id)
+            ->with('success', 'Undangan event berhasil diterima. Silakan upload materi untuk event ini.');
     }
 
     /**

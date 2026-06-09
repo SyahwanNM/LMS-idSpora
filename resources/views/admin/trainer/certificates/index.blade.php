@@ -25,13 +25,62 @@
             ->get();
     }
 
+    function certHasCrmTemplate($model): bool
+    {
+        return trim((string) ($model->certificate_template ?? '')) !== '';
+    }
+
+    function certHasCrmLogo($model): bool
+    {
+        $logos = $model->certificate_logo ?? null;
+
+        if (is_array($logos)) {
+            return collect($logos)->contains(fn($logo) => trim((string) $logo) !== '');
+        }
+
+        return trim((string) $logos) !== '';
+    }
+
+    function certHasCrmSignature($model): bool
+    {
+        $signatures = $model->certificate_signature ?? null;
+
+        if (!is_array($signatures)) {
+            return trim((string) $signatures) !== '';
+        }
+
+        return collect($signatures)->contains(function ($signature) {
+            if (is_array($signature)) {
+                return trim((string) ($signature['image'] ?? '')) !== '';
+            }
+
+            return trim((string) $signature) !== '';
+        });
+    }
+
+    function certHasTemplate($model): bool
+    {
+        return certAssets($model)->where('type', 'template')->isNotEmpty()
+            || certHasCrmTemplate($model);
+    }
+
+    function certHasLogo($model): bool
+    {
+        return certAssets($model)->where('type', 'logo')->isNotEmpty()
+            || certHasCrmLogo($model);
+    }
+
+    function certHasSignature($model): bool
+    {
+        return certAssets($model)->where('type', 'signature')->isNotEmpty()
+            || certHasCrmSignature($model);
+    }
+
     function certStatus($model)
     {
-        $assets = certAssets($model);
-
-        $hasTemplate = $assets->where('type', 'template')->isNotEmpty();
-        $hasLogo = $assets->where('type', 'logo')->isNotEmpty();
-        $hasSignature = $assets->where('type', 'signature')->isNotEmpty();
+        $hasTemplate = certHasTemplate($model);
+        $hasLogo = certHasLogo($model);
+        $hasSignature = certHasSignature($model);
 
         if ($hasTemplate && $hasLogo && $hasSignature) {
             return 'ready';
@@ -52,9 +101,22 @@
         ? $trainers->sum('published_certificates_count')
         : 0;
 
-    $readyCount = $allPrograms->filter(fn($item) => certStatus($item) === 'ready')->count();
+    $siapDikirimCount = $unsentItems->filter(fn($item) => certStatus($item) === 'ready')->count();
+    $menungguAssetCount = $unsentItems->filter(fn($item) => certStatus($item) === 'not-configured')->count();
+    $dalamProsesCount = $unsentItems->filter(fn($item) => certStatus($item) === 'configured')->count();
+    $sudahDikirimCount = $sentItems->count();
 
-    $notConfiguredCount = $allPrograms->filter(fn($item) => certStatus($item) === 'not-configured')->count();
+    $calcPercent = static function (int $count) use ($totalProgram): int {
+        return $totalProgram > 0 ? (int) round(($count / $totalProgram) * 100) : 0;
+    };
+
+    $siapDikirimPercent = $calcPercent($siapDikirimCount);
+    $menungguAssetPercent = $calcPercent($menungguAssetCount);
+    $dalamProsesPercent = $calcPercent($dalamProsesCount);
+    $sudahDikirimPercent = $calcPercent($sudahDikirimCount);
+
+    $readyCount = $siapDikirimCount;
+    $notConfiguredCount = $menungguAssetCount;
 @endphp
 
 @push('admin-trainer-styles')
@@ -81,9 +143,14 @@
             --btn-soft-bg: #eef2ff;
         }
 
+        .admin-trainer-main {
+            background-color: #f8fafc !important;
+        }
+
         .cert-dashboard {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             width: 100%;
+            background: transparent;
         }
 
         .cert-hero {
@@ -1016,8 +1083,12 @@
             background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
             color: white;
             transform: translateY(-1px);
-      @section('admin-trainer-content')
-    <div class="cert-dashboard" style="font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafbfe; padding: 10px 10px 40px 10px; min-height: 100vh;">
+        }
+    </style>
+@endpush
+
+@section('admin-trainer-content')
+    <div class="cert-dashboard">
 
         <!-- Header Section -->
         <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 32px;">
@@ -1287,9 +1358,9 @@
                             $assets = certAssets($item);
                             $status = certStatus($item);
 
-                            $hasTemplate = $assets->where('type', 'template')->isNotEmpty();
-                            $hasLogo = $assets->where('type', 'logo')->isNotEmpty();
-                            $hasSignature = $assets->where('type', 'signature')->isNotEmpty();
+                            $hasTemplate = certHasTemplate($item);
+                            $hasLogo = certHasLogo($item);
+                            $hasSignature = certHasSignature($item);
 
                             $isEvent = $item instanceof \App\Models\Event;
                             $title = $isEvent ? ($item->title ?? '-') : ($item->name ?? '-');
@@ -1677,62 +1748,6 @@
                     }
                 });
                 activeTabValue = 'all';
-                runFilter();
-            });
-        });
-    </script>
-@endpush/div>
-    </div>
-@endsection
-
-@push('admin-trainer-scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const tabBtns = document.querySelectorAll('.custom-tab-btn');
-            const tabPanes = document.querySelectorAll('.custom-tab-pane');
-
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', function () {
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    tabPanes.forEach(p => p.classList.remove('active'));
-
-                    this.classList.add('active');
-
-                    const targetId = this.getAttribute('data-target');
-                    document.getElementById(targetId)?.classList.add('active');
-
-                    const tabName = targetId.replace('-pane', '');
-                    const url = new URL(window.location);
-                    url.searchParams.set('tab', tabName);
-                    window.history.pushState({}, '', url);
-                });
-            });
-
-            const searchInput = document.getElementById('certSearch');
-            const statusFilter = document.getElementById('certStatus');
-            const resetBtn = document.getElementById('certReset');
-
-            function runFilter() {
-                const term = (searchInput?.value || '').toLowerCase().trim();
-                const status = statusFilter?.value || 'all';
-
-                document.querySelectorAll('.cert-row').forEach(row => {
-                    const title = row.getAttribute('data-title') || '';
-                    const rowStatus = row.getAttribute('data-status') || '';
-
-                    const matchSearch = term === '' || title.includes(term);
-                    const matchStatus = status === 'all' || rowStatus === status;
-
-                    row.style.display = matchSearch && matchStatus ? '' : 'none';
-                });
-            }
-
-            searchInput?.addEventListener('input', runFilter);
-            statusFilter?.addEventListener('change', runFilter);
-
-            resetBtn?.addEventListener('click', function () {
-                if (searchInput) searchInput.value = '';
-                if (statusFilter) statusFilter.value = 'all';
                 runFilter();
             });
         });

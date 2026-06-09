@@ -11,8 +11,24 @@
     ];
 
     $materialStatus = (string) ($event->material_status ?? 'draft');
-    $hasUploadedModule = !empty($event->module_path);
-    $displayMaterialStatus = $hasUploadedModule ? $materialStatus : 'draft';
+    $submittedModules = ($myModules ?? collect());
+    if ($submittedModules->isEmpty() && !empty($event->module_path)) {
+        $submittedModules = collect([(object) [
+            'original_name' => basename((string) $event->module_path),
+            'path' => $event->module_path,
+            'status' => $materialStatus,
+            'created_at' => $event->module_submitted_at ?? $event->updated_at,
+            'survey_link' => null,
+            'rejection_reason' => null,
+            'is_legacy' => true,
+        ]]);
+    }
+    $hasUploadedModule = $submittedModules->isNotEmpty();
+    if ($hasUploadedModule && ($myMaterialStatus ?? 'not_uploaded') !== 'not_uploaded') {
+        $displayMaterialStatus = (string) $myMaterialStatus;
+    } else {
+        $displayMaterialStatus = $hasUploadedModule ? $materialStatus : 'draft';
+    }
     $isRevisionWindow = $displayMaterialStatus === 'rejected';
     $deadline = $isRevisionWindow
         ? (!empty($event->material_revision_deadline)
@@ -35,8 +51,28 @@
         $eventRejectionReason = trim((string) ($event->module_rejection_reason ?? ''));
     }
     $showEventRejectionReason = $displayMaterialStatus === 'rejected' && $eventRejectionReason !== '';
-    $moduleFileUrl = $event->module_file_url;
-    $uploadedModuleName = $hasUploadedModule ? basename((string) $event->module_path) : null;
+    $resolveModuleViewUrl = function ($module) use ($event) {
+        $path = (string) ($module->path ?? '');
+        if ($path === '') {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+        if (!empty($module->is_legacy)) {
+            return $event->module_file_url;
+        }
+
+        return $module->download_url ?? \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+    };
+    $resolveModuleLabel = function ($module) {
+        $name = (string) ($module->original_name ?? 'Materi');
+        if (str_starts_with($name, 'Link: ')) {
+            return str_replace('Link: ', '', $name);
+        }
+
+        return $name;
+    };
     $canUploadMaterials = ($materialStatus !== 'approved') && ($materialStatus !== 'pending_review') && ($isRejected || empty($deadline) || now()->lte($deadline));
 @endphp
 
@@ -677,6 +713,72 @@
             color: var(--yellow-clr);
         }
 
+        .module-preview-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .module-preview-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #e8edf5;
+            background: #fff;
+        }
+
+        .module-preview-item .file-meta {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .module-preview-item .file-name {
+            margin: 0 0 4px 0;
+            color: var(--main-navy-clr);
+            font-size: 14px;
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .module-preview-item .file-sub {
+            margin: 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .module-preview-item .file-status {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid;
+            white-space: nowrap;
+            margin-top: 6px;
+            display: inline-block;
+        }
+
+        .module-preview-item .file-status.approved {
+            background: #dcfce7;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .module-preview-item .file-status.rejected {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .module-preview-item .file-status.pending {
+            background: #f3effa;
+            border-color: #e9e3f4;
+            color: #51376c;
+        }
+
         .upload-lock-note {
             display: flex;
             align-items: flex-start;
@@ -1262,25 +1364,66 @@
                     </div>
 
                     <div class="upload-panel">
-                        <div class="module-preview">
-                            <div>
+                        <div class="module-preview" style="flex-direction: column; align-items: stretch;">
+                            <div style="margin-bottom: {{ $hasUploadedModule ? '16px' : '0' }};">
                                 <p class="meta-label">Materi saat ini</p>
                                 @if($hasUploadedModule)
-                                    <h3>{{ $uploadedModuleName }}</h3>
+                                    <h3>{{ $submittedModules->count() }} File Terkirim</h3>
                                     <p>
-                                        {{ $displayMaterialStatus === 'approved' ? 'Materi ini sudah dikunci setelah disetujui admin.' : 'Materi ini masih tersimpan untuk status ' . strtolower(str_replace('_', ' ', $displayMaterialStatus)) . '.' }}
+                                        {{ $displayMaterialStatus === 'approved' ? 'Seluruh materi telah disetujui admin.' : 'Semua file yang sudah dikirim dapat dilihat di bawah ini.' }}
                                     </p>
                                 @else
                                     <h3>Belum ada materi yang diunggah</h3>
-                                    <p>File yang Anda kirim akan tampil di sini sebagai referensi status terakhir.</p>
+                                    <p>File yang Anda kirim akan tampil di sini setelah dikirim ke admin.</p>
                                 @endif
                             </div>
 
-                            @if($hasUploadedModule && $moduleFileUrl)
-                                <a href="{{ $moduleFileUrl }}" class="preview-link" target="_blank" rel="noopener noreferrer">
-                                    <i class="bi bi-box-arrow-up-right"></i>
-                                    Lihat File
-                                </a>
+                            @if($hasUploadedModule)
+                                <div class="module-preview-list">
+                                    @foreach($submittedModules as $module)
+                                        @php
+                                            $moduleStatus = (string) ($module->status ?? 'pending_review');
+                                            $moduleViewUrl = $resolveModuleViewUrl($module);
+                                            $moduleLabel = $resolveModuleLabel($module);
+                                            $isLinkModule = str_starts_with((string) ($module->original_name ?? ''), 'Link: ')
+                                                || preg_match('#^https?://#i', (string) ($module->path ?? ''));
+                                            $moduleStatusClass = match ($moduleStatus) {
+                                                'approved' => 'approved',
+                                                'rejected' => 'rejected',
+                                                default => 'pending',
+                                            };
+                                            $moduleStatusText = match ($moduleStatus) {
+                                                'approved' => 'Disetujui',
+                                                'rejected' => 'Perlu Revisi',
+                                                default => 'Menunggu Review',
+                                            };
+                                            $submittedAt = $module->created_at ?? null;
+                                        @endphp
+                                        <div class="module-preview-item">
+                                            <div class="file-meta">
+                                                <p class="file-name">{{ $moduleLabel }}</p>
+                                                @if($submittedAt)
+                                                    <p class="file-sub">Terkirim {{ $submittedAt->format('d M Y H:i') }}</p>
+                                                @endif
+                                                @if(!empty($module->survey_link))
+                                                    <p class="file-sub">
+                                                        <i class="bi bi-link-45deg"></i>
+                                                        Survei:
+                                                        <a href="{{ $module->survey_link }}" target="_blank" rel="noopener noreferrer"
+                                                            style="color: #51376c; text-decoration: underline;">{{ $module->survey_link }}</a>
+                                                    </p>
+                                                @endif
+                                                <span class="file-status {{ $moduleStatusClass }}">{{ $moduleStatusText }}</span>
+                                            </div>
+                                            @if($moduleViewUrl)
+                                                <a href="{{ $moduleViewUrl }}" class="preview-link" target="_blank" rel="noopener noreferrer">
+                                                    <i class="bi bi-{{ $isLinkModule ? 'link-45deg' : 'box-arrow-up-right' }}"></i>
+                                                    {{ $isLinkModule ? 'Buka Link' : 'Lihat File' }}
+                                                </a>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
                             @endif
                         </div> {{-- UNIFIED DRAFT CARD (DRAFT ONLY) --}}
                         @if(!empty($draftModules))
@@ -1399,6 +1542,10 @@
                                 <div style="display: flex; flex-direction: column; gap: 10px;">
                                     @foreach($myModules as $module)
                                         @php
+                                            $historyViewUrl = $resolveModuleViewUrl($module);
+                                            $historyLabel = $resolveModuleLabel($module);
+                                            $historyIsLink = str_starts_with((string) ($module->original_name ?? ''), 'Link: ')
+                                                || preg_match('#^https?://#i', (string) ($module->path ?? ''));
                                             $badgeStyle = match ($module->status) {
                                                 'approved' => 'background: #dcfce7; border-color: #bbf7d0; color: #166534;',
                                                 'rejected' => 'background: #fee2e2; border-color: #fecaca; color: #991b1b;',
@@ -1427,13 +1574,13 @@
                                                 <i class="bi {{ $icon }}"
                                                     style="font-size: 22px; color: {{ $iconColor }}; flex-shrink: 0;"></i>
                                                 <div style="min-width: 0;">
-                                                    @if(preg_match('#^https?://#i', $module->path))
-                                                        <a href="{{ $module->path }}" target="_blank" rel="noopener noreferrer"
-                                                            style="margin: 0; font-size: 14px; font-weight: 600; color: #51376c; word-break: break-all; text-decoration: underline; display: inline-block;">{{ $module->original_name }}</a>
+                                                    @if($historyViewUrl)
+                                                        <a href="{{ $historyViewUrl }}" target="_blank" rel="noopener noreferrer"
+                                                            style="margin: 0; font-size: 14px; font-weight: 600; color: #51376c; word-break: break-all; text-decoration: underline; display: inline-block;">{{ $historyLabel }}</a>
                                                     @else
                                                         <p
                                                             style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr); word-break: break-all;">
-                                                            {{ $module->original_name }}</p>
+                                                            {{ $historyLabel }}</p>
                                                     @endif
                                                     <p style="margin: 0; font-size: 12px; color: #64748b;">
                                                         Terkirim pada {{ $module->created_at->format('d M Y H:i') }}
@@ -1455,10 +1602,19 @@
                                                     @endif
                                                 </div>
                                             </div>
-                                            <span
-                                                style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; border: 1px solid; white-space: nowrap; {{ $badgeStyle }}">
-                                                {{ $statusLabel }}
-                                            </span>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                                @if($historyViewUrl)
+                                                    <a href="{{ $historyViewUrl }}" target="_blank" rel="noopener noreferrer"
+                                                        style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: #3f2a54; color: #fff; text-decoration: none; white-space: nowrap;">
+                                                        <i class="bi bi-{{ $historyIsLink ? 'link-45deg' : 'eye' }}"></i>
+                                                        {{ $historyIsLink ? 'Buka' : 'Lihat' }}
+                                                    </a>
+                                                @endif
+                                                <span
+                                                    style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; border: 1px solid; white-space: nowrap; {{ $badgeStyle }}">
+                                                    {{ $statusLabel }}
+                                                </span>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
