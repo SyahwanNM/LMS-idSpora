@@ -2497,6 +2497,11 @@ class TrainerController extends Controller
             $effectiveDeadline = Carbon::parse($event->material_deadline);
         }
 
+        $isRevisionUpload = $effectiveMaterialStatus === 'rejected';
+        if ($isRevisionUpload) {
+            $effectiveDeadline = null;
+        }
+
         // Action: delete_draft
         if ($request->input('action') === 'delete_draft') {
             $fileIndex = (int) $request->input('index');
@@ -2567,7 +2572,7 @@ class TrainerController extends Controller
             'material_survey_link' => 'nullable|string|max:2048'
         ]);
 
-        if ($effectiveDeadline && now()->gt($effectiveDeadline)) {
+        if (!$isRevisionUpload && $effectiveDeadline && now()->gt($effectiveDeadline)) {
             return response()->json([
                 'success' => false,
                 'error' => 'Batas pengumpulan materi sudah lewat. Silakan hubungi admin trainer.',

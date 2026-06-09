@@ -27,6 +27,9 @@
         ? ($isRevisionWindow ? 'Batas revisi sudah lewat' : 'Batas pengumpulan sudah lewat')
         : ($isRevisionWindow ? 'Masa revisi masih terbuka' : 'Materi masih bisa diunggah');
     $materialStatusLabel = strtoupper(str_replace('_', ' ', $displayMaterialStatus));
+    $isRejected = $displayMaterialStatus === 'rejected';
+    $uploadModeLabel = $isRejected ? 'Upload Revisi Materi' : 'Upload Materi Event';
+    $submitDraftLabel = $isRejected ? 'GANTI FILE REVISI' : 'TAMBAHKAN KE DRAF';
     $eventRejectionReason = trim((string) ($event->material_rejection_reason ?? ''));
     if ($eventRejectionReason === '') {
         $eventRejectionReason = trim((string) ($event->module_rejection_reason ?? ''));
@@ -34,7 +37,7 @@
     $showEventRejectionReason = $displayMaterialStatus === 'rejected' && $eventRejectionReason !== '';
     $moduleFileUrl = $event->module_file_url;
     $uploadedModuleName = $hasUploadedModule ? basename((string) $event->module_path) : null;
-    $canUploadMaterials = ($materialStatus !== 'approved') && ($materialStatus !== 'pending_review') && (empty($deadline) || now()->lte($deadline));
+    $canUploadMaterials = ($materialStatus !== 'approved') && ($materialStatus !== 'pending_review') && ($isRejected || empty($deadline) || now()->lte($deadline));
 @endphp
 
 @push('styles')
@@ -50,6 +53,7 @@
             border: 1px solid rgba(81, 55, 108, 0.1) !important;
             background: #ffffff !important;
         }
+
         .premium-swal-title {
             font-size: 24px !important;
             font-weight: 800 !important;
@@ -58,6 +62,7 @@
             margin-top: 15px !important;
             margin-bottom: 10px !important;
         }
+
         .premium-swal-confirm-btn {
             padding: 14px 32px !important;
             font-size: 14px !important;
@@ -70,16 +75,20 @@
             cursor: pointer !important;
             margin: 8px !important;
         }
+
         .premium-swal-confirm-btn:hover {
             transform: translateY(-2px) !important;
             box-shadow: 0 8px 20px rgba(81, 55, 108, 0.3) !important;
         }
+
         .premium-swal-confirm-btn.danger {
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
         }
+
         .premium-swal-confirm-btn.danger:hover {
             box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3) !important;
         }
+
         .premium-swal-cancel-btn {
             padding: 14px 28px !important;
             font-size: 14px !important;
@@ -92,6 +101,7 @@
             cursor: pointer !important;
             margin: 8px !important;
         }
+
         .premium-swal-cancel-btn:hover {
             background: #e2e8f0 !important;
             color: #334155 !important;
@@ -103,6 +113,7 @@
             text-align: center;
             padding: 10px 0;
         }
+
         .swal-icon-glow {
             width: 80px;
             height: 80px;
@@ -113,10 +124,12 @@
             justify-content: center;
             position: relative;
         }
+
         .swal-icon-glow.success {
             background: rgba(16, 185, 129, 0.1);
             color: #10b981;
         }
+
         .swal-icon-glow.success::after {
             content: '';
             position: absolute;
@@ -125,10 +138,12 @@
             border: 2px dashed rgba(16, 185, 129, 0.3);
             animation: rotateDashed 20s linear infinite;
         }
+
         .swal-icon-glow.warning {
             background: rgba(81, 55, 108, 0.1);
             color: #51376c;
         }
+
         .swal-icon-glow.warning::after {
             content: '';
             position: absolute;
@@ -137,10 +152,17 @@
             border: 2px dashed rgba(81, 55, 108, 0.3);
             animation: rotateDashed 20s linear infinite;
         }
+
         @keyframes rotateDashed {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
+
         .swal-icon-circle {
             width: 60px;
             height: 60px;
@@ -152,12 +174,15 @@
             background: #ffffff;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
         }
+
         .swal-icon-glow.success .swal-icon-circle {
             box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
         }
+
         .swal-icon-glow.warning .swal-icon-circle {
             box-shadow: 0 8px 20px rgba(81, 55, 108, 0.15);
         }
+
         .swal-custom-title {
             font-size: 22px;
             font-weight: 800;
@@ -165,12 +190,14 @@
             margin: 0 0 6px 0;
             letter-spacing: -0.02em;
         }
+
         .swal-custom-subtitle {
             font-size: 14px;
             color: #64748b;
             margin: 0 0 24px 0;
             line-height: 1.4;
         }
+
         .swal-warning-box {
             background: linear-gradient(135deg, #fdfcff 0%, #f9f6fc 100%);
             border: 1px dashed #b497d6;
@@ -179,6 +206,7 @@
             text-align: left;
             box-shadow: inset 0 2px 4px rgba(81, 55, 108, 0.02);
         }
+
         .warning-badge {
             display: inline-flex;
             align-items: center;
@@ -193,12 +221,14 @@
             margin-bottom: 12px;
             border: 1px solid rgba(81, 55, 108, 0.15);
         }
+
         .warning-text {
             font-size: 13.5px;
             color: #3b284e;
             line-height: 1.55;
             margin: 0 0 10px 0;
         }
+
         .warning-action-info {
             font-size: 12.5px;
             color: #51376c;
@@ -208,6 +238,7 @@
             border-radius: 12px;
             border: 1px solid rgba(180, 151, 214, 0.2);
         }
+
         .badge-submit-action {
             display: inline-block;
             padding: 2px 6px;
@@ -217,6 +248,7 @@
             font-weight: 700;
             font-size: 11px;
         }
+
         .swal-steps-box {
             background: #fdfcff;
             border: 1px solid #e9e3f4;
@@ -227,12 +259,14 @@
             flex-direction: column;
             gap: 16px;
         }
+
         .swal-step-item {
             display: grid;
             grid-template-columns: 36px 1fr;
             gap: 14px;
             align-items: flex-start;
         }
+
         .swal-step-item .step-num {
             width: 36px;
             height: 36px;
@@ -246,12 +280,14 @@
             font-weight: 700;
             box-shadow: 0 4px 10px rgba(81, 55, 108, 0.06);
         }
+
         .swal-step-item .step-content strong {
             display: block;
             font-size: 13.5px;
             color: #1e1b4b;
             margin-bottom: 3px;
         }
+
         .swal-step-item .step-content p {
             margin: 0;
             font-size: 12px;
@@ -302,7 +338,7 @@
             left: -10%;
             width: 60%;
             height: 200%;
-            background: radial-gradient(circle, rgba(99,102,241,0.25) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(255, 255, 255, 0) 70%);
             transform: rotate(30deg);
             filter: blur(40px);
         }
@@ -312,7 +348,7 @@
             right: -10%;
             width: 50%;
             height: 150%;
-            background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
             filter: blur(40px);
         }
 
@@ -910,7 +946,7 @@
             /* box-shadow removed */
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .primary-btn:hover {
             background: linear-gradient(135deg, #634585 0%, #4c3366 100%) !important;
             transform: translateY(-2px);
@@ -1212,9 +1248,16 @@
                 <div class="studio-panel">
                     <div class="panel-hero">
                         <div>
-                            <h2>Upload Materi Event</h2>
-                            <p>Gunakan area ini untuk mengirim file materi final yang akan direview admin sebelum event
-                                berjalan.</p>
+                            <h2>{{ $uploadModeLabel }}</h2>
+                            <p>
+                                @if($isRejected)
+                                    Materi sebelumnya ditolak admin. Silakan unggah file pengganti untuk revisi agar bisa
+                                    direview ulang.
+                                @else
+                                    Gunakan area ini untuk mengirim file materi final yang akan direview admin sebelum event
+                                    berjalan.
+                                @endif
+                            </p>
                         </div>
                     </div>
 
@@ -1239,54 +1282,81 @@
                                     Lihat File
                                 </a>
                             @endif
-                        </div>                        {{-- UNIFIED DRAFT CARD (DRAFT ONLY) --}}
+                        </div> {{-- UNIFIED DRAFT CARD (DRAFT ONLY) --}}
                         @if(!empty($draftModules))
-                            <div class="unified-draft-card" style="padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); position: relative; overflow: hidden;">
+                            <div class="unified-draft-card"
+                                style="padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); position: relative; overflow: hidden;">
                                 <!-- Top accent border line -->
-                                <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #51376c, #3f2a54); font-size: 0;"></div>
-                                
+                                <div
+                                    style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #51376c, #3f2a54); font-size: 0;">
+                                </div>
+
                                 <!-- Count / Header -->
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                                    <span style="font-size: 16px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                    <span
+                                        style="font-size: 16px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
                                         <i class="bi bi-file-earmark-arrow-up" style="color: #51376c; font-size: 20px;"></i>
                                         {{ count($draftModules) }} File Tersimpan
                                     </span>
                                 </div>
 
                                 <!-- Checklist of files -->
-                                <div class="draft-checklist" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                                <div class="draft-checklist"
+                                    style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
                                     @foreach($draftModules as $index => $draft)
-                                        <div class="draft-checklist-item-wrapper" style="padding: 14px; background: #faf8fc; border: 1px solid #e9e3f4; border-radius: 16px; display: flex; flex-direction: column; gap: 10px;">
-                                            <div class="draft-checklist-item" style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                                                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; text-align: left;">
-                                                    <i class="bi bi-check-lg" style="color: #10b981; font-size: 18px; font-weight: 900; flex-shrink: 0;"></i>
+                                        <div class="draft-checklist-item-wrapper"
+                                            style="padding: 14px; background: #faf8fc; border: 1px solid #e9e3f4; border-radius: 16px; display: flex; flex-direction: column; gap: 10px;">
+                                            <div class="draft-checklist-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; text-align: left;">
+                                                    <i class="bi bi-check-lg"
+                                                        style="color: #10b981; font-size: 18px; font-weight: 900; flex-shrink: 0;"></i>
                                                     @if(str_starts_with($draft['original_name'], 'Link: '))
                                                         @php
                                                             $linkUrl = str_replace('Link: ', '', $draft['original_name']);
                                                         @endphp
-                                                        <span style="font-size: 14px; font-weight: 600; color: #2e2050; word-break: break-all;">
-                                                            Materi Link: <a href="{{ $linkUrl }}" target="_blank" rel="noopener noreferrer" style="color: #51376c; text-decoration: underline;">{{ $linkUrl }}</a>
+                                                        <span
+                                                            style="font-size: 14px; font-weight: 600; color: #2e2050; word-break: break-all;">
+                                                            Materi Link: <a href="{{ $linkUrl }}" target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style="color: #51376c; text-decoration: underline;">{{ $linkUrl }}</a>
                                                         </span>
                                                     @else
-                                                        <span style="font-size: 14px; font-weight: 600; color: #2e2050; word-break: break-all;">{{ $draft['original_name'] }}</span>
+                                                        <span
+                                                            style="font-size: 14px; font-weight: 600; color: #2e2050; word-break: break-all;">{{ $draft['original_name'] }}</span>
                                                     @endif
                                                     @if(!empty($draft['size']) && $draft['size'] > 0)
-                                                        <span style="font-size: 12px; color: #7c6a9f; white-space: nowrap;">({{ round($draft['size'] / 1024, 2) }} KB)</span>
+                                                        <span
+                                                            style="font-size: 12px; color: #7c6a9f; white-space: nowrap;">({{ round($draft['size'] / 1024, 2) }}
+                                                            KB)</span>
                                                     @endif
                                                 </div>
                                                 @if($canUploadMaterials)
-                                                    <button type="button" class="btn-delete-draft" data-index="{{ $index }}" style="background: none; border: none; color: #ef4444; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#fee2e2'" onmouseout="this.style.backgroundColor='transparent'">
+                                                    <button type="button" class="btn-delete-draft" data-index="{{ $index }}"
+                                                        style="background: none; border: none; color: #ef4444; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;"
+                                                        onmouseover="this.style.backgroundColor='#fee2e2'"
+                                                        onmouseout="this.style.backgroundColor='transparent'">
                                                         <i class="bi bi-trash3-fill"></i> Hapus
                                                     </button>
                                                 @endif
                                             </div>
-                                            
+
                                             <!-- Survey Link Input for this draft (Optional) -->
                                             <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
-                                                <label style="font-size: 11px; font-weight: 700; color: #7c6a9f; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px;">
-                                                    <i class="bi bi-link-45deg" style="font-size: 14px;"></i> Link Survei Kepuasan <span style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
+                                                <label
+                                                    style="font-size: 11px; font-weight: 700; color: #7c6a9f; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px;">
+                                                    <i class="bi bi-link-45deg" style="font-size: 14px;"></i> Link Survei Kepuasan
+                                                    <span
+                                                        style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
                                                 </label>
-                                                <input type="text" class="survey-link-input" data-index="{{ $index }}" value="{{ $draft['survey_link'] ?? '' }}" placeholder="Masukkan URL kuisioner/survei kepuasan (misal: Google Form)" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; color: #1e293b; background: #fff; transition: all 0.2s;" onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';" onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'; updateDraftSurveyLink({{ $index }}, this.value);" />
+                                                <input type="text" class="survey-link-input" data-index="{{ $index }}"
+                                                    value="{{ $draft['survey_link'] ?? '' }}"
+                                                    placeholder="Masukkan URL kuisioner/survei kepuasan (misal: Google Form)"
+                                                    style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; color: #1e293b; background: #fff; transition: all 0.2s;"
+                                                    onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';"
+                                                    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'; updateDraftSurveyLink({{ $index }}, this.value);" />
                                             </div>
                                         </div>
                                     @endforeach
@@ -1294,79 +1364,99 @@
 
                                 <!-- Status & Info -->
                                 <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; margin-bottom: 20px;">
-                                    <div style="font-size: 14px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-                                        Status : <span style="background: #f3effa; color: #51376c; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #e9e3f4; letter-spacing: 0.05em;">DRAFT</span>
+                                    <div
+                                        style="font-size: 14px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                                        Status : <span
+                                            style="background: #f3effa; color: #51376c; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #e9e3f4; letter-spacing: 0.05em;">{{ $isRejected ? 'REVISI' : 'DRAFT' }}</span>
                                     </div>
-                                    <p style="margin: 0; font-size: 13px; color: #64748b; font-style: italic; display: flex; align-items: center; gap: 6px; text-align: left;">
-                                        <i class="bi bi-info-circle-fill" style="color: #64748b; font-size: 14px;"></i> 
-                                        Materi dapat ditambah atau dihapus sebelum dikirim.
+                                    <p
+                                        style="margin: 0; font-size: 13px; color: #64748b; font-style: italic; display: flex; align-items: center; gap: 6px; text-align: left;">
+                                        <i class="bi bi-info-circle-fill" style="color: #64748b; font-size: 14px;"></i>
+                                        {{ $isRejected ? 'Materi yang ditolak bisa diganti dengan file revisi sebelum dikirim ulang.' : 'Materi dapat ditambah atau dihapus sebelum dikirim.' }}
                                     </p>
                                 </div>
 
                                 <!-- Submit Action Button -->
-                                <button type="button" id="btnSubmitFinal" class="primary-btn" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #51376c 0%, #3f2a54 100%); color: #fff; border: none; cursor: pointer; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; transition: all 0.2s; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(81, 55, 108, 0.3)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(81, 55, 108, 0.2)';">
-                                    Submit ke Admin untuk Review <i class="bi bi-send-fill" style="color: #fff; margin-left: 8px; font-size: 13px;"></i>
+                                <button type="button" id="btnSubmitFinal" class="primary-btn"
+                                    style="width: 100%; justify-content: center; background: linear-gradient(135deg, #51376c 0%, #3f2a54 100%); color: #fff; border: none; cursor: pointer; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; transition: all 0.2s; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2);"
+                                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(81, 55, 108, 0.3)';"
+                                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(81, 55, 108, 0.2)';">
+                                    {{ $isRejected ? 'Kirim File Revisi ke Admin' : 'Submit ke Admin untuk Review' }} <i
+                                        class="bi bi-send-fill" style="color: #fff; margin-left: 8px; font-size: 13px;"></i>
                                 </button>
                             </div>
                         @endif
 
                         {{-- SUBMITTED FILES HISTORY (HISTORY ONLY) --}}
                         @if($myModules->isNotEmpty())
-                            <div class="submitted-files-history" style="margin-bottom: 24px; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px;">
-                                <h3 style="font-size: 15px; font-weight: 700; color: #334155; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+                            <div class="submitted-files-history"
+                                style="margin-bottom: 24px; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px;">
+                                <h3
+                                    style="font-size: 15px; font-weight: 700; color: #334155; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
                                     <i class="bi bi-clock-history" style="color: #64748b; font-size: 18px;"></i>
                                     Riwayat Pengiriman
                                 </h3>
                                 <div style="display: flex; flex-direction: column; gap: 10px;">
                                     @foreach($myModules as $module)
                                         @php
-                                            $badgeStyle = match($module->status) {
+                                            $badgeStyle = match ($module->status) {
                                                 'approved' => 'background: #dcfce7; border-color: #bbf7d0; color: #166534;',
                                                 'rejected' => 'background: #fee2e2; border-color: #fecaca; color: #991b1b;',
                                                 default => 'background: #f3effa; border-color: #e9e3f4; color: #51376c;',
                                             };
-                                            $statusLabel = match($module->status) {
+                                            $statusLabel = match ($module->status) {
                                                 'approved' => 'Disetujui',
                                                 'rejected' => 'Perlu Revisi',
                                                 default => 'Menunggu Review',
                                             };
-                                            $icon = match($module->status) {
+                                            $icon = match ($module->status) {
                                                 'approved' => 'bi-file-earmark-check-fill',
                                                 'rejected' => 'bi-file-earmark-x-fill',
                                                 default => 'bi-file-earmark-arrow-up-fill',
                                             };
-                                            $iconColor = match($module->status) {
+                                            $iconColor = match ($module->status) {
                                                 'approved' => '#16a34a',
                                                 'rejected' => '#dc2626',
                                                 default => '#51376c',
                                             };
                                         @endphp
-                                        <div class="file-item-row" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; gap: 12px;">
-                                            <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; text-align: left;">
-                                                <i class="bi {{ $icon }}" style="font-size: 22px; color: {{ $iconColor }}; flex-shrink: 0;"></i>
+                                        <div class="file-item-row"
+                                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; gap: 12px;">
+                                            <div
+                                                style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; text-align: left;">
+                                                <i class="bi {{ $icon }}"
+                                                    style="font-size: 22px; color: {{ $iconColor }}; flex-shrink: 0;"></i>
                                                 <div style="min-width: 0;">
                                                     @if(preg_match('#^https?://#i', $module->path))
-                                                        <a href="{{ $module->path }}" target="_blank" rel="noopener noreferrer" style="margin: 0; font-size: 14px; font-weight: 600; color: #51376c; word-break: break-all; text-decoration: underline; display: inline-block;">{{ $module->original_name }}</a>
+                                                        <a href="{{ $module->path }}" target="_blank" rel="noopener noreferrer"
+                                                            style="margin: 0; font-size: 14px; font-weight: 600; color: #51376c; word-break: break-all; text-decoration: underline; display: inline-block;">{{ $module->original_name }}</a>
                                                     @else
-                                                        <p style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr); word-break: break-all;">{{ $module->original_name }}</p>
+                                                        <p
+                                                            style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr); word-break: break-all;">
+                                                            {{ $module->original_name }}</p>
                                                     @endif
                                                     <p style="margin: 0; font-size: 12px; color: #64748b;">
                                                         Terkirim pada {{ $module->created_at->format('d M Y H:i') }}
                                                     </p>
                                                     @if(!empty($module->survey_link))
-                                                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #51376c; font-weight: 600;">
-                                                            <i class="bi bi-link-45deg"></i> Link Survei: 
-                                                            <a href="{{ $module->survey_link }}" target="_blank" rel="noopener noreferrer" style="color: #51376c; text-decoration: underline;">{{ $module->survey_link }}</a>
+                                                        <p
+                                                            style="margin: 4px 0 0 0; font-size: 12px; color: #51376c; font-weight: 600;">
+                                                            <i class="bi bi-link-45deg"></i> Link Survei:
+                                                            <a href="{{ $module->survey_link }}" target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style="color: #51376c; text-decoration: underline;">{{ $module->survey_link }}</a>
                                                         </p>
                                                     @endif
                                                     @if($module->status === 'rejected' && !empty($module->rejection_reason))
-                                                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #dc2626; font-style: italic; background: #fff5f5; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #ef4444;">
+                                                        <p
+                                                            style="margin: 4px 0 0 0; font-size: 12px; color: #dc2626; font-style: italic; background: #fff5f5; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #ef4444;">
                                                             Catatan Admin: {{ $module->rejection_reason }}
                                                         </p>
                                                     @endif
                                                 </div>
                                             </div>
-                                            <span style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; border: 1px solid; white-space: nowrap; {{ $badgeStyle }}">
+                                            <span
+                                                style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; border: 1px solid; white-space: nowrap; {{ $badgeStyle }}">
                                                 {{ $statusLabel }}
                                             </span>
                                         </div>
@@ -1419,22 +1509,28 @@
                                 </div>
 
                                 <div style="margin-top: 20px; text-align: left;">
-                                    <label for="materialLink" style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
-                                        Link Materi Lainnya <span style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
+                                    <label for="materialLink"
+                                        style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Link Materi Lainnya <span
+                                            style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
                                     </label>
-                                    <input type="text" id="materialLink" name="material_link" placeholder="Contoh: https://drive.google.com/... atau https://youtube.com/..." 
-                                        style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; color: #1e293b; background: #fff; transition: all 0.2s;" 
-                                        onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';" 
+                                    <input type="text" id="materialLink" name="material_link"
+                                        placeholder="Contoh: https://drive.google.com/... atau https://youtube.com/..."
+                                        style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; color: #1e293b; background: #fff; transition: all 0.2s;"
+                                        onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';"
                                         onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';" />
                                 </div>
 
                                 <div style="margin-top: 12px; text-align: left;">
-                                    <label for="materialSurveyLink" style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
-                                        Link Survei Kepuasan <span style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
+                                    <label for="materialSurveyLink"
+                                        style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Link Survei Kepuasan <span
+                                            style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
                                     </label>
-                                    <input type="text" id="materialSurveyLink" name="material_survey_link" placeholder="Contoh: https://forms.gle/... (Untuk berkas / link materi di atas)" 
-                                        style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; color: #1e293b; background: #fff; transition: all 0.2s;" 
-                                        onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';" 
+                                    <input type="text" id="materialSurveyLink" name="material_survey_link"
+                                        placeholder="Contoh: https://forms.gle/... (Untuk berkas / link materi di atas)"
+                                        style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; color: #1e293b; background: #fff; transition: all 0.2s;"
+                                        onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';"
                                         onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';" />
                                 </div>
 
@@ -1445,7 +1541,8 @@
 
                                 <div class="panel-footer">
                                     <button type="submit" class="primary-btn" id="submitBtn">
-                                        TAMBAHKAN KE DRAF <i class="bi bi-plus-circle" style="color: #e9d5ff; margin-left: 8px;"></i>
+                                        {{ $submitDraftLabel }} <i class="bi bi-plus-circle"
+                                            style="color: #e9d5ff; margin-left: 8px;"></i>
                                     </button>
                                 </div>
                             </form>
@@ -1458,14 +1555,15 @@
                                         <p>Materi Anda telah disetujui oleh admin. Pengunggahan berkas baru dikunci.</p>
                                     @else
                                         <h3>Materi sedang direview</h3>
-                                        <p>Seluruh materi Anda telah dikirim dan sedang diperiksa oleh admin. Pengunggahan berkas baru dikunci sementara waktu.</p>
+                                        <p>Seluruh materi Anda telah dikirim dan sedang diperiksa oleh admin. Pengunggahan berkas
+                                            baru dikunci sementara waktu.</p>
                                     @endif
                                 </div>
                             </div>
                         @endif
                     </div>
                 </div>
-                
+
                 <!-- Right Column: Status Grid -->
                 <aside class="status-grid" aria-label="Ringkasan studio event">
                     <article class="status-card">
@@ -1478,7 +1576,9 @@
                     </article>
 
                     <article class="status-card">
-                        <div class="icon" style="background: linear-gradient(135deg, #f3effa 0%, #e9e3f4 100%); color: #51376c;"><i class="bi bi-file-earmark-check"></i></div>
+                        <div class="icon"
+                            style="background: linear-gradient(135deg, #f3effa 0%, #e9e3f4 100%); color: #51376c;"><i
+                                class="bi bi-file-earmark-check"></i></div>
                         <div>
                             <p class="label">Status</p>
                             @if($displayMaterialStatus !== 'draft')
@@ -1488,21 +1588,21 @@
                                         'rejected' => 'rejected',
                                         'pending_review' => 'pending',
                                         'not_uploaded' => 'not-submitted',
-                                        default        => 'pending',
+                                        default => 'pending',
                                     };
                                     $statusIcon = match ($displayMaterialStatus) {
                                         'approved' => '✓',
                                         'rejected' => '✕',
                                         'pending_review' => '⏳',
                                         'not_uploaded' => '—',
-                                        default        => '📋',
+                                        default => '📋',
                                     };
                                     $badgeLabel = match ($displayMaterialStatus) {
                                         'approved' => 'Materi Disetujui',
                                         'rejected' => 'Perlu Revisi',
                                         'pending_review' => 'Sedang Direview',
                                         'not_uploaded' => 'Belum Dikirim',
-                                        default        => 'Terkirim',
+                                        default => 'Terkirim',
                                     };
                                 @endphp
                                 <span class="status-badge {{ $badgeClass }}">
@@ -1513,7 +1613,8 @@
                                 <p class="value">{{ $materialStatusLabel }}</p>
                             @endif
                             @if($displayMaterialStatus === 'draft')
-                                <p class="hint">Belum upload materi. Status review akan muncul setelah file berhasil dikirim.</p>
+                                <p class="hint">Belum upload materi. Status review akan muncul setelah file berhasil dikirim.
+                                </p>
                             @elseif($displayMaterialStatus === 'approved')
                                 <p class="hint">Materi Anda telah disetujui dan siap ditampilkan di event.</p>
                             @elseif($displayMaterialStatus === 'rejected')
@@ -1525,7 +1626,9 @@
                     </article>
 
                     <article class="status-card">
-                        <div class="icon" style="background: linear-gradient(135deg, #f3effa 0%, #e9e3f4 100%); color: #51376c;"><i class="bi bi-info-circle"></i></div>
+                        <div class="icon"
+                            style="background: linear-gradient(135deg, #f3effa 0%, #e9e3f4 100%); color: #51376c;"><i
+                                class="bi bi-info-circle"></i></div>
                         <div>
                             <p class="label">Format</p>
                             <p class="value">PDF, MP4, PPTX, DOCX</p>
@@ -1661,17 +1764,17 @@
                     if (uploadedFiles.length > 0) {
                         fileList.style.display = "block";
                         uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                                                    <li>
-                                                        <div class="file-meta">
-                                                            <i class="bi bi-file-earmark"></i>
-                                                            <div>
-                                                                <p class="file-name">${file.name}</p>
-                                                                <p class="file-size">${(file.size / 1024).toFixed(2)} KB</p>
-                                                            </div>
-                                                        </div>
-                                                        <button type="button" class="delete-file" data-index="${index}">HAPUS</button>
-                                                    </li>
-                                                `).join("");
+                                                            <li>
+                                                                <div class="file-meta">
+                                                                    <i class="bi bi-file-earmark"></i>
+                                                                    <div>
+                                                                        <p class="file-name">${file.name}</p>
+                                                                        <p class="file-size">${(file.size / 1024).toFixed(2)} KB</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="delete-file" data-index="${index}">HAPUS</button>
+                                                            </li>
+                                                        `).join("");
 
                         uploadedFilesList.querySelectorAll(".delete-file").forEach(btn => {
                             btn.addEventListener("click", (e) => {
@@ -1751,8 +1854,8 @@
                         .then(async (response) => {
                             const text = await response.text();
                             let data = {};
-                            try { data = JSON.parse(text); } catch(e) {
-                                  throw new Error('Server error: ' + text.substring(0, 200));
+                            try { data = JSON.parse(text); } catch (e) {
+                                throw new Error('Server error: ' + text.substring(0, 200));
                             }
                             if (!response.ok || !data.success) {
                                 const message = data.error || data.message || 'Gagal mengunggah materi event.';
@@ -1765,29 +1868,29 @@
                             if (linkInput) linkInput.value = '';
                             const surveyLinkInput = document.getElementById("materialSurveyLink");
                             if (surveyLinkInput) surveyLinkInput.value = '';
-                            
+
                             Swal.fire({
                                 html: `
-                                    <div class="swal-custom-container">
-                                        <div class="swal-icon-glow warning">
-                                            <div class="swal-icon-circle">
-                                                <i class="bi bi-cloud-arrow-up-fill" style="color: #51376c;"></i>
-                                            </div>
-                                        </div>
-                                        <div class="swal-custom-body">
-                                            <h4 class="swal-custom-title">Berhasil Ditambahkan!</h4>
-                                            <p class="swal-custom-subtitle">Berkas Anda telah tersimpan di draf sementara.</p>
-                                            <div class="swal-warning-box">
-                                                <p class="warning-text">
-                                                    Materi ini masih berstatus <strong>Draf Lokal</strong> dan <strong>belum diajukan ke admin</strong>.
-                                                </p>
-                                                <div class="warning-action-info">
-                                                    Silakan klik tombol <span class="badge-submit-action">Submit ke Admin untuk Review</span> pada daftar draf jika Anda sudah selesai mengunggah seluruh materi.
+                                            <div class="swal-custom-container">
+                                                <div class="swal-icon-glow warning">
+                                                    <div class="swal-icon-circle">
+                                                        <i class="bi bi-cloud-arrow-up-fill" style="color: #51376c;"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="swal-custom-body">
+                                                    <h4 class="swal-custom-title">Berhasil Ditambahkan!</h4>
+                                                    <p class="swal-custom-subtitle">Berkas Anda telah tersimpan di draf sementara.</p>
+                                                    <div class="swal-warning-box">
+                                                        <p class="warning-text">
+                                                            Materi ini masih berstatus <strong>Draf Lokal</strong> dan <strong>belum diajukan ke admin</strong>.
+                                                        </p>
+                                                        <div class="warning-action-info">
+                                                            Silakan klik tombol <span class="badge-submit-action">Submit ke Admin untuk Review</span> pada daftar draf jika Anda sudah selesai mengunggah seluruh materi.
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                `,
+                                        `,
                                 showConfirmButton: true,
                                 confirmButtonText: 'Saya Mengerti',
                                 customClass: {
@@ -1823,7 +1926,7 @@
                 document.querySelectorAll('.btn-delete-draft').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const index = e.currentTarget.dataset.index;
-                        
+
                         Swal.fire({
                             title: 'Hapus Draf?',
                             text: 'Apakah Anda yakin ingin menghapus file draf ini?',
@@ -1852,39 +1955,54 @@
                                         title: 'premium-swal-title'
                                     }
                                 });
-                                
+
                                 const formData = new FormData();
                                 formData.append('_token', '{{ csrf_token() }}');
                                 formData.append('action', 'delete_draft');
                                 formData.append('index', index);
-                                
+
                                 fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
                                     method: 'POST',
                                     body: formData,
                                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                                 })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        Swal.fire({
-                                            icon: 'success',
-                                            iconColor: '#10b981',
-                                            title: 'Berhasil',
-                                            text: data.message,
-                                            showConfirmButton: false,
-                                            timer: 1200,
-                                            customClass: {
-                                                popup: 'premium-swal-popup',
-                                                title: 'premium-swal-title'
-                                            }
-                                        });
-                                        setTimeout(() => { window.location.reload(); }, 1200);
-                                    } else {
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                iconColor: '#10b981',
+                                                title: 'Berhasil',
+                                                text: data.message,
+                                                showConfirmButton: false,
+                                                timer: 1200,
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title'
+                                                }
+                                            });
+                                            setTimeout(() => { window.location.reload(); }, 1200);
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                iconColor: '#ef4444',
+                                                title: 'Gagal',
+                                                text: data.error || 'Gagal menghapus draf.',
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title',
+                                                    confirmButton: 'premium-swal-confirm-btn'
+                                                },
+                                                buttonsStyling: false
+                                            });
+                                        }
+                                    })
+                                    .catch(err => {
                                         Swal.fire({
                                             icon: 'error',
                                             iconColor: '#ef4444',
                                             title: 'Gagal',
-                                            text: data.error || 'Gagal menghapus draf.',
+                                            text: 'Terjadi kesalahan sistem.',
                                             customClass: {
                                                 popup: 'premium-swal-popup',
                                                 title: 'premium-swal-title',
@@ -1892,22 +2010,7 @@
                                             },
                                             buttonsStyling: false
                                         });
-                                    }
-                                })
-                                .catch(err => {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        iconColor: '#ef4444',
-                                        title: 'Gagal',
-                                        text: 'Terjadi kesalahan sistem.',
-                                        customClass: {
-                                            popup: 'premium-swal-popup',
-                                            title: 'premium-swal-title',
-                                            confirmButton: 'premium-swal-confirm-btn'
-                                        },
-                                        buttonsStyling: false
                                     });
-                                });
                             }
                         });
                     });
@@ -1919,41 +2022,41 @@
                     btnSubmitFinal.addEventListener('click', () => {
                         Swal.fire({
                             html: `
-                                <div class="swal-custom-container">
-                                    <div class="swal-icon-glow warning">
-                                        <div class="swal-icon-circle">
-                                            <i class="bi bi-send-check-fill"></i>
+                                        <div class="swal-custom-container">
+                                            <div class="swal-icon-glow warning">
+                                                <div class="swal-icon-circle">
+                                                    <i class="bi bi-send-check-fill"></i>
+                                                </div>
+                                            </div>
+                                            <div class="swal-custom-body">
+                                                <h4 class="swal-custom-title">Kirim Materi Final?</h4>
+                                                <p class="swal-custom-subtitle">Pastikan semua berkas telah lengkap sebelum mengirim ke Admin.</p>
+                                                <div class="swal-steps-box">
+                                                    <div class="swal-step-item">
+                                                        <div class="step-num"><i class="bi bi-file-earmark-lock2"></i></div>
+                                                        <div class="step-content">
+                                                            <strong>Kunci Akses Unggah</strong>
+                                                            <p>Form unggah akan dikunci sementara selama proses review.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="swal-step-item">
+                                                        <div class="step-num"><i class="bi bi-shield-shaded"></i></div>
+                                                        <div class="step-content">
+                                                            <strong>Verifikasi Admin</strong>
+                                                            <p>Admin Trainer akan meninjau kelayakan dan kelengkapan materi Anda.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="swal-step-item">
+                                                        <div class="step-num"><i class="bi bi-bell"></i></div>
+                                                        <div class="step-content">
+                                                            <strong>Notifikasi Status</strong>
+                                                            <p>Anda akan mendapat pemberitahuan apakah materi disetujui atau perlu revisi.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="swal-custom-body">
-                                        <h4 class="swal-custom-title">Kirim Materi Final?</h4>
-                                        <p class="swal-custom-subtitle">Pastikan semua berkas telah lengkap sebelum mengirim ke Admin.</p>
-                                        <div class="swal-steps-box">
-                                            <div class="swal-step-item">
-                                                <div class="step-num"><i class="bi bi-file-earmark-lock2"></i></div>
-                                                <div class="step-content">
-                                                    <strong>Kunci Akses Unggah</strong>
-                                                    <p>Form unggah akan dikunci sementara selama proses review.</p>
-                                                </div>
-                                            </div>
-                                            <div class="swal-step-item">
-                                                <div class="step-num"><i class="bi bi-shield-shaded"></i></div>
-                                                <div class="step-content">
-                                                    <strong>Verifikasi Admin</strong>
-                                                    <p>Admin Trainer akan meninjau kelayakan dan kelengkapan materi Anda.</p>
-                                                </div>
-                                            </div>
-                                            <div class="swal-step-item">
-                                                <div class="step-num"><i class="bi bi-bell"></i></div>
-                                                <div class="step-content">
-                                                    <strong>Notifikasi Status</strong>
-                                                    <p>Anda akan mendapat pemberitahuan apakah materi disetujui atau perlu revisi.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `,
+                                    `,
                             showCancelButton: true,
                             confirmButtonText: 'Ya, Kirim Sekarang',
                             cancelButtonText: 'Batal',
@@ -1974,38 +2077,53 @@
                                         title: 'premium-swal-title'
                                     }
                                 });
-                                
+
                                 const formData = new FormData();
                                 formData.append('_token', '{{ csrf_token() }}');
                                 formData.append('action', 'submit_final');
-                                
+
                                 fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
                                     method: 'POST',
                                     body: formData,
                                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                                 })
-                                .then(response => response.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        Swal.fire({
-                                            icon: 'success',
-                                            iconColor: '#10b981',
-                                            title: 'Berhasil',
-                                            text: data.message,
-                                            showConfirmButton: false,
-                                            timer: 1200,
-                                            customClass: {
-                                                popup: 'premium-swal-popup',
-                                                title: 'premium-swal-title'
-                                            }
-                                        });
-                                        setTimeout(() => { window.location.reload(); }, 1200);
-                                    } else {
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                iconColor: '#10b981',
+                                                title: 'Berhasil',
+                                                text: data.message,
+                                                showConfirmButton: false,
+                                                timer: 1200,
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title'
+                                                }
+                                            });
+                                            setTimeout(() => { window.location.reload(); }, 1200);
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                iconColor: '#ef4444',
+                                                title: 'Gagal',
+                                                text: data.error || 'Gagal mengirim materi.',
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title',
+                                                    confirmButton: 'premium-swal-confirm-btn'
+                                                },
+                                                buttonsStyling: false
+                                            });
+                                        }
+                                    })
+                                    .catch(err => {
                                         Swal.fire({
                                             icon: 'error',
                                             iconColor: '#ef4444',
                                             title: 'Gagal',
-                                            text: data.error || 'Gagal mengirim materi.',
+                                            text: 'Terjadi kesalahan sistem.',
                                             customClass: {
                                                 popup: 'premium-swal-popup',
                                                 title: 'premium-swal-title',
@@ -2013,28 +2131,13 @@
                                             },
                                             buttonsStyling: false
                                         });
-                                    }
-                                })
-                                .catch(err => {
-                                    Swal.fire({
-                                        icon: 'error',
-                                        iconColor: '#ef4444',
-                                        title: 'Gagal',
-                                        text: 'Terjadi kesalahan sistem.',
-                                        customClass: {
-                                            popup: 'premium-swal-popup',
-                                            title: 'premium-swal-title',
-                                            confirmButton: 'premium-swal-confirm-btn'
-                                        },
-                                        buttonsStyling: false
                                     });
-                                });
                             }
                         });
                     });
                 }
 
-                window.updateDraftSurveyLink = function(index, value) {
+                window.updateDraftSurveyLink = function (index, value) {
                     const formData = new FormData();
                     formData.append('_token', '{{ csrf_token() }}');
                     formData.append('action', 'save_draft_survey');
@@ -2051,30 +2154,29 @@
                         body: formData,
                         headers: { 'X-Requested-With': 'XMLHttpRequest' }
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            input.style.borderColor = '#10b981';
-                            input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
-                            if (data.survey_link !== undefined) {
-                                input.value = data.survey_link || '';
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                input.style.borderColor = '#10b981';
+                                input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
+                                if (data.survey_link !== undefined) {
+                                    input.value = data.survey_link || '';
+                                }
+                                setTimeout(() => {
+                                    input.style.borderColor = '#cbd5e1';
+                                    input.style.boxShadow = 'none';
+                                }, 1000);
+                            } else {
+                                input.style.borderColor = '#ef4444';
+                                input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
                             }
-                            setTimeout(() => {
-                                input.style.borderColor = '#cbd5e1';
-                                input.style.boxShadow = 'none';
-                            }, 1000);
-                        } else {
+                        })
+                        .catch(err => {
                             input.style.borderColor = '#ef4444';
                             input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
-                        }
-                    })
-                    .catch(err => {
-                        input.style.borderColor = '#ef4444';
-                        input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
-                    });
+                        });
                 };
             });
         </script>
     @endif
 @endsection
-
