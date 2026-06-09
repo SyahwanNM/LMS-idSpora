@@ -512,7 +512,11 @@ class EventController extends Controller
 
         if ($dailyQrs->isNotEmpty()) {
             foreach ($dailyQrs as $dqr) {
-                $checkedInCount = \App\Models\EventDailyAttendance::where('event_daily_qr_id', $dqr->id)->count();
+                $checkedInCount = \App\Models\EventDailyAttendance::where('event_daily_qr_id', $dqr->id)
+                    ->whereHas('registration', function($q) {
+                        $q->where('status', 'active');
+                    })
+                    ->count();
                 $percent = $totalActiveReg > 0 ? round(($checkedInCount / $totalActiveReg) * 100) : 0;
                 $daysData[] = [
                     'day_number' => $dqr->day_number,
@@ -526,7 +530,7 @@ class EventController extends Controller
 
             // Fetch recent check-ins
             $recentAttendances = \App\Models\EventDailyAttendance::whereIn('event_registration_id', function($q) use ($event) {
-                    $q->select('id')->from('event_registrations')->where('event_id', $event->id);
+                    $q->select('id')->from('event_registrations')->where('event_id', $event->id)->where('status', 'active');
                 })
                 ->with('registration.user')
                 ->latest('scanned_at')
@@ -1871,6 +1875,126 @@ class EventController extends Controller
             \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Admin: Store multiple event materials (files and links)
+     */
+    public function storeMaterials(Request $request, Event $event)
+    {
+        $trainerId = $event->trainer_id ?? auth()->id();
+
+        if (!$request->hasFile('files') && (empty($request->input('links')) || !is_array($request->input('links')))) {
+            return back()->with('error', 'Harap sertakan setidaknya satu file atau satu link materi.');
+        }
+
+        $request->validate([
+            'files' => 'nullable|array',
+            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000',
+            'links' => 'nullable|array',
+            'links.*.url' => 'required|url|max:2048',
+            'links.*.name' => 'nullable|string|max:255',
+        ]);
+
+        $primaryMaterialPath = null;
+
+        // Process files
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $filepath = $file->storeAs('events/' . $event->id . '/materials', $filename, 'public');
+
+                \App\Models\EventTrainerModule::create([
+                    'event_id' => $event->id,
+                    'trainer_id' => $trainerId,
+                    'original_name' => $file->getClientOriginalName(),
+                    'path' => $filepath,
+                    'status' => 'approved', // Admin uploads are auto-approved!
+                ]);
+
+                if ($primaryMaterialPath === null) {
+                    $primaryMaterialPath = $filepath;
+                }
+            }
+        }
+
+        // Process links
+        if (!empty($request->input('links')) && is_array($request->input('links'))) {
+            foreach ($request->input('links') as $link) {
+                if (empty($link['url'])) continue;
+                $linkUrl = $link['url'];
+                $linkName = !empty($link['name']) ? $link['name'] : $linkUrl;
+
+                \App\Models\EventTrainerModule::create([
+                    'event_id' => $event->id,
+                    'trainer_id' => $trainerId,
+                    'original_name' => $linkName,
+                    'path' => $linkUrl,
+                    'status' => 'approved', // Admin uploads are auto-approved!
+                ]);
+
+                if ($primaryMaterialPath === null) {
+                    $primaryMaterialPath = $linkUrl;
+                }
+            }
+        }
+
+        if ($primaryMaterialPath) {
+            $event->update([
+                'module_path' => $primaryMaterialPath,
+                'material_status' => 'approved',
+            ]);
+        }
+
+        return back()->with('success', 'Materi event berhasil disimpan.');
+    }
+
+    /**
+     * Admin: Delete specific event material
+     */
+    public function destroyMaterial(Event $event, \App\Models\EventTrainerModule $module)
+    {
+        if ($module->event_id !== $event->id) {
+            return back()->with('error', 'Aksi tidak valid.');
+        }
+
+        if (!preg_match('#^https?://#i', $module->path)) {
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($module->path);
+            }
+        }
+
+        $module->delete();
+
+        if ($event->module_path === $module->path) {
+            $nextModule = \App\Models\EventTrainerModule::where('event_id', $event->id)->first();
+            $event->update([
+                'module_path' => $nextModule ? $nextModule->path : null,
+                'material_status' => $nextModule ? $event->material_status : 'draft',
+            ]);
+        }
+
+        return back()->with('success', 'Materi event berhasil dihapus.');
+    }
+
+    /**
+     * Admin: Update specific event material feedback link
+     */
+    public function updateFeedbackLink(Request $request, Event $event, \App\Models\EventTrainerModule $module)
+    {
+        if ($module->event_id !== $event->id) {
+            return back()->with('error', 'Aksi tidak valid.');
+        }
+
+        $validated = $request->validate([
+            'feedback_link' => 'nullable|url|max:2048',
+        ]);
+
+        $module->update([
+            'feedback_link' => $validated['feedback_link']
+        ]);
+
+        return back()->with('success', 'Link feedback materi berhasil diperbarui.');
     }
 }
 

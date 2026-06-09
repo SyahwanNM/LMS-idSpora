@@ -1,12 +1,8 @@
-@extends('layouts.admin')
+@extends('layouts.admin-trainer')
 
 @section('title', 'Tambah Trainer Baru')
 
-@section('navbar')
-    @include('partials.navbar-admin-trainer')
-@endsection
-
-@section('styles')
+@push('admin-trainer-styles')
     <style>
         /* Trainer Hero Section - CRM Style */
         .trainer-hero {
@@ -209,112 +205,6 @@
             color: #c62828 !important;
         }
 
-        /* Sidebar Navigation - Clean Style */
-        .trainer-wrapper {
-            display: flex;
-            min-height: calc(100vh - 72px);
-        }
-
-        .trainer-sidebar {
-            width: 260px;
-            background: #fff;
-            padding: 24px 16px;
-            border-right: 1px solid #eee;
-            flex-shrink: 0;
-            position: sticky;
-            top: 72px;
-            height: calc(100vh - 72px);
-            overflow-y: auto;
-        }
-
-        .trainer-main {
-            flex-grow: 1;
-            padding: 32px;
-            background-color: #F8F9FA;
-        }
-
-        .nav-menu-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #94a3b8;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            margin-top: 24px;
-            display: block;
-            padding-left: 16px;
-        }
-
-        .nav-menu-label:first-child {
-            margin-top: 0;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            padding: 11px 16px;
-            color: #1e293b;
-            text-decoration: none;
-            border-radius: 10px;
-            margin-bottom: 4px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-            gap: 12px;
-        }
-
-        .sidebar-link i {
-            font-size: 1.15rem;
-            color: #64748b;
-            transition: color 0.2s ease;
-        }
-
-        .sidebar-link:hover {
-            background-color: #f8fafc;
-            color: #3949ab;
-        }
-
-        .sidebar-link:hover i {
-            color: #3949ab;
-        }
-
-        .sidebar-link.active {
-            background-color: #3949ab;
-            color: #fff;
-        }
-
-        .sidebar-link.active i {
-            color: #fff;
-        }
-
-        .sidebar-parent {
-            justify-content: space-between;
-        }
-
-        .sidebar-parent .sidebar-chevron {
-            font-size: 0.8rem;
-            transition: transform 0.2s ease;
-        }
-
-        .sidebar-parent[aria-expanded='true'] .sidebar-chevron {
-            transform: rotate(180deg);
-        }
-
-        .sidebar-submenu {
-            margin: 4px 0 8px;
-        }
-
-        .sidebar-submenu .sidebar-link {
-            margin-left: 14px;
-            padding: 7px 10px;
-            font-size: 0.82rem;
-            border-radius: 8px;
-        }
-
-        .sidebar-submenu .sidebar-link i {
-            font-size: 0.95rem;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             .trainer-hero {
@@ -328,29 +218,15 @@
             .hero-subtitle {
                 font-size: 1rem;
             }
-
-            .trainer-sidebar {
-                display: none !important;
-            }
-
-            .trainer-main {
-                padding: 20px;
-            }
         }
     </style>
-@endsection
+@endpush
 
-@section('content')
-    <div class="trainer-wrapper">
-        <!-- Sidebar Navigation -->
-        @include('admin.trainer.partials.sidebar')
-
-        <!-- Main Content -->
-        <main class="trainer-main">
+@section('admin-trainer-content')
             <!-- Hero Section -->
             <div class="trainer-hero mb-5">
                 <div>
-                    <span class="hero-label"><i class="bi bi-shield-check me-2"></i>Admin Panel</span>
+                    <span class="hero-label"><i class="bi bi-shield-check me-2"></i>Panel Admin</span>
                     <h1 class="hero-title">Daftarkan Trainer Baru</h1>
                     <p class="hero-subtitle">Tambahkan instruktur baru ke platform idSpora. Atur kredensial akses dan
                         informasi pribadi dengan mudah.</p>
@@ -517,7 +393,7 @@
                                     </a>
                                     <div class="d-flex gap-3">
                                         <button type="reset" class="btn btn-reset">
-                                            <i class="bi bi-arrow-clockwise me-2"></i>Reset Form
+                                            <i class="bi bi-arrow-clockwise me-2"></i>Atur Ulang
                                         </button>
                                         <button type="submit" class="btn btn-submit">
                                             <i class="bi bi-check-circle me-2"></i>Simpan & Daftarkan
@@ -540,13 +416,13 @@
                             Role <strong style="color: #2e7d32;">Trainer</strong> adalah instruktur yang memiliki akses
                             khusus ke "Trainer Dashboard" untuk mengelola konten kelas.
                         </p>
-
+ 
                         <h6 class="text-success mt-3 mb-3">
                             <i class="bi bi-check-circle me-2" style="color: #2e7d32;"></i>
                             Fitur Akses:
                         </h6>
                         <ul class="list-unstyled mb-4">
-                            <li><i class="bi bi-check-circle text-success me-2"></i>Upload Modul & Video Kelas</li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Unggah Modul & Video Kelas</li>
                             <li><i class="bi bi-check-circle text-success me-2"></i>Buat & Kelola Kuis</li>
                             <li><i class="bi bi-check-circle text-success me-2"></i>Akses Tabel Pendaftar</li>
                             <li><i class="bi bi-check-circle text-success me-2"></i>Lihat Statistik Kelas</li>
@@ -565,6 +441,4 @@
                         </ul>
                     </div>
                 </div>
-        </main>
-    </div>
 @endsection

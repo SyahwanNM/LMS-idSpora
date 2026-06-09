@@ -1,6 +1,6 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Review Material - ' . $material->name)
+@section('title', 'Tinjau Materi - ' . $material->name)
 
 @push('admin-trainer-styles')
     <style>
@@ -878,7 +878,7 @@
                     </span>
                 @else
                     <span class="status-chip">
-                        <i class="bi bi-hourglass-split"></i> Pending Review
+                        <i class="bi bi-hourglass-split"></i> Menunggu Tinjauan
                     </span>
                 @endif
             </div>
@@ -901,7 +901,7 @@
                                             style="background:#e2e8f0;color:#475569;font-weight:700;font-size:0.72rem;">
                                             {{ $material->category->name ?? 'Kategori Umum' }}
                                         </span>
-                                        Diupload
+                                        Diunggah
                                         {{ $material->updated_at?->format('d M Y') ?? $material->created_at->format('d M Y') }}
                                     </p>
                                 </div>
@@ -967,11 +967,11 @@
                                 <div
                                     style="display:flex;align-items:center;gap:8px;margin-bottom:10px;margin-top:{{ $loop->first ? '0' : '24px' }};">
                                     <span style="
-                                                            display:inline-flex;align-items:center;gap:6px;
-                                                            background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
-                                                            color:{{ $unitColor['text'] }};border-radius:8px;
-                                                            padding:4px 12px;font-size:0.78rem;font-weight:700;
-                                                        ">
+                                                                    display:inline-flex;align-items:center;gap:6px;
+                                                                    background:{{ $unitColor['bg'] }};border:1px solid {{ $unitColor['border'] }};
+                                                                    color:{{ $unitColor['text'] }};border-radius:8px;
+                                                                    padding:4px 12px;font-size:0.78rem;font-weight:700;
+                                                                ">
                                         <i class="bi {{ $unitColor['icon'] }}" style="font-size:0.75rem;"></i>
                                         {{ $unit['unit_label'] }}
                                     </span>
@@ -1103,7 +1103,7 @@
                                                                 @elseif($reviewStatus === 'rejected')
                                                                     <i class="bi bi-x-circle-fill"></i> Ditolak
                                                                 @else
-                                                                    <i class="bi bi-hourglass-split"></i> Menunggu review
+                                                                    <i class="bi bi-hourglass-split"></i> Menunggu tinjauan
                                                                 @endif
                                                             </span>
                                                             @if($module->isQuiz())
@@ -1192,6 +1192,8 @@
                                     <div style="font-weight:700;color:#1e293b;font-size:0.85rem;">
                                         {{ $material->trainer?->name ?? 'Anonim' }}
                                     </div>
+                                        {{ $material->trainer?->name ?? 'Anonim' }}
+                                    </div>
                                     <div style="font-size:0.73rem;color:#64748b;">Instruktur</div>
                                     @if($material->trainer?->email)
                                         <div style="font-size:0.7rem;color:#94a3b8;">{{ $material->trainer->email }}</div>
@@ -1230,6 +1232,8 @@
                                         style="font-size:1.3rem;font-weight:800;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};">
                                         {{ $totalRejectedM }}
                                     </div>
+                                        {{ $totalRejectedM }}
+                                    </div>
                                     <div
                                         style="font-size:0.7rem;color:{{ $totalRejectedM > 0 ? '#be123c' : '#94a3b8' }};margin-top:2px;">
                                         Ditolak</div>
@@ -1239,7 +1243,7 @@
                                 <div
                                     style="margin-top:10px;background:#fffbeb;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:6px;font-size:0.78rem;color:#92400e;font-weight:700;">
                                     <i class="bi bi-hourglass-split"></i>
-                                    {{ $totalPending }} modul menunggu review
+                                    {{ $totalPending }} modul menunggu tinjauan
                                 </div>
                             @endif
                         </div>
@@ -1251,6 +1255,7 @@
                                 <form method="POST" action="{{ route('admin.trainer.material.approve', $material) }}"
                                     style="margin-bottom:10px;">
                                     @csrf
+                                    <button type="submit" class="btn-approve" {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
                                     <button type="submit" class="btn-approve" {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
                                         <i class="bi bi-check-circle-fill"></i> Setujui Seluruh Materi
                                     </button>
@@ -1389,7 +1394,7 @@
                     const copyBtn = document.createElement('button');
                     copyBtn.type = 'button';
                     copyBtn.className = 'module-code-copy';
-                    copyBtn.textContent = 'Copy Code';
+                    copyBtn.textContent = 'Salin Kode';
                     copyBtn.dataset.codeText = codeText;
                     const holder = document.createElement('div');
                     holder.className = 'module-code-block';
@@ -1403,7 +1408,7 @@
                         const txt = this.dataset.codeText || '';
                         navigator.clipboard.writeText(txt).then(() => {
                             const orig = this.textContent;
-                            this.textContent = 'Copied!';
+                            this.textContent = 'Tersalin!';
                             setTimeout(() => { this.textContent = orig; }, 1000);
                         }).catch(() => { });
                     });
@@ -1423,11 +1428,11 @@
                         `<div class="quiz-preview-answer ${a.is_correct ? 'is-correct' : ''}">${escapeHtml(a.text || '-')}</div>`
                     ).join('');
                     return `<div class="quiz-preview-item">
-                                    <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
-                                    <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
-                                </div>`;
+                                        <p class="quiz-preview-q">${i + 1}. ${escapeHtml(q.question || '?')} ${q.points ? `<span style="font-weight:400;color:#64748b;">(${q.points} poin)</span>` : ''}</p>
+                                        <div class="quiz-preview-answers">${answers || '<div class="quiz-preview-answer">Belum ada opsi</div>'}</div>
+                                    </div>`;
                 }).join('');
-                return `<div class="quiz-preview-head">Review Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
+                return `<div class="quiz-preview-head">Tinjauan Soal Kuis</div><div class="quiz-preview-list">${items}</div>`;
             }
 
             function renderPreview(url, kind) {

@@ -48,7 +48,7 @@ class EventModuleController extends Controller
                     'id'          => $m->id,
                     'name'        => $m->original_name,
                     'path'        => $m->path,
-                    'url'         => \Illuminate\Support\Facades\Storage::disk('public')->url($m->path),
+                    'url'         => $m->download_url,
                     'status'      => $m->status,
                     'uploaded_at' => $m->created_at?->toDateTimeString(),
                     'rejection_reason' => $m->rejection_reason,

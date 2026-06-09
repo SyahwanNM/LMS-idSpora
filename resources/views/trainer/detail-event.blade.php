@@ -1258,7 +1258,23 @@
               <div class="info-card-content">
                 <span class="info-card-label">DATE</span>
                 <span class="info-card-value">
-                  {{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('D M d Y') : 'TBA' }}
+                  @php
+                    $startDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+                    $untilDate = !empty($event->event_until_date) ? \Carbon\Carbon::parse($event->event_until_date) : null;
+                  @endphp
+                  @if($startDate)
+                    @if($untilDate && $untilDate->ne($startDate))
+                      @if($startDate->format('M Y') === $untilDate->format('M Y'))
+                        {{ $startDate->format('d') }} – {{ $untilDate->format('d M Y') }}
+                      @else
+                        {{ $startDate->format('d M Y') }} – {{ $untilDate->format('d M Y') }}
+                      @endif
+                    @else
+                      {{ $startDate->format('d M Y') }}
+                    @endif
+                  @else
+                    TBA
+                  @endif
                 </span>
               </div>
             </div>
@@ -1274,9 +1290,18 @@
               <div class="info-card-content">
                 <span class="info-card-label">TIME</span>
                 <span class="info-card-value">
-                  {{ $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('h:i A') : 'TBA' }}
-                  @if($event->event_time_end)
-                    - {{ \Carbon\Carbon::parse($event->event_time_end)->format('h:i A') }}
+                  @php
+                    $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : null;
+                    $endTime = !empty($event->event_until_time) 
+                      ? \Carbon\Carbon::parse($event->event_until_time)->format('H:i') 
+                      : (!empty($event->event_time_end) ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : null);
+                  @endphp
+                  @if($startTime)
+                    {{ $startTime }}
+                    @if($endTime) - {{ $endTime }} @endif
+                    WIB
+                  @else
+                    TBA
                   @endif
                 </span>
               </div>

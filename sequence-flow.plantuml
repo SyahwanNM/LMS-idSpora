@@ -1,0 +1,78 @@
+@startuml
+title Sequence Diagram Fitur Trainer Academy idSpora
+
+skinparam backgroundColor #0b0b0b
+skinparam sequence {
+    ArrowColor #6f86a6
+    LifeLineBorderColor #dbeafe
+    LifeLineBackgroundColor #ffffff
+    ParticipantBorderColor #dbeafe
+    ParticipantBackgroundColor #111827
+    ParticipantFontColor #ffffff
+    ActorBorderColor #dbeafe
+    ActorFontColor #ffffff
+    DatabaseBorderColor #dbeafe
+    DatabaseBackgroundColor #ffffff
+    DatabaseFontColor #ffffff
+}
+
+actor "Admin Event / Course" as AdminEvent
+participant "Frontend / UI" as UI
+participant "Sistem" as Sistem
+database "Database" as DB
+participant "Admin Trainer" as AdminTrainer
+
+AdminEvent -> UI : Kelola event / course
+activate UI
+
+UI -> Sistem : Kirim request data event / course
+activate Sistem
+Sistem -> DB : Simpan / ambil data event / course
+activate DB
+DB --> Sistem : Data event / course
+deactivate DB
+Sistem --> UI : Tampilkan data
+UI --> AdminEvent : Informasi event / course tampil
+
+AdminEvent -> UI : Kirim undangan trainer
+UI -> Sistem : Proses undangan trainer
+Sistem -> DB : Simpan data undangan
+activate DB
+DB --> Sistem : Undangan tersimpan
+deactivate DB
+Sistem --> UI : Status undangan berhasil
+UI --> AdminEvent : Notifikasi berhasil dikirim
+
+AdminEvent -> UI : Kelola materi event / course
+UI -> Sistem : Kirim data materi
+Sistem -> DB : Simpan data materi
+activate DB
+DB --> Sistem : Materi tersimpan
+deactivate DB
+
+Sistem -> AdminTrainer : Kirim materi untuk review
+activate AdminTrainer
+AdminTrainer --> Sistem : Review materi
+
+alt Materi disetujui
+    AdminTrainer -> Sistem : Approve materi
+    Sistem -> DB : Update status materi approved
+    activate DB
+    DB --> Sistem : Status diperbarui
+    deactivate DB
+else Materi perlu revisi
+    AdminTrainer -> Sistem : Request revisi materi
+    Sistem -> DB : Update status revisi
+    activate DB
+    DB --> Sistem : Status revisi tersimpan
+    deactivate DB
+end
+
+Sistem --> UI : Update status materi
+deactivate Sistem
+UI --> AdminEvent : Status materi tampil
+deactivate UI
+
+deactivate AdminTrainer
+
+@enduml

@@ -1,6 +1,6 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Material Approvals - Pending')
+@section('title', 'Persetujuan Materi - Menunggu')
 
 @push('admin-trainer-styles')
     <style>
@@ -92,6 +92,10 @@
         .btn-header-action:hover {
             background: rgba(255, 255, 255, .28);
             color: #fff;
+        }
+
+        .btn-header-action:focus {
+            outline: none;
         }
 
         .stat-grid {
@@ -452,6 +456,10 @@
                 width: 100%;
             }
 
+            .toolbar-left {
+                flex: none !important;
+            }
+
             .toolbar-right {
                 justify-content: flex-start;
                 margin-left: 0;
@@ -481,7 +489,7 @@
             <div>
                 <h1 class="page-title">
                     <i class="bi bi-hourglass-split"></i>
-                    Material Approvals
+                    Persetujuan Materi
                 </h1>
                 <p class="page-subtitle">
                     Review materi course dan event dari trainer sebelum ditayangkan ke publik.
@@ -490,7 +498,7 @@
 
             <button class="btn-header-action" onclick="window.location.reload();">
                 <i class="bi bi-arrow-clockwise"></i>
-                Refresh
+                Segarkan
             </button>
         </div>
 
@@ -503,7 +511,7 @@
                 </div>
                 <div class="stat-info">
                     <h3>{{ $totalPending ?? 0 }}</h3>
-                    <p>Menunggu Review</p>
+                    <p>Menunggu Tinjauan</p>
                 </div>
             </div>
 
@@ -543,7 +551,7 @@
                                 Semua Deadline
                             </option>
                             <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                                Overdue
+                                Lewat Tenggat
                             </option>
                             <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>
                                 Tepat Waktu
@@ -625,7 +633,7 @@
 
                                 <td>
                                     <span class="badge-status badge-pending">
-                                        Review Pending
+                                        Menunggu Tinjauan
                                     </span>
                                 </td>
 
@@ -642,10 +650,10 @@
                                     </div>
                                 </td>
 
-                                <td class="text-end">
+                                <td>
                                     <a href="{{ route('admin.trainer.material.show', $material->id) }}"
                                         class="btn-action btn-primary-action">
-                                        Review
+                                        Tinjau
                                         <i class="bi bi-play-fill"></i>
                                     </a>
                                 </td>
@@ -783,7 +791,7 @@
 
                                 <td>
                                     <span class="badge-status badge-pending">
-                                        Review Pending
+                                        Menunggu Tinjauan
                                     </span>
                                 </td>
 
@@ -816,8 +824,8 @@
                                             <input type="hidden" name="module_id" value="{{ $eventModule->id }}">
 
                                             <button type="submit" class="btn-action btn-icon-action"
-                                                style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Approve"
-                                                aria-label="Approve">
+                                                style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;" title="Setujui"
+                                                aria-label="Setujui">
                                                 <i class="bi bi-check2-circle"></i>
                                             </button>
                                         </form>

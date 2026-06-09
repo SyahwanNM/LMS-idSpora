@@ -39,7 +39,7 @@
     $showEventRejectionReason = $displayMaterialStatus === 'rejected' && $eventRejectionReason !== '';
     $moduleFileUrl = $event->module_file_url
         ?? (isset($myModules) && $myModules->isNotEmpty()
-            ? \Illuminate\Support\Facades\Storage::disk('public')->url($myModules->first()->path)
+            ? $myModules->first()->download_url
             : null);
     $uploadedModuleName = $hasUploadedModule
         ? (isset($myModules) && $myModules->isNotEmpty()

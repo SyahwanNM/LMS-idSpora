@@ -128,7 +128,25 @@
                                             <i class="bi bi-calendar-date text-info me-2"></i>
                                             <div>
                                                 <small class="text-muted d-block">Date</small>
-                                                <strong>{{ \Carbon\Carbon::parse($event->event_date)->format('d F Y') }}</strong>
+                                                @php
+                                                    $startDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+                                                    $untilDate = !empty($event->event_until_date) ? \Carbon\Carbon::parse($event->event_until_date) : null;
+                                                @endphp
+                                                <strong>
+                                                    @if($startDate)
+                                                        @if($untilDate && $untilDate->ne($startDate))
+                                                            @if($startDate->format('F Y') === $untilDate->format('F Y'))
+                                                                {{ $startDate->format('d') }} – {{ $untilDate->format('d F Y') }}
+                                                            @else
+                                                                {{ $startDate->format('d F Y') }} – {{ $untilDate->format('d F Y') }}
+                                                            @endif
+                                                        @else
+                                                            {{ $startDate->format('d F Y') }}
+                                                        @endif
+                                                    @else
+                                                        TBA
+                                                    @endif
+                                                </strong>
                                             </div>
                                         </div>
                                     </div>
@@ -137,9 +155,20 @@
                                             <i class="bi bi-clock text-warning me-2"></i>
                                             <div>
                                                 <small class="text-muted d-block">Time</small>
+                                                @php
+                                                    $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : null;
+                                                    $endTime = !empty($event->event_until_time) 
+                                                        ? \Carbon\Carbon::parse($event->event_until_time)->format('H:i') 
+                                                        : (!empty($event->event_time_end) ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : null);
+                                                @endphp
                                                 <strong>
-                                                    {{ \Carbon\Carbon::parse($event->event_time)->format('H:i') }}
-                                                    @if(!empty($event->event_time_end)) - {{ \Carbon\Carbon::parse($event->event_time_end)->format('H:i') }} @endif WIB
+                                                    @if($startTime)
+                                                        {{ $startTime }}
+                                                        @if($endTime) - {{ $endTime }} @endif
+                                                        WIB
+                                                    @else
+                                                        TBA
+                                                    @endif
                                                 </strong>
                                             </div>
                                         </div>
@@ -651,19 +680,33 @@
                                                         @foreach($trainerModules as $tm)
                                                             @php
                                                                 $borderClass = $tm->status === 'approved' ? 'border-success' : ($tm->status === 'rejected' ? 'border-danger' : 'border-warning');
+                                                                $isLink = preg_match('#^https?://#i', $tm->path);
                                                             @endphp
                                                             <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 border-start border-4 {{ $borderClass }}">
-                                                                <div class="d-flex align-items-center gap-2">
-                                                                    <i class="bi bi-file-earmark-text"></i>
-                                                                    <div>
-                                                                        <div class="fw-bold" style="font-size:0.75rem;">{{ $tm->original_name }}</div>
-                                                                        <div class="text-muted" style="font-size:0.7rem;">
+                                                                <div class="d-flex align-items-center gap-2 truncate" style="max-width: 65%;">
+                                                                    <i class="bi {{ $isLink ? 'bi-link-45deg text-primary' : 'bi-file-earmark-text text-secondary' }}" style="font-size: 1.1rem;"></i>
+                                                                    <div class="truncate">
+                                                                        <div class="fw-bold text-truncate" style="font-size:0.75rem;" title="{{ $tm->original_name }}">{{ $tm->original_name }}</div>
+                                                                        <div class="text-muted text-truncate" style="font-size:0.7rem;">
                                                                             {{ $tm->trainer?->name ?? 'Trainer' }} &bull; {{ $tm->created_at?->format('d/m/Y H:i') }}
                                                                         </div>
+                                                                        @if(!empty($tm->feedback_link))
+                                                                            <div class="text-warning text-truncate mt-1" style="font-size:0.7rem;">
+                                                                                <i class="bi bi-chat-left-text me-1"></i> Feedback: <a href="{{ $tm->feedback_link }}" target="_blank" class="text-warning text-decoration-underline">{{ $tm->feedback_link }}</a>
+                                                                            </div>
+                                                                        @endif
                                                                     </div>
                                                                 </div>
                                                                 <div class="d-flex align-items-center gap-1">
-                                                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tm->path) }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
+                                                                    <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" title="Set Link Feedback"
+                                                                            data-bs-toggle="modal" data-bs-target="#editFeedbackLinkModal"
+                                                                            data-module-id="{{ $tm->id }}" data-event-id="{{ $event->id }}"
+                                                                            data-module-name="{{ $tm->original_name }}" data-feedback-link="{{ $tm->feedback_link ?? '' }}">
+                                                                        <i class="bi bi-link-45deg"></i>
+                                                                    </button>
+                                                                    <a href="{{ $tm->download_url }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2" title="{{ $isLink ? 'Buka Link' : 'Download File' }}">
+                                                                        <i class="bi {{ $isLink ? 'bi-box-arrow-up-right' : 'bi-download' }}"></i>
+                                                                    </a>
                                                                     @if($tm->status === 'approved')
                                                                         <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
                                                                     @elseif($tm->status === 'rejected')
@@ -671,11 +714,20 @@
                                                                     @else
                                                                         <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Pending</span>
                                                                     @endif
+                                                                    
+                                                                    <!-- Delete Material Form -->
+                                                                    <form action="{{ route('admin.events.materials.destroy', [$event, $tm]) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Hapus materi ini?')">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-xs btn-outline-danger py-0 px-2" title="Hapus"><i class="bi bi-trash"></i></button>
+                                                                    </form>
                                                                 </div>
                                                             </div>
                                                         @endforeach
                                                     </div>
                                                 @endif
+
+
                                             </li>
                                             @if($modulePending ?? false)
                                                 <li class="list-group-item px-0">
@@ -1764,5 +1816,59 @@ function toggleDailyPresenceModal(regId, dayNumber, action, btnEl) {
         btnEl.innerHTML = originalText;
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const feedbackModal = document.getElementById('editFeedbackLinkModal');
+    if (feedbackModal) {
+        feedbackModal.addEventListener('show.bs.modal', function(e) {
+            const btn = e.relatedTarget;
+            if (!btn) return;
+            const moduleId = btn.getAttribute('data-module-id');
+            const eventId  = btn.getAttribute('data-event-id');
+            const name     = btn.getAttribute('data-module-name') || '-';
+            const link     = btn.getAttribute('data-feedback-link') || '';
+            
+            document.getElementById('feedbackLinkModuleName').textContent = name;
+            document.getElementById('feedback_link_input').value = link;
+            document.getElementById('editFeedbackLinkForm').action =
+                '/admin/events/' + eventId + '/materials/' + moduleId + '/feedback-link';
+        });
+    }
+});
 </script>
+
+<!-- Edit Feedback Link Modal -->
+<div class="modal fade" id="editFeedbackLinkModal" tabindex="-1" aria-labelledby="editFeedbackLinkLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:450px;">
+        <div class="modal-content" style="border-radius: 14px;">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-link-45deg text-warning" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <h5 class="modal-title fw-semibold mb-0" id="editFeedbackLinkLabel">Link Feedback Materi</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editFeedbackLinkForm" method="POST" action="">
+                @csrf
+                @method('PATCH')
+                <div class="modal-body pt-2 pb-1">
+                    <p class="text-muted small mb-3">Masukkan link feedback untuk materi <strong id="feedbackLinkModuleName"></strong>:</p>
+                    <div class="mb-3">
+                        <label for="feedback_link_input" class="form-label small fw-semibold text-muted">Link URL Feedback</label>
+                        <input type="url" class="form-control form-control-sm" id="feedback_link_input" name="feedback_link" placeholder="https://example.com/feedback">
+                        <div class="form-text small text-muted">Kosongkan jika ingin menghapus link feedback.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning btn-sm text-dark px-4 fw-semibold">
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

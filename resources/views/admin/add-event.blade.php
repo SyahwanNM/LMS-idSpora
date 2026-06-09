@@ -112,9 +112,12 @@
                                 $rowHasZoom = !empty($event->zoom_link);
                                 $rowRequiresVbg = !($rowHasMaps && !$rowHasZoom); // VBG wajib kecuali offline-only
                                 $rowTotal = $rowRequiresVbg ? 3 : 2;
+                                $rowIsMultiDay = !empty($event->event_until_date)
+                                    && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                $rowHasDailyAbs = $rowIsMultiDay && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
                                 $rowDone  = ($rowRequiresVbg ? (!empty($event->vbg_path) ? 1 : 0) : 0)
                                           + (!empty($event->module_path) ? 1 : 0)
-                                          + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token)) ? 1 : 0);
+                                          + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token) || $rowHasDailyAbs) ? 1 : 0);
                                 $rowPct = $rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 0;
                             @endphp
                             @php
@@ -192,7 +195,10 @@
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
-                                        $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+                                        $isMultiDayEvent = !empty($event->event_until_date)
+                                            && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                        $hasDailyAbs = $isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
+                                        $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken || $hasDailyAbs;
                                         $totalDisplay = $requiresVbg ? 3 : 2;
                                         $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                         $pct = $totalDisplay > 0
@@ -576,7 +582,10 @@
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
-                                    $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+                                    $isMultiDayEvent = !empty($event->event_until_date)
+                                        && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                    $hasDailyAbs = $isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
+                                    $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken || $hasDailyAbs;
                                     $totalDisplay = $requiresVbg ? 3 : 2;
                                     $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
                                     $pct = $totalDisplay > 0
@@ -613,10 +622,20 @@
                                         <span style="margin-left:auto; flex-shrink:0;" class="d-flex flex-column align-items-end gap-1">
                                             @if($eventTrainerModulesApproved->isNotEmpty())
                                                 @foreach($eventTrainerModulesApproved as $etm)
-                                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
-                                                        <i class="bi bi-file-earmark-arrow-down me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
-                                                        @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
-                                                    </a>
+                                                    @php
+                                                        $isLink = preg_match('#^https?://#i', $etm->path);
+                                                    @endphp
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <a href="{{ $etm->download_url }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
+                                                            <i class="bi {{ $isLink ? 'bi-link-45deg' : 'bi-file-earmark-arrow-down' }} me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
+                                                            @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
+                                                        </a>
+                                                        @if(!empty($etm->feedback_link))
+                                                            <a href="{{ $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
+                                                                <i class="bi bi-chat-left-text me-1"></i>Feedback
+                                                            </a>
+                                                        @endif
+                                                    </div>
                                                 @endforeach
                                             @elseif($hasModule)
                                                 <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
@@ -629,7 +648,23 @@
                                         <span style="flex-shrink:0; color:{{ $hasAbs ? '#198754' : '#dc3545' }}; font-weight:500;">Absensi</span>
                                         <span style="margin-left:auto; flex-shrink:0;">
                                             @if($hasAbs)
-                                                @if($hasAbsFile)
+                                                @if($isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists())
+                                                    @php
+                                                        $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('day_number')->get();
+                                                    @endphp
+                                                    <div class="d-flex gap-1 flex-wrap align-items-center justify-content-end" style="max-width:300px;">
+                                                        @foreach($dailyQrs as $dqr)
+                                                            @if($dqr->qr_image_url)
+                                                                <a href="{{ $dqr->qr_image_url }}" target="_blank" class="position-relative d-inline-block text-decoration-none" title="Hari {{ $dqr->day_number }} ({{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }})">
+                                                                    <img src="{{ $dqr->qr_image_url }}" alt="QR Hari {{ $dqr->day_number }}" class="rounded border" style="width:36px;height:36px;object-fit:cover;">
+                                                                    <span class="position-absolute bottom-0 end-0 bg-dark text-white px-1" style="font-size:8px; border-radius:3px 0 3px 0; opacity:0.85;">H{{ $dqr->day_number }}</span>
+                                                                </a>
+                                                            @else
+                                                                <span class="badge bg-secondary" title="{{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }}">H{{ $dqr->day_number }}</span>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                @elseif($hasAbsFile)
                                                     @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
                                                     @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
                                                         <a href="{{ Storage::url($event->attendance_path) }}" target="_blank"><img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;"></a>

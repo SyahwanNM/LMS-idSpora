@@ -1241,10 +1241,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
     <style>
         :root {
-            --primary: #1e3a8a;
-            --primary-light: #3b82f6;
-            --primary-soft: #eff6ff;
-            --primary-border: #bfdbfe;
+            --primary: #624388;
+            --primary-light: #8562b3;
+            --primary-soft: #f7f5fa;
+            --primary-border: #e9d5ff;
             --text-dark: #111827;
             --text-muted: #6b7280;
             --bg-gray: #f9fafb;
@@ -1281,14 +1281,14 @@
 
         /* HERO CARD (LEFT) - ULTRA PREMIUM EDITION */
         .hero-card {
-            background: linear-gradient(120deg, #0f172a, #1e3a8a, #4c1d95, #0f172a);
+            background: linear-gradient(120deg, #2e2050, #51376c, #624388, #2e2050);
             background-size: 300% 300%;
             animation: gradientMove 12s ease infinite;
             border-radius: var(--radius-xl);
             padding: 40px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             position: relative;
-            box-shadow: 0 20px 50px -10px rgba(30, 58, 138, 0.4), 0 10px 20px -15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 50px -10px rgba(98, 67, 136, 0.4), 0 10px 20px -15px rgba(0, 0, 0, 0.5);
             display: flex;
             gap: 40px;
             align-items: center;
@@ -1304,7 +1304,7 @@
         }
 
         .hero-card:hover {
-            box-shadow: 0 30px 60px -15px rgba(30, 58, 138, 0.5), 0 15px 25px -10px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 30px 60px -15px rgba(98, 67, 136, 0.5), 0 15px 25px -10px rgba(0, 0, 0, 0.6);
             transform: translateY(-4px);
         }
 
@@ -1329,7 +1329,7 @@
             left: 10%;
             width: 300px;
             height: 300px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.3) 0%, rgba(255,255,255,0) 70%);
             border-radius: 50%;
             filter: blur(40px);
             z-index: -1;
@@ -1389,13 +1389,13 @@
             border: 4px solid rgba(255, 255, 255, 0.3);
             padding: 4px;
             background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
-            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(133, 98, 179, 0.4);
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .hero-card:hover .hero-avatar img {
             transform: scale(1.08) rotate(-3deg);
-            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.4), 0 0 30px rgba(59, 130, 246, 0.6);
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.4), 0 0 30px rgba(133, 98, 179, 0.6);
             border-color: rgba(255, 255, 255, 0.5);
         }
 
@@ -1403,7 +1403,7 @@
             position: absolute;
             bottom: 8px;
             right: 8px;
-            background: #38bdf8;
+            background: #a78bfa;
             color: #ffffff;
             border-radius: 50%;
             width: 40px;
@@ -1411,7 +1411,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.5);
+            box-shadow: 0 4px 15px rgba(167, 139, 250, 0.5);
             border: 3px solid rgba(255,255,255,0.8);
             cursor: pointer;
             font-size: 16px;
@@ -1419,7 +1419,7 @@
         }
 
         .hero-avatar .edit-photo:hover {
-            background: #0ea5e9;
+            background: #8b5cf6;
             transform: scale(1.15) rotate(15deg);
         }
 
@@ -1444,9 +1444,9 @@
         }
 
         .hero-info h1 i {
-            color: #38bdf8;
+            color: #a78bfa;
             font-size: 24px;
-            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+            filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.6));
         }
 
         .role-badge {
@@ -1492,7 +1492,7 @@
 
         .hero-meta i {
             font-size: 18px;
-            color: #7dd3fc;
+            color: #c4b5fd;
         }
 
         .hero-contacts {
@@ -1519,7 +1519,7 @@
         }
 
         .hero-contacts i {
-            color: #38bdf8;
+            color: #a78bfa;
             font-size: 18px;
             background: rgba(255, 255, 255, 0.1);
             padding: 8px;
@@ -1530,9 +1530,9 @@
         }
 
         .hero-contacts span:hover i {
-            background: #38bdf8;
+            background: #a78bfa;
             color: #ffffff;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
         }
 
         /* ACTIVITY CARD (RIGHT) */
@@ -1602,9 +1602,9 @@
             color: #f59e0b;
         }
 
-        .activity-icon.blue {
-            background: #eff6ff;
-            color: #3b82f6;
+        .activity-icon.plum {
+            background: #f7f5fa;
+            color: #8562b3;
         }
 
         .activity-text h4 {
@@ -2242,9 +2242,9 @@
             color: #f5b041;
         }
 
-        .ec-icon.blue {
-            background: #eff6ff;
-            color: #3b82f6;
+        .ec-icon.plum {
+            background: #f7f5fa;
+            color: #8562b3;
         }
 
         .ec-icon.navy {
@@ -2308,9 +2308,9 @@
             color: var(--primary);
         }
 
-        .ec-badge.blue {
-            background: #eff6ff;
-            color: #3b82f6;
+        .ec-badge.plum {
+            background: #f7f5fa;
+            color: #8562b3;
         }
 
         .ec-badge.green {
@@ -2913,7 +2913,7 @@
         }
 
         .tag-item {
-            background: #eff6ff;
+            background: #f7f5fa;
             color: #1e3a8a;
             padding: 4px 10px;
             border-radius: 99px;
@@ -3082,7 +3082,7 @@
                         </div>
                     </div>
                     <div class="activity-item">
-                        <div class="activity-icon blue"><i class="bi bi-person-badge"></i></div>
+                        <div class="activity-icon plum"><i class="bi bi-person-badge"></i></div>
                         <div class="activity-text">
                             <h4>{{ number_format($averageRating ?? 0, 1) }} <i class="bi bi-star-fill"
                                     style="font-size:12px; color:#facc15;"></i></h4>
@@ -3157,14 +3157,14 @@
                                 </div>
                             </div>
                             <div class="stat-h-box">
-                                <div class="stat-h-icon" style="color: #3b82f6;"><i class="bi bi-journal-check"></i></div>
+                                <div class="stat-h-icon" style="color: #8562b3;"><i class="bi bi-journal-check"></i></div>
                                 <div class="stat-h-text">
                                     <p>Course Selesai</p>
                                     <h4>{{ $completedCoursesCount ?? 0 }} Course</h4>
                                 </div>
                             </div>
                             <div class="stat-h-box">
-                                <div class="stat-h-icon" style="color: #3b82f6;"><i class="bi bi-star"></i></div>
+                                <div class="stat-h-icon" style="color: #8562b3;"><i class="bi bi-star"></i></div>
                                 <div class="stat-h-text">
                                     <p>Rata-rata Rating</p>
                                     <h4><i class="bi bi-star-fill" style="font-size:12px; color:#111827;"></i>
@@ -3677,7 +3677,7 @@
                             'image' => $img,
                             'url' => route('trainer.detail-course', $course->id),
                             'meta_icon' => 'bi-star-fill',
-                            'badge_color' => '#3b82f6'
+                            'badge_color' => '#8562b3'
                         ]);
                     }
                     $displayItems = $mixedItems->take(3);

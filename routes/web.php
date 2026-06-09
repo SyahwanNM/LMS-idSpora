@@ -724,11 +724,20 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'update'])->name('admin.trainer.certificates.update');
     Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/publish', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'publish'])->name('admin.trainer.certificates.publish');
 
+    // Manual Certificate Management
+    Route::post('/admin/trainer/{trainer}/certificates/issue', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
+    Route::delete('/admin/trainer/certificates/{trainerCertificate}/revoke', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'revokeCertificate'])->name('admin.trainer.certificates.revoke');
+    Route::get('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'showSendCertificateForm'])->name('admin.trainer.certificates.send');
+    Route::post('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendCertificate'])->name('admin.trainer.certificates.send.post');
+    Route::get('/admin/trainer/certificates/{certificate}/view-file', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'viewCertificateFile'])->name('admin.trainer.certificates.view');
+    Route::post('/admin/trainer/certificates/preview', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'previewCertificate'])->name('admin.trainer.certificates.preview');
+
     Route::get('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'show'])->name('admin.trainer.show');
     Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
     Route::post('/admin/trainer/{trainer}/course/{course}/deadline', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'updateCourseDeadline'])->name('admin.trainer.courses.deadline');
+    Route::post('/admin/trainer/{trainer}/event/{event}/deadline', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'updateEventDeadline'])->name('admin.trainer.events.deadline');
 
     // Material Approval Routes
     Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.trainer.material.approvals');

@@ -48,6 +48,18 @@
                             </a>
                         </li>
                     @endif
+                    @if(auth()->user()?->role === 'admin' && !request()->routeIs('admin.dashboard'))
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-medium text-primary d-flex align-items-center {{ (request()->routeIs('admin.events.*') || request()->routeIs('admin.add-event')) ? 'active' : '' }}" href="{{ route('admin.events.index') }}">
+                                <i class="bi bi-calendar-event me-2"></i> Manage Event
+                            </a>
+                        </li>
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-medium text-primary d-flex align-items-center {{ request()->routeIs('admin.reports') ? 'active' : '' }}" href="{{ route('admin.reports') }}">
+                                <i class="bi bi-graph-up me-2"></i> Reports
+                            </a>
+                        </li>
+                    @endif
                     @if(auth()->user()?->role === 'admin')
                         <li class="nav-item ms-lg-2">
                             <a class="btn btn-sm btn-warning fw-semibold d-flex align-items-center gap-1 {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
@@ -349,11 +361,11 @@
     .navbar { z-index: 10000; pointer-events:auto; overflow: visible !important; }
     .navbar .container, .navbar .container-fluid { overflow: visible !important; }
     .navbar { padding-top: .35rem; padding-bottom: .35rem; }
-    .navbar .nav-link {color: rgba(255,255,255,.9);} 
-    .navbar .nav-link:hover {color: #fff;}
-    .navbar .nav-link { padding-top: .35rem; padding-bottom: .35rem; font-size: .95rem; }
-    .navbar .nav-link.active {color:#fff;position:relative;}
-    .navbar .nav-link.active::after {content:"";position:absolute;left:.5rem;right:.5rem;bottom:-.4rem;height:2px;background:#fff;border-radius:2px;opacity:.9;}
+    .navbar .nav-link { color: #4b5563 !important; font-size: .95rem; font-weight: 500; transition: color 0.15s ease-in-out; position: relative; }
+    .navbar .nav-link:hover { color: #0d6efd !important; }
+    .navbar .nav-link.active { color: #0d6efd !important; font-weight: 600; }
+    .navbar .nav-link::after { content: ""; position: absolute; left: 0.5rem; right: 0.5rem; bottom: -0.25rem; height: 2px; background-color: #0d6efd; border-radius: 2px; transform: scaleX(0); transition: transform 0.18s ease-in-out; }
+    .navbar .nav-link.active::after, .navbar .nav-link:hover::after { transform: scaleX(1); }
     .avatar-circle {width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid #EBBC01;background:#6b7280;display:inline-flex;align-items:center;justify-content:center;}
     .avatar-circle img {width:100%;height:100%;object-fit:cover;display:block;}
     /* Subtle dropdown animation + visible background */

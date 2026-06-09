@@ -6,10 +6,12 @@
     <title>Sertifikat Trainer</title>
 @endif
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+    
     @if(!isset($is_preview) || !$is_preview)
         @page { size: A4 landscape; margin: 0; }
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: 'Georgia', 'Times New Roman', serif; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+        body { margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; background: #fff; }
     @endif
 
     .certificate-page {
@@ -18,233 +20,280 @@
         position: relative;
         overflow: hidden;
         background: #fff;
-        color: #19102c;
+        color: #1e293b;
         box-sizing: border-box;
         @if(isset($is_preview) && $is_preview)
         transform: scale(var(--cert-scale, 1));
         transform-origin: top left;
+        --cert-font-scale: 0.82;
         @endif
     }
 
-    /* ─── Shared Layout Classes ─── */
-    .tpl-inner {
-        position: relative;
-        height: 100%;
-        width: 100%;
-        padding: 36px 56px;
+    /* ─── Shared Styles across Templates ─── */
+    .logo-row {
         text-align: center;
-        color: #19102c;
-        box-sizing: border-box;
+        margin-bottom: 15px;
+        width: 100%;
+        position: relative;
+        z-index: 5;
     }
-
-    .tpl-logo-row {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-        flex-wrap: wrap;
-    }
-
-    .tpl-logo {
-        height: 42px;
-        max-width: 140px;
+    .logo-item {
+        height: 48px;
+        width: auto;
+        margin: 0 10px;
+        vertical-align: middle;
         object-fit: contain;
     }
 
-    .tpl-title {
+    .cert-title {
         font-family: 'Georgia', serif;
-        font-size: 38px;
-        letter-spacing: 4px;
-        margin: 6px 0 8px;
         text-transform: uppercase;
         font-weight: 700;
+        margin: 10px 0 2px;
+        text-align: center;
     }
 
-    .tpl-subtitle {
-        font-size: 12px;
+    .sub-title {
+        font-family: 'Helvetica', sans-serif;
+        font-weight: bold;
         text-transform: uppercase;
-        letter-spacing: 3px;
-        color: #2e2050;
-        font-weight: 600;
-        margin-bottom: 8px;
+        margin-top: 4px;
+        text-align: center;
     }
 
-    .tpl-presented {
+    .presented-text {
         font-size: 14px;
         color: #64748b;
-        margin: 10px 0 4px;
         font-style: italic;
+        margin-bottom: 5px;
+        text-align: center;
+        position: relative;
+        z-index: 2;
     }
 
-    .tpl-name {
-        font-size: 44px;
-        font-weight: 700;
-        margin: 8px 0;
-        font-family: 'Times New Roman', serif;
+    .recipient-name {
+        font-family: 'Great Vibes', 'Georgia', serif;
+        font-weight: normal;
+        text-align: center;
+        display: inline-block;
+        letter-spacing: 1px;
+        position: relative;
+        z-index: 2;
     }
 
-    .tpl-desc {
+    .cert-desc {
+        text-align: center;
         font-size: 13px;
         line-height: 1.65;
         color: #1f2937;
-        margin-top: 6px;
+        margin-top: 10px;
+        position: relative;
+        z-index: 2;
     }
 
-    .tpl-footer {
-        margin-top: 20px;
-        display: flex;
-        justify-content: flex-end;
-        gap: 32px;
-        align-items: flex-end;
+    .cert-footer {
+        position: absolute;
+        bottom: 70px;
+        width: 100%;
+        left: 0;
+        padding: 0 70px;
+        box-sizing: border-box;
+        z-index: 3;
     }
 
-    .tpl-sig {
+    .sig-container {
         text-align: center;
-        min-width: 160px;
-        font-size: 11px;
-        color: #19102c;
+        width: 100%;
     }
 
-    .tpl-sig img {
-        max-height: 50px;
+    .sig-box {
+        display: inline-block;
+        text-align: center;
+        width: 220px;
+        margin: 0 24px;
+        vertical-align: bottom;
+    }
+
+    .sig-box img {
+        max-height: 65px;
         max-width: 140px;
         object-fit: contain;
         display: block;
         margin: 0 auto 4px;
     }
 
-    .tpl-sig-line {
-        border-top: 1px solid #19102c;
-        margin: 4px 0;
+    .sig-line {
+        width: 170px;
+        margin: 8px auto;
+        border-bottom: 1.5px solid #0f172a;
     }
 
-    .tpl-cert-id {
+    .cert-id {
         position: absolute;
-        bottom: 18px;
-        right: 32px;
-        font-size: 8px;
+        bottom: 25px;
+        right: 40px;
+        font-size: 8.5pt;
+        color: #94a3b8;
+        font-weight: 600;
+        z-index: 3;
+        background: rgba(251, 191, 36, 0.1);
+        padding: 5px 10px;
+        border-radius: 4px;
+    }
+
+    .verification-tag {
+        position: absolute;
+        bottom: 25px;
+        left: 40px;
+        font-size: 7.5pt;
         color: #94a3b8;
         font-family: monospace;
-        letter-spacing: 1px;
+        letter-spacing: 1.5px;
+        font-weight: 600;
+        z-index: 3;
     }
 
-    .tpl-verification {
-        position: absolute;
-        bottom: 18px;
-        left: 32px;
-        font-size: 8px;
-        color: #94a3b8;
-        font-family: monospace;
-        letter-spacing: 1px;
-    }
-
-    /* ─── Template 1: Royal ─── */
+    /* ─── Template 1: Premium Royal (Maroon & Gold Waves) ─── */
     .template_1 {
-        border: 14px solid #19102c;
-        background: #fff;
-        height: 21cm;
+        padding: 35px;
+        background: #ffffff;
+    }
+    .template_1 .content-wrap {
+        padding-top: 40px;
+        text-align: center;
         position: relative;
+        z-index: 2;
+    }
+    .template_1 .cert-title {
+        font-size: 36pt;
+        color: #1e1b4b;
+        letter-spacing: 4px;
+    }
+    .template_1 .sub-title {
+        font-size: 11pt;
+        color: #7f1d1d;
+        letter-spacing: 5px;
+        margin-bottom: 25px;
+    }
+    .template_1 .recipient-name {
+        font-size: 38pt;
+        color: #7f1d1d;
+        margin: 10px 0;
+    }
+    .template_1 .sig-line {
+        border-bottom-style: dashed;
+        border-bottom-color: #7f1d1d;
     }
 
-    .template_1 .tpl-inner {
-        border: 2px double #2e2050;
-        margin: 12px;
-        height: calc(100% - 24px);
-        width: calc(100% - 24px);
-        box-sizing: border-box;
-    }
-
-    .template_1 .tpl-name {
-        border-bottom: 2px solid #2e2050;
-        display: inline-block;
-        padding: 4px 32px;
-    }
-
-    /* ─── Template 2: Modern ─── */
+    /* ─── Template 2: Modern Corporate (Sleek Ribbon & Navy Corners) ─── */
     .template_2 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        height: 21cm;
-        position: relative;
-    }
-
-    .template_2::before {
-        content: '';
-        position: absolute;
-        inset: 0 auto 0 0;
-        width: 70px;
-        background: #19102c;
-    }
-
-    .template_2::after {
-        content: '';
-        position: absolute;
-        inset: 0 auto 0 70px;
-        width: 7px;
-        background: #2e2050;
-    }
-
-    .template_2 .tpl-inner {
-        text-align: left;
-        padding: 40px 60px 36px 120px;
-    }
-
-    .template_2 .tpl-logo-row {
-        justify-content: flex-start;
-    }
-
-    .template_2 .tpl-name {
-        border-left: 6px solid #2e2050;
-        padding-left: 14px;
-    }
-
-    .template_2 .tpl-footer {
-        justify-content: flex-start;
-    }
-
-    .template_2 .tpl-verification {
-        left: 120px;
-    }
-
-    /* ─── Template 3: Clean ─── */
-    .template_3 {
+        padding: 0;
         background: #f8fafc;
-        height: 21cm;
+    }
+    .template_2 .content-wrap {
+        padding: 60px 20px 20px 20px;
+        text-align: center;
         position: relative;
+        z-index: 2;
     }
-
-    .template_3 .tpl-header {
-        background: #19102c;
-        color: #fff;
-        padding: 20px 56px;
-    }
-
-    .template_3 .tpl-header .tpl-title {
-        font-size: 28px;
-        margin: 0;
-        color: #fff;
+    .template_2 .cert-title {
+        font-size: 32pt;
+        color: #0f172a;
         letter-spacing: 2px;
     }
-
-    .template_3 .tpl-bar {
-        height: 7px;
-        background: #2e2050;
+    .template_2 .sub-title {
+        font-size: 13pt;
+        color: #475569;
+        letter-spacing: 4px;
+        margin-bottom: 25px;
+    }
+    .template_2 .recipient-name {
+        font-size: 38pt;
+        color: #0f172a;
+        margin: 15px auto;
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 5px;
+    }
+    .template_2 .gold-badge {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 4px solid #d4af37;
+        background: #ffffff;
+        z-index: 5;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .template_2 .gold-badge-inner {
+        position: absolute;
+        top: 5px; left: 5px; right: 5px; bottom: 5px;
+        border-radius: 50%;
+        border: 1px solid #d4af37;
+        background: #faf8f5;
+    }
+    .template_2 .cert-footer {
+        padding: 0 70px 0 160px;
+    }
+    .template_2 .verification-tag {
+        left: 160px;
     }
 
-    .template_3 .tpl-inner {
-        text-align: left;
-        padding: 28px 56px;
-        height: calc(100% - 80px);
-        box-sizing: border-box;
+    /* ─── Template 3: Creative Professional (Dynamic Wave & Gradients) ─── */
+    .template_3 {
+        padding: 0;
+        background: #fdfdfd;
+        border: 15px solid #ffffff;
+    }
+    .template_3 .content-wrap {
+        padding: 50px 20px 20px 20px;
+        text-align: center;
+        position: relative;
+        z-index: 5;
+    }
+    .template_3 .cert-title {
+        font-size: 32pt;
+        color: #1e1b4b;
+        letter-spacing: 3px;
+    }
+    .template_3 .sub-title {
+        font-size: 11pt;
+        color: #d97706;
+        letter-spacing: 5px;
+        margin-bottom: 25px;
+    }
+    .template_3 .recipient-name {
+        font-size: 38pt;
+        color: #4c1d95;
+        margin: 10px auto;
+        border-bottom: 2px solid #d97706;
+        padding-bottom: 5px;
+    }
+    .template_3 .sig-box {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        padding: 8px 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+    }
+    .template_3 .sig-line {
+        border-bottom-color: #4c1d95;
+    }
+    .template_3 .verification-tag {
+        left: 70px;
+    }
+    .template_3 .cert-id {
+        right: 70px;
     }
 
-    .template_3 .tpl-logo-row {
-        justify-content: flex-start;
-    }
-
-    .template_3 .tpl-footer {
-        justify-content: flex-start;
+    @media (max-width: 768px) {
+        .recipient-name {
+            font-size: 26pt !important;
+        }
+        .cert-title {
+            font-size: 24pt !important;
+        }
     }
 </style>
 @if(!isset($is_preview) || !$is_preview)
@@ -261,7 +310,10 @@
     $role       = $roleLabel ?? 'Narasumber';
 
     // Build logo list: logo idSpora + logos dari admin
-    $idSporaLogoPath = public_path('aset/logo-idspora.png');
+    $idSporaLogoPath = public_path('aset/logo idspora_dark.png');
+    if (!file_exists($idSporaLogoPath)) {
+        $idSporaLogoPath = public_path('aset/logo-idspora.png');
+    }
     $idSporaLogoB64  = file_exists($idSporaLogoPath)
         ? 'data:image/png;base64,' . base64_encode(file_get_contents($idSporaLogoPath))
         : null;
@@ -277,120 +329,122 @@
 
 <div class="certificate-page {{ $template }}">
 
-    {{-- ═══ TEMPLATE 1: Royal ═══ --}}
+    {{-- ═══ BACKGROUND DECORATIONS FOR TEMPLATE 1 ═══ --}}
     @if($template === 'template_1')
-        <div class="tpl-inner">
-            <div class="tpl-logo-row">
-                @foreach($allLogos as $logo)
-                    <img class="tpl-logo" src="{{ $logo }}" alt="Logo">
-                @endforeach
-            </div>
+        <!-- Top Left Gold Bar -->
+        <div style="position: absolute; top: 15mm; left: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
+        <!-- Bottom Right Gold Bar -->
+        <div style="position: absolute; bottom: 15mm; right: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
 
-            <div class="tpl-title">Sertifikat Penghargaan</div>
-            <div class="tpl-subtitle">{{ strtoupper($role) }}</div>
-            <div class="tpl-name">{{ $trainerName }}</div>
-
-            <div class="tpl-desc">
-                Atas kontribusinya sebagai {{ strtolower($role) }} dalam <strong>{{ $title }}</strong>, diterbitkan pada {{ $issuedDateText }}.
-            </div>
-
-            <div class="tpl-footer">
-                @php $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64'=>$b,'name'=>'','position'=>''], $signaturesBase64 ?? []); @endphp
-                @foreach($sigsToRender as $sig)
-                    <div class="tpl-sig">
-                        @if(!empty($sig['base64']))
-                            <img src="{{ $sig['base64'] }}" alt="Tanda Tangan">
-                        @endif
-                        <div class="tpl-sig-line"></div>
-                        <strong>{{ $sig['name'] ?: 'Admin idSpora' }}</strong><br>
-                        {{ $sig['position'] ?: 'Learning Manager' }}
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="tpl-verification">IDSPORA • TRAINER CERTIFICATE</div>
-            <div class="tpl-cert-id">{{ $certNum }}</div>
+        <!-- Top Right Maroon & Gold Waves -->
+        <div style="position: absolute; top: 0; right: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
+            <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <path d="M 30,0 C 50,40 70,60 100,80 L 100,0 Z" fill="#7f1d1d" />
+                <path d="M 40,0 C 58,38 74,54 100,70 L 100,0 Z" fill="#eab308" />
+                <path d="M 50,0 C 66,34 78,46 100,60 L 100,0 Z" fill="#991b1b" />
+                <path d="M 65,0 C 78,26 86,34 100,45 L 100,0 Z" fill="#eab308" />
+                <path d="M 75,0 C 85,20 90,25 100,35 L 100,0 Z" fill="#7f1d1d" />
+            </svg>
         </div>
 
-    {{-- ═══ TEMPLATE 2: Modern ═══ --}}
+        <!-- Bottom Left Maroon & Gold Waves -->
+        <div style="position: absolute; bottom: 0; left: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
+            <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <path d="M 0,30 C 40,50 60,70 80,100 L 0,100 Z" fill="#7f1d1d" />
+                <path d="M 0,40 C 38,58 54,74 70,100 L 0,100 Z" fill="#eab308" />
+                <path d="M 0,50 C 34,66 46,78 60,100 L 0,100 Z" fill="#991b1b" />
+                <path d="M 0,65 C 26,78 34,86 45,100 L 0,100 Z" fill="#eab308" />
+                <path d="M 0,75 C 20,85 25,90 35,100 L 0,100 Z" fill="#7f1d1d" />
+            </svg>
+        </div>
+
+    {{-- ═══ BACKGROUND DECORATIONS FOR TEMPLATE 2 ═══ --}}
     @elseif($template === 'template_2')
-        <div class="tpl-inner">
-            <div class="tpl-logo-row">
-                @foreach($allLogos as $logo)
-                    <img class="tpl-logo" src="{{ $logo }}" alt="Logo">
-                @endforeach
-            </div>
-
-            <div class="tpl-title">Sertifikat Penghargaan</div>
-            <div class="tpl-subtitle">{{ strtoupper($role) }}</div>
-            <div class="tpl-name">{{ $trainerName }}</div>
-
-            <div class="tpl-desc">
-                Atas kontribusinya sebagai {{ strtolower($role) }} dalam <strong>{{ $title }}</strong>, diterbitkan pada {{ $issuedDateText }}.
-            </div>
-
-            <div class="tpl-footer">
-                @php $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64'=>$b,'name'=>'','position'=>''], $signaturesBase64 ?? []); @endphp
-                @foreach($sigsToRender as $sig)
-                    <div class="tpl-sig">
-                        @if(!empty($sig['base64']))
-                            <img src="{{ $sig['base64'] }}" alt="Tanda Tangan">
-                        @endif
-                        <div class="tpl-sig-line"></div>
-                        <strong>{{ $sig['name'] ?: 'Admin idSpora' }}</strong><br>
-                        {{ $sig['position'] ?: 'Learning Manager' }}
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="tpl-verification">IDSPORA • TRAINER CERTIFICATE</div>
-            <div class="tpl-cert-id">{{ $certNum }}</div>
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
+            <svg width="100%" height="100%" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                <!-- Top-left diagonal gold ribbon -->
+                <polygon points="0,0 60,0 0,60" fill="#d4af37" />
+                <polygon points="0,0 55,0 0,55" fill="#fef08a" />
+                <polygon points="0,0 40,0 0,40" fill="#ca8a04" />
+                
+                <!-- Right side navy & gold triangles -->
+                <polygon points="297,0 215,0 297,125" fill="#0f172a" />
+                <polygon points="297,210 185,210 297,135" fill="#ca8a04" />
+                <polygon points="297,210 190,210 297,137" fill="#fbbf24" />
+            </svg>
+        </div>
+        
+        <div class="gold-badge">
+            <div class="gold-badge-inner"></div>
         </div>
 
-    {{-- ═══ TEMPLATE 3: Clean ═══ --}}
+    {{-- ═══ BACKGROUND DECORATIONS FOR TEMPLATE 3 ═══ --}}
     @else
-        <div class="tpl-header">
-            <div class="tpl-title">Sertifikat Penghargaan</div>
-        </div>
-        <div class="tpl-bar"></div>
-        <div class="tpl-inner">
-            @if(!empty($allLogos))
-                <div class="tpl-logo-row">
-                    @foreach($allLogos as $logo)
-                        <img class="tpl-logo" src="{{ $logo }}" alt="Logo">
-                    @endforeach
-                </div>
-            @endif
-
-            <div class="tpl-subtitle">{{ strtoupper($role) }}</div>
-            <div class="tpl-name">{{ $trainerName }}</div>
-
-            <div class="tpl-desc">
-                Atas kontribusinya sebagai {{ strtolower($role) }} dalam <strong>{{ $title }}</strong>, diterbitkan pada {{ $issuedDateText }}.
-            </div>
-
-            <div class="tpl-footer">
-                @php $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64'=>$b,'name'=>'','position'=>''], $signaturesBase64 ?? []); @endphp
-                @foreach($sigsToRender as $sig)
-                    <div class="tpl-sig">
-                        @if(!empty($sig['base64']))
-                            <img src="{{ $sig['base64'] }}" alt="Tanda Tangan">
-                        @endif
-                        <div class="tpl-sig-line"></div>
-                        <strong>{{ $sig['name'] ?: 'Admin idSpora' }}</strong><br>
-                        {{ $sig['position'] ?: 'Learning Manager' }}
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="tpl-verification">IDSPORA • TRAINER CERTIFICATE</div>
-            <div class="tpl-cert-id">{{ $certNum }}</div>
-        </div>
+        @php 
+            $bgCreativeUrl = request()->schemeAndHttpHost() . '/aset/bg-creative.png';
+        @endphp
+        <img src="{{ $bgCreativeUrl }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
     @endif
+
+    {{-- ═══ CONTENT WRAPPER ═══ --}}
+    <div class="content-wrap">
+        <div class="logo-row">
+            @foreach(array_slice($allLogos, 0, 4) as $logo)
+                <img class="logo-item" src="{{ $logo }}" alt="Logo">
+            @endforeach
+        </div>
+
+        <h1 class="cert-title">Sertifikat Penghargaan</h1>
+        <div class="sub-title">{{ strtoupper($role) }}</div>
+
+        <p class="presented-text">Diberikan kepada:</p>
+        <div class="recipient-name">{{ $trainerName }}</div>
+
+        <p class="cert-desc">
+            Atas kontribusinya sebagai {{ strtolower($role) }} dalam <strong>{{ $title }}</strong>, diterbitkan pada {{ $issuedDateText }}.
+        </p>
+    </div>
+
+    {{-- ═══ SIGNATURE FOOTER ═══ --}}
+    <div class="cert-footer">
+        <div class="sig-container">
+            @php 
+                $sigsToRender = !empty($signaturesData) 
+                    ? $signaturesData 
+                    : array_map(fn($b) => ['base64'=>$b,'name'=>'','position'=>''], $signaturesBase64 ?? []); 
+            @endphp
+            @forelse(array_slice($sigsToRender, 0, 3) as $sig)
+                <div class="sig-box">
+                    @if(!empty($sig['base64']))
+                        <img src="{{ $sig['base64'] }}" alt="Tanda Tangan">
+                    @endif
+                    <div class="sig-line"></div>
+                    @if(!empty($sig['name']))
+                        <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $sig['name'] }}</p>
+                        @if(!empty($sig['position']))
+                            <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $sig['position'] }}</p>
+                        @endif
+                    @else
+                        <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
+                    @endif
+                </div>
+            @empty
+                <div class="sig-box">
+                    <div style="height: 65px;"></div>
+                    <div class="sig-line"></div>
+                    <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
+                </div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- ═══ VERIFICATION INFO ═══ --}}
+    <div class="verification-tag">VERIFIED BY IDSPORA.COM</div>
+    <div class="cert-id">Verified Certificate ID: {{ $certNum }}</div>
 
 </div>
 
 @if(!isset($is_preview) || !$is_preview)
-    </body>
-    </html>
+</body>
+</html>
 @endif

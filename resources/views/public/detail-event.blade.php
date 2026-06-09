@@ -112,14 +112,46 @@
                             <i class="bi bi-calendar-event me-3 text-secondary"></i>
                             <div>
                                 <small class="text-muted d-block">Tanggal</small>
-                                <span class="fw-medium">{{ \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') }}</span>
+                                @php
+                                    $startDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+                                    $untilDate = !empty($event->event_until_date) ? \Carbon\Carbon::parse($event->event_until_date) : null;
+                                @endphp
+                                <span class="fw-medium">
+                                    @if($startDate)
+                                        @if($untilDate && $untilDate->ne($startDate))
+                                            @if($startDate->format('F Y') === $untilDate->format('F Y'))
+                                                {{ $startDate->translatedFormat('d') }} – {{ $untilDate->translatedFormat('d F Y') }}
+                                            @else
+                                                {{ $startDate->translatedFormat('d F Y') }} – {{ $untilDate->translatedFormat('d F Y') }}
+                                            @endif
+                                        @else
+                                            {{ $startDate->translatedFormat('d F Y') }}
+                                        @endif
+                                    @else
+                                        TBA
+                                    @endif
+                                </span>
                             </div>
                         </div>
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-clock me-3 text-secondary"></i>
                             <div>
                                 <small class="text-muted d-block">Waktu</small>
-                                <span class="fw-medium">{{ $event->event_time ?? '19:30 WIB - Selesai' }}</span>
+                                @php
+                                    $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : null;
+                                    $endTime = !empty($event->event_until_time) 
+                                        ? \Carbon\Carbon::parse($event->event_until_time)->format('H:i') 
+                                        : (!empty($event->event_time_end) ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : null);
+                                @endphp
+                                <span class="fw-medium">
+                                    @if($startTime)
+                                        {{ $startTime }}
+                                        @if($endTime) - {{ $endTime }} @endif
+                                        WIB
+                                    @else
+                                        TBA
+                                    @endif
+                                </span>
                             </div>
                         </div>
                         <div class="d-flex align-items-center mb-2">

@@ -17,6 +17,7 @@ class EventTrainerModule extends Model
         'rejection_reason',
         'reviewed_by',
         'reviewed_at',
+        'feedback_link',
     ];
 
     protected $casts = [
@@ -40,6 +41,9 @@ class EventTrainerModule extends Model
 
     public function getDownloadUrlAttribute(): string
     {
+        if (preg_match('#^https?://#i', $this->path)) {
+            return $this->path;
+        }
         return Storage::disk('public')->url($this->path);
     }
 
