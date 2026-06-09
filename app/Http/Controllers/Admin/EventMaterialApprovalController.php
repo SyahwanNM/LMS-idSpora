@@ -126,7 +126,7 @@ class EventMaterialApprovalController extends Controller
 
         if ($now->gt($deadline)) {
             return [
-                'label' => 'Overdue',
+                'label' => 'Lewat Tenggat',
                 'class' => 'overdue',
                 'is_overdue' => true,
             ];

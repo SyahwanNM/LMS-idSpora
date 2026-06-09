@@ -1,6 +1,6 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Course Studio')
+@section('title', 'Studio Kelas')
 
 @push('admin-trainer-styles')
     <style>
@@ -42,7 +42,7 @@
 
 @section('admin-trainer-content')
         <div class="studio-hero">
-            <h1 class="fw-bold mb-2 position-relative" style="z-index: 2;">Course Studio</h1>
+            <h1 class="fw-bold mb-2 position-relative" style="z-index: 2;">Studio Kelas</h1>
             <p class="mb-0 text-white-50 position-relative" style="z-index: 2; font-size: 1.1rem;">
                 Manajemen Materi (Modul, Video, Quiz) untuk Semua Kelas Trainer
             </p>

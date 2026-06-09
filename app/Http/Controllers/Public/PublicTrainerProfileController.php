@@ -103,18 +103,52 @@ class PublicTrainerProfileController extends Controller
                     'user_name' => (string) ($user->name ?? 'Anonim'),
                     'user_role' => 'Peserta',
                     'user_avatar_url' => $user ? $user->avatar_url : null,
+                    'created_at' => $feedback->created_at,
                 ];
             });
 
-        $experiences = $activeEvents->map(function ($event) {
-            return (object) [
-                'role' => (string) ($event->title ?? 'Training Session'),
-                'company' => 'idSpora',
-                'period' => optional($event->event_date)->format('Y') ?? now()->format('Y'),
-                'description' => (int) ($event->participants_count ?? 0) . ' participants' .
-                    (optional($event->event_date) ? ' • ' . optional($event->event_date)->format('d M Y') : ''),
-            ];
-        });
+        // Process experiences from model
+        $experiences = collect();
+        $rawExperiences = $trainer->trainer_experiences ?? [];
+        foreach ($rawExperiences as $exp) {
+            if (is_array($exp) || is_object($exp)) {
+                $exp = (array) $exp;
+                $period = 'PRESENT';
+                if (!empty($exp['start_date'])) {
+                    $start = \Carbon\Carbon::parse($exp['start_date'])->locale('id')->translatedFormat('M Y');
+                    $end = !empty($exp['end_date'])
+                        ? \Carbon\Carbon::parse($exp['end_date'])->locale('id')->translatedFormat('M Y')
+                        : 'Sekarang';
+                    $period = $start . ' - ' . $end;
+                }
+                $experiences->push((object) [
+                    'role' => (string) ($exp['role'] ?? 'Trainer'),
+                    'company' => (string) ($exp['company'] ?? 'idSpora'),
+                    'period' => $period,
+                    'description' => (string) ($exp['description'] ?? ''),
+                ]);
+            } elseif (is_string($exp) && trim($exp) !== '') {
+                $experiences->push((object) [
+                    'role' => trim($exp),
+                    'company' => 'idSpora',
+                    'period' => 'PRESENT',
+                    'description' => '',
+                ]);
+            }
+        }
+
+        // If no experiences entered, fallback to events
+        if ($experiences->isEmpty()) {
+            $experiences = $activeEvents->map(function ($event) {
+                return (object) [
+                    'role' => (string) ($event->title ?? 'Training Session'),
+                    'company' => 'idSpora',
+                    'period' => optional($event->event_date)->format('Y') ?? now()->format('Y'),
+                    'description' => (int) ($event->participants_count ?? 0) . ' participants' .
+                        (optional($event->event_date) ? ' • ' . optional($event->event_date)->format('d M Y') : ''),
+                ];
+            });
+        }
 
         if ($experiences->isEmpty()) {
             $experiences = collect([
@@ -127,7 +161,8 @@ class PublicTrainerProfileController extends Controller
             ]);
         }
 
-        $certificates = TrainerCertificate::query()
+        // Process certificates (verified + manual)
+        $systemCertificates = TrainerCertificate::query()
             ->with('certifiable')
             ->where('trainer_id', $trainer->id)
             ->whereIn('status', ['sent', 'published'])
@@ -151,17 +186,91 @@ class PublicTrainerProfileController extends Controller
                 ];
             });
 
+        $manualCertificates = collect();
+        $rawCertifications = $trainer->trainer_certifications ?? [];
+        foreach ($rawCertifications as $cert) {
+            if (is_array($cert) || is_object($cert)) {
+                $cert = (array) $cert;
+                $year = !empty($cert['start_date']) ? \Carbon\Carbon::parse($cert['start_date'])->format('Y') : now()->format('Y');
+                $manualCertificates->push((object) [
+                    'icon_url' => null,
+                    'title' => (string) ($cert['name'] ?? 'Sertifikasi'),
+                    'issuer' => (string) ($cert['issuer'] ?? 'Lembaga Sertifikasi'),
+                    'year' => $year,
+                ]);
+            } elseif (is_string($cert) && trim($cert) !== '') {
+                $manualCertificates->push((object) [
+                    'icon_url' => null,
+                    'title' => trim($cert),
+                    'issuer' => 'Lembaga Sertifikasi',
+                    'year' => now()->format('Y'),
+                ]);
+            }
+        }
+
+        $certificates = $systemCertificates->concat($manualCertificates)->take(6);
+
+        // Experience years calculation
+        $experienceYears = 0;
+        $rawExperiencesList = $trainer->trainer_experiences ?? [];
+        if (!empty($rawExperiencesList)) {
+            $earliestYear = (int) now()->format('Y');
+            foreach ($rawExperiencesList as $exp) {
+                if (is_array($exp) || is_object($exp)) {
+                    $exp = (array) $exp;
+                    if (!empty($exp['start_date'])) {
+                        $startYear = (int) \Carbon\Carbon::parse($exp['start_date'])->format('Y');
+                        if ($startYear < $earliestYear) {
+                            $earliestYear = $startYear;
+                        }
+                    }
+                }
+            }
+            $experienceYears = max(1, (int) now()->format('Y') - $earliestYear);
+        }
+        if ($experienceYears === 0) {
+            $experienceYears = 5; // Fallback
+        }
+
+        // Dynamic success rate
+        $successRate = 95;
+        if ($combinedRating > 4.0) {
+            $successRate += (int) (($combinedRating - 4.0) * 10);
+        }
+        $successRate = min(100, max(85, $successRate));
+
         $reputation = [
             'rating' => round($combinedRating, 1),
             'rating_count' => $totalRatings,
             'students' => (int) $courseStudents + (int) $eventStudents,
-            'experience_years' => 10, // Mocked for design preview
-            'success_rate' => 98,    // Mocked for design preview
+            'experience_years' => $experienceYears,
+            'success_rate' => $successRate,
             'active_learners' => (int) $courseStudents + (int) $eventStudents,
         ];
 
-        // Expertise tags (mocked or derived)
-        $expertise = ['Data Science', 'Machine Learning', 'AI Ethics', 'Python', 'Neural Networks'];
+        // Expertise tags from trainer profile
+        $rawSkills = $trainer->trainer_skills ?? [];
+        $expertise = [];
+        foreach ($rawSkills as $skill) {
+            if (is_array($skill) || is_object($skill)) {
+                $skill = (array) $skill;
+                if (!empty($skill['name'])) {
+                    $expertise[] = $skill['name'];
+                }
+            } elseif (is_string($skill) && trim($skill) !== '') {
+                $expertise[] = trim($skill);
+            }
+        }
+
+        if (empty($expertise)) {
+            $expertise = $activeCourses->pluck('category.name')->filter()->unique()->values()->all();
+            if (empty($expertise) && !empty($trainer->profession)) {
+                $expertise = array_slice(array_filter(explode(' ', strtoupper($trainer->profession))), 0, 4);
+            }
+            if (empty($expertise)) {
+                $expertise = ['Data Science', 'Machine Learning', 'AI Ethics', 'Python', 'Neural Networks'];
+            }
+        }
 
         // Social links fallback
         $socials = [
@@ -170,6 +279,22 @@ class PublicTrainerProfileController extends Controller
             'twitter' => '#',
             'github' => '#',
         ];
+
+        // Tailored Philosophy & Outcomes based on profession
+        $philosophy = 'Fokus pada implementasi praktis dan studi kasus nyata untuk memastikan setiap peserta mampu menerapkan ilmu secara langsung di dunia kerja.';
+        $outcomes = 'Siswa akan mendapatkan pemahaman mendalam dan kemampuan untuk membangun solusi nyata yang skalabel di bidang ini.';
+        
+        $profession = strtolower((string) ($trainer->profession ?? ''));
+        if (str_contains($profession, 'data') || str_contains($profession, 'ai') || str_contains($profession, 'artificial intelligence') || str_contains($profession, 'machine learning')) {
+            $philosophy = 'Fokus pada pemahaman fundamental teori data/AI serta implementasi praktis pada studi kasus industri nyata.';
+            $outcomes = 'Siswa akan mendapatkan pemahaman mendalam tentang arsitektur AI/data dan kemampuan untuk membangun model yang cerdas dan skalabel.';
+        } elseif (str_contains($profession, 'design') || str_contains($profession, 'ui') || str_contains($profession, 'ux') || str_contains($profession, 'art')) {
+            $philosophy = 'Menekankan estetika, fungsionalitas, serta metodologi user-centric dalam setiap proses pembuatan karya kreatif.';
+            $outcomes = 'Siswa akan mampu merancang antarmuka yang intuitif dan memukau serta memahami alur pengalaman pengguna yang optimal.';
+        } elseif (str_contains($profession, 'developer') || str_contains($profession, 'programmer') || str_contains($profession, 'engineer') || str_contains($profession, 'coding')) {
+            $philosophy = 'Praktek langsung (hands-on coding), best practices industri, clean code, serta pemecahan masalah (problem solving) secara logis.';
+            $outcomes = 'Siswa akan menguasai pemrograman web/aplikasi modern, integrasi database, dan siap membangun sistem yang andal.';
+        }
 
         return view('public.trainer-profile', [
             'trainer' => $trainer,
@@ -181,8 +306,8 @@ class PublicTrainerProfileController extends Controller
             'experiences' => $experiences,
             'certificates' => $certificates,
             'feedbacks' => $feedbacks,
-            'philosophy' => 'Fokus pada implementasi praktis dan studi kasus nyata untuk memastikan setiap peserta mampu menerapkan ilmu secara langsung di dunia kerja.',
-            'outcomes' => 'Siswa akan mendapatkan pemahaman mendalam tentang arsitektur AI dan kemampuan untuk membangun solusi berbasis data yang skalabel.',
+            'philosophy' => $philosophy,
+            'outcomes' => $outcomes,
         ]);
     }
 }
