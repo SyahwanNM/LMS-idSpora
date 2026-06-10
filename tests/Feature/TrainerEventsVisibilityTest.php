@@ -332,4 +332,36 @@ class TrainerEventsVisibilityTest extends TestCase
         $response->assertSee('Estimasi Pendapatan');
         $response->assertSee('Rp 500.000');
     }
+
+    public function test_event_duplication_cleans_up_orphans(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin);
+
+        // 1. Create a template event
+        $originalEvent = $this->createBaseEvent();
+
+        $nextId = $originalEvent->id + 1;
+
+        // Create orphan records in DB manually for event_id = 2
+        // We use user_saved_events pivot table because it does not have a foreign key constraint,
+        // allowing us to insert an orphan record without violating SQLite FK constraints.
+        \Illuminate\Support\Facades\DB::table('user_saved_events')->insert([
+            'user_id' => $this->trainer->id,
+            'event_id' => $nextId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // 3. Call duplicate endpoint
+        $response = $this->post(route('admin.events.duplicate', $originalEvent->id));
+        $response->assertStatus(201);
+
+        $duplicatedEventId = $response->json('data.id');
+        $this->assertEquals($nextId, $duplicatedEventId);
+
+        // 4. Verify that the orphan records for the new event ID were cleaned up
+        $savedEventsCount = \Illuminate\Support\Facades\DB::table('user_saved_events')->where('event_id', $duplicatedEventId)->count();
+        $this->assertEquals(0, $savedEventsCount, 'Orphan user_saved_events should be cleared during duplication');
+    }
 }

@@ -185,7 +185,7 @@ class TrainerOperationalFlowTest extends TestCase
             'event_id' => $event1->id,
             'user_id' => User::factory()->create()->id,
             'rating' => 5.0,
-            'feedback' => 'Amazing session by co-speaker!',
+            'comment' => 'Amazing session by co-speaker!',
         ]);
 
         // Create another event (where trainer is NOT main trainer, but has accepted trainer assignment)
@@ -214,7 +214,7 @@ class TrainerOperationalFlowTest extends TestCase
             'event_id' => $event2->id,
             'user_id' => User::factory()->create()->id,
             'rating' => 4.0,
-            'feedback' => 'Great assignment execution!',
+            'comment' => 'Great assignment execution!',
         ]);
 
         // Calculate via Service

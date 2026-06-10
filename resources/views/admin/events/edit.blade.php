@@ -938,9 +938,9 @@
             syncLocationModeUI();
 
             // Speakers (from Trainer API)
-            const speakersContainer = document.getElementById('speakersContainer');
-            const addSpeakerBtn = document.getElementById('addSpeakerRow');
-            const speakerCombined = document.getElementById('speakerCombined');
+            const speakersContainer = document.querySelector('#editEventModal #speakersContainer');
+            const addSpeakerBtn = document.querySelector('#editEventModal #addSpeakerRow');
+            const speakerCombined = document.querySelector('#editEventModal #speakerCombined');
             const trainersUrl = @json(route('admin.api.trainers'));
             let trainersCache = null;
 

@@ -1220,6 +1220,9 @@
                 <div style="display:grid;gap:6px;">
                     <label for="avatar" style="font-size:12px;color:#334155;font-weight:600;">Avatar</label>
                     <input type="file" id="avatar" name="avatar" accept="image/*" style="font-size:12px;color:#334155;" />
+                    @error('avatar')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -1228,6 +1231,9 @@
                     <label for="name" style="font-size:12px;font-weight:600;color:#334155;">Nama</label>
                     <input id="name" name="name" type="text" value="{{ old('name', $trainer->name) }}" required
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('name')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1235,6 +1241,9 @@
                     <input id="academic_title" name="academic_title" type="text"
                         value="{{ old('academic_title', $trainer->academic_title) }}" placeholder="Contoh: S.Kom., M.Kom."
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('academic_title')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1242,6 +1251,9 @@
                     <input id="phone" name="phone" type="text" value="{{ old('phone', $trainer->phone) }}"
                         placeholder="Contoh: +6281234567890"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('phone')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1249,6 +1261,9 @@
                     <input id="profession" name="profession" type="text"
                         value="{{ old('profession', $trainer->profession) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('profession')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1256,6 +1271,9 @@
                     <input id="institution" name="institution" type="text"
                         value="{{ old('institution', $trainer->institution) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('institution')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -1264,6 +1282,9 @@
                 <input id="website" name="website" type="text" value="{{ old('website', $trainer->website) }}"
                     placeholder="contoh: https://example.com"
                     style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                @error('website')
+                    <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div style="display:grid;gap:6px;">
@@ -1271,6 +1292,9 @@
                 <input id="linkedin_url" name="linkedin_url" type="url"
                     value="{{ old('linkedin_url', $trainer->linkedin_url) }}" placeholder="https://www.linkedin.com/in/..."
                     style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                @error('linkedin_url')
+                    <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
@@ -1279,6 +1303,9 @@
                     <input id="bank_name" name="bank_name" type="text" value="{{ old('bank_name', $trainer->bank_name) }}"
                         placeholder="BCA / Mandiri / BNI / dll"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('bank_name')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1287,6 +1314,9 @@
                     <input id="bank_account_number" name="bank_account_number" type="text"
                         value="{{ old('bank_account_number', $trainer->bank_account_number) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('bank_account_number')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1295,6 +1325,9 @@
                     <input id="bank_account_holder" name="bank_account_holder" type="text"
                         value="{{ old('bank_account_holder', $trainer->bank_account_holder) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('bank_account_holder')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -1302,6 +1335,9 @@
                 <label for="bio" style="font-size:12px;font-weight:600;color:#334155;">Bio</label>
                 <textarea id="bio" name="bio" rows="5"
                     style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;">{{ old('bio', $trainer->bio) }}</textarea>
+                @error('bio')
+                    <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div style="display:flex;justify-content:flex-end;gap:8px;">

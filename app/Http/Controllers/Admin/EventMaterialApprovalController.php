@@ -318,6 +318,105 @@ class EventMaterialApprovalController extends Controller
         ]);
     }
 
+    private function syncEventMaterialStatus(int $eventId, int $trainerId): void
+    {
+        $event = Event::find($eventId);
+        if (!$event) {
+            return;
+        }
+
+        // Count module statuses
+        $modules = \App\Models\EventTrainerModule::where('event_id', $eventId)
+            ->where('trainer_id', $trainerId)
+            ->get();
+
+        $totalModules = $modules->count();
+        $approvedModules = $modules->where('status', 'approved')->count();
+        $rejectedModules = $modules->where('status', 'rejected')->count();
+        $pendingModules = $modules->whereIn('status', ['pending_review', 'pending'])->count();
+
+        // Determine assignment status
+        $assignment = TrainerAssignment::where('event_id', $eventId)
+            ->where('trainer_id', $trainerId)
+            ->first();
+
+        $newStatus = 'pending_review';
+
+        if ($totalModules === 0) {
+            // If no modules, check if assignment has material_path
+            if ($assignment && !empty($assignment->material_path)) {
+                $newStatus = 'pending_review';
+            } else {
+                $newStatus = 'pending';
+            }
+        } elseif ($pendingModules > 0) {
+            $newStatus = 'pending_review';
+        } elseif ($approvedModules === $totalModules) {
+            $newStatus = 'approved';
+        } elseif ($rejectedModules > 0) {
+            $newStatus = 'rejected';
+        }
+
+        if ($assignment) {
+            $payload = [
+                'material_status' => $newStatus,
+            ];
+
+            if ($newStatus === 'approved') {
+                $payload['material_approved_at'] = now();
+                $payload['material_approved_by'] = Auth::id();
+                $payload['material_rejection_reason'] = null;
+            } elseif ($newStatus === 'rejected') {
+                if (empty($assignment->material_rejection_reason)) {
+                    $firstRejected = $modules->where('status', 'rejected')->first();
+                    $payload['material_rejection_reason'] = $firstRejected?->rejection_reason;
+                }
+                $payload['material_rejected_at'] = now();
+                $payload['material_rejected_by'] = Auth::id();
+            } else { // pending_review / pending
+                $payload['material_approved_at'] = null;
+                $payload['material_approved_by'] = null;
+                $payload['material_rejected_at'] = null;
+                $payload['material_rejected_by'] = null;
+                $payload['material_rejection_reason'] = null;
+            }
+
+            $assignment->update($payload);
+        }
+
+        // Synchronize with Event if this trainer is the primary trainer
+        if ((int) $event->trainer_id === (int) $trainerId) {
+            $eventPayload = [
+                'material_status' => $newStatus,
+            ];
+
+            if ($newStatus === 'approved') {
+                $eventPayload['material_approved_at'] = now();
+                $eventPayload['material_approved_by'] = Auth::id();
+                $eventPayload['material_rejection_reason'] = null;
+                $eventPayload['module_verified_at'] = now();
+                $eventPayload['module_verified_by'] = Auth::id();
+            } elseif ($newStatus === 'rejected') {
+                if (empty($event->material_rejection_reason)) {
+                    $firstRejected = $modules->where('status', 'rejected')->first();
+                    $eventPayload['material_rejection_reason'] = $firstRejected?->rejection_reason;
+                }
+                $eventPayload['material_approved_at'] = null;
+                $eventPayload['material_approved_by'] = null;
+                $eventPayload['module_verified_at'] = null;
+                $eventPayload['module_verified_by'] = null;
+            } else { // pending_review / pending
+                $eventPayload['material_approved_at'] = null;
+                $eventPayload['material_approved_by'] = null;
+                $eventPayload['material_rejection_reason'] = null;
+                $eventPayload['module_verified_at'] = null;
+                $eventPayload['module_verified_by'] = null;
+            }
+
+            $event->update($eventPayload);
+        }
+    }
+
     /**
      * Approve event material and notify trainer
      */
@@ -343,19 +442,7 @@ class EventMaterialApprovalController extends Controller
                 'rejection_reason' => null,
             ]);
 
-            // Update event-level status if no more pending modules exist
-            $stillPending = \App\Models\EventTrainerModule::where('event_id', $event->id)
-                ->where('status', 'pending_review')->count();
-            if ($stillPending === 0) {
-                $event->update([
-                    'material_status'           => 'approved',
-                    'material_approved_at'      => now(),
-                    'material_approved_by'      => Auth::id(),
-                    'material_rejection_reason' => null,
-                    'module_verified_at'        => now(),
-                    'module_verified_by'        => Auth::id(),
-                ]);
-            }
+            $this->syncEventMaterialStatus($event->id, $etm->trainer_id);
 
             try {
                 TrainerNotification::create([
@@ -392,17 +479,7 @@ class EventMaterialApprovalController extends Controller
                     'rejection_reason' => null,
                 ]);
 
-            // Sync to event-level if this is the primary trainer
-            if ($event->trainer_id == $assignment->trainer_id) {
-                $event->update([
-                    'material_status'           => 'approved',
-                    'material_approved_at'      => now(),
-                    'material_approved_by'      => Auth::id(),
-                    'material_rejection_reason' => null,
-                    'module_verified_at'        => now(),
-                    'module_verified_by'        => Auth::id(),
-                ]);
-            }
+            $this->syncEventMaterialStatus($event->id, $assignment->trainer_id);
 
             try {
                 TrainerNotification::create([
@@ -492,11 +569,7 @@ class EventMaterialApprovalController extends Controller
                 'rejection_reason' => $rejectionReason,
             ]);
 
-            // Also update event-level status if this was the primary content
-            $event->update([
-                'material_status'           => 'rejected',
-                'material_rejection_reason' => $rejectionReason,
-            ]);
+            $this->syncEventMaterialStatus($event->id, $etm->trainer_id);
 
             try {
                 TrainerNotification::create([
@@ -531,12 +604,7 @@ class EventMaterialApprovalController extends Controller
                     'rejection_reason' => $rejectionReason,
                 ]);
 
-            if ($event->trainer_id == $assignment->trainer_id) {
-                $event->update([
-                    'material_status'           => 'rejected',
-                    'material_rejection_reason' => $rejectionReason,
-                ]);
-            }
+            $this->syncEventMaterialStatus($event->id, $assignment->trainer_id);
 
             try {
                 TrainerNotification::create([
@@ -588,5 +656,115 @@ class EventMaterialApprovalController extends Controller
         }
 
         return back()->with('success', 'Materi event berhasil ditolak. Trainer telah diberitahu.');
+    }
+
+    /**
+     * Revoke event material approval/rejection and set back to pending review
+     */
+    public function revoke(Request $request, Event $event)
+    {
+        if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
+            abort(403);
+        }
+
+        $moduleId = $request->input('module_id');
+        $assignmentId = $request->input('assignment_id');
+
+        if ($moduleId) {
+            $etm = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
+
+            $etm->update([
+                'status'           => 'pending_review',
+                'reviewed_by'      => null,
+                'reviewed_at'      => null,
+                'rejection_reason' => null,
+            ]);
+
+            $this->syncEventMaterialStatus($event->id, $etm->trainer_id);
+            
+            try {
+                TrainerNotification::create([
+                    'trainer_id' => $etm->trainer_id,
+                    'type'       => 'event_material_revoked',
+                    'title'      => 'Peninjauan Materi Ditarik',
+                    'message'    => 'Persetujuan/penolakan untuk modul "' . $etm->original_name . '" untuk event "' . $event->title . '" telah ditarik kembali oleh admin. Status kembali ke Peninjauan.',
+                    'data'       => ['entity_type' => 'event', 'entity_id' => (int) $event->id, 'url' => route('trainer.events.show', $event->id)],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            } catch (\Throwable $e) {}
+            
+            return back()->with('success', 'Keputusan untuk modul berhasil dibatalkan. Status dikembalikan ke Menunggu Tinjauan.');
+        } elseif ($assignmentId) {
+            $assignment = \App\Models\TrainerAssignment::where('id', $assignmentId)
+                ->where('event_id', $event->id)
+                ->firstOrFail();
+
+            // Set all modules associated with this trainer for this event back to pending_review
+            \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('trainer_id', $assignment->trainer_id)
+                ->update([
+                    'status'           => 'pending_review',
+                    'reviewed_by'      => null,
+                    'reviewed_at'      => null,
+                    'rejection_reason' => null,
+                ]);
+
+            $this->syncEventMaterialStatus($event->id, $assignment->trainer_id);
+
+            try {
+                TrainerNotification::create([
+                    'trainer_id' => $assignment->trainer_id,
+                    'type'       => 'event_material_revoked',
+                    'title'      => 'Peninjauan Materi Ditarik',
+                    'message'    => 'Persetujuan/penolakan materi untuk event "' . $event->title . '" telah ditarik kembali oleh admin. Status kembali ke Peninjauan.',
+                    'data'       => ['entity_type' => 'event', 'entity_id' => (int) $event->id, 'url' => route('trainer.events.show', $event->id)],
+                    'expires_at' => now()->addDays(30),
+                ]);
+            } catch (\Throwable $e) {}
+
+            return back()->with('success', 'Keputusan materi event berhasil dibatalkan. Status dikembalikan ke Menunggu Tinjauan.');
+        } else {
+            // Fallback Legacy
+            if ($event->trainer_id) {
+                // If there's an assignment
+                $assignment = \App\Models\TrainerAssignment::where('event_id', $event->id)
+                    ->where('trainer_id', $event->trainer_id)
+                    ->first();
+                
+                if ($assignment) {
+                    \App\Models\EventTrainerModule::where('event_id', $event->id)
+                        ->where('trainer_id', $assignment->trainer_id)
+                        ->update([
+                            'status'           => 'pending_review',
+                            'reviewed_by'      => null,
+                            'reviewed_at'      => null,
+                            'rejection_reason' => null,
+                        ]);
+                    $this->syncEventMaterialStatus($event->id, $assignment->trainer_id);
+                } else {
+                    $event->update([
+                        'material_status'           => 'pending_review',
+                        'material_approved_at'      => null,
+                        'material_approved_by'      => null,
+                        'material_rejection_reason' => null,
+                        'module_verified_at'        => null,
+                        'module_verified_by'        => null,
+                    ]);
+                }
+            } else {
+                $event->update([
+                    'material_status'           => 'pending_review',
+                    'material_approved_at'      => null,
+                    'material_approved_by'      => null,
+                    'material_rejection_reason' => null,
+                    'module_verified_at'        => null,
+                    'module_verified_by'        => null,
+                ]);
+            }
+
+            return back()->with('success', 'Keputusan materi event berhasil dibatalkan. Status dikembalikan ke Menunggu Tinjauan.');
+        }
     }
 }

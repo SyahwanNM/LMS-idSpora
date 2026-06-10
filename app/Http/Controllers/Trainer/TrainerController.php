@@ -1909,6 +1909,106 @@ class TrainerController extends Controller
         }
     }
 
+    private function syncEventMaterialStatus(int $eventId, int $trainerId): void
+    {
+        $event = \App\Models\Event::find($eventId);
+        if (!$event) {
+            return;
+        }
+
+        // Count module statuses
+        $modules = \App\Models\EventTrainerModule::where('event_id', $eventId)
+            ->where('trainer_id', $trainerId)
+            ->get();
+
+        $totalModules = $modules->count();
+        $approvedModules = $modules->where('status', 'approved')->count();
+        $rejectedModules = $modules->where('status', 'rejected')->count();
+        $pendingModules = $modules->whereIn('status', ['pending_review', 'pending'])->count();
+
+        // Determine assignment status
+        $assignment = \App\Models\TrainerAssignment::where('event_id', $eventId)
+            ->where('trainer_id', $trainerId)
+            ->first();
+
+        $newStatus = 'pending_review';
+
+        if ($totalModules === 0) {
+            $newStatus = 'pending';
+        } elseif ($pendingModules > 0) {
+            $newStatus = 'pending_review';
+        } elseif ($approvedModules === $totalModules) {
+            $newStatus = 'approved';
+        } elseif ($rejectedModules > 0) {
+            $newStatus = 'rejected';
+        }
+
+        // Get the latest remaining module path to set as primary path
+        $latestModule = $modules->sortByDesc('created_at')->first();
+        $latestPath = $latestModule ? $latestModule->path : null;
+
+        if ($assignment) {
+            $payload = [
+                'material_status' => $newStatus,
+                'material_path' => $latestPath,
+            ];
+
+            if ($newStatus === 'approved') {
+                $payload['material_approved_at'] = now();
+                $payload['material_approved_by'] = $assignment->material_approved_by ?: 1;
+                $payload['material_rejection_reason'] = null;
+            } elseif ($newStatus === 'rejected') {
+                if (empty($assignment->material_rejection_reason)) {
+                    $firstRejected = $modules->where('status', 'rejected')->first();
+                    $payload['material_rejection_reason'] = $firstRejected?->rejection_reason;
+                }
+                $payload['material_rejected_at'] = now();
+                $payload['material_rejected_by'] = $assignment->material_rejected_by ?: 1;
+            } else { // pending_review / pending
+                $payload['material_approved_at'] = null;
+                $payload['material_approved_by'] = null;
+                $payload['material_rejected_at'] = null;
+                $payload['material_rejected_by'] = null;
+                $payload['material_rejection_reason'] = null;
+            }
+
+            $assignment->update($payload);
+        }
+
+        // Synchronize with Event if this trainer is the primary trainer
+        if ((int) $event->trainer_id === (int) $trainerId) {
+            $eventPayload = [
+                'material_status' => $newStatus,
+                'module_path' => $latestPath,
+            ];
+
+            if ($newStatus === 'approved') {
+                $eventPayload['material_approved_at'] = now();
+                $eventPayload['material_approved_by'] = $event->material_approved_by ?: 1;
+                $eventPayload['material_rejection_reason'] = null;
+                $eventPayload['module_verified_at'] = now();
+                $eventPayload['module_verified_by'] = $event->module_verified_by ?: 1;
+            } elseif ($newStatus === 'rejected') {
+                if (empty($event->material_rejection_reason)) {
+                    $firstRejected = $modules->where('status', 'rejected')->first();
+                    $eventPayload['material_rejection_reason'] = $firstRejected?->rejection_reason;
+                }
+                $eventPayload['material_approved_at'] = null;
+                $eventPayload['material_approved_by'] = null;
+                $eventPayload['module_verified_at'] = null;
+                $eventPayload['module_verified_by'] = null;
+            } else { // pending_review / pending
+                $eventPayload['material_approved_at'] = null;
+                $eventPayload['material_approved_by'] = null;
+                $eventPayload['material_rejection_reason'] = null;
+                $eventPayload['module_verified_at'] = null;
+                $eventPayload['module_verified_by'] = null;
+            }
+
+            $event->update($eventPayload);
+        }
+    }
+
     public function saveEventQuiz(Request $request, $id)
     {
 
@@ -2795,12 +2895,7 @@ class TrainerController extends Controller
             ? ($event->material_status ?? '')
             : ($assignment->material_status ?? 'pending'));
 
-        if ($effectiveMaterialStatus === 'approved') {
-            return response()->json([
-                'success' => false,
-                'error' => 'Materi sudah disetujui admin, upload ulang tidak diizinkan.',
-            ], 422);
-        }
+
 
         $invitation = TrainerNotification::query()
             ->where('trainer_id', (int) Auth::id())
@@ -2823,6 +2918,113 @@ class TrainerController extends Controller
         $isRevisionUpload = $effectiveMaterialStatus === 'rejected';
         if ($isRevisionUpload) {
             $effectiveDeadline = null;
+        }
+
+        // Action: replace_module
+        if ($request->input('action') === 'replace_module') {
+            $moduleId = (int) $request->input('module_id');
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->where('trainer_id', $trainerId)
+                ->first();
+
+            if (!$module) {
+                return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
+            }
+
+            $request->validate([
+                'file' => 'nullable|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000',
+                'material_link' => 'nullable|string|max:2048',
+            ]);
+
+            if (!$request->hasFile('file') && !$request->filled('material_link')) {
+                return response()->json(['success' => false, 'error' => 'Tidak ada file atau link yang dikirim.']);
+            }
+
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $filepath = $file->storeAs('events/' . $event->id . '/materials/draft', $filename, 'public');
+
+                // Delete old file if exists
+                if ($module->path && !preg_match('#^https?://#i', $module->path)) {
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($module->path);
+                    }
+                }
+
+                $module->update([
+                    'original_name' => $file->getClientOriginalName(),
+                    'path' => $filepath,
+                    'status' => 'pending_review',
+                    'rejection_reason' => null,
+                ]);
+            } elseif ($request->filled('material_link')) {
+                $link = trim((string) $request->input('material_link'));
+                if (!preg_match('#^https?://#i', $link) && !preg_match('#^ftp://#i', $link)) {
+                    $link = 'https://' . $link;
+                }
+
+                $module->update([
+                    'original_name' => 'Link: ' . $link,
+                    'path' => $link,
+                    'status' => 'pending_review',
+                    'rejection_reason' => null,
+                ]);
+            }
+
+            // Sync to event/assignment level to trigger review again
+            if ($isPrimaryTrainer || !$assignment) {
+                $event->update([
+                    'material_status' => 'pending_review',
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejection_reason' => null,
+                ]);
+            } else {
+                $assignment->update([
+                    'material_status' => 'pending_review',
+                    'material_submitted_at' => now(),
+                    'material_approved_at' => null,
+                    'material_approved_by' => null,
+                    'material_rejection_reason' => null,
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berkas revisi berhasil diunggah dan status diubah ke Menunggu Review.',
+            ]);
+        }
+
+        // Action: delete_module
+        if ($request->input('action') === 'delete_module') {
+
+            $moduleId = (int) $request->input('module_id');
+            $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+                ->where('event_id', $event->id)
+                ->where('trainer_id', $trainerId)
+                ->first();
+
+            if (!$module) {
+                return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
+            }
+
+            // Delete old file if exists
+            if ($module->path && !preg_match('#^https?://#i', $module->path)) {
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($module->path);
+                }
+            }
+
+            $module->delete();
+
+            $this->syncEventMaterialStatus($event->id, $trainerId);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Materi berhasil dihapus.',
+            ]);
         }
 
         // Action: delete_draft
