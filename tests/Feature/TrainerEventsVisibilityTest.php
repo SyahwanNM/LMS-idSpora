@@ -179,4 +179,157 @@ class TrainerEventsVisibilityTest extends TestCase
         // Therefore, it should now automatically be complete
         $this->assertTrue($event->has_approved_modules);
     }
+
+    public function test_event_invitation_auto_created_on_duplicate(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        
+        // 1. Create a base event assigned to the trainer
+        $event = $this->createBaseEvent([
+            'trainer_id' => $this->trainer->id,
+            'speaker' => $this->trainer->name,
+        ]);
+
+        // Manually create the invitation for the original event (like the creation flow does)
+        \App\Models\TrainerNotification::create([
+            'trainer_id' => $this->trainer->id,
+            'type' => 'event_invitation',
+            'title' => 'Original Invitation',
+            'message' => 'Original',
+            'invitation_status' => 'pending',
+            'data' => [
+                'entity_type' => 'event',
+                'entity_id' => $event->id,
+                'url' => route('trainer.events.show', $event->id),
+            ],
+        ]);
+
+        // 2. Perform the duplicate event request as admin
+        $response = $this->actingAs($admin)->post(route('admin.events.duplicate', $event));
+        $response->assertStatus(201);
+        
+        $duplicatedEventId = $response->json('data.id');
+        $this->assertNotNull($duplicatedEventId);
+        $this->assertNotEquals($event->id, $duplicatedEventId);
+
+        // Verify that the duplicated event has the trainer_id and speaker name duplicated
+        $duplicatedEvent = Event::find($duplicatedEventId);
+        $this->assertEquals($this->trainer->id, $duplicatedEvent->trainer_id);
+        $this->assertEquals($this->trainer->name, $duplicatedEvent->speaker);
+
+        // Verify that no TrainerNotification of type event_invitation exists yet for the duplicated event
+        $originalNotificationCount = \App\Models\TrainerNotification::where('trainer_id', $this->trainer->id)
+            ->where('type', 'event_invitation')
+            ->count();
+        $this->assertEquals(1, $originalNotificationCount); // only the original one exists
+
+        // 3. Act as the trainer and access the dashboard or get notifications index
+        $this->actingAs($this->trainer);
+        
+        // Visit notifications endpoint or dashboard
+        $notifResponse = $this->get(route('trainer.notifications.index'));
+        $notifResponse->assertOk();
+
+        // 4. Assert that the notification has been dynamically created for the duplicated event!
+        $newNotifications = \App\Models\TrainerNotification::where('trainer_id', $this->trainer->id)
+            ->where('type', 'event_invitation')
+            ->get();
+        
+        $this->assertCount(2, $newNotifications);
+
+        // Find the one for the duplicated event
+        $duplicatedNotification = $newNotifications->first(function ($notif) use ($duplicatedEventId) {
+            return (int) data_get($notif->data, 'entity_id') === (int) $duplicatedEventId;
+        });
+
+        $this->assertNotNull($duplicatedNotification);
+        $this->assertEquals('pending', $duplicatedNotification->invitation_status);
+        $this->assertEquals('pending', data_get($duplicatedNotification->data, 'invitation_status'));
+        $this->assertEquals('event', data_get($duplicatedNotification->data, 'entity_type'));
+    }
+
+    public function test_notifications_index_renders_html_for_browser_and_json_for_ajax(): void
+    {
+        $this->actingAs($this->trainer);
+
+        // 1. Send normal GET request (browser request)
+        $htmlResponse = $this->get(route('trainer.notifications.index'));
+        $htmlResponse->assertOk();
+        $htmlResponse->assertSee('Daftar Undangan');
+        $htmlResponse->assertSee('Kembali ke Dashboard');
+
+        // 2. Send AJAX/JSON GET request
+        $jsonResponse = $this->getJson(route('trainer.notifications.index'));
+        $jsonResponse->assertOk();
+        $jsonResponse->assertJsonStructure([
+            'items',
+            'unread',
+        ]);
+    }
+
+    public function test_accept_event_invitation_with_scheme(): void
+    {
+        $this->actingAs($this->trainer);
+
+        $event = $this->createBaseEvent([
+            'trainer_id' => $this->trainer->id,
+            'speaker' => $this->trainer->name,
+        ]);
+
+        $notification = \App\Models\TrainerNotification::create([
+            'trainer_id' => $this->trainer->id,
+            'type' => 'event_invitation',
+            'title' => 'Event Invitation',
+            'message' => 'Please join',
+            'invitation_status' => 'pending',
+            'data' => [
+                'entity_type' => 'event',
+                'entity_id' => $event->id,
+                'url' => route('trainer.events.show', $event->id),
+            ],
+        ]);
+
+        $response = $this->post(route('trainer.notifications.accept-with-scheme', $notification), [
+            'scheme_type' => 2,
+            'legal_agreement_1' => '1',
+            'legal_agreement_2' => '1',
+        ]);
+
+        $response->assertRedirect(route('trainer.events.show', $event->id));
+        $response->assertSessionHas('success');
+
+        $notification->refresh();
+        $this->assertEquals('accepted', $notification->invitation_status);
+        $this->assertEquals(2, data_get($notification->data, 'scheme_type'));
+
+        $assignment = TrainerAssignment::where('trainer_id', $this->trainer->id)
+            ->where('event_id', $event->id)
+            ->first();
+        
+        $this->assertNotNull($assignment);
+        $this->assertEquals('accepted', $assignment->status);
+        $this->assertEquals(2, $assignment->scheme_type);
+    }
+
+    public function test_trainer_finance_page_renders_with_correct_data(): void
+    {
+        $this->actingAs($this->trainer);
+
+        // Create a trainer payment
+        \App\Models\TrainerPayment::create([
+            'user_id' => $this->trainer->id,
+            'type' => 'course_payout',
+            'trainer_name' => $this->trainer->name,
+            'title' => 'Pencairan Test',
+            'amount' => 500000,
+            'status' => 'approved',
+            'payment_date' => now(),
+        ]);
+
+        $response = $this->get(route('trainer.finance'));
+        $response->assertOk();
+        $response->assertSee('Total Pendapatan Aktual');
+        $response->assertSee('Estimasi Pendapatan');
+        $response->assertSee('Rp 500.000');
+    }
 }

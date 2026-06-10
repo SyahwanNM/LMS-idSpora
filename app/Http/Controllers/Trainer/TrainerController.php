@@ -129,6 +129,104 @@ class TrainerController extends Controller
         return in_array(mb_strtolower($trainerName), $this->parseTrainerSpeakerNames($event->speaker), true);
     }
 
+    private function ensureEventSpeakersSynced(Event $event): void
+    {
+        if (empty($event->speaker)) {
+            return;
+        }
+
+        // If event_speakers already exist for this event, do nothing
+        if ($event->speakers()->exists()) {
+            return;
+        }
+
+        // Otherwise, parse the speaker field and create event_speakers
+        $speakerNames = $this->parseTrainerSpeakerNames($event->speaker);
+        foreach ($speakerNames as $i => $name) {
+            $name = trim((string) $name);
+            if ($name === '') continue;
+
+            $trainer = \App\Models\User::where('role', 'trainer')
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+                ->first();
+
+            \App\Models\EventSpeaker::create([
+                'event_id'   => $event->id,
+                'trainer_id' => $trainer?->id,
+                'name'       => $name,
+                'salary'     => 0,
+                'order'      => $i,
+            ]);
+        }
+    }
+
+    public function ensureEventInvitationsExistForTrainer($trainer): void
+    {
+        if (!$trainer || $trainer->role !== 'trainer') {
+            return;
+        }
+
+        $trainerId = (int) $trainer->id;
+        $trainerName = (string) ($trainer->name ?? '');
+
+        // 1. Get all event IDs for which this trainer already has an event_invitation notification
+        $existingNotificationEventIds = TrainerNotification::query()
+            ->where('trainer_id', $trainerId)
+            ->where('type', 'event_invitation')
+            ->get()
+            ->map(function (TrainerNotification $notification) {
+                return (int) data_get($notification->data, 'entity_id', 0);
+            })
+            ->filter(fn($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        // 2. Query all events where the trainer is assigned (either trainer_id = trainerId or speaker contains trainerName)
+        // but which DO NOT have an invitation notification.
+        $missingEventsQuery = Event::query();
+        if (!empty($existingNotificationEventIds)) {
+            $missingEventsQuery->whereNotIn('id', $existingNotificationEventIds);
+        }
+
+        $missingEvents = $missingEventsQuery->where(function ($query) use ($trainerId, $trainerName) {
+            $query->where('trainer_id', $trainerId);
+            if ($trainerName !== '') {
+                $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+            }
+        })->get();
+
+        // 3. For each missing event, verify match, sync speakers, and create the TrainerNotification
+        foreach ($missingEvents as $event) {
+            if (!$this->trainerMatchesEvent($event, $trainerId, $trainerName)) {
+                continue;
+            }
+
+            // Sync event speakers if missing (e.g. for duplicated events)
+            $this->ensureEventSpeakersSynced($event);
+
+            $source = ((int) ($event->trainer_id ?? 0) === $trainerId) ? 'trainer_id' : 'speaker_match';
+            
+            // Create the invitation notification
+            TrainerNotification::create([
+                'trainer_id' => $trainerId,
+                'type' => 'event_invitation',
+                'title' => 'Undangan Menjadi Narasumber Event',
+                'message' => 'Anda diundang menjadi narasumber untuk event "' . $event->title . '".',
+                'invitation_status' => 'pending',
+                'data' => [
+                    'entity_type' => 'event',
+                    'entity_id' => $event->id,
+                    'url' => route('trainer.events.show', $event->id),
+                    'invitation_status' => 'pending',
+                    'invitation_source' => $source,
+                    'due_at' => $event->material_deadline ? Carbon::parse($event->material_deadline)->toIso8601String() : now()->addDays(7)->toIso8601String(),
+                    'material_deadline' => $event->material_deadline ? Carbon::parse($event->material_deadline)->toIso8601String() : null,
+                ],
+            ]);
+        }
+    }
+
     private function resolveEventSpeakerSalary(Event $event, int $trainerId): float
     {
         if ($trainerId <= 0) {
@@ -562,6 +660,7 @@ class TrainerController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
+        $this->ensureEventInvitationsExistForTrainer($user);
         $activityService = app(TrainerActivityService::class);
         $trainerActivity = $activityService->refresh($user);
         $availableContributionSchemes = $activityService->availableContributionSchemes($user);
@@ -1083,6 +1182,7 @@ class TrainerController extends Controller
     public function events(Request $request)
     {
         $user = \Illuminate\Support\Facades\Auth::user();
+        $this->ensureEventInvitationsExistForTrainer($user);
         $trainerId = (int) ($user->id ?? 0);
         $search = $request->query('search');
         $trainerName = trim((string) ($user->name ?? ''));
@@ -1199,8 +1299,10 @@ class TrainerController extends Controller
 
     public function eventDetail($id)
     {
-        $trainerId = \Illuminate\Support\Facades\Auth::id();
-        $trainerName = mb_strtolower(trim((string) (\Illuminate\Support\Facades\Auth::user()?->name ?? '')));
+        $user = \Illuminate\Support\Facades\Auth::user();
+        $this->ensureEventInvitationsExistForTrainer($user);
+        $trainerId = $user ? $user->id : 0;
+        $trainerName = mb_strtolower(trim((string) ($user?->name ?? '')));
 
         $pendingInvitation = TrainerNotification::query()
             ->where('trainer_id', (int) $trainerId)
@@ -1850,7 +1952,17 @@ class TrainerController extends Controller
     public function finance()
     {
         $trainerId = Auth::id();
+        $user = Auth::user();
+        if (!$user) {
+            abort(403);
+        }
 
+        // 1. Calculate actual total earned from approved payouts
+        $totalEarned = \App\Models\TrainerPayment::where('user_id', $trainerId)
+            ->where('status', 'approved')
+            ->sum('amount');
+
+        // 2. Fetch recent payments (Midtrans settled payments for courses/events of this trainer)
         $baseQuery = \App\Models\ManualPayment::query()
             ->with(['user:id,name', 'event:id,title,trainer_id', 'course:id,name,trainer_id'])
             ->where('status', 'settled')
@@ -1862,18 +1974,86 @@ class TrainerController extends Controller
                 });
             });
 
-        $totalEarned = (clone $baseQuery)->sum('amount');
         $payments = (clone $baseQuery)
             ->latest('created_at')
             ->paginate(10);
 
-        // Fetch disburse payouts for this trainer
+        // 3. Fetch disburse payouts for this trainer
         $payouts = \App\Models\TrainerPayment::with(['event', 'course'])
             ->where('user_id', $trainerId)
             ->latest()
             ->get();
 
-        return view('trainer.finance', compact('totalEarned', 'payments', 'payouts'));
+        // 4. Calculate Estimasi Course
+        $courses = $user->coursesAsTrainer()
+            ->withCount([
+                'enrollments as active_students' => function ($query) {
+                    $query->where('status', 'active');
+                },
+            ])
+            ->get()
+            ->map(function (Course $course) {
+                $activeStudents = (int) ($course->active_students ?? 0);
+                $price = (float) ($course->price ?? 0);
+                $schemePercent = (int) ($course->trainer_revenue_percent ?? 0);
+                $estimatedRevenue = $activeStudents > 0 && $price > 0 && $schemePercent > 0
+                    ? round(($activeStudents * $price * $schemePercent) / 100)
+                    : 0;
+
+                return [
+                    'course' => $course,
+                    'active_students' => $activeStudents,
+                    'scheme_percent' => $schemePercent,
+                    'estimated_revenue' => $estimatedRevenue,
+                ];
+            })
+            ->filter(fn($item) => $item['estimated_revenue'] > 0)
+            ->values();
+
+        // 5. Calculate Estimasi Event
+        $events = TrainerAssignment::query()
+            ->where('trainer_id', $trainerId)
+            ->where('status', 'accepted')
+            ->with([
+                'event' => function ($query) {
+                    $query->withCount([
+                        'registrations as active_participants_count' => function ($registrationQuery) {
+                            $registrationQuery->where('status', 'active');
+                        }
+                    ]);
+                }
+            ])
+            ->get()
+            ->map(function (TrainerAssignment $assignment) {
+                $schemeDefinitions = TrainerAssignment::getSchemeDefinitions();
+                $schemeType = (int) ($assignment->scheme_type ?? 0);
+                $scheme = $schemeDefinitions[$schemeType] ?? [];
+                $event = $assignment->event;
+
+                $eventPrice = (float) ($event->price ?? 0);
+                $activeParticipants = (int) ($event->active_participants_count ?? 0);
+                $schemePercent = (int) ($scheme['percentage'] ?? 0);
+                $feePerParticipant = $eventPrice > 0 && $schemePercent > 0
+                    ? round(($eventPrice * $schemePercent) / 100, 2)
+                    : 0;
+                $estimatedFee = $activeParticipants > 0 && $feePerParticipant > 0
+                    ? round($activeParticipants * $feePerParticipant, 2)
+                    : 0;
+
+                return [
+                    'event' => $event,
+                    'active_participants_count' => $activeParticipants,
+                    'fee_trainer' => $feePerParticipant,
+                    'estimated_fee' => $estimatedFee,
+                ];
+            })
+            ->filter(fn($item) => $item['estimated_fee'] > 0)
+            ->values();
+
+        // 6. Calculate total estimated earnings
+        $estimatedTotal = $courses->sum('estimated_revenue') + $events->sum('estimated_fee');
+
+        return view('trainer.finance', compact('totalEarned', 'payments', 'payouts', 'courses', 'events', 'estimatedTotal'));
     }
 
     /**

@@ -576,13 +576,25 @@ class TrainerManagementController extends Controller
             ->get(['id', 'name', 'status', 'approved_at', 'created_at']);
 
         $trainerEvents = Event::query()
-            ->where('trainer_id', $trainer->id)
+            ->where(function($query) use ($trainer) {
+                $query->where('trainer_id', $trainer->id)
+                    ->orWhereHas('speakers', function ($q) use ($trainer) {
+                        $q->where('trainer_id', $trainer->id);
+                    })
+                    ->orWhereHas('trainerAssignments', function ($q) use ($trainer) {
+                        $q->where('trainer_id', $trainer->id)
+                            ->where('status', 'accepted');
+                    });
+                if ($trainer->name) {
+                    $query->orWhere('speaker', 'like', '%' . $trainer->name . '%');
+                }
+            })
             ->withCount(['registrations' => function($q) {
                 $q->where('status', 'active');
             }])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
-            ->get(['id', 'title', 'jenis', 'event_date', 'created_at', 'certificate_template']);
+            ->get(['id', 'title', 'jenis', 'event_date', 'created_at', 'certificate_template', 'material_deadline', 'trainer_id', 'speaker']);
 
         $trainerCertificates = TrainerCertificate::query()
             ->with(['issuer:id,name', 'certifiable'])
@@ -601,7 +613,19 @@ class TrainerManagementController extends Controller
 
         $eventFeedback = \App\Models\Feedback::query()
             ->whereHas('event', function($q) use ($trainer) {
-                $q->where('trainer_id', $trainer->id);
+                $q->where(function($query) use ($trainer) {
+                    $query->where('trainer_id', $trainer->id)
+                        ->orWhereHas('speakers', function ($sq) use ($trainer) {
+                            $sq->where('trainer_id', $trainer->id);
+                        })
+                        ->orWhereHas('trainerAssignments', function ($aq) use ($trainer) {
+                            $aq->where('trainer_id', $trainer->id)
+                                ->where('status', 'accepted');
+                        });
+                    if ($trainer->name) {
+                        $query->orWhere('speaker', 'like', '%' . $trainer->name . '%');
+                    }
+                });
             })
             ->with(['user:id,name', 'event:id,title'])
             ->latest()
