@@ -421,6 +421,7 @@ class ResellerController extends Controller
         ]);
 
         $user = Auth::user();
+        $accountNumber = str_replace(' ', '', $request->account_number);
 
         // 2. Cek apakah saldo user cukup?
         if ($user->wallet_balance < $request->amount) {
@@ -430,7 +431,7 @@ class ResellerController extends Controller
         }
 
         // 3. Proses Transaksi (Database Transaction)
-        DB::transaction(function () use ($request, $user) {
+        DB::transaction(function () use ($request, $user, $accountNumber) {
 
             // A. Kurangi saldo user (Wallet Balance)
             $user->wallet_balance = $user->wallet_balance - $request->amount;
@@ -441,7 +442,7 @@ class ResellerController extends Controller
                 'user_id' => $user->id,
                 'amount' => $request->amount,
                 'bank_name' => $request->bank_name,
-                'account_number' => $request->account_number,
+                'account_number' => $accountNumber,
                 'account_holder' => $request->account_holder,
                 'status' => 'pending' // Status awalnya pending, nanti admin yang update ke 'paid' atau 'rejected'
             ]);
@@ -504,6 +505,19 @@ class ResellerController extends Controller
             $query->where('status', $status);
         }
 
+        if ($date_range = request('date_range')) {
+            $dates = explode(' - ', $date_range);
+            if (count($dates) === 2) {
+                try {
+                    $start = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[0]))->startOfDay();
+                    $end = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[1]))->endOfDay();
+                    $query->whereBetween('created_at', [$start, $end]);
+                } catch (\Exception $e) {
+                    // Ignore invalid format
+                }
+            }
+        }
+
         $allReferrals = $user->referrals()->with('referredUser')->latest()->get();
         $history = $query->paginate(12)->withQueryString();
 
@@ -534,6 +548,19 @@ class ResellerController extends Controller
 
         if ($status = request('status')) {
             $query->where('status', $status);
+        }
+
+        if ($date_range = request('date_range')) {
+            $dates = explode(' - ', $date_range);
+            if (count($dates) === 2) {
+                try {
+                    $start = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[0]))->startOfDay();
+                    $end = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[1]))->endOfDay();
+                    $query->whereBetween('created_at', [$start, $end]);
+                } catch (\Exception $e) {
+                    // Ignore invalid format
+                }
+            }
         }
 
         $allWithdrawals = $user->withdrawals()->latest()->get();

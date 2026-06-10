@@ -37,6 +37,7 @@
         
         .footer { margin-top: 50px; text-align: center; color: #999; font-size: 10px; border-top: 1px solid #EEE; padding-top: 20px; }
 
+        
         /* Sembunyikan tombol print saat dicetak */
         @media print {
             .no-print { display: none; }
@@ -83,12 +84,14 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>ID & Bank</th>
-                    <th>Penerima / Rekening</th>
+                    <th>ID Penarikan</th>
                     <th>Tanggal Pengajuan</th>
-                    <th>Status</th>
-                    <th>Tanggal Proses</th>
-                    <th style="text-align: right;">Nominal</th>
+                    <th>Pengguna</th>
+                    <th>Bank Tujuan</th>
+                    <th>Nomor Rekening</th>
+                    <th style="text-align: right;">Total Penarikan</th>
+                    <th style="text-align: center;">Status</th>
+                    <th>Tanggal Diproses</th>
                 </tr>
             </thead>
             <tbody>
@@ -96,18 +99,36 @@
                 @php 
                     $isRejected = strtolower($wd->status) == 'rejected'; 
                     $strikeStyle = $isRejected ? 'text-decoration: line-through; opacity: 0.5;' : '';
+                    
+                    // Mask the account number
+                    $accountLen = strlen($wd->account_number);
+                    if ($accountLen > 4) {
+                        $maskedRaw = str_repeat('•', $accountLen - 4) . substr($wd->account_number, -4);
+                    } else {
+                        $maskedRaw = $wd->account_number;
+                    }
+                    preg_match_all('/.{1,4}/u', $maskedRaw, $matches);
+                    $maskedAccount = implode(' ', $matches[0]);
                 @endphp
                 <tr>
                     <td>
                         <div style="font-weight: bold; {{ $strikeStyle }}">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
                         <div style="color: #666; font-size: 11px; {{ $strikeStyle }}">{{ $wd->bank_name }}</div>
                     </td>
-                    <td>
-                        <div style="font-weight: bold; {{ $strikeStyle }}">{{ $wd->account_holder }}</div>
-                        <div style="color: #666; font-size: 11px; {{ $strikeStyle }}">{{ $wd->account_number }}</div>
+                    <td style="color: #666; font-size: 11px; {{ $strikeStyle }}">
+                        <div>{{ $wd->created_at->format('d M Y') }}</div>
+                        <div>{{ $wd->created_at->format('H:i') }} WIB</div>
                     </td>
-                    <td style="color: #666; font-size: 11px; {{ $strikeStyle }}">{{ $wd->created_at->format('d/m/Y H:i') }}</td>
+                    <td style="font-weight: bold; {{ $strikeStyle }}">{{ $wd->user->name ?? $user->name }}</td>
+                    <td style="color: #333; {{ $strikeStyle }}">{{ $wd->bank_name }}</td>
                     <td>
+                        <div style="font-weight: bold; {{ $strikeStyle }}">{{ $maskedAccount }}</div>
+                        <div style="color: #666; font-size: 11px; {{ $strikeStyle }}">A/n. {{ $wd->account_holder }}</div>
+                    </td>
+                    <td style="text-align: right; font-weight: bold; {{ $isRejected ? 'text-decoration: line-through; opacity: 0.5; color: #dc3545;' : 'color: #198754;' }}">
+                        Rp {{ number_format($wd->amount, 0, ',', '.') }}
+                    </td>
+                    <td style="text-align: center;">
                         @if(strtolower($wd->status) == 'approved')
                             <span class="badge-success">APPROVED</span>
                         @elseif($isRejected)
@@ -118,18 +139,16 @@
                     </td>
                     <td style="color: #666; font-size: 11px;">
                         @if($wd->status != 'pending')
-                            {{ $wd->updated_at->format('d/m/Y H:i') }}
+                            <div>{{ $wd->updated_at->format('d M Y') }}</div>
+                            <div>{{ $wd->updated_at->format('H:i') }} WIB</div>
                         @else
-                            <span style="font-style: italic;">Belum diproses</span>
+                            <span style="font-style: italic; color: #999;">Belum diproses</span>
                         @endif
-                    </td>
-                    <td style="text-align: right; font-weight: bold; {{ $isRejected ? 'text-decoration: line-through; opacity: 0.5; color: #dc3545;' : '' }}">
-                        Rp {{ number_format($wd->amount, 0, ',', '.') }}
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="text-align: center; color: #999;">Belum ada riwayat penarikan dana.</td>
+                    <td colspan="8" style="text-align: center; color: #999; padding: 30px;">Belum ada riwayat penarikan dana.</td>
                 </tr>
                 @endforelse
             </tbody>

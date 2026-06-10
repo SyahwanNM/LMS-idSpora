@@ -1,5 +1,3 @@
-{{-- @include ('partials.navbar-after-login') --}}
-@include ('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -117,6 +115,7 @@
 </head>
 
 <body>
+    @include ('partials.navbar-after-login')
     <div class="hero-box" aria-hidden="true"></div>
     <main class="pt-4 mt-4">
         <!-- Navbar -->
@@ -452,8 +451,9 @@
                         <div class="d-flex gap-2 align-items-center flex-wrap">
                             <form action="{{ route('reseller.index') }}" method="GET" class="d-flex m-0">
                                 <div class="input-group input-group-sm">
-                                    <input type="text" name="search" class="form-control" placeholder="Cari program..." value="{{ request('search') }}">
-                                    <button class="btn btn-outline-secondary bg-white" type="submit"><i class="bi bi-search"></i></button>
+                                    <label for="searchProgram" class="visually-hidden">Cari program</label>
+                                    <input type="text" id="searchProgram" name="search" class="form-control" placeholder="Cari program..." value="{{ request('search') }}">
+                                    <button class="btn btn-outline-secondary bg-white" type="submit" aria-label="Cari" title="Cari"><i class="bi bi-search"></i></button>
                                 </div>
                             </form>
                             <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle px-3 py-2">
@@ -837,12 +837,14 @@
                         <table class="table align-middle table-hover mb-0">
                             <thead>
                                 <tr class="text-muted small">
-                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">ID Penarikan</th>
-                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Nama Pemilik</th>
-                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Tanggal Pengajuan</th>
-                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Total</th>
-                                    <th class="border-0 py-3 text-center text-secondary" style="background-color: #f8fafc; font-weight: 600; width: 150px;">Status</th>
-                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Tanggal Diproses</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600; border-radius: 8px 0 0 8px;">ID Penarikan</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Tanggal Pengajuan</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Pengguna</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Bank Tujuan</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Nomor Rekening</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Total Penarikan</th>
+                                    <th class="border-0 py-3 text-center text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Status</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600; border-radius: 0 8px 8px 0;">Tanggal Diproses</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -853,36 +855,58 @@
                                         
                                         // Set status badge style
                                         if ($status === 'approved') {
-                                            $statusBadge = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2.5 py-1.5 small d-inline-flex align-items-center gap-1" style="font-weight: 500;"><i class="bi bi-check-circle-fill"></i> Approved</span>';
+                                            $statusBadge = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-check-circle-fill"></i> Approved</span>';
                                         } elseif ($isRejected) {
-                                            $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2.5 py-1.5 small d-inline-flex align-items-center gap-1" style="font-weight: 500;"><i class="bi bi-x-circle-fill"></i> Rejected</span>';
+                                            $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-x-circle-fill"></i> Rejected</span>';
                                         } else {
-                                            $statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill px-2.5 py-1.5 small d-inline-flex align-items-center gap-1" style="font-weight: 500;"><i class="bi bi-clock-fill"></i> Pending</span>';
+                                            $statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-clock-fill"></i> Pending</span>';
                                         }
+                                        
+                                        // Mask and format account number with spacing
+                                        $accountLen = strlen($wd->account_number);
+                                        if ($accountLen > 4) {
+                                            $maskedRaw = str_repeat('•', $accountLen - 4) . substr($wd->account_number, -4);
+                                        } else {
+                                            $maskedRaw = $wd->account_number;
+                                        }
+                                        preg_match_all('/.{1,4}/u', $maskedRaw, $matches);
+                                        $maskedFormatted = implode(' ', $matches[0]);
                                     @endphp
                                     <tr>
                                         <td class="py-3">
-                                            <div class="fw-semibold text-dark {{ $isRejected ? 'text-decoration-line-through opacity-75' : '' }}">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
-                                            <small class="text-muted">{{ $wd->bank_name }}</small>
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'opacity-50' : '' }}">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
                                         </td>
                                         <td class="py-3">
-                                            <div class="fw-semibold text-dark {{ $isRejected ? 'text-decoration-line-through opacity-75' : '' }}">{{ $wd->account_holder }}</div>
-                                            <small class="text-muted">{{ $wd->account_number }}</small>
+                                            <div class="text-dark fw-medium {{ $isRejected ? 'opacity-50' : '' }}">{{ $wd->created_at->format('d M Y') }}</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ $wd->created_at->format('H:i') }} WIB</small>
                                         </td>
                                         <td class="py-3">
-                                            <div class="text-dark {{ $isRejected ? 'text-decoration-line-through opacity-75' : '' }}">{{ $wd->created_at->format('d M Y') }}</div>
-                                            <small class="text-muted">{{ $wd->created_at->format('H:i') }} WIB</small>
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'opacity-50' : '' }}">{{ $wd->user->name ?? Auth::user()->name }}</div>
                                         </td>
                                         <td class="py-3">
-                                            <div class="fw-semibold {{ $isRejected ? 'text-danger text-decoration-line-through opacity-75' : 'text-dark' }}">Rp {{ number_format($wd->amount, 0, ',', '.') }}</div>
+                                            <div class="d-flex align-items-center gap-2 {{ $isRejected ? 'opacity-50' : '' }}">
+                                                <i class="bi bi-bank text-primary fs-5"></i>
+                                                <span class="fw-medium text-dark">{{ $wd->bank_name }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'opacity-50' : '' }}">
+                                                {{ $maskedFormatted }}
+                                            </div>
+                                            <small class="text-muted d-block" style="font-size: 0.75rem;">A/n. {{ $wd->account_holder }}</small>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-bold text-success {{ $isRejected ? 'text-danger text-decoration-line-through opacity-50' : '' }}" style="font-size: 1.05rem;">
+                                                Rp {{ number_format($wd->amount, 0, ',', '.') }}
+                                            </div>
                                         </td>
                                         <td class="py-3 text-center">
                                             {!! $statusBadge !!}
                                         </td>
                                         <td class="py-3">
-                                            @if($wd->status !== 'pending')
-                                                <div class="text-dark">{{ $wd->updated_at->format('d M Y') }}</div>
-                                                <small class="text-muted">{{ $wd->updated_at->format('H:i') }} WIB</small>
+                                            @if($status !== 'pending')
+                                                <div class="text-dark fw-medium">{{ $wd->updated_at->format('d M Y') }}</div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">{{ $wd->updated_at->format('H:i') }} WIB</small>
                                             @else
                                                 <span class="text-muted fst-italic small">Belum diproses</span>
                                             @endif
@@ -914,7 +938,7 @@
 
                         <div class="accordion" id="faqAccordion">
 
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="display-2 accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq1">
@@ -925,10 +949,7 @@
                                     <div class="accordion-body text-muted small">
                                         Dana dapat ditarik melalui menu "Withdraw" di dashboard reseller.
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                                    </div>
                                 <h2 class="display-2 accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq2">
@@ -940,9 +961,7 @@
                                         Komisi masuk setelah pembelian berhasil & tidak refund.
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq3">
@@ -954,9 +973,7 @@
                                         Link berlaku tanpa batas selama akun Anda aktif.
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq4">
@@ -968,9 +985,7 @@
                                         Tidak, referral untuk pembelian orang lain.
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq5">
@@ -982,7 +997,6 @@
                                         Tingkatkan jumlah referral sesuai persyaratan tier.
                                     </div>
                                 </div>
-                            </div>
 
                         </div>
 

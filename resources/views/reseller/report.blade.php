@@ -88,7 +88,7 @@
             <thead>
                 <tr>
                     <th>Tanggal</th>
-                    <th>Pengguna Baru</th>
+                    <th>Pengguna</th>
                     <th>Detail Transaksi</th>
                     <th style="text-align: center;">Status</th>
                     <th style="text-align: right;">Komisi</th>
@@ -101,9 +101,15 @@
                     $strikeStyle = $isRejected ? 'text-decoration: line-through; opacity: 0.5;' : '';
                 @endphp
                 <tr>
-                    <td style="color: #666; font-size: 11px; {{ $strikeStyle }}">{{ $item->created_at->format('d/m/Y') }}</td>
-                    <td style="font-weight: bold; {{ $strikeStyle }}">{{ $item->referredUser->name ?? 'User Anonim' }}</td>
-                    <td style="color: #666; {{ $strikeStyle }}">{{ $item->description ?? 'Pembelian Event/Course' }}</td>
+                    <td style="color: #666; font-size: 11px; {{ $strikeStyle }}">
+                        <div>{{ $item->created_at->format('d M Y') }}</div>
+                        <div style="font-size: 10px; color: #999;">{{ $item->created_at->format('H:i') }} WIB</div>
+                    </td>
+                    <td style="font-weight: bold; {{ $strikeStyle }}">
+                        <div>{{ $item->referredUser->name ?? 'Pengguna Baru' }}</div>
+                        <div style="font-weight: normal; font-size: 11px; color: #666;">{{ $item->referredUser->email ?? '-' }}</div>
+                    </td>
+                    <td style="color: #333; {{ $strikeStyle }}">{{ $item->description ?? 'Pembelian Event/Course' }}</td>
                     <td style="text-align: center;">
                         @if(strtolower($item->status) === 'paid')
                             <span class="badge-success">PAID</span>
@@ -113,13 +119,13 @@
                             <span class="badge-warning">PENDING</span>
                         @endif
                     </td>
-                    <td style="text-align: right; font-weight: bold; {{ $isRejected ? 'text-decoration: line-through; opacity: 0.5; color: #dc3545;' : '' }}">
+                    <td style="text-align: right; font-weight: bold; {{ $isRejected ? 'text-decoration: line-through; opacity: 0.5; color: #dc3545;' : 'color: #198754;' }}">
                         {{ $isRejected ? '-' : '+' }}Rp {{ number_format($item->amount, 0, ',', '.') }}
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; color: #999;">Belum ada riwayat transaksi referral.</td>
+                    <td colspan="5" style="text-align: center; color: #999; padding: 30px;">Belum ada riwayat transaksi referral.</td>
                 </tr>
                 @endforelse
             </tbody>

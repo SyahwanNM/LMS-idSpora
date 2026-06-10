@@ -91,8 +91,8 @@
                 <div class="row g-3">
                     <div class="col-7">
                         <label for="account_number" class="form-label fw-light small text-muted">Nomor Rekening</label>
-                        <input type="number" class="form-control bg-light border-0 py-2" id="account_number"
-                            name="account_number" placeholder="Contoh: 1234567890" required>
+                        <input type="text" class="form-control bg-light border-0 py-2" id="account_number"
+                            name="account_number" placeholder="Contoh: 1234 5678 90" required>
                     </div>
                     <div class="col-5">
                         <label for="account_holder" class="form-label fw-light small text-muted">Atas Nama</label>
@@ -100,7 +100,7 @@
                             name="account_holder" placeholder="Nama Pemilik" required>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label fw-light small text-muted">Jumlah Penarikan</label>
+                        <label for="withdrawAmount" class="form-label fw-light small text-muted">Jumlah Penarikan</label>
                         <div class="input-group">
                             <span class="input-group-text">Rp</span>
                             <input type="number" class="form-control" id="withdrawAmount" name="amount" placeholder="0">
@@ -213,6 +213,19 @@
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const accountInput = document.getElementById('account_number');
+        if (accountInput) {
+            accountInput.addEventListener('input', function(e) {
+                // Remove all non-digits
+                let value = e.target.value.replace(/\D/g, '');
+                // Group in chunks of 4 digits
+                let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                e.target.value = formatted;
+            });
+        }
+    });
+
     // Menyimpan saldo user di variabel JS agar mudah diakses
     const maxBalance = {{ auth()->user()->wallet_balance ?? 0 }};
 
