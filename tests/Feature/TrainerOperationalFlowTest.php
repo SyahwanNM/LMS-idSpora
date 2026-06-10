@@ -152,4 +152,90 @@ class TrainerOperationalFlowTest extends TestCase
             'type' => 'trainer_strike_reset',
         ]);
     }
+
+    /** @test */
+    public function admin_trainer_detail_and_activity_service_include_cospeaker_and_assigned_events_feedback(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $trainer = User::factory()->create(['role' => 'trainer']);
+
+        // Create main event (where trainer is NOT main trainer, but co-speaker)
+        $event1 = \App\Models\Event::create([
+            'title' => 'Co-speaker Event',
+            'image' => 'uploads/events/test.jpg',
+            'speaker' => 'Guest Speaker',
+            'description' => 'Test event description',
+            'location' => 'Online',
+            'price' => 0,
+            'event_time' => '10:00:00',
+            'event_date' => now()->subDay()->toDateString(),
+            'material_status' => 'approved',
+        ]);
+
+        \App\Models\EventSpeaker::create([
+            'event_id' => $event1->id,
+            'trainer_id' => $trainer->id,
+            'name' => $trainer->name,
+            'salary' => 1000,
+            'order' => 0,
+        ]);
+
+        // Create feedback for event1
+        \App\Models\Feedback::create([
+            'event_id' => $event1->id,
+            'user_id' => User::factory()->create()->id,
+            'rating' => 5.0,
+            'feedback' => 'Amazing session by co-speaker!',
+        ]);
+
+        // Create another event (where trainer is NOT main trainer, but has accepted trainer assignment)
+        $event2 = \App\Models\Event::create([
+            'title' => 'Assigned Event',
+            'image' => 'uploads/events/test.jpg',
+            'speaker' => 'Guest Speaker',
+            'description' => 'Test event description',
+            'location' => 'Online',
+            'price' => 0,
+            'event_time' => '10:00:00',
+            'event_date' => now()->subDay()->toDateString(),
+            'material_status' => 'approved',
+        ]);
+
+        \App\Models\TrainerAssignment::create([
+            'trainer_id' => $trainer->id,
+            'event_id' => $event2->id,
+            'scheme_type' => 1,
+            'status' => 'accepted',
+            'sla_upload_deadline' => now()->addDays(3),
+        ]);
+
+        // Create feedback for event2
+        \App\Models\Feedback::create([
+            'event_id' => $event2->id,
+            'user_id' => User::factory()->create()->id,
+            'rating' => 4.0,
+            'feedback' => 'Great assignment execution!',
+        ]);
+
+        // Calculate via Service
+        /** @var TrainerActivityService $activityService */
+        $activityService = app(TrainerActivityService::class);
+        $summary = $activityService->refresh($trainer);
+
+        // Average rating should be (5 + 4) / 2 = 4.5
+        $this->assertEquals(4.5, (float) $summary['average_rating']);
+
+        // Check via Admin Controller
+        $response = $this->actingAs($admin)->get(route('admin.trainer.show', $trainer));
+
+        $response->assertOk();
+        $response->assertViewHas('trainerEvents', function ($events) use ($event1, $event2) {
+            return $events->contains('id', $event1->id) && $events->contains('id', $event2->id);
+        });
+        $response->assertViewHas('eventFeedback', function ($feedbacks) use ($event1, $event2) {
+            return $feedbacks->count() === 2;
+        });
+        $response->assertViewHas('averageRating', 4.5);
+    }
 }
+
