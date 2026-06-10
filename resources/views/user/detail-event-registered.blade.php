@@ -1729,8 +1729,8 @@
                                                             @endif
                                                         </div>
                                                     </a>
-                                                    @if(!empty($mod->feedback_link))
-                                                        <a href="{{ $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                    @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
                                                            class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
                                                            style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
                                                            onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
@@ -1777,8 +1777,8 @@
                                                             @endif
                                                         </div>
                                                     </a>
-                                                    @if(!empty($mod->feedback_link))
-                                                        <a href="{{ $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                    @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
                                                            class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
                                                            style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
                                                            onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">

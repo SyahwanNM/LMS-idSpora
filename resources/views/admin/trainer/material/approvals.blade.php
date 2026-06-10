@@ -741,12 +741,12 @@
                                     <div class="course-info">
                                         <div>
                                             <h6 class="course-title">
-                                                {{ \Illuminate\Support\Str::limit($event->title ?? '-', 48) }}
+                                                {{ \Illuminate\Support\Str::limit($event->event->title ?? '-', 48) }}
                                             </h6>
                                             <div class="text-muted" style="font-size:.75rem;">
-                                                {{ $event->jenis ?? 'Event' }}
-                                                @if($event->event_date)
-                                                    • {{ $event->event_date->format('d M Y') }}
+                                                {{ $event->event->jenis ?? 'Event' }}
+                                                @if($event->event->event_date)
+                                                    • {{ $event->event->event_date->format('d M Y') }}
                                                 @endif
                                             </div>
                                         </div>
@@ -771,13 +771,13 @@
 
                                 <td>
                                     <div style="font-weight:700;color:#334155;">
-                                        {{ $event->trainerModules->count() }} Dokumen Modul
+                                        {{ $event->event->trainerModules->where('trainer_id', $event->trainer_id)->count() }} Dokumen Modul
                                     </div>
                                 </td>
 
                                 <td>
                                     @php
-                                        $latestSubmit = $event->trainerModules->max('created_at');
+                                        $latestSubmit = $event->event->trainerModules->where('trainer_id', $event->trainer_id)->max('created_at');
                                     @endphp
                                     <div style="font-weight:700;color:#334155;">
                                         {{ $latestSubmit ? \Carbon\Carbon::parse($latestSubmit)->format('d M Y') : ($event->updated_at?->format('d M Y') ?? '-') }}
@@ -795,7 +795,7 @@
 
                                 <td>
                                     @php
-                                        $eventDeadline = $event->material_deadline;
+                                        $eventDeadline = $event->event->material_deadline;
                                         $eventLate = $eventDeadline ? now()->gt($eventDeadline) : false;
                                     @endphp
 
@@ -809,7 +809,7 @@
                                 </td>
 
                                 <td class="text-end">
-                                    <a href="{{ route('admin.event-material.show', $event->id) }}"
+                                    <a href="{{ route('admin.event-material.show', $event->event_id) }}?assignment_id={{ $event->id }}"
                                         class="btn-action btn-primary-action">
                                         Tinjau
                                         <i class="bi bi-play-fill"></i>

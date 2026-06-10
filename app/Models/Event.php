@@ -95,6 +95,29 @@ class Event extends Model
         'module_path' => 'array', // Added to support multiple trainer modules
     ];
 
+    public function getHasApprovedModulesAttribute(): bool
+    {
+        $assignedTrainerIds = collect();
+        if ($this->trainer_id) {
+            $assignedTrainerIds->push((int) $this->trainer_id);
+        }
+        $speakerTrainerIds = $this->speakers()->whereNotNull('trainer_id')->pluck('trainer_id')->map(fn($id) => (int) $id);
+        $assignedTrainerIds = $assignedTrainerIds->merge($speakerTrainerIds)->unique()->values();
+
+        if ($assignedTrainerIds->isNotEmpty()) {
+            $approvedTrainerIds = $this->approvedTrainerModules()->distinct('trainer_id')->pluck('trainer_id')->map(fn($id) => (int) $id)->toArray();
+            
+            foreach ($assignedTrainerIds as $tId) {
+                if (!in_array($tId, $approvedTrainerIds, true)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return true;
+    }
+
     /**
      * Count how many operational documents have been uploaded.
      */
@@ -102,16 +125,7 @@ class Event extends Model
     {
         $hasVbg = !empty($this->vbg_path);
 
-        // Module complete only when ALL registered speakers have an approved module.
-        // Fallback to legacy check when no speakers are registered in event_speakers table.
-        $speakerCount  = $this->speakers()->count();
-        $approvedCount = $this->approvedTrainerModules()->distinct('trainer_id')->count('trainer_id');
-
-        if ($speakerCount > 0) {
-            $hasModule = $approvedCount >= $speakerCount;
-        } else {
-            $hasModule = !empty($this->module_path) || $approvedCount > 0;
-        }
+        $hasModule = $this->has_approved_modules;
 
         $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
 

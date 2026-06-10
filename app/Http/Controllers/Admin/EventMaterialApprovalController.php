@@ -236,8 +236,17 @@ class EventMaterialApprovalController extends Controller
      */
     public function show(Request $request, Event $event)
     {
-        $event->load(['trainerModules.trainer', 'trainerModules.reviewer', 'trainer']);
         $assignment = $this->resolveTargetAssignment($event, $request);
+        $targetTrainerId = $assignment?->trainer_id ?: $event->trainer_id;
+
+        $event->load([
+            'trainerModules' => function ($q) use ($targetTrainerId) {
+                $q->where('trainer_id', $targetTrainerId);
+            },
+            'trainerModules.trainer',
+            'trainerModules.reviewer',
+            'trainer'
+        ]);
 
         $materialPath = $assignment?->material_path ?: $event->module_path;
         if ($event->trainerModules->isEmpty() && empty($materialPath)) {
@@ -372,6 +381,17 @@ class EventMaterialApprovalController extends Controller
                 'material_rejection_reason' => null,
             ]);
 
+            // Also approve all modules associated with this trainer for this event
+            \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('trainer_id', $assignment->trainer_id)
+                ->where('status', '!=', 'approved')
+                ->update([
+                    'status'           => 'approved',
+                    'reviewed_by'      => Auth::id(),
+                    'reviewed_at'      => now(),
+                    'rejection_reason' => null,
+                ]);
+
             // Sync to event-level if this is the primary trainer
             if ($event->trainer_id == $assignment->trainer_id) {
                 $event->update([
@@ -499,6 +519,17 @@ class EventMaterialApprovalController extends Controller
                 'material_rejected_by'      => Auth::id(),
                 'material_rejection_reason' => $rejectionReason,
             ]);
+
+            // Also reject all modules associated with this trainer for this event
+            \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('trainer_id', $assignment->trainer_id)
+                ->where('status', '!=', 'rejected')
+                ->update([
+                    'status'           => 'rejected',
+                    'reviewed_by'      => Auth::id(),
+                    'reviewed_at'      => now(),
+                    'rejection_reason' => $rejectionReason,
+                ]);
 
             if ($event->trainer_id == $assignment->trainer_id) {
                 $event->update([

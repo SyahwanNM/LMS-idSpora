@@ -988,12 +988,12 @@
                 <i class="bi bi-arrow-left"></i>
                 Kembali
             </a>
-            @if(($event->material_status ?? 'pending') === 'approved')
+            @if(($materialStatus ?? 'pending') === 'approved')
                 <span class="status-chip approved">
                     <span class="pulse-dot"></span>
                     Disetujui
                 </span>
-            @elseif(($event->material_status ?? 'pending') === 'rejected')
+            @elseif(($materialStatus ?? 'pending') === 'rejected')
                 <span class="status-chip rejected">
                     <span class="pulse-dot"></span>
                     Revisi / Ditolak
@@ -1035,7 +1035,7 @@
                             <p class="review-meta-row">
                                 <span class="review-type-chip">{{ $event->jenis ?? 'Event' }}</span>
                                 <span>·</span>
-                                <span>Diajukan oleh {{ $event->trainer->name ?? 'Trainer' }}</span>
+                                <span>Diajukan oleh {{ $materialTrainer->name ?? 'Trainer' }}</span>
                             </p>
                         </div>
 
@@ -1077,21 +1077,23 @@
                                     $previewKind = 'file';
                                     $previewUrl = '';
 
-                                    if ($surveyUrl !== '') {
+                                    if ($rawContent !== '') {
+                                        if ($isHttp) {
+                                            $previewUrl = $rawContent;
+                                            $previewKind = 'link';
+                                        } else {
+                                            $previewUrl = route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=0';
+                                            if (in_array($ext, ['mp4', 'mov', 'webm', 'm4v'], true)) {
+                                                $previewKind = 'video';
+                                            } elseif ($ext === 'pdf') {
+                                                $previewKind = 'pdf';
+                                            } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                                                $previewKind = 'image';
+                                            }
+                                        }
+                                    } elseif ($surveyUrl !== '') {
                                         $previewUrl = $surveyUrl;
                                         $previewKind = 'link';
-                                    } elseif ($isHttp) {
-                                        $previewUrl = $rawContent;
-                                        $previewKind = 'link';
-                                    } elseif ($rawContent !== '') {
-                                        $previewUrl = route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=0';
-                                        if (in_array($ext, ['mp4', 'mov', 'webm', 'm4v'], true)) {
-                                            $previewKind = 'video';
-                                        } elseif ($ext === 'pdf') {
-                                            $previewKind = 'pdf';
-                                        } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
-                                            $previewKind = 'image';
-                                        }
                                     }
 
                                     $downloadUrl = $rawContent !== '' && !$isHttp
@@ -1120,7 +1122,7 @@
                                                     </span>
                                                     <span style="color:#cbd5e1;">·</span>
                                                     <span class="module-filename-tag">
-                                                        Diunggah: {{ $module->created_at ? $module->created_at->format('d M Y H:i') : '-' }}
+                                                        Oleh: {{ $module->trainer->name ?? '-' }} · Diunggah: {{ $module->created_at ? $module->created_at->format('d M Y H:i') : '-' }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -1172,7 +1174,7 @@
                                             </span>
 
                                             {{-- Inline action buttons if pending review --}}
-                                            @if((($event->material_status ?? 'pending') === 'pending' || ($event->material_status ?? 'pending') === 'pending_review') && $reviewStatus !== 'approved')
+                                            @if((($materialStatus ?? 'pending') === 'pending' || ($materialStatus ?? 'pending') === 'pending_review') && $reviewStatus !== 'approved')
                                                 <div class="module-decision-stack">
                                                     <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" class="module-action-form">
                                                         @csrf
@@ -1260,15 +1262,15 @@
                     <div class="card-custom side-card">
                         <div class="side-card-title">Instruktur</div>
                         <div class="trainer-profile-row">
-                            <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($event->trainer?->name ?? 'T') . '&background=3949ab&color=fff&bold=true' }}"
+                            <img src="{{ $materialTrainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($materialTrainer?->name ?? 'T') . '&background=3949ab&color=fff&bold=true' }}"
                                 class="trainer-avatar"
-                                alt="Avatar {{ $event->trainer?->name ?? 'Trainer' }}">
+                                alt="Avatar {{ $materialTrainer?->name ?? 'Trainer' }}">
                             <div style="min-width:0;">
-                                <div class="trainer-profile-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
+                                <div class="trainer-profile-name">{{ $materialTrainer?->name ?? 'Anonim' }}</div>
                                 <div class="trainer-profile-role">Trainer / Instruktur Event</div>
-                                @if($event->trainer?->email)
+                                @if($materialTrainer?->email)
                                     <div class="trainer-profile-email">
-                                        <i class="bi bi-envelope me-1"></i>{{ $event->trainer->email }}
+                                        <i class="bi bi-envelope me-1"></i>{{ $materialTrainer->email }}
                                     </div>
                                 @endif
                             </div>
@@ -1350,12 +1352,15 @@
                     </div>
 
                     {{-- Decision Card (Approve All or Reject Event) --}}
-                    @if (($event->material_status ?? 'pending') === 'pending' || ($event->material_status ?? 'pending') === 'pending_review')
+                    @if (($materialStatus ?? 'pending') === 'pending' || ($materialStatus ?? 'pending') === 'pending_review')
                         <div class="card-custom side-card">
                             <div class="side-card-title">Keputusan Akhir</div>
                             
                             <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" style="margin-bottom:12px;">
                                 @csrf
+                                @if($assignment)
+                                    <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                                @endif
                                 <button type="submit" class="btn-approve">
                                     <i class="bi bi-check-circle-fill"></i> Setujui Semua Materi
                                 </button>
@@ -1389,6 +1394,9 @@
                 </div>
                 <form action="{{ route('admin.event-material.reject', $event->id) }}" method="POST">
                     @csrf
+                    @if($assignment)
+                        <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                    @endif
                     <div class="modal-body">
                         <div class="mb-1">
                             <label for="rejection_reason" class="form-label" style="font-weight:750; color:var(--admin-text-main);">Catatan Revisi / Alasan Penolakan</label>
@@ -1461,7 +1469,23 @@
                     return `<img src="${url}" alt="Preview gambar">`;
                 }
                 if (kind === 'link') {
-                    return `<iframe src="${url}" title="Preview tautan" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+                    return `
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center p-4" style="height: 100%; width: 100%; background: #f8fafc; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;">
+                            <div class="mb-3" style="width: 50px; height: 50px; border-radius: 50%; background: #e0e7ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                                <i class="bi bi-box-arrow-up-right text-primary" style="font-size: 1.3rem;"></i>
+                            </div>
+                            <h6 class="mb-2" style="font-weight: 800; color: #1e293b; font-size: 0.95rem; margin-top: 0; margin-bottom: 8px;">Tautan Eksternal / Materi Link</h6>
+                            <p class="text-muted mb-3" style="font-size: 0.76rem; max-width: 320px; line-height: 1.45; margin: 0 auto 14px;">
+                                Tautan ini tidak dapat ditampilkan di sini karena kebijakan keamanan web (CSP). Silakan buka tautan secara langsung di tab baru:
+                            </p>
+                            <a href="${url}" target="_blank" class="btn btn-primary btn-sm px-4 py-2" style="font-weight: 700; border-radius: 8px; background-color: var(--admin-secondary, #3949ab); border-color: var(--admin-secondary, #3949ab); color: #fff; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                                <i class="bi bi-box-arrow-up-right"></i> Buka Tautan Materi
+                            </a>
+                            <div class="mt-3 text-muted" style="font-size: 0.68rem; word-break: break-all; max-width: 90%; font-family: monospace;">
+                                ${url}
+                            </div>
+                        </div>
+                    `;
                 }
                 return `<iframe src="${url}" title="Preview file"></iframe>`;
             }

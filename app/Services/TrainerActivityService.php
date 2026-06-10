@@ -229,12 +229,18 @@ class TrainerActivityService
             ->whereIn('status', ['approved', 'completed', 'finished', 'archived'])
             ->count();
 
-        $completedEvents = Event::query()
+        $completedEventsQuery = Event::query()
             ->where('trainer_id', $trainerId)
             ->where('material_status', 'approved')
-            ->whereNotNull('event_date')
-            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) < ?", [now()->format('Y-m-d H:i:s')])
-            ->count();
+            ->whereNotNull('event_date');
+
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            $completedEventsQuery->whereRaw("datetime(date(event_date, 'localtime') || ' ' || COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) < ?", [now()->format('Y-m-d H:i:s')]);
+        } else {
+            $completedEventsQuery->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) < ?", [now()->format('Y-m-d H:i:s')]);
+        }
+
+        $completedEvents = $completedEventsQuery->count();
 
         return $completedCourses + $completedEvents;
     }

@@ -184,14 +184,7 @@
                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                         $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                         $hasVbg = !empty($event->vbg_path);
-                                        $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
-                                        $speakerCount  = isset($event->speakers) ? $event->speakers->count() : $event->speakers()->count();
-                                        $approvedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
-                                        if ($speakerCount > 0) {
-                                            $hasModule = $approvedCount >= $speakerCount;
-                                        } else {
-                                            $hasModule = $approvedCount > 0 || !empty($event->module_path);
-                                        }
+                                        $hasModule = $event->has_approved_modules;
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
@@ -571,14 +564,7 @@
                                     $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                     $hasVbg = !empty($event->vbg_path);
                                     $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
-                                    // Module complete only when ALL registered speakers have an approved module
-                                    $modalSpeakerCount  = $event->speakers()->count();
-                                    $modalApprovedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
-                                    if ($modalSpeakerCount > 0) {
-                                        $hasModule = $modalApprovedCount >= $modalSpeakerCount;
-                                    } else {
-                                        $hasModule = $modalApprovedCount > 0 || !empty($event->module_path);
-                                    }
+                                    $hasModule = $event->has_approved_modules;
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
@@ -630,8 +616,8 @@
                                                             <i class="bi {{ $isLink ? 'bi-link-45deg' : 'bi-file-earmark-arrow-down' }} me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
                                                             @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
                                                         </a>
-                                                        @if(!empty($etm->feedback_link))
-                                                            <a href="{{ $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
+                                                        @if(!empty($etm->survey_link ?: $etm->feedback_link))
+                                                            <a href="{{ $etm->survey_link ?: $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
                                                                 <i class="bi bi-chat-left-text me-1"></i>Feedback
                                                             </a>
                                                         @endif

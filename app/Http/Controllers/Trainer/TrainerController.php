@@ -53,6 +53,82 @@ class TrainerController extends Controller
             ->first();
     }
 
+    private function trainerEventQuery(int $trainerId, string $trainerName = '', bool $includeLegacySpeakerMatch = false): \Illuminate\Database\Eloquent\Builder
+    {
+        return Event::query()->where(function ($query) use ($trainerId, $trainerName, $includeLegacySpeakerMatch) {
+            $query->where('trainer_id', $trainerId)
+                ->orWhereHas('speakers', function ($speakerQuery) use ($trainerId) {
+                    $speakerQuery->where('trainer_id', $trainerId);
+                })
+                ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainerId) {
+                    $assignmentQuery->where('trainer_id', $trainerId)
+                        ->where('status', 'accepted');
+                });
+
+            if ($includeLegacySpeakerMatch && $trainerName !== '') {
+                $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+            }
+        });
+    }
+
+    private function parseTrainerSpeakerNames(?string $speaker): array
+    {
+        $speaker = trim((string) $speaker);
+        if ($speaker === '') {
+            return [];
+        }
+
+        if (str_contains($speaker, '|')) {
+            $parts = preg_split('/\s*\|\s*/', $speaker) ?: [];
+        } elseif (preg_match('/\R/', $speaker)) {
+            $parts = preg_split('/\R+/', $speaker) ?: [];
+        } elseif (str_contains($speaker, ';')) {
+            $parts = preg_split('/\s*;\s*/', $speaker) ?: [];
+        } else {
+            $parts = [$speaker];
+        }
+
+        return collect($parts)
+            ->map(fn($name) => mb_strtolower(trim((string) $name)))
+            ->filter(fn($name) => $name !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function trainerMatchesEvent(Event $event, int $trainerId, string $trainerName = ''): bool
+    {
+        if ($trainerId <= 0) {
+            return false;
+        }
+
+        if ((int) ($event->trainer_id ?? 0) === $trainerId) {
+            return true;
+        }
+
+        $speakerMatch = $event->relationLoaded('speakers')
+            ? $event->speakers->contains(fn($speaker) => (int) ($speaker->trainer_id ?? 0) === $trainerId)
+            : $event->speakers()->where('trainer_id', $trainerId)->exists();
+
+        if ($speakerMatch) {
+            return true;
+        }
+
+        $assignmentMatch = $event->relationLoaded('trainerAssignments')
+            ? $event->trainerAssignments->contains(fn($assignment) => (int) ($assignment->trainer_id ?? 0) === $trainerId && (string) ($assignment->status ?? '') === 'accepted')
+            : $event->trainerAssignments()->where('trainer_id', $trainerId)->where('status', 'accepted')->exists();
+
+        if ($assignmentMatch) {
+            return true;
+        }
+
+        if ($trainerName === '') {
+            return false;
+        }
+
+        return in_array(mb_strtolower($trainerName), $this->parseTrainerSpeakerNames($event->speaker), true);
+    }
+
     private function resolveEventSpeakerSalary(Event $event, int $trainerId): float
     {
         if ($trainerId <= 0) {
@@ -547,8 +623,13 @@ class TrainerController extends Controller
 
         $activeEventsQuery = $this->trainerEventQuery((int) $user->id, (string) ($user->name ?? ''), true)
             ->whereNotIn('id', $pendingInvitationEventIds)
-            ->whereNotNull('event_date')
-            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+            ->whereNotNull('event_date');
+
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            $activeEventsQuery->whereRaw("datetime(date(event_date, 'localtime') || ' ' || COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+        } else {
+            $activeEventsQuery->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+        }
 
         $priorityEvents = (clone $activeEventsQuery)
             ->withCount([
@@ -1567,14 +1648,6 @@ class TrainerController extends Controller
             $event->setAttribute('module_verified_at', $assignment->material_approved_at);
             $event->setAttribute('material_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
             $event->setAttribute('module_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
-        }
-
-        // Exact speaker name check for LIKE matches
-        if ((int) ($event->trainer_id ?? 0) !== (int) $trainerId && $trainerName !== '') {
-            $speakerNames = array_map('mb_strtolower', preg_split('/\s*[,;]+\s*/', (string) $event->speaker) ?: []);
-            if (!in_array($trainerName, $speakerNames, true)) {
-                abort(403);
-            }
         }
 
         $invitation = \App\Models\TrainerNotification::query()
