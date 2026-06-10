@@ -426,6 +426,28 @@
             color: #fff;
         }
 
+        .module-btn-revoke {
+            color: #d97706;
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: 10px;
+            height: 36px;
+            padding: 0 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .module-btn-revoke:hover {
+            background: #d97706;
+            color: #fff;
+            border-color: #d97706;
+        }
+
         .module-reject-form {
             margin-top: 12px;
             padding: 16px;
@@ -585,6 +607,29 @@
         .btn-reject:hover {
             background: var(--status-rejected-bg);
             border-color: var(--status-rejected-text);
+            transform: translateY(-1px);
+        }
+
+        .btn-revoke {
+            width: 100%;
+            background: #fff;
+            color: #d97706;
+            border: 1px solid #fef3c7;
+            height: 50px;
+            padding: 0 16px;
+            border-radius: 14px;
+            font-weight: 750;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+
+        .btn-revoke:hover {
+            background: #fffbeb;
+            border-color: #d97706;
             transform: translateY(-1px);
         }
 
@@ -1199,6 +1244,19 @@
                                                     </form>
                                                 </div>
                                             @endif
+
+                                            {{-- Inline action buttons if approved or rejected --}}
+                                            @if($reviewStatus === 'approved' || $reviewStatus === 'rejected')
+                                                <div class="module-decision-stack">
+                                                    <form method="POST" action="{{ route('admin.event-material.revoke', $event->id) }}">
+                                                        @csrf
+                                                        <input type="hidden" name="module_id" value="{{ $module->id }}">
+                                                        <button type="submit" class="module-btn-revoke">
+                                                            <i class="bi bi-arrow-counterclockwise"></i> Batalkan Keputusan
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -1371,8 +1429,30 @@
                             </button>
                         </div>
                     @else
-                        <div class="card-custom side-card review-locked-notice">
-                            <i class="bi bi-lock-fill me-1"></i> Materi event ini sudah di-review.
+                        <div class="card-custom side-card">
+                            <div class="side-card-title">Keputusan Akhir</div>
+                            <div class="review-locked-notice mb-3" style="text-align: left; padding: 0; color: var(--admin-text-main); font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-info-circle-fill text-primary"></i> 
+                                <span>Status: 
+                                    @if(($materialStatus ?? 'pending') === 'approved')
+                                        <span class="text-success">Disetujui</span>
+                                    @elseif(($materialStatus ?? 'pending') === 'rejected')
+                                        <span class="text-danger">Ditolak / Revisi</span>
+                                    @else
+                                        <span class="text-muted">{{ ucfirst($materialStatus ?? 'pending') }}</span>
+                                    @endif
+                                </span>
+                            </div>
+                            
+                            <form method="POST" action="{{ route('admin.event-material.revoke', $event->id) }}">
+                                @csrf
+                                @if($assignment)
+                                    <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                                @endif
+                                <button type="submit" class="btn-revoke">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Batalkan Keputusan
+                                </button>
+                            </form>
                         </div>
                     @endif
 

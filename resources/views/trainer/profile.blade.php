@@ -3148,6 +3148,29 @@
                             @endif
                         </div>
 
+                        <div class="section-header-flex mb-0 mt-4">
+                            <h3 class="section-title mb-0" style="font-size:18px; text-align:left; text-transform:none;">
+                                Rekening Bank</h3>
+                            <button class="btn-icon-edit" onclick="openModal('modal-edit-profil')"><i
+                                    class="bi bi-pencil"></i></button>
+                        </div>
+                        <div style="background: var(--bg-gray); border: 1px solid var(--border-light); border-radius: 16px; padding: 20px; margin-top: 14px; text-align: left; display: grid; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                            <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary);">
+                                <i class="bi bi-bank" style="font-size: 20px;"></i>
+                                <span id="ui-bank-name" style="font-size: 15px;">{{ $displayBankName }}</span>
+                            </div>
+                            <div style="font-size: 13px; color: var(--text-muted); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+                                <div>
+                                    <span style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Nomor Rekening</span>
+                                    <strong id="ui-bank-account-number" style="font-size: 14px; color: var(--text-dark);">{{ $displayBankAccountNumber }}</strong>
+                                </div>
+                                <div>
+                                    <span style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Nama Pemilik Rekening</span>
+                                    <strong id="ui-bank-account-holder" style="font-size: 14px; color: var(--text-dark);">{{ $displayBankAccountHolder }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="stat-horizontal-grid">
                             <div class="stat-h-box">
                                 <div class="stat-h-icon"><i class="bi bi-person-workspace"></i></div>
@@ -3728,19 +3751,31 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="form-label">Nama Lengkap</label>
-                        <input type="text" name="name" class="form-control" value="{{ $trainer->name }}" required>
+                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $trainer->name) }}" required>
+                        @error('name')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jabatan / Peran</label>
-                        <input type="text" name="profession" class="form-control" value="{{ $trainer->profession }}">
+                        <input type="text" name="profession" class="form-control @error('profession') is-invalid @enderror" value="{{ old('profession', $trainer->profession) }}">
+                        @error('profession')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Institusi</label>
-                        <input type="text" name="institution" class="form-control" value="{{ $trainer->institution }}">
+                        <input type="text" name="institution" class="form-control @error('institution') is-invalid @enderror" value="{{ old('institution', $trainer->institution) }}">
+                        @error('institution')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Bio Singkat</label>
-                        <textarea name="bio" class="form-control" rows="3">{{ $trainer->bio }}</textarea>
+                        <textarea name="bio" class="form-control @error('bio') is-invalid @enderror" rows="3">{{ old('bio', $trainer->bio) }}</textarea>
+                        @error('bio')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div style="display:flex; flex-wrap:wrap; gap:16px;">
                         <div class="form-group" style="flex:1; min-width:200px;">
@@ -3751,7 +3786,37 @@
                         </div>
                         <div class="form-group" style="flex:1; min-width:200px;">
                             <label class="form-label">Nomor Telepon</label>
-                            <input type="text" name="phone" class="form-control" value="{{ $trainer->phone }}">
+                            <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone', $trainer->phone) }}">
+                            @error('phone')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-credit-card-2-front" style="color: #624388;"></i> Informasi Rekening Bank
+                    </h4>
+                    <div class="form-group">
+                        <label class="form-label">Nama Bank</label>
+                        <input type="text" name="bank_name" class="form-control @error('bank_name') is-invalid @enderror" value="{{ old('bank_name', $trainer->bank_name) }}" placeholder="Contoh: BCA, Mandiri, BNI, dll">
+                        @error('bank_name')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                        <div class="form-group" style="flex:1; min-width:200px;">
+                            <label class="form-label">Nomor Rekening</label>
+                            <input type="text" name="bank_account_number" class="form-control @error('bank_account_number') is-invalid @enderror" value="{{ old('bank_account_number', $trainer->bank_account_number) }}">
+                            @error('bank_account_number')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:200px;">
+                            <label class="form-label">Nama Pemilik Rekening</label>
+                            <input type="text" name="bank_account_holder" class="form-control @error('bank_account_holder') is-invalid @enderror" value="{{ old('bank_account_holder', $trainer->bank_account_holder) }}">
+                            @error('bank_account_holder')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -3781,7 +3846,10 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="form-label">Deskripsi Tentang Saya</label>
-                        <textarea name="bio" class="form-control" rows="5">{{ $trainer->bio }}</textarea>
+                        <textarea name="bio" class="form-control @error('bio') is-invalid @enderror" rows="5">{{ old('bio', $trainer->bio) }}</textarea>
+                        @error('bio')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
                 <div class="modal-footer"
@@ -4103,6 +4171,17 @@
                 closeModal(modalId);
             }
         }
+
+        // Auto open modal on validation errors
+        document.addEventListener('DOMContentLoaded', function () {
+            @if ($errors->any())
+                @if ($errors->has('bio') && !$errors->has('name') && !$errors->has('phone') && !$errors->has('bank_name') && !$errors->has('bank_account_number') && !$errors->has('bank_account_holder'))
+                    openModal('modal-edit-tentang');
+                @else
+                    openModal('modal-edit-profil');
+                @endif
+            @endif
+        });
 
         // --- Advanced Mock Save Functions for Simulation ---
         let currentEditCard = null;
