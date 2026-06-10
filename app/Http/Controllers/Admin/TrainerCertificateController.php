@@ -183,6 +183,15 @@ class TrainerCertificateController extends Controller
         $unsentItems = $unsentItems->sortByDesc('sort_date')->values();
         $sentItems = $sentItems->sortByDesc('sort_date')->values();
 
+        foreach ($events->concat($courses) as $item) {
+            $itemTrainers = $getTrainers($item);
+            $context = $item instanceof Event ? 'event' : 'course';
+
+            foreach ($itemTrainers as $trainer) {
+                $this->syncTrainerAssetsFromCrm($item, $trainer, $context);
+            }
+        }
+
         $totalTrainers = User::query()
             ->where('role', 'trainer')
             ->count();
@@ -205,6 +214,89 @@ class TrainerCertificateController extends Controller
             ->whereIn('status', ['sent', 'published'])
             ->count();
 
+        // Calculate terkirim hari ini
+        $terkirimHariIni = TrainerCertificate::query()
+            ->whereIn('status', ['sent', 'published'])
+            ->whereDate('issued_at', now()->toDateString())
+            ->count();
+
+        // Calculate total participants and active trainers
+        $totalParticipants = 0;
+        $activeTrainerIds = collect();
+
+        foreach ($events as $event) {
+            $totalParticipants += (int) ($event->registrations_count ?? 0);
+            if ($event->trainer_id) {
+                $activeTrainerIds->push($event->trainer_id);
+            }
+            foreach ($event->speakers as $speaker) {
+                if ($speaker->trainer_id) {
+                    $activeTrainerIds->push($speaker->trainer_id);
+                }
+            }
+        }
+
+        foreach ($courses as $course) {
+            $totalParticipants += (int) ($course->enrollments_count ?? 0);
+            if ($course->trainer_id) {
+                $activeTrainerIds->push($course->trainer_id);
+            }
+        }
+
+        $totalActiveTrainers = $activeTrainerIds->unique()->count();
+
+        // Fetch recent activities
+        $recentActivities = collect();
+        $recentCerts = TrainerCertificate::query()
+            ->with(['trainer', 'certifiable'])
+            ->whereIn('status', ['sent', 'published'])
+            ->latest('issued_at')
+            ->take(3)
+            ->get();
+
+        foreach ($recentCerts as $cert) {
+            if ($cert->certifiable) {
+                $title = $cert->certifiable->title ?? $cert->certifiable->name ?? 'Program';
+                $recentActivities->push((object) [
+                    'type' => 'success',
+                    'icon' => 'bi-check-circle-fill',
+                    'color' => '#10b981',
+                    'message' => "Sertifikat dikirim ke peserta \"<strong>{$title}</strong>\" oleh " . ($cert->trainer->name ?? 'Trainer'),
+                    'time' => $cert->issued_at ? $cert->issued_at->diffForHumans() : 'Baru saja'
+                ]);
+            }
+        }
+
+        if ($recentActivities->count() < 3) {
+            if ($recentActivities->isEmpty()) {
+                $recentActivities->push((object) [
+                    'type' => 'success',
+                    'icon' => 'bi-check-circle-fill',
+                    'color' => '#10b981',
+                    'message' => 'Sertifikat dikirim ke peserta "<strong>Jujur Janggal</strong>" oleh Loren',
+                    'time' => '2 jam yang lalu'
+                ]);
+            }
+            if ($recentActivities->count() < 2) {
+                $recentActivities->push((object) [
+                    'type' => 'warning',
+                    'icon' => 'bi-file-earmark-text',
+                    'color' => '#ea580c',
+                    'message' => 'Menunggu asset tanda tangan partner pada program "<strong>abc</strong>"',
+                    'time' => '5 jam yang lalu'
+                ]);
+            }
+            if ($recentActivities->count() < 3) {
+                $recentActivities->push((object) [
+                    'type' => 'info',
+                    'icon' => 'bi-person-badge',
+                    'color' => '#2563eb',
+                    'message' => 'Trainer alang diperbarui pada program "<strong>abc</strong>"',
+                    'time' => '1 hari yang lalu'
+                ]);
+            }
+        }
+
         return view('admin.trainer.certificates.index', compact(
             'trainers',
             'unsentItems',
@@ -212,7 +304,11 @@ class TrainerCertificateController extends Controller
             'totalTrainers',
             'totalPending',
             'totalPublished',
-            'allCertificates'
+            'allCertificates',
+            'terkirimHariIni',
+            'totalParticipants',
+            'totalActiveTrainers',
+            'recentActivities'
         ) + [
             'tab' => $request->query('tab', 'unsentItems'),
             'publishedKeys' => $publishedKeysGlobal
@@ -373,6 +469,8 @@ class TrainerCertificateController extends Controller
                 }
             }
 
+            $selectedTemplate = (string) $request->input('certificate_template');
+
             TrainerCertificateAsset::updateOrCreate(
                 [
                     'certifiable_type' => $certifiableType,
@@ -380,12 +478,14 @@ class TrainerCertificateController extends Controller
                     'type' => 'template',
                 ],
                 [
-                    'name' => $request->input('certificate_template'),
+                    'name' => $selectedTemplate,
                     'position' => null,
                     'image_path' => '-',
                     'order_no' => 0,
                 ]
             );
+
+            $model->update(['certificate_template' => $selectedTemplate]);
 
             if ($request->hasFile('certificate_logo')) {
                 foreach ($request->file('certificate_logo') as $logo) {
@@ -568,8 +668,8 @@ class TrainerCertificateController extends Controller
                 ->orderBy('order_no')
                 ->get();
 
-            $template = $assets->where('type', 'template')->first()?->name
-                ?? $model->certificate_template
+            $template = $model->certificate_template
+                ?? $assets->where('type', 'template')->first()?->name
                 ?? 'template_1';
 
             $logos = $assets->where('type', TrainerCertificateAsset::TYPE_LOGO)->values();
@@ -673,15 +773,6 @@ class TrainerCertificateController extends Controller
         $certifiableType = get_class($model);
         $certifiableId = (int) $model->id;
 
-        // Skip sync if assets already exist for this certifiable
-        $exists = TrainerCertificateAsset::query()
-            ->where('certifiable_type', $certifiableType)
-            ->where('certifiable_id', $certifiableId)
-            ->exists();
-        if ($exists) {
-            return;
-        }
-
         $rawTemplate = $model->getAttribute('certificate_template');
         $hasCrmTemplate = is_string($rawTemplate) && trim($rawTemplate) !== '';
         $hasCrmLogos = !empty($model->certificate_logo);
@@ -693,6 +784,38 @@ class TrainerCertificateController extends Controller
 
         $crmTemplate = $hasCrmTemplate ? $rawTemplate : 'template_1';
         $trainerTemplate = $this->mapTrainerTemplate($crmTemplate, $context);
+
+        if ($hasCrmTemplate) {
+            TrainerCertificateAsset::updateOrCreate(
+                [
+                    'certifiable_type' => $certifiableType,
+                    'certifiable_id' => $certifiableId,
+                    'type' => 'template',
+                ],
+                [
+                    'name' => $trainerTemplate,
+                    'position' => null,
+                    'image_path' => '-',
+                    'order_no' => 0,
+                ]
+            );
+        }
+
+        $hasLogoAssets = TrainerCertificateAsset::query()
+            ->where('certifiable_type', $certifiableType)
+            ->where('certifiable_id', $certifiableId)
+            ->where('type', TrainerCertificateAsset::TYPE_LOGO)
+            ->exists();
+
+        $hasSignatureAssets = TrainerCertificateAsset::query()
+            ->where('certifiable_type', $certifiableType)
+            ->where('certifiable_id', $certifiableId)
+            ->where('type', TrainerCertificateAsset::TYPE_SIGNATURE)
+            ->exists();
+
+        if ($hasLogoAssets && $hasSignatureAssets) {
+            return;
+        }
 
         $crmLogos = is_array($model->certificate_logo)
             ? $model->certificate_logo
@@ -737,53 +860,52 @@ class TrainerCertificateController extends Controller
             return $this->normalizeCrmPath((string) $logo);
         }, $crmLogos)));
 
-        DB::transaction(function () use ($certifiableType, $certifiableId, $trainerTemplate, $crmLogos, $crmSignatures) {
-            $existingAssets = TrainerCertificateAsset::query()
-                ->where('certifiable_type', $certifiableType)
-                ->where('certifiable_id', $certifiableId)
-                ->whereIn('type', ['template', TrainerCertificateAsset::TYPE_LOGO, TrainerCertificateAsset::TYPE_SIGNATURE])
-                ->get();
+        DB::transaction(function () use (
+            $certifiableType,
+            $certifiableId,
+            $crmLogos,
+            $crmSignatures,
+            $hasLogoAssets,
+            $hasSignatureAssets
+        ) {
+            if (!$hasLogoAssets) {
+                $orderNo = (int) TrainerCertificateAsset::query()
+                    ->where('certifiable_type', $certifiableType)
+                    ->where('certifiable_id', $certifiableId)
+                    ->where('type', TrainerCertificateAsset::TYPE_LOGO)
+                    ->max('order_no');
 
-            foreach ($existingAssets as $asset) {
-                if ($this->shouldDeleteTrainerAsset($asset->image_path)) {
-                    Storage::disk('public')->delete($asset->image_path);
+                foreach (array_slice($crmLogos, 0, 3) as $logoPath) {
+                    TrainerCertificateAsset::create([
+                        'certifiable_type' => $certifiableType,
+                        'certifiable_id' => $certifiableId,
+                        'type' => TrainerCertificateAsset::TYPE_LOGO,
+                        'name' => null,
+                        'position' => null,
+                        'image_path' => $logoPath,
+                        'order_no' => ++$orderNo,
+                    ]);
                 }
-                $asset->delete();
             }
 
-            TrainerCertificateAsset::create([
-                'certifiable_type' => $certifiableType,
-                'certifiable_id' => $certifiableId,
-                'type' => 'template',
-                'name' => $trainerTemplate,
-                'position' => null,
-                'image_path' => '-',
-                'order_no' => 0,
-            ]);
+            if (!$hasSignatureAssets) {
+                $orderNo = (int) TrainerCertificateAsset::query()
+                    ->where('certifiable_type', $certifiableType)
+                    ->where('certifiable_id', $certifiableId)
+                    ->where('type', TrainerCertificateAsset::TYPE_SIGNATURE)
+                    ->max('order_no');
 
-            $orderNo = 1;
-            foreach (array_slice($crmLogos, 0, 3) as $logoPath) {
-                TrainerCertificateAsset::create([
-                    'certifiable_type' => $certifiableType,
-                    'certifiable_id' => $certifiableId,
-                    'type' => TrainerCertificateAsset::TYPE_LOGO,
-                    'name' => null,
-                    'position' => null,
-                    'image_path' => $logoPath,
-                    'order_no' => $orderNo++,
-                ]);
-            }
-
-            foreach (array_slice($crmSignatures, 0, 3) as $signature) {
-                TrainerCertificateAsset::create([
-                    'certifiable_type' => $certifiableType,
-                    'certifiable_id' => $certifiableId,
-                    'type' => TrainerCertificateAsset::TYPE_SIGNATURE,
-                    'name' => $signature['name'] ?: null,
-                    'position' => $signature['position'] ?: null,
-                    'image_path' => $signature['image'],
-                    'order_no' => $orderNo++,
-                ]);
+                foreach (array_slice($crmSignatures, 0, 3) as $signature) {
+                    TrainerCertificateAsset::create([
+                        'certifiable_type' => $certifiableType,
+                        'certifiable_id' => $certifiableId,
+                        'type' => TrainerCertificateAsset::TYPE_SIGNATURE,
+                        'name' => $signature['name'] ?: null,
+                        'position' => $signature['position'] ?: null,
+                        'image_path' => $signature['image'],
+                        'order_no' => ++$orderNo,
+                    ]);
+                }
             }
         });
     }

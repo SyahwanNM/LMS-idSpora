@@ -134,13 +134,31 @@ class TrainerNotificationsController extends Controller
             $event = Event::query()->find($entityId);
             if ($event) {
                 if ($decision === 'accept') {
-                    // Multi-speaker support: don't block others if trainer_id is already set.
+                    // Multi-speaker support: ensure assignment exists and update it
+                    \App\Models\TrainerAssignment::updateOrCreate(
+                        ['trainer_id' => $uid, 'event_id' => $entityId],
+                        [
+                            'status' => 'accepted',
+                            'invitation_notification_id' => $notification->id,
+                            'sla_upload_deadline' => $event->material_deadline ?: now()->addDays(3),
+                        ]
+                    );
+
                     // Only update event->trainer_id if it's currently empty, to record at least one official trainer.
                     if (empty($event->trainer_id)) {
                         $event->trainer_id = $uid;
                         $event->save();
                     }
                 } else {
+                    // Update TrainerAssignment status to rejected
+                    \App\Models\TrainerAssignment::updateOrCreate(
+                        ['trainer_id' => $uid, 'event_id' => $entityId],
+                        [
+                            'status' => 'rejected',
+                            'invitation_notification_id' => $notification->id,
+                        ]
+                    );
+
                     // Only clear trainer_id if the current user was the one assigned.
                     if ((int) $event->trainer_id === (int) $uid) {
                         $event->trainer_id = null;
@@ -159,6 +177,8 @@ class TrainerNotificationsController extends Controller
         }
         $data['responded_at'] = now()->toIso8601String();
         $notification->data = $data;
+        $notification->invitation_status = $data['invitation_status'];
+        $notification->responded_at = now();
         if (is_null($notification->read_at)) {
             $notification->read_at = now();
         }
@@ -224,6 +244,10 @@ class TrainerNotificationsController extends Controller
             return redirect()->route('trainer.courses.studio', $entityId)->with('success', $message);
         }
 
+        if ($decision === 'accept' && $entityType === 'event' && $entityId > 0) {
+            return redirect()->route('trainer.events.show', $entityId)->with('success', $message);
+        }
+
         return back()->with('success', $message);
     }
 
@@ -270,8 +294,15 @@ class TrainerNotificationsController extends Controller
         $data['scheme_type'] = $validated['scheme_type'];
         $data['responded_at'] = now()->toIso8601String();
         $notification->data = $data;
+        $notification->invitation_status = 'accepted';
+        $notification->responded_at = now();
         $notification->read_at = now();
         $notification->save();
+
+        if ($entityType === 'event' && $entityId > 0) {
+            return redirect()->route('trainer.events.show', $entityId)
+                ->with('success', 'Undangan berhasil diterima dengan skema yang dipilih.');
+        }
 
         return back()->with('success', 'Undangan berhasil diterima dengan skema yang dipilih.');
     }

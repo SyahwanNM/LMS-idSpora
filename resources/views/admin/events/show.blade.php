@@ -660,7 +660,7 @@
                                                 @php
                                                     $trainerModules = $event->trainerModules()->with('trainer')->orderByDesc('created_at')->get();
                                                     $hasModuleItems = $trainerModules->isNotEmpty();
-                                                    $moduleApproved = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'approved');
+                                                    $moduleApproved = $event->has_approved_modules;
                                                     $moduleRejected = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'rejected');
                                                     $modulePending  = $trainerModules->contains('status', 'pending_review');
                                                     $moduleIcon = $moduleApproved
@@ -690,9 +690,9 @@
                                                                         <div class="text-muted text-truncate" style="font-size:0.7rem;">
                                                                             {{ $tm->trainer?->name ?? 'Trainer' }} &bull; {{ $tm->created_at?->format('d/m/Y H:i') }}
                                                                         </div>
-                                                                        @if(!empty($tm->feedback_link))
+                                                                        @if(!empty($tm->survey_link ?: $tm->feedback_link))
                                                                             <div class="text-warning text-truncate mt-1" style="font-size:0.7rem;">
-                                                                                <i class="bi bi-chat-left-text me-1"></i> Feedback: <a href="{{ $tm->feedback_link }}" target="_blank" class="text-warning text-decoration-underline">{{ $tm->feedback_link }}</a>
+                                                                                <i class="bi bi-chat-left-text me-1"></i> Feedback: <a href="{{ $tm->survey_link ?: $tm->feedback_link }}" target="_blank" class="text-warning text-decoration-underline">{{ $tm->survey_link ?: $tm->feedback_link }}</a>
                                                                             </div>
                                                                         @endif
                                                                     </div>
@@ -701,7 +701,7 @@
                                                                     <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" title="Set Link Feedback"
                                                                             data-bs-toggle="modal" data-bs-target="#editFeedbackLinkModal"
                                                                             data-module-id="{{ $tm->id }}" data-event-id="{{ $event->id }}"
-                                                                            data-module-name="{{ $tm->original_name }}" data-feedback-link="{{ $tm->feedback_link ?? '' }}">
+                                                                            data-module-name="{{ $tm->original_name }}" data-feedback-link="{{ $tm->survey_link ?: ($tm->feedback_link ?? '') }}">
                                                                         <i class="bi bi-link-45deg"></i>
                                                                     </button>
                                                                     <a href="{{ $tm->download_url }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2" title="{{ $isLink ? 'Buka Link' : 'Download File' }}">

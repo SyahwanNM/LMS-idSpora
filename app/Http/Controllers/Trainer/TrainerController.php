@@ -129,6 +129,34 @@ class TrainerController extends Controller
         return in_array(mb_strtolower($trainerName), $this->parseTrainerSpeakerNames($event->speaker), true);
     }
 
+    private function resolveEventSpeakerSalary(Event $event, int $trainerId): float
+    {
+        if ($trainerId <= 0) {
+            return 0;
+        }
+
+        $speakers = $event->relationLoaded('speakers')
+            ? $event->speakers
+            : $event->speakers()->get();
+
+        $byTrainer = $speakers->first(fn ($speaker) => (int) ($speaker->trainer_id ?? 0) === $trainerId);
+        if ($byTrainer && (float) ($byTrainer->salary ?? 0) > 0) {
+            return (float) $byTrainer->salary;
+        }
+
+        $trainerName = mb_strtolower(trim((string) (\App\Models\User::query()->whereKey($trainerId)->value('name') ?? '')));
+        if ($trainerName !== '') {
+            $byName = $speakers->first(
+                fn ($speaker) => mb_strtolower(trim((string) ($speaker->name ?? ''))) === $trainerName
+            );
+            if ($byName && (float) ($byName->salary ?? 0) > 0) {
+                return (float) $byName->salary;
+            }
+        }
+
+        return 0;
+    }
+
     private function resolveEventCompensation(Event $event, int $trainerId, ?TrainerAssignment $assignment = null): array
     {
         $activeParticipants = (int) ($event->active_participants_count ?? $event->participants_count ?? 0);
@@ -173,15 +201,22 @@ class TrainerController extends Controller
         $feePerParticipant = ($eventPrice > 0 && $schemePercent > 0)
             ? round(($eventPrice * $schemePercent) / 100, 2)
             : ($isFallbackToEventPrice ? round($eventPrice, 2) : 0);
-        $estimatedFee = ($activeParticipants > 0 && $feePerParticipant > 0)
-            ? round($activeParticipants * $feePerParticipant, 2)
-            : 0;
+        $speakerSalary = $this->resolveEventSpeakerSalary($event, $trainerId);
+        $feeTrainer = $speakerSalary > 0 ? $speakerSalary : $feePerParticipant;
+        $estimatedFee = $speakerSalary > 0
+            ? round($speakerSalary, 2)
+            : (($activeParticipants > 0 && $feePerParticipant > 0)
+                ? round($activeParticipants * $feePerParticipant, 2)
+                : 0);
 
         return [
             'scheme_percent' => $schemePercent,
             'event_price' => $eventPrice,
             'active_participants_count' => $activeParticipants,
+            'speaker_salary' => $speakerSalary,
             'fee_per_participant' => $feePerParticipant,
+            'fee_trainer' => $feeTrainer,
+            'fee_trainer_type' => $speakerSalary > 0 ? 'flat' : 'per_participant',
             'estimated_fee' => $estimatedFee,
             'is_fallback_to_event_price' => $isFallbackToEventPrice,
         ];
@@ -588,8 +623,13 @@ class TrainerController extends Controller
 
         $activeEventsQuery = $this->trainerEventQuery((int) $user->id, (string) ($user->name ?? ''), true)
             ->whereNotIn('id', $pendingInvitationEventIds)
-            ->whereNotNull('event_date')
-            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+            ->whereNotNull('event_date');
+
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            $activeEventsQuery->whereRaw("datetime(date(event_date, 'localtime') || ' ' || COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+        } else {
+            $activeEventsQuery->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+        }
 
         $priorityEvents = (clone $activeEventsQuery)
             ->withCount([
@@ -1202,7 +1242,8 @@ class TrainerController extends Controller
             ->with([
                 'scheduleItems' => function ($q) {
                     $q->orderBy('start', 'asc');
-                }
+                },
+                'speakers',
             ])
             ->firstOrFail();
 
@@ -1609,6 +1650,33 @@ class TrainerController extends Controller
             $event->setAttribute('module_rejection_reason', (string) ($assignment->material_rejection_reason ?? ''));
         }
 
+        $invitation = \App\Models\TrainerNotification::query()
+            ->where('trainer_id', (int) $trainerId)
+            ->where('type', 'event_invitation')
+            ->where(function ($query) use ($event) {
+                $query->where('data', 'like', '%"entity_id":' . (int) $event->id . '%');
+            })
+            ->latest('id')
+            ->first();
+
+        $invitationData = is_array($invitation?->data) ? $invitation->data : [];
+        $invitationUploadDueAtRaw = (string) data_get($invitationData, 'upload_due_at', '');
+        $effectiveDeadline = null;
+        if ($invitationUploadDueAtRaw !== '') {
+            $effectiveDeadline = \Carbon\Carbon::parse($invitationUploadDueAtRaw);
+        } elseif (!empty($event->material_deadline)) {
+            $effectiveDeadline = \Carbon\Carbon::parse($event->material_deadline);
+        }
+        $cacheKey = "trainer_draft_files_{$trainerId}_{$event->id}";
+
+        if ($effectiveDeadline && now()->gt($effectiveDeadline) && \Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === (int) $trainerId;
+            $this->performSubmitFinal($event, $trainerId, $isPrimaryTrainer, $assignment, $effectiveDeadline, $invitation);
+            $event->refresh();
+        }
+
+        $draftModules = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
+
         // Per-trainer module status
         $myModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
             ->where('trainer_id', $trainerId)
@@ -1641,7 +1709,102 @@ class TrainerController extends Controller
 
         $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId, $assignment);
 
-        return view('trainer.event-studio', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
+        return view('trainer.event-studio', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation', 'draftModules'));
+    }
+
+    private function performSubmitFinal($event, $trainerId, $isPrimaryTrainer, $assignment, $effectiveDeadline, $invitation)
+    {
+        $cacheKey = "trainer_draft_files_{$trainerId}_{$event->id}";
+        $draftFiles = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
+        if (empty($draftFiles)) {
+            return;
+        }
+
+        foreach ($draftFiles as $draft) {
+            \App\Models\EventTrainerModule::create([
+                'event_id' => $event->id,
+                'trainer_id' => $trainerId,
+                'original_name' => $draft['original_name'],
+                'path' => $draft['path'],
+                'survey_link' => $draft['survey_link'] ?? null,
+                'status' => 'pending_review',
+            ]);
+        }
+
+        $lastDraft = end($draftFiles);
+        $primaryMaterialPath = $lastDraft['path'];
+
+        if ($isPrimaryTrainer || !$assignment) {
+            $event->update([
+                'module_path' => $primaryMaterialPath,
+                'material_status' => 'pending_review',
+                'module_submitted_at' => now(),
+                'material_approved_at' => null,
+                'material_approved_by' => null,
+                'material_rejection_reason' => null,
+                'module_verified_at' => null,
+                'module_verified_by' => null,
+                'module_rejected_at' => null,
+                'module_rejected_by' => null,
+                'module_rejection_reason' => null,
+            ]);
+        } else {
+            $assignment->update([
+                'material_path' => $primaryMaterialPath,
+                'materials_uploaded_at' => now(),
+                'material_status' => 'pending_review',
+                'material_submitted_at' => now(),
+                'material_approved_at' => null,
+                'material_approved_by' => null,
+                'material_rejected_at' => null,
+                'material_rejected_by' => null,
+                'material_rejection_reason' => null,
+            ]);
+        }
+
+        $latestImagePath = null;
+        $latestModuleDocPath = null;
+        foreach ($draftFiles as $draft) {
+            $mime = $draft['mime_type'] ?? '';
+            $path = $draft['path'];
+            $origName = $draft['original_name'];
+            if (str_starts_with((string) $mime, 'image/')) {
+                $latestImagePath = $path;
+            } else {
+                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                if (in_array($ext, ['pdf', 'ppt', 'pptx', 'doc', 'docx'], true)) {
+                    $latestModuleDocPath = $path;
+                }
+            }
+        }
+        $updates = [];
+        if ($latestImagePath) {
+            $updates['vbg_path'] = $latestImagePath;
+        }
+        if ($latestModuleDocPath) {
+            $updates['module_path'] = $latestModuleDocPath;
+        }
+        if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
+            $event->update($updates);
+        }
+
+        \Illuminate\Support\Facades\Cache::forget($cacheKey);
+
+        if (!empty($effectiveDeadline) && now()->lte($effectiveDeadline)) {
+            app(\App\Services\TrainerActivityService::class)->resetLateUploads(\Illuminate\Support\Facades\Auth::user(), [
+                'entity_type' => 'event',
+                'entity_id' => (int) $event->id,
+                'entity_title' => (string) ($event->title ?? ''),
+                'url' => route('trainer.events.show', $event->id),
+            ]);
+        }
+
+        if ($invitation) {
+            $invitationData = is_array($invitation->data) ? $invitation->data : [];
+            $invitationData['material_uploaded_at'] = now()->toIso8601String();
+            $invitation->data = $invitationData;
+            $invitation->save();
+        }
     }
 
     public function saveEventQuiz(Request $request, $id)
@@ -2431,11 +2594,6 @@ class TrainerController extends Controller
 
     public function uploadEventMaterials(Request $request, $id)
     {
-        $request->validate([
-            'files' => 'required|array|min:1|max:1',
-            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000'
-        ]);
-
         $trainerId = Auth::id();
         $trainerName = mb_strtolower(trim((string) (Auth::user()?->name ?? '')));
 
@@ -2464,7 +2622,6 @@ class TrainerController extends Controller
             ], 422);
         }
 
-        $materialStatus = (string) ($event->material_status ?? 'draft');
         $invitation = TrainerNotification::query()
             ->where('trainer_id', (int) Auth::id())
             ->where('type', 'event_invitation')
@@ -2482,121 +2639,151 @@ class TrainerController extends Controller
         } elseif (!empty($event->material_deadline)) {
             $effectiveDeadline = Carbon::parse($event->material_deadline);
         }
-        // No deadline = always allowed to upload
 
-        if ($effectiveDeadline && now()->gt($effectiveDeadline)) {
+        $isRevisionUpload = $effectiveMaterialStatus === 'rejected';
+        if ($isRevisionUpload) {
+            $effectiveDeadline = null;
+        }
+
+        // Action: delete_draft
+        if ($request->input('action') === 'delete_draft') {
+            $fileIndex = (int) $request->input('index');
+            $cacheKey = "trainer_draft_files_{$trainerId}_{$event->id}";
+            $draftFiles = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
+            if (isset($draftFiles[$fileIndex])) {
+                $filePath = $draftFiles[$fileIndex]['path'];
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($filePath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($filePath);
+                }
+                unset($draftFiles[$fileIndex]);
+                $draftFiles = array_values($draftFiles);
+                \Illuminate\Support\Facades\Cache::put($cacheKey, $draftFiles, now()->addDays(30));
+                return response()->json(['success' => true, 'message' => 'Draf materi berhasil dihapus.']);
+            }
+            return response()->json(['success' => false, 'error' => 'File tidak ditemukan.'], 404);
+        }
+
+        // Action: save_draft_survey
+        if ($request->input('action') === 'save_draft_survey') {
+            $fileIndex = (int) $request->input('index');
+            $surveyLink = $request->input('survey_link');
+
+            if ($surveyLink !== null) {
+                $surveyLink = trim((string) $surveyLink);
+                if ($surveyLink === '') {
+                    $surveyLink = null;
+                } elseif (!preg_match('#^https?://#i', $surveyLink) && !preg_match('#^ftp://#i', $surveyLink)) {
+                    $surveyLink = 'https://' . $surveyLink;
+                }
+            }
+
+            $cacheKey = "trainer_draft_files_{$trainerId}_{$event->id}";
+            $draftFiles = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
+            if (isset($draftFiles[$fileIndex])) {
+                $draftFiles[$fileIndex]['survey_link'] = $surveyLink;
+                \Illuminate\Support\Facades\Cache::put($cacheKey, $draftFiles, now()->addDays(30));
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Link survei berhasil disimpan.',
+                    'survey_link' => $surveyLink
+                ]);
+            }
+            return response()->json(['success' => false, 'error' => 'Draf materi tidak ditemukan.'], 404);
+        }
+
+        // Action: submit_final
+        if ($request->input('action') === 'submit_final') {
+            $cacheKey = "trainer_draft_files_{$trainerId}_{$event->id}";
+            $draftFiles = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
+            if (empty($draftFiles)) {
+                return response()->json(['success' => false, 'error' => 'Tidak ada file materi baru di draf untuk dikirim.'], 422);
+            }
+
+            $this->performSubmitFinal($event, $trainerId, $isPrimaryTrainer, $assignment, $effectiveDeadline, $invitation);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Materi event berhasil dikirim untuk review admin.',
+            ]);
+        }
+
+        // Default: upload new draft file
+        $request->validate([
+            'files' => 'required_without:material_link|array|max:5',
+            'files.*' => 'nullable|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000',
+            'material_link' => 'nullable|string|max:2048',
+            'material_survey_link' => 'nullable|string|max:2048'
+        ]);
+
+        if (!$isRevisionUpload && $effectiveDeadline && now()->gt($effectiveDeadline)) {
             return response()->json([
                 'success' => false,
                 'error' => 'Batas pengumpulan materi sudah lewat. Silakan hubungi admin trainer.',
             ], 422);
         }
 
-        if (!$request->hasFile('files')) {
-            return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
+        if (!$request->hasFile('files') && !$request->filled('material_link')) {
+            return response()->json(['success' => false, 'error' => 'Tidak ada file atau link yang dikirim.']);
+        }
+
+        $surveyLink = $request->input('material_survey_link');
+        if ($surveyLink !== null) {
+            $surveyLink = trim((string) $surveyLink);
+            if ($surveyLink === '') {
+                $surveyLink = null;
+            } elseif (!preg_match('#^https?://#i', $surveyLink) && !preg_match('#^ftp://#i', $surveyLink)) {
+                $surveyLink = 'https://' . $surveyLink;
+            }
         }
 
         $storedFiles = [];
-        $primaryMaterialPath = null;
-        $latestImagePath = null;
-        $latestModuleDocPath = null;
-        $firstFile = null;
+        $cacheKey = "trainer_draft_files_{$trainerId}_{$event->id}";
+        $draftFiles = \Illuminate\Support\Facades\Cache::get($cacheKey, []);
 
-        foreach ($request->file('files') as $file) {
-            $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-            $filepath = $file->storeAs('events/' . $event->id . '/materials', $filename, 'public');
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $filepath = $file->storeAs('events/' . $event->id . '/materials/draft', $filename, 'public');
 
-            $storedFiles[] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $filepath,
-                'size' => $file->getSize(),
-                'mime_type' => $file->getMimeType(),
+                $newDraft = [
+                    'original_name' => $file->getClientOriginalName(),
+                    'path' => $filepath,
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                    'uploaded_at' => now()->toDateTimeString(),
+                    'survey_link' => $surveyLink,
+                ];
+
+                $draftFiles[] = $newDraft;
+                $storedFiles[] = $newDraft;
+            }
+        }
+
+        if ($request->filled('material_link')) {
+            $link = trim((string) $request->input('material_link'));
+            if (!preg_match('#^https?://#i', $link) && !preg_match('#^ftp://#i', $link)) {
+                $link = 'https://' . $link;
+            }
+
+            $newDraft = [
+                'original_name' => 'Link: ' . $link,
+                'path' => $link,
+                'size' => 0,
+                'mime_type' => 'text/url',
+                'uploaded_at' => now()->toDateTimeString(),
+                'survey_link' => $surveyLink,
             ];
 
-            if ($primaryMaterialPath === null) {
-                $primaryMaterialPath = $filepath;
-                $firstFile = $file;
-            }
+            $draftFiles[] = $newDraft;
+            $storedFiles[] = $newDraft;
         }
 
-        if (!empty($primaryMaterialPath) && $firstFile) {
-            // Always save to event_trainer_modules for per-trainer tracking
-            \App\Models\EventTrainerModule::create([
-                'event_id' => $event->id,
-                'trainer_id' => $trainerId,
-                'original_name' => $firstFile->getClientOriginalName(),
-                'path' => $primaryMaterialPath,
-                'status' => 'pending_review',
-            ]);
-
-            if ($isPrimaryTrainer || !$assignment) {
-                $event->update([
-                    'module_path' => $primaryMaterialPath,
-                    'material_status' => 'pending_review',
-                    'module_submitted_at' => now(),
-                    'material_approved_at' => null,
-                    'material_approved_by' => null,
-                    'material_rejection_reason' => null,
-                    'module_verified_at' => null,
-                    'module_verified_by' => null,
-                    'module_rejected_at' => null,
-                    'module_rejected_by' => null,
-                    'module_rejection_reason' => null,
-                ]);
-            } else {
-                $assignment->update([
-                    'material_path' => $primaryMaterialPath,
-                    'materials_uploaded_at' => now(),
-                    'material_status' => 'pending_review',
-                    'material_submitted_at' => now(),
-                    'material_approved_at' => null,
-                    'material_approved_by' => null,
-                    'material_rejected_at' => null,
-                    'material_rejected_by' => null,
-                    'material_rejection_reason' => null,
-                ]);
-            }
-
-            if (str_starts_with((string) $file->getMimeType(), 'image/')) {
-                $latestImagePath = $filepath;
-            } else {
-                // Treat non-image docs as a module submission (pending admin verification).
-                $ext = strtolower((string) $file->getClientOriginalExtension());
-                if (in_array($ext, ['pdf', 'ppt', 'pptx', 'doc', 'docx'], true)) {
-                    $latestModuleDocPath = $filepath;
-                }
-            }
-        }
-
-        $updates = [];
-        if ($latestImagePath) {
-            $updates['vbg_path'] = $latestImagePath;
-        }
-        if ($latestModuleDocPath) {
-            $updates['module_path'] = $latestModuleDocPath;
-        }
-        if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
-            $event->update($updates);
-        }
-        if (!empty($effectiveDeadline) && now()->lte($effectiveDeadline)) {
-            app(TrainerActivityService::class)->resetLateUploads(Auth::user(), [
-                'entity_type' => 'event',
-                'entity_id' => (int) $event->id,
-                'entity_title' => (string) ($event->title ?? ''),
-                'url' => route('trainer.events.show', $event->id),
-            ]);
-        }
-
-        if ($invitation) {
-            $invitationData['material_uploaded_at'] = now()->toIso8601String();
-            $invitation->data = $invitationData;
-            $invitation->save();
-        }
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $draftFiles, now()->addDays(30));
 
         return response()->json([
             'success' => true,
-            'message' => 'Materi event berhasil diunggah.',
+            'message' => 'Materi berhasil ditambahkan ke draf.',
             'files' => $storedFiles,
-            'module_path' => $primaryMaterialPath,
         ]);
     }
 
@@ -2722,7 +2909,9 @@ class TrainerController extends Controller
             app(TrainerActivityService::class)->resetExpiredInvitationStreak($trainer);
         }
 
-        return back()->with('success', 'Undangan event berhasil diterima. Silakan upload materi untuk event ini.');
+        return redirect()
+            ->route('trainer.events.show', $event->id)
+            ->with('success', 'Undangan event berhasil diterima. Silakan upload materi untuk event ini.');
     }
 
     /**
@@ -3098,7 +3287,9 @@ class TrainerController extends Controller
 
         if ($assets->isNotEmpty()) {
             $templateAsset = $assets->where('type', 'template')->first();
-            $template = $templateAsset?->name ?? 'template_1';
+            $template = $certifiable->certificate_template
+                ?? $templateAsset?->name
+                ?? 'template_1';
 
             foreach ($assets as $asset) {
                 $path = $asset->image_path;

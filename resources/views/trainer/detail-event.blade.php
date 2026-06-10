@@ -1333,9 +1333,13 @@
               </div>
               <div class="info-card-content">
                 <span class="info-card-label">FEE TRAINER</span>
-                @if((float) ($eventCompensation['fee_trainer'] ?? 0) > 0)
+                @if((float) ($eventCompensation['speaker_salary'] ?? 0) > 0)
                   <span class="info-card-value">
-                    Rp {{ number_format((float) ($eventCompensation['fee_trainer'] ?? 0), 0, ',', '.') }}/peserta
+                    Rp {{ number_format((float) $eventCompensation['speaker_salary'], 0, ',', '.') }}
+                  </span>
+                @elseif((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
+                  <span class="info-card-value">
+                    Rp {{ number_format((float) $eventCompensation['fee_per_participant'], 0, ',', '.') }}/peserta
                   </span>
                 @else
                   <span class="info-card-value">Belum diatur admin</span>

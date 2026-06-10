@@ -287,6 +287,127 @@
         right: 70px;
     }
 
+    /* ─── Template 4: Blue Shield (CRM) ─── */
+    .template_4 {
+        width: 29.7cm;
+        height: 21cm;
+        background: #ffffff !important;
+        position: relative;
+        overflow: hidden;
+        padding: 0;
+    }
+    .template_4 .bg-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 29.7cm;
+        height: 21cm;
+        z-index: 1;
+    }
+    .template_4 .logo-banner-container {
+        position: absolute;
+        top: 0;
+        left: 28%;
+        width: 44%;
+        background-color: #ffffff;
+        border-radius: 0 0 15px 15px;
+        padding: 8px 20px;
+        text-align: center;
+        z-index: 10;
+    }
+    .template_4 .logo-poster-img {
+        height: 45px;
+        width: auto;
+        vertical-align: middle;
+        display: inline-block;
+    }
+    .template_4 .logo-item-top {
+        height: 38px;
+        width: auto;
+        vertical-align: middle;
+        display: inline-block;
+        margin: 0 5px;
+    }
+    .template_4 .content-blue {
+        position: absolute;
+        top: 45mm;
+        left: 0;
+        width: 29.7cm;
+        text-align: center;
+        z-index: 5;
+        padding: 0 15mm;
+        box-sizing: border-box;
+        color: #ffffff;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .template_4 .recipient-underline {
+        width: 180mm;
+        height: 1.5px;
+        background-color: #ffffff;
+        margin: 2mm auto 4mm auto;
+    }
+    .template_4 .cert-footer {
+        position: absolute;
+        bottom: 15mm;
+        left: 20mm;
+        right: 20mm;
+        text-align: center;
+        width: auto;
+        z-index: 6;
+        padding: 0;
+    }
+    .template_4 .sig-box {
+        display: inline-block;
+        vertical-align: bottom;
+        text-align: center;
+        width: 80mm;
+        margin: 0 10mm;
+    }
+    .template_4 .sig-position {
+        font-weight: bold;
+        margin: 0 0 1mm 0;
+        font-size: 8pt;
+        color: #1a1a1a;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .template_4 .sig-image-wrap {
+        height: 55px;
+        margin: 1mm auto;
+        text-align: center;
+    }
+    .template_4 .sig-img {
+        height: 55px;
+        width: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+    }
+    .template_4 .sig-line {
+        width: 65mm;
+        border-bottom: 1.5px solid #1a1a1a;
+        margin: 2px auto;
+    }
+    .template_4 .sig-name {
+        font-weight: bold;
+        margin: 1.5mm 0 0 0;
+        font-size: 8.5pt;
+        color: #1a1a1a;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .template_4 .verification-tag {
+        left: 20mm;
+        bottom: 5mm;
+        color: #94a3b8;
+    }
+    .template_4 .cert-id {
+        right: 20mm;
+        bottom: 5mm;
+        color: #94a3b8;
+        background: rgba(251, 191, 36, 0.1);
+        padding: 3px 6px;
+        border-radius: 3px;
+    }
+
     @media (max-width: 768px) {
         .recipient-name {
             font-size: 26pt !important;
@@ -325,8 +446,67 @@
     foreach (($logosBase64 ?? []) as $lb) {
         $allLogos[] = $lb;
     }
+
+    $bgBlueShieldPath = public_path('aset/bg-blue-shield.png');
+    $logoPosterPath = public_path('aset/logo poster.png');
 @endphp
 
+@if($template === 'template_4')
+<div class="certificate-page template_4">
+    @if(file_exists($bgBlueShieldPath))
+        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($bgBlueShieldPath)) }}" class="bg-image" alt="">
+    @endif
+
+    <div class="logo-banner-container">
+        @if(file_exists($logoPosterPath))
+            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPosterPath)) }}" class="logo-poster-img" alt="">
+        @endif
+        @foreach(array_slice($allLogos, 0, 2) as $logo)
+            <img src="{{ $logo }}" class="logo-item-top" alt="Logo">
+        @endforeach
+    </div>
+
+    <div class="content-blue">
+        <h1 style="font-size: 26pt; font-weight: 900; margin: 0; letter-spacing: 3px;">SERTIFIKAT</h1>
+        <p style="font-size: 9pt; font-weight: bold; letter-spacing: 4px; margin: 3mm 0 1mm 0;">DIBERIKAN KEPADA</p>
+        <div style="font-size: 24pt; font-weight: bold; margin: 4mm 0 1mm 0;">{{ strtoupper($trainerName) }}</div>
+        <div class="recipient-underline"></div>
+        <p style="font-size: 9pt; margin: 2mm 0 1mm 0;">Atas Kontribusinya Sebagai</p>
+        <p style="font-size: 14pt; font-weight: bold; margin: 1mm 0 2mm 0;">{{ strtoupper($role) }}</p>
+        <p style="font-size: 9pt; margin: 2mm 0 1mm 0;">Dalam Program</p>
+        <h2 style="font-size: 16pt; font-weight: bold; margin: 1mm 0 1mm 0;">"{{ $title }}"</h2>
+        <p style="font-size: 8.5pt; margin: 3mm 0 0 0;">
+            Diterbitkan pada <strong>{{ $issuedDateText }}</strong>
+        </p>
+    </div>
+
+    <div class="cert-footer">
+        @php $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64'=>$b,'name'=>'','position'=>''], $signaturesBase64 ?? []); @endphp
+        @forelse($sigsToRender as $sig)
+            <div class="sig-box">
+                <p class="sig-position">{{ $sig['position'] ?? 'Authorized Position' }}</p>
+                <div class="sig-image-wrap">
+                    @if(!empty($sig['base64']))
+                        <img src="{{ $sig['base64'] }}" class="sig-img" alt="">
+                    @endif
+                </div>
+                <div class="sig-line"></div>
+                <p class="sig-name">{{ $sig['name'] ?? 'Authorized Signature' }}</p>
+            </div>
+        @empty
+            <div class="sig-box">
+                <p class="sig-position">Authorized Position</p>
+                <div class="sig-image-wrap"><div style="height:55px;"></div></div>
+                <div class="sig-line"></div>
+                <p class="sig-name">Authorized Signature</p>
+            </div>
+        @endforelse
+    </div>
+
+    <div class="verification-tag">VERIFIED BY IDSPORA.COM</div>
+    <div class="cert-id">ID: {{ $certNum }}</div>
+</div>
+@else
 <div class="certificate-page {{ $template }}">
 
     {{-- ═══ BACKGROUND DECORATIONS FOR TEMPLATE 1 ═══ --}}
@@ -379,7 +559,7 @@
         </div>
 
     {{-- ═══ BACKGROUND DECORATIONS FOR TEMPLATE 3 ═══ --}}
-    @else
+    @elseif($template === 'template_3')
         @php 
             $bgCreativeUrl = request()->schemeAndHttpHost() . '/aset/bg-creative.png';
         @endphp
@@ -443,6 +623,7 @@
     <div class="cert-id">Verified Certificate ID: {{ $certNum }}</div>
 
 </div>
+@endif
 
 @if(!isset($is_preview) || !$is_preview)
 </body>

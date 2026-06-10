@@ -856,7 +856,11 @@ body {
                         }
                     }
                 @endphp
-                <div class="invite-item" onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')" style="cursor:pointer;">
+                <div class="invite-item" 
+                     @if($inviteEntityType === 'course') 
+                         onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')" 
+                         style="cursor:pointer;" 
+                     @endif>
                     <div class="invite-icon-box {{ $inviteEntityType === 'event' ? 'box-purple' : 'box-green' }}">
                         <i class="bi {{ $inviteEntityType === 'event' ? 'bi-person-video3' : 'bi-file-text' }}"></i>
                     </div>
@@ -878,17 +882,31 @@ body {
                         <div class="invite-desc">
                             {{ $inviteEntityType === 'event' ? 'Anda diundang sebagai pembicara untuk sesi ' . Str::limit($invite->title, 20) . '.' : 'Anda diundang sebagai pengajar untuk menyampaikan materi dalam kelas ini.' }}
                         </div>
-                        <div style="display: flex; gap: 8px; margin-top: 12px;">
-                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1;">
-                                @csrf
-                                <input type="hidden" name="action" value="accept">
-                                <button type="button" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
-                            </form>
-                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1;">
-                                @csrf
-                                <input type="hidden" name="action" value="reject">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation(); return confirm('Apakah Anda yakin ingin menolak undangan ini?');">Tolak</button>
-                            </form>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                            @if($inviteEntityType === 'event' && $entityId > 0)
+                                <a href="{{ route('trainer.events.show', $entityId) }}"
+                                   class="btn btn-sm"
+                                   style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #cbd5e1; color:#475569; background:#fff; padding:8px; text-decoration:none; text-align:center;"
+                                   onclick="event.stopPropagation();">
+                                    Lihat Detail
+                                </a>
+                            @endif
+                            <div style="display: flex; gap: 8px;">
+                                @if($inviteEntityType === 'course')
+                                    <button type="button" class="btn btn-sm" style="flex:1; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
+                                @else
+                                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="decision" value="accept">
+                                        <button type="submit" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation();">Terima</button>
+                                    </form>
+                                @endif
+                                <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                    @csrf
+                                    <input type="hidden" name="decision" value="reject">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation(); return confirm('Apakah Anda yakin ingin menolak undangan ini?');">Tolak</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -13,6 +13,7 @@ class EventTrainerModule extends Model
         'trainer_id',
         'original_name',
         'path',
+        'survey_link',
         'status',
         'rejection_reason',
         'reviewed_by',

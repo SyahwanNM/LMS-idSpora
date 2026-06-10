@@ -23,6 +23,7 @@
                          request()->routeIs('admin.withdrawals.*') || 
                          request()->routeIs('admin.crm.*') || 
                          request()->routeIs('admin.trainer.*') ||
+                         request()->routeIs('admin.event-material*') ||
                          request()->routeIs('admin.courses.studio*') ||
                          request()->routeIs('admin.material.*');
     @endphp

@@ -963,18 +963,23 @@ class EventController extends Controller
 
         $event->update($data);
 
+        // Clear trainer_id if the previously assigned trainer is no longer in the speakers list
+        $resolvedNewTrainerIds = $this->resolveTrainerIdsFromSpeakers($event->speaker);
+        if ($event->trainer_id && !in_array((int) $event->trainer_id, $resolvedNewTrainerIds, true)) {
+            $event->trainer_id = null;
+            $event->save();
+        }
+
         $currentAssignedTrainerIds = $this->resolveAssignedTrainerIds(
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
         $newlyAssignedTrainerIds = array_values(array_diff($currentAssignedTrainerIds, $previousAssignedTrainerIds));
 
-        // Sync speakers with salaries
+        // Sync speakers with salaries (call always to allow deletion)
         $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
         $speakerSalaries = (array) $request->input('speaker_salaries', []);
-        if (!empty($speakerNames)) {
-            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
-        }
+        $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
 
         foreach ($newlyAssignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
@@ -1991,6 +1996,7 @@ class EventController extends Controller
         ]);
 
         $module->update([
+            'survey_link' => $validated['feedback_link'],
             'feedback_link' => $validated['feedback_link']
         ]);
 
