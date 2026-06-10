@@ -115,6 +115,7 @@ class Event extends Model
             return true;
         }
 
+        // Tidak ada trainer yang di-assign → secara otomatis benar (karena tidak ada modul yang perlu di-upload)
         return true;
     }
 

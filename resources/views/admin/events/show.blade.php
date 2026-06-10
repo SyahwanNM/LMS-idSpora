@@ -698,12 +698,6 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="d-flex align-items-center gap-1">
-                                                                    <button type="button" class="btn btn-xs btn-outline-warning py-0 px-2" title="Set Link Feedback"
-                                                                            data-bs-toggle="modal" data-bs-target="#editFeedbackLinkModal"
-                                                                            data-module-id="{{ $tm->id }}" data-event-id="{{ $event->id }}"
-                                                                            data-module-name="{{ $tm->original_name }}" data-feedback-link="{{ $tm->survey_link ?: ($tm->feedback_link ?? '') }}">
-                                                                        <i class="bi bi-link-45deg"></i>
-                                                                    </button>
                                                                     <a href="{{ $tm->download_url }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2" title="{{ $isLink ? 'Buka Link' : 'Download File' }}">
                                                                         <i class="bi {{ $isLink ? 'bi-box-arrow-up-right' : 'bi-download' }}"></i>
                                                                     </a>
@@ -714,13 +708,6 @@
                                                                     @else
                                                                         <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Pending</span>
                                                                     @endif
-                                                                    
-                                                                    <!-- Delete Material Form -->
-                                                                    <form action="{{ route('admin.events.materials.destroy', [$event, $tm]) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Hapus materi ini?')">
-                                                                        @csrf
-                                                                        @method('DELETE')
-                                                                        <button type="submit" class="btn btn-xs btn-outline-danger py-0 px-2" title="Hapus"><i class="bi bi-trash"></i></button>
-                                                                    </form>
                                                                 </div>
                                                             </div>
                                                         @endforeach
@@ -1816,59 +1803,6 @@ function toggleDailyPresenceModal(regId, dayNumber, action, btnEl) {
         btnEl.innerHTML = originalText;
     });
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const feedbackModal = document.getElementById('editFeedbackLinkModal');
-    if (feedbackModal) {
-        feedbackModal.addEventListener('show.bs.modal', function(e) {
-            const btn = e.relatedTarget;
-            if (!btn) return;
-            const moduleId = btn.getAttribute('data-module-id');
-            const eventId  = btn.getAttribute('data-event-id');
-            const name     = btn.getAttribute('data-module-name') || '-';
-            const link     = btn.getAttribute('data-feedback-link') || '';
-            
-            document.getElementById('feedbackLinkModuleName').textContent = name;
-            document.getElementById('feedback_link_input').value = link;
-            document.getElementById('editFeedbackLinkForm').action =
-                '/admin/events/' + eventId + '/materials/' + moduleId + '/feedback-link';
-        });
-    }
-});
 </script>
 
-<!-- Edit Feedback Link Modal -->
-<div class="modal fade" id="editFeedbackLinkModal" tabindex="-1" aria-labelledby="editFeedbackLinkLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:450px;">
-        <div class="modal-content" style="border-radius: 14px;">
-            <div class="modal-header border-0 pb-0">
-                <div class="d-flex align-items-center gap-2">
-                    <div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-link-45deg text-warning" style="font-size: 1.2rem;"></i>
-                    </div>
-                    <h5 class="modal-title fw-semibold mb-0" id="editFeedbackLinkLabel">Link Feedback Materi</h5>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="editFeedbackLinkForm" method="POST" action="">
-                @csrf
-                @method('PATCH')
-                <div class="modal-body pt-2 pb-1">
-                    <p class="text-muted small mb-3">Masukkan link feedback untuk materi <strong id="feedbackLinkModuleName"></strong>:</p>
-                    <div class="mb-3">
-                        <label for="feedback_link_input" class="form-label small fw-semibold text-muted">Link URL Feedback</label>
-                        <input type="url" class="form-control form-control-sm" id="feedback_link_input" name="feedback_link" placeholder="https://example.com/feedback">
-                        <div class="form-text small text-muted">Kosongkan jika ingin menghapus link feedback.</div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-warning btn-sm text-dark px-4 fw-semibold">
-                        Simpan
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection
