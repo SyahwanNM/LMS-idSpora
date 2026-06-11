@@ -184,14 +184,7 @@
                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
                                         $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
                                         $hasVbg = !empty($event->vbg_path);
-                                        $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
-                                        $speakerCount  = isset($event->speakers) ? $event->speakers->count() : $event->speakers()->count();
-                                        $approvedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
-                                        if ($speakerCount > 0) {
-                                            $hasModule = $approvedCount >= $speakerCount;
-                                        } else {
-                                            $hasModule = $approvedCount > 0 || !empty($event->module_path);
-                                        }
+                                        $hasModule = $event->has_approved_modules;
                                         $hasAbsFile = !empty($event->attendance_path);
                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
@@ -568,17 +561,14 @@
                                     $hasMapsLink = !empty($event->maps_url);
                                     $hasZoomLink = !empty($event->zoom_link);
                                     $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-                                    $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
+                                    $requiresVbg   = !$isOfflineOnly;
                                     $hasVbg = !empty($event->vbg_path);
-                                    $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
-                                    // Module complete only when ALL registered speakers have an approved module
-                                    $modalSpeakerCount  = $event->speakers()->count();
-                                    $modalApprovedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
-                                    if ($modalSpeakerCount > 0) {
-                                        $hasModule = $modalApprovedCount >= $modalSpeakerCount;
-                                    } else {
-                                        $hasModule = $modalApprovedCount > 0 || !empty($event->module_path);
-                                    }
+                                    // Query langsung dengan event_id eksplisit — tidak pakai relasi cached
+                                    $eventTrainerModulesApproved = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                                        ->where('status', 'approved')
+                                        ->with('trainer:id,name')
+                                        ->get();
+                                    $hasModule = $eventTrainerModulesApproved->isNotEmpty();
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
@@ -630,15 +620,13 @@
                                                             <i class="bi {{ $isLink ? 'bi-link-45deg' : 'bi-file-earmark-arrow-down' }} me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
                                                             @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
                                                         </a>
-                                                        @if(!empty($etm->feedback_link))
-                                                            <a href="{{ $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
+                                                        @if(!empty($etm->survey_link ?: $etm->feedback_link))
+                                                            <a href="{{ $etm->survey_link ?: $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
                                                                 <i class="bi bi-chat-left-text me-1"></i>Feedback
                                                             </a>
                                                         @endif
                                                     </div>
                                                 @endforeach
-                                            @elseif($hasModule)
-                                                <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
                                             @else
                                                 <span class="text-muted">Not available</span>
                                             @endif
@@ -1827,9 +1815,9 @@
         // Reseller Event: radios submit as `is_reseller_event` directly; no JS sync required.
 
         // Speakers (dynamic) - sourced from Trainer API; first required, others optional
-        const speakersContainer = document.getElementById('speakersContainer');
-        const addSpeakerBtn = document.getElementById('addSpeakerRow');
-        const speakerCombined = document.getElementById('speakerCombined');
+        const speakersContainer = document.querySelector('#addEventModal #speakersContainer');
+        const addSpeakerBtn = document.querySelector('#addEventModal #addSpeakerRow');
+        const speakerCombined = document.querySelector('#addEventModal #speakerCombined');
         const trainersUrl = @json(route('admin.api.trainers'));
         let trainersCache = null;
 
@@ -2295,7 +2283,7 @@
             function getFieldBlock(el){
                 if(!el) return null;
                 if((el.name || '') === 'speakers[]'){
-                    const container = document.getElementById('speakersContainer');
+                    const container = document.querySelector('#addEventModal #speakersContainer');
                     return container?.closest('.mb-3') || el.closest('.mb-3') || el.parentElement;
                 }
                 return el.closest('.mb-3') || el.closest('.input-group') || el.parentElement;

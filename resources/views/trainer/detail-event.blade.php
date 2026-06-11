@@ -1004,7 +1004,7 @@
         flex: 1;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1200px) {
         .detail-layout-top {
             flex-direction: column;
             gap: 18px;
@@ -1026,23 +1026,6 @@
 
         .hub-pill-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-
-    @media (max-width: 768px) {
-        .vsa-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .hub-pill-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .vsa-title,
-        .vsa-subtitle,
-        .hub-title,
-        .rundown-list h2 {
-            font-size: 18px;
         }
     }
 
@@ -1079,10 +1062,13 @@
         .hero-media {
             width: 100%;
             max-width: 420px;
+            height: auto;
         }
 
-        .hero-image {
+        .hero-image,
+        .hero-image-placeholder {
             height: 200px;
+            border-radius: 16px;
         }
 
         .event-info-cards {
@@ -1095,16 +1081,32 @@
             font-size: 38px;
             margin-bottom: var(--spacing-xl);
         }
+
+        .vsa-grid.is-hybrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 768px) {
         main {
             margin-left: 0;
-            padding: var(--spacing-sm);
+            padding: var(--spacing-lg) var(--spacing-md) 100px var(--spacing-md);
         }
 
-        .event-info-cards {
+        .vsa-grid,
+        .vsa-grid.is-hybrid {
             grid-template-columns: 1fr;
+        }
+
+        .hub-pill-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .vsa-title,
+        .vsa-subtitle,
+        .hub-title,
+        .rundown-list h2 {
+            font-size: 18px;
         }
 
         .hero-section {
@@ -1125,10 +1127,6 @@
         .status-badge {
             font-size: 10px;
             padding: 7px 12px;
-        }
-
-        .hub-pill-grid {
-            grid-template-columns: 1fr;
         }
 
         .event-info-cards {
@@ -1168,7 +1166,8 @@
             font-size: 28px;
         }
 
-        .hero-image {
+        .hero-image,
+        .hero-image-placeholder {
             height: 180px;
         }
 
@@ -1182,10 +1181,10 @@
         }
 
         .rundown-list li {
-            flex-direction: column;
+            flex-direction: row;
             align-items: flex-start;
-            gap: var(--spacing-xs);
-            padding: var(--spacing-sm);
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
         }
     }
 </style>

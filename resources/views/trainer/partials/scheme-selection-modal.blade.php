@@ -616,9 +616,7 @@
 
             // Set form action and payload
             const notificationId = document.getElementById('notification_id').value;
-            form.action = respondUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
-
-            // Add scheme and agreement values to form
+            const entityType = modal.getAttribute('data-entity-type');
             const schemeSelected = document.querySelector('.scheme-radio:checked');
             if (!schemeSelected) {
                 return;
@@ -627,19 +625,27 @@
             const agreement1 = document.getElementById('agreement1').checked ? '1' : '';
             const agreement2 = document.getElementById('agreement2').checked ? '1' : '';
 
-            // Course flow uses standard respond endpoint
-            upsertHiddenInput('decision', 'accept');
-            upsertHiddenInput('scheme_type', schemeValue);
-            // Backend expects string keys from config('trainer_schemes'):
-            // e2e (35%), module_video (25%), video_only (10%)
-            const courseSchemeKey = (function () {
-                if (schemeValue === '1') return 'e2e';
-                if (schemeValue === '2') return 'module_video';
-                if (schemeValue === '3') return 'video_only';
-                return schemeValue;
-            })();
-            upsertHiddenInput('contribution_scheme', courseSchemeKey);
-            upsertHiddenInput('e_agreement', agreement1 && agreement2 ? '1' : '');
+            if (entityType === 'event') {
+                form.action = acceptWithSchemeUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
+                upsertHiddenInput('scheme_type', schemeValue);
+                upsertHiddenInput('legal_agreement_1', agreement1 ? '1' : '');
+                upsertHiddenInput('legal_agreement_2', agreement2 ? '1' : '');
+            } else {
+                form.action = respondUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
+                // Course flow uses standard respond endpoint
+                upsertHiddenInput('decision', 'accept');
+                upsertHiddenInput('scheme_type', schemeValue);
+                // Backend expects string keys from config('trainer_schemes'):
+                // e2e (35%), module_video (25%), video_only (10%)
+                const courseSchemeKey = (function () {
+                    if (schemeValue === '1') return 'e2e';
+                    if (schemeValue === '2') return 'module_video';
+                    if (schemeValue === '3') return 'video_only';
+                    return schemeValue;
+                })();
+                upsertHiddenInput('contribution_scheme', courseSchemeKey);
+                upsertHiddenInput('e_agreement', agreement1 && agreement2 ? '1' : '');
+            }
 
             // Show loading state
             confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Memproses...';
@@ -651,9 +657,14 @@
 
         // Window function for opening modal with invitation info
         window.openSchemeSelectionModal = function (notificationId, eventTitle, entityType) {
-            modal.setAttribute('data-entity-type', 'course');
+            modal.setAttribute('data-entity-type', entityType || 'course');
             document.getElementById('notification_id').value = notificationId;
-            document.getElementById('invitationTitle').textContent = 'Anda menerima penugasan untuk course:';
+            
+            if (entityType === 'event') {
+                document.getElementById('invitationTitle').textContent = 'Anda menerima penugasan untuk event:';
+            } else {
+                document.getElementById('invitationTitle').textContent = 'Anda menerima penugasan untuk course:';
+            }
             document.getElementById('invitationDesc').textContent = eventTitle;
 
             // Reset form

@@ -129,17 +129,17 @@
             --cert-soft: #f5f3ff;
             --cert-border: #f1f5f9;
             --cert-muted: #64748b;
-            --cert-warning: #f59e0b;
-            --cert-danger: #ef4444;
+            --cert-warning: #64748b;
+            --cert-danger: #64748b;
             --cert-success: #10b981;
-            --cert-ready-bg: rgba(16, 185, 129, 0.1);
-            --cert-ready-color: #065f46;
-            --cert-configured-bg: rgba(59, 130, 246, 0.1);
-            --cert-configured-color: #1e40af;
-            --cert-missing-bg: rgba(239, 68, 68, 0.1);
-            --cert-missing-color: #9f1239;
+            --cert-ready-bg: rgba(16, 185, 129, 0.08);
+            --cert-ready-color: #047857;
+            --cert-configured-bg: #f1f5f9;
+            --cert-configured-color: #475569;
+            --cert-missing-bg: #f1f5f9;
+            --cert-missing-color: #475569;
             --btn-start: #4f46e5;
-            --btn-end: #6366f1;
+            --btn-end: #4f46e5;
             --btn-soft-bg: #eef2ff;
         }
 
@@ -504,14 +504,8 @@
             justify-content: space-between;
             align-items: flex-start;
             overflow: hidden;
-        }
-
-        .card-header-banner.course {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        }
-
-        .card-header-banner.event {
-            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         /* Mini certificate Mockup inside Header */
@@ -521,14 +515,13 @@
             bottom: -12px;
             width: 82px;
             height: 58px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
             transform: rotate(-12deg);
             transition: transform 0.3s ease;
             padding: 5px;
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -539,7 +532,7 @@
         }
 
         .mockup-frame {
-            border: 1px dashed rgba(255, 255, 255, 0.4);
+            border: 1px dashed #cbd5e1;
             height: 100%;
             border-radius: 3px;
             padding: 3px;
@@ -555,9 +548,9 @@
             bottom: 3px;
             width: 8px;
             height: 8px;
-            background: radial-gradient(circle, #fbbf24 60%, #d97706 100%);
+            background: #fbbf24;
             border-radius: 50%;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .mockup-lines {
@@ -569,13 +562,13 @@
 
         .mockup-line-long {
             height: 2px;
-            background: rgba(255, 255, 255, 0.5);
+            background: #e2e8f0;
             border-radius: 1px;
         }
 
         .mockup-line-short {
             height: 2px;
-            background: rgba(255, 255, 255, 0.35);
+            background: #f1f5f9;
             border-radius: 1px;
             width: 60%;
         }
@@ -588,10 +581,9 @@
             padding: 4px 10px;
             text-transform: uppercase;
             letter-spacing: .8px;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(4px);
+            background: #e2e8f0;
+            color: #475569;
+            border: 1px solid #cbd5e1;
         }
 
         /* Status badge */
@@ -604,24 +596,25 @@
             align-items: center;
             gap: 6px;
             white-space: nowrap;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #fff;
-            backdrop-filter: blur(4px);
+            border: 1px solid transparent;
         }
 
         .status-badge.ready {
-            background: rgba(16, 185, 129, 0.3);
-            border-color: rgba(16, 185, 129, 0.4);
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
         }
 
         .status-badge.configured {
-            background: rgba(59, 130, 246, 0.3);
-            border-color: rgba(59, 130, 246, 0.4);
+            background: #eef2ff;
+            color: #4f46e5;
+            border-color: #cbd5e1;
         }
 
         .status-badge.missing {
-            background: rgba(239, 68, 68, 0.3);
-            border-color: rgba(239, 68, 68, 0.4);
+            background: #f1f5f9;
+            color: #475569;
+            border-color: #cbd5e1;
         }
 
         /* Pulse Indicator */
@@ -630,55 +623,18 @@
             height: 6px;
             border-radius: 50%;
             display: inline-block;
-            position: relative;
         }
 
         .pulse-dot.ready {
             background-color: #10b981;
         }
 
-        .pulse-dot.ready::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #10b981;
-            animation: pulse-ring 1.8s infinite ease-in-out;
-        }
-
         .pulse-dot.configured {
-            background-color: #3b82f6;
-        }
-
-        .pulse-dot.configured::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #3b82f6;
-            animation: pulse-ring 1.8s infinite ease-in-out;
+            background-color: #4f46e5;
         }
 
         .pulse-dot.missing {
-            background-color: #ef4444;
-        }
-
-        .pulse-dot.missing::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #ef4444;
-            animation: pulse-ring 1.8s infinite ease-in-out;
+            background-color: #64748b;
         }
 
         @keyframes pulse-ring {
@@ -718,18 +674,9 @@
             font-size: 1.25rem;
             flex-shrink: 0;
             transition: transform 0.25s ease;
-        }
-
-        .program-icon-wrapper.course {
-            background: #f5f3ff;
-            color: #4f46e5;
-            border: 1px solid #e0e7ff;
-        }
-
-        .program-icon-wrapper.event {
-            background: #f0f9ff;
-            color: #0284c7;
-            border: 1px solid #e0f2fe;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
         }
 
         .certificate-card:hover .program-icon-wrapper {
@@ -823,19 +770,20 @@
             gap: 4px;
             padding: 8px 4px;
             border-radius: 8px;
-            background: #fff;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
             transition: all 0.2s ease;
         }
 
         .check-item.is-valid {
-            border-color: #d1fae5;
-            background: #f0fdf4;
+            border-color: #e2e8f0;
+            background: #f8fafc;
         }
 
         .check-item.is-invalid {
-            border-color: #ffe4e6;
-            background: #fff1f2;
+            border-color: #e2e8f0;
+            background: #f8fafc;
+            opacity: 0.65;
         }
 
         .check-icon {
@@ -848,22 +796,22 @@
         }
 
         .check-item.is-invalid .check-icon {
-            color: #f43f5e;
+            color: #94a3b8;
         }
 
         .check-label {
             font-size: 0.68rem;
             font-weight: 600;
-            color: #64748b;
+            color: #475569;
             text-align: center;
         }
 
         .check-item.is-valid .check-label {
-            color: #065f46;
+            color: #475569;
         }
 
         .check-item.is-invalid .check-label {
-            color: #9f1239;
+            color: #94a3b8;
         }
 
         /* Manage button — full width */
@@ -916,15 +864,13 @@
 
         /* Button styles based on config status */
         .btn-manage-template:not(.soft):not(.warning) {
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            background: #4f46e5;
             color: #fff;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
         }
 
         .btn-manage-template:not(.soft):not(.warning):hover {
             color: #fff;
-            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
-            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+            background: #4338ca;
         }
 
         .btn-manage-template.soft {
@@ -939,14 +885,14 @@
         }
 
         .btn-manage-template.warning {
-            background: #fff1f2;
-            color: #e11d48;
-            border: 1px solid #ffe4e6;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
         }
 
         .btn-manage-template.warning:hover {
-            background: #ffe4e6;
-            color: #be123c;
+            background: #cbd5e1;
+            color: #1e293b;
         }
 
         /* Empty state */
@@ -1069,20 +1015,34 @@
             gap: 6px;
             padding: 6px 12px;
             border-radius: 8px;
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            background: #4f46e5;
             color: white;
             border: none;
             font-size: 0.75rem;
             font-weight: 700;
             text-decoration: none;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
         }
         .btn-action-manage-pill:hover {
-            box-shadow: 0 6px 14px rgba(79, 70, 229, 0.25);
-            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+            background: #4338ca;
             color: white;
             transform: translateY(-1px);
+        }
+
+        .tab-count-badge {
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 6px;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+        .cert-tab-btn.active .tab-count-badge {
+            background: var(--cert-soft);
+            color: var(--cert-primary);
         }
     </style>
 @endpush
@@ -1391,44 +1351,55 @@
                         <div class="certificate-card cert-row" 
                              data-title="{{ strtolower($title) }}"
                              data-status="{{ $isSent ? 'sent' : $status }}"
-                             data-tab-cat="{{ $tabCategory }}"
-                             style="background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); transition: all 0.3s ease; display: flex; flex-direction: column; overflow: hidden;">
+                             data-tab-cat="{{ $tabCategory }}">
                              
-                             <!-- Top Badge Header -->
-                             <div style="padding: 16px 20px 10px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-                                 <!-- Status badge -->
+                             <!-- Top Banner Header -->
+                             <div class="card-header-banner {{ $context }}">
                                  @if($isSent)
-                                     <span style="font-size: 0.68rem; font-weight: 800; background: #faf5ff; color: #a855f7; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
-                                         <i class="bi bi-check-circle-fill"></i> Sudah Dikirim
+                                     <span class="status-badge ready">
+                                         <span class="pulse-dot ready"></span> Sudah Dikirim
                                      </span>
                                  @elseif($status === 'ready')
-                                     <span style="font-size: 0.68rem; font-weight: 800; background: #ecfdf5; color: #10b981; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
-                                         <i class="bi bi-check-circle-fill"></i> Siap Dikirim
+                                     <span class="status-badge ready">
+                                         <span class="pulse-dot ready"></span> Siap Dikirim
                                      </span>
                                  @elseif($status === 'configured')
-                                     <span style="font-size: 0.68rem; font-weight: 800; background: #eff6ff; color: #3b82f6; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
-                                         <i class="bi bi-check-circle-fill"></i> Dalam Proses
+                                     <span class="status-badge configured">
+                                         <span class="pulse-dot configured"></span> Dalam Proses
                                      </span>
                                  @else
-                                     <span style="font-size: 0.68rem; font-weight: 800; background: #fff7ed; color: #f59e0b; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
-                                         <i class="bi bi-exclamation-circle-fill"></i> Menunggu Asset
+                                     <span class="status-badge missing">
+                                         <span class="pulse-dot missing"></span> Menunggu Asset
                                      </span>
                                  @endif
 
-                                 <!-- Type badge (ACARA/KURSUS) -->
-                                 <span style="font-size: 0.68rem; font-weight: 800; background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                                     {{ $typeBadge }}
-                                 </span>
+                                 <span class="type-badge">{{ $typeBadge }}</span>
+
+                                 <!-- Mini mockup decorative element -->
+                                 <div class="mini-mockup">
+                                     <div class="mockup-frame">
+                                         <div class="mockup-lines">
+                                             <div class="mockup-line-long"></div>
+                                             <div class="mockup-line-short"></div>
+                                             <div class="mockup-line-long"></div>
+                                         </div>
+                                         <div class="mockup-seal"></div>
+                                     </div>
+                                 </div>
                              </div>
 
                              <!-- Inner card body -->
-                             <div class="card-inner" style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1;">
+                             <div class="card-inner">
                                  <!-- Title, Date and stats row -->
                                  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
                                      <div style="display: flex; gap: 12px; min-width: 0;">
                                          <!-- Left Calendar icon card -->
-                                         <div style="width: 42px; height: 42px; border-radius: 10px; background: #eef2ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
-                                             <i class="bi bi-calendar3"></i>
+                                         <div class="program-icon-wrapper {{ $context }}">
+                                             @if($isEvent)
+                                                 <i class="bi bi-calendar3"></i>
+                                             @else
+                                                 <i class="bi bi-journal-bookmark-fill"></i>
+                                             @endif
                                          </div>
                                          <div style="min-width: 0;">
                                              <h5 class="program-title" style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $title }}">{{ $title }}</h5>
@@ -1452,27 +1423,27 @@
                                  </div>
 
                                  <!-- Kelengkapan Asset Desain checklist -->
-                                 <div class="asset-checklist" style="border-top: 1px dashed #e2e8f0; padding-top: 12px; margin-top: 4px;">
-                                     <div class="checklist-title" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 8px;">Kelengkapan Asset Desain</div>
-                                     <div class="checklist-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                                         <div class="check-item {{ $hasTemplate ? 'is-valid' : 'is-invalid' }}" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; border-radius: 8px; border: 1px solid {{ $hasTemplate ? '#d1fae5' : '#ffe4e6' }}; background: {{ $hasTemplate ? '#f0fdf4' : '#fff1f2' }}; transition: all 0.2s;">
-                                             <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}" style="color: {{ $hasTemplate ? '#10b981' : '#f43f5e' }}; font-size: 13px; display: inline-flex;"></i>
-                                             <span style="font-size: 0.72rem; font-weight: 700; color: {{ $hasTemplate ? '#065f46' : '#9f1239' }};">Template</span>
+                                 <div class="asset-checklist">
+                                     <div class="checklist-title">Kelengkapan Asset Desain</div>
+                                     <div class="checklist-grid">
+                                         <div class="check-item {{ $hasTemplate ? 'is-valid' : 'is-invalid' }}">
+                                             <i class="bi {{ $hasTemplate ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }} check-icon"></i>
+                                             <span class="check-label">Template</span>
                                          </div>
-                                         <div class="check-item {{ $hasLogo ? 'is-valid' : 'is-invalid' }}" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; border-radius: 8px; border: 1px solid {{ $hasLogo ? '#d1fae5' : '#ffe4e6' }}; background: {{ $hasLogo ? '#f0fdf4' : '#fff1f2' }}; transition: all 0.2s;">
-                                             <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}" style="color: {{ $hasLogo ? '#10b981' : '#f43f5e' }}; font-size: 13px; display: inline-flex;"></i>
-                                             <span style="font-size: 0.72rem; font-weight: 700; color: {{ $hasLogo ? '#065f46' : '#9f1239' }};">Logo</span>
+                                         <div class="check-item {{ $hasLogo ? 'is-valid' : 'is-invalid' }}">
+                                             <i class="bi {{ $hasLogo ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }} check-icon"></i>
+                                             <span class="check-label">Logo</span>
                                          </div>
-                                         <div class="check-item {{ $hasSignature ? 'is-valid' : 'is-invalid' }}" style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 4px; border-radius: 8px; border: 1px solid {{ $hasSignature ? '#d1fae5' : '#ffe4e6' }}; background: {{ $hasSignature ? '#f0fdf4' : '#fff1f2' }}; transition: all 0.2s;">
-                                             <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }}" style="color: {{ $hasSignature ? '#10b981' : '#f43f5e' }}; font-size: 13px; display: inline-flex;"></i>
-                                             <span style="font-size: 0.72rem; font-weight: 700; color: {{ $hasSignature ? '#065f46' : '#9f1239' }}; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Ttd Partner</span>
+                                         <div class="check-item {{ $hasSignature ? 'is-valid' : 'is-invalid' }}">
+                                             <i class="bi {{ $hasSignature ? 'bi-check-circle-fill' : 'bi-x-circle-fill' }} check-icon"></i>
+                                             <span class="check-label">Ttd Partner</span>
                                          </div>
                                      </div>
                                  </div>
 
                                  <!-- Trainer & Certificate List -->
-                                 <div class="trainer-status-list" style="margin-top: 2px;">
-                                     <div class="checklist-title" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 8px;">Daftar Trainer & Sertifikat</div>
+                                 <div class="trainer-status-list">
+                                     <div class="checklist-title">Daftar Trainer & Sertifikat</div>
                                      <div style="display: flex; flex-direction: column; gap: 8px;">
                                          @foreach($itemTrainers as $trn)
                                              @php
@@ -1493,12 +1464,16 @@
                                                  $colorIndex = abs(crc32($trn->name)) % count($bgColors);
                                                  $bgColor = $bgColors[$colorIndex];
                                              @endphp
-                                             <div class="trainer-status-row" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; transition: all 0.2s;">
+                                             <div class="trainer-status-row">
                                                  <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-                                                     <!-- Initials Circle -->
-                                                     <div style="width: 28px; height: 28px; border-radius: 50%; background-color: {{ $bgColor }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 10px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
-                                                         {{ $initials }}
-                                                     </div>
+                                                     <!-- Avatar Image or Initials Circle -->
+                                                     @if($trn->avatar_url)
+                                                         <img src="{{ $trn->avatar_url }}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(0,0,0,0.05); flex-shrink: 0;" alt="Avatar">
+                                                     @else
+                                                         <div style="width: 28px; height: 28px; border-radius: 50%; background-color: {{ $bgColor }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 10px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                                             {{ $initials }}
+                                                         </div>
+                                                     @endif
                                                      <div style="min-width: 0; flex: 1;">
                                                          <span style="font-size: 0.8rem; font-weight: 700; color: #1e293b; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $trn->name }}">{{ $trn->name }}</span>
                                                          <span style="font-size: 0.68rem; display: block; font-weight: 600;">

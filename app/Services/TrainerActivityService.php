@@ -193,6 +193,9 @@ class TrainerActivityService
 
     private function calculateAverageRating(int $trainerId): float
     {
+        $trainer = User::find($trainerId);
+        $trainerName = $trainer ? $trainer->name : '';
+
         $courseStats = Review::query()
             ->whereHas('course', function ($query) use ($trainerId) {
                 $query->where('trainer_id', $trainerId);
@@ -201,8 +204,20 @@ class TrainerActivityService
             ->first();
 
         $eventStats = Feedback::query()
-            ->whereHas('event', function ($query) use ($trainerId) {
-                $query->where('trainer_id', $trainerId);
+            ->whereHas('event', function ($query) use ($trainerId, $trainerName) {
+                $query->where(function ($q) use ($trainerId, $trainerName) {
+                    $q->where('trainer_id', $trainerId)
+                        ->orWhereHas('speakers', function ($sq) use ($trainerId) {
+                            $sq->where('trainer_id', $trainerId);
+                        })
+                        ->orWhereHas('trainerAssignments', function ($aq) use ($trainerId) {
+                            $aq->where('trainer_id', $trainerId)
+                                ->where('status', 'accepted');
+                        });
+                    if ($trainerName !== '') {
+                        $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                    }
+                });
             })
             ->selectRaw('COUNT(*) as total_count, COALESCE(AVG(rating), 0) as average_rating')
             ->first();
@@ -224,30 +239,66 @@ class TrainerActivityService
 
     private function countCompletedActivities(int $trainerId): int
     {
+        $trainer = User::find($trainerId);
+        $trainerName = $trainer ? $trainer->name : '';
+
         $completedCourses = Course::query()
             ->where('trainer_id', $trainerId)
             ->whereIn('status', ['approved', 'completed', 'finished', 'archived'])
             ->count();
 
-        $completedEvents = Event::query()
-            ->where('trainer_id', $trainerId)
+        $completedEventsQuery = Event::query()
+            ->where(function ($q) use ($trainerId, $trainerName) {
+                $q->where('trainer_id', $trainerId)
+                    ->orWhereHas('speakers', function ($sq) use ($trainerId) {
+                        $sq->where('trainer_id', $trainerId);
+                    })
+                    ->orWhereHas('trainerAssignments', function ($aq) use ($trainerId) {
+                        $aq->where('trainer_id', $trainerId)
+                            ->where('status', 'accepted');
+                    });
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
             ->where('material_status', 'approved')
-            ->whereNotNull('event_date')
-            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) < ?", [now()->format('Y-m-d H:i:s')])
-            ->count();
+            ->whereNotNull('event_date');
+
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
+            $completedEventsQuery->whereRaw("datetime(date(event_date, 'localtime') || ' ' || COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) < ?", [now()->format('Y-m-d H:i:s')]);
+        } else {
+            $completedEventsQuery->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) < ?", [now()->format('Y-m-d H:i:s')]);
+        }
+
+        $completedEvents = $completedEventsQuery->count();
 
         return $completedCourses + $completedEvents;
     }
 
     private function latestTeachingTimestamp(int $trainerId): ?Carbon
     {
+        $trainer = User::find($trainerId);
+        $trainerName = $trainer ? $trainer->name : '';
+
         $courseLastApprovedAt = Course::query()
             ->where('trainer_id', $trainerId)
             ->whereIn('status', ['approved', 'completed', 'finished', 'archived'])
             ->max('approved_at');
 
         $eventLastDate = Event::query()
-            ->where('trainer_id', $trainerId)
+            ->where(function ($q) use ($trainerId, $trainerName) {
+                $q->where('trainer_id', $trainerId)
+                    ->orWhereHas('speakers', function ($sq) use ($trainerId) {
+                        $sq->where('trainer_id', $trainerId);
+                    })
+                    ->orWhereHas('trainerAssignments', function ($aq) use ($trainerId) {
+                        $aq->where('trainer_id', $trainerId)
+                            ->where('status', 'accepted');
+                    });
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
             ->where('material_status', 'approved')
             ->max('event_date');
 

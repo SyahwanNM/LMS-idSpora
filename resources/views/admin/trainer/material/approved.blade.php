@@ -6,7 +6,7 @@
 <style>
     :root {
         --admin-primary: #1e1b4b;
-        --admin-secondary: #4338ca;
+        --admin-secondary: #3949ab;
         --admin-card-bg: #ffffff;
         --admin-border: #e2e8f0;
         --admin-text-main: #0f172a;
@@ -14,31 +14,41 @@
     }
 
     .page-header {
-        margin-bottom: 24px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        flex-wrap: wrap;
-        background: linear-gradient(135deg, #1a237e 0%, #283593 55%, #3949ab 100%);
-        border-radius: 20px;
-        padding: 24px 26px;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        border-radius: 24px;
+        padding: 36px 40px;
         color: #fff;
         position: relative;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        box-shadow: 0 14px 30px rgba(26, 35, 126, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
     }
 
     .page-header::after {
         content: '';
         position: absolute;
-        right: -80px;
-        top: -80px;
-        width: 240px;
-        height: 240px;
+        top: -40%;
+        right: -10%;
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(99, 102, 241, 0) 70%);
+        filter: blur(20px);
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(255,255,255,.2) 0%, rgba(255,255,255,0) 70%);
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -5%;
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 70%);
+        filter: blur(20px);
+        border-radius: 50%;
+        z-index: 1;
         pointer-events: none;
     }
 
@@ -49,11 +59,11 @@
     }
 
     .page-title {
-        font-size: 2rem;
+        font-size: 2.2rem;
         font-weight: 800;
         color: #fff;
         margin-bottom: 8px;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.8px;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -61,15 +71,15 @@
 
     .page-subtitle {
         margin: 0;
-        color: rgba(255,255,255,.86);
-        font-size: .92rem;
+        color: #94a3b8;
+        font-size: .95rem;
     }
 
     .content-card {
         background: var(--admin-card-bg);
         border-radius: 20px;
         border: 1px solid var(--admin-border);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,.05);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
         overflow: hidden;
     }
 
@@ -79,7 +89,7 @@
         background: #fff;
         display: flex;
         gap: 14px;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
     }
@@ -92,7 +102,7 @@
     .toolbar-form {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         flex-wrap: wrap;
     }
 
@@ -104,38 +114,54 @@
 
     .search-box input {
         width: 100%;
-        padding: 10px 16px 10px 40px;
-        height: 44px;
-        border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        font-size: .9rem;
+        padding: 12px 16px 12px 42px;
+        height: 46px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.9rem;
         background: #f8fafc;
+        color: #1e293b;
+        transition: all 0.25s ease;
+        outline: none;
     }
 
     .search-box i {
         position: absolute;
-        left: 14px;
+        left: 16px;
         top: 50%;
         transform: translateY(-50%);
         color: #94a3b8;
+        font-size: 1rem;
+        transition: color 0.25s ease;
     }
 
     .search-box input:focus {
-        border-color: #166534;
-        outline: none;
+        border-color: #3949ab;
         background: #fff;
-        box-shadow: 0 0 0 3px rgba(22,101,52,.1);
+        box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.08);
+    }
+
+    .search-box:focus-within i {
+        color: #3949ab;
     }
 
     .filter-select {
-        border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        padding: 0 12px;
-        height: 44px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0 16px;
+        height: 46px;
         font-size: .88rem;
         min-width: 180px;
-        background: #fff;
+        background: #f8fafc;
         color: #334155;
+        outline: none;
+        transition: all 0.25s ease;
+    }
+
+    .filter-select:focus {
+        border-color: #3949ab;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.08);
     }
 
     .toolbar-right {
@@ -147,6 +173,21 @@
         margin-left: auto;
     }
 
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
     .table {
         margin-bottom: 0;
         width: 100%;
@@ -156,20 +197,20 @@
     .table th {
         background: #f8fafc;
         color: var(--admin-text-muted);
-        font-size: .75rem;
+        font-size: .78rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: .5px;
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--admin-border);
+        letter-spacing: .8px;
+        padding: 18px 24px;
+        border-bottom: 1.5px solid var(--admin-border);
         white-space: nowrap;
     }
 
     .table td {
-        padding: 16px 24px;
+        padding: 18px 24px;
         vertical-align: middle;
         border-bottom: 1px solid var(--admin-border);
-        font-size: .84rem;
+        font-size: .86rem;
     }
 
     .table tr:hover {
@@ -177,22 +218,23 @@
     }
 
     .course-title {
-        font-weight: 700;
+        font-weight: 800;
         color: var(--admin-text-main);
         margin: 0 0 4px;
-        font-size: .88rem;
-        line-height: 1.4;
+        font-size: .9rem;
+        line-height: 1.45;
     }
 
     .badge-cat {
-        background: #e2e8f0;
-        color: #475569;
+        background: rgba(57, 73, 171, 0.08);
+        color: #3949ab;
         padding: 4px 10px;
         border-radius: 6px;
-        font-size: .7rem;
+        font-size: .72rem;
         font-weight: 700;
         display: inline-flex;
         align-items: center;
+        gap: 4px;
     }
 
     .trainer-info {
@@ -202,88 +244,115 @@
     }
 
     .trainer-avatar {
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
         border-radius: 50%;
         object-fit: cover;
+        border: 2px solid #ffffff;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
     }
 
     .trainer-name {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--admin-text-main);
-        font-size: .84rem;
+        font-size: .86rem;
     }
 
     .badge-status {
-        padding: 6px 12px;
-        border-radius: 20px;
+        padding: 6px 14px;
+        border-radius: 100px;
         font-size: .75rem;
         font-weight: 700;
         display: inline-flex;
         align-items: center;
         gap: 6px;
         white-space: nowrap;
-    }
-
-    .badge-status::before {
-        content: '';
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
     }
 
     .badge-approved-status {
-        background: #dcfce7;
-        color: #166534;
+        background: rgba(16, 185, 129, 0.12);
+        color: #059669;
     }
 
     .badge-approved-status::before {
-        background: #166534;
+        content: '';
+        width: 6px;
+        height: 6px;
+        background-color: #10b981;
+        border-radius: 50%;
     }
 
-    .btn-action {
-        background: #fff;
-        border: 1px solid #cbd5e1;
-        color: var(--admin-text-main);
-        height: 34px;
-        padding: 0 10px;
-        border-radius: 7px;
-        font-size: .78rem;
-        font-weight: 600;
+    .btn-action-view {
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+        color: #059669;
+        height: 36px;
+        padding: 0 14px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 700;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 4px;
-        transition: all .2s;
+        gap: 6px;
+        transition: all 0.2s ease;
         white-space: nowrap;
     }
 
-    .btn-action:hover {
-        border-color: var(--admin-secondary);
-        color: var(--admin-secondary);
-        background: #f8fafc;
+    .btn-action-view:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-revisions-link {
+        height: 44px;
+        color: #991b1b;
+        border: 1.5px solid #fecaca;
+        background: #fef2f2;
+        padding: 0 16px;
+        border-radius: 10px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.25s ease;
+    }
+
+    .btn-revisions-link:hover {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #991b1b;
+        transform: translateY(-1px);
     }
 
     .btn-back-header {
-        background: rgba(255,255,255,.18);
-        border: 1px solid rgba(255,255,255,.34);
+        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.2);
         color: #fff;
-        padding: 10px 16px;
-        border-radius: 10px;
-        font-size: .84rem;
+        padding: 10px 18px;
+        border-radius: 12px;
+        font-size: .86rem;
         font-weight: 700;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
         gap: 8px;
         transition: all .2s;
-        backdrop-filter: blur(2px);
+        backdrop-filter: blur(4px);
     }
 
     .btn-back-header:hover {
-        background: rgba(255,255,255,.28);
+        background: rgba(255,255,255,.2);
         color: #fff;
+        transform: translateY(-1px);
     }
 
     .empty-state {
@@ -292,34 +361,127 @@
     }
 
     .empty-state i {
-        font-size: 3rem;
+        font-size: 3.2rem;
         color: #cbd5e1;
         margin-bottom: 16px;
         display: block;
     }
 
-    @media (max-width: 1200px) {
-        .toolbar,
-        .page-header {
-            flex-direction: column;
-            align-items: stretch;
-        }
+    .pagination-wrapper {
+        padding: 20px 24px;
+        border-top: 1px solid var(--admin-border);
+        background: #f8fafc;
+    }
 
-        .toolbar-left,
-        .toolbar-form,
-        .search-box,
-        .filter-select,
+    @media (max-width: 991.98px) {
+        .page-header {
+            padding: 30px;
+            border-radius: 20px;
+        }
+        .page-title {
+            font-size: 1.8rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .toolbar {
+            padding: 16px;
+            gap: 12px;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .toolbar-left, .toolbar-form {
+            width: 100%;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+        .search-box, .filter-select {
+            width: 100% !important;
+        }
         .toolbar-right {
             width: 100%;
-        }
-
-        .toolbar-left {
-            flex: none !important;
-        }
-
-        .toolbar-right {
-            justify-content: flex-start;
             margin-left: 0;
+            display: flex;
+        }
+        .btn-revisions-link {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Responsive Table to Cards conversion on mobile/tablet */
+    @media (max-width: 991.98px) {
+        .table, .table thead, .table tbody, .table tr, .table td {
+            display: block;
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        .table thead {
+            display: none; /* Hide standard headers */
+        }
+
+        .table tr {
+            margin-bottom: 24px;
+            border: 1px solid var(--admin-border);
+            border-radius: 18px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
+        }
+
+        .table td {
+            padding: 10px 0;
+            border-bottom: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+        }
+
+        .table td::before {
+            content: attr(data-label);
+            font-weight: 800;
+            color: var(--admin-text-muted);
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            margin-right: 16px;
+        }
+
+        /* Highlight Title Column */
+        .table td[data-label="Materi Course"],
+        .table td[data-label="Materi Event"] {
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 14px;
+            margin-bottom: 10px;
+            display: block;
+            text-align: left;
+        }
+
+        .table td[data-label="Materi Course"]::before,
+        .table td[data-label="Materi Event"]::before {
+            display: none;
+        }
+
+        /* Action Column style */
+        .table td:last-child {
+            border-top: 1px solid #f1f5f9;
+            padding-top: 14px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: stretch;
+        }
+
+        .table td:last-child::before {
+            display: none;
+        }
+
+        .btn-action-view {
+            width: 100%;
+            justify-content: center;
+            height: 40px;
         }
     }
 </style>
@@ -343,7 +505,8 @@
     </a>
 </div>
 
-<div class="content-card">
+<!-- Course Materials Content Card -->
+<div class="content-card mb-4">
     <div class="toolbar">
         <div class="toolbar-left">
             <form method="GET" class="toolbar-form">
@@ -365,9 +528,7 @@
         </div>
 
         <div class="toolbar-right">
-            <a href="{{ route('admin.trainer.material.rejected') }}"
-               class="btn-action"
-               style="height:44px;color:#991b1b;border-color:#fecaca;background:#fef2f2;">
+            <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-revisions-link">
                 Lihat Revisi
                 <i class="bi bi-arrow-right"></i>
             </a>
@@ -391,7 +552,7 @@
             <tbody>
                 @forelse($approvedMaterials as $material)
                     <tr>
-                        <td>
+                        <td data-label="Materi Course">
                             <h6 class="course-title">
                                 {{ \Illuminate\Support\Str::limit($material->name ?? 'Course Tanpa Judul', 45) }}
                             </h6>
@@ -402,7 +563,7 @@
                             </span>
                         </td>
 
-                        <td>
+                        <td data-label="Trainer">
                             <div class="trainer-info">
                                 <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($material->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
                                      class="trainer-avatar"
@@ -412,18 +573,21 @@
                                     <div class="trainer-name">
                                         {{ $material->trainer?->name ?? 'Anonim' }}
                                     </div>
+                                    <div style="font-size:.72rem;color:#64748b;">
+                                        {{ $material->trainer?->email }}
+                                    </div>
                                 </div>
                             </div>
                         </td>
 
-                        <td>
-                            <div style="font-weight:600;color:#334155;">
+                        <td data-label="Isi Modul">
+                            <div style="font-weight:700;color:#334155;">
                                 {{ $material->modules_count ?? 0 }} File/Kuis
                             </div>
                         </td>
 
-                        <td>
-                            <div style="font-weight:600;color:#334155;">
+                        <td data-label="Tanggal Disetujui">
+                            <div style="font-weight:700;color:#334155;">
                                 {{ $material->approved_at ? \Carbon\Carbon::parse($material->approved_at)->format('d M Y') : '-' }}
                             </div>
 
@@ -432,16 +596,16 @@
                             </div>
                         </td>
 
-                        <td>
+                        <td data-label="Status">
                             <span class="badge-status badge-approved-status">Live</span>
                         </td>
 
-                        <td>
+                        <td data-label="Tenggat">
                             @php
                                 $monitor = $deadlineMonitoring[$material->id] ?? null;
                             @endphp
 
-                            <div style="font-weight:600;color:#334155;">
+                            <div style="font-weight:700;color:#334155;">
                                 {{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}
                             </div>
 
@@ -450,11 +614,11 @@
                             </div>
                         </td>
 
-                        <td class="text-end">
+                        <td data-label="Aksi" class="text-end">
                             <a href="{{ route('admin.trainer.material.show', $material->id) }}"
-                               class="btn-action"
-                               style="color:#166534;border-color:#bbf7d0;background:#f0fdf4;">
-                                <i class="bi bi-eye"></i>
+                               class="btn-action-view"
+                               title="Tinjau Modul">
+                                <i class="bi bi-eye-fill"></i> Tinjau
                             </a>
                         </td>
                     </tr>
@@ -476,13 +640,14 @@
     </div>
 
     @if(method_exists($approvedMaterials, 'hasPages') && $approvedMaterials->hasPages())
-        <div class="p-3 border-top">
+        <div class="pagination-wrapper">
             {{ $approvedMaterials->appends(request()->except('page'))->links('pagination::bootstrap-5') }}
         </div>
     @endif
 </div>
 
-<div class="content-card mt-4">
+<!-- Event Materials Content Card -->
+<div class="content-card">
     <div class="toolbar">
         <div class="toolbar-left">
             <form method="GET" class="toolbar-form">
@@ -504,9 +669,7 @@
         </div>
 
         <div class="toolbar-right">
-            <a href="{{ route('admin.trainer.material.rejected') }}"
-               class="btn-action"
-               style="height:44px;color:#991b1b;border-color:#fecaca;background:#fef2f2;">
+            <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-revisions-link">
                 Lihat Revisi
                 <i class="bi bi-arrow-right"></i>
             </a>
@@ -536,7 +699,7 @@
                     @endphp
 
                     <tr>
-                        <td>
+                        <td data-label="Materi Event">
                             <h6 class="course-title">
                                 {{ \Illuminate\Support\Str::limit($event->title ?? 'Event Tanpa Judul', 48) }}
                             </h6>
@@ -550,7 +713,7 @@
                             </div>
                         </td>
 
-                        <td>
+                        <td data-label="Trainer">
                             <div class="trainer-info">
                                 <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($event->trainer?->name ?? 'Trainer') . '&background=3949ab&color=fff&bold=true' }}"
                                      class="trainer-avatar"
@@ -568,14 +731,14 @@
                             </div>
                         </td>
 
-                        <td>
-                            <div style="font-weight:600;color:#334155;">
+                        <td data-label="Isi Modul">
+                            <div style="font-weight:700;color:#334155;">
                                 {{ $event->trainerModules->count() }} Dokumen Modul
                             </div>
                         </td>
 
-                        <td>
-                            <div style="font-weight:600;color:#334155;">
+                        <td data-label="Tanggal Disetujui">
+                            <div style="font-weight:700;color:#334155;">
                                 {{ $approvedAt ? \Carbon\Carbon::parse($approvedAt)->format('d M Y') : '-' }}
                             </div>
 
@@ -584,12 +747,12 @@
                             </div>
                         </td>
 
-                        <td>
+                        <td data-label="Status">
                             <span class="badge-status badge-approved-status">Live</span>
                         </td>
 
-                        <td>
-                            <div style="font-weight:600;color:#334155;">
+                        <td data-label="Tenggat">
+                            <div style="font-weight:700;color:#334155;">
                                 {{ $eventDeadline ? \Carbon\Carbon::parse($eventDeadline)->format('d M Y H:i') : 'Belum ditentukan' }}
                             </div>
 
@@ -598,17 +761,18 @@
                             </div>
                         </td>
 
-                        <td class="text-end">
+                        <td data-label="Aksi" class="text-end">
                             <a href="{{ route('admin.event-material.show', $event->id) }}"
-                               class="btn-action">
-                                Tinjau <i class="bi bi-arrow-right"></i>
+                               class="btn-action-view"
+                               title="Tinjau Modul">
+                                <i class="bi bi-eye-fill"></i> Tinjau
                             </a>
                         </td>
                     </tr>
                 @empty
                     <tr>
                         <td colspan="7">
-                            <div class="empty-state" style="padding:36px 20px;">
+                            <div class="empty-state">
                                 <i class="bi bi-folder2-open"></i>
                                 <h6 class="fw-bold mt-2 mb-1" style="color:#334155;">
                                     Belum ada materi event approved

@@ -145,10 +145,25 @@ class EventController extends Controller
     {
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
         $events = Event::query()
-            ->with(['approvedTrainerModules.trainer', 'speakers'])
+            ->with(['speakers'])
+            ->withCount(['trainerModules as approved_modules_count' => function ($q) {
+                $q->where('status', 'approved');
+            }])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
             ->paginate(10);
+
+        // Load approvedTrainerModules with trainer scoped per event (safe eager load)
+        $events->each(function ($event) {
+            $event->setRelation(
+                'approvedTrainerModules',
+                \App\Models\EventTrainerModule::where('event_id', $event->id)
+                    ->where('status', 'approved')
+                    ->with('trainer:id,name')
+                    ->get()
+            );
+        });
+
         $materiOptions = Event::query()->whereNotNull('materi')->distinct()->orderBy('materi')->pluck('materi');
         $jenisOptions = Event::query()->whereNotNull('jenis')->distinct()->orderBy('jenis')->pluck('jenis');
         return view('admin.add-event', compact('events', 'materiOptions', 'jenisOptions'));
@@ -360,6 +375,17 @@ class EventController extends Controller
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
+
+        // Guard: pastikan tidak ada module/registrasi/assignment/dll yang ter-create secara tidak sengaja untuk event baru (orphan dari deleted events)
+        \App\Models\EventRegistration::where('event_id', $event->id)->delete();
+        \App\Models\EventTrainerModule::where('event_id', $event->id)->delete();
+        \App\Models\TrainerAssignment::where('event_id', $event->id)->forceDelete();
+        \App\Models\EventDailyQr::where('event_id', $event->id)->delete();
+        \App\Models\EventSpeaker::where('event_id', $event->id)->delete();
+        \App\Models\EventScheduleItem::where('event_id', $event->id)->delete();
+        \App\Models\EventExpense::where('event_id', $event->id)->delete();
+        \App\Models\Feedback::where('event_id', $event->id)->delete();
+        \Illuminate\Support\Facades\DB::table('user_saved_events')->where('event_id', $event->id)->delete();
 
         // Sync speakers with salaries
         $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
@@ -963,18 +989,23 @@ class EventController extends Controller
 
         $event->update($data);
 
+        // Clear trainer_id if the previously assigned trainer is no longer in the speakers list
+        $resolvedNewTrainerIds = $this->resolveTrainerIdsFromSpeakers($event->speaker);
+        if ($event->trainer_id && !in_array((int) $event->trainer_id, $resolvedNewTrainerIds, true)) {
+            $event->trainer_id = null;
+            $event->save();
+        }
+
         $currentAssignedTrainerIds = $this->resolveAssignedTrainerIds(
             !empty($event->trainer_id) ? (int) $event->trainer_id : null,
             $event->speaker
         );
         $newlyAssignedTrainerIds = array_values(array_diff($currentAssignedTrainerIds, $previousAssignedTrainerIds));
 
-        // Sync speakers with salaries
+        // Sync speakers with salaries (call always to allow deletion)
         $speakerNames = collect((array) $request->input('speakers', []))->map(fn($s) => trim((string) $s))->filter()->values()->all();
         $speakerSalaries = (array) $request->input('speaker_salaries', []);
-        if (!empty($speakerNames)) {
-            $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
-        }
+        $this->syncEventSpeakers($event, $speakerNames, $speakerSalaries);
 
         foreach ($newlyAssignedTrainerIds as $trainerId) {
             $source = ((int) ($event->trainer_id ?? 0) === (int) $trainerId) ? 'trainer_id' : 'speaker_match';
@@ -1081,7 +1112,24 @@ class EventController extends Controller
         $copy->attendance_qr_token        = null;
         $copy->attendance_qr_image        = null;
         $copy->attendance_qr_generated_at = null;
+
+        // Pastikan relasi trainerModules tidak ikut di-carry oleh replicate()
+        $copy->unsetRelation('trainerModules');
+        $copy->unsetRelation('approvedTrainerModules');
+        $copy->unsetRelation('registrations');
+
         $copy->save();
+
+        // Hapus EventTrainerModule dan EventRegistration yang mungkin ter-copy otomatis — harus kosong di event baru (orphan dari deleted events)
+        \App\Models\EventTrainerModule::where('event_id', $copy->id)->delete();
+        \App\Models\EventRegistration::where('event_id', $copy->id)->delete();
+        \App\Models\TrainerAssignment::where('event_id', $copy->id)->forceDelete();
+        \App\Models\EventDailyQr::where('event_id', $copy->id)->delete();
+        \App\Models\EventSpeaker::where('event_id', $copy->id)->delete();
+        \App\Models\EventScheduleItem::where('event_id', $copy->id)->delete();
+        \App\Models\EventExpense::where('event_id', $copy->id)->delete();
+        \App\Models\Feedback::where('event_id', $copy->id)->delete();
+        \Illuminate\Support\Facades\DB::table('user_saved_events')->where('event_id', $copy->id)->delete();
 
         // Copy schedule items
         foreach ($event->scheduleItems as $item) {
@@ -1094,6 +1142,13 @@ class EventController extends Controller
         foreach ($event->expenses as $expense) {
             $copy->expenses()->create($expense->only([
                 'item', 'quantity', 'unit_price', 'total', 'note',
+            ]));
+        }
+
+        // Salin EventSpeaker records agar assignment trainer tetap terjaga
+        foreach ($event->speakers as $speaker) {
+            $copy->speakers()->create($speaker->only([
+                'trainer_id', 'name', 'salary', 'notes', 'order',
             ]));
         }
 
@@ -1875,126 +1930,6 @@ class EventController extends Controller
             \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Admin: Store multiple event materials (files and links)
-     */
-    public function storeMaterials(Request $request, Event $event)
-    {
-        $trainerId = $event->trainer_id ?? auth()->id();
-
-        if (!$request->hasFile('files') && (empty($request->input('links')) || !is_array($request->input('links')))) {
-            return back()->with('error', 'Harap sertakan setidaknya satu file atau satu link materi.');
-        }
-
-        $request->validate([
-            'files' => 'nullable|array',
-            'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000',
-            'links' => 'nullable|array',
-            'links.*.url' => 'required|url|max:2048',
-            'links.*.name' => 'nullable|string|max:255',
-        ]);
-
-        $primaryMaterialPath = null;
-
-        // Process files
-        if ($request->hasFile('files')) {
-            foreach ($request->file('files') as $file) {
-                $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-                $filepath = $file->storeAs('events/' . $event->id . '/materials', $filename, 'public');
-
-                \App\Models\EventTrainerModule::create([
-                    'event_id' => $event->id,
-                    'trainer_id' => $trainerId,
-                    'original_name' => $file->getClientOriginalName(),
-                    'path' => $filepath,
-                    'status' => 'approved', // Admin uploads are auto-approved!
-                ]);
-
-                if ($primaryMaterialPath === null) {
-                    $primaryMaterialPath = $filepath;
-                }
-            }
-        }
-
-        // Process links
-        if (!empty($request->input('links')) && is_array($request->input('links'))) {
-            foreach ($request->input('links') as $link) {
-                if (empty($link['url'])) continue;
-                $linkUrl = $link['url'];
-                $linkName = !empty($link['name']) ? $link['name'] : $linkUrl;
-
-                \App\Models\EventTrainerModule::create([
-                    'event_id' => $event->id,
-                    'trainer_id' => $trainerId,
-                    'original_name' => $linkName,
-                    'path' => $linkUrl,
-                    'status' => 'approved', // Admin uploads are auto-approved!
-                ]);
-
-                if ($primaryMaterialPath === null) {
-                    $primaryMaterialPath = $linkUrl;
-                }
-            }
-        }
-
-        if ($primaryMaterialPath) {
-            $event->update([
-                'module_path' => $primaryMaterialPath,
-                'material_status' => 'approved',
-            ]);
-        }
-
-        return back()->with('success', 'Materi event berhasil disimpan.');
-    }
-
-    /**
-     * Admin: Delete specific event material
-     */
-    public function destroyMaterial(Event $event, \App\Models\EventTrainerModule $module)
-    {
-        if ($module->event_id !== $event->id) {
-            return back()->with('error', 'Aksi tidak valid.');
-        }
-
-        if (!preg_match('#^https?://#i', $module->path)) {
-            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($module->path);
-            }
-        }
-
-        $module->delete();
-
-        if ($event->module_path === $module->path) {
-            $nextModule = \App\Models\EventTrainerModule::where('event_id', $event->id)->first();
-            $event->update([
-                'module_path' => $nextModule ? $nextModule->path : null,
-                'material_status' => $nextModule ? $event->material_status : 'draft',
-            ]);
-        }
-
-        return back()->with('success', 'Materi event berhasil dihapus.');
-    }
-
-    /**
-     * Admin: Update specific event material feedback link
-     */
-    public function updateFeedbackLink(Request $request, Event $event, \App\Models\EventTrainerModule $module)
-    {
-        if ($module->event_id !== $event->id) {
-            return back()->with('error', 'Aksi tidak valid.');
-        }
-
-        $validated = $request->validate([
-            'feedback_link' => 'nullable|url|max:2048',
-        ]);
-
-        $module->update([
-            'feedback_link' => $validated['feedback_link']
-        ]);
-
-        return back()->with('success', 'Link feedback materi berhasil diperbarui.');
     }
 }
 

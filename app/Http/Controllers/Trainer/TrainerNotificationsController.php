@@ -15,36 +15,577 @@ class TrainerNotificationsController extends Controller
 {
     public function index(Request $request)
     {
-        $uid = Auth::id();
-        if (!$uid) {
-            return response()->json(['items' => [], 'unread' => 0]);
+        $user = Auth::user();
+        if (!$user) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['items' => [], 'unread' => 0]);
+            }
+            return redirect()->route('login');
         }
 
-        $items = TrainerNotification::where('trainer_id', $uid)
+        try {
+            app(TrainerController::class)->ensureEventInvitationsExistForTrainer($user);
+        } catch (\Exception $e) {
+            // Log or ignore gracefully to avoid blocking notifications loading
+            \Illuminate\Support\Facades\Log::error('Failed to sync event invitations for trainer: ' . $e->getMessage());
+        }
+
+        $uid = $user->id;
+
+        if ($request->expectsJson() || $request->ajax()) {
+            $items = TrainerNotification::where('trainer_id', $uid)
+                ->orderByDesc('created_at')
+                ->limit(15)
+                ->get()
+                ->map(function (TrainerNotification $notification) {
+                    return [
+                        'id' => $notification->id,
+                        'title' => $notification->title,
+                        'message' => $notification->message,
+                        'type' => $notification->type,
+                        'time_ago' => optional($notification->created_at)->diffForHumans(),
+                        'url' => data_get($notification->data, 'url'),
+                        'read_at' => optional($notification->read_at)?->toIso8601String(),
+                    ];
+                })
+                ->values();
+
+            $unread = TrainerNotification::where('trainer_id', $uid)
+                ->whereNull('read_at')
+                ->count();
+
+            return response()->json([
+                'items' => $items,
+                'unread' => $unread,
+            ]);
+        }
+
+        $invitations = TrainerNotification::where('trainer_id', $uid)
+            ->whereIn('type', ['course_invitation', 'event_invitation'])
+            ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
             ->orderByDesc('created_at')
-            ->limit(15)
-            ->get()
-            ->map(function (TrainerNotification $notification) {
-                return [
-                    'id' => $notification->id,
-                    'title' => $notification->title,
-                    'message' => $notification->message,
-                    'type' => $notification->type,
-                    'time_ago' => optional($notification->created_at)->diffForHumans(),
-                    'url' => data_get($notification->data, 'url'),
-                    'read_at' => optional($notification->read_at)?->toIso8601String(),
-                ];
-            })
-            ->values();
+            ->paginate(15);
 
-        $unread = TrainerNotification::where('trainer_id', $uid)
-            ->whereNull('read_at')
-            ->count();
+        $viewHtml = <<<'HTML'
+@extends('layouts.trainer')
 
-        return response()->json([
-            'items' => $items,
-            'unread' => $unread,
-        ]);
+@section('title', 'Daftar Undangan')
+
+@push('styles')
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+    .invitation-page-container {
+        font-family: 'Outfit', sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+    }
+    
+    .invitation-header-section {
+        background: linear-gradient(135deg, #2e2050 0%, #4a326c 100%);
+        padding: 32px;
+        border-radius: 24px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(46, 32, 80, 0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .invitation-header-title {
+        font-size: 28px;
+        font-weight: 800;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.5px;
+    }
+
+    .invitation-header-desc {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    .btn-back-dash {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(8px);
+        text-decoration: none;
+    }
+
+    .btn-back-dash:hover {
+        background: white;
+        color: #2e2050;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+    }
+
+    .invitation-card {
+        border: 1px solid #f1f5f9;
+        border-radius: 20px;
+        background: #ffffff;
+        padding: 28px;
+        margin-bottom: 20px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .invitation-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: transparent;
+        transition: background-color 0.3s ease;
+    }
+
+    .invitation-card.is-unread {
+        background: #fdfcff;
+        border-color: rgba(99, 102, 241, 0.12);
+        box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.05), 0 8px 10px -6px rgba(99, 102, 241, 0.05);
+    }
+
+    .invitation-card.is-unread::before {
+        background-color: #6366f1;
+    }
+
+    .invitation-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: rgba(46, 32, 80, 0.08);
+    }
+
+    .invitation-badge-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .invitation-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .invitation-badge-event {
+        background: #f3e8ff;
+        color: #6b21a8;
+        border: 1px solid #e9d5ff;
+    }
+
+    .invitation-badge-course {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+    }
+
+    .badge-new {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 30px;
+        letter-spacing: 0.5px;
+    }
+
+    .invitation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    .invitation-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+        line-height: 1.3;
+        letter-spacing: -0.2px;
+    }
+
+    .invitation-date {
+        font-size: 12px;
+        color: #94a3b8;
+        font-weight: 600;
+        white-space: nowrap;
+        background: #f8fafc;
+        padding: 4px 10px;
+        border-radius: 8px;
+        border: 1px solid #f1f5f9;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .invitation-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 13px;
+        color: #475569;
+        margin-bottom: 18px;
+        padding: 12px 0;
+        border-top: 1px dashed #f1f5f9;
+        border-bottom: 1px dashed #f1f5f9;
+    }
+
+    .invitation-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f8fafc;
+        padding: 6px 12px;
+        border-radius: 10px;
+        border: 1px solid #f1f5f9;
+        font-weight: 500;
+    }
+
+    .invitation-meta i {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    .invitation-desc {
+        font-size: 14.5px;
+        color: #475569;
+        line-height: 1.6;
+        margin-bottom: 22px;
+    }
+
+    .invitation-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .btn-action-primary {
+        background: linear-gradient(135deg, #2e2050 0%, #4a326c 100%);
+        color: white !important;
+        padding: 10px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 13px;
+        box-shadow: 0 4px 15px rgba(46, 32, 80, 0.15);
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(46, 32, 80, 0.25);
+        opacity: 0.95;
+    }
+
+    .btn-action-outline {
+        border: 1.5px solid #e2e8f0;
+        color: #475569 !important;
+        background: white;
+        padding: 9px 22px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-action-outline:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #0f172a !important;
+        transform: translateY(-2px);
+    }
+
+    .btn-action-danger-outline {
+        border: 1.5px solid #fee2e2;
+        color: #dc2626 !important;
+        background: white;
+        padding: 9px 22px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-action-danger-outline:hover {
+        border-color: #dc2626;
+        background: #fef2f2;
+        transform: translateY(-2px);
+    }
+
+    .status-badge-container {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 13px;
+        gap: 6px;
+    }
+
+    .status-badge-accepted {
+        background: #d1fae5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+    }
+
+    .status-badge-rejected {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .empty-invitations-card {
+        padding: 60px 20px;
+        text-align: center;
+        background: white;
+        border-radius: 24px;
+        border: 1px solid #f1f5f9;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+
+    .empty-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        background: #f3f0f7;
+        color: #624388;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px auto;
+        font-size: 36px;
+    }
+
+    /* Custom responsive tweaks */
+    @media (max-width: 768px) {
+        .invitation-header-section {
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            justify-content: center;
+        }
+        .btn-back-dash {
+            width: 100%;
+            justify-content: center;
+        }
+        .invitation-card {
+            padding: 20px;
+            border-radius: 16px;
+        }
+        .invitation-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .invitation-date {
+            align-self: flex-start;
+        }
+        .invitation-meta {
+            gap: 10px;
+        }
+        .invitation-meta span {
+            width: 100%;
+        }
+        .invitation-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        .invitation-actions > * {
+            width: 100%;
+        }
+        .btn-action-primary, .btn-action-outline, .btn-action-danger-outline {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="invitation-page-container py-4">
+    <div class="invitation-header-section">
+        <div>
+            <h1 class="invitation-header-title">Daftar Undangan</h1>
+            <p class="invitation-header-desc">Kelola semua undangan kelas dan event yang dikirimkan kepada Anda.</p>
+        </div>
+        <a href="{{ route('trainer.dashboard') }}" class="btn-back-dash">
+            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            @forelse($invitations as $invite)
+                @php
+                    $inviteEntityType = data_get($invite->data, 'entity_type', 'course');
+                    $inviteTypeLabel = $inviteEntityType === 'event' ? 'Event' : 'Course';
+                    $entityId = (int) data_get($invite->data, 'entity_id', 0);
+                    $entityDate = '-';
+                    $entityTime = '-';
+                    $entityLocation = '-';
+                    
+                    if ($inviteEntityType === 'event') {
+                        $eventObj = \App\Models\Event::find($entityId);
+                        if ($eventObj) {
+                            $entityDate = $eventObj->event_date ? $eventObj->event_date->format('d M Y') : 'Jadwal Menyusul';
+                            $entityTime = $eventObj->event_time ? \Carbon\Carbon::parse($eventObj->event_time)->format('H:i') : '-';
+                            $entityLocation = $eventObj->location ?: ($eventObj->is_online ? 'Online (Virtual)' : '-');
+                        }
+                    } else {
+                        $courseObj = \App\Models\Course::find($entityId);
+                        if ($courseObj) {
+                             $entityDate = $courseObj->created_at ? $courseObj->created_at->format('d M Y') : '-';
+                             $entityLocation = '-';
+                        }
+                    }
+                    
+                    $status = (string) data_get($invite->data, 'invitation_status', ($invite->invitation_status ?? 'pending'));
+                @endphp
+                <div class="invitation-card {{ is_null($invite->read_at) ? 'is-unread' : '' }}">
+                    <div class="invitation-header">
+                        <div>
+                            <div class="invitation-badge-row">
+                                <span class="invitation-badge {{ $inviteEntityType === 'event' ? 'invitation-badge-event' : 'invitation-badge-course' }}">
+                                    <i class="bi {{ $inviteEntityType === 'event' ? 'bi-calendar-event' : 'bi-book-half' }} me-1"></i> {{ $inviteTypeLabel }}
+                                </span>
+                                @if(is_null($invite->read_at))
+                                    <span class="badge-new">BARU</span>
+                                @endif
+                            </div>
+                            <h3 class="invitation-title">{{ $invite->title }}</h3>
+                        </div>
+                        <span class="invitation-date"><i class="bi bi-clock-history me-1"></i> {{ optional($invite->created_at)->diffForHumans() }}</span>
+                    </div>
+
+                    <div class="invitation-meta mt-2">
+                        <span><i class="bi bi-calendar3"></i> {{ $entityDate }}</span>
+                        @if($entityTime !== '-')
+                            <span><i class="bi bi-clock"></i> {{ $entityTime }}</span>
+                        @endif
+                        @if($entityLocation !== '-')
+                            <span><i class="bi bi-geo-alt"></i> {{ $entityLocation }}</span>
+                        @endif
+                    </div>
+
+                    <div class="invitation-desc">
+                        {{ $invite->message }}
+                    </div>
+
+                    <div class="invitation-actions">
+                        @if($status === 'pending')
+                            @if($inviteEntityType === 'event' && $entityId > 0)
+                                <a href="{{ route('trainer.events.show', $entityId) }}" class="btn-action-outline">
+                                    <i class="bi bi-eye"></i> Lihat Detail
+                                </a>
+                            @elseif($inviteEntityType === 'course' && $entityId > 0)
+                                <a href="{{ route('trainer.detail-course', $entityId) }}" class="btn-action-outline">
+                                    <i class="bi bi-eye"></i> Lihat Detail
+                                </a>
+                            @endif
+                            
+                            @if($inviteEntityType === 'course')
+                                <button type="button" class="btn-action-primary" onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">
+                                    <i class="bi bi-check-circle"></i> Terima Undangan
+                                </button>
+                            @else
+                                <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="margin:0; display:inline-block;">
+                                    @csrf
+                                    <input type="hidden" name="decision" value="accept">
+                                    <button type="submit" class="btn-action-primary">
+                                        <i class="bi bi-check-circle"></i> Terima Undangan
+                                    </button>
+                                </form>
+                            @endif
+
+                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="margin:0; display:inline-block;">
+                                @csrf
+                                <input type="hidden" name="decision" value="reject">
+                                <button type="submit" class="btn-action-danger-outline" onclick="return confirm('Apakah Anda yakin ingin menolak undangan ini?');">
+                                    <i class="bi bi-x-circle"></i> Tolak
+                                </button>
+                            </form>
+                        @elseif($status === 'accepted')
+                            <div class="status-badge-container status-badge-accepted">
+                                <i class="bi bi-check-circle-fill"></i> Undangan Diterima
+                            </div>
+                            @if($inviteEntityType === 'event' && $entityId > 0)
+                                <a href="{{ route('trainer.events.show', $entityId) }}" class="btn-action-outline ms-2">
+                                    Masuk ke Detail Event <i class="bi bi-arrow-right"></i>
+                                </a>
+                            @elseif($inviteEntityType === 'course' && $entityId > 0)
+                                <a href="{{ route('trainer.courses.studio', $entityId) }}" class="btn-action-outline ms-2">
+                                    Masuk ke Studio Kelas <i class="bi bi-arrow-right"></i>
+                                </a>
+                            @endif
+                        @elseif($status === 'rejected')
+                            <div class="status-badge-container status-badge-rejected">
+                                <i class="bi bi-x-circle-fill"></i> Undangan Ditolak
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="empty-invitations-card">
+                    <div class="empty-icon-wrapper">
+                        <i class="bi bi-envelope-open"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-2" style="font-size: 20px;">Tidak Ada Undangan</h4>
+                    <p class="text-muted mb-0">Saat ini Anda tidak memiliki undangan kelas atau event baru maupun lama.</p>
+                </div>
+            @endforelse
+
+            <div class="d-flex justify-content-center mt-4">
+                {!! $invitations->links('pagination::bootstrap-5') !!}
+            </div>
+        </div>
+    </div>
+</div>
+
+@include('trainer.partials.scheme-selection-modal')
+@endsection
+HTML;
+
+        return \Illuminate\Support\Facades\Blade::render($viewHtml, ['invitations' => $invitations]);
     }
 
     public function markAllRead(Request $request)

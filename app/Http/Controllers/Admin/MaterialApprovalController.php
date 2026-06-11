@@ -255,35 +255,45 @@ class MaterialApprovalController extends Controller
 
         $pendingMaterials = $query->paginate(15);
 
-        $pendingEventsQuery = \App\Models\Event::query()
-            ->whereHas('trainerModules', function ($q) {
-                $q->where('status', 'pending_review');
+        $pendingEventsQuery = \App\Models\TrainerAssignment::query()
+            ->whereHas('event')
+            ->whereNotNull('material_path')
+            ->where(function ($q) {
+                $q->whereNull('material_status')
+                    ->orWhereIn('material_status', ['pending', 'pending_review']);
             })
             ->with([
                 'trainer:id,name,email,avatar',
-                'trainerModules' => function ($q) {
+                'event:id,title,event_date,event_time,location,material_deadline,jenis',
+                'event.trainerModules' => function ($q) {
                     $q->where('status', 'pending_review');
-                }
+                },
+                'event.trainerModules.trainer:id,name,email,avatar'
             ]);
 
         if ($request->filled('search')) {
             $search = (string) $request->search;
             $pendingEventsQuery->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhereHas('trainer', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                $q->whereHas('event', function ($eq) use ($search) {
+                    $eq->where('title', 'like', "%{$search}%");
+                })->orWhereHas('trainer', function ($tq) use ($search) {
+                    $tq->where('name', 'like', "%{$search}%");
+                });
             });
         }
 
         $deadlineFilter = (string) $request->get('deadline_filter', 'all');
         if (in_array($deadlineFilter, ['overdue', 'on_time', 'no_deadline'], true)) {
             $pendingEventsQuery->where(function ($q) use ($deadlineFilter) {
-                if ($deadlineFilter === 'overdue') {
-                    $q->whereNotNull('material_deadline')->where('material_deadline', '<', now());
-                } elseif ($deadlineFilter === 'on_time') {
-                    $q->whereNotNull('material_deadline')->where('material_deadline', '>=', now());
-                } else { // no_deadline
-                    $q->whereNull('material_deadline');
-                }
+                $q->whereHas('event', function ($eq) use ($deadlineFilter) {
+                    if ($deadlineFilter === 'overdue') {
+                        $eq->whereNotNull('material_deadline')->where('material_deadline', '<', now());
+                    } elseif ($deadlineFilter === 'on_time') {
+                        $eq->whereNotNull('material_deadline')->where('material_deadline', '>=', now());
+                    } else { // no_deadline
+                        $eq->whereNull('material_deadline');
+                    }
+                });
             });
         }
 

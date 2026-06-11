@@ -36,9 +36,9 @@
             : ($event->start_at ? $event->start_at->copy()->subDays(3) : null))
         : (!empty($event->material_deadline)
             ? \Carbon\Carbon::parse($event->material_deadline)
-            : ($event->start_at ? $event->start_at->copy()->subDays(7) : null));
+            : ($event->start_at ? $event->start_at->copy()->subDays(3) : null));
     $deadlinePassed = $deadline ? now()->gt($deadline) : false;
-    $deadlineLabel = $isRevisionWindow ? 'Deadline Revisi (H-3)' : 'Deadline Pengumpulan (H-7)';
+    $deadlineLabel = $isRevisionWindow ? 'Deadline Revisi (H-3)' : 'Deadline Pengumpulan (H-3)';
     $deadlineHint = $deadlinePassed
         ? ($isRevisionWindow ? 'Batas revisi sudah lewat' : 'Batas pengumpulan sudah lewat')
         : ($isRevisionWindow ? 'Masa revisi masih terbuka' : 'Materi masih bisa diunggah');
@@ -73,13 +73,39 @@
 
         return $name;
     };
-    $canUploadMaterials = ($materialStatus !== 'approved') && ($materialStatus !== 'pending_review') && ($isRejected || empty($deadline) || now()->lte($deadline));
+    $canUploadMaterials = true;
+
+    $step1State = 'active'; // active, completed
+    $step2State = 'inactive'; // inactive, active, completed
+    $step3State = 'inactive'; // inactive, active, completed, rejected
+
+    if ($displayMaterialStatus === 'pending_review' || $displayMaterialStatus === 'approved') {
+        $step1State = 'completed';
+        $step2State = 'completed';
+        if ($displayMaterialStatus === 'approved') {
+            $step3State = 'completed';
+        } else {
+            $step3State = 'active';
+        }
+    } elseif ($displayMaterialStatus === 'rejected') {
+        $step1State = 'active';
+        $step2State = !empty($draftModules) ? 'active' : 'inactive';
+        $step3State = 'rejected';
+    } else {
+        $step1State = 'active';
+        $step2State = !empty($draftModules) ? 'active' : 'inactive';
+        $step3State = 'inactive';
+    }
 @endphp
 
 @push('styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
     <style>
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
         /* Premium SweetAlert Custom Styling */
         .premium-swal-popup {
             border-radius: 28px !important;
@@ -1345,6 +1371,23 @@
                 </section>
             @endif
 
+            @if(!empty($draftModules))
+                <div class="draft-warning-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #f59e0b; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);">
+                    <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+                        <span style="font-size: 24px; animation: bounce 1.5s infinite; display: inline-block;">⚠️</span>
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; color: #78350f; font-size: 15px; font-weight: 700;">Materi Belum Terkirim ke Admin!</h4>
+                            <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.4;">
+                                Anda memiliki <strong>{{ count($draftModules) }} berkas di draf</strong>. Klik tombol <strong>Kirim ke Admin</strong> di sebelah kanan draf agar materi dapat ditinjau oleh Admin.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="primary-btn btn-trigger-submit-final" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 12px; font-weight: 700; white-space: nowrap; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.2);">
+                        Kirim Sekarang <i class="bi bi-send-fill" style="color:#fff;"></i>
+                    </button>
+                </div>
+            @endif
+
             <section class="studio-layout">
                 <!-- Left Column: Studio Panel -->
                 <div class="studio-panel">
@@ -1353,7 +1396,7 @@
                             <h2>{{ $uploadModeLabel }}</h2>
                             <p>
                                 @if($isRejected)
-                                    Materi sebelumnya ditolak admin. Silakan unggah file pengganti untuk revisi agar bisa
+                                    Materi sebelumnya ditolak admin. Silangan unggah file pengganti untuk revisi agar bisa
                                     direview ulang.
                                 @else
                                     Gunakan area ini untuk mengirim file materi final yang akan direview admin sebelum event
@@ -1363,69 +1406,72 @@
                         </div>
                     </div>
 
-                    <div class="upload-panel">
-                        <div class="module-preview" style="flex-direction: column; align-items: stretch;">
-                            <div style="margin-bottom: {{ $hasUploadedModule ? '16px' : '0' }};">
-                                <p class="meta-label">Materi saat ini</p>
-                                @if($hasUploadedModule)
-                                    <h3>{{ $submittedModules->count() }} File Terkirim</h3>
-                                    <p>
-                                        {{ $displayMaterialStatus === 'approved' ? 'Seluruh materi telah disetujui admin.' : 'Semua file yang sudah dikirim dapat dilihat di bawah ini.' }}
-                                    </p>
-                                @else
-                                    <h3>Belum ada materi yang diunggah</h3>
-                                    <p>File yang Anda kirim akan tampil di sini setelah dikirim ke admin.</p>
-                                @endif
-                            </div>
-
-                            @if($hasUploadedModule)
-                                <div class="module-preview-list">
-                                    @foreach($submittedModules as $module)
-                                        @php
-                                            $moduleStatus = (string) ($module->status ?? 'pending_review');
-                                            $moduleViewUrl = $resolveModuleViewUrl($module);
-                                            $moduleLabel = $resolveModuleLabel($module);
-                                            $isLinkModule = str_starts_with((string) ($module->original_name ?? ''), 'Link: ')
-                                                || preg_match('#^https?://#i', (string) ($module->path ?? ''));
-                                            $moduleStatusClass = match ($moduleStatus) {
-                                                'approved' => 'approved',
-                                                'rejected' => 'rejected',
-                                                default => 'pending',
-                                            };
-                                            $moduleStatusText = match ($moduleStatus) {
-                                                'approved' => 'Disetujui',
-                                                'rejected' => 'Perlu Revisi',
-                                                default => 'Menunggu Review',
-                                            };
-                                            $submittedAt = $module->created_at ?? null;
-                                        @endphp
-                                        <div class="module-preview-item">
-                                            <div class="file-meta">
-                                                <p class="file-name">{{ $moduleLabel }}</p>
-                                                @if($submittedAt)
-                                                    <p class="file-sub">Terkirim {{ $submittedAt->format('d M Y H:i') }}</p>
-                                                @endif
-                                                @if(!empty($module->survey_link))
-                                                    <p class="file-sub">
-                                                        <i class="bi bi-link-45deg"></i>
-                                                        Survei:
-                                                        <a href="{{ $module->survey_link }}" target="_blank" rel="noopener noreferrer"
-                                                            style="color: #51376c; text-decoration: underline;">{{ $module->survey_link }}</a>
-                                                    </p>
-                                                @endif
-                                                <span class="file-status {{ $moduleStatusClass }}">{{ $moduleStatusText }}</span>
-                                            </div>
-                                            @if($moduleViewUrl)
-                                                <a href="{{ $moduleViewUrl }}" class="preview-link" target="_blank" rel="noopener noreferrer">
-                                                    <i class="bi bi-{{ $isLinkModule ? 'link-45deg' : 'box-arrow-up-right' }}"></i>
-                                                    {{ $isLinkModule ? 'Buka Link' : 'Lihat File' }}
-                                                </a>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
+                    <!-- UX STEPPER GUIDE -->
+                    <div class="ux-stepper" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; background: #faf8fc; border-bottom: 1px solid #e9e3f4; gap: 12px; flex-wrap: wrap; text-align: left;">
+                        <!-- Step 1 -->
+                        <div class="step-item" style="display: flex; align-items: center; gap: 8px;">
+                            @if($step1State === 'completed')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #10b981; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-check"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #10b981;">Unggah Materi</span>
+                            @else
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #51376c; color: #fff; font-size: 12px; font-weight: 700;">1</span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #51376c;">Unggah Materi</span>
                             @endif
-                        </div> {{-- UNIFIED DRAFT CARD (DRAFT ONLY) --}}
+                        </div>
+                        <div style="height: 2px; background: {{ $step2State === 'completed' || $step2State === 'active' ? '#51376c' : '#e2e8f0' }}; flex: 1; min-width: 20px;" class="step-line"></div>
+                        
+                        <!-- Step 2 -->
+                        <div class="step-item" style="display: flex; align-items: center; gap: 8px;">
+                            @if($step2State === 'completed')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #10b981; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-check"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #10b981;">Simpan di Draf</span>
+                            @elseif($step2State === 'active')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #51376c; color: #fff; font-size: 12px; font-weight: 700;">2</span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #51376c;">Simpan di Draf</span>
+                            @else
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #cbd5e1; color: #fff; font-size: 12px; font-weight: 700;">2</span>
+                                <span style="font-size: 13.5px; font-weight: 600; color: #64748b;">Simpan di Draf</span>
+                            @endif
+                        </div>
+                        <div style="height: 2px; background: {{ $step3State === 'completed' || $step3State === 'active' ? '#10b981' : '#e2e8f0' }}; flex: 1; min-width: 20px;" class="step-line"></div>
+                        
+                        <!-- Step 3 -->
+                        <div class="step-item" style="display: flex; align-items: center; gap: 8px;">
+                            @if($step3State === 'completed')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #10b981; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-check-all"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #10b981;">Materi Disetujui</span>
+                            @elseif($step3State === 'active')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; color: #fff; font-size: 12px; font-weight: 700; animation: pulse 1.5s infinite;"><i class="bi bi-hourglass-split"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #d97706;">Menunggu Review</span>
+                            @elseif($step3State === 'rejected')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #ef4444; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-x"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #ef4444;">Perlu Revisi</span>
+                            @else
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #cbd5e1; color: #fff; font-size: 12px; font-weight: 700;">3</span>
+                                <span style="font-size: 13.5px; font-weight: 600; color: #64748b;">Kirim ke Admin</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="upload-panel">
+                        @if($displayMaterialStatus === 'pending_review' || $displayMaterialStatus === 'approved')
+                            <div class="upload-lock-note" style="margin-bottom: 24px;">
+                                <div class="icon" style="display: flex; align-items: center; justify-content: center; background: rgba(81, 55, 108, 0.1); color: #51376c;">
+                                    <i class="bi {{ $displayMaterialStatus === 'approved' ? 'bi-shield-check' : 'bi-shield-lock' }}"></i>
+                                </div>
+                                <div>
+                                    @if($displayMaterialStatus === 'approved')
+                                        <h3>Materi telah disetujui</h3>
+                                        <p>Materi Anda telah disetujui oleh admin. Anda masih dapat mengunggah berkas baru atau mengubah materi jika diperlukan.</p>
+                                    @else
+                                        <h3>Materi sedang direview</h3>
+                                        <p>Seluruh materi Anda telah dikirim dan sedang diperiksa oleh admin. Anda masih dapat mengunggah berkas baru atau mengubah materi jika diperlukan.</p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+{{-- UNIFIED DRAFT CARD (DRAFT ONLY) --}}
                         @if(!empty($draftModules))
                             <div class="unified-draft-card"
                                 style="padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); position: relative; overflow: hidden;">
@@ -1478,10 +1524,11 @@
                                                 </div>
                                                 @if($canUploadMaterials)
                                                     <button type="button" class="btn-delete-draft" data-index="{{ $index }}"
-                                                        style="background: none; border: none; color: #ef4444; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;"
+                                                        style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px; transition: all 0.2s;"
                                                         onmouseover="this.style.backgroundColor='#fee2e2'"
-                                                        onmouseout="this.style.backgroundColor='transparent'">
-                                                        <i class="bi bi-trash3-fill"></i> Hapus
+                                                        onmouseout="this.style.backgroundColor='transparent'"
+                                                        title="Hapus Draf">
+                                                        <i class="bi bi-trash3-fill"></i>
                                                     </button>
                                                 @endif
                                             </div>
@@ -1603,6 +1650,19 @@
                                                 </div>
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                                <button type="button" class="btn-delete-submitted" data-id="{{ $module->id }}"
+                                                    style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px; transition: all 0.2s;"
+                                                    onmouseover="this.style.backgroundColor='#fee2e2'"
+                                                    onmouseout="this.style.backgroundColor='transparent'"
+                                                    title="Hapus Materi">
+                                                    <i class="bi bi-trash3-fill"></i>
+                                                </button>
+                                                @if($module->status === 'rejected')
+                                                    <button type="button" class="btn-replace-rejected primary-btn" data-id="{{ $module->id }}" data-is-link="{{ $historyIsLink ? '1' : '0' }}"
+                                                        style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; color: #fff; border: none; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                                        <i class="bi bi-arrow-left-right"></i> Ganti
+                                                    </button>
+                                                @endif
                                                 @if($historyViewUrl)
                                                     <a href="{{ $historyViewUrl }}" target="_blank" rel="noopener noreferrer"
                                                         style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: #3f2a54; color: #fff; text-decoration: none; white-space: nowrap;">
@@ -1646,6 +1706,8 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <input type="file" id="replaceFileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" style="display: none;" />
 
                             <form id="moduleForm" class="module-form"
                                 action="{{ route('trainer.events.studio.upload', $event->id) }}" method="POST"
@@ -1702,20 +1764,6 @@
                                     </button>
                                 </div>
                             </form>
-                        @else
-                            <div class="upload-lock-note">
-                                <div class="icon"><i class="bi bi-shield-lock"></i></div>
-                                <div>
-                                    @if($materialStatus === 'approved')
-                                        <h3>Materi telah disetujui</h3>
-                                        <p>Materi Anda telah disetujui oleh admin. Pengunggahan berkas baru dikunci.</p>
-                                    @else
-                                        <h3>Materi sedang direview</h3>
-                                        <p>Seluruh materi Anda telah dikirim dan sedang diperiksa oleh admin. Pengunggahan berkas
-                                            baru dikunci sementara waktu.</p>
-                                    @endif
-                                </div>
-                            </div>
                         @endif
                     </div>
                 </div>
@@ -2028,34 +2076,40 @@
                             Swal.fire({
                                 html: `
                                             <div class="swal-custom-container">
-                                                <div class="swal-icon-glow warning">
+                                                <div class="swal-icon-glow success">
                                                     <div class="swal-icon-circle">
-                                                        <i class="bi bi-cloud-arrow-up-fill" style="color: #51376c;"></i>
+                                                        <i class="bi bi-cloud-arrow-up-fill" style="color: #10b981;"></i>
                                                     </div>
                                                 </div>
                                                 <div class="swal-custom-body">
-                                                    <h4 class="swal-custom-title">Berhasil Ditambahkan!</h4>
-                                                    <p class="swal-custom-subtitle">Berkas Anda telah tersimpan di draf sementara.</p>
+                                                    <h4 class="swal-custom-title">Materi Tersimpan!</h4>
+                                                    <p class="swal-custom-subtitle">Materi Anda berhasil ditambahkan ke draf sementara.</p>
                                                     <div class="swal-warning-box">
-                                                        <p class="warning-text">
-                                                            Materi ini masih berstatus <strong>Draf Lokal</strong> dan <strong>belum diajukan ke admin</strong>.
+                                                        <p class="warning-text" style="margin-bottom: 8px;">
+                                                            Apakah Anda ingin <strong>langsung mengirimkan</strong> materi ini ke Admin untuk diperiksa?
                                                         </p>
-                                                        <div class="warning-action-info">
-                                                            Silakan klik tombol <span class="badge-submit-action">Submit ke Admin untuk Review</span> pada daftar draf jika Anda sudah selesai mengunggah seluruh materi.
-                                                        </div>
+                                                        <p class="warning-text" style="font-size: 12.5px; color: #64748b; margin: 0;">
+                                                            Jika Anda masih ingin mengunggah file/link tambahan lainnya, pilih opsi <strong>Simpan sebagai Draf</strong>.
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
                                         `,
-                                showConfirmButton: true,
-                                confirmButtonText: 'Saya Mengerti',
+                                showCancelButton: true,
+                                confirmButtonText: '🚀 Ya, Kirim ke Admin Sekarang',
+                                cancelButtonText: '📁 Simpan sebagai Draf (Tambah lagi)',
                                 customClass: {
                                     popup: 'premium-swal-popup',
-                                    confirmButton: 'premium-swal-confirm-btn'
+                                    confirmButton: 'premium-swal-confirm-btn',
+                                    cancelButton: 'premium-swal-cancel-btn'
                                 },
                                 buttonsStyling: false
-                            }).then(() => {
-                                window.location.reload();
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    submitFinalDirectly();
+                                } else {
+                                    window.location.reload();
+                                }
                             });
                         })
                         .catch(error => {
@@ -2144,6 +2198,100 @@
                                                 iconColor: '#ef4444',
                                                 title: 'Gagal',
                                                 text: data.error || 'Gagal menghapus draf.',
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title',
+                                                    confirmButton: 'premium-swal-confirm-btn'
+                                                },
+                                                buttonsStyling: false
+                                            });
+                                        }
+                                    })
+                                    .catch(err => {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            iconColor: '#ef4444',
+                                            title: 'Gagal',
+                                            text: 'Terjadi kesalahan sistem.',
+                                            customClass: {
+                                                popup: 'premium-swal-popup',
+                                                title: 'premium-swal-title',
+                                                confirmButton: 'premium-swal-confirm-btn'
+                                            },
+                                            buttonsStyling: false
+                                        });
+                                    });
+                            }
+                        });
+                    });
+                });
+
+                // delete submitted handler
+                document.querySelectorAll('.btn-delete-submitted').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const moduleId = e.currentTarget.dataset.id;
+
+                        Swal.fire({
+                            title: 'Hapus Materi?',
+                            text: 'Apakah Anda yakin ingin menghapus materi yang sudah diupload ini? Tindakan ini akan memperbarui status review materi Anda.',
+                            icon: 'warning',
+                            iconColor: '#ef4444',
+                            showCancelButton: true,
+                            confirmButtonColor: '#ef4444',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Ya, Hapus',
+                            cancelButtonText: 'Batal',
+                            customClass: {
+                                popup: 'premium-swal-popup',
+                                title: 'premium-swal-title',
+                                confirmButton: 'premium-swal-confirm-btn danger',
+                                cancelButton: 'premium-swal-cancel-btn'
+                            },
+                            buttonsStyling: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire({
+                                    title: 'Menghapus...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => { Swal.showLoading(); },
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title'
+                                    }
+                                });
+
+                                const formData = new FormData();
+                                formData.append('_token', '{{ csrf_token() }}');
+                                formData.append('action', 'delete_module');
+                                formData.append('module_id', moduleId);
+
+                                fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                iconColor: '#10b981',
+                                                title: 'Berhasil',
+                                                text: data.message,
+                                                showConfirmButton: false,
+                                                timer: 1200,
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title'
+                                                }
+                                            });
+                                            setTimeout(() => { window.location.reload(); }, 1200);
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                iconColor: '#ef4444',
+                                                title: 'Gagal',
+                                                text: data.error || 'Gagal menghapus materi.',
                                                 customClass: {
                                                     popup: 'premium-swal-popup',
                                                     title: 'premium-swal-title',
@@ -2289,6 +2437,231 @@
                                         });
                                     });
                             }
+                        });
+                    });
+                }
+
+                // banner trigger submit final handler
+                const btnTriggerBanners = document.querySelectorAll('.btn-trigger-submit-final');
+                btnTriggerBanners.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (btnSubmitFinal) {
+                            btnSubmitFinal.click();
+                        } else {
+                            submitFinalDirectly();
+                        }
+                    });
+                });
+
+                function submitFinalDirectly() {
+                    Swal.fire({
+                        title: 'Mengirim...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); },
+                        customClass: {
+                            popup: 'premium-swal-popup',
+                            title: 'premium-swal-title'
+                        }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('action', 'submit_final');
+
+                    fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    iconColor: '#10b981',
+                                    title: 'Berhasil',
+                                    text: data.message,
+                                    showConfirmButton: false,
+                                    timer: 1200,
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title'
+                                    }
+                                });
+                                setTimeout(() => { window.location.reload(); }, 1200);
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    iconColor: '#ef4444',
+                                    title: 'Gagal',
+                                    text: data.error || 'Gagal mengirim materi.',
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title',
+                                        confirmButton: 'premium-swal-confirm-btn'
+                                    },
+                                    buttonsStyling: false
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Gagal',
+                                text: 'Terjadi kesalahan sistem.',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        });
+                }
+
+                let currentReplacingModuleId = null;
+                const replaceFileInput = document.getElementById('replaceFileInput');
+
+                document.querySelectorAll('.btn-replace-rejected').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const moduleId = e.currentTarget.dataset.id;
+                        const isLink = e.currentTarget.dataset.isLink === '1';
+
+                        if (isLink) {
+                            Swal.fire({
+                                title: 'Ganti Link Revisi',
+                                text: 'Masukkan URL materi yang baru:',
+                                input: 'url',
+                                inputPlaceholder: 'https://...',
+                                showCancelButton: true,
+                                confirmButtonText: 'Kirim Revisi',
+                                cancelButtonText: 'Batal',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    confirmButton: 'premium-swal-confirm-btn',
+                                    cancelButton: 'premium-swal-cancel-btn'
+                                },
+                                buttonsStyling: false,
+                                inputValidator: (value) => {
+                                    if (!value) {
+                                        return 'URL tidak boleh kosong!';
+                                    }
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    uploadRevisionDirectly(moduleId, null, result.value);
+                                }
+                            });
+                        } else {
+                            currentReplacingModuleId = moduleId;
+                            if (replaceFileInput) replaceFileInput.click();
+                        }
+                    });
+                });
+
+                if (replaceFileInput) {
+                    replaceFileInput.addEventListener('change', (e) => {
+                        if (e.target.files.length === 0 || !currentReplacingModuleId) return;
+                        const file = e.target.files[0];
+                        
+                        const allowedExt = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
+                        const ext = (file.name.split('.').pop() || '').toLowerCase();
+                        if (!allowedExt.includes(ext)) {
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Format Tidak Diizinkan',
+                                text: 'Hanya berkas PDF, MP4, PPTX, DOCX yang diizinkan.',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            });
+                            return;
+                        }
+
+                        uploadRevisionDirectly(currentReplacingModuleId, file, null);
+                        e.target.value = '';
+                    });
+                }
+
+                function uploadRevisionDirectly(moduleId, file, link) {
+                    Swal.fire({
+                        title: 'Mengunggah Revisi...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); },
+                        customClass: {
+                            popup: 'premium-swal-popup',
+                            title: 'premium-swal-title'
+                        }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('action', 'replace_module');
+                    formData.append('module_id', moduleId);
+                    if (file) {
+                        formData.append('file', file);
+                    }
+                    if (link) {
+                        formData.append('material_link', link);
+                    }
+
+                    fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                iconColor: '#10b981',
+                                title: 'Revisi Berhasil Dikirim',
+                                text: data.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title'
+                                }
+                            });
+                            setTimeout(() => { window.location.reload(); }, 1500);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Gagal',
+                                text: data.error || 'Gagal mengirim revisi.',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            iconColor: '#ef4444',
+                            title: 'Gagal',
+                            text: 'Terjadi kesalahan sistem.',
+                            customClass: {
+                                popup: 'premium-swal-popup',
+                                title: 'premium-swal-title',
+                                confirmButton: 'premium-swal-confirm-btn'
+                            },
+                            buttonsStyling: false
                         });
                     });
                 }

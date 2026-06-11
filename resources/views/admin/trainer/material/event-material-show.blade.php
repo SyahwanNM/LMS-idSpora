@@ -4,6 +4,8 @@
 
 @push('admin-trainer-styles')
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
         :root {
             --admin-primary: #1e1b4b;
             --admin-secondary: #3949ab;
@@ -16,17 +18,27 @@
             --admin-text-main: #0f172a;
             --admin-text-muted: #64748b;
             
-            --status-pending-bg: #fffbeb;
+            --status-pending-bg: rgba(245, 158, 11, 0.08);
             --status-pending-text: #d97706;
-            --status-pending-border: #fef3c7;
+            --status-pending-border: rgba(245, 158, 11, 0.15);
             
-            --status-approved-bg: #f0fdf4;
-            --status-approved-text: #16a34a;
-            --status-approved-border: #dcfce7;
+            --status-approved-bg: rgba(16, 185, 129, 0.08);
+            --status-approved-text: #059669;
+            --status-approved-border: rgba(16, 185, 129, 0.15);
             
-            --status-rejected-bg: #fef2f2;
+            --status-rejected-bg: rgba(239, 68, 68, 0.08);
             --status-rejected-text: #dc2626;
-            --status-rejected-border: #fee2e2;
+            --status-rejected-border: rgba(239, 68, 68, 0.15);
+        }
+
+        .show-page-wrapper {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .scrollable-content::-webkit-scrollbar {
@@ -44,15 +56,6 @@
             background: #94a3b8;
         }
 
-        .show-page-wrapper {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -60,24 +63,27 @@
             margin-bottom: 24px;
             gap: 16px;
             flex-wrap: wrap;
-            padding: 12px 0;
+            padding: 16px 24px;
+            background: #ffffff;
+            border: 1px solid var(--admin-border);
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
         }
 
         .btn-back {
             background: #fff;
-            border: 1px solid #cbd5e1;
-            color: #334155;
-            height: 42px;
+            border: 1.5px solid #e2e8f0;
+            color: #475569;
+            height: 40px;
             padding: 0 18px;
             border-radius: 12px;
             font-weight: 700;
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             transition: all 0.25s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
         }
 
         .btn-back:hover {
@@ -87,17 +93,21 @@
             transform: translateX(-3px);
         }
 
+        .btn-back i {
+            font-size: 0.95rem;
+        }
+
         .status-chip {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            height: 42px;
+            height: 38px;
             padding: 0 16px;
-            border-radius: 999px;
-            font-size: 0.86rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
             font-weight: 800;
-            letter-spacing: 0.2px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
 
         .status-chip.pending {
@@ -118,31 +128,29 @@
             color: var(--status-rejected-text);
         }
 
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
+        .status-chip::before {
+            content: '';
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background-color: currentColor;
-            animation: pulse-dot-anim 1.5s infinite ease-in-out;
+            flex-shrink: 0;
         }
 
-        @keyframes pulse-dot-anim {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.5; }
-        }
-
+        /* Card custom adjustments */
         .card-custom {
             background: var(--admin-card-bg);
             border-radius: 20px;
             border: 1px solid var(--admin-border);
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
             padding: 24px;
             margin-bottom: 24px;
             transition: all 0.3s ease;
         }
 
         .card-custom:hover {
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+            border-color: #cbd5e1;
         }
 
         .card-title-bar {
@@ -150,8 +158,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 20px;
-            padding-bottom: 14px;
-            border-bottom: 2px solid var(--admin-accent-soft);
+            padding-bottom: 12px;
+            border-bottom: 1.5px solid var(--admin-border);
         }
 
         .card-title-text {
@@ -161,21 +169,84 @@
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            letter-spacing: -0.2px;
         }
 
+        .card-title-text i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: rgba(57, 73, 171, 0.06);
+            color: var(--admin-secondary);
+            font-size: 1.05rem;
+        }
+
+        .review-count-badge {
+            font-size: 0.76rem;
+            color: var(--admin-text-muted);
+            font-weight: 700;
+            background: #f8fafc;
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--admin-border);
+        }
+
+        .review-hero-header {
+            margin-bottom: 16px;
+        }
+
+        .review-hero-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--admin-text-main);
+            margin: 0 0 6px;
+            line-height: 1.35;
+            letter-spacing: -0.4px;
+        }
+
+        .review-meta-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--admin-text-muted);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .review-type-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.72rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 3px 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Video / Player screen */
         .video-container {
             background: #0f172a;
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
             aspect-ratio: 16/9;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.3);
-            border: 1px solid #1e293b;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+            border: 1.5px solid #1e293b;
             position: relative;
+            transition: all 0.3s ease;
         }
 
         .video-container iframe,
@@ -192,7 +263,7 @@
             background: #fff;
             color: var(--admin-text-main);
             border-color: var(--admin-border);
-            box-shadow: inset 0 2px 8px rgba(15, 23, 42, 0.04);
+            box-shadow: inset 0 2px 6px rgba(15, 23, 42, 0.02);
         }
 
         .video-container.is-image img {
@@ -210,62 +281,68 @@
             background: #fff;
         }
 
-        .module-item.is-preview-active {
-            border-color: var(--admin-secondary);
-            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.12);
+        .review-preview-footer {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
         }
 
+        .review-preview-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: #334155;
+            flex: 1;
+        }
+
+        .review-preview-meta {
+            font-size: 0.74rem;
+            color: #64748b;
+            font-weight: 600;
+            background: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        /* Module Items styled lists */
         .module-item {
-            border: 1px solid #e2e8f0;
+            border: 1.5px solid #e2e8f0;
             border-radius: 16px;
             padding: 18px;
             display: flex;
             gap: 16px;
             background: #ffffff;
             align-items: flex-start;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
             position: relative;
             overflow: hidden;
             margin-bottom: 12px;
         }
 
-        .module-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: transparent;
-            transition: background 0.2s ease;
-        }
-
-        .module-item.pending::before { background: var(--status-pending-text); }
-        .module-item.approved::before { background: var(--status-approved-text); }
-        .module-item.rejected::before { background: var(--status-rejected-text); }
-
         .module-item:hover {
             border-color: #cbd5e1;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
             transform: translateY(-2px);
         }
 
+        .module-item.is-preview-active {
+            border-color: var(--admin-secondary);
+            background: rgba(57, 73, 171, 0.01);
+        }
+
         .module-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 12px;
-            background: var(--admin-accent-soft);
-            color: var(--admin-secondary);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            color: #475569;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             flex-shrink: 0;
-            transition: all 0.25s ease;
-        }
-
-        .module-item:hover .module-icon {
-            transform: scale(1.08) rotate(3deg);
         }
 
         .module-desc {
@@ -275,22 +352,37 @@
 
         .module-desc h6 {
             margin: 0 0 6px 0;
-            font-weight: 750;
+            font-weight: 800;
             color: var(--admin-text-main);
-            font-size: 0.94rem;
+            font-size: 0.92rem;
             line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        /* Small state indicators instead of large thick borders */
+        .status-dot-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .status-dot-indicator.pending { background-color: #f59e0b; }
+        .status-dot-indicator.approved { background-color: #10b981; }
+        .status-dot-indicator.rejected { background-color: #ef4444; }
 
         .module-meta-info {
             display: flex;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .module-type-tag {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 800;
             color: var(--admin-text-muted);
             text-transform: uppercase;
@@ -298,9 +390,9 @@
         }
 
         .module-filename-tag {
-            font-size: 0.75rem;
-            color: var(--admin-text-muted);
-            font-style: italic;
+            font-size: 0.74rem;
+            color: #475569;
+            font-weight: 500;
             background: #f1f5f9;
             padding: 2px 8px;
             border-radius: 6px;
@@ -313,55 +405,43 @@
         .module-quick-actions {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .module-icon-btn {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            border: 1px solid transparent;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
+            background: #ffffff;
+            color: #475569;
         }
 
-        .module-icon-btn.preview {
+        .module-icon-btn:hover {
+            border-color: var(--admin-secondary);
             color: var(--admin-secondary);
-            background: var(--admin-accent-soft);
-            border-color: var(--admin-accent-border);
-        }
-
-        .module-icon-btn.preview:hover {
-            background: var(--admin-secondary);
-            color: #fff;
-        }
-
-        .module-icon-btn.download {
-            color: #166534;
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-        }
-
-        .module-icon-btn.download:hover {
-            background: #166534;
-            color: #fff;
+            background: #f8fafc;
         }
 
         .module-review-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 12px;
-            border-radius: 999px;
+            padding: 4px 10px;
+            border-radius: 6px;
             font-size: 0.72rem;
             font-weight: 800;
             letter-spacing: 0.3px;
+            text-transform: uppercase;
             border: 1px solid transparent;
+            width: fit-content;
         }
 
         .module-review-badge.approved {
@@ -386,20 +466,21 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
 
         .module-btn-approve,
-        .module-btn-reject {
-            border: 1px solid transparent;
-            border-radius: 10px;
-            height: 36px;
-            padding: 0 14px;
+        .module-btn-reject,
+        .module-btn-revoke {
+            border: 1.5px solid transparent;
+            border-radius: 8px;
+            height: 34px;
+            padding: 0 12px;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -407,12 +488,13 @@
 
         .module-btn-approve {
             color: #fff;
-            background: var(--status-approved-text);
+            background: var(--admin-secondary);
+            border-color: var(--admin-secondary);
         }
 
         .module-btn-approve:hover {
-            background: #15803d;
-            box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2);
+            background: #283593;
+            border-color: #283593;
         }
 
         .module-btn-reject {
@@ -424,12 +506,25 @@
         .module-btn-reject:hover {
             background: var(--status-rejected-text);
             color: #fff;
+            border-color: var(--status-rejected-text);
+        }
+
+        .module-btn-revoke {
+            color: #d97706;
+            background: #fffbeb;
+            border-color: #fef3c7;
+        }
+
+        .module-btn-revoke:hover {
+            background: #d97706;
+            color: #fff;
+            border-color: #d97706;
         }
 
         .module-reject-form {
             margin-top: 12px;
-            padding: 16px;
-            border-radius: 14px;
+            padding: 14px;
+            border-radius: 12px;
             border: 1px solid var(--status-rejected-border);
             background: #fffafa;
             animation: slideDown 0.25s ease-out;
@@ -442,21 +537,20 @@
 
         .module-reject-form textarea {
             width: 100%;
-            min-height: 84px;
+            min-height: 80px;
             border-radius: 10px;
-            border: 1px solid var(--status-rejected-border);
+            border: 1.5px solid var(--status-rejected-border);
             padding: 10px 12px;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             resize: vertical;
             margin-bottom: 10px;
             background: #fff;
             color: var(--admin-text-main);
+            outline: none;
         }
 
         .module-reject-form textarea:focus {
-            outline: none;
             border-color: var(--status-rejected-text);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
         }
 
         .module-reject-form button {
@@ -464,9 +558,9 @@
             color: #fff;
             border: none;
             border-radius: 8px;
-            height: 36px;
+            height: 34px;
             padding: 0 14px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -476,22 +570,70 @@
             background: #b91c1c;
         }
 
-        .trainer-avatar {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            flex-shrink: 0;
+        .review-survey-box {
+            font-size: 0.78rem;
+            background: var(--admin-accent-soft);
+            border: 1.5px solid var(--admin-accent-border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-top: 8px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .review-survey-box a {
+            color: var(--admin-secondary);
+            text-decoration: underline;
+            font-weight: 700;
+        }
+
+        .review-rejection-box {
+            font-size: 0.78rem;
+            color: var(--status-rejected-text);
+            background: var(--status-rejected-bg);
+            border: 1.5px solid var(--status-rejected-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .review-rejection-box strong {
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+
+        .review-empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--admin-text-muted);
+        }
+
+        .review-empty-state i {
+            font-size: 2.5rem;
+            color: #cbd5e1;
+            margin-bottom: 8px;
             display: block;
         }
 
+        .review-empty-state h5 {
+            color: var(--admin-text-main);
+            font-weight: 800;
+            margin: 0 0 4px;
+        }
+
+        /* Sidebar card refinements */
         .side-card {
             background: #fff;
             border: 1px solid var(--admin-border);
             border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.02);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
             padding: 20px !important;
         }
 
@@ -502,23 +644,102 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
             margin-bottom: 16px;
-            border-bottom: 2px solid var(--admin-accent-soft);
+            border-bottom: 1.5px solid var(--admin-accent-soft);
             padding-bottom: 8px;
         }
 
+        .trainer-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trainer-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+            flex-shrink: 0;
+            display: block;
+        }
+
+        .trainer-profile-name {
+            font-weight: 800;
+            color: var(--admin-text-main);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .trainer-profile-role {
+            font-size: 0.74rem;
+            color: var(--admin-text-muted);
+            font-weight: 600;
+            margin-top: 1px;
+        }
+
+        .trainer-profile-email {
+            font-size: 0.72rem;
+            color: var(--admin-text-muted);
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .info-list-custom {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-item-custom {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .info-label-custom {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--admin-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-val-custom {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--admin-text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-val-custom i {
+            color: #64748b;
+        }
+
+        /* Mini stats grid */
         .grid-stats-mini {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
         }
 
         .stat-mini-item {
             background: #f8fafc;
-            border-radius: 14px;
-            padding: 12px;
+            border-radius: 12px;
+            padding: 12px 8px;
             text-align: center;
             border: 1px solid #f1f5f9;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
 
         .stat-mini-item:hover {
@@ -527,65 +748,19 @@
         }
 
         .stat-mini-num {
-            font-size: 1.4rem;
-            font-weight: 850;
+            font-size: 1.35rem;
+            font-weight: 800;
             color: var(--admin-text-main);
             line-height: 1.2;
         }
 
         .stat-mini-label {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--admin-text-muted);
-            font-weight: 700;
-            margin-top: 3px;
-        }
-
-        .btn-approve {
-            width: 100%;
-            background: linear-gradient(135deg, var(--admin-secondary) 0%, var(--admin-primary) 100%);
-            color: white;
-            height: 50px;
-            padding: 0 16px;
-            border: none;
-            border-radius: 14px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            font-size: 0.94rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 8px 20px rgba(57, 73, 171, 0.22);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-        }
-
-        .btn-approve:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.35);
-        }
-
-        .btn-reject {
-            width: 100%;
-            background: #fff;
-            color: var(--status-rejected-text);
-            border: 1px solid var(--status-rejected-border);
-            height: 50px;
-            padding: 0 16px;
-            border-radius: 14px;
             font-weight: 750;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.25s ease;
-            cursor: pointer;
-        }
-
-        .btn-reject:hover {
-            background: var(--status-rejected-bg);
-            border-color: var(--status-rejected-text);
-            transform: translateY(-1px);
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .summary-progress-wrapper {
@@ -598,130 +773,119 @@
             background: #f1f5f9;
             border-radius: 999px;
             overflow: hidden;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            border: 1px solid #e2e8f0;
         }
 
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #22c55e 0%, #4f46e5 100%);
+            background: var(--admin-secondary);
             border-radius: 999px;
-            transition: width 0.4s ease;
+            transition: width 0.6s ease;
         }
 
-        .reject-modal .modal-content {
-            border-radius: 24px;
-            overflow: hidden;
-            border: 1px solid var(--admin-border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        .review-pending-banner {
+            margin-top: 12px;
+            background: var(--status-pending-bg);
+            border: 1px solid var(--status-pending-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76rem;
+            color: var(--status-pending-text);
+            font-weight: 750;
         }
 
-        .reject-modal .modal-header {
-            background: #f8fafc;
-            border-bottom: 1px solid var(--admin-border);
-            padding: 20px 24px;
+        /* Sticky Action Sidebar */
+        .action-box {
+            position: sticky;
+            top: 90px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        .reject-modal .modal-title {
-            color: var(--admin-text-main);
-            font-size: 1.05rem;
-            font-weight: 850;
+        /* Final Action Buttons styles */
+        .btn-approve {
+            width: 100%;
+            background: var(--admin-secondary);
+            color: white;
+            height: 48px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            transition: all 0.25s ease;
+            cursor: pointer;
         }
 
-        .reject-modal .modal-body {
-            padding: 24px;
-            background: #ffffff;
+        .btn-approve:hover:not(:disabled) {
+            background: #283593;
         }
 
-        .reject-modal .form-control {
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            font-size: 0.9rem;
-            padding: 12px 16px;
-            min-height: 140px;
-            resize: vertical;
-        }
-
-        .reject-modal .form-control:focus {
-            border-color: var(--admin-secondary);
-            box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.12);
-            outline: none;
-        }
-
-        .reject-modal .btn-cancel {
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #475569;
+        .btn-reject {
+            width: 100%;
+            background: #fff;
+            color: var(--status-rejected-text);
+            border: 1.5px solid var(--status-rejected-border);
+            height: 48px;
+            padding: 0 16px;
             border-radius: 12px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            height: 44px;
-            padding: 0 18px;
-            transition: all 0.2s ease;
-        }
-
-        .reject-modal .btn-cancel:hover {
-            background: #f8fafc;
-            color: var(--admin-text-main);
-        }
-
-        .reject-modal .btn-submit-reject {
-            border: none;
-            background: var(--status-rejected-text);
-            color: #fff;
-            border-radius: 12px;
-            font-size: 0.88rem;
             font-weight: 750;
-            height: 44px;
-            padding: 0 20px;
-            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            cursor: pointer;
         }
 
-        .reject-modal .btn-submit-reject:hover {
-            background: #b91c1c;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        .btn-reject:hover {
+            background: var(--status-rejected-bg);
+            border-color: var(--status-rejected-text);
         }
 
-        .info-list-custom {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .btn-revoke {
+            width: 100%;
+            background: #fff;
+            color: #d97706;
+            border: 1.5px solid #fef3c7;
+            height: 48px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-weight: 750;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            cursor: pointer;
         }
 
-        .info-item-custom {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+        .btn-revoke:hover {
+            background: #fffbeb;
+            border-color: #d97706;
         }
 
-        .info-label-custom {
-            font-size: 0.72rem;
-            font-weight: 800;
+        .review-locked-notice {
+            font-size: 0.82rem;
+            padding: 12px;
+            text-align: center;
             color: var(--admin-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
-        .info-val-custom {
-            font-size: 0.86rem;
-            font-weight: 700;
-            color: var(--admin-text-main);
-        }
-
-        .page-header {
-            background: var(--admin-card-bg);
-            border: 1px solid var(--admin-border);
-            border-radius: 16px;
-            padding: 14px 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
-        }
-
+        /* Alert notifications */
         .review-alert {
             border: 1px solid transparent;
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 12px 16px;
             margin-bottom: 20px;
             display: flex;
@@ -743,225 +907,110 @@
             color: var(--status-rejected-text);
         }
 
-        .review-hero-header {
-            margin-bottom: 16px;
+        /* Modal Dialog */
+        .reject-modal .modal-content {
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.1);
         }
 
-        .review-hero-title {
-            font-size: 1.12rem;
-            font-weight: 800;
-            color: var(--admin-text-main);
-            margin: 0 0 6px;
-            line-height: 1.35;
-        }
-
-        .review-meta-row {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-size: 0.8rem;
-            color: var(--admin-text-muted);
-            margin: 0;
-        }
-
-        .review-type-chip {
-            display: inline-flex;
-            align-items: center;
-            background: var(--admin-accent-soft);
-            color: var(--admin-secondary);
-            font-weight: 700;
-            font-size: 0.72rem;
-            border: 1px solid var(--admin-accent-border);
-            border-radius: 999px;
-            padding: 3px 10px;
-        }
-
-        .review-preview-footer {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .review-preview-title {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: #475569;
-            flex: 1;
-        }
-
-        .review-preview-meta {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            font-weight: 600;
-        }
-
-        .card-title-text i {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
-            background: var(--admin-accent-soft);
-            color: var(--admin-secondary);
-            font-size: 0.95rem;
-        }
-
-        .review-count-badge {
-            font-size: 0.78rem;
-            color: var(--admin-text-muted);
-            font-weight: 700;
+        .reject-modal .modal-header {
             background: #f8fafc;
-            padding: 5px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--admin-border);
+            border-bottom: 1.5px solid var(--admin-border);
+            padding: 18px 24px;
         }
 
-        .trainer-profile-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .trainer-profile-name {
-            font-weight: 800;
+        .reject-modal .modal-title {
             color: var(--admin-text-main);
-            font-size: 0.9rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .trainer-profile-role {
-            font-size: 0.75rem;
-            color: var(--admin-text-muted);
-            font-weight: 600;
-            margin-top: 1px;
-        }
-
-        .trainer-profile-email {
-            font-size: 0.72rem;
-            color: var(--admin-text-muted);
-            margin-top: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .stat-mini-item--success {
-            border-left: 3px solid var(--status-approved-text);
-        }
-
-        .stat-mini-item--success .stat-mini-num {
-            color: var(--status-approved-text);
-        }
-
-        .stat-mini-item--danger {
-            border-left: 3px solid var(--status-rejected-text);
-        }
-
-        .stat-mini-item--danger .stat-mini-num {
-            color: var(--status-rejected-text);
-        }
-
-        .stat-mini-item--muted .stat-mini-num {
-            color: var(--admin-text-muted);
-        }
-
-        .review-pending-banner {
-            margin-top: 14px;
-            background: var(--status-pending-bg);
-            border: 1px solid var(--status-pending-border);
-            border-radius: 10px;
-            padding: 10px 12px;
-            display: flex;
+            font-size: 1.05rem;
+            font-weight: 800;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.78rem;
-            color: var(--status-pending-text);
-            font-weight: 750;
+            letter-spacing: -0.2px;
         }
 
-        .review-survey-box {
-            font-size: 0.78rem;
-            background: var(--admin-accent-soft);
-            border: 1px solid var(--admin-accent-border);
+        .reject-modal .modal-body {
+            padding: 24px;
+            background: #ffffff;
+        }
+
+        .reject-modal .form-control {
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            padding: 12px 14px;
+            min-height: 120px;
+            resize: vertical;
+            outline: none;
+        }
+
+        .reject-modal .form-control:focus {
+            border-color: var(--admin-secondary);
+        }
+
+        .reject-modal .btn-cancel {
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            color: #475569;
             border-radius: 10px;
-            padding: 8px 12px;
-            margin-top: 6px;
+            font-size: 0.86rem;
             font-weight: 700;
+            height: 40px;
+            padding: 0 18px;
+            transition: all 0.2s ease;
         }
 
-        .review-survey-box a {
-            color: var(--admin-secondary);
-            text-decoration: underline;
-        }
-
-        .review-rejection-box {
-            font-size: 0.78rem;
-            color: var(--status-rejected-text);
-            background: var(--status-rejected-bg);
-            border: 1px solid var(--status-rejected-border);
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-top: 6px;
-        }
-
-        .review-rejection-box strong {
-            font-weight: 800;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .review-empty-state {
-            text-align: center;
-            padding: 2.5rem 1rem;
-            color: var(--admin-text-muted);
-        }
-
-        .review-empty-state i {
-            font-size: 2.5rem;
-            color: #cbd5e1;
-        }
-
-        .review-empty-state h5 {
+        .reject-modal .btn-cancel:hover {
+            background: #f8fafc;
             color: var(--admin-text-main);
-            font-weight: 800;
-            margin: 0.75rem 0 0.25rem;
         }
 
-        .review-locked-notice {
-            font-size: 0.8rem;
-            padding: 14px;
-            text-align: center;
-            color: var(--admin-text-muted);
+        .reject-modal .btn-submit-reject {
+            border: none;
+            background: var(--status-rejected-text);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 0.86rem;
+            font-weight: 750;
+            height: 40px;
+            padding: 0 18px;
+            transition: all 0.2s ease;
         }
 
-        .action-box {
+        .reject-modal .btn-submit-reject:hover {
+            background: #b91c1c;
+        }
+
+        .preview-sticky-container {
             position: sticky;
             top: 90px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            z-index: 10;
         }
 
-        @media (max-width: 1200px) {
+        .module-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            width: 100%;
+        }
+
+        @media (max-width: 1199.98px) {
             .action-box {
+                position: static !important;
+            }
+            .preview-sticky-container {
                 position: static !important;
             }
         }
 
         @media (max-width: 768px) {
-            .module-item {
-                flex-direction: column;
-            }
             .page-header {
                 align-items: flex-start;
                 flex-direction: column;
+                padding: 16px;
             }
             .status-chip {
                 width: 100%;
@@ -971,10 +1020,17 @@
                 width: 100%;
                 justify-content: center;
             }
+        }
+
+        @media (max-width: 575.98px) {
+            .module-item-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
             .module-quick-actions {
-                width: 100%;
-                justify-content: flex-end;
-                margin-top: 10px;
+                justify-content: flex-start !important;
+                margin-top: 4px;
             }
         }
     </style>
@@ -988,19 +1044,16 @@
                 <i class="bi bi-arrow-left"></i>
                 Kembali
             </a>
-            @if(($event->material_status ?? 'pending') === 'approved')
+            @if(($materialStatus ?? 'pending') === 'approved')
                 <span class="status-chip approved">
-                    <span class="pulse-dot"></span>
                     Disetujui
                 </span>
-            @elseif(($event->material_status ?? 'pending') === 'rejected')
+            @elseif(($materialStatus ?? 'pending') === 'rejected')
                 <span class="status-chip rejected">
-                    <span class="pulse-dot"></span>
                     Revisi / Ditolak
                 </span>
             @else
                 <span class="status-chip pending">
-                    <span class="pulse-dot"></span>
                     Menunggu Tinjauan
                 </span>
             @endif
@@ -1028,14 +1081,14 @@
             <div class="col-xl-8" style="display:flex; flex-direction:column; gap:20px;">
 
                 {{-- Sticky Preview Card at top of content area on desktop scroll --}}
-                <div style="position: sticky; top: 90px; z-index: 10;">
+                <div class="preview-sticky-container">
                     <div class="card-custom" style="margin-bottom:0;">
                         <div class="review-hero-header">
                             <h1 class="review-hero-title">{{ $event->title }}</h1>
                             <p class="review-meta-row">
                                 <span class="review-type-chip">{{ $event->jenis ?? 'Event' }}</span>
                                 <span>·</span>
-                                <span>Diajukan oleh {{ $event->trainer->name ?? 'Trainer' }}</span>
+                                <span>Diajukan oleh {{ $materialTrainer->name ?? 'Trainer' }}</span>
                             </p>
                         </div>
 
@@ -1077,21 +1130,23 @@
                                     $previewKind = 'file';
                                     $previewUrl = '';
 
-                                    if ($surveyUrl !== '') {
+                                    if ($rawContent !== '') {
+                                        if ($isHttp) {
+                                            $previewUrl = $rawContent;
+                                            $previewKind = 'link';
+                                        } else {
+                                            $previewUrl = route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=0';
+                                            if (in_array($ext, ['mp4', 'mov', 'webm', 'm4v'], true)) {
+                                                $previewKind = 'video';
+                                            } elseif ($ext === 'pdf') {
+                                                $previewKind = 'pdf';
+                                            } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                                                $previewKind = 'image';
+                                            }
+                                        }
+                                    } elseif ($surveyUrl !== '') {
                                         $previewUrl = $surveyUrl;
                                         $previewKind = 'link';
-                                    } elseif ($isHttp) {
-                                        $previewUrl = $rawContent;
-                                        $previewKind = 'link';
-                                    } elseif ($rawContent !== '') {
-                                        $previewUrl = route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=0';
-                                        if (in_array($ext, ['mp4', 'mov', 'webm', 'm4v'], true)) {
-                                            $previewKind = 'video';
-                                        } elseif ($ext === 'pdf') {
-                                            $previewKind = 'pdf';
-                                        } elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
-                                            $previewKind = 'image';
-                                        }
                                     }
 
                                     $downloadUrl = $rawContent !== '' && !$isHttp
@@ -1111,16 +1166,19 @@
                                     </div>
 
                                     <div class="module-desc">
-                                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                                        <div class="module-item-header">
                                             <div>
-                                                <h6>{{ $module->original_name ?: basename($module->path) }}</h6>
+                                                <h6>
+                                                    <span class="status-dot-indicator {{ $module->status === 'approved' ? 'approved' : ($module->status === 'rejected' ? 'rejected' : 'pending') }}"></span>
+                                                    {{ $module->original_name ?: basename($module->path) }}
+                                                </h6>
                                                 <div class="module-meta-info">
                                                     <span class="module-type-tag">
                                                         @if($module->survey_link) TAUTAN / SURVEI @else DOKUMEN MODUL @endif
                                                     </span>
                                                     <span style="color:#cbd5e1;">·</span>
                                                     <span class="module-filename-tag">
-                                                        Diunggah: {{ $module->created_at ? $module->created_at->format('d M Y H:i') : '-' }}
+                                                        Oleh: {{ $module->trainer->name ?? '-' }} · Diunggah: {{ $module->created_at ? $module->created_at->format('d M Y H:i') : '-' }}
                                                     </span>
                                                 </div>
                                             </div>
@@ -1160,29 +1218,29 @@
                                         @endif
 
                                         {{-- Review badge and Actions --}}
-                                        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                                        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
                                             <span class="module-review-badge {{ $reviewStatus }}">
                                                 @if($reviewStatus === 'approved')
-                                                    <i class="bi bi-check-circle-fill"></i> Disetujui
+                                                    Disetujui
                                                 @elseif($reviewStatus === 'rejected')
-                                                    <i class="bi bi-x-circle-fill"></i> Perlu Revisi
+                                                    Perlu Revisi
                                                 @else
-                                                    <i class="bi bi-hourglass-split"></i> Menunggu Tinjauan
+                                                    Menunggu Tinjauan
                                                 @endif
                                             </span>
 
                                             {{-- Inline action buttons if pending review --}}
-                                            @if((($event->material_status ?? 'pending') === 'pending' || ($event->material_status ?? 'pending') === 'pending_review') && $reviewStatus !== 'approved')
+                                            @if((($materialStatus ?? 'pending') === 'pending' || ($materialStatus ?? 'pending') === 'pending_review') && $reviewStatus !== 'approved')
                                                 <div class="module-decision-stack">
                                                     <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" class="module-action-form">
                                                         @csrf
                                                         <input type="hidden" name="module_id" value="{{ $module->id }}">
                                                         <button type="submit" class="module-btn-approve">
-                                                            <i class="bi bi-check2-circle"></i> Setujui Modul
+                                                            Setujui Modul
                                                         </button>
                                                     </form>
                                                     <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}">
-                                                        <i class="bi bi-exclamation-circle"></i> Revisi
+                                                        Revisi
                                                     </button>
                                                 </div>
 
@@ -1192,7 +1250,20 @@
                                                         <input type="hidden" name="module_id" value="{{ $module->id }}">
                                                         <textarea name="rejection_reason" required placeholder="Tuliskan catatan perbaikan untuk dokumen/modul event ini..."></textarea>
                                                         <button type="submit">
-                                                            <i class="bi bi-send-fill me-1"></i> Kirim Catatan
+                                                            Kirim Catatan
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endif
+
+                                            {{-- Inline action buttons if approved or rejected --}}
+                                            @if($reviewStatus === 'approved' || $reviewStatus === 'rejected')
+                                                <div class="module-decision-stack">
+                                                    <form method="POST" action="{{ route('admin.event-material.revoke', $event->id) }}">
+                                                        @csrf
+                                                        <input type="hidden" name="module_id" value="{{ $module->id }}">
+                                                        <button type="submit" class="module-btn-revoke">
+                                                            Batalkan Keputusan
                                                         </button>
                                                     </form>
                                                 </div>
@@ -1219,7 +1290,7 @@
                             <div class="module-item pending">
                                 <div class="module-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
                                 <div class="module-desc">
-                                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div class="module-item-header">
                                         <div>
                                             <h6>{{ $legacyName }}</h6>
                                             <span class="module-type-tag">DOKUMEN MODUL EVENT (SINGLE FILE)</span>
@@ -1260,15 +1331,15 @@
                     <div class="card-custom side-card">
                         <div class="side-card-title">Instruktur</div>
                         <div class="trainer-profile-row">
-                            <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($event->trainer?->name ?? 'T') . '&background=3949ab&color=fff&bold=true' }}"
+                            <img src="{{ $materialTrainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($materialTrainer?->name ?? 'T') . '&background=3949ab&color=fff&bold=true' }}"
                                 class="trainer-avatar"
-                                alt="Avatar {{ $event->trainer?->name ?? 'Trainer' }}">
+                                alt="Avatar {{ $materialTrainer?->name ?? 'Trainer' }}">
                             <div style="min-width:0;">
-                                <div class="trainer-profile-name">{{ $event->trainer?->name ?? 'Anonim' }}</div>
+                                <div class="trainer-profile-name">{{ $materialTrainer?->name ?? 'Anonim' }}</div>
                                 <div class="trainer-profile-role">Trainer / Instruktur Event</div>
-                                @if($event->trainer?->email)
+                                @if($materialTrainer?->email)
                                     <div class="trainer-profile-email">
-                                        <i class="bi bi-envelope me-1"></i>{{ $event->trainer->email }}
+                                        <i class="bi bi-envelope me-1"></i>{{ $materialTrainer->email }}
                                     </div>
                                 @endif
                             </div>
@@ -1316,16 +1387,16 @@
                                 <div class="stat-mini-num">{{ $etmCount }}</div>
                                 <div class="stat-mini-label">Total Modul</div>
                             </div>
-                            <div class="stat-mini-item stat-mini-item--success">
-                                <div class="stat-mini-num">{{ $etmApproved }}</div>
+                            <div class="stat-mini-item">
+                                <div class="stat-mini-num" style="color: var(--status-approved-text);">{{ $etmApproved }}</div>
                                 <div class="stat-mini-label">Disetujui</div>
                             </div>
-                            <div class="stat-mini-item {{ $etmRejected > 0 ? 'stat-mini-item--danger' : 'stat-mini-item--muted' }}">
-                                <div class="stat-mini-num">{{ $etmRejected }}</div>
+                            <div class="stat-mini-item">
+                                <div class="stat-mini-num" style="color: var(--status-rejected-text);">{{ $etmRejected }}</div>
                                 <div class="stat-mini-label">Ditolak</div>
                             </div>
                             <div class="stat-mini-item">
-                                <div class="stat-mini-num">{{ $etmPending }}</div>
+                                <div class="stat-mini-num" style="color: var(--status-pending-text);">{{ $etmPending }}</div>
                                 <div class="stat-mini-label">Pending</div>
                             </div>
                         </div>
@@ -1350,24 +1421,49 @@
                     </div>
 
                     {{-- Decision Card (Approve All or Reject Event) --}}
-                    @if (($event->material_status ?? 'pending') === 'pending' || ($event->material_status ?? 'pending') === 'pending_review')
+                    @if (($materialStatus ?? 'pending') === 'pending' || ($materialStatus ?? 'pending') === 'pending_review')
                         <div class="card-custom side-card">
                             <div class="side-card-title">Keputusan Akhir</div>
                             
                             <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" style="margin-bottom:12px;">
                                 @csrf
+                                @if($assignment)
+                                    <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                                @endif
                                 <button type="submit" class="btn-approve">
-                                    <i class="bi bi-check-circle-fill"></i> Setujui Semua Materi
+                                    Setujui Semua Materi
                                 </button>
                             </form>
 
                             <button type="button" class="btn-reject" data-bs-toggle="modal" data-bs-target="#rejectEventModal">
-                                <i class="bi bi-x-circle-fill"></i> Tolak Semua Materi
+                                Tolak Semua Materi
                             </button>
                         </div>
                     @else
-                        <div class="card-custom side-card review-locked-notice">
-                            <i class="bi bi-lock-fill me-1"></i> Materi event ini sudah di-review.
+                        <div class="card-custom side-card">
+                            <div class="side-card-title">Keputusan Akhir</div>
+                            <div class="review-locked-notice mb-3" style="text-align: left; padding: 0; color: var(--admin-text-main); font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-info-circle-fill text-primary"></i> 
+                                <span>Status: 
+                                    @if(($materialStatus ?? 'pending') === 'approved')
+                                        <span class="text-success">Disetujui</span>
+                                    @elseif(($materialStatus ?? 'pending') === 'rejected')
+                                        <span class="text-danger">Ditolak / Revisi</span>
+                                    @else
+                                        <span class="text-muted">{{ ucfirst($materialStatus ?? 'pending') }}</span>
+                                    @endif
+                                </span>
+                            </div>
+                            
+                            <form method="POST" action="{{ route('admin.event-material.revoke', $event->id) }}">
+                                @csrf
+                                @if($assignment)
+                                    <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                                @endif
+                                <button type="submit" class="btn-revoke">
+                                    Batalkan Keputusan
+                                </button>
+                            </form>
                         </div>
                     @endif
 
@@ -1383,12 +1479,15 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="rejectEventModalLabel">
-                        <i class="bi bi-x-circle-fill text-danger"></i> Tolak Semua Materi Event
+                        Tolak Semua Materi Event
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="{{ route('admin.event-material.reject', $event->id) }}" method="POST">
                     @csrf
+                    @if($assignment)
+                        <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
+                    @endif
                     <div class="modal-body">
                         <div class="mb-1">
                             <label for="rejection_reason" class="form-label" style="font-weight:750; color:var(--admin-text-main);">Catatan Revisi / Alasan Penolakan</label>
@@ -1461,7 +1560,23 @@
                     return `<img src="${url}" alt="Preview gambar">`;
                 }
                 if (kind === 'link') {
-                    return `<iframe src="${url}" title="Preview tautan" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+                    return `
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center p-4" style="height: 100%; width: 100%; background: #f8fafc; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;">
+                            <div class="mb-3" style="width: 50px; height: 50px; border-radius: 50%; background: #e0e7ff; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px;">
+                                <i class="bi bi-box-arrow-up-right text-primary" style="font-size: 1.3rem;"></i>
+                            </div>
+                            <h6 class="mb-2" style="font-weight: 800; color: #1e293b; font-size: 0.95rem; margin-top: 0; margin-bottom: 8px;">Tautan Eksternal / Materi Link</h6>
+                            <p class="text-muted mb-3" style="font-size: 0.76rem; max-width: 320px; line-height: 1.45; margin: 0 auto 14px;">
+                                Tautan ini tidak dapat ditampilkan di sini karena kebijakan keamanan web (CSP). Silakan buka tautan secara langsung di tab baru:
+                            </p>
+                            <a href="${url}" target="_blank" class="btn btn-primary btn-sm px-4 py-2" style="font-weight: 700; border-radius: 8px; background-color: var(--admin-secondary, #3949ab); border-color: var(--admin-secondary, #3949ab); color: #fff; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                                <i class="bi bi-box-arrow-up-right"></i> Buka Tautan Materi
+                            </a>
+                            <div class="mt-3 text-muted" style="font-size: 0.68rem; word-break: break-all; max-width: 90%; font-family: monospace;">
+                                ${url}
+                            </div>
+                        </div>
+                    `;
                 }
                 return `<iframe src="${url}" title="Preview file"></iframe>`;
             }

@@ -761,4 +761,5 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/event/{event}/material/stream', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'stream'])->name('admin.event-material.stream');
     Route::post('/admin/event/{event}/material/approve', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'approve'])->name('admin.event-material.approve');
     Route::post('/admin/event/{event}/material/reject', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'reject'])->name('admin.event-material.reject');
+    Route::post('/admin/event/{event}/material/revoke', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'revoke'])->name('admin.event-material.revoke');
 });
