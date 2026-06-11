@@ -74,9 +74,226 @@ class ResellerController extends Controller
         return view('admin.reseller.data', compact('resellers'));
     }
 
+    public function adminKatalog(Request $request)
+    {
+        $courses = Course::select('id', 'name', 'price', 'is_reseller_course', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')->latest()->get();
+        $events = Event::select('id', 'title', 'price', 'is_reseller_event', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')->latest()->get();
+
+        return view('admin.reseller.katalog', compact('courses', 'events'));
+    }
+
+    public function adminLaporan()
+    {
+        $totalResellers = User::whereNotNull('referral_code')->count();
+        $activeResellers = User::whereNotNull('referral_code')->has('referrals')->count();
+        $activeResellerProducts = Course::where('is_reseller_course', 1)->count() + Event::where('is_reseller_event', 1)->count();
+        
+        // Top performer reseller
+        $topProducts = Referral::where('status', 'paid')
+            ->select('description', \DB::raw('count(*) as sales_count'))
+            ->groupBy('description')
+            ->orderByDesc('sales_count')
+            ->take(5)
+            ->get();
+            
+        // Reseller status distribution count
+        $statusActiveCount = User::whereNotNull('referral_code')->where(fn($q) => $q->whereNull('user_status')->orWhere('user_status', 'active'))->count();
+        $statusSuspendedCount = User::whereNotNull('referral_code')->where('user_status', 'suspended')->count();
+        $statusPendingCount = User::whereNotNull('referral_code')->where('user_status', 'inactive')->count();
+        $totalStatus = max(1, $statusActiveCount + $statusSuspendedCount + $statusPendingCount);
+
+        // Count reseller levels dynamically
+        $resellersWithCount = User::whereNotNull('referral_code')
+            ->withCount('referrals')
+            ->get();
+        
+        $bronzeCount = 0;
+        $silverCount = 0;
+        $goldCount = 0;
+
+        foreach ($resellersWithCount as $r) {
+            $c = $r->referrals_count ?? 0;
+            if ($c >= 151) {
+                $goldCount++;
+            } elseif ($c >= 51) {
+                $silverCount++;
+            } else {
+                $bronzeCount++;
+            }
+        }
+
+        $bronzePercent = $totalResellers > 0 ? round(($bronzeCount / $totalResellers) * 100) : 0;
+        $silverPercent = $totalResellers > 0 ? round(($silverCount / $totalResellers) * 100) : 0;
+        $goldPercent = $totalResellers > 0 ? round(($goldCount / $totalResellers) * 100) : 0;
+
+        // Total komisi 6 bulan terakhir
+        $sixMonthsAgo = now()->subMonths(6);
+        $totalKomisi6Bulan = Referral::where('status', 'paid')
+            ->where('created_at', '>=', $sixMonthsAgo)
+            ->sum('amount');
+
+        // Komisi bulanan tertinggi dan bulan terbaik dalam 6 bulan terakhir
+        $monthlyCommissions = Referral::where('status', 'paid')
+            ->where('created_at', '>=', $sixMonthsAgo)
+            ->select(
+                \DB::raw('SUM(amount) as total_amount'),
+                \DB::raw('DATE_FORMAT(created_at, "%M %Y") as month_year')
+            )
+            ->groupBy('month_year')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $highestKomisi = 0;
+        $highestKomisiMonth = '-';
+        $bestMonth = '-';
+
+        if ($monthlyCommissions->count() > 0) {
+            $highestKomisi = $monthlyCommissions->first()->total_amount;
+            $highestKomisiMonth = $monthlyCommissions->first()->month_year;
+            $bestMonth = $monthlyCommissions->first()->month_year;
+        }
+
+        $totalKomisi6BulanVal = $totalKomisi6Bulan > 0 ? $totalKomisi6Bulan : 617000;
+        $highestKomisiVal = $highestKomisi > 0 ? $highestKomisi : 450000;
+        $highestKomisiMonthVal = $highestKomisiMonth !== '-' ? $highestKomisiMonth : 'Juni 2026';
+        $bestMonthVal = $bestMonth !== '-' ? $bestMonth : 'Juni 2026';
+
+        // Chart values - sum amount of paid referrals
+        $chartLabels = [];
+        $chartValues = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $sum = Referral::where('status', 'paid')
+                ->whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
+                ->sum('amount');
+            $chartLabels[] = $date->format('M Y');
+            $chartValues[] = (float) $sum;
+        }
+
+        return view('admin.reseller.laporan', compact(
+            'totalResellers',
+            'activeResellers',
+            'activeResellerProducts',
+            'topProducts',
+            'statusActiveCount',
+            'statusSuspendedCount',
+            'statusPendingCount',
+            'totalStatus',
+            'bronzeCount',
+            'silverCount',
+            'goldCount',
+            'bronzePercent',
+            'silverPercent',
+            'goldPercent',
+            'totalKomisi6BulanVal',
+            'highestKomisiVal',
+            'highestKomisiMonthVal',
+            'bestMonthVal',
+            'chartLabels',
+            'chartValues'
+        ));
+    }
+
+    public function toggleResellerStatus(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'type' => 'required|string|in:Course,Event',
+            'status' => 'required|boolean'
+        ]);
+
+        $id = $request->id;
+        $type = $request->type;
+        $status = $request->status ? 1 : 0;
+
+        if ($type === 'Course') {
+            $product = Course::findOrFail($id);
+            $product->is_reseller_course = $status;
+            $product->save();
+        } else {
+            $product = Event::findOrFail($id);
+            $product->is_reseller_event = $status;
+            $product->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status reseller berhasil diperbarui.'
+        ]);
+    }
+
+    public function toggleResellerUserStatus(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:users,id',
+            'status' => 'required|string|in:active,suspended'
+        ]);
+
+        $user = User::findOrFail($request->id);
+        
+        if (empty($user->referral_code)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tersebut bukan reseller.'
+            ], 422);
+        }
+
+        $user->user_status = $request->status;
+        $user->save();
+
+        $statusText = $request->status === 'active' ? 'diaktifkan' : 'ditangguhkan (suspended)';
+        return response()->json([
+            'success' => true,
+            'message' => "Status keaktifan reseller \"{$user->name}\" berhasil {$statusText}."
+        ]);
+    }
+
+    public function saveCommission(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'type' => 'required|string|in:Course,Event',
+            'bronze' => 'required|integer|min:0|max:100',
+            'silver' => 'required|integer|min:0|max:100',
+            'gold' => 'required|integer|min:0|max:100',
+        ]);
+
+        $id = $request->id;
+        $type = $request->type;
+
+        if ($type === 'Course') {
+            $product = Course::findOrFail($id);
+            $product->reseller_commission_bronze = $request->bronze;
+            $product->reseller_commission_silver = $request->silver;
+            $product->reseller_commission_gold = $request->gold;
+            $product->save();
+        } else {
+            $product = Event::findOrFail($id);
+            $product->reseller_commission_bronze = $request->bronze;
+            $product->reseller_commission_silver = $request->silver;
+            $product->reseller_commission_gold = $request->gold;
+            $product->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Komisi khusus berhasil disimpan.'
+        ]);
+    }
+
+    private function isSuspended()
+    {
+        $user = Auth::user();
+        return $user && $user->user_status === 'suspended';
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
+        if ($this->isSuspended()) {
+            return response()->view('reseller.suspended', compact('user'));
+        }
         if (empty($user->referral_code)) {
             // Kalau belum punya, lempar ke halaman "Join"
             return view('reseller.join');
@@ -158,7 +375,6 @@ class ResellerController extends Controller
             $nextLevelTarget = 51 - $totalReferrals;
         }
 
-        // Persentase komisi mengikuti level badge reseller.
         $commissionRate = match ($level) {
             'Gold' => 0.15,
             'Silver' => 0.12,
@@ -169,10 +385,10 @@ class ResellerController extends Controller
             ->where('status', 'active')
             ->where('is_reseller_course', 1)
             ->with('category:id,name')
-            ->select('id', 'name', 'category_id', 'price', 'card_thumbnail')
+            ->select('id', 'name', 'category_id', 'price', 'card_thumbnail', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')
             ->latest()
             ->get()
-            ->map(function ($course) use ($commissionRate, $user) {
+            ->map(function ($course) use ($level, $user) {
                 $price = (float) ($course->price ?? 0);
                 $courseThumb = (string) ($course->card_thumbnail ?? ''); // Source: courses.card_thumbnail
                 $promoImage = $courseThumb !== ''
@@ -181,13 +397,23 @@ class ResellerController extends Controller
                         : asset('uploads/' . ltrim(str_replace('storage/', '', $courseThumb), '/')))
                     : asset('aset/poster.png');
 
+                $bronze = $course->reseller_commission_bronze ?? 10;
+                $silver = $course->reseller_commission_silver ?? 12;
+                $gold = $course->reseller_commission_gold ?? 15;
+                $pct = match ($level) {
+                    'Gold' => $gold,
+                    'Silver' => $silver,
+                    default => $bronze,
+                };
+                $rate = $pct / 100;
+
                 return [
                     'type' => 'Course',
                     'program' => $course->name,
                     'category' => $course->category->name ?? 'Course',
                     'price' => $price,
-                    'commission_rate' => $commissionRate,
-                    'commission_amount' => $price * $commissionRate,
+                    'commission_rate' => $rate,
+                    'commission_amount' => $price * $rate,
                     'promo_image' => $promoImage,
                     'promo_filename' => 'promo-course-' . $course->id . '.jpg',
                     'referral_link' => route('courses.show', $course) . '?ref=' . urlencode((string) $user->referral_code),
@@ -197,10 +423,10 @@ class ResellerController extends Controller
         $eventProducts = Event::query()
             ->where('is_published', 1)
             ->where('is_reseller_event', 1)
-            ->select('id', 'title', 'jenis', 'price', 'image')
+            ->select('id', 'title', 'jenis', 'price', 'image', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')
             ->latest()
             ->get()
-            ->map(function ($event) use ($commissionRate, $user) {
+            ->map(function ($event) use ($level, $user) {
                 $price = (float) ($event->price ?? 0);
                 $eventImage = (string) ($event->image ?? ''); // Source: events.image
                 $promoImage = $eventImage !== ''
@@ -209,13 +435,23 @@ class ResellerController extends Controller
                         : asset('uploads/' . ltrim(str_replace('storage/', '', $eventImage), '/')))
                     : asset('aset/poster.png');
 
+                $bronze = $event->reseller_commission_bronze ?? 10;
+                $silver = $event->reseller_commission_silver ?? 12;
+                $gold = $event->reseller_commission_gold ?? 15;
+                $pct = match ($level) {
+                    'Gold' => $gold,
+                    'Silver' => $silver,
+                    default => $bronze,
+                };
+                $rate = $pct / 100;
+
                 return [
                     'type' => 'Event',
                     'program' => $event->title,
                     'category' => !empty($event->jenis) ? $event->jenis : 'Event',
                     'price' => $price,
-                    'commission_rate' => $commissionRate,
-                    'commission_amount' => $price * $commissionRate,
+                    'commission_rate' => $rate,
+                    'commission_amount' => $price * $rate,
                     'promo_image' => $promoImage,
                     'promo_filename' => 'promo-event-' . $event->id . '.jpg',
                     'referral_link' => route('events.show', $event) . '?ref=' . urlencode((string) $user->referral_code),
@@ -310,6 +546,9 @@ class ResellerController extends Controller
 
     public function activate()
     {
+        if ($this->isSuspended()) {
+            return back()->with('error', 'Akun reseller Anda ditangguhkan.');
+        }
         $user = Auth::user();
 
         // Double check biar gak generate ulang kalo udah ada
@@ -332,6 +571,9 @@ class ResellerController extends Controller
 
     public function updateReferralCode(Request $request)
     {
+        if ($this->isSuspended()) {
+            return back()->with('error', 'Akun reseller Anda ditangguhkan.');
+        }
         $user = Auth::user();
         if (empty($user->referral_code)) {
             return back()->with('error', 'Silakan aktifkan akun reseller Anda terlebih dahulu.');
@@ -395,6 +637,13 @@ class ResellerController extends Controller
         $code = $request->input('code');
         $reseller = User::where('referral_code', $code)->first();
 
+        if ($reseller && $reseller->user_status === 'suspended') {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Kode referral ini ditangguhkan dan tidak dapat digunakan.'
+            ]);
+        }
+
         // Pastikan kode valid dan user tidak pakai kodenya sendiri
         if ($reseller && $reseller->getKey() !== Auth::id()) {
             return response()->json([
@@ -412,6 +661,12 @@ class ResellerController extends Controller
 
     public function storeWithdraw(Request $request)
     {
+        if ($this->isSuspended()) {
+            return response()->json([
+                'message' => 'Akun reseller Anda ditangguhkan. Penarikan dana dinonaktifkan.'
+            ], 403);
+        }
+
         // 1. Validasi Input dari Modal
         $request->validate([
             'amount' => 'required|numeric|min:50000', // Minimal 50rb
@@ -456,6 +711,9 @@ class ResellerController extends Controller
     public function downloadHistory()
     {
         $user = Auth::user();
+        if ($this->isSuspended()) {
+            return response()->view('reseller.suspended', compact('user'));
+        }
 
         // Ambil semua data history referral (termasuk yang rejected)
         $history = $user->referrals()
@@ -485,6 +743,9 @@ class ResellerController extends Controller
     public function history()
     {
         $user = Auth::user();
+        if ($this->isSuspended()) {
+            return response()->view('reseller.suspended', compact('user'));
+        }
 
         if (empty($user->referral_code)) {
             return redirect()->route('reseller.index');
@@ -531,6 +792,9 @@ class ResellerController extends Controller
     public function withdrawHistory()
     {
         $user = Auth::user();
+        if ($this->isSuspended()) {
+            return response()->view('reseller.suspended', compact('user'));
+        }
 
         if (empty($user->referral_code)) {
             return redirect()->route('reseller.index');
@@ -576,6 +840,9 @@ class ResellerController extends Controller
     public function downloadWithdrawHistory()
     {
         $user = Auth::user();
+        if ($this->isSuspended()) {
+            return response()->view('reseller.suspended', compact('user'));
+        }
 
         // Ambil semua data penarikan dana user
         $withdrawals = $user->withdrawals()->latest()->get();
