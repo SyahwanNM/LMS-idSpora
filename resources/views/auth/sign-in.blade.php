@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -7,6 +7,7 @@
   <title>Sign In - idSPORA</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
   <style>
     body {
@@ -384,6 +385,12 @@
           </div>
         </div>
 
+        @if(config('services.recaptcha.site_key'))
+        <div class="input-group-custom d-flex flex-column align-items-center mb-4">
+          <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-theme="dark"></div>
+        </div>
+        @endif
+
         <button type="submit" class="btn-register">Sign In</button>
       </form>
 
@@ -443,15 +450,20 @@
     document.getElementById('signinForm')?.addEventListener('submit', function(e) {
         const fields = this.querySelectorAll('[required]');
         let hasError = false;
+        
+        // Remove all old error messages and reset borders
+        this.querySelectorAll('.field-error').forEach(function(el) {
+            el.remove();
+        });
         fields.forEach(function(field) {
             field.style.borderColor = '';
-            const wrapper = field.closest('.input-group-custom') || field.parentNode;
-            const prev = wrapper.querySelector('.field-error');
-            if (prev) prev.remove();
+        });
 
+        fields.forEach(function(field) {
             if (!field.value.trim()) {
                 hasError = true;
                 field.style.borderColor = '#dc3545';
+                const wrapper = field.closest('.input-group-custom') || field.parentNode;
                 const err = document.createElement('small');
                 err.className = 'field-error';
                 err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;';
@@ -459,6 +471,25 @@
                 wrapper.appendChild(err);
             }
         });
+
+        @if(config('services.recaptcha.site_key'))
+        if (typeof grecaptcha !== 'undefined') {
+            const recaptchaResponse = grecaptcha.getResponse();
+            if (!recaptchaResponse) {
+                hasError = true;
+                const recaptchaContainer = document.querySelector('.g-recaptcha');
+                if (recaptchaContainer) {
+                    const wrapper = recaptchaContainer.closest('.input-group-custom');
+                    const err = document.createElement('small');
+                    err.className = 'field-error';
+                    err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;text-align:center;';
+                    err.textContent = 'Please complete the reCAPTCHA verification.';
+                    wrapper.appendChild(err);
+                }
+            }
+        }
+        @endif
+
         if (hasError) e.preventDefault();
     });
   </script>
