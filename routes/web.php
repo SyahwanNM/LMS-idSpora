@@ -82,22 +82,20 @@ Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
 
 
 Route::middleware(['auth'])->group(function () {
+    // --- Fitur Reseller ---
     Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
-    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
-
-    // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
-    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
+    Route::post('/reseller/update-code', [ResellerController::class, 'updateReferralCode'])->name('reseller.update-code');
+    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
+
+    // Penarikan Dana (Withdrawal)
+    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
     Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
 
+    // Riwayat & Laporan (Cetak/Unduh)
+    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
     Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
     Route::get('/reseller/withdraw/download', [ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
-
-    // --- BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
-    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
-    
-    // Route Baru untuk Update Kode Afiliasi / Kustomisasi Kode Referral
-    Route::post('/reseller/update-code', [ResellerController::class, 'updateReferralCode'])->name('reseller.update-code');
 });
 
 

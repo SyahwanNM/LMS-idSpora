@@ -139,16 +139,25 @@
 
         foreach ($topProducts as $item) {
             $thumbnail = null;
-            $course = \App\Models\Course::where('name', $item->description)->first();
-            if ($course) {
-                $courseThumb = (string) ($course->card_thumbnail ?? '');
-                $thumbnail = $courseThumb !== ''
-                    ? (str_starts_with($courseThumb, 'http://') || str_starts_with($courseThumb, 'https://')
-                        ? $courseThumb
-                        : asset('uploads/' . ltrim(str_replace('storage/', '', $courseThumb), '/')))
-                    : asset('aset/poster.png');
-            } else {
-                $event = \App\Models\Event::where('title', $item->description)->first();
+            $productName = $item->description;
+            $categoryName = 'Produk Reseller';
+
+            if (str_starts_with($productName, 'Komisi Course: ')) {
+                $productName = substr($productName, strlen('Komisi Course: '));
+                $categoryName = 'Kursus';
+                $course = \App\Models\Course::where('name', $productName)->first();
+                if ($course) {
+                    $courseThumb = (string) ($course->card_thumbnail ?? '');
+                    $thumbnail = $courseThumb !== ''
+                        ? (str_starts_with($courseThumb, 'http://') || str_starts_with($courseThumb, 'https://')
+                            ? $courseThumb
+                            : asset('uploads/' . ltrim(str_replace('storage/', '', $courseThumb), '/')))
+                        : asset('aset/poster.png');
+                }
+            } elseif (str_starts_with($productName, 'Komisi Event: ')) {
+                $productName = substr($productName, strlen('Komisi Event: '));
+                $categoryName = 'Event';
+                $event = \App\Models\Event::where('title', $productName)->first();
                 if ($event) {
                     $eventImage = (string) ($event->image ?? '');
                     $thumbnail = $eventImage !== ''
@@ -157,13 +166,38 @@
                             : asset('uploads/' . ltrim(str_replace('storage/', '', $eventImage), '/')))
                         : asset('aset/poster.png');
                 }
+            } else {
+                $course = \App\Models\Course::where('name', $productName)->first();
+                if ($course) {
+                    $categoryName = 'Kursus';
+                    $courseThumb = (string) ($course->card_thumbnail ?? '');
+                    $thumbnail = $courseThumb !== ''
+                        ? (str_starts_with($courseThumb, 'http://') || str_starts_with($courseThumb, 'https://')
+                            ? $courseThumb
+                            : asset('uploads/' . ltrim(str_replace('storage/', '', $courseThumb), '/')))
+                        : asset('aset/poster.png');
+                } else {
+                    $event = \App\Models\Event::where('title', $productName)->first();
+                    if ($event) {
+                        $categoryName = 'Event';
+                        $eventImage = (string) ($event->image ?? '');
+                        $thumbnail = $eventImage !== ''
+                            ? (str_starts_with($eventImage, 'http://') || str_starts_with($eventImage, 'https://')
+                                ? $eventImage
+                                : asset('uploads/' . ltrim(str_replace('storage/', '', $eventImage), '/')))
+                            : asset('aset/poster.png');
+                    }
+                }
             }
+
+            $item->product_display_name = $productName;
+            $item->category_name = $categoryName;
             $item->thumbnail = $thumbnail ?? asset('aset/poster.png');
         }
             
         // Reseller status distribution count (2 status: Aktif & Suspend)
-        $statusActiveCount = \App\Models\User::whereNotNull('referral_code')->where(fn($q) => $q->whereNull('user_status')->orWhere('user_status', '!=', 'suspended'))->count();
-        $statusSuspendedCount = \App\Models\User::whereNotNull('referral_code')->where('user_status', 'suspended')->count();
+        $statusActiveCount = \App\Models\User::whereNotNull('referral_code')->where('reseller_status', 'active')->count();
+        $statusSuspendedCount = \App\Models\User::whereNotNull('referral_code')->where('reseller_status', 'suspended')->count();
         $totalStatus = max(1, $statusActiveCount + $statusSuspendedCount);
 
         // Count reseller levels dynamically
@@ -372,11 +406,11 @@
                                                 <div class="d-flex align-items-center justify-content-center bg-light text-secondary rounded fw-bold" style="width: 30px; height: 30px; font-size: 0.9rem;">
                                                     {{ $rankNum }}
                                                 </div>
-                                                <img src="{{ $item->thumbnail }}" alt="{{ $item->description }}" class="rounded shadow-sm" style="width: 44px; height: 44px; object-fit: cover;">
-                                                <div>
-                                                    <h6 class="mb-0 fw-bold text-dark small" style="font-size: 0.95rem;">{{ $item->description }}</h6>
-                                                    <small class="text-muted" style="font-size: 0.75rem;">Kategori: Produk Reseller</small>
-                                                </div>
+                                                 <img src="{{ $item->thumbnail }}" alt="{{ $item->product_display_name }}" class="rounded shadow-sm" style="width: 44px; height: 44px; object-fit: cover;">
+                                                 <div>
+                                                     <h6 class="mb-0 fw-bold text-dark small" style="font-size: 0.95rem;">{{ $item->product_display_name }}</h6>
+                                                     <small class="text-muted" style="font-size: 0.75rem;">Kategori: {{ $item->category_name }}</small>
+                                                 </div>
                                             </div>
                                             <span class="badge rounded-pill px-3 py-2 fw-semibold" style="background-color: var(--primary-subtle); color: var(--primary-dark); font-size: 0.75rem;">
                                                 {{ $item->sales_count }} Terjual

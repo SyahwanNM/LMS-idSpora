@@ -97,10 +97,10 @@ class ResellerController extends Controller
             ->get();
             
         // Reseller status distribution count
-        $statusActiveCount = User::whereNotNull('referral_code')->where(fn($q) => $q->whereNull('user_status')->orWhere('user_status', 'active'))->count();
-        $statusSuspendedCount = User::whereNotNull('referral_code')->where('user_status', 'suspended')->count();
-        $statusPendingCount = User::whereNotNull('referral_code')->where('user_status', 'inactive')->count();
-        $totalStatus = max(1, $statusActiveCount + $statusSuspendedCount + $statusPendingCount);
+        $statusActiveCount = User::whereNotNull('referral_code')->where(fn($q) => $q->whereNull('reseller_status')->orWhere('reseller_status', 'active'))->count();
+        $statusSuspendedCount = User::whereNotNull('referral_code')->where('reseller_status', 'suspended')->count();
+        $statusPendingCount = 0;
+        $totalStatus = max(1, $statusActiveCount + $statusSuspendedCount);
 
         // Count reseller levels dynamically
         $resellersWithCount = User::whereNotNull('referral_code')
@@ -239,7 +239,7 @@ class ResellerController extends Controller
             ], 422);
         }
 
-        $user->user_status = $request->status;
+        $user->reseller_status = $request->status;
         $user->save();
 
         $statusText = $request->status === 'active' ? 'diaktifkan' : 'ditangguhkan (suspended)';
@@ -285,7 +285,7 @@ class ResellerController extends Controller
     private function isSuspended()
     {
         $user = Auth::user();
-        return $user && $user->user_status === 'suspended';
+        return $user && $user->reseller_status === 'suspended';
     }
 
     public function index(Request $request)
@@ -472,7 +472,7 @@ class ResellerController extends Controller
             })->values();
         }
 
-        $perPage = 6;
+        $perPage = 5;
         $page = $request->input('page', 1);
         $offset = ($page - 1) * $perPage;
         
@@ -637,7 +637,7 @@ class ResellerController extends Controller
         $code = $request->input('code');
         $reseller = User::where('referral_code', $code)->first();
 
-        if ($reseller && $reseller->user_status === 'suspended') {
+        if ($reseller && $reseller->reseller_status === 'suspended') {
             return response()->json([
                 'valid' => false,
                 'message' => 'Kode referral ini ditangguhkan dan tidak dapat digunakan.'

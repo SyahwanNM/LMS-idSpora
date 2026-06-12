@@ -140,7 +140,6 @@
                     <select id="resellerStatusSelect" class="form-select rounded-pill" style="height: 44px;">
                         <option value="">Semua Status</option>
                         <option value="Aktif">Status Aktif</option>
-                        <option value="Nonaktif">Status Nonaktif</option>
                         <option value="Suspended">Status Suspended</option>
                     </select>
                 </div>
@@ -189,7 +188,7 @@
                                         }
 
                                         $resellerClicks = \DB::table('referral_clicks')->where('user_id', $reseller->id)->count();
-                                        $status = empty($reseller->user_status) || $reseller->user_status === 'active' ? 'Aktif' : ($reseller->user_status === 'inactive' ? 'Nonaktif' : 'Suspended');
+                                        $status = $reseller->reseller_status === 'suspended' ? 'Suspended' : 'Aktif';
                                     @endphp
                                     <tr class="reseller-row" 
                                         data-name="{{ strtolower($reseller->name) }}" 
@@ -287,14 +286,9 @@
 
             $resellerClicks = \DB::table('referral_clicks')->where('user_id', $reseller->id)->count();
             $conversionRate = ($resellerClicks > 0) ? number_format(($count / $resellerClicks) * 100, 1) . '%' : '0%';
-            $status = empty($reseller->user_status) || $reseller->user_status === 'active' ? 'Aktif' : ($reseller->user_status === 'inactive' ? 'Nonaktif' : 'Suspended');
+            $status = $reseller->reseller_status === 'suspended' ? 'Suspended' : 'Aktif';
             
-            $statusBadgeClass = 'bg-success bg-opacity-10 text-success';
-            if ($status === 'Nonaktif') {
-                $statusBadgeClass = 'bg-warning bg-opacity-10 text-warning-emphasis';
-            } elseif ($status === 'Suspended') {
-                $statusBadgeClass = 'bg-danger bg-opacity-10 text-danger';
-            }
+            $statusBadgeClass = $status === 'Suspended' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-success bg-opacity-10 text-success';
 
             $whatsappPhone = $reseller->phone;
             if ($whatsappPhone) {
@@ -324,10 +318,7 @@
                             <!-- Profile Card Left -->
                             <div class="col-lg-4">
                                 <div class="card border-0 bg-light p-4 rounded-4 text-center h-100 shadow-none">
-                                    <div class="avatar-circle mx-auto mb-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" 
-                                         style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); border: 3px solid #fff; font-size: 2rem;">
-                                        {{ strtoupper(substr($reseller->name, 0, 2)) }}
-                                    </div>
+                                    <img src="{{ $reseller->avatar_url }}" alt="{{ $reseller->name }}" class="rounded-circle shadow-sm mx-auto mb-3" style="width: 80px; height: 80px; object-fit: cover; border: 3px solid #fff;">
                                     <h4 class="fw-bold text-dark mb-1">{{ $reseller->name }}</h4>
                                     <p class="text-muted small mb-3">{{ $reseller->email }}</p>
                                     
