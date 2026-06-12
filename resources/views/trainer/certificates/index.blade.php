@@ -495,35 +495,91 @@
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 992px) {
     .cert-tabs-filter-container {
       flex-direction: column;
       align-items: stretch;
-      gap: 20px;
+      gap: 16px;
     }
+  }
+
+  @media (max-width: 768px) {
+    .cert-page {
+      padding-bottom: 100px;
+    }
+
+    .top-page-inner {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .title-page h1 {
+      font-size: 28px !important;
+    }
+
+    .top-page {
+      padding: var(--spacing-xl) var(--spacing-lg) !important;
+    }
+
     .cert-nav-tabs {
       flex-wrap: wrap;
       justify-content: center;
+      gap: 16px;
     }
+
     .cert-filter-widgets {
-      flex-direction: column;
-      align-items: stretch;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
     }
-    .cert-search-wrapper, .cert-select-wrapper {
+
+    .cert-search-wrapper {
+      flex: 1 1 100%;
+    }
+
+    .cert-select-wrapper {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    .cert-select {
       width: 100%;
     }
+
     .cert-toggle-filter-btn {
-      width: 100%;
+      flex: 1 1 100%;
       height: 40px;
     }
+
     .cert-cards-grid {
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     }
   }
 
   @media (max-width: 600px) {
+    .certificate-card {
+      max-width: 380px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
     .cert-cards-grid {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .cert-filter-widgets {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .cert-search-wrapper,
+    .cert-select-wrapper,
+    .cert-toggle-filter-btn {
+      width: 100%;
+      flex: none;
     }
   }
 </style>

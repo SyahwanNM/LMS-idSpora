@@ -123,6 +123,10 @@
   }
   $areaD = $pathD . " L {$svgPoints[4]['x']} 150 L {$svgPoints[0]['x']} 150 Z";
 
+  $totalRevenue = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+      ->where('status', 'approved')
+      ->sum('amount');
+
   $thisMonthRevenue = $revenueData[4] ?? 0;
   $lastMonthRevenue = $revenueData[3] ?? 0;
   $revenueGrowth = 0;
@@ -692,10 +696,10 @@ body {
             
             <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
                 <div class="revenue-title"><i class="bi bi-wallet2" style="margin-right: 8px; font-size: 16px;"></i> Pendapatan Total</div>
-                <div style="background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px); letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.1);">BULAN INI</div>
+                <div style="background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px); letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.1);">TOTAL</div>
             </div>
             
-            <div class="revenue-amount" style="position: relative; z-index: 2;">Rp {{ number_format($thisMonthRevenue, 0, ',', '.') }}</div>
+            <div class="revenue-amount" style="position: relative; z-index: 2;">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
             
             <div class="revenue-growth" style="position: relative; z-index: 2;">
                 @if($revenueGrowth >= 0)
@@ -825,8 +829,14 @@ body {
                     }
                 @endphp
                 <div class="invite-item" 
+                     @if($inviteEntityType === 'course')
                      onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')" 
-                     style="cursor:pointer;">
+                     style="cursor:pointer;"
+                     @elseif($inviteEntityType === 'event' && $entityId > 0)
+                     onclick="window.location.href='{{ route('trainer.events.show', $entityId) }}'"
+                     style="cursor:pointer;"
+                     @endif
+                     >
                     <div class="invite-icon-box {{ $inviteEntityType === 'event' ? 'box-purple' : 'box-green' }}">
                         <i class="bi {{ $inviteEntityType === 'event' ? 'bi-person-video3' : 'bi-file-text' }}"></i>
                     </div>
@@ -865,7 +875,15 @@ body {
                                 </a>
                             @endif
                             <div style="display: flex; gap: 8px;">
-                                <button type="button" class="btn btn-sm" style="flex:1; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
+                                @if($inviteEntityType === 'course')
+                                    <button type="button" class="btn btn-sm" style="flex:1; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
+                                @else
+                                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="decision" value="accept">
+                                        <button type="submit" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation();">Terima</button>
+                                    </form>
+                                @endif
                                 <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
                                     @csrf
                                     <input type="hidden" name="decision" value="reject">
