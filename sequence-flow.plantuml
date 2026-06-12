@@ -1,78 +1,72 @@
 @startuml
-title Sequence Diagram Fitur Trainer Academy idSpora
+title Sequence Diagram Penerbitan Sertifikat Trainer
 
-skinparam backgroundColor #0b0b0b
+skinparam backgroundColor white
+skinparam shadowing false
+
 skinparam sequence {
-    ArrowColor #6f86a6
-    LifeLineBorderColor #dbeafe
-    LifeLineBackgroundColor #ffffff
-    ParticipantBorderColor #dbeafe
-    ParticipantBackgroundColor #111827
-    ParticipantFontColor #ffffff
-    ActorBorderColor #dbeafe
-    ActorFontColor #ffffff
-    DatabaseBorderColor #dbeafe
-    DatabaseBackgroundColor #ffffff
-    DatabaseFontColor #ffffff
+    ArrowColor #24364B
+    LifeLineBorderColor #B8C7D9
+    LifeLineBackgroundColor white
+
+    ActorBorderColor #24364B
+    ActorBackgroundColor white
+
+    BoundaryBorderColor #24364B
+    BoundaryBackgroundColor white
+
+    DatabaseBorderColor #24364B
+    DatabaseBackgroundColor white
+
+    ParticipantBackgroundColor #1F2D3D
+    ParticipantBorderColor #1F2D3D
+    ParticipantFontColor white
 }
 
-actor "Admin Event / Course" as AdminEvent
-participant "Frontend / UI" as UI
-participant "Sistem" as Sistem
+actor "Admin Trainer" as Admin
+boundary "Dashboard Admin Trainer" as AdminDash
+participant "Sistem" as System
 database "Database" as DB
-participant "Admin Trainer" as AdminTrainer
+boundary "Dashboard Trainer" as TrainerDash
+actor "Trainer" as Trainer
 
-AdminEvent -> UI : Kelola event / course
-activate UI
+Admin -> AdminDash : Pilih event/course selesai
+activate AdminDash
 
-UI -> Sistem : Kirim request data event / course
-activate Sistem
-Sistem -> DB : Simpan / ambil data event / course
+AdminDash -> System : Request generate sertifikat
+activate System
+
+System -> DB : Ambil data trainer dan kegiatan
 activate DB
-DB --> Sistem : Data event / course
-deactivate DB
-Sistem --> UI : Tampilkan data
-UI --> AdminEvent : Informasi event / course tampil
-
-AdminEvent -> UI : Kirim undangan trainer
-UI -> Sistem : Proses undangan trainer
-Sistem -> DB : Simpan data undangan
-activate DB
-DB --> Sistem : Undangan tersimpan
-deactivate DB
-Sistem --> UI : Status undangan berhasil
-UI --> AdminEvent : Notifikasi berhasil dikirim
-
-AdminEvent -> UI : Kelola materi event / course
-UI -> Sistem : Kirim data materi
-Sistem -> DB : Simpan data materi
-activate DB
-DB --> Sistem : Materi tersimpan
+DB --> System : Data trainer dan kegiatan
 deactivate DB
 
-Sistem -> AdminTrainer : Kirim materi untuk review
-activate AdminTrainer
-AdminTrainer --> Sistem : Review materi
+System -> DB : Simpan data sertifikat
+activate DB
+DB --> System : Sertifikat tersimpan
+deactivate DB
 
-alt Materi disetujui
-    AdminTrainer -> Sistem : Approve materi
-    Sistem -> DB : Update status materi approved
-    activate DB
-    DB --> Sistem : Status diperbarui
-    deactivate DB
-else Materi perlu revisi
-    AdminTrainer -> Sistem : Request revisi materi
-    Sistem -> DB : Update status revisi
-    activate DB
-    DB --> Sistem : Status revisi tersimpan
-    deactivate DB
-end
+System --> AdminDash : Generate sertifikat berhasil
+deactivate System
+deactivate AdminDash
 
-Sistem --> UI : Update status materi
-deactivate Sistem
-UI --> AdminEvent : Status materi tampil
-deactivate UI
+Trainer -> TrainerDash : Buka halaman sertifikat
+activate TrainerDash
 
-deactivate AdminTrainer
+TrainerDash -> System : Request data sertifikat
+activate System
+
+System -> DB : Ambil data sertifikat
+activate DB
+DB --> System : Data sertifikat
+deactivate DB
+
+System --> TrainerDash : Tampilkan sertifikat
+
+Trainer -> TrainerDash : Download sertifikat
+TrainerDash --> Trainer : Sertifikat berhasil diunduh
+
+deactivate System
+deactivate TrainerDash
 
 @enduml

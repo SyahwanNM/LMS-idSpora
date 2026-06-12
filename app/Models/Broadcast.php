@@ -12,6 +12,7 @@ class Broadcast extends Model
         'segment',
         'platform',
         'link',
+        'attachment',
         'sender_id',
         'target_count',
         'status'

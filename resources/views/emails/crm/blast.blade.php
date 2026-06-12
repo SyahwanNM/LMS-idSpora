@@ -5,85 +5,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $broadcast->title }}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; width: 100% !important;">
-    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; margin: 0; padding: 40px 0; width: 100%;">
+<body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: 'Segoe UI', Arial, sans-serif; color: #333333; -webkit-font-smoothing: antialiased; width: 100% !important;">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f4f5f7; margin: 0; padding: 40px 0; width: 100%;">
         <tr>
             <td align="center" valign="top">
                 <!-- Main Email Card Container -->
-                <table width="600" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); max-width: 600px; width: 100%; border-collapse: separate;">
+                <table width="600" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e1e4e8; border-radius: 8px; overflow: hidden; max-width: 600px; width: 100%; border-collapse: separate;">
                     
-                    <!-- Top Logo (Centered) -->
+                    <!-- Header with Logo -->
                     <tr>
-                        <td align="center" valign="top" style="padding: 40px 30px 20px 30px; background-color: #ffffff;">
-                            <img src="{{ $message->embed(public_path('aset/logo idspora_dark.png')) }}" alt="idSpora Logo" style="height: 48px; width: auto; display: block; margin: 0 auto;">
+                        <td align="left" valign="top" style="padding: 30px 40px; background-color: #ffffff; border-bottom: 1px solid #edf2f7;">
+                            <img src="{{ $message->embed(public_path('aset/logo idspora_dark.png')) }}" alt="idSpora Logo" style="height: 38px; width: auto; display: block;">
                         </td>
                     </tr>
                     
-                    <!-- Subject Heading (Centered) -->
+                    <!-- Content -->
                     <tr>
-                        <td align="center" valign="top" style="padding: 0 30px 24px 30px; background-color: #ffffff; text-align: center;">
-                            <h1 style="margin: 0 0 10px 0; color: #1e1b4b; font-size: 24px; font-weight: 800; line-height: 1.3; font-family: 'Segoe UI', sans-serif;">
+                        <td align="left" valign="top" style="padding: 40px 40px 30px 40px; background-color: #ffffff;">
+                            <h2 style="margin: 0 0 20px 0; color: #1e1b4b; font-size: 20px; font-weight: 700; line-height: 1.4; font-family: 'Segoe UI', sans-serif;">
                                 {{ $broadcast->title }}
-                            </h1>
-                            <p style="margin: 0; color: #64748b; font-size: 14px; font-family: 'Segoe UI', sans-serif; font-weight: 500;">
-                                Pengumuman penting dari idSpora Academy
-                            </p>
-                        </td>
-                    </tr>
-                    
-                    <!-- Purple Layout Container Box with Megaphone Illustration -->
-                    <tr>
-                        <td align="center" valign="top" style="padding: 0 40px 30px 40px; background-color: #ffffff;">
-                            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%); background-color: #7c3aed; border-radius: 20px; overflow: hidden; border-collapse: separate; box-shadow: 0 4px 10px rgba(124, 58, 237, 0.15);">
+                            </h2>
+                            
+                            <div style="font-size: 15px; line-height: 1.65; color: #4a5568; margin-bottom: 30px; white-space: pre-wrap; font-family: 'Segoe UI', sans-serif;">
+                                {{ $broadcast->message }}
+                            </div>
+                            
+                            <!-- Call To Action Button (Optional) -->
+                            @if($broadcast->link)
+                            <table border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 30px;">
                                 <tr>
-                                    <!-- Megaphone Icon (Left) -->
-                                    <td align="center" valign="middle" style="padding: 30px 10px 30px 30px; width: 110px;">
-                                        <img src="https://img.icons8.com/clouds/200/megaphone.png" alt="Megaphone" style="width: 100px; height: auto; display: block;">
-                                    </td>
-                                    
-                                    <!-- Message & Button (Right) -->
-                                    <td align="left" valign="middle" style="padding: 30px 30px 30px 20px;">
-                                        <!-- Message Content -->
-                                        <div style="font-size: 15px; line-height: 1.65; color: #ffffff; margin-bottom: 24px; white-space: pre-wrap; font-family: 'Segoe UI', sans-serif; font-weight: 500;">
-                                            {{ $broadcast->message }}
-                                        </div>
-                                        
-                                        <!-- Yellow Button -->
-                                        <table border="0" cellspacing="0" cellpadding="0">
-                                            <tr>
-                                                <td align="center" style="border-radius: 12px; background-color: #fbbf24;">
-                                                    <a href="{{ $broadcast->link ?: config('app.url') }}" target="_blank" style="background-color: #fbbf24; border: 1px solid #fbbf24; border-radius: 12px; color: #1e1b4b !important; display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 700; text-decoration: none; font-family: 'Segoe UI', sans-serif; text-transform: uppercase; letter-spacing: 0.5px;">
-                                                        Kunjungi Platform
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                    <td align="center" style="border-radius: 6px; background-color: #7c3aed;">
+                                        <a href="{{ $broadcast->link }}" target="_blank" style="background-color: #7c3aed; border: 1px solid #7c3aed; border-radius: 6px; color: #ffffff !important; display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: 600; text-decoration: none; font-family: 'Segoe UI', sans-serif; letter-spacing: 0.3px;">
+                                            Kunjungi Halaman Halaman
+                                        </a>
                                     </td>
                                 </tr>
                             </table>
+                            @endif
+
+                            <!-- File Attachments List (Optional) -->
+                            @if($broadcast->attachment)
+                            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #edf2f7;">
+                                <strong style="font-size: 12px; color: #718096; display: block; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.8px;">Lampiran Dokumen:</strong>
+                                <ul style="margin: 0; padding-left: 20px; color: #7c3aed; font-size: 14px; font-family: 'Segoe UI', sans-serif;">
+                                    @php
+                                        $paths = json_decode($broadcast->attachment, true);
+                                    @endphp
+                                    @if(is_array($paths))
+                                        @foreach($paths as $path)
+                                            @php
+                                                $filename = basename($path);
+                                                $cleanFilename = preg_replace('/^\d+_/', '', $filename);
+                                            @endphp
+                                            <li style="margin-bottom: 8px;">
+                                                <a href="{{ Storage::disk('public')->url($path) }}" target="_blank" style="color: #7c3aed; text-decoration: underline; font-weight: 600;">
+                                                    {{ $cleanFilename }}
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    @else
+                                        @php
+                                            $filename = basename($broadcast->attachment);
+                                            $cleanFilename = preg_replace('/^\d+_/', '', $filename);
+                                        @endphp
+                                        <li>
+                                            <a href="{{ Storage::disk('public')->url($broadcast->attachment) }}" target="_blank" style="color: #7c3aed; text-decoration: underline; font-weight: 600;">
+                                                {{ $cleanFilename }}
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </div>
+                            @endif
                         </td>
                     </tr>
                     
-                    <!-- Signature / Footer Divider -->
+                    <!-- Signature / Sign-off -->
                     <tr>
-                        <td align="left" valign="top" style="padding: 10px 40px 30px 40px; background-color: #ffffff;">
-                            <hr style="border: 0; border-top: 1px solid #f1f5f9; margin-top: 10px; margin-bottom: 24px;">
+                        <td align="left" valign="top" style="padding: 10px 40px 40px 40px; background-color: #ffffff;">
+                            <hr style="border: 0; border-top: 1px solid #edf2f7; margin-top: 10px; margin-bottom: 24px;">
                             
-                            <p style="margin: 0; font-size: 14px; color: #64748b; font-family: 'Segoe UI', sans-serif; line-height: 1.5;">
-                                Salam hangat,<br>
-                                <span style="font-weight: 700; color: #1e1b4b;">Admin {{ config('app.name') }}</span>
+                            <p style="margin: 0; font-size: 14px; color: #718096; font-family: 'Segoe UI', sans-serif; line-height: 1.5;">
+                                Salam hormat,<br>
+                                <strong style="font-weight: 700; color: #1e1b4b; display: inline-block; margin-top: 4px;">Tim idSpora Academy</strong>
                             </p>
                         </td>
                     </tr>
                     
-                    <!-- Bottom Gray Footer Band -->
+                    <!-- Bottom Footer -->
                     <tr>
-                        <td align="center" valign="top" style="padding: 24px 40px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;">
-                            <p style="margin: 0 0 6px 0; font-size: 11px; color: #94a3b8; font-family: 'Segoe UI', sans-serif; line-height: 1.4;">
+                        <td align="center" valign="top" style="padding: 24px 40px; background-color: #f8fafc; border-top: 1px solid #edf2f7; text-align: center;">
+                            <p style="margin: 0 0 6px 0; font-size: 11px; color: #a0aec0; font-family: 'Segoe UI', sans-serif; line-height: 1.4;">
                                 &copy; {{ date('Y') }} {{ config('app.name') }}. Seluruh hak cipta dilindungi.
                             </p>
                             <p style="margin: 0; font-size: 10px; color: #cbd5e1; font-family: 'Segoe UI', sans-serif; line-height: 1.4;">
-                                Anda menerima email ini karena terdaftar sebagai member di platform kami.
+                                Email ini dikirim secara otomatis oleh sistem administrasi idSpora.
                             </p>
                         </td>
                     </tr>

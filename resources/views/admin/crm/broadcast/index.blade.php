@@ -61,7 +61,7 @@
             <tbody>
                 @forelse($broadcasts as $item)
                 @php
-                    $segMap = ['all'=>['bg:var(--crm-border-soft);color:var(--crm-text-muted);','Semua User'],'reseller'=>['background:rgba(245,158,11,0.1);color:#d97706;','Reseller'],'trainer'=>['background:rgba(6,182,212,0.1);color:#0891b2;','Trainer'],'no_event'=>['background:rgba(239,68,68,0.1);color:#dc2626;','Belum Ikut Event']];
+                    $segMap = ['all'=>['bg:var(--crm-border-soft);color:var(--crm-text-muted);','Semua User'],'reseller'=>['background:rgba(245,158,11,0.1);color:#d97706;','Reseller'],'trainer'=>['background:rgba(6,182,212,0.1);color:#0891b2;','Trainer'],'no_event'=>['background:rgba(239,68,68,0.1);color:#dc2626;','Belum Ikut Event'],'manual'=>['background:rgba(124,58,237,0.1);color:var(--crm-primary);','Input Manual']];
                     $seg = $segMap[$item->segment] ?? ['background:var(--crm-border-soft);color:var(--crm-text-muted);','Lainnya'];
                 @endphp
                 <tr>
@@ -124,7 +124,7 @@
 @push('modals')
 @foreach($broadcasts as $item)
 @php
-    $segMap = ['all'=>'Semua User','reseller'=>'Reseller','trainer'=>'Trainer','no_event'=>'Belum Ikut Event'];
+    $segMap = ['all'=>'Semua User','reseller'=>'Reseller','trainer'=>'Trainer','no_event'=>'Belum Ikut Event','manual'=>'Input Manual'];
     $segLabel = $segMap[$item->segment] ?? 'Lainnya';
 @endphp
 <div class="modal fade" id="modalDetail{{ $item->id }}" tabindex="-1" aria-hidden="true">
@@ -158,6 +158,37 @@
                         <a href="{{ $item->link }}" target="_blank" style="color:var(--crm-primary);text-decoration:none;">
                             {{ $item->link }} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.75rem;"></i>
                         </a>
+                    </div>
+                </div>
+                @endif
+                @if($item->attachment)
+                <div class="card-minimal p-3 mb-3">
+                    <div style="font-size:0.65rem;font-weight:700;color:var(--crm-text-subtle);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">File Lampiran</div>
+                    <div style="font-size:0.8rem;font-weight:700;color:var(--crm-primary);word-break:break-all;display:flex;flex-direction:column;gap:8px;">
+                        @php
+                            $paths = json_decode($item->attachment, true);
+                        @endphp
+                        @if(is_array($paths))
+                            @foreach($paths as $index => $path)
+                                @php
+                                    $filename = basename($path);
+                                    $cleanFilename = preg_replace('/^\d+_/', '', $filename);
+                                @endphp
+                                <a href="{{ asset('storage/' . $path) }}" target="_blank" style="color:var(--crm-primary);text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                                    <i class="bi bi-file-earmark-arrow-down-fill" style="font-size:1rem;"></i>
+                                    {{ $cleanFilename }} <i class="bi bi-box-arrow-up-right" style="font-size:0.75rem;"></i>
+                                </a>
+                            @endforeach
+                        @else
+                            @php
+                                $filename = basename($item->attachment);
+                                $cleanFilename = preg_replace('/^\d+_/', '', $filename);
+                            @endphp
+                            <a href="{{ asset('storage/' . $item->attachment) }}" target="_blank" style="color:var(--crm-primary);text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                                <i class="bi bi-file-earmark-arrow-down-fill" style="font-size:1rem;"></i>
+                                {{ $cleanFilename }} <i class="bi bi-box-arrow-up-right" style="font-size:0.75rem;"></i>
+                            </a>
+                        @endif
                     </div>
                 </div>
                 @endif

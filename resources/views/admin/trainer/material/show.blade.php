@@ -3,7 +3,10 @@
 @section('title', 'Tinjau Materi - ' . $material->name)
 
 @push('admin-trainer-styles')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
         :root {
             --admin-primary: #1e1b4b;
             --admin-secondary: #3949ab;
@@ -16,20 +19,29 @@
             --admin-text-main: #0f172a;
             --admin-text-muted: #64748b;
             
-            --status-pending-bg: #fffbeb;
+            --status-pending-bg: rgba(245, 158, 11, 0.08);
             --status-pending-text: #d97706;
-            --status-pending-border: #fef3c7;
+            --status-pending-border: rgba(245, 158, 11, 0.15);
             
-            --status-approved-bg: #f0fdf4;
-            --status-approved-text: #16a34a;
-            --status-approved-border: #dcfce7;
+            --status-approved-bg: rgba(16, 185, 129, 0.08);
+            --status-approved-text: #059669;
+            --status-approved-border: rgba(16, 185, 129, 0.15);
             
-            --status-rejected-bg: #fef2f2;
+            --status-rejected-bg: rgba(239, 68, 68, 0.08);
             --status-rejected-text: #dc2626;
-            --status-rejected-border: #fee2e2;
+            --status-rejected-border: rgba(239, 68, 68, 0.15);
         }
 
-        /* Smooth scrollbar for scrollable elements */
+        .show-page-wrapper {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .scrollable-content::-webkit-scrollbar {
             width: 6px;
         }
@@ -45,15 +57,6 @@
             background: #94a3b8;
         }
 
-        .show-page-wrapper {
-            animation: fadeIn 0.4s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -61,24 +64,27 @@
             margin-bottom: 24px;
             gap: 16px;
             flex-wrap: wrap;
-            padding: 12px 0;
+            padding: 16px 24px;
+            background: #ffffff;
+            border: 1px solid var(--admin-border);
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
         }
 
         .btn-back {
             background: #fff;
-            border: 1px solid #cbd5e1;
-            color: #334155;
-            height: 42px;
+            border: 1.5px solid #e2e8f0;
+            color: #475569;
+            height: 40px;
             padding: 0 18px;
             border-radius: 12px;
             font-weight: 700;
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             transition: all 0.25s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
         }
 
         .btn-back:hover {
@@ -88,17 +94,21 @@
             transform: translateX(-3px);
         }
 
+        .btn-back i {
+            font-size: 0.95rem;
+        }
+
         .status-chip {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            height: 42px;
+            height: 38px;
             padding: 0 16px;
-            border-radius: 999px;
-            font-size: 0.86rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
             font-weight: 800;
-            letter-spacing: 0.2px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
         }
 
         .status-chip.pending {
@@ -119,32 +129,29 @@
             color: var(--status-rejected-text);
         }
 
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
+        .status-chip::before {
+            content: '';
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background-color: currentColor;
-            animation: pulse-dot-anim 1.5s infinite ease-in-out;
+            flex-shrink: 0;
         }
 
-        @keyframes pulse-dot-anim {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.5; }
-        }
-
-        /* Card Setup */
+        /* Card custom adjustments */
         .card-custom {
             background: var(--admin-card-bg);
             border-radius: 20px;
             border: 1px solid var(--admin-border);
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
             padding: 24px;
             margin-bottom: 24px;
             transition: all 0.3s ease;
         }
 
         .card-custom:hover {
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+            border-color: #cbd5e1;
         }
 
         .card-title-bar {
@@ -152,8 +159,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 20px;
-            padding-bottom: 14px;
-            border-bottom: 2px solid var(--admin-accent-soft);
+            padding-bottom: 12px;
+            border-bottom: 1.5px solid var(--admin-border);
         }
 
         .card-title-text {
@@ -163,22 +170,84 @@
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            letter-spacing: -0.2px;
         }
 
-        /* Video / Preview Player Container */
+        .card-title-text i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: rgba(57, 73, 171, 0.06);
+            color: var(--admin-secondary);
+            font-size: 1.05rem;
+        }
+
+        .review-count-badge {
+            font-size: 0.76rem;
+            color: var(--admin-text-muted);
+            font-weight: 700;
+            background: #f8fafc;
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--admin-border);
+        }
+
+        .review-hero-header {
+            margin-bottom: 16px;
+        }
+
+        .review-hero-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--admin-text-main);
+            margin: 0 0 6px;
+            line-height: 1.35;
+            letter-spacing: -0.4px;
+        }
+
+        .review-meta-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--admin-text-muted);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .review-type-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f5f9;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.72rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 3px 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        /* Video / Player screen */
         .video-container {
             background: #0f172a;
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
             aspect-ratio: 16/9;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.3);
-            border: 1px solid #1e293b;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+            border: 1.5px solid #1e293b;
             position: relative;
+            transition: all 0.3s ease;
         }
 
         .video-container iframe,
@@ -203,12 +272,10 @@
             box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02);
         }
 
-        /* Article content rendering stylings */
         .module-preview-article {
             color: #334155;
             line-height: 1.8;
             font-size: 0.96rem;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
         .module-preview-article h1,
@@ -255,7 +322,7 @@
             background: transparent;
             color: #e2e8f0;
             overflow-x: auto;
-            font-family: 'Fira Code', Consolas, Monaco, monospace;
+            font-family: Consolas, Monaco, monospace;
             font-size: 13.5px;
             line-height: 1.65;
         }
@@ -340,7 +407,32 @@
             box-shadow: 0 2px 6px rgba(22, 163, 74, 0.05);
         }
 
-        /* Unit / Bab Section Label */
+        .review-preview-footer {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .review-preview-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: #334155;
+            flex: 1;
+        }
+
+        .review-preview-meta {
+            font-size: 0.74rem;
+            color: #64748b;
+            font-weight: 600;
+            background: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        /* Bab Header */
         .unit-header-bar {
             display: flex;
             align-items: center;
@@ -354,64 +446,49 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            border-radius: 10px;
-            padding: 6px 14px;
-            font-size: 0.8rem;
+            border-radius: 8px;
+            padding: 5px 12px;
+            font-size: 0.78rem;
             font-weight: 750;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
         }
 
+        /* Module Items styled lists */
         .module-item {
-            border: 1px solid #e2e8f0;
+            border: 1.5px solid #e2e8f0;
             border-radius: 16px;
             padding: 18px;
             display: flex;
             gap: 16px;
             background: #ffffff;
             align-items: flex-start;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
             position: relative;
             overflow: hidden;
             margin-bottom: 12px;
         }
 
-        .module-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: transparent;
-            transition: background 0.2s ease;
-        }
-
-        .module-item.pending::before { background: var(--status-pending-text); }
-        .module-item.approved::before { background: var(--status-approved-text); }
-        .module-item.rejected::before { background: var(--status-rejected-text); }
-
         .module-item:hover {
             border-color: #cbd5e1;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
             transform: translateY(-2px);
         }
 
+        .module-item.is-preview-active {
+            border-color: var(--admin-secondary);
+            background: rgba(57, 73, 171, 0.01);
+        }
+
         .module-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 12px;
-            background: var(--admin-accent-soft);
-            color: var(--admin-secondary);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            color: #475569;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             flex-shrink: 0;
-            transition: all 0.25s ease;
-        }
-
-        .module-item:hover .module-icon {
-            transform: scale(1.08) rotate(3deg);
         }
 
         .module-desc {
@@ -421,22 +498,37 @@
 
         .module-desc h6 {
             margin: 0 0 6px 0;
-            font-weight: 750;
+            font-weight: 800;
             color: var(--admin-text-main);
-            font-size: 0.94rem;
+            font-size: 0.92rem;
             line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        /* Small state indicators */
+        .status-dot-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .status-dot-indicator.pending { background-color: #f59e0b; }
+        .status-dot-indicator.approved { background-color: #10b981; }
+        .status-dot-indicator.rejected { background-color: #ef4444; }
 
         .module-meta-info {
             display: flex;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .module-type-tag {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 800;
             color: var(--admin-text-muted);
             text-transform: uppercase;
@@ -444,9 +536,9 @@
         }
 
         .module-filename-tag {
-            font-size: 0.75rem;
-            color: var(--admin-text-muted);
-            font-style: italic;
+            font-size: 0.74rem;
+            color: #475569;
+            font-weight: 500;
             background: #f1f5f9;
             padding: 2px 8px;
             border-radius: 6px;
@@ -459,55 +551,43 @@
         .module-quick-actions {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .module-icon-btn {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            border: 1px solid transparent;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
+            background: #ffffff;
+            color: #475569;
         }
 
-        .module-icon-btn.preview {
+        .module-icon-btn:hover {
+            border-color: var(--admin-secondary);
             color: var(--admin-secondary);
-            background: var(--admin-accent-soft);
-            border-color: var(--admin-accent-border);
-        }
-
-        .module-icon-btn.preview:hover {
-            background: var(--admin-secondary);
-            color: #fff;
-        }
-
-        .module-icon-btn.download {
-            color: #166534;
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-        }
-
-        .module-icon-btn.download:hover {
-            background: #166534;
-            color: #fff;
+            background: #f8fafc;
         }
 
         .module-review-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 12px;
-            border-radius: 999px;
+            padding: 4px 10px;
+            border-radius: 6px;
             font-size: 0.72rem;
             font-weight: 800;
             letter-spacing: 0.3px;
+            text-transform: uppercase;
             border: 1px solid transparent;
+            width: fit-content;
         }
 
         .module-review-badge.approved {
@@ -533,8 +613,8 @@
             align-items: center;
             gap: 4px;
             padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
             font-weight: 700;
             color: var(--status-rejected-text);
             background: var(--status-rejected-bg);
@@ -545,20 +625,20 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
 
         .module-btn-approve,
         .module-btn-reject {
-            border: 1px solid transparent;
-            border-radius: 10px;
-            height: 36px;
-            padding: 0 14px;
+            border: 1.5px solid transparent;
+            border-radius: 8px;
+            height: 34px;
+            padding: 0 12px;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -566,12 +646,13 @@
 
         .module-btn-approve {
             color: #fff;
-            background: var(--status-approved-text);
+            background: var(--admin-secondary);
+            border-color: var(--admin-secondary);
         }
 
         .module-btn-approve:hover {
-            background: #15803d;
-            box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2);
+            background: #283593;
+            border-color: #283593;
         }
 
         .module-btn-reject {
@@ -583,12 +664,13 @@
         .module-btn-reject:hover {
             background: var(--status-rejected-text);
             color: #fff;
+            border-color: var(--status-rejected-text);
         }
 
         .module-reject-form {
             margin-top: 12px;
-            padding: 16px;
-            border-radius: 14px;
+            padding: 14px;
+            border-radius: 12px;
             border: 1px solid var(--status-rejected-border);
             background: #fffafa;
             animation: slideDown 0.25s ease-out;
@@ -601,21 +683,20 @@
 
         .module-reject-form textarea {
             width: 100%;
-            min-height: 84px;
+            min-height: 80px;
             border-radius: 10px;
-            border: 1px solid var(--status-rejected-border);
+            border: 1.5px solid var(--status-rejected-border);
             padding: 10px 12px;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             resize: vertical;
             margin-bottom: 10px;
             background: #fff;
             color: var(--admin-text-main);
+            outline: none;
         }
 
         .module-reject-form textarea:focus {
-            outline: none;
             border-color: var(--status-rejected-text);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
         }
 
         .module-reject-form button {
@@ -623,9 +704,9 @@
             color: #fff;
             border: none;
             border-radius: 8px;
-            height: 36px;
+            height: 34px;
             padding: 0 14px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -635,43 +716,50 @@
             background: #b91c1c;
         }
 
-        /* Sidebar Kanan Elements */
-        .trainer-avatar {
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            flex-shrink: 0;
+        .review-rejection-box {
+            font-size: 0.78rem;
+            color: var(--status-rejected-text);
+            background: var(--status-rejected-bg);
+            border: 1.5px solid var(--status-rejected-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .review-rejection-box strong {
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+
+        .review-empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--admin-text-muted);
+        }
+
+        .review-empty-state i {
+            font-size: 2.5rem;
+            color: #cbd5e1;
+            margin-bottom: 8px;
             display: block;
         }
 
-        .trainer-box {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 18px;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            border: 1px solid var(--admin-border);
-            border-radius: 16px;
-            margin-bottom: 20px;
+        .review-empty-state h5 {
+            color: var(--admin-text-main);
+            font-weight: 800;
+            margin: 0 0 4px;
         }
 
-        .trainer-box img {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 2px solid #fff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-            object-fit: cover;
-        }
-
+        /* Sidebar card refinements */
         .side-card {
             background: #fff;
             border: 1px solid var(--admin-border);
             border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.02);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
             padding: 20px !important;
         }
 
@@ -682,24 +770,69 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
             margin-bottom: 16px;
-            border-bottom: 2px solid var(--admin-accent-soft);
+            border-bottom: 1.5px solid var(--admin-accent-soft);
             padding-bottom: 8px;
         }
 
-        /* Stats Blocks */
+        .trainer-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .trainer-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+            flex-shrink: 0;
+            display: block;
+        }
+
+        .trainer-profile-name {
+            font-weight: 800;
+            color: var(--admin-text-main);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .trainer-profile-role {
+            font-size: 0.74rem;
+            color: var(--admin-text-muted);
+            font-weight: 600;
+            margin-top: 1px;
+        }
+
+        .trainer-profile-email {
+            font-size: 0.72rem;
+            color: var(--admin-text-muted);
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Mini stats grid */
         .grid-stats-mini {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
         }
 
         .stat-mini-item {
             background: #f8fafc;
-            border-radius: 14px;
-            padding: 12px;
+            border-radius: 12px;
+            padding: 12px 8px;
             text-align: center;
             border: 1px solid #f1f5f9;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
 
         .stat-mini-item:hover {
@@ -708,77 +841,41 @@
         }
 
         .stat-mini-num {
-            font-size: 1.4rem;
-            font-weight: 850;
+            font-size: 1.35rem;
+            font-weight: 800;
             color: var(--admin-text-main);
             line-height: 1.2;
         }
 
         .stat-mini-label {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             color: var(--admin-text-muted);
-            font-weight: 700;
-            margin-top: 3px;
-        }
-
-        /* Final Actions Buttons */
-        .btn-approve {
-            width: 100%;
-            background: linear-gradient(135deg, var(--admin-secondary) 0%, var(--admin-primary) 100%);
-            color: white;
-            height: 50px;
-            padding: 0 16px;
-            border: none;
-            border-radius: 14px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            font-size: 0.94rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 8px 20px rgba(57, 73, 171, 0.22);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-        }
-
-        .btn-approve:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(57, 73, 171, 0.32);
-        }
-
-        .btn-approve:disabled {
-            background: #cbd5e1;
-            color: #94a3b8;
-            box-shadow: none;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        .btn-reject {
-            width: 100%;
-            background: #fff;
-            color: var(--status-rejected-text);
-            border: 1px solid var(--status-rejected-border);
-            height: 50px;
-            padding: 0 16px;
-            border-radius: 14px;
             font-weight: 750;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.25s ease;
-            cursor: pointer;
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
-        .btn-reject:hover {
-            background: var(--status-rejected-bg);
-            border-color: var(--status-rejected-text);
-            transform: translateY(-1px);
+        .stat-mini-item--success {
+            border-left: none;
         }
 
-        /* Progress Bar Section */
+        .stat-mini-item--success .stat-mini-num {
+            color: var(--status-approved-text);
+        }
+
+        .stat-mini-item--danger {
+            border-left: none;
+        }
+
+        .stat-mini-item--danger .stat-mini-num {
+            color: var(--status-rejected-text);
+        }
+
+        .stat-mini-item--muted .stat-mini-num {
+            color: var(--admin-text-muted);
+        }
+
         .summary-progress-wrapper {
             margin-top: 14px;
         }
@@ -789,14 +886,29 @@
             background: #f1f5f9;
             border-radius: 999px;
             overflow: hidden;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            border: 1px solid #e2e8f0;
         }
 
         .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #22c55e 0%, var(--admin-secondary) 100%);
+            background: var(--admin-secondary);
             border-radius: 999px;
-            transition: width 0.4s ease;
+            transition: width 0.6s ease;
+        }
+
+        .review-pending-banner {
+            margin-top: 12px;
+            background: var(--status-pending-bg);
+            border: 1px solid var(--status-pending-border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.76rem;
+            color: var(--status-pending-text);
+            font-weight: 750;
         }
 
         /* Warning structure incompleteness */
@@ -819,95 +931,72 @@
             margin-bottom: 3px;
         }
 
-        /* Modal Dialog Customizations */
-        .reject-modal .modal-content {
-            border-radius: 24px;
-            overflow: hidden;
-            border: 1px solid var(--admin-border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        /* Sticky Action Sidebar */
+        .action-box {
+            position: sticky;
+            top: 90px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
-        .reject-modal .modal-header {
-            background: #f8fafc;
-            border-bottom: 1px solid var(--admin-border);
-            padding: 20px 24px;
-        }
-
-        .reject-modal .modal-title {
-            color: var(--admin-text-main);
-            font-size: 1.05rem;
-            font-weight: 850;
+        /* Final Action Buttons styles */
+        .btn-approve {
+            width: 100%;
+            background: var(--admin-secondary);
+            color: white;
+            height: 48px;
+            padding: 0 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            transition: all 0.25s ease;
+            cursor: pointer;
         }
 
-        .reject-modal .modal-body {
-            padding: 24px;
-            background: #ffffff;
+        .btn-approve:hover:not(:disabled) {
+            background: #283593;
         }
 
-        .reject-modal .form-control {
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            font-size: 0.9rem;
-            padding: 12px 16px;
-            min-height: 140px;
-            resize: vertical;
+        .btn-approve:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.7;
         }
 
-        .reject-modal .form-control:focus {
-            border-color: var(--admin-secondary);
-            box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.12);
-            outline: none;
-        }
-
-        .reject-modal .btn-cancel {
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #475569;
+        .btn-reject {
+            width: 100%;
+            background: #fff;
+            color: var(--status-rejected-text);
+            border: 1.5px solid var(--status-rejected-border);
+            height: 48px;
+            padding: 0 16px;
             border-radius: 12px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            height: 44px;
-            padding: 0 18px;
-            transition: all 0.2s ease;
-        }
-
-        .reject-modal .btn-cancel:hover {
-            background: #f8fafc;
-            color: var(--admin-text-main);
-        }
-
-        .reject-modal .btn-submit-reject {
-            border: none;
-            background: var(--status-rejected-text);
-            color: #fff;
-            border-radius: 12px;
-            font-size: 0.88rem;
             font-weight: 750;
-            height: 44px;
-            padding: 0 20px;
-            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            cursor: pointer;
         }
 
-        .reject-modal .btn-submit-reject:hover {
-            background: #b91c1c;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        .btn-reject:hover {
+            background: var(--status-rejected-bg);
+            border-color: var(--status-rejected-text);
         }
 
-        .page-header {
-            background: var(--admin-card-bg);
-            border: 1px solid var(--admin-border);
-            border-radius: 16px;
-            padding: 14px 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
-        }
-
+        /* Alert notifications */
         .review-alert {
             border: 1px solid transparent;
-            border-radius: 14px;
+            border-radius: 12px;
             padding: 12px 16px;
             margin-bottom: 20px;
             display: flex;
@@ -929,201 +1018,110 @@
             color: var(--status-rejected-text);
         }
 
-        .review-hero-header { margin-bottom: 16px; }
-
-        .review-hero-title {
-            font-size: 1.12rem;
-            font-weight: 800;
-            color: var(--admin-text-main);
-            margin: 0 0 6px;
-            line-height: 1.35;
+        /* Modal Dialog */
+        .reject-modal .modal-content {
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.1);
         }
 
-        .review-meta-row {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            font-size: 0.8rem;
-            color: var(--admin-text-muted);
-            margin: 0;
-        }
-
-        .review-type-chip {
-            display: inline-flex;
-            align-items: center;
-            background: var(--admin-accent-soft);
-            color: var(--admin-secondary);
-            font-weight: 700;
-            font-size: 0.72rem;
-            border: 1px solid var(--admin-accent-border);
-            border-radius: 999px;
-            padding: 3px 10px;
-        }
-
-        .review-preview-footer {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .review-preview-title {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: #475569;
-            flex: 1;
-        }
-
-        .review-preview-meta {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            font-weight: 600;
-        }
-
-        .card-title-text i {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
-            background: var(--admin-accent-soft);
-            color: var(--admin-secondary);
-            font-size: 0.95rem;
-        }
-
-        .review-count-badge {
-            font-size: 0.78rem;
-            color: var(--admin-text-muted);
-            font-weight: 700;
+        .reject-modal .modal-header {
             background: #f8fafc;
-            padding: 5px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--admin-border);
+            border-bottom: 1.5px solid var(--admin-border);
+            padding: 18px 24px;
         }
 
-        .trainer-profile-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .trainer-profile-name {
-            font-weight: 800;
+        .reject-modal .modal-title {
             color: var(--admin-text-main);
-            font-size: 0.9rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .trainer-profile-role {
-            font-size: 0.75rem;
-            color: var(--admin-text-muted);
-            font-weight: 600;
-            margin-top: 1px;
-        }
-
-        .trainer-profile-email {
-            font-size: 0.72rem;
-            color: var(--admin-text-muted);
-            margin-top: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .stat-mini-item--success {
-            border-left: 3px solid var(--status-approved-text);
-        }
-
-        .stat-mini-item--success .stat-mini-num {
-            color: var(--status-approved-text);
-        }
-
-        .stat-mini-item--danger {
-            border-left: 3px solid var(--status-rejected-text);
-        }
-
-        .stat-mini-item--danger .stat-mini-num {
-            color: var(--status-rejected-text);
-        }
-
-        .stat-mini-item--muted .stat-mini-num {
-            color: var(--admin-text-muted);
-        }
-
-        .review-pending-banner {
-            margin-top: 14px;
-            background: var(--status-pending-bg);
-            border: 1px solid var(--status-pending-border);
-            border-radius: 10px;
-            padding: 10px 12px;
-            display: flex;
+            font-size: 1.05rem;
+            font-weight: 800;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.78rem;
-            color: var(--status-pending-text);
-            font-weight: 750;
+            letter-spacing: -0.2px;
         }
 
-        .review-rejection-box {
-            font-size: 0.78rem;
-            color: var(--status-rejected-text);
-            background: var(--status-rejected-bg);
-            border: 1px solid var(--status-rejected-border);
+        .reject-modal .modal-body {
+            padding: 24px;
+            background: #ffffff;
+        }
+
+        .reject-modal .form-control {
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            padding: 12px 14px;
+            min-height: 120px;
+            resize: vertical;
+            outline: none;
+        }
+
+        .reject-modal .form-control:focus {
+            border-color: var(--admin-secondary);
+        }
+
+        .reject-modal .btn-cancel {
+            border: 1.5px solid #cbd5e1;
+            background: #ffffff;
+            color: #475569;
             border-radius: 10px;
-            padding: 10px 14px;
-            margin-top: 6px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            height: 40px;
+            padding: 0 18px;
+            transition: all 0.2s ease;
         }
 
-        .review-rejection-box strong {
-            font-weight: 800;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .review-empty-state {
-            text-align: center;
-            padding: 2.5rem 1rem;
-            color: var(--admin-text-muted);
-        }
-
-        .review-empty-state i {
-            font-size: 2.5rem;
-            color: #cbd5e1;
-        }
-
-        .review-empty-state h5 {
+        .reject-modal .btn-cancel:hover {
+            background: #f8fafc;
             color: var(--admin-text-main);
-            font-weight: 800;
-            margin: 0.75rem 0 0.25rem;
         }
 
-        .action-box {
+        .reject-modal .btn-submit-reject {
+            border: none;
+            background: var(--status-rejected-text);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 0.86rem;
+            font-weight: 750;
+            height: 40px;
+            padding: 0 18px;
+            transition: all 0.2s ease;
+        }
+
+        .reject-modal .btn-submit-reject:hover {
+            background: #b91c1c;
+        }
+
+        .preview-sticky-container {
             position: sticky;
             top: 90px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            z-index: 10;
         }
 
-        @media (max-width: 1200px) {
+        .module-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            width: 100%;
+        }
+
+        @media (max-width: 1199.98px) {
             .action-box {
+                position: static !important;
+            }
+            .preview-sticky-container {
                 position: static !important;
             }
         }
 
         @media (max-width: 768px) {
-            .module-item {
-                flex-direction: column;
-            }
             .page-header {
                 align-items: flex-start;
                 flex-direction: column;
+                padding: 16px;
             }
             .status-chip {
                 width: 100%;
@@ -1133,10 +1131,17 @@
                 width: 100%;
                 justify-content: center;
             }
+        }
+
+        @media (max-width: 575.98px) {
+            .module-item-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
             .module-quick-actions {
-                width: 100%;
-                justify-content: flex-end;
-                margin-top: 10px;
+                justify-content: flex-start !important;
+                margin-top: 4px;
             }
         }
     </style>
@@ -1153,21 +1158,33 @@
             </a>
             @if($material->status === 'approved')
                 <span class="status-chip approved">
-                    <span class="pulse-dot"></span>
                     Disetujui
                 </span>
             @elseif($material->status === 'rejected')
                 <span class="status-chip rejected">
-                    <span class="pulse-dot"></span>
                     Revisi / Ditolak
                 </span>
             @else
                 <span class="status-chip pending">
-                    <span class="pulse-dot"></span>
                     Menunggu Tinjauan
                 </span>
             @endif
         </div>
+
+        {{-- Notifications --}}
+        @if (session('success'))
+            <div class="review-alert review-alert--success">
+                <i class="bi bi-check-circle-fill fs-5"></i>
+                <div>{{ session('success') }}</div>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="review-alert review-alert--danger">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                <div>{{ session('error') }}</div>
+            </div>
+        @endif
 
         {{-- Main Content Grid --}}
         <div class="row g-4">
@@ -1176,7 +1193,7 @@
             <div class="col-xl-8" style="display:flex; flex-direction:column; gap:20px;">
 
                 {{-- Preview Card (Sticky at top of content area on desktop scroll) --}}
-                <div style="position: sticky; top: 90px; z-index: 10;">
+                <div class="preview-sticky-container">
                     <div class="card-custom" style="margin-bottom:0;">
                         <div class="review-hero-header">
                             <h1 class="review-hero-title">{{ $material->name }}</h1>
@@ -1218,7 +1235,7 @@
                             <i class="bi bi-list-task"></i>
                             Struktur Modul Pembelajaran
                         </h5>
-                        <span class="review-count-badge">{{ $uploadedModulesCount ?? 0 }} Modul Aktif</span>
+                        <span class="review-count-badge">{{ $uploadedModulesCount ?? 0 }} Modul/Kuis Aktif</span>
                     </div>
 
                     {{-- Scrollable List --}}
@@ -1252,8 +1269,8 @@
                                     <form method="POST" action="{{ route('admin.trainer.material.unit.approve', $material) }}" style="margin:0;">
                                         @csrf
                                         <input type="hidden" name="unit_no" value="{{ $unit['unit_no'] }}">
-                                        <button type="submit" class="module-btn-approve" style="height:30px; font-size:0.74rem; padding:0 12px; border-radius:8px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.1);">
-                                            <i class="bi bi-check-all"></i> Setujui Bab {{ $unit['unit_no'] }}
+                                        <button type="submit" class="module-btn-approve" style="height:30px; font-size:0.74rem; padding:0 12px; border-radius:8px; box-shadow: none;">
+                                            Setujui Bab {{ $unit['unit_no'] }}
                                         </button>
                                     </form>
                                 @endif
@@ -1309,9 +1326,12 @@
                                         </div>
 
                                         <div class="module-desc">
-                                            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                                            <div class="module-item-header">
                                                 <div>
-                                                    <h6>{{ $module->order_no }}. {{ $module->title }}</h6>
+                                                    <h6>
+                                                        <span class="status-dot-indicator {{ $module->review_status === 'approved' ? 'approved' : ($module->review_status === 'rejected' ? 'rejected' : 'pending') }}"></span>
+                                                        {{ $module->order_no }}. {{ $module->title }}
+                                                    </h6>
                                                     <div class="module-meta-info">
                                                         <span class="module-type-tag">
                                                             {{ strtoupper($module->type) }}
@@ -1358,11 +1378,11 @@
                                                     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                                         <span class="module-review-badge {{ $reviewStatus }}">
                                                             @if($reviewStatus === 'approved')
-                                                                <i class="bi bi-check-circle-fill"></i> Disetujui
+                                                                Disetujui
                                                             @elseif($reviewStatus === 'rejected')
-                                                                <i class="bi bi-x-circle-fill"></i> Perlu Revisi
+                                                                Perlu Revisi
                                                             @else
-                                                                <i class="bi bi-hourglass-split"></i> Menunggu Tinjauan
+                                                                Menunggu Tinjauan
                                                             @endif
                                                         </span>
                                                         @if($module->isQuiz())
@@ -1374,7 +1394,7 @@
 
                                                     @if($reviewStatus === 'rejected' && !empty($module->review_rejection_reason))
                                                         <div class="review-rejection-box">
-                                                            <strong><i class="bi bi-chat-left-text-fill me-1"></i>Catatan Revisi:</strong>
+                                                            <strong>Catatan Revisi:</strong>
                                                             {{ $module->review_rejection_reason }}
                                                         </div>
                                                     @endif
@@ -1390,11 +1410,11 @@
                                                         <form method="POST" action="{{ route('admin.trainer.material.module.approve', [$material, $module]) }}" class="module-action-form">
                                                             @csrf
                                                             <button type="submit" class="module-btn-approve">
-                                                                <i class="bi bi-check2-circle"></i> Setujui Modul
+                                                                Setujui Modul
                                                             </button>
                                                         </form>
                                                         <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}">
-                                                            <i class="bi bi-exclamation-circle"></i> Revisi
+                                                            Revisi
                                                         </button>
                                                     </div>
 
@@ -1403,7 +1423,7 @@
                                                             @csrf
                                                             <textarea name="rejection_reason" required minlength="10" placeholder="Tuliskan detail perbaikan atau catatan revisi yang harus dikerjakan trainer..."></textarea>
                                                             <button type="submit">
-                                                                <i class="bi bi-send-fill me-1"></i> Kirim Catatan
+                                                                Kirim Catatan
                                                             </button>
                                                         </form>
                                                     </div>
@@ -1474,12 +1494,12 @@
                                 <div class="stat-mini-num">{{ $totalUploaded }}</div>
                                 <div class="stat-mini-label">Modul Aktif</div>
                             </div>
-                            <div class="stat-mini-item stat-mini-item--success">
-                                <div class="stat-mini-num">{{ $totalApprovedM }}</div>
+                            <div class="stat-mini-item">
+                                <div class="stat-mini-num" style="color: var(--status-approved-text);">{{ $totalApprovedM }}</div>
                                 <div class="stat-mini-label">Disetujui</div>
                             </div>
-                            <div class="stat-mini-item {{ $totalRejectedM > 0 ? 'stat-mini-item--danger' : 'stat-mini-item--muted' }}">
-                                <div class="stat-mini-num">{{ $totalRejectedM }}</div>
+                            <div class="stat-mini-item">
+                                <div class="stat-mini-num" style="color: var(--status-rejected-text);">{{ $totalRejectedM }}</div>
                                 <div class="stat-mini-label">Ditolak</div>
                             </div>
                         </div>
@@ -1511,7 +1531,7 @@
                             <form method="POST" action="{{ route('admin.trainer.material.approve', $material) }}" style="margin-bottom:12px;">
                                 @csrf
                                 <button type="submit" class="btn-approve" {{ !$structureCompleteness['is_complete'] ? 'disabled' : '' }}>
-                                    <i class="bi bi-check-circle-fill"></i> Setujui Seluruh Materi
+                                    Setujui Seluruh Materi
                                 </button>
                                 
                                 @if(!$structureCompleteness['is_complete'])
@@ -1533,7 +1553,7 @@
                             </form>
 
                             <button type="button" class="btn-reject" data-bs-toggle="modal" data-bs-target="#rejectCourseModal">
-                                <i class="bi bi-x-circle-fill"></i> Tolak Seluruh Course
+                                Tolak Seluruh Course
                             </button>
                         </div>
                     @endif
@@ -1550,7 +1570,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="rejectCourseModalLabel">
-                        <i class="bi bi-x-circle-fill text-danger"></i> Tolak Seluruh Materi Course
+                        Tolak Seluruh Materi Course
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

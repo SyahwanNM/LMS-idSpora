@@ -8,6 +8,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Queue\SerializesModels;
 
 class CRMBlastMail extends Mailable implements ShouldQueue
@@ -49,6 +51,22 @@ class CRMBlastMail extends Mailable implements ShouldQueue
      */
     public function attachments(): array
     {
-        return [];
+        $mailAttachments = [];
+        if ($this->broadcast->attachment) {
+            $paths = json_decode($this->broadcast->attachment, true);
+            if (is_array($paths)) {
+                foreach ($paths as $path) {
+                    if (Storage::disk('public')->exists($path)) {
+                        $mailAttachments[] = Attachment::fromPath(Storage::disk('public')->path($path));
+                    }
+                }
+            } else {
+                // Backward compatibility for single file
+                if (Storage::disk('public')->exists($this->broadcast->attachment)) {
+                    $mailAttachments[] = Attachment::fromPath(Storage::disk('public')->path($this->broadcast->attachment));
+                }
+            }
+        }
+        return $mailAttachments;
     }
 }

@@ -372,6 +372,82 @@
                 gap: 16px;
             }
         }
+
+        /* Responsive Table to Cards conversion on mobile/tablet */
+        @media (max-width: 991.98px) {
+            .table, .table thead, .table tbody, .table tr, .table td {
+                display: block;
+                width: 100% !important;
+                box-sizing: border-box;
+            }
+
+            .table thead {
+                display: none; /* Hide standard headers */
+            }
+
+            .table tr {
+                margin-bottom: 24px;
+                border: 1px solid var(--admin-border);
+                border-radius: 18px;
+                padding: 20px;
+                background: #fff;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
+            }
+
+            .table td {
+                padding: 10px 0;
+                border-bottom: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+            }
+
+            .table td::before {
+                content: attr(data-label);
+                font-weight: 800;
+                color: var(--admin-text-muted);
+                font-size: 0.74rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                text-align: left;
+                margin-right: 16px;
+            }
+
+            /* Highlight Title Column */
+            .table td[data-label="Materi Course"],
+            .table td[data-label="Materi Event"] {
+                border-bottom: 1px solid #f1f5f9;
+                padding-bottom: 14px;
+                margin-bottom: 10px;
+                display: block;
+                text-align: left;
+            }
+
+            .table td[data-label="Materi Course"]::before,
+            .table td[data-label="Materi Event"]::before {
+                display: none;
+            }
+
+            /* Action Column style */
+            .table td:last-child {
+                border-top: 1px solid #f1f5f9;
+                padding-top: 14px;
+                margin-top: 10px;
+                display: flex;
+                justify-content: stretch;
+            }
+
+            .table td:last-child::before {
+                display: none;
+            }
+
+            .btn-action {
+                width: 100%;
+                justify-content: center;
+                height: 40px;
+            }
+        }
     </style>
 @endpush
 @endpush
@@ -455,7 +531,7 @@
                 <tbody>
                     @forelse($rejectedMaterials as $material)
                         <tr>
-                            <td>
+                            <td data-label="Materi Course">
                                 <div class="course-info">
                                     <img src="{{ $material->card_thumbnail ?? 'https://via.placeholder.com/160x120/e2e8f0/64748b?text=Cover' }}"
                                         class="course-thumb" alt="Cover">
@@ -466,7 +542,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Trainer">
                                 <div class="trainer-info">
                                     <img src="{{ $material->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
                                         class="trainer-avatar">
@@ -477,13 +553,13 @@
                                     </div>
                                 </div>
                             </td>
-                            <td style="max-width: 250px;">
+                            <td data-label="Alasan Penolakan" style="max-width: 250px;">
                                 <div class="rejection-note">
                                     <i class="bi bi-chat-text-fill me-1"></i>
                                     {{ Str::limit($material->rejection_reason, 60) }}
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Tanggal Ditolak">
                                 <div style="font-weight: 600; color: #334155;">
                                     {{ $material->rejected_at ? $material->rejected_at->format('d M Y') : '-' }}
                                 </div>
@@ -491,10 +567,10 @@
                                     {{ $material->rejected_at ? $material->rejected_at->diffForHumans() : '' }}
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Status">
                                 <span class="badge-status badge-rejected-status">Revisi</span>
                             </td>
-                            <td>
+                            <td data-label="Tenggat">
                                 @php $monitor = $deadlineMonitoring[$material->id] ?? null; @endphp
                                 <div style="font-weight: 600; color: #334155;">
                                     {{ $monitor['deadline_text'] ?? 'Belum ditentukan' }}
@@ -504,7 +580,7 @@
                                     {{ $monitor['status_text'] ?? 'Tanpa deadline' }}
                                 </div>
                             </td>
-                            <td class="text-end">
+                            <td data-label="Aksi" class="text-end">
                                 <a href="{{ route('admin.trainer.material.show', $material->id) }}" class="btn-action">
                                     Cek <i class="bi bi-arrow-right"></i>
                                 </a>
@@ -584,7 +660,7 @@
                             $latestRejectedAt = $event->trainerModules->max('reviewed_at');
                         @endphp
                         <tr>
-                            <td>
+                            <td data-label="Materi Event">
                                 <div>
                                     <h6 class="course-title">{{ \Illuminate\Support\Str::limit($event->title ?? '-', 48) }}</h6>
                                     <div class="text-muted" style="font-size:0.72rem;">
@@ -592,7 +668,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Trainer">
                                 <div class="trainer-info">
                                     <img src="{{ $event->trainer?->avatar_url ?? 'https://ui-avatars.com/api/?name=Trainer' }}"
                                         class="trainer-avatar" alt="Trainer">
@@ -602,13 +678,13 @@
                                     </div>
                                 </div>
                             </td>
-                            <td style="max-width: 250px;">
+                            <td data-label="Alasan Penolakan" style="max-width: 250px;">
                                 <div class="rejection-note">
                                     <i class="bi bi-chat-text-fill me-1"></i>
                                     {{ Str::limit($rejectionReasons ?: $event->material_rejection_reason, 60) ?: '-' }}
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Tanggal Ditolak">
                                 <div style="font-weight: 600; color: #334155;">
                                     {{ $latestRejectedAt ? \Carbon\Carbon::parse($latestRejectedAt)->format('d M Y') : '-' }}
                                 </div>
@@ -616,10 +692,10 @@
                                     {{ $latestRejectedAt ? \Carbon\Carbon::parse($latestRejectedAt)->diffForHumans() : '' }}
                                 </div>
                             </td>
-                            <td>
+                            <td data-label="Status">
                                 <span class="badge-status badge-rejected-status">Revisi</span>
                             </td>
-                            <td class="text-end">
+                            <td data-label="Aksi" class="text-end">
                                 <a href="{{ route('admin.event-material.show', $event->id) }}" class="btn-action">
                                     Tinjau <i class="bi bi-arrow-right"></i>
                                 </a>
