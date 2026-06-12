@@ -49,7 +49,7 @@
     {{-- Form --}}
     <div class="col-lg-8">
         <div class="card-minimal p-4">
-            <form id="broadcastForm" action="{{ route('admin.crm.broadcast.send') }}" method="POST">
+            <form id="broadcastForm" action="{{ route('admin.crm.broadcast.send') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="row g-4">
                     <div class="col-12">
@@ -66,7 +66,17 @@
                             <option value="reseller">Hanya Reseller</option>
                             <option value="trainer">Hanya Trainer / Pemateri</option>
                             <option value="no_event">Belum Pernah Ikut Event</option>
+                            <option value="manual">✍️ Input Manual</option>
                         </select>
+                    </div>
+
+                    <div class="col-12" id="manualTargetsField" style="display: none;">
+                        <label class="form-field-label">Target Pengiriman Manual (Email / No. HP)</label>
+                        <textarea name="manual_targets" class="form-field" rows="4"
+                                  placeholder="Masukkan email dan/atau nomor HP. Pisahkan dengan koma atau baris baru.&#10;Contoh:&#10;email1@example.com&#10;+628123456789&#10;email2@example.com"></textarea>
+                        <p style="font-size:0.72rem;color:var(--crm-text-subtle);margin:6px 0 0;">
+                            Sistem akan secara otomatis menyaring email (berisi '@') untuk pengiriman Email, dan nomor HP (8-20 digit angka) untuk pengiriman WhatsApp.
+                        </p>
                     </div>
 
                     <div class="col-md-6">
@@ -83,6 +93,12 @@
                         <input type="text" name="link" class="form-field"
                                placeholder="Contoh: https://idspora.com/courses/detail-course/1">
                         <p style="font-size:0.72rem;color:var(--crm-text-subtle);margin:6px 0 0;">Link halaman terkait broadcast. Jika dikosongkan, tombol di email otomatis mengarah ke Landing Page idSpora.</p>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-field-label">File Lampiran (Opsional, Bisa Lebih dari 1)</label>
+                        <input type="file" name="attachments[]" id="attachmentInput" class="form-field" style="padding: 0.5rem 1rem;" multiple>
+                        <p style="font-size:0.72rem;color:var(--crm-text-subtle);margin:6px 0 0;">Format file bebas (PDF, Gambar, Doc, dll). Anda dapat memilih beberapa file sekaligus. Maksimal ukuran per file adalah 10MB.</p>
                     </div>
 
                     <div class="col-12">
@@ -191,9 +207,13 @@
                         <span class="fw-700 text-muted" style="font-size:0.72rem; text-transform: uppercase;">Platform:</span>
                         <span id="confirmPlatform" class="badge bg-secondary-subtle text-dark fw-700 px-2.5 py-1" style="font-size:0.72rem; border-radius: 6px; background: rgba(108, 117, 125, 0.1) !important; color: var(--crm-navy) !important;">-</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-start">
+                    <div class="mb-2 pb-2 border-bottom d-flex justify-content-between align-items-start" style="border-color: rgba(0,0,0,0.05) !important;">
                         <span class="fw-700 text-muted" style="font-size:0.72rem; text-transform: uppercase;">Link Tujuan:</span>
                         <span id="confirmLink" class="fw-700 text-primary text-end" style="font-size:0.75rem; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--crm-primary);">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-700 text-muted" style="font-size:0.72rem; text-transform: uppercase;">Lampiran File:</span>
+                        <span id="confirmAttachment" class="fw-700 text-navy text-end" style="font-size:0.75rem; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
                     </div>
                 </div>
 
@@ -236,6 +256,73 @@
         document.getElementById('charCount').textContent = this.value.length + ' karakter';
     });
 
+    const segmentSelect = document.querySelector('select[name="segment"]');
+    const manualTargetsField = document.getElementById('manualTargetsField');
+    const manualTargetsTextarea = document.querySelector('textarea[name="manual_targets"]');
+    const estimateBox = document.getElementById('estimateBox');
+
+    function updateEstimate() {
+        const segment = segmentSelect.value;
+        if (segment === 'manual') {
+            const val = manualTargetsTextarea.value || '';
+            const targets = val.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0);
+            const emails = targets.filter(t => t.includes('@'));
+            // Phone regex: optional +, then 8 to 20 digits, spaces/hyphens allowed
+            const phones = targets.filter(t => !t.includes('@') && /^\+?[0-9\-\s]{8,20}$/.test(t));
+            
+            estimateBox.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span style="font-size:0.78rem;color:var(--crm-text-subtle);">Target Email Manual:</span>
+                    <strong style="font-size:0.85rem;color:var(--crm-navy);">${emails.length}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-size:0.78rem;color:var(--crm-text-subtle);">Target WhatsApp Manual:</span>
+                    <strong style="font-size:0.85rem;color:var(--crm-navy);">${phones.length}</strong>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                    <span style="font-size:0.78rem;color:var(--crm-navy);font-weight:700;">Total Target:</span>
+                    <strong style="font-size:0.95rem;color:var(--crm-primary);">${emails.length + phones.length}</strong>
+                </div>
+            `;
+        } else {
+            estimateBox.innerHTML = `<p style="font-size:0.78rem;color:var(--crm-text-subtle);"><span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menghitung estimasi...</p>`;
+            
+            fetch(`{{ route('admin.crm.broadcast.estimate-count') }}?segment=${segment}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        estimateBox.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span style="font-size:0.78rem;color:var(--crm-text-subtle);">Total Penerima:</span>
+                                <strong style="font-size:0.95rem;color:var(--crm-primary);">${data.count} pengguna</strong>
+                            </div>
+                        `;
+                    } else {
+                        estimateBox.innerHTML = `<p style="font-size:0.78rem;color:red;">Gagal memuat estimasi.</p>`;
+                    }
+                })
+                .catch(err => {
+                    estimateBox.innerHTML = `<p style="font-size:0.78rem;color:red;">Gagal memuat estimasi.</p>`;
+                });
+        }
+    }
+
+    segmentSelect.addEventListener('change', function() {
+        if (this.value === 'manual') {
+            manualTargetsField.style.display = 'block';
+            manualTargetsTextarea.setAttribute('required', 'required');
+        } else {
+            manualTargetsField.style.display = 'none';
+            manualTargetsTextarea.removeAttribute('required');
+        }
+        updateEstimate();
+    });
+
+    manualTargetsTextarea.addEventListener('input', updateEstimate);
+
+    // Initial load
+    updateEstimate();
+
     function confirmBroadcast(event) {
         event.preventDefault();
         const form = document.getElementById('broadcastForm');
@@ -250,11 +337,32 @@
             
             const linkVal = form.querySelector('input[name="link"]').value || '-';
             
+            let targetCountText = '-';
+            if (segmentSelect.value === 'manual') {
+                const val = manualTargetsTextarea.value || '';
+                const targets = val.split(/[\n,]+/).map(t => t.trim()).filter(t => t.length > 0);
+                const emails = targets.filter(t => t.includes('@'));
+                const phones = targets.filter(t => !t.includes('@') && /^\+?[0-9\-\s]{8,20}$/.test(t));
+                const total = emails.length + phones.length;
+                targetCountText = `${total} target manual (${emails.length} Email, ${phones.length} WhatsApp)`;
+            } else {
+                targetCountText = segmentText;
+            }
+            
+            // Get attachment file names
+            const attachmentInput = document.getElementById('attachmentInput');
+            let attachmentName = '-';
+            if (attachmentInput.files.length > 0) {
+                const names = Array.from(attachmentInput.files).map(f => f.name);
+                attachmentName = names.join(', ');
+            }
+            
             // Update confirmation modal details
             document.getElementById('confirmTitle').textContent = titleVal;
-            document.getElementById('confirmSegment').textContent = segmentText;
+            document.getElementById('confirmSegment').textContent = targetCountText;
             document.getElementById('confirmPlatform').textContent = platformText;
             document.getElementById('confirmLink').textContent = linkVal;
+            document.getElementById('confirmAttachment').textContent = attachmentName;
             
             // Show modal
             const confirmModal = new bootstrap.Modal(document.getElementById('confirmSendModal'));

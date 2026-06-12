@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class CRMController extends Controller
 {
@@ -617,27 +618,68 @@ class CRMController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'message' => 'required|string',
-            'segment' => 'required|in:all,reseller,trainer,no_event',
+            'segment' => 'required|in:all,reseller,trainer,no_event,manual',
+            'manual_targets' => 'required_if:segment,manual|string|nullable',
             'platform' => 'required|in:email,whatsapp,both',
             'link' => 'nullable|string|max:255',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:10240',
         ]);
 
-        // Get target users based on segment
-        $query = User::where('role', '!=', 'admin');
+        if ($request->segment == 'manual') {
+            $rawTargets = preg_split('/[\n,]+/', $request->manual_targets);
+            $targets = collect();
+            foreach ($rawTargets as $rawTarget) {
+                $rawTarget = trim($rawTarget);
+                if (empty($rawTarget)) {
+                    continue;
+                }
+                if (filter_var($rawTarget, FILTER_VALIDATE_EMAIL)) {
+                    $targets->push((object)[
+                        'email' => $rawTarget,
+                        'phone' => null
+                    ]);
+                } elseif (preg_match('/^\+?[0-9\-\s]{8,20}$/', $rawTarget)) {
+                    $cleanedPhone = preg_replace('/[\-\s]+/', '', $rawTarget);
+                    $targets->push((object)[
+                        'email' => null,
+                        'phone' => $cleanedPhone
+                    ]);
+                }
+            }
+            $targetCount = $targets->count();
+        } else {
+            // Get target users based on segment
+            $query = User::where('role', '!=', 'admin');
 
-        if ($request->segment == 'reseller') {
-            $query->where('role', 'reseller');
-        } elseif ($request->segment == 'trainer') {
-            $query->where('role', 'trainer');
-        } elseif ($request->segment == 'no_event') {
-            $query->whereDoesntHave('eventRegistrations');
+            if ($request->segment == 'reseller') {
+                $query->where('role', 'reseller');
+            } elseif ($request->segment == 'trainer') {
+                $query->where('role', 'trainer');
+            } elseif ($request->segment == 'no_event') {
+                $query->whereDoesntHave('eventRegistrations');
+            }
+
+            $targets = $query->get();
+            $targetCount = $targets->count();
         }
 
-        $targets = $query->get();
-        $targetCount = $targets->count();
-
         if ($targetCount == 0) {
-            return back()->with('error', 'Tidak ada pengguna ditemukan untuk segmen ini');
+            return back()->with('error', $request->segment == 'manual'
+                ? 'Tidak ada target manual (email atau nomor WhatsApp) yang valid ditemukan'
+                : 'Tidak ada pengguna ditemukan untuk segmen ini');
+        }
+
+        // Store attachments if present
+        $attachmentPath = null;
+        if ($request->hasFile('attachments')) {
+            $attachments = [];
+            foreach ($request->file('attachments') as $file) {
+                $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._\-]/', '_', $file->getClientOriginalName());
+                $path = $file->storeAs('broadcasts', $filename, 'public');
+                $attachments[] = $path;
+            }
+            $attachmentPath = json_encode($attachments);
         }
 
         // Create log entry
@@ -647,6 +689,7 @@ class CRMController extends Controller
             'segment' => $request->segment,
             'platform' => $request->platform,
             'link' => $request->link,
+            'attachment' => $attachmentPath,
             'sender_id' => Auth::id(),
             'target_count' => $targetCount,
             'status' => 'sent'
@@ -669,6 +712,17 @@ class CRMController extends Controller
             if ($request->platform == 'whatsapp' || $request->platform == 'both') {
                 if ($user->phone) {
                     $waMessage = $broadcast->message;
+                    if ($broadcast->attachment) {
+                        $paths = json_decode($broadcast->attachment, true);
+                        if (is_array($paths)) {
+                            $waMessage .= "\n\n📁 Lampiran Dokumen:";
+                            foreach ($paths as $index => $path) {
+                                $waMessage .= "\n" . ($index + 1) . ". " . Storage::disk('public')->url($path);
+                            }
+                        } else {
+                            $waMessage .= "\n\n📁 Lampiran Dokumen:\n" . Storage::disk('public')->url($broadcast->attachment);
+                        }
+                    }
                     $ctaLink = $broadcast->link ?: config('app.url');
                     $waMessage .= "\n\n🌐 Kunjungi tautan berikut:\n" . $ctaLink;
                     
@@ -677,7 +731,38 @@ class CRMController extends Controller
             }
         }
 
-        return redirect()->route('admin.crm.broadcast.index')->with('success', 'Broadcast berhasil dikirim ke ' . $targetCount . ' pengguna');
+        return redirect()->route('admin.crm.broadcast.index')->with('success', 'Broadcast berhasil dikirim ke ' . $targetCount . ' target');
+    }
+
+    /**
+     * Get estimate count for a broadcast segment
+     */
+    public function estimateCount(Request $request)
+    {
+        if(!Auth::check() || Auth::user()->role !== 'admin'){
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hanya admin yang dapat mengakses fitur ini'
+            ], 403);
+        }
+
+        $segment = $request->query('segment');
+        $query = User::where('role', '!=', 'admin');
+
+        if ($segment == 'reseller') {
+            $query->where('role', 'reseller');
+        } elseif ($segment == 'trainer') {
+            $query->where('role', 'trainer');
+        } elseif ($segment == 'no_event') {
+            $query->whereDoesntHave('eventRegistrations');
+        }
+
+        $count = $query->count();
+
+        return response()->json([
+            'status' => 'success',
+            'count' => $count
+        ]);
     }
 
     /**
