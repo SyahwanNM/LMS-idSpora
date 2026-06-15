@@ -438,6 +438,16 @@
                                                                                  <i class="bi bi-x-circle me-1"></i>Tidak
                                                                              </button>
                                                                          </form>
+
+                                                                         @if(in_array($reg->submission_status, ['lolos', 'tidak_lolos']))
+                                                                         <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $reg]) }}" class="d-inline">
+                                                                             @csrf
+                                                                             <input type="hidden" name="status" value="pending">
+                                                                             <button type="submit" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="return confirm('Kembalikan status review ke Pending?')">
+                                                                                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                                                                             </button>
+                                                                         </form>
+                                                                         @endif
                                                                      </div>
                                                                      @endif
                                                                  </div>

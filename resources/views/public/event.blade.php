@@ -13,30 +13,19 @@
     
     <style>
         /* --- LAYOUT FIXES (Sticky Footer & Full Width) --- */
-        html, body {
-            height: 100%;
+        html {
             margin: 0;
         }
-
         body {
-            display: flex;
-            flex-direction: column; /* Susun elemen vertikal */
-            min-height: 100vh;      /* Minimal setinggi layar */
+            margin: 0;
+            min-height: 100vh;
             overflow-x: hidden;
             font-family: 'Poppins', sans-serif;
         }
 
-        /* Konten utama akan mengambil sisa ruang agar footer terdorong ke bawah */
-        main {
-            flex: 1 0 auto;
-            width: 100%;
-        }
-
         /* Footer Full Width */
         .footer-section-wrapper {
-            flex-shrink: 0;
             width: 100%;
-            margin-top: auto;
         }
 
         /* --- EXISTING STYLES --- */
@@ -45,31 +34,72 @@
         }
 
         /* Event Grid Responsive */
-        
         .event .event-list {
-            display: grid;
-            row-gap: 40px;
-            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-            gap: 20px;
-            align-items: stretch;
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+            gap: 20px !important;
+            align-items: stretch !important; /* Semua card dalam 1 baris sama tinggi */
         }
 
-     
+        /* Card Event — Ukuran seragam */
+        .event .card-event {
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        /* Gambar card — tinggi tetap agar seragam */
+        .event .card-event .thumb-wrapper {
+            height: 200px !important;
+            overflow: hidden !important;
+            flex-shrink: 0 !important;
+        }
+
+        .event .card-event .card-image-event {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+        }
+
+        /* Card body tumbuh mengisi sisa ruang */
+        .event .card-event .card-body {
+            padding: 14px 16px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 !important;
+        }
+
+        /* Judul event compact */
+        .event .card-event .event-title {
+            font-size: 1rem !important;
+            margin-bottom: 6px !important;
+            line-height: 1.35 !important;
+            min-height: calc(1.35em * 2) !important;
+        }
+
+        @media (max-width: 768px) {
+            .event .card-event .thumb-wrapper { height: 160px !important; }
+            .event .event-list { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important; }
+        }
+        @media (max-width: 480px) {
+            .event .card-event .thumb-wrapper { height: 140px !important; }
+            .event .event-list { grid-template-columns: 1fr !important; }
+        }
 
         /* Tags & Meta */
-        .tags { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-size: 0.85rem; }
-        .event .card-event .tags .tag { background-color: #E4E4E6 !important; color: #3B3B43; padding: 4px 10px; border-radius: 6px; font-weight: 500; font-size: 0.75rem; }
+        .tags { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; font-size: 0.85rem; }
+        .event .card-event .tags .tag { background-color: #E4E4E6 !important; color: #3B3B43; padding: 3px 8px; border-radius: 6px; font-weight: 500; font-size: 0.72rem; }
         .meta { display: flex; align-items: center; color: #6c757d; font-size: 0.85rem; }
 
         /* Description & Info */
-        .desc-event { font-size: 0.9rem; color: #555; margin-bottom: 15px; line-height: 1.5; height: 42px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .desc-event { font-size: 0.82rem; color: #555; margin-bottom: 6px; line-height: 1.4; height: 34px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         /* Push price+button to bottom of card */
         .event .card-event .card-body .keterangan { margin-top: auto; }
-        .keterangan-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #555; }
-        .keterangan-item { display: flex; align-items: center; gap: 8px; }
+        .keterangan-row { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; font-size: 0.8rem; color: #555; }
+        .keterangan-item { display: flex; align-items: center; gap: 6px; }
 
         /* Countdown */
-        .countdown-wrapper { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; margin-bottom: 15px; }
+        .countdown-wrapper { margin-top: 6px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; margin-bottom: 8px; }
         .countdown-label { color: #555; font-weight: 500; }
         .countdown-timer { background: #212f4d; color: #ffd54f; padding: 2px 8px; border-radius: 4px; font-family: monospace; letter-spacing: 1px; min-width: 140px; text-align: center; }
         .countdown-timer.started { background: #198754; color: #fff; }
@@ -80,7 +110,7 @@
         .search-input-2::placeholder { color: #6c757d !important; opacity: 1; }
 
         /* Price & Button */
-        .price-row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 15px; border-top: 1px solid #f0f0f0; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid #f0f0f0; }
         .price-col { display: flex; flex-direction: column; }
         .price-now:not(.price-free) { color: #ffd54f; font-weight: 700; font-size: 1.1rem; color: #d6bc3a; /* Gold override */ }
         .price-old { color: #6c757d; text-decoration: line-through; font-size: 0.85rem; }
@@ -378,7 +408,7 @@
                                 @else
                                 {{-- No quota: just show count inline --}}
                                 @endif
-                            <div class="desc-event rich-desc">{!! Str::limit(strip_tags($event->description,'<p><br><strong><em><ul><ol><li><b><i>'), 220) !!}</div>
+                            <div class="desc-event rich-desc">{{ Str::limit(strip_tags($event->description), 220) }}</div>
                             
                             <div class="keterangan keterangan-row">
                                 <div class="keterangan-item">

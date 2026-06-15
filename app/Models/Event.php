@@ -78,6 +78,8 @@ class Event extends Model
         'announcement_date',
         'until_submission_2',
         'price_stage2',
+        'finalist_payment_start',
+        'finalist_payment_end',
     ];
 
     protected $casts = [
@@ -110,6 +112,8 @@ class Event extends Model
         'announcement_date' => 'datetime',
         'until_submission_2' => 'datetime',
         'price_stage2' => 'decimal:2',
+        'finalist_payment_start' => 'datetime',
+        'finalist_payment_end' => 'datetime',
     ];
 
     public function getHasApprovedModulesAttribute(): bool
@@ -154,7 +158,13 @@ class Event extends Model
 
         $hasModule = $this->has_approved_modules;
 
-        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
+        $isMultiDay = !empty($this->event_until_date)
+            && \Carbon\Carbon::parse($this->event_until_date)->gt(\Carbon\Carbon::parse($this->event_date));
+        $hasDailyAbs = false;
+        if ($isMultiDay && $this->id) {
+            $hasDailyAbs = \App\Models\EventDailyQr::where('event_id', $this->id)->exists();
+        }
+        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token) || $hasDailyAbs;
 
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {

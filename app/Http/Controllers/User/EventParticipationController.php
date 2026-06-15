@@ -442,7 +442,7 @@ class EventParticipationController extends Controller
             $registration->submission_status = 'pending';
             $registration->save();
 
-            return redirect()->back()->with('success', 'Submission awal berhasil diunggah.');
+            return redirect()->back()->with('success', 'Initial submission successfully uploaded.');
         }
 
         return redirect()->back()->with('error', 'Gagal mengunggah file.');
@@ -492,7 +492,7 @@ class EventParticipationController extends Controller
             $registration->submission_2_uploaded_at = $now;
             $registration->save();
 
-            return redirect()->back()->with('success', 'Submission kedua berhasil diunggah.');
+            return redirect()->back()->with('success', 'Second submission successfully uploaded.');
         }
 
         return redirect()->back()->with('error', 'Gagal mengunggah file.');
@@ -513,6 +513,17 @@ class EventParticipationController extends Controller
 
         if (!$registration || $registration->submission_status !== 'lolos') {
             abort(403, 'Halaman ini hanya untuk peserta yang lolos Tahap 1.');
+        }
+
+        $now = \Carbon\Carbon::now(config('app.timezone'));
+        if ($event->finalist_payment_start && $now->lt($event->finalist_payment_start)) {
+            return redirect()->route('events.registered.detail', $event)
+                ->with('error', 'Stage 2 Payment / Finalist Registration is not open yet. It will open on ' . $event->finalist_payment_start->translatedFormat('d M Y, H:i') . ' WIB.');
+        }
+
+        if ($event->finalist_payment_end && $now->gt($event->finalist_payment_end)) {
+            return redirect()->route('events.registered.detail', $event)
+                ->with('error', 'Stage 2 Payment / Finalist Registration is closed. It ended on ' . $event->finalist_payment_end->translatedFormat('d M Y, H:i') . ' WIB.');
         }
 
         // Already paid or not required
@@ -544,6 +555,17 @@ class EventParticipationController extends Controller
 
         if (!$registration || $registration->submission_status !== 'lolos') {
             abort(403);
+        }
+
+        $now = \Carbon\Carbon::now(config('app.timezone'));
+        if ($event->finalist_payment_start && $now->lt($event->finalist_payment_start)) {
+            return redirect()->route('events.registered.detail', $event)
+                ->with('error', 'Stage 2 Payment / Finalist Registration is not open yet. It will open on ' . $event->finalist_payment_start->translatedFormat('d M Y, H:i') . ' WIB.');
+        }
+
+        if ($event->finalist_payment_end && $now->gt($event->finalist_payment_end)) {
+            return redirect()->route('events.registered.detail', $event)
+                ->with('error', 'Stage 2 Payment / Finalist Registration is closed. It ended on ' . $event->finalist_payment_end->translatedFormat('d M Y, H:i') . ' WIB.');
         }
 
         if ($registration->stage2_payment_status !== 'pending') {
@@ -601,6 +623,15 @@ class EventParticipationController extends Controller
 
         if (!$registration || $registration->submission_status !== 'lolos') {
             return response()->json(['error' => 'Akses ditolak'], 403);
+        }
+
+        $now = \Carbon\Carbon::now(config('app.timezone'));
+        if ($event->finalist_payment_start && $now->lt($event->finalist_payment_start)) {
+            return response()->json(['error' => 'Stage 2 Payment / Finalist Registration is not open yet. It will open on ' . $event->finalist_payment_start->translatedFormat('d M Y, H:i') . ' WIB.'], 422);
+        }
+
+        if ($event->finalist_payment_end && $now->gt($event->finalist_payment_end)) {
+            return response()->json(['error' => 'Stage 2 Payment / Finalist Registration is closed. It ended on ' . $event->finalist_payment_end->translatedFormat('d M Y, H:i') . ' WIB.'], 422);
         }
 
         if ($registration->stage2_payment_status !== 'pending') {

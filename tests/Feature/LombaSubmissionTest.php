@@ -153,7 +153,7 @@ class LombaSubmissionTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Submission awal berhasil diunggah.');
+        $response->assertSessionHas('success', 'Initial submission successfully uploaded.');
 
         $registration->refresh();
         $this->assertNotNull($registration->submission_path);
@@ -272,6 +272,47 @@ class LombaSubmissionTest extends TestCase
         $this->assertEquals('Kerjaan sudah bagus, silakan lanjut ke tahap 2.', $registration->submission_notes);
     }
 
+    public function test_admin_can_reset_reviewed_submission_to_pending(): void
+    {
+        $event = Event::create([
+            'title' => 'Lomba Reset Review',
+            'jenis' => 'Lomba',
+            'description' => 'Desc',
+            'speaker' => '',
+            'price' => 0,
+            'location' => 'Online',
+            'event_date' => now()->addDays(5)->toDateString(),
+            'event_time' => '10:00:00',
+            'start_submission' => now()->subDay(),
+            'until_submission' => now()->addDay(),
+            'announcement_date' => now()->addDays(2),
+            'until_submission_2' => now()->addDays(4),
+            'is_published' => true,
+        ]);
+
+        $registration = EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $this->user->id,
+            'status' => 'active',
+            'submission_path' => 'submissions/proposal.pdf',
+            'submission_uploaded_at' => now(),
+            'submission_status' => 'tidak_lolos',
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.events.submissions.review', [$event, $registration]), [
+            'status' => 'pending',
+            'submission_notes' => 'Reset to pending.',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Status submission berhasil diperbarui.');
+
+        $registration->refresh();
+        $this->assertEquals('pending', $registration->submission_status);
+        $this->assertEquals('Reset to pending.', $registration->submission_notes);
+        $this->assertEquals('not_required', $registration->stage2_payment_status);
+    }
+
     public function test_lolos_user_can_upload_second_submission_after_announcement(): void
     {
         $event = Event::create([
@@ -306,7 +347,7 @@ class LombaSubmissionTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'Submission kedua berhasil diunggah.');
+        $response->assertSessionHas('success', 'Second submission successfully uploaded.');
 
         $registration->refresh();
         $this->assertNotNull($registration->submission_path_2);
@@ -1139,6 +1180,86 @@ class LombaSubmissionTest extends TestCase
         $registration->refresh();
         $this->assertEquals('pending', $registration->stage2_payment_status);
         $this->assertNull($registration->stage2_payment_at);
+    }
+
+    public function test_user_cannot_access_or_pay_stage2_outside_payment_dates(): void
+    {
+        $event = Event::create([
+            'title' => 'Lomba Stage 2 Date Restrictions',
+            'jenis' => 'Lomba',
+            'description' => 'Desc',
+            'speaker' => '',
+            'price' => 0,
+            'price_stage2' => 50000,
+            'location' => 'Online',
+            'event_date' => now()->addDays(5)->toDateString(),
+            'event_time' => '10:00:00',
+            'start_submission' => now()->subDays(5),
+            'until_submission' => now()->subDays(3),
+            'announcement_date' => now()->subDay(),
+            'until_submission_2' => now()->addDay(),
+            'finalist_payment_start' => now()->addMinutes(10), // in the future
+            'finalist_payment_end' => now()->addHour(),
+            'is_published' => true,
+        ]);
+
+        $registration = EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $this->user->id,
+            'status' => 'active',
+            'submission_path' => 'submissions/proposal.pdf',
+            'submission_uploaded_at' => now()->subDays(4),
+            'submission_status' => 'lolos', // qualified!
+            'stage2_payment_status' => 'pending',
+        ]);
+
+        // Scenario 1: Payment not started yet
+        $startStr = $event->finalist_payment_start->translatedFormat('d M Y, H:i');
+        $expectedNotOpenMsg = 'Stage 2 Payment / Finalist Registration is not open yet. It will open on ' . $startStr . ' WIB.';
+
+        // 1.1 access payment page -> redirect to detail
+        $response = $this->actingAs($this->user)->get(route('events.payment.stage2', $event));
+        $response->assertRedirect(route('events.registered.detail', $event));
+        $response->assertSessionHas('error', $expectedNotOpenMsg);
+
+        // 1.2 submit manual payment -> redirect to detail
+        $response2 = $this->actingAs($this->user)->post(route('events.payment.stage2.manual', $event), [
+            'whatsapp' => '08123456789',
+            'payment_proof' => \Illuminate\Http\UploadedFile::fake()->create('proof.jpg', 100),
+        ]);
+        $response2->assertRedirect(route('events.registered.detail', $event));
+        $response2->assertSessionHas('error', $expectedNotOpenMsg);
+
+        // 1.3 midtrans snap token request -> 422 JSON
+        $response3 = $this->actingAs($this->user)->postJson(route('events.payment.stage2.midtrans', $event));
+        $response3->assertStatus(422);
+        $response3->assertJson(['error' => $expectedNotOpenMsg]);
+
+        // Scenario 2: Payment has ended
+        $event->update([
+            'finalist_payment_start' => now()->subHours(2),
+            'finalist_payment_end' => now()->subHour(), // ended
+        ]);
+        $endStr = $event->finalist_payment_end->translatedFormat('d M Y, H:i');
+        $expectedClosedMsg = 'Stage 2 Payment / Finalist Registration is closed. It ended on ' . $endStr . ' WIB.';
+
+        // 2.1 access payment page -> redirect to detail
+        $response = $this->actingAs($this->user)->get(route('events.payment.stage2', $event));
+        $response->assertRedirect(route('events.registered.detail', $event));
+        $response->assertSessionHas('error', $expectedClosedMsg);
+
+        // 2.2 submit manual payment -> redirect to detail
+        $response2 = $this->actingAs($this->user)->post(route('events.payment.stage2.manual', $event), [
+            'whatsapp' => '08123456789',
+            'payment_proof' => \Illuminate\Http\UploadedFile::fake()->create('proof.jpg', 100),
+        ]);
+        $response2->assertRedirect(route('events.registered.detail', $event));
+        $response2->assertSessionHas('error', $expectedClosedMsg);
+
+        // 2.3 midtrans snap token request -> 422 JSON
+        $response3 = $this->actingAs($this->user)->postJson(route('events.payment.stage2.midtrans', $event));
+        $response3->assertStatus(422);
+        $response3->assertJson(['error' => $expectedClosedMsg]);
     }
 }
 
