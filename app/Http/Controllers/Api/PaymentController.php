@@ -43,8 +43,8 @@ class PaymentController extends Controller
             UserNotification::create([
                 'user_id' => $payment->user_id,
                 'type' => 'event_registration_midtrans_success',
-                'title' => 'Pendaftaran Dikonfirmasi',
-                'message' => 'Anda berhasil terdaftar di event "' . ($event->title ?? 'Event') . '".',
+                'title' => 'Registration Confirmed',
+                'message' => 'You have successfully registered for the event "' . ($event->title ?? 'Event') . '".',
                 'data' => [
                     'event_id' => $event->id,
                     'order_id' => $payment->order_id,
@@ -542,8 +542,8 @@ class PaymentController extends Controller
                     UserNotification::create([
                         'user_id' => $user->id,
                         'type' => 'event_registration',
-                        'title' => 'Pendaftaran Dikonfirmasi',
-                        'message' => 'Pendaftaran untuk "' . $event->title . '" telah dikonfirmasi.',
+                        'title' => 'Registration Confirmed',
+                        'message' => 'Registration for "' . $event->title . '" has been confirmed.',
                         'data' => ['url' => route('events.show', $event)],
                         'expires_at' => now()->addDays(14),
                     ]);
@@ -1180,16 +1180,28 @@ class PaymentController extends Controller
                 // Activate related entities
                 if ($payment->event_registration_id) {
                     $registration = EventRegistration::find($payment->event_registration_id);
-                    if ($registration && $registration->status !== 'active') {
-                        $registration->status = 'active';
-                        $registration->payment_verified_at = now();
-                        $registration->payment_verified_by = null;
-                        $registration->save();
+                    if ($registration) {
+                        $isStage2 = (data_get($payment->metadata, 'stage') == 2 || str_starts_with($payment->order_id, 'STG2-'));
+                        if ($isStage2) {
+                            $registration->stage2_payment_status = 'settled';
+                            $registration->stage2_payment_at = now();
+                            $registration->save();
+                        } else {
+                            if ($registration->status !== 'active') {
+                                $registration->status = 'active';
+                                $registration->payment_verified_at = now();
+                                $registration->payment_verified_by = null;
+                                $registration->save();
+                            }
+                        }
                     }
 
                     $event = $payment->event_id ? Event::find($payment->event_id) : null;
                     if ($event) {
-                        $this->processEventReferralCommission($event, $payment);
+                        $isStage2 = (data_get($payment->metadata, 'stage') == 2 || str_starts_with($payment->order_id, 'STG2-'));
+                        if (!$isStage2) {
+                            $this->processEventReferralCommission($event, $payment);
+                        }
                         $this->notifyEventMidtransRegistrationSuccess($event, $payment);
                         $this->sendPaymentInvoice($payment, 'event', (string) ($event->title ?? 'Event'));
                     }

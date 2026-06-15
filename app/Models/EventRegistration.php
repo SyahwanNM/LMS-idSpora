@@ -30,6 +30,14 @@ class EventRegistration extends Model
         'university_origin',
         'study_program',
         'position',
+        'submission_path',
+        'submission_uploaded_at',
+        'submission_status',
+        'submission_path_2',
+        'submission_2_uploaded_at',
+        'submission_notes',
+        'stage2_payment_status',
+        'stage2_payment_at',
     ];
 
     protected $casts = [
@@ -37,6 +45,9 @@ class EventRegistration extends Model
         'feedback_submitted_at' => 'datetime',
         'attended_at' => 'datetime',
         'attendance_scan_qr' => 'datetime',
+        'submission_uploaded_at' => 'datetime',
+        'submission_2_uploaded_at' => 'datetime',
+        'stage2_payment_at' => 'datetime',
     ];
 
     public function getInvoiceUrlAttribute()

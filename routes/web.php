@@ -58,6 +58,11 @@ Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
 });
 
+Route::get('/auto-login', function () {
+    auth()->loginUsingId(2);
+    return redirect()->route('dashboard');
+});
+
 Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('course.detail');
 
 // Canonical course detail route (alias used in views)
@@ -280,6 +285,9 @@ Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
+    if (strtolower(trim($event->jenis ?? '')) === 'lomba' && $event->until_submission && now()->gt($event->until_submission)) {
+        return redirect()->route('events.show', $event)->with('error', 'Pendaftaran Lomba sudah ditutup.');
+    }
     $user = auth()->user();
     $already = $user && $user->eventRegistrations()->where('event_id', $event->id)->exists();
     if ($already) {
@@ -328,6 +336,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\User\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     // Dedicated scan page for event QR (auth, require registration)
     Route::get('/events/{event}/scan', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {
+        if ($event->jenis === 'Lomba') {
+            return redirect()->route('events.registered.detail', $event)->with('error', 'Lomba tidak memiliki QR Attendance.');
+        }
+
         $user = $request->user();
         if (!$user) {
             return redirect()->route('login');

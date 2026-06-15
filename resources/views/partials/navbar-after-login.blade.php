@@ -106,8 +106,8 @@
     <!-- Notif Dropdown -->
     <div class="dropdown-menu dropdown-menu-end shadow notification-dropdown-premium" id="notificationDropdown" style="display: none;">
         <div class="dropdown-header-premium d-flex justify-content-between align-items-center">
-            <span>Notifikasi</span>
-            <button class="btn btn-link btn-sm p-0 text-warning" onclick="markAllAsRead()">Tandai semua dibaca</button>
+            <span>Notifications</span>
+            <button class="btn btn-link btn-sm p-0 text-warning" onclick="markAllAsRead()">Mark all as read</button>
         </div>
         <div id="notificationList" class="notif-list-container" style="max-height: 350px; overflow-y: auto;">
             @forelse($notifications as $notification)
@@ -136,7 +136,7 @@
                         <path d="M4 8.5V7a4 4 0 1 1 8 0v1.5H4zm1 0h6V7a3 3 0 1 0-6 0v1.5zM3.5 10a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1h-9z"/>
                         <path d="M8 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
                     </svg>
-                    <p class="small mb-0">Tidak ada notifikasi baru</p>
+                    <p class="small mb-0">No new notifications</p>
                 </div>
             @endforelse
         </div>

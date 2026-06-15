@@ -104,12 +104,12 @@
                     <div class="fw-semibold" id="confirmDeleteUserEmail">-</div>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Batal</button>
                 <form id="confirmDeleteUserForm" action="#" method="POST" class="m-0">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger confirm-danger-btn">
+                        <button type="submit" class="btn btn-danger confirm-danger-btn" style="border-radius: 10px;">
                                 <i class="bi bi-trash me-1"></i> Ya, hapus
                         </button>
                 </form>

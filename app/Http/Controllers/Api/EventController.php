@@ -1158,8 +1158,8 @@ class EventController extends Controller
             UserNotification::create([
                 'user_id' => $payment->user_id,
                 'type' => 'event_registration_midtrans_success',
-                'title' => 'Pendaftaran Dikonfirmasi',
-                'message' => 'Anda berhasil terdaftar di event "' . ($event->title ?? 'Event') . '".',
+                'title' => 'Registration Confirmed',
+                'message' => 'You have successfully registered for the event "' . ($event->title ?? 'Event') . '".',
                 'data' => [
                     'event_id' => $event->id,
                     'order_id' => $payment->order_id,

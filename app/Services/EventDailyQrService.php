@@ -59,6 +59,17 @@ class EventDailyQrService
      */
     public function syncDailyQrs(Event $event, bool $deleteOutOfRange = true): array
     {
+        if ($event->jenis === 'Lomba') {
+            $toDelete = EventDailyQr::where('event_id', $event->id)->get();
+            foreach ($toDelete as $old) {
+                if (!empty($old->qr_image)) {
+                    try { Storage::disk('public')->delete($old->qr_image); } catch (\Throwable $e) {}
+                }
+                $old->delete();
+            }
+            return [];
+        }
+
         $dates      = $this->getEventDates($event);
         $validDates = array_map(fn($d) => $d->format('Y-m-d'), $dates);
 
@@ -127,6 +138,10 @@ class EventDailyQrService
      */
     public function getTodayQr(Event $event): ?EventDailyQr
     {
+        if ($event->jenis === 'Lomba') {
+            return null;
+        }
+
         $today = Carbon::now(config('app.timezone'))->startOfDay();
         $dates = $this->getEventDates($event);
 
