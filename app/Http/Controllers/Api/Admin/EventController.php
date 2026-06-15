@@ -316,16 +316,23 @@ class EventController extends Controller
             if ($isPublished) {
                 $incomplete = [];
 
-                if (empty($event->vbg_path)) {
+                $hasMapsLink = !empty($event->maps_url);
+                $hasZoomLink = !empty($event->zoom_link);
+                $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                $requiresVbg = !$isOfflineOnly;
+
+                if ($requiresVbg && empty($event->vbg_path)) {
                     $incomplete[] = 'Virtual background (vbg) belum diupload';
                 }
 
-                $hasApprovedModule = \App\Models\EventTrainerModule::where('event_id', $event->id)
-                    ->where('status', 'approved')
-                    ->exists();
+                if ($event->jenis !== 'Lomba') {
+                    $hasApprovedModule = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                        ->where('status', 'approved')
+                        ->exists();
 
-                if (!$hasApprovedModule) {
-                    $incomplete[] = 'Belum ada modul trainer yang disetujui';
+                    if (!$hasApprovedModule) {
+                        $incomplete[] = 'Belum ada modul trainer yang disetujui';
+                    }
                 }
 
                 if (!empty($incomplete)) {

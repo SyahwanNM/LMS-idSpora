@@ -336,7 +336,7 @@
                             type="text"
                             id="referralCodeInput"
                             placeholder="Enter the reseller referral code if any"
-                            value="{{ request()->query('ref', '') }}"
+                            value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}"
                             autocomplete="off"
                         >
                         <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
@@ -431,7 +431,7 @@
                     <input type="hidden" name="name" id="hiddenNameInput" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
-                    <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', '') }}">
+                    <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
 
                     @if($isFreeCourse)
                         <button type="submit" id="freeEnrollBtn" class="btn_bayar_payment" disabled>Study Now!</button>

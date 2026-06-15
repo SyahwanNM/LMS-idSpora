@@ -40,6 +40,17 @@ class ManualPaymentController extends Controller
                 : ($event->price ?? 0);
         }
 
+        // Apply reseller/referral discount if active
+        $rawReferralCode = trim((string) $request->input('referral_code', ''));
+        $referralCode = null;
+        if ($rawReferralCode !== '' && (bool) ($event->is_reseller_event ?? false)) {
+            $referrer = \App\Models\User::where('referral_code', $rawReferralCode)->first();
+            if ($referrer && (int) $referrer->id !== (int) $user->id) {
+                $referralCode = $rawReferralCode;
+                $finalPrice = round($finalPrice * 0.90, 2);
+            }
+        }
+
         $isFree = (int) $finalPrice <= 0;
 
         // Free event → register immediately
@@ -103,6 +114,7 @@ class ManualPaymentController extends Controller
                     'university_origin' => $request->input('university_origin'),
                     'study_program' => $request->input('study_program'),
                     'position' => $request->input('position'),
+                    'referral_code' => $referralCode,
                 ]);
             } else {
                 $registration->update([
@@ -112,6 +124,7 @@ class ManualPaymentController extends Controller
                     'university_origin' => $request->input('university_origin'),
                     'study_program' => $request->input('study_program'),
                     'position' => $request->input('position'),
+                    'referral_code' => $referralCode,
                 ]);
             }
 
@@ -138,6 +151,7 @@ class ManualPaymentController extends Controller
                 'currency' => 'IDR',
                 'method' => 'manual_transfer',
                 'status' => 'pending',
+                'referral_code' => $referralCode,
                 'metadata' => array_merge((array) ($manual->metadata ?? []), [
                     'source' => 'event',
                     'payment_method' => 'transfer',
@@ -162,6 +176,6 @@ class ManualPaymentController extends Controller
         }
 
         return redirect()->route('events.show', $event->id)
-            ->with('success', 'Bukti transfer berhasil dikirim. Pendaftaran Anda sedang ditinjau oleh admin.');
+            ->with('success', 'Transfer proof has been successfully submitted. Your registration is under review by the admin.');
     }
 }

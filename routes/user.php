@@ -38,6 +38,9 @@ Route::middleware('auth')->get('/detail-event-registered/{event}', function (Eve
 })->name('events.registered.detail');
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
+    if (strtolower(trim($event->jenis ?? '')) === 'lomba' && $event->until_submission && now()->gt($event->until_submission)) {
+        return redirect()->route('events.show', $event)->with('error', 'Pendaftaran Lomba sudah ditutup.');
+    }
     $user = auth()->user();
     $registration = $user ? $user->eventRegistrations()->where('event_id', $event->id)->latest('id')->first() : null;
     if ($registration && $registration->status === 'active') {
@@ -108,6 +111,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\User\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     // Dedicated scan page for event QR (auth, require registration)
     Route::get('/events/{event}/scan', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {
+        if ($event->jenis === 'Lomba') {
+            return redirect()->route('events.registered.detail', $event)->with('error', 'Lomba tidak memiliki QR Attendance.');
+        }
+
         $user = $request->user();
         if (!$user) {
             return redirect()->route('login');
@@ -276,6 +283,16 @@ Route::middleware('auth')->group(function () {
         }
         return back()->with('success', $saved ? 'Course disimpan.' : 'Course dihapus dari tersimpan.');
     })->name('courses.save');
+
+    Route::post('/events/{event}/submit-initial', [\App\Http\Controllers\User\EventParticipationController::class, 'uploadInitialSubmission'])->name('events.submit.initial');
+    Route::post('/events/{event}/submit-second', [\App\Http\Controllers\User\EventParticipationController::class, 'uploadSecondSubmission'])->name('events.submit.second');
+
+    // Stage 2 Payment Routes
+    Route::get('/events/{event}/payment-stage2', [\App\Http\Controllers\User\EventParticipationController::class, 'showStage2Payment'])->name('events.payment.stage2');
+    Route::post('/events/{event}/payment-stage2/manual', [\App\Http\Controllers\User\EventParticipationController::class, 'submitStage2ManualPayment'])->name('events.payment.stage2.manual');
+    Route::post('/events/{event}/payment-stage2/midtrans', [\App\Http\Controllers\User\EventParticipationController::class, 'createStage2MidtransOrder'])->name('events.payment.stage2.midtrans');
+    Route::post('/events/{event}/payment-stage2/settle', [\App\Http\Controllers\User\EventParticipationController::class, 'settleStage2Payment'])->name('events.payment.stage2.settle');
+    Route::get('/events/{event}/payment-stage2/pending-order', [\App\Http\Controllers\User\EventParticipationController::class, 'stage2PendingOrder'])->name('events.payment.stage2.pending-order');
 
     // Voucher & Redemption
     Route::post('/profile/redeem-voucher/{voucher}', [\App\Http\Controllers\User\ProfileController::class, 'redeemVoucher'])->name('profile.redeem-voucher');

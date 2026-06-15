@@ -131,18 +131,24 @@
         <div style="font-size: 12px; color: #6B7280;">
             <a href="{{ route('dashboard') }}" style="text-decoration:none; color:inherit;">Home</a> / 
             <a href="{{ route('events.index') }}" style="text-decoration:none; color:inherit;">Event</a> / 
-            <span style="color:#111827; font-weight:600;">Payment</span>
+            @if(isset($isStage2) && $isStage2)
+                <a href="{{ route('events.registered.detail', $event) }}" style="text-decoration:none; color:inherit;">{{ $event->title }}</a> / 
+                <span style="color:#111827; font-weight:600;">Payment Tahap 2</span>
+            @else
+                <span style="color:#111827; font-weight:600;">Payment</span>
+            @endif
         </div>
     </div>
 
-    <form id="paymentForm" method="POST" action="{{ route('payment.manual.register', $event->id ?? '') }}" enctype="multipart/form-data" novalidate>
+    <form id="paymentForm" method="POST" action="{{ isset($isStage2) && $isStage2 ? route('events.payment.stage2.manual', $event) : route('payment.manual.register', $event->id ?? '') }}" enctype="multipart/form-data" novalidate>
         @csrf
         <input type="hidden" name="event_id" value="{{ $event->id ?? '' }}">
 
         @php
-            $isHybridPayment = isset($event) && !empty($event->maps_url) && !empty($event->zoom_link)
+            $isStage2 = $isStage2 ?? false;
+            $isHybridPayment = !$isStage2 && isset($event) && !empty($event->maps_url) && !empty($event->zoom_link)
                                && ($event->price_offline > 0 || $event->price_online > 0);
-            $discountRate    = (isset($event) && $event->hasDiscount() && !empty($event->discount_percentage))
+            $discountRate    = (!$isStage2 && isset($event) && $event->hasDiscount() && !empty($event->discount_percentage))
                                ? (float) $event->discount_percentage / 100 : 0.0;
             $priceOfflineFinal = $isHybridPayment
                                ? (int) round((float)($event->price_offline ?? 0) * (1 - $discountRate))
@@ -150,11 +156,13 @@
             $priceOnlineFinal  = $isHybridPayment
                                ? (int) round((float)($event->price_online ?? 0) * (1 - $discountRate))
                                : 0;
-            $isFree = isset($event) ? ((int)($event->price ?? 0) === 0) : false;
-            $hasDiscount = isset($event) ? $event->hasDiscount() : false;
-            $finalPrice = $isHybridPayment
-                        ? $priceOfflineFinal  // default to offline price
-                        : (isset($event) ? ($hasDiscount ? ($event->discounted_price ?? 0) : ($event->price ?? 0)) : 0);
+            $isFree = $isStage2 ? ((int)($event->price_stage2 ?? 0) === 0) : (isset($event) ? ((int)($event->price ?? 0) === 0) : false);
+            $hasDiscount = !$isStage2 && isset($event) ? $event->hasDiscount() : false;
+            $finalPrice = $isStage2
+                        ? ($event->price_stage2 ?? 0)
+                        : ($isHybridPayment
+                            ? $priceOfflineFinal
+                            : (isset($event) ? ($hasDiscount ? ($event->discounted_price ?? 0) : ($event->price ?? 0)) : 0));
         @endphp
 
         <div class="payment-container" style="margin-top: 0;">
@@ -162,7 +170,7 @@
                 
                 <div class="left-col">
                     <div class="card-custom">
-                        <h3>Participant Data</h3>
+                        <h3>{{ $isStage2 ? 'Participant Data (Konfirmasi)' : 'Participant Data' }}</h3>
                         
                         <div class="mb-custom">
                             <label class="form-label-custom">Email</label>
@@ -171,7 +179,7 @@
 
                         <div class="mb-custom">
                             <label class="form-label-custom" style="margin-bottom:0">Full Name</label>
-                            <input type="text" class="form-control-custom" name="full_name" value="{{ auth()->user()->name ?? '' }}" placeholder="Nama sesuai sertifikat" required minlength="3">
+                            <input type="text" class="form-control-custom" name="full_name" value="{{ old('full_name', $isStage2 ? ($registration->full_name ?? auth()->user()->name) : (auth()->user()->name ?? '')) }}" placeholder="Nama sesuai sertifikat" required minlength="3" {{ $isStage2 ? 'readonly' : '' }}>
                             <div class="warning-text" style="margin-top:4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" class="bi bi-exclamation-circle" viewBox="0 0 16 16">
                                     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
@@ -185,42 +193,44 @@
                         <div class="mb-custom"> <label class="form-label-custom">Whatsapp Number</label>
                             <div class="wa-group">
                                 <input type="hidden" name="dial_code" value="">
-                                <input type="text" class="form-control-custom" name="whatsapp" placeholder="Contoh: 6281234567890" inputmode="numeric" required style="flex:1;min-width:0;">
+                                <input type="text" class="form-control-custom" name="whatsapp" value="{{ old('whatsapp', $isStage2 ? ($registration->whatsapp_number ?? auth()->user()->phone) : '') }}" placeholder="Example: 6281234567890" inputmode="numeric" required style="flex:1;min-width:0;" {{ $isStage2 ? 'readonly' : '' }}>
                             </div>
                         </div>
 
                         <!-- Asal Perguruan Tinggi -->
                         <div class="mb-custom">
                             <label class="form-label-custom">Company Name/Organization <span style="color:#ef4444;">*</span></label>
-                            <input type="text" class="form-control-custom" name="university_origin" value="{{ auth()->user()->institution ?? '' }}" placeholder="Contoh: Universitas Indonesia" required>
+                            <input type="text" class="form-control-custom" name="university_origin" value="{{ old('university_origin', $isStage2 ? ($registration->university_origin ?? auth()->user()->institution) : (auth()->user()->institution ?? '')) }}" placeholder="Example: Telkom University" required {{ $isStage2 ? 'readonly' : '' }}>
                         </div>
 
                         <!-- Program Studi / Departemen / Unit Kerja -->
                         <div class="mb-custom">
                             <label class="form-label-custom">Study Program / Department / Work Unit <span style="color:#ef4444;">*</span></label>
-                            <input type="text" class="form-control-custom" name="study_program" value="" placeholder="Contoh: Teknik Informatika / Departemen Ilmu Komputer" required>
+                            <input type="text" class="form-control-custom" name="study_program" value="{{ old('study_program', $isStage2 ? ($registration->study_program ?? '') : '') }}" placeholder="Example: Informatics Engineering / Department of Computer Science" required {{ $isStage2 ? 'readonly' : '' }}>
                         </div>
 
                         <!-- Jabatan -->
                         <div class="mb-custom">
                             <label class="form-label-custom">Position <span style="color:#ef4444;">*</span></label>
-                            <input type="text" class="form-control-custom" name="position" value="{{ auth()->user()->profession ?? '' }}" placeholder="Contoh: Dosen / Mahasiswa / Staff" required>
+                            <input type="text" class="form-control-custom" name="position" value="{{ old('position', $isStage2 ? ($registration->position ?? auth()->user()->profession) : (auth()->user()->profession ?? '')) }}" placeholder="Example: Lecturer / Student / Staff" required {{ $isStage2 ? 'readonly' : '' }}>
                         </div>
-                        @if(isset($event) && (bool) ($event->is_reseller_event ?? false))
+                        @if(isset($event) && (bool) ($event->is_reseller_event ?? false) && !$isStage2)
                         <div class="mb-custom">
                             <label class="form-label-custom">Referral Code (opsional)</label>
-                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Have a referral code? Enter it here" value="{{ request()->query('ref', '') }}">
-                            <div id="referralMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
+                            <input type="text" class="form-control-custom" name="referral_code" id="referralCodeInput" placeholder="Have a referral code? Enter it here" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
+                            <div id="referralMessage" class="form-text small" style="display:none;">&nbsp;</div>
                             <div class="form-text small">Enter the reseller referral code to get a discount/commission.</div>
                         </div>
                         @endif
 
+                        @if(!$isStage2)
                         <div class="mb-custom">
                             <label class="form-label-custom">Voucher Code (opsional)</label>
                             <input type="text" class="form-control-custom" name="voucher_code" id="voucherCodeInput" placeholder="Masukkan kode voucher penukaran Anda" autocomplete="off">
                             <div id="voucherMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
                             <div class="form-text small">Masukkan kode voucher yang telah ditukarkan di halaman profil untuk potongan harga.</div>
                         </div>
+                        @endif
 
 
                         @if($isHybridPayment)
@@ -252,7 +262,7 @@
 
                 <div class="right-col">
                     <div class="card-custom">
-                        <h3>Checkout Detail Event</h3>
+                        <h3>{{ $isStage2 ? 'Pembayaran Tahap 2' : 'Checkout Detail Event' }}</h3>
                         <div class="order-detail-content">
                             @if(isset($event))
                                 <img src="{{ $event->image_url ?? asset('aset/event.png') }}" alt="{{ $event->title }}" class="order-img" onerror="this.src='{{ asset('aset/event.png') }}'">
@@ -283,76 +293,92 @@
                             </div>
                         </div>
 
-                    @if(!$isFree)
-                                <div class="mt-3">
-                                    <div class="form-label-custom" style="margin-bottom:8px; font-weight:600;">Payment Method</div>
-                                    <div style="display:flex; flex-direction:column; gap:10px;">
-                                        <label id="method-midtrans-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:#f5f5f5;cursor:not-allowed;font-size:14px;font-weight:600;color:#9ca3af;opacity:0.6;pointer-events:none;">
-                                            <input type="radio" name="payment_method" value="midtrans" id="method-midtrans" disabled style="accent-color:#4f46e5;">
-                                            <span>💳 Pembayaran Online</span>
-                                            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#9ca3af;">Not available at this time</span>
-                                        </label>
-                                        <label id="method-transfer-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #059669;background:#ecfdf5;cursor:pointer;font-size:14px;font-weight:600;color:#047857;transition:all .2s;">
-                                            <input type="radio" name="payment_method" value="transfer" id="method-transfer" checked style="accent-color:#059669;">
-                                            <span>🏦 Transfer Rekening</span>
-                                            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#6b7280;">Upload bukti • pending verifikasi</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                {{-- Transfer proof upload — shown only when Transfer Rekening selected --}}
-                                <div id="transferProofSection" class="mt-3" style="display:none;">
-                                    {{-- Bank account info --}}
-                                    <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:12px;">
-                                        <div style="font-size:12px;font-weight:600;color:#15803d;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-bank" viewBox="0 0 16 16" style="margin-right:4px;">
-                                                <path d="m8 0 6.61 3h.89a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5H15v7a.5.5 0 0 1 .485.379l.5 2A.5.5 0 0 1 15.5 16h-15a.5.5 0 0 1-.485-.621l.5-2A.5.5 0 0 1 1 13V6H.5a.5.5 0 0 1-.5-.5v-2A.5.5 0 0 1 .5 3h.89zM3.777 3h8.447L8 1zM2 6v7h1V6zm2 0v7h2.5V6zm3.5 0v7h1V6zm2 0v7H12V6zM13 6v7h1V6zm2-1V4H1v1zm-.39 9H1.39l-.25 1h13.72z"/>
-                                            </svg>
-                                            Tujuan Transfer
+                    @if(isset($isStage2) && $isStage2 && $existingPayment)
+                        <div style="background:#fff7ed; border:1.5px solid #fed7aa; border-radius:12px; padding:1.2rem; margin-top: 14px;">
+                            <div class="d-flex align-items-center gap-2 mb-1" style="color:#c2410c; font-weight:700; font-size:14px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-hourglass-split" viewBox="0 0 16 16" style="margin-right: 4px;">
+                                    <path d="M2.5 15a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1zm2-13v1c0 .537.12 1.045.337 1.5h6.326c.216-.455.337-.963.337-1.5V2zm3 6.35c0 .07.135.254.412.386a3.5 3.5 0 0 0 1.951.386v-.772A3.5 3.5 0 0 0 7.828 8.35a.4.4 0 0 0-.412-.386V8.35zm0 1.3v.772a3.5 3.5 0 0 0 1.951-.386.4.4 0 0 0 .412-.386v-.386a.4.4 0 0 0-.412.386 3.5 3.5 0 0 0-1.951.386z"/>
+                                </svg>
+                                <strong>Bukti Pembayaran Sedang Direview</strong>
+                            </div>
+                            <p class="mb-0 small text-muted" style="font-size:12px; margin-top:6px;">Bukti pembayaran Anda telah dikirim pada {{ $existingPayment->created_at->format('d M Y H:i') }}. Mohon tunggu konfirmasi admin.</p>
+                        </div>
+                    @else
+                        @if(!$isFree)
+                                    <div class="mt-3">
+                                        <div class="form-label-custom" style="margin-bottom:8px; font-weight:600;">Payment Method</div>
+                                        <div style="display:flex; flex-direction:column; gap:10px;">
+                                            @if(isset($event) && $event->accept_online_payment)
+                                            <label id="method-midtrans-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:#374151;transition:all .2s;">
+                                                <input type="radio" name="payment_method" value="midtrans" id="method-midtrans" style="accent-color:#4f46e5;" {{ !$event->accept_manual_transfer ? 'checked' : '' }}>
+                                                <span>Online Payment</span>
+                                                <span style="margin-left:auto;font-size:11px;font-weight:400;color:#6b7280;">Instant process</span>
+                                            </label>
+                                            @endif
+                                            @if(isset($event) && $event->accept_manual_transfer)
+                                            <label id="method-transfer-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #059669;background:#ecfdf5;cursor:pointer;font-size:14px;font-weight:600;color:#047857;transition:all .2s;">
+                                                <input type="radio" name="payment_method" value="transfer" id="method-transfer" style="accent-color:#059669;" {{ $event->accept_manual_transfer ? 'checked' : '' }}>
+                                                <span>Bank Account Transfer</span>
+                                                <span style="margin-left:auto;font-size:11px;font-weight:400;color:#6b7280;">Upload proof • pending verification</span>
+                                            </label>
+                                            @endif
                                         </div>
-                                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                                            <div>
-                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">1111-999-236</div>
-                                                <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>Bank BNI</strong> &nbsp;·&nbsp; a.n. APTIKOM JABAR</div>
+                                    </div>
+
+                                    {{-- Transfer proof upload — shown only when Transfer Rekening selected --}}
+                                    <div id="transferProofSection" class="mt-3" style="display:none;">
+                                        {{-- Bank account info --}}
+                                        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+                                            <div style="font-size:12px;font-weight:600;color:#15803d;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="currentColor" class="bi bi-bank" viewBox="0 0 16 16" style="margin-right:4px;">
+                                                    <path d="m8 0 6.61 3h.89a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5H15v7a.5.5 0 0 1 .485.379l.5 2A.5.5 0 0 1 15.5 16h-15a.5.5 0 0 1-.485-.621l.5-2A.5.5 0 0 1 1 13V6H.5a.5.5 0 0 1-.5-.5v-2A.5.5 0 0 1 .5 3h.89zM3.777 3h8.447L8 1zM2 6v7h1V6zm2 0v7h2.5V6zm3.5 0v7h1V6zm2 0v7H12V6zM13 6v7h1V6zm2-1V4H1v1zm-.39 9H1.39l-.25 1h13.72z"/>
+                                                </svg>
+                                                Transfer Purpose
                                             </div>
-                                            <button type="button" onclick="navigator.clipboard.writeText('023401267');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500);"
-                                                style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:600;">
-                                                Copy
-                                            </button>
+                                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                                <div>
+                                                    <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">{{ isset($event) ? $event->bank_account_number : '' }}</div>
+                                                    <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>{{ isset($event) ? $event->bank_name : '' }}</strong> &nbsp;·&nbsp; {{ isset($event) ? $event->bank_account_holder : '' }}</div>
+                                                </div>
+                                                <button type="button" onclick="navigator.clipboard.writeText('{{ isset($event) ? $event->bank_account_number : '' }}');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500);"
+                                                    style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:600;">
+                                                    Copy
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        <label class="form-label-custom" style="font-weight:600;">Transfer Proof <span style="color:#ef4444;">*</span></label>
+                                        <input type="file" name="payment_proof" id="paymentProofInput"
+                                            class="form-control-custom"
+                                            accept="image/jpeg,image/png,image/jpg,image/webp"
+                                            style="padding:8px;">
+                                        <div class="form-text small text-muted mt-1">Format: JPG, PNG, WebP. Maks <strong>1 MB</strong>.</div>
+                                        <div id="proofSizeError" class="form-text small text-danger mt-1" style="display:none;">The file size exceeds 1 MB. Please select a smaller file.</div>
                                     </div>
+                                @endif
 
-                                    <label class="form-label-custom" style="font-weight:600;">Bukti Transfer <span style="color:#ef4444;">*</span></label>
-                                    <input type="file" name="payment_proof" id="paymentProofInput"
-                                        class="form-control-custom"
-                                        accept="image/jpeg,image/png,image/jpg,image/webp"
-                                        style="padding:8px;">
-                                    <div class="form-text small text-muted mt-1">Format: JPG, PNG, WebP. Maks <strong>1 MB</strong>.</div>
-                                    <div id="proofSizeError" class="form-text small text-danger mt-1" style="display:none;">Ukuran file melebihi 1 MB. Pilih file yang lebih kecil.</div>
-                                </div>
-                            @endif
-
-                    </div>
-
-                    @if(isset($event) && $isFree)
-                        <div class="mt-3" id="manualPaySection">
-                            <button type="submit" class="btn-pay" id="freeRegBtn">Register Now!</button>
                         </div>
-                    @endif
 
-                    @if(!$isFree)
-                        <div id="midtransSection">
-                            <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay with Midtrans</button>
-                            <div class="small text-muted mt-2">Payment will be verified automatically after success.</div>
-                        </div>
-                        <div id="transferSection" style="display:none; margin-top:0;">
-                            <button type="button" id="transferPayBtn" class="btn-pay"
-                                style="background:#059669;"
-                                data-bs-toggle="modal" data-bs-target="#transferConfirmModal">
-                                Kirim Bukti Transfer
-                            </button>
-                            <div class="small text-muted mt-2">Pembayaran akan diverifikasi oleh admin dalam 1×24 jam.</div>
-                        </div>
+                        @if(isset($event) && $isFree)
+                            <div class="mt-3" id="manualPaySection">
+                                <button type="submit" class="btn-pay" id="freeRegBtn">Register Now!</button>
+                            </div>
+                        @endif
+
+                        @if(!$isFree)
+                            <div id="midtransSection">
+                                <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay Now!</button>
+                                <div class="small text-muted mt-2">Payment will be verified automatically after success.</div>
+                            </div>
+                            <div id="transferSection" style="display:none; margin-top:0;">
+                                <button type="button" id="transferPayBtn" class="btn-pay"
+                                    style="background:#059669;"
+                                    data-bs-toggle="modal" data-bs-target="#transferConfirmModal">
+                                    Submit Transfer Proof
+                                </button>
+                                <div class="small text-muted mt-2">Payment will be verified by admin within 1×24 hours.</div>
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -370,34 +396,34 @@
                                 <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/>
                             </svg>
                         </div>
-                        <h5 class="modal-title mb-0 fw-bold" id="transferConfirmLabel" style="color:#15803d;">Konfirmasi Pembayaran</h5>
+                        <h5 class="modal-title mb-0 fw-bold" id="transferConfirmLabel" style="color:#15803d;">Confirm Payment</h5>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" style="padding:20px 24px;">
                     <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:16px;">
-                        Pastikan pembayaran yang Anda lakukan sesuai dengan jumlah total yang tertera pada halaman sebelumnya.
-                        Kesalahan nominal pembayaran dapat menyebabkan proses verifikasi menjadi lebih lama.
+                        Please ensure that your payment matches the total amount listed on the previous page.
+                        Incorrect payment amounts may delay the verification process.
                     </p>
                     <p style="color:#374151;font-size:14px;line-height:1.6;margin-bottom:20px;">
-                        Silakan periksa kembali sebelum melanjutkan ke proses pembayaran.
+                        Please check carefully before proceeding to payment.
                     </p>
                     <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px 14px;border-radius:10px;border:1.5px solid #d1d5db;background:#f9fafb;">
                         <input type="checkbox" id="transferConfirmCheck" style="margin-top:2px;accent-color:#059669;width:16px;height:16px;flex-shrink:0;">
                         <span style="font-size:13px;color:#374151;line-height:1.5;">
-                            Saya menyatakan bahwa saya telah memeriksa dan memastikan jumlah pembayaran sesuai dengan total yang tertera.
+                            I declare that I have checked and confirmed that the payment amount matches the total listed.
                         </span>
                     </label>
                 </div>
                 <div class="modal-footer" style="padding:12px 24px 20px;border-top:none;gap:10px;">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"
                         style="border-radius:10px;padding:10px 20px;font-weight:600;flex:1;">
-                        Batal
+                        Cancel
                     </button>
                     <button type="button" id="transferConfirmProceed"
                         style="flex:2;border-radius:10px;padding:10px 20px;font-weight:600;background:#059669;color:#fff;border:none;opacity:0.5;cursor:not-allowed;transition:all .2s;"
                         disabled>
-                        Lanjutkan Pembayaran
+                        Continue Payment
                     </button>
                 </div>
             </div>
@@ -517,6 +543,25 @@
 
         const form = document.getElementById('paymentForm');
         if(!form) return;
+
+        const isStage2 = @json($isStage2 ?? false);
+        const snapTokenUrl = isStage2 
+            ? @json(isset($event) ? route('events.payment.stage2.midtrans', $event) : '')
+            : @json(isset($event) ? route('payment.snap-token', $event->id) : '');
+        const pendingOrderUrl = isStage2 
+            ? @json(isset($event) ? route('events.payment.stage2.pending-order', $event) : '')
+            : @json(isset($event) ? route('payment.pending-order', $event->id) : '');
+        const finalizeUrl = isStage2 
+            ? @json(isset($event) ? route('events.payment.stage2.settle', $event) : '')
+            : @json(isset($event) ? route('payment.finalize', $event->id) : '');
+        const redirectUrl = isStage2 
+            ? @json(isset($event) ? route('events.registered.detail', $event) : route('dashboard'))
+            : @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+        const eventTitle = @json(isset($event) ? ($event->title ?? 'Event') : 'Event');
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const checkReferralUrl = @json(isset($event) ? route('payment.check-referral', $event->id) : '');
+        let cachedPending = null;
+
         const fullName = form.querySelector('input[name="full_name"]');
         const wa = form.querySelector('input[name="whatsapp"]');
         const universityInput = form.querySelector('input[name="university_origin"]');
@@ -625,7 +670,7 @@
                     if (pending && pending.pending) {
                         midtransPayBtn.textContent = 'Lanjutkan pembayaran Midtrans';
                     } else {
-                        midtransPayBtn.textContent = 'Pay with Midtrans';
+                        midtransPayBtn.textContent = 'Pay Now!';
                     }
                 }
             }
@@ -677,7 +722,7 @@
             const code = getReferralCode();
 
             if(code !== '' && currentUserReferral && code.toUpperCase() === String(currentUserReferral).toUpperCase()){
-                if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'You cannot use your own referral code.'; }
+                if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted', 'text-success'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'You cannot use your own referral code.'; }
                 referralState = 'invalid';
                 referralFinalAmount = base;
                 if (getVoucherCode() !== '') {
@@ -692,7 +737,7 @@
             if(code === ''){
                 referralState = 'idle';
                 referralFinalAmount = base;
-                if(referralMessageEl){ referralMessageEl.style.display = 'none'; referralMessageEl.textContent = ''; }
+                if(referralMessageEl){ referralMessageEl.style.display = 'none'; referralMessageEl.textContent = ''; referralMessageEl.classList.remove('text-success', 'text-danger', 'text-muted'); }
                 if (getVoucherCode() !== '') {
                     scheduleVoucherValidation();
                 } else {
@@ -708,7 +753,7 @@
                 if(!data){
                     referralState = 'invalid';
                     referralFinalAmount = base;
-                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Failed to verify code. Please try again.'; }
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted', 'text-success'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = 'Failed to verify code. Please try again.'; }
                     if (getVoucherCode() !== '') {
                         scheduleVoucherValidation();
                     } else {
@@ -720,12 +765,13 @@
 
                 if(data.valid){
                     referralState = 'valid';
-                    referralFinalAmount = parseFloat(data.final_amount) || base;
-                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-danger'); referralMessageEl.classList.add('text-muted'); referralMessageEl.textContent = data.message || 'Referral code is valid.'; }
+                    const rate = parseFloat(data.discount_rate) || 0.0;
+                    referralFinalAmount = base * (1 - rate);
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-danger', 'text-muted'); referralMessageEl.classList.add('text-success'); referralMessageEl.textContent = data.message || 'Referral code is valid.'; }
                 } else {
                     referralState = 'invalid';
                     referralFinalAmount = base;
-                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = data.message || 'Invalid referral code.'; }
+                    if(referralMessageEl){ referralMessageEl.style.display = ''; referralMessageEl.classList.remove('text-muted', 'text-success'); referralMessageEl.classList.add('text-danger'); referralMessageEl.textContent = data.message || 'Invalid referral code.'; }
                 }
                 
                 if (getVoucherCode() !== '') {
@@ -976,7 +1022,7 @@
                     if(data.success){
                         showMidtransSuccessModal(data.message);
                         setTimeout(function(){
-                            window.location.href = data.redirect || @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                            window.location.href = data.redirect || redirectUrl;
                         }, 1600);
                     } else {
                         showAppNotify(data.message || 'Registration failed.', 'error');
@@ -1002,13 +1048,6 @@
         updateReferralUI();
         validate();
 
-        const snapTokenUrl = @json(isset($event) ? route('payment.snap-token', $event->id) : '');
-        const pendingOrderUrl = @json(isset($event) ? route('payment.pending-order', $event->id) : '');
-        const finalizeUrl = @json(isset($event) ? route('payment.finalize', $event->id) : '');
-        const eventTitle = @json(isset($event) ? ($event->title ?? 'Event') : 'Event');
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        const checkReferralUrl = @json(isset($event) ? route('payment.check-referral', $event->id) : '');
-
         function showMidtransSuccessModal(customMsg = null){
             const text = document.getElementById('midtransSuccessModalText');
             if (text) {
@@ -1020,8 +1059,6 @@
                 m.show();
             }
         }
-
-        let cachedPending = null;
 
         async function fetchPendingOrder(){
             if(!pendingOrderUrl) return null;
@@ -1111,23 +1148,47 @@
                 }
 
                 const url = new URL(snapTokenUrl, window.location.origin);
-                if(dialVal) url.searchParams.set('dial_code', dialVal);
-                if(waVal) url.searchParams.set('whatsapp', waVal);
-                if(referralInput && referralInput.value && referralInput.value.trim() !== '') url.searchParams.set('referral_code', referralInput.value.trim());
-                if(voucherVal !== '') url.searchParams.set('voucher_code', voucherVal);
-                if(forceNew) url.searchParams.set('force_new', '1');
+                const method = isStage2 ? 'POST' : 'GET';
+                const headers = {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf
+                };
                 
-                const attendanceTypeEl = document.getElementById('attendanceTypeInput');
-                if(attendanceTypeEl && attendanceTypeEl.value) url.searchParams.set('attendance_type', attendanceTypeEl.value);
+                let body = null;
+                if (method === 'POST') {
+                    body = JSON.stringify({
+                        dial_code: dialVal,
+                        whatsapp: waVal,
+                        referral_code: referralInput ? referralInput.value.trim() : '',
+                        voucher_code: voucherVal,
+                        force_new: forceNew ? '1' : '0',
+                        attendance_type: document.getElementById('attendanceTypeInput')?.value || ''
+                    });
+                } else {
+                    if(dialVal) url.searchParams.set('dial_code', dialVal);
+                    if(waVal) url.searchParams.set('whatsapp', waVal);
+                    if(referralInput && referralInput.value && referralInput.value.trim() !== '') url.searchParams.set('referral_code', referralInput.value.trim());
+                    if(voucherVal !== '') url.searchParams.set('voucher_code', voucherVal);
+                    if(forceNew) url.searchParams.set('force_new', '1');
+                    
+                    const attendanceTypeEl = document.getElementById('attendanceTypeInput');
+                    if(attendanceTypeEl && attendanceTypeEl.value) url.searchParams.set('attendance_type', attendanceTypeEl.value);
+                }
 
-                const res = await fetch(url.toString(), {
-                    method: 'GET',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                const fetchOptions = {
+                    method: method,
+                    headers: headers,
                     credentials: 'same-origin'
-                });
+                };
+                if (body) {
+                    fetchOptions.body = body;
+                }
+
+                const res = await fetch(url.toString(), fetchOptions);
                 const data = await res.json();
                 if(!res.ok || !data || (!data.snap_token && !data.redirect_url)){
-                    throw new Error(data && data.message ? data.message : 'Failed membuat token Midtrans');
+                    throw new Error((data && (data.message || data.error)) ? (data.message || data.error) : 'Failed membuat token Midtrans');
                 }
                 return data;
             }
@@ -1166,7 +1227,7 @@
                         } catch(_e) {}
                         showMidtransSuccessModal();
                         setTimeout(function(){
-                            window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                            window.location.href = redirectUrl;
                         }, 1400);
                     },
                     onPending: async function(){
@@ -1189,7 +1250,7 @@
                             if (result && result.status === 'settled') {
                                 showMidtransSuccessModal();
                                 setTimeout(function(){
-                                    window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                                    window.location.href = redirectUrl;
                                 }, 1400);
                                 return;
                             }
@@ -1215,7 +1276,7 @@
                             if (window.snap && typeof window.snap.hide === 'function') window.snap.hide();
                             showMidtransSuccessModal();
                             setTimeout(function(){
-                                window.location.href = @json(isset($event) ? route('events.show', $event->id) : route('dashboard'));
+                                window.location.href = redirectUrl;
                             }, 1400);
                         } else if (result.status === 'expired' || result.status === 'rejected') {
                             clearInterval(window._snapPollTimer);

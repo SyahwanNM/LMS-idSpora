@@ -68,6 +68,16 @@ class Event extends Model
         'is_reseller_event',
         'is_published',
         'published_at',
+        'accept_online_payment',
+        'accept_manual_transfer',
+        'bank_account_number',
+        'bank_name',
+        'bank_account_holder',
+        'start_submission',
+        'until_submission',
+        'announcement_date',
+        'until_submission_2',
+        'price_stage2',
     ];
 
     protected $casts = [
@@ -90,9 +100,16 @@ class Event extends Model
         'expenses_json' => 'array',
         'benefit' => 'array',
         'is_reseller_event' => 'boolean',
+        'accept_online_payment' => 'boolean',
+        'accept_manual_transfer' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
         'module_path' => 'array', // Added to support multiple trainer modules
+        'start_submission' => 'datetime',
+        'until_submission' => 'datetime',
+        'announcement_date' => 'datetime',
+        'until_submission_2' => 'datetime',
+        'price_stage2' => 'decimal:2',
     ];
 
     public function getHasApprovedModulesAttribute(): bool
@@ -125,12 +142,19 @@ class Event extends Model
     public function getDocumentsCompletedCountAttribute(): int
     {
         $hasVbg = !empty($this->vbg_path);
+        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
+
+        if ($this->jenis === 'Lomba') {
+            $count = 0;
+            if (!$isOfflineOnly && $hasVbg) {
+                $count++;
+            }
+            return $count;
+        }
 
         $hasModule = $this->has_approved_modules;
 
         $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
-
-        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
 
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {
@@ -152,11 +176,15 @@ class Event extends Model
     {
         // Determine denominator according to offline/online rule
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
-        $total = $isOfflineOnly ? 2 : 3;
+        if ($this->jenis === 'Lomba') {
+            $total = $isOfflineOnly ? 0 : 1;
+        } else {
+            $total = $isOfflineOnly ? 2 : 3;
+        }
         $done = (int) $this->documents_completed_count;
         $done = max(0, min($total, $done));
         if ($total === 0)
-            return 0;
+            return 100;
         if ($done === $total)
             return 100;
         return (int) floor(($done / $total) * 100);

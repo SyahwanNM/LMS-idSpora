@@ -164,17 +164,23 @@
                     </div>
 
                     <div class="mt-4">
-                        @if($event->price > 0)
-                            <a href="{{ route('payment', $event) }}" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm mb-3 transition-transform hover-up">
-                                Enroll Now
-                            </a>
+                        @if($event->jenis === 'Lomba' && $event->until_submission && \Carbon\Carbon::now()->gt($event->until_submission))
+                            <button class="btn btn-secondary w-100 py-3 fw-bold rounded-3 shadow-sm mb-3 cursor-not-allowed" disabled>
+                                Registration Closed
+                            </button>
                         @else
-                            <form action="{{ route('events.register', $event) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm mb-3 transition-transform hover-up">
-                                    Join for Free
-                                </button>
-                            </form>
+                            @if($event->price > 0)
+                                <a href="{{ route('payment', $event) }}" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm mb-3 transition-transform hover-up">
+                                    Enroll Now
+                                </a>
+                            @else
+                                <form action="{{ route('events.register', $event) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-warning w-100 py-3 fw-bold rounded-3 shadow-sm mb-3 transition-transform hover-up">
+                                        Join for Free
+                                    </button>
+                                </form>
+                            @endif
                         @endif
                         
                         @php

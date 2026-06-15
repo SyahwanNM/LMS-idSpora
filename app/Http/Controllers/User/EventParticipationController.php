@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\EventRegistration;
 use App\Models\EventDailyQr;
 use App\Models\EventDailyAttendance;
+use App\Models\ManualPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,13 @@ class EventParticipationController extends Controller
         $user = Auth::user();
         if (!$user) {
             return redirect()->back()->with('error', 'Login dahulu untuk mendaftar.');
+        }
+
+        if (strtolower(trim($event->jenis ?? '')) === 'lomba' && $event->until_submission && \Carbon\Carbon::now()->gt($event->until_submission)) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Pendaftaran Lomba sudah ditutup.'], 422);
+            }
+            return redirect()->back()->with('error', 'Pendaftaran Lomba sudah ditutup.');
         }
 
         if (!(bool) ($event->is_published ?? false)) {
@@ -72,8 +80,8 @@ class EventParticipationController extends Controller
                 UserNotification::create([
                     'user_id' => $user->id,
                     'type' => 'event_registration',
-                    'title' => 'Pendaftaran Dikonfirmasi',
-                    'message' => 'Pendaftaran untuk "' . $event->title . '" telah dikonfirmasi.',
+                    'title' => 'Registration Confirmed',
+                    'message' => 'Registration for "' . $event->title . '" has been confirmed.',
                     // Redirect back to detail event instead of ticket page
                     'data' => ['url' => route('events.registered.detail', $event)],
                     'expires_at' => now()->addDays(14),
@@ -133,9 +141,16 @@ class EventParticipationController extends Controller
                 return null;
             }
         };
-        $endTime = $parseEventTime($eventDate, $event->event_time_end);
-        if (!$endTime && $eventDate) {
-            $endTime = $eventDate->copy()->endOfDay();
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+        if ($isLomba) {
+            $endTime = $event->until_submission_2 ? Carbon::parse($event->until_submission_2) : (
+                $event->until_submission ? Carbon::parse($event->until_submission) : null
+            );
+        } else {
+            $endTime = $parseEventTime($eventDate, $event->event_time_end);
+            if (!$endTime && $eventDate) {
+                $endTime = $eventDate->copy()->endOfDay();
+            }
         }
 
         $isAttended = !empty($registration->attended_at) || in_array(strtolower((string) $registration->attendance_status), ['yes', 'present', 'attended']);
@@ -242,6 +257,10 @@ class EventParticipationController extends Controller
      */
     public function scanAttendance(Event $event, Request $request)
     {
+        if ($event->jenis === 'Lomba') {
+            return response()->json(['message' => 'Lomba tidak memiliki QR Attendance.'], 403);
+        }
+
         $user = Auth::user();
         if (!$user) {
             return response()->json(['message' => 'Login diperlukan.'], 401);
@@ -378,5 +397,495 @@ class EventParticipationController extends Controller
         $registration->save();
 
         return response()->json(['message' => 'Attendance berhasil disimpan.'], 200);
+    }
+
+    public function uploadInitialSubmission(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->back()->with('error', 'Login diperlukan.');
+        }
+
+        $registration = EventRegistration::where('event_id', $event->id)->where('user_id', $user->id)->first();
+        if (!$registration || $registration->status !== 'active') {
+            return redirect()->back()->with('error', 'Anda belum terdaftar aktif.');
+        }
+
+        if ($registration->submission_status === 'tidak_lolos') {
+            return redirect()->back()->with('error', 'Anda tidak dapat memperbarui submission karena dinyatakan tidak lolos.');
+        }
+
+        if ($registration->submission_status === 'lolos') {
+            return redirect()->back()->with('error', 'Anda tidak dapat memperbarui submission karena telah dinyatakan lolos ke tahap berikutnya.');
+        }
+
+        $now = Carbon::now();
+        if ($event->start_submission && $now->lt($event->start_submission)) {
+            return redirect()->back()->with('error', 'Pengiriman submission belum dibuka.');
+        }
+        if ($event->until_submission && $now->gt($event->until_submission)) {
+            return redirect()->back()->with('error', 'Pengiriman submission sudah ditutup.');
+        }
+
+        $request->validate([
+            'submission_file' => 'required|file|mimes:pdf|max:10240', // 10 MB
+        ]);
+
+        if ($request->hasFile('submission_file')) {
+            if ($registration->submission_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($registration->submission_path);
+            }
+
+            $path = $request->file('submission_file')->store('submissions', 'public');
+            $registration->submission_path = $path;
+            $registration->submission_uploaded_at = $now;
+            $registration->submission_status = 'pending';
+            $registration->save();
+
+            return redirect()->back()->with('success', 'Submission awal berhasil diunggah.');
+        }
+
+        return redirect()->back()->with('error', 'Gagal mengunggah file.');
+    }
+
+    public function uploadSecondSubmission(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->back()->with('error', 'Login diperlukan.');
+        }
+
+        $registration = EventRegistration::where('event_id', $event->id)->where('user_id', $user->id)->first();
+        if (!$registration || $registration->status !== 'active') {
+            return redirect()->back()->with('error', 'Anda belum terdaftar aktif.');
+        }
+
+        if ($registration->submission_status !== 'lolos') {
+            return redirect()->back()->with('error', 'Anda tidak lolos ke tahap berikutnya.');
+        }
+
+        // Block stage 2 upload if payment is still pending
+        if ($registration->stage2_payment_status === 'pending') {
+            return redirect()->route('events.payment.stage2', $event)
+                ->with('error', 'Harap selesaikan pembayaran Tahap 2 terlebih dahulu sebelum mengunggah submission.');
+        }
+
+        $now = Carbon::now();
+        if ($event->announcement_date && $now->lt($event->announcement_date)) {
+            return redirect()->back()->with('error', 'Pengiriman submission kedua belum dibuka.');
+        }
+        if ($event->until_submission_2 && $now->gt($event->until_submission_2)) {
+            return redirect()->back()->with('error', 'Pengiriman submission kedua sudah ditutup.');
+        }
+
+        $request->validate([
+            'submission_file_2' => 'required|file|mimes:pdf|max:10240', // 10 MB
+        ]);
+
+        if ($request->hasFile('submission_file_2')) {
+            if ($registration->submission_path_2) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($registration->submission_path_2);
+            }
+
+            $path = $request->file('submission_file_2')->store('submissions', 'public');
+            $registration->submission_path_2 = $path;
+            $registration->submission_2_uploaded_at = $now;
+            $registration->save();
+
+            return redirect()->back()->with('success', 'Submission kedua berhasil diunggah.');
+        }
+
+        return redirect()->back()->with('error', 'Gagal mengunggah file.');
+    }
+
+    // ─────────────────────────── Stage 2 Payment ────────────────────────────
+
+    /**
+     * Show Stage 2 payment page.
+     */
+    public function showStage2Payment(Event $event)
+    {
+        $user = Auth::user();
+        if (!$user) return redirect()->route('login');
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)->first();
+
+        if (!$registration || $registration->submission_status !== 'lolos') {
+            abort(403, 'Halaman ini hanya untuk peserta yang lolos Tahap 1.');
+        }
+
+        // Already paid or not required
+        if (in_array($registration->stage2_payment_status, ['settled', 'not_required'], true)) {
+            return redirect()->route('events.registered.detail', $event)
+                ->with('info', 'Pembayaran tahap 2 sudah selesai atau tidak diperlukan.');
+        }
+
+        // Check for existing pending manual payment
+        $existingPayment = ManualPayment::where('event_registration_id', $registration->id)
+            ->whereJsonContains('metadata->stage', 2)
+            ->where('status', 'pending')
+            ->latest()->first();
+
+        $isStage2 = true;
+        return view('user.payment', compact('event', 'registration', 'existingPayment', 'isStage2'));
+    }
+
+    /**
+     * Submit Stage 2 manual transfer payment.
+     */
+    public function submitStage2ManualPayment(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return redirect()->route('login');
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)->first();
+
+        if (!$registration || $registration->submission_status !== 'lolos') {
+            abort(403);
+        }
+
+        if ($registration->stage2_payment_status !== 'pending') {
+            return redirect()->back()->with('info', 'Status pembayaran sudah diperbarui.');
+        }
+
+        $request->validate([
+            'whatsapp'      => 'required|string|max:30',
+            'payment_proof' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+        ]);
+
+        $orderId = 'STG2-' . $registration->id . '-' . strtoupper(Str::random(6));
+
+        $payment = ManualPayment::create([
+            'event_id'              => $event->id,
+            'event_registration_id' => $registration->id,
+            'user_id'               => $user->id,
+            'order_id'              => $orderId,
+            'amount'                => (float) ($event->price_stage2 ?? 0),
+            'currency'              => 'IDR',
+            'method'                => 'manual_transfer',
+            'whatsapp_number'       => $request->whatsapp,
+            'status'                => 'pending',
+            'metadata'              => ['stage' => 2, 'source' => 'stage2_payment'],
+        ]);
+
+        // Upload proof
+        if ($request->hasFile('payment_proof')) {
+            $file = $request->file('payment_proof');
+            $path = $file->store('payments/stage2', 'public');
+            \App\Models\PaymentProof::create([
+                'manual_payment_id' => $payment->id,
+                'event_registration_id' => $registration->id,
+                'file_path' => $path,
+                'mime_type' => $file->getClientMimeType(),
+                'file_size' => $file->getSize(),
+                'uploaded_by' => $user->id,
+            ]);
+        }
+
+        return redirect()->route('events.registered.detail', $event)
+            ->with('success', 'Bukti pembayaran berhasil dikirim. Mohon tunggu konfirmasi admin.');
+    }
+
+    /**
+     * Create Midtrans order for Stage 2 payment.
+     */
+    public function createStage2MidtransOrder(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Unauthenticated'], 401);
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)->first();
+
+        if (!$registration || $registration->submission_status !== 'lolos') {
+            return response()->json(['error' => 'Akses ditolak'], 403);
+        }
+
+        if ($registration->stage2_payment_status !== 'pending') {
+            return response()->json(['error' => 'Status pembayaran tidak memerlukan pembayaran.'], 422);
+        }
+
+        $amount = (float) ($event->price_stage2 ?? 0);
+        if ($amount <= 0) {
+            return response()->json(['error' => 'Nominal tidak valid.'], 422);
+        }
+
+        $forceNew = (bool) $request->boolean('force_new');
+
+        // Reuse existing pending midtrans order if any
+        $existingPayment = ManualPayment::where('event_registration_id', $registration->id)
+            ->where('user_id', $user->id)
+            ->where('method', 'midtrans')
+            ->where('status', 'pending')
+            ->where(function($q) {
+                $q->whereJsonContains('metadata->stage', 2)
+                  ->orWhere('order_id', 'like', 'STG2-%');
+            })
+            ->latest('id')
+            ->first();
+
+        if ($existingPayment && !$forceNew) {
+            $snapToken = data_get($existingPayment->metadata, 'snap_token');
+            if ($snapToken && $existingPayment->created_at && now()->diffInHours($existingPayment->created_at) < 24) {
+                return response()->json(['snap_token' => $snapToken, 'order_id' => $existingPayment->order_id]);
+            }
+        }
+
+        if ($existingPayment) {
+            $existingPayment->update(['status' => 'expired']);
+        }
+
+        $orderId = 'STG2-' . $registration->id . '-' . strtoupper(Str::random(6));
+
+        $dial = trim((string) $request->input('dial_code'));
+        $wa = trim((string) $request->input('whatsapp'));
+        $phone = trim($dial . $wa);
+        if ($phone === '') {
+            $phone = (string) ($user->phone ?? '');
+        }
+
+        try {
+            \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
+            \Midtrans\Config::$isSanitized  = true;
+            \Midtrans\Config::$is3ds        = true;
+
+            $params = [
+                'transaction_details' => [
+                    'order_id'     => $orderId,
+                    'gross_amount' => (int) $amount,
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name,
+                    'email'      => $user->email,
+                    'phone'      => $phone,
+                ],
+                'item_details' => [[
+                    'id'       => 'stage2-' . $event->id,
+                    'price'    => (int) $amount,
+                    'quantity' => 1,
+                    'name'     => 'Pembayaran Tahap 2 - ' . $event->title,
+                ]],
+            ];
+
+            $snapToken = \Midtrans\Snap::getSnapToken($params);
+
+            // Record pending midtrans payment
+            ManualPayment::create([
+                'event_id'              => $event->id,
+                'event_registration_id' => $registration->id,
+                'user_id'               => $user->id,
+                'order_id'              => $orderId,
+                'amount'                => $amount,
+                'currency'              => 'IDR',
+                'method'                => 'midtrans',
+                'status'                => 'pending',
+                'whatsapp_number'       => $phone ?: null,
+                'metadata'              => ['stage' => 2, 'snap_token' => $snapToken, 'source' => 'stage2_payment'],
+            ]);
+
+            return response()->json(['snap_token' => $snapToken, 'order_id' => $orderId]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Gagal membuat transaksi Midtrans: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Check pending Midtrans order status for Stage 2.
+     */
+    public function stage2PendingOrder(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)->first();
+
+        if (!$registration) {
+            return response()->json(['error' => 'Registration not found.'], 404);
+        }
+
+        $payment = ManualPayment::where('event_registration_id', $registration->id)
+            ->where('user_id', $user->id)
+            ->where('method', 'midtrans')
+            ->where('status', 'pending')
+            ->where(function($q) {
+                $q->whereJsonContains('metadata->stage', 2)
+                  ->orWhere('order_id', 'like', 'STG2-%');
+            })
+            ->latest('id')
+            ->first();
+
+        if ($payment && $payment->order_id) {
+            try {
+                \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+                \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
+                
+                $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
+                
+                $transactionStatus = $midtransStatus['transaction_status'] ?? null;
+                $fraudStatus = $midtransStatus['fraud_status'] ?? null;
+                
+                $actualStatus = 'pending';
+                if ($transactionStatus == 'capture') {
+                    if ($fraudStatus == 'challenge') {
+                        $actualStatus = 'pending';
+                    } else if ($fraudStatus == 'accept') {
+                        $actualStatus = 'settled';
+                    }
+                } else if ($transactionStatus == 'settlement') {
+                    $actualStatus = 'settled';
+                } else if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
+                    $actualStatus = 'expired';
+                }
+
+                if ($actualStatus !== 'pending') {
+                    $payment->status = $actualStatus;
+                    $payment->save();
+
+                    if ($actualStatus === 'settled') {
+                        $registration->stage2_payment_status = 'settled';
+                        $registration->stage2_payment_at = now();
+                        $registration->save();
+                    } else {
+                        $registration->stage2_payment_status = 'pending';
+                        $registration->save();
+                    }
+
+                    $payment = null;
+                }
+            } catch (\Throwable $e) {
+                if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
+                    if ($payment->created_at && now()->diffInHours($payment->created_at) >= 24) {
+                        $payment->status = 'expired';
+                        $payment->save();
+                        $payment = null;
+                    }
+                }
+            }
+        }
+
+        if ($payment) {
+            return response()->json([
+                'pending' => true,
+                'order_id' => $payment->order_id,
+                'snap_token' => data_get($payment->metadata, 'snap_token'),
+                'whatsapp_number' => $payment->whatsapp_number,
+            ]);
+        }
+
+        return response()->json([
+            'pending' => false,
+            'needs_force_new' => true,
+        ]);
+    }
+
+
+    /**
+     * Settle Stage 2 payment (called after Midtrans success callback / admin confirm).
+     */
+    public function settleStage2Payment(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'Unauthenticated'], 401);
+            }
+            return redirect()->route('login');
+        }
+
+        $request->validate(['order_id' => 'required|string']);
+
+        $registration = EventRegistration::where('event_id', $event->id)
+            ->where('user_id', $user->id)->first();
+
+        if (!$registration) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'Registration not found.'], 404);
+            }
+            abort(404);
+        }
+
+        // Find the matching manual payment
+        $payment = ManualPayment::where('order_id', $request->order_id)
+            ->where('event_registration_id', $registration->id)
+            ->whereJsonContains('metadata->stage', 2)
+            ->first();
+
+        if (!$payment) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => 'Payment not found.'], 404);
+            }
+            abort(404);
+        }
+
+        try {
+            \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
+            
+            $status = (array) \Midtrans\Transaction::status($request->order_id);
+            
+            $transactionStatus = $status['transaction_status'] ?? null;
+            $fraudStatus = $status['fraud_status'] ?? null;
+            
+            $actualStatus = 'pending';
+            if ($transactionStatus == 'capture') {
+                if ($fraudStatus == 'challenge') {
+                    $actualStatus = 'pending';
+                } else if ($fraudStatus == 'accept') {
+                    $actualStatus = 'settled';
+                }
+            } else if ($transactionStatus == 'settlement') {
+                $actualStatus = 'settled';
+            } else if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
+                $actualStatus = 'expired';
+            }
+
+            $payment->status = $actualStatus;
+            $payment->save();
+
+            if ($actualStatus === 'settled') {
+                $registration->stage2_payment_status = 'settled';
+                $registration->stage2_payment_at = now();
+                $registration->save();
+            } else {
+                $registration->stage2_payment_status = 'pending';
+                $registration->save();
+            }
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => $actualStatus === 'settled',
+                    'status' => $actualStatus,
+                    'message' => $actualStatus === 'settled' 
+                        ? 'Pembayaran Tahap 2 berhasil dikonfirmasi!' 
+                        : 'Status pembayaran: ' . $actualStatus,
+                    'redirect' => route('events.registered.detail', $event)
+                ]);
+            }
+
+            if ($actualStatus === 'settled') {
+                return redirect()->route('events.registered.detail', $event)
+                    ->with('success', 'Pembayaran Tahap 2 berhasil dikonfirmasi! Anda sekarang dapat mengunggah submission tahap 2.');
+            }
+
+            return redirect()->route('events.registered.detail', $event)
+                ->with('info', 'Status pembayaran Tahap 2 Anda: ' . $actualStatus);
+
+        } catch (\Throwable $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'pending',
+                    'message' => 'Status pembayaran pending.'
+                ]);
+            }
+            return redirect()->route('events.registered.detail', $event)
+                ->with('info', 'Status pembayaran Tahap 2 pending.');
+        }
     }
 }

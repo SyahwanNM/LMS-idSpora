@@ -23,7 +23,9 @@
             <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
                 <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Add Event</button>
+                @if(auth()->user()->role !== 'event_admin')
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Add Event</button>
+                @endif
             </div>
         </div>
 
@@ -99,6 +101,7 @@
                                 <th>Date</th>
                                 <th>Location</th>
                                 <th>Link</th>
+                                <th>Reseller</th>
                                 <th>Documents Completion</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -176,7 +179,13 @@
                                         �
                                     @endif
                                 </td>
-                               
+                                <td>
+                                    @if((bool) ($event->is_reseller_event ?? false))
+                                        <span class="badge bg-success">Ya</span>
+                                    @else
+                                        <span class="badge bg-secondary">Tidak</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @php 
                                         $hasMapsLink = !empty($event->maps_url);
@@ -236,23 +245,25 @@
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="bottom" title="View Event">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
-                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit">
-                                            <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-secondary btn-action-icon duplicate-event-btn"
-                                            data-id="{{ $event->id }}"
-                                            data-title="{{ $event->title }}"
-                                            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Duplicate">
-                                            <i class="bi bi-copy"></i><span class="visually-hidden">Duplicate</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger btn-action-icon"
-                                            data-bs-toggle="modal" data-bs-target="#deleteEventModal"
-                                            title="Delete"
-                                            data-url="{{ route('admin.events.destroy',$event) }}"
-                                            data-title="{{ $event->title }}"
-                                            data-image="{{ $event->image_url ?? '' }}">
-                                            <i class="bi bi-trash"></i><span class="visually-hidden">Delete</span>
-                                        </button>
+                                        @if(auth()->user()->role !== 'event_admin')
+                                            <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit">
+                                                <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-secondary btn-action-icon duplicate-event-btn"
+                                                data-id="{{ $event->id }}"
+                                                data-title="{{ $event->title }}"
+                                                data-bs-toggle="tooltip" data-bs-placement="bottom" title="Duplicate">
+                                                <i class="bi bi-copy"></i><span class="visually-hidden">Duplicate</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-action-icon"
+                                                data-bs-toggle="modal" data-bs-target="#deleteEventModal"
+                                                title="Delete"
+                                                data-url="{{ route('admin.events.destroy',$event) }}"
+                                                data-title="{{ $event->title }}"
+                                                data-image="{{ $event->image_url ?? '' }}">
+                                                <i class="bi bi-trash"></i><span class="visually-hidden">Delete</span>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -777,7 +788,7 @@
                                     </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i class="bi bi-plus-circle me-1"></i>Tambah Nama Pembicara</button>
                                     <input type="hidden" name="speaker" id="speakerCombined" value="{{ old('speaker') }}">
-                                    <div class="form-text">Minimum 1 trainer. Additional speakers are optional.</div>
+                                    <div class="form-text" id="speakerHelpText">Minimum 1 trainer. Additional speakers are optional.</div>
                                 </div>
                                 </div>
                                 <div class="mb-3">
@@ -841,7 +852,7 @@
                                     <label for="jenis" class="form-label fw-semibold">Event type <span class="text-danger">*</span></label>
                                     <div class="position-relative">
                                         @php
-                                            $jenisDefaults = ['Webinar','Seminar','Workshop'];
+                                            $jenisDefaults = ['Webinar','Seminar','Workshop','Lomba'];
                                             $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
                                             $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))->map(fn($v) => trim((string)$v))->filter()->unique(fn($v) => mb_strtolower($v))->values()->all();
 
@@ -856,6 +867,30 @@
                                         </select>
                                     </div>
                                     <div class="form-text">Choose the event type.</div>
+                                </div>
+
+                                {{-- Competition settings block — shown only when event type is Lomba --}}
+                                <div id="lombaSettingsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('jenis') === 'Lomba' ? '' : 'display: none;' }}">
+                                    <h6 class="fw-bold mb-3 text-primary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏆 Pengaturan Kompetisi / Lomba</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-6 mb-2">
+                                            <label for="start_submission" class="form-label small fw-semibold mb-1">Mulai Pengiriman Submission <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="start_submission" id="start_submission" class="form-control form-control-sm" value="{{ old('start_submission') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="until_submission" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Awal <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="until_submission" id="until_submission" class="form-control form-control-sm" value="{{ old('until_submission') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="announcement_date" class="form-label small fw-semibold mb-1">Tanggal Pengumuman Kelolosan <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="announcement_date" id="announcement_date" class="form-control form-control-sm" value="{{ old('announcement_date') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="until_submission_2" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Kedua/Lanjutan <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="until_submission_2" id="until_submission_2" class="form-control form-control-sm" value="{{ old('until_submission_2') }}">
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-muted mt-1 small">Wajib diatur jika jenis event adalah Lomba. Peserta yang lolos pengumuman awal dapat mengunggah submission kedua.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="short_desc" class="form-label fw-semibold">Short Description <span class="text-danger">*</span></label>
@@ -939,6 +974,40 @@
                                         <small class="text-muted d-block mt-1">Set 0 for free. The lower price will be used as the base price.</small>
                                     </div>
                                     <small class="text-muted mt-1 d-block" id="price-single-hint">Use only numbers. Automatically formatted.</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Metode Pembayaran</label>
+                                    <div class="d-flex gap-3 align-items-center mb-2">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="accept_online_payment" id="accept_online_payment" value="1" {{ old('accept_online_payment', 1) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-medium text-dark" for="accept_online_payment">💳 Online Payment</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="accept_manual_transfer" id="accept_manual_transfer" value="1" {{ old('accept_manual_transfer', 1) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-medium text-dark" for="accept_manual_transfer">🏦 Transfer Manual</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-muted">Pilih metode pembayaran yang diperbolehkan untuk event ini.</div>
+                                </div>
+
+                                {{-- Bank details container — shown only when accept_manual_transfer is checked --}}
+                                <div id="bankDetailsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('accept_manual_transfer', 1) ? '' : 'display: none;' }}">
+                                    <h6 class="fw-bold mb-3 text-secondary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏦 Informasi Rekening Transfer</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <label for="bank_name" class="form-label small fw-semibold mb-1">Nama Bank <span class="text-danger">*</span></label>
+                                            <input type="text" name="bank_name" id="bank_name" class="form-control form-control-sm" value="{{ old('bank_name') }}" placeholder="Contoh: Bank BCA">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="bank_account_number" class="form-label small fw-semibold mb-1">Nomor Rekening <span class="text-danger">*</span></label>
+                                            <input type="text" name="bank_account_number" id="bank_account_number" class="form-control form-control-sm" value="{{ old('bank_account_number') }}" placeholder="Contoh: 12345678">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="bank_account_holder" class="form-label small fw-semibold mb-1">Nama Pemilik Rekening <span class="text-danger">*</span></label>
+                                            <input type="text" name="bank_account_holder" id="bank_account_holder" class="form-control form-control-sm" value="{{ old('bank_account_holder') }}" placeholder="Contoh: Faishal">
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-muted mt-1 small">Wajib diisi jika Transfer Manual diaktifkan. Informasi ini akan ditampilkan di halaman pembayaran peserta.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="diskon" class="form-label fw-semibold">Discount (%)</label>
@@ -1088,6 +1157,74 @@
 
         <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Payment method toggle logic
+            const acceptManualCheckbox = document.getElementById('accept_manual_transfer');
+            const bankDetailsContainer = document.getElementById('bankDetailsContainer');
+            const bankNameInput = document.getElementById('bank_name');
+            const bankAccNoInput = document.getElementById('bank_account_number');
+            const bankAccHolderInput = document.getElementById('bank_account_holder');
+
+            if (acceptManualCheckbox && bankDetailsContainer) {
+                const toggleBankDetails = () => {
+                    const checked = acceptManualCheckbox.checked;
+                    bankDetailsContainer.style.display = checked ? '' : 'none';
+                    if (bankNameInput) bankNameInput.required = checked;
+                    if (bankAccNoInput) bankAccNoInput.required = checked;
+                    if (bankAccHolderInput) bankAccHolderInput.required = checked;
+                };
+                acceptManualCheckbox.addEventListener('change', toggleBankDetails);
+                toggleBankDetails(); // run initially
+            }
+
+            // Lomba/Competition dynamic form logic
+            const jenisSelect = document.getElementById('jenis');
+            const boxTrainerEvent = document.querySelector('.box-trainer-event');
+            const lombaSettingsContainer = document.getElementById('lombaSettingsContainer');
+
+            const startSubmissionInput = document.getElementById('start_submission');
+            const untilSubmissionInput = document.getElementById('until_submission');
+            const announcementDateInput = document.getElementById('announcement_date');
+            const untilSubmission2Input = document.getElementById('until_submission_2');
+
+            if (jenisSelect) {
+                const toggleLombaFields = () => {
+                    const isLomba = jenisSelect.value === 'Lomba';
+                    
+                    if (lombaSettingsContainer) lombaSettingsContainer.style.display = isLomba ? '' : 'none';
+
+                    if (boxTrainerEvent) {
+                        boxTrainerEvent.style.display = isLomba ? 'none' : '';
+                        
+                        // Disable inputs so they are not validated/submitted when hidden
+                        const inputs = boxTrainerEvent.querySelectorAll('select, input');
+                        inputs.forEach(input => {
+                            input.disabled = isLomba;
+                        });
+
+                        const star = boxTrainerEvent.querySelector('label span.text-danger');
+                        if (star) star.style.display = isLomba ? 'none' : '';
+                        
+                        const helpText = boxTrainerEvent.querySelector('#speakerHelpText');
+                        if (helpText) {
+                            helpText.textContent = isLomba 
+                                ? 'Trainer/Speaker is optional. Add speaker is optional.' 
+                                : 'Minimum 1 trainer. Additional speakers are optional.';
+                        }
+                    }
+
+                    if (typeof updateSpeakerRowsState === 'function') updateSpeakerRowsState();
+                    if (typeof updateSubmitState === 'function') updateSubmitState();
+
+                    if (startSubmissionInput) startSubmissionInput.required = isLomba;
+                    if (untilSubmissionInput) untilSubmissionInput.required = isLomba;
+                    if (announcementDateInput) announcementDateInput.required = isLomba;
+                    if (untilSubmission2Input) untilSubmission2Input.required = isLomba;
+                };
+
+                jenisSelect.addEventListener('change', toggleLombaFields);
+                toggleLombaFields(); // run initially
+            }
+
             var publishModalEl = document.getElementById('publishConfirmModal');
             var publishModal = (publishModalEl && window.bootstrap && typeof bootstrap.Modal === 'function') ? new bootstrap.Modal(publishModalEl) : null;
             var pendingPublishForm = null;
@@ -1712,6 +1849,9 @@
                     const data = await resp.json();
                     if(resp.ok && data.lat && data.lng){
                         showMap(parseFloat(data.lat), parseFloat(data.lng));
+                        if(data.place_name && placeNameInput){
+                            placeNameInput.value = data.place_name;
+                        }
                     }else{
                         alert(data.message || 'Coordinates not found from link.');
                     }
@@ -1837,10 +1977,12 @@
         function updateSpeakerRowsState(){
             if(!speakersContainer) return;
             const rows = speakersContainer.querySelectorAll('.speaker-row');
+            const jenisSelect = document.querySelector('#addEventModal #jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
             rows.forEach((row, idx) => {
                 const sel = row.querySelector('select[name="speakers[]"]');
                 const rm  = row.querySelector('.remove-speaker');
-                if(sel){ sel.required = (idx === 0); }
+                if(sel){ sel.required = (idx === 0 && !isLomba); }
                 if(rm){ rm.disabled = (rows.length <= 1); }
             });
         }
@@ -3310,10 +3452,12 @@ function initEditEventSpeakers(modalEl){
     function updateSpeakerRowsState() {
         if (!speakersContainer) return;
         const rows = speakersContainer.querySelectorAll('.speaker-row');
+        const jenisSelect = modalEl.querySelector('#jenis');
+        const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
         rows.forEach((row, idx) => {
             const sel = row.querySelector('select[name="speakers[]"]');
             const rm = row.querySelector('.remove-speaker');
-            if (sel) sel.required = (idx === 0);
+            if (sel) sel.required = (idx === 0 && !isLomba);
             if (rm) rm.disabled = (rows.length <= 1);
         });
     }

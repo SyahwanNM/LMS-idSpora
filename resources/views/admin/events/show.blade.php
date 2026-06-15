@@ -87,6 +87,7 @@
                                 @endif
                                 
                                 <div class="row g-3 mb-4">
+                                    @if($event->jenis !== 'Lomba')
                                     <div class="col-md-6">
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-person-fill text-primary me-2"></i>
@@ -96,6 +97,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    @endif
                                     <div class="col-md-6">
                                         <div class="d-flex align-items-center">
                                             <i class="bi bi-journal-text text-secondary me-2"></i>
@@ -219,7 +221,11 @@
                                                 <div class="live-dot-ring me-1">
                                                     <span class="live-dot"></span>
                                                 </div>
-                                                <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-broadcast text-primary me-2"></i>Live Monitoring Kehadiran (Real-time)</h5>
+                                                @if($event->jenis === 'Lomba')
+                                                    <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-broadcast text-primary me-2"></i>Monitoring pendaftaran per hari</h5>
+                                                @else
+                                                    <h5 class="mb-0 text-dark fw-bold"><i class="bi bi-broadcast text-primary me-2"></i>Live Monitoring Kehadiran (Real-time)</h5>
+                                                @endif
                                             </div>
                                             <span class="badge bg-light text-dark border small" id="lastUpdatedBadge">Terakhir diupdate: -</span>
                                         </div>
@@ -238,7 +244,11 @@
                                                     </div>
                                                     <!-- Chart Container -->
                                                     <div class="bg-light p-3 border rounded shadow-sm">
-                                                        <h6 class="text-dark fw-semibold mb-3"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Grafik Persentase Kehadiran per Hari</h6>
+                                                        @if($event->jenis === 'Lomba')
+                                                            <h6 class="text-dark fw-semibold mb-3"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Grafik Pendaftaran per Hari</h6>
+                                                        @else
+                                                            <h6 class="text-dark fw-semibold mb-3"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Grafik Persentase Kehadiran per Hari</h6>
+                                                        @endif
                                                         <div style="position: relative; height: 260px;">
                                                             <canvas id="attendanceChart"></canvas>
                                                         </div>
@@ -248,7 +258,11 @@
                                                 <!-- Live Check-in Feed Column -->
                                                 <div class="col-xl-4">
                                                     <div class="border rounded p-3 h-100 bg-white d-flex flex-column shadow-sm" style="max-height: 400px;">
-                                                        <h6 class="text-dark fw-semibold mb-3 border-bottom pb-2"><i class="bi bi-activity me-2 text-success"></i>Feed Check-in Terbaru</h6>
+                                                        @if($event->jenis === 'Lomba')
+                                                            <h6 class="text-dark fw-semibold mb-3 border-bottom pb-2"><i class="bi bi-activity me-2 text-success"></i>Pendaftaran Terbaru</h6>
+                                                        @else
+                                                            <h6 class="text-dark fw-semibold mb-3 border-bottom pb-2"><i class="bi bi-activity me-2 text-success"></i>Feed Check-in Terbaru</h6>
+                                                        @endif
                                                         <div class="overflow-y-auto flex-grow-1" id="liveCheckinFeed" style="max-height: 320px;">
                                                             <div class="text-center text-muted py-5 small">Memuat aktivitas...</div>
                                                         </div>
@@ -264,7 +278,13 @@
                             @php
                                 // Eager-load users for participant list
                                 try {
-                                    $registrations = $event->registrations()->with(['user', 'paymentProofs', 'dailyAttendances'])->latest()->get();
+                                    $registrations = $event->registrations()
+                                        ->whereHas('user', function ($query) {
+                                            $query->where('role', '!=', 'admin');
+                                        })
+                                        ->with(['user', 'paymentProofs', 'dailyAttendances'])
+                                        ->latest()
+                                        ->get();
                                 } catch (\Throwable $e) {
                                     $registrations = collect();
                                 }
@@ -292,12 +312,25 @@
                                                         <th style="width:200px;">Email</th>
                                                         <th style="width:140px;">Phone</th>
                                                         <th style="width:120px;">Status</th>
+                                                        @if($event->jenis === 'Lomba')
+<th style="width:250px;">Lomba Submission</th>
+                                                        @endif
                                                         <th style="width:160px;">Registered</th>
                                                         <th style="width:160px;">Actions</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @foreach($registrations as $i => $reg)
+                                                    @php
+                                                        $pendingStage2Payment = \App\Models\ManualPayment::where('event_registration_id', $reg->id)
+                                                            ->where('status', 'pending')
+                                                            ->where(function($q) {
+                                                                $q->whereJsonContains('metadata->stage', 2)
+                                                                  ->orWhere('order_id', 'like', 'STG2-%');
+                                                            })
+                                                            ->first();
+                                                        $stage2ProofPath = $pendingStage2Payment ? optional($pendingStage2Payment->proofs()->latest()->first())->file_path : null;
+                                                    @endphp
                                                     <tr data-reg-code="{{ $reg->registration_code ?? '' }}">
                                                         <td>{{ $i+1 }}</td>
                                                         <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
@@ -333,7 +366,96 @@
                                                             @if($st === 'pending' && !empty($reg->payment_proof))
                                                                 <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">PROOF</span>
                                                             @endif
+                                                            @if($pendingStage2Payment && $stage2ProofPath)
+                                                                <span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">PROOF TAHAP 2</span>
+                                                            @endif
                                                         </td>
+                                                        @if($event->jenis === 'Lomba')
+                                                         <td>
+                                                             @if($reg->submission_path)
+                                                                 <div class="mb-2">
+                                                                     <span class="small text-muted d-block fw-bold">Tahap 1:</span>
+                                                                     <a href="{{ Storage::disk('public')->url($reg->submission_path) }}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 my-1" style="font-size: 11px;">
+                                                                         <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> File Awal
+                                                                     </a>
+                                                                     <div class="mt-1">
+                                                                         @if($reg->submission_status === 'lolos')
+                                                                             <span class="badge bg-success" style="font-size: 10px;">Lolos</span>
+                                                                         @elseif($reg->submission_status === 'tidak_lolos')
+                                                                             <span class="badge bg-danger" style="font-size: 10px;">Tidak Lolos</span>
+                                                                         @else
+                                                                             <span class="badge bg-warning text-dark" style="font-size: 10px;">Pending</span>
+                                                                         @endif
+                                                                     </div>
+
+                                                                     @if($reg->submission_notes)
+                                                                         <div class="mt-1 small text-muted text-start" style="font-size: 10px; max-width: 150px; white-space: normal; word-break: break-word;">
+                                                                             <strong>Catatan:</strong> {{ Str::limit($reg->submission_notes, 50) }}
+                                                                         </div>
+                                                                     @endif
+                                                                     
+                                                                     {{-- Status Setting Buttons --}}
+                                                                     @if($st === 'active')
+                                                                     <div class="mt-2 d-flex gap-1">
+                                                                         {{-- Trigger Modal for Lolos --}}
+                                                                         <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#reviewModalLolos-{{ $reg->id }}">
+                                                                             <i class="bi bi-check2-circle me-1"></i>Lolos
+                                                                         </button>
+
+                                                                         <!-- Modal Lolos for $reg->id -->
+                                                                         <div class="modal fade shadow-sm" id="reviewModalLolos-{{ $reg->id }}" tabindex="-1" aria-labelledby="reviewModalLolosLabel-{{ $reg->id }}" aria-hidden="true">
+                                                                             <div class="modal-dialog modal-dialog-centered">
+                                                                                 <div class="modal-content">
+                                                                                     <div class="modal-header">
+                                                                                         <h5 class="modal-title fw-bold" id="reviewModalLolosLabel-{{ $reg->id }}">
+                                                                                             <i class="bi bi-check2-circle text-success me-2"></i>Nyatakan Peserta Lolos & Beri Catatan
+                                                                                         </h5>
+                                                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                                     </div>
+                                                                                     <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $reg]) }}">
+                                                                                         @csrf
+                                                                                         <input type="hidden" name="status" value="lolos">
+                                                                                         <div class="modal-body text-start">
+                                                                                             <p class="text-muted small">Anda akan menyatakan bahwa submission dari <strong>{{ $reg->user->name }}</strong> dinyatakan <strong>Lolos</strong>. Berikan catatan atau revisi yang harus dibaca oleh peserta (opsional).</p>
+                                                                                             <div class="mb-3">
+                                                                                                 <label for="submission_notes-{{ $reg->id }}" class="form-label fw-bold">Catatan / Revisi:</label>
+                                                                                                 <textarea class="form-control text-start" id="submission_notes-{{ $reg->id }}" name="submission_notes" rows="4" placeholder="Tulis catatan revisi atau instruksi selanjutnya untuk peserta...">{{ $reg->submission_notes }}</textarea>
+                                                                                             </div>
+                                                                                         </div>
+                                                                                         <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+                                                                                             <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Batal</button>
+                                                                                             <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="border-radius: 10px;">Simpan & Loloskan</button>
+                                                                                         </div>
+                                                                                     </form>
+                                                                                 </div>
+                                                                             </div>
+                                                                         </div>
+
+                                                                         <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $reg]) }}" class="d-inline">
+                                                                             @csrf
+                                                                             <input type="hidden" name="status" value="tidak_lolos">
+                                                                             <button type="submit" class="btn btn-xs btn-danger py-0 px-2" style="font-size: 11px;" onclick="return confirm('Nyatakan peserta ini TIDAK LOLOS?')">
+                                                                                 <i class="bi bi-x-circle me-1"></i>Tidak
+                                                                             </button>
+                                                                         </form>
+                                                                     </div>
+                                                                     @endif
+                                                                 </div>
+                                                             @else
+                                                                 <span class="text-muted small">Belum unggah file awal</span>
+                                                             @endif
+
+                                                             @if($reg->submission_path_2)
+                                                                 <div class="mt-2 pt-2 border-top">
+                                                                     <span class="small text-muted d-block fw-bold">Tahap 2:</span>
+                                                                     <a href="{{ Storage::disk('public')->url($reg->submission_path_2) }}" target="_blank" class="btn btn-xs btn-outline-success py-0 px-2 my-1" style="font-size: 11px;">
+                                                                         <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> File Akhir
+                                                                     </a>
+                                                                     <div class="text-muted small mt-1" style="font-size: 9px; line-height: 1.2;">Diunggah: {{ $reg->submission_2_uploaded_at ? $reg->submission_2_uploaded_at->format('d M H:i') : '' }}</div>
+                                                                 </div>
+                                                             @endif
+                                                         </td>
+                                                         @endif
                                                         <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                                         <td>
                                                             @if($st === 'pending' && !empty($reg->payment_proof))
@@ -363,32 +485,64 @@
                                                                     </div>
                                                                 </div>
                                                             @elseif($st === 'active')
-                                                                <div class="d-flex align-items-center gap-1">
-                                                                    @php
-                                                                        $attendedDays = $reg->dailyAttendances->pluck('day_number')->toArray();
-                                                                        $totalEventDays = max(1, count($dailyQrs));
-                                                                    @endphp
-                                                                    <button class="btn btn-xs btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
-                                                                            type="button"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#presenceModal"
-                                                                            data-reg-id="{{ $reg->id }}"
-                                                                            data-user-name="{{ $reg->user->name ?? '-' }}"
-                                                                            data-attended-days="{{ json_encode($attendedDays) }}"
-                                                                            data-total-days="{{ $totalEventDays }}"
-                                                                            data-reg-status-yes="{{ $reg->attendance_status === 'yes' ? 1 : 0 }}"
-                                                                            style="font-size:11px; height: 22px; line-height: 22px;">
-                                                                        <i class="bi bi-calendar-check"></i> Presensi
-                                                                    </button>
-                                                                    <form method="POST" action="{{ route('admin.events.registrations.cancel', [$event, $reg]) }}" class="d-inline m-0">
-                                                                        @csrf
-                                                                        @method('PATCH')
-                                                                        <button type="submit" class="btn btn-xs btn-outline-warning py-0 px-2" style="font-size:11px; height: 22px; line-height: 22px;"
-                                                                            onclick="return confirm('Batalkan approval ini? Status akan kembali ke pending.')">
-                                                                            <i class="bi bi-arrow-counterclockwise"></i> Batal ACC
-                                                                        </button>
-                                                                    </form>
-                                                                </div>
+                                                                 <div class="d-flex flex-column gap-2" style="width:fit-content;">
+                                                                     @if($pendingStage2Payment && $stage2ProofPath)
+                                                                         <div class="d-flex flex-column gap-1 p-2 border border-info rounded bg-info-subtle" style="min-width: 140px;">
+                                                                             <span class="small text-dark fw-bold d-block" style="font-size: 10px;">Tahap 2 Manual:</span>
+                                                                             <a href="{{ Storage::disk('public')->url($stage2ProofPath) }}"
+                                                                                target="_blank"
+                                                                                class="btn btn-xs btn-outline-secondary py-0 px-2 mb-1 bg-white" style="font-size:11px;width:fit-content;">
+                                                                                 <i class="bi bi-image me-1"></i>Bukti T2
+                                                                             </a>
+                                                                             <div class="d-flex gap-1">
+                                                                                 <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
+                                                                                     data-bs-toggle="modal"
+                                                                                     data-bs-target="#approveModal"
+                                                                                     data-reg-id="{{ $reg->id }}"
+                                                                                     data-event-id="{{ $event->id }}"
+                                                                                     data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                                     <i class="bi bi-check2"></i> OK
+                                                                                 </button>
+                                                                                 <button type="button" class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;"
+                                                                                     data-bs-toggle="modal"
+                                                                                     data-bs-target="#rejectModal"
+                                                                                     data-reg-id="{{ $reg->id }}"
+                                                                                     data-event-id="{{ $event->id }}"
+                                                                                     data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                                     <i class="bi bi-x"></i> Reject
+                                                                                 </button>
+                                                                             </div>
+                                                                         </div>
+                                                                     @endif
+                                                                     <div class="d-flex align-items-center gap-1">
+                                                                         @php
+                                                                             $attendedDays = $reg->dailyAttendances->pluck('day_number')->toArray();
+                                                                             $totalEventDays = max(1, count($dailyQrs));
+                                                                         @endphp
+                                                                         @if(strtolower(trim($event->jenis ?? '')) !== 'lomba')
+                                                                         <button class="btn btn-xs btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
+                                                                                 type="button"
+                                                                                 data-bs-toggle="modal"
+                                                                                 data-bs-target="#presenceModal"
+                                                                                 data-reg-id="{{ $reg->id }}"
+                                                                                 data-user-name="{{ $reg->user->name ?? '-' }}"
+                                                                                 data-attended-days="{{ json_encode($attendedDays) }}"
+                                                                                 data-total-days="{{ $totalEventDays }}"
+                                                                                 data-reg-status-yes="{{ $reg->attendance_status === 'yes' ? 1 : 0 }}"
+                                                                                 style="font-size:11px; height: 22px; line-height: 22px;">
+                                                                             <i class="bi bi-calendar-check"></i> Presensi
+                                                                         </button>
+                                                                         @endif
+                                                                         <form method="POST" action="{{ route('admin.events.registrations.cancel', [$event, $reg]) }}" class="d-inline m-0">
+                                                                             @csrf
+                                                                             @method('PATCH')
+                                                                             <button type="submit" class="btn btn-xs btn-danger text-white py-0 px-2 fw-semibold" style="font-size:11px; height: 22px; line-height: 22px;"
+                                                                                 onclick="return confirm('Batalkan approval ini? Status akan kembali ke pending.')">
+                                                                                 <i class="bi bi-arrow-counterclockwise"></i> Batal ACC
+                                                                             </button>
+                                                                         </form>
+                                                                     </div>
+                                                                 </div>
                                                             @else
                                                                 <span class="text-muted small">-</span>
                                                             @endif
@@ -656,6 +810,7 @@
                                                     </span>
                                                 </li>
                                             @endif
+                                            @if($event->jenis !== 'Lomba')
                                             <li class="list-group-item px-0">
                                                 @php
                                                     $trainerModules = $event->trainerModules()->with('trainer')->orderByDesc('created_at')->get();
@@ -723,6 +878,8 @@
                                                     </div>
                                                 </li>
                                             @endif
+                                            @endif
+                                            @if($event->jenis !== 'Lomba')
                                             <li class="list-group-item px-0">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <span>
@@ -795,6 +952,7 @@
                                                     </div>
                                                 @endif
                                             </li>
+                                            @endif
                                         </ul>
 
                                     </div>
@@ -1012,7 +1170,7 @@
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnResetZoom"><i class="bi bi-aspect-ratio"></i></button>
                         <a href="{{ $event->image_url }}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Buka Tab</a>
                 </div>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal" style="border-radius: 8px;">Tutup</button>
             </div>
         </div>
     </div>
@@ -1087,6 +1245,11 @@ document.addEventListener('DOMContentLoaded', function(){
 @keyframes live-pulse {
     0% { transform: scale(1); opacity: 1; }
     100% { transform: scale(2.8); opacity: 0; }
+}
+.btn-batal-hadir:hover {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+    border-color: #fca5a5 !important;
 }
 </style>
 @endif
@@ -1384,8 +1547,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 <p class="fw-semibold mb-3" id="approveUserName" style="color:#15803d;"></p>
                 <p class="text-muted small">Peserta akan otomatis mendapatkan status <strong>Active</strong> dan notifikasi konfirmasi.</p>
             </div>
-            <div class="modal-footer border-0 pt-0">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
                 <form id="approveForm" method="POST" action="" class="d-inline m-0">
                     @csrf
                     <button type="submit" class="btn btn-success btn-sm px-4">
@@ -1433,7 +1596,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         placeholder="e.g. Bukti transfer tidak jelas / tidak sesuai nominal"
                         required>Bukti pembayaran tidak valid.</textarea>
                 </div>
-                <div class="modal-footer border-0 pt-0">
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-x-circle me-1"></i>Reject
@@ -1484,8 +1647,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     This action cannot be undone.
                 </div>
             </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Batal</button>
                 <button type="submit" class="btn btn-danger confirm-danger-btn" id="deleteConfirmBtnShow" form="deleteEventFormShow">
                     <i class="bi bi-trash me-1"></i> Hapus Permanen
                 </button>
@@ -1509,9 +1672,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="modal-body">
                     <p id="publishEventModalShowMessage">Are you sure?</p>
                 </div>
-                <div class="modal-footer d-flex justify-content-end gap-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-primary btn-sm" id="publishEventModalShowConfirmBtn">Konfirmasi</button>
+                <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal" style="border-radius: 8px;">Batal</button>
+                    <button type="button" class="btn btn-primary btn-sm px-3" id="publishEventModalShowConfirmBtn" style="border-radius: 8px;">Konfirmasi</button>
                 </div>
             </div>
         </div>
@@ -1546,8 +1709,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         <!-- Dynamic daily presence items will be generated here -->
                     </div>
                 </div>
-                <div class="modal-footer border-top bg-light py-3 px-4 d-flex justify-content-end">
-                    <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px;">Tutup</button>
+                <div class="modal-footer border-top bg-light py-2.5 px-4 d-flex justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary px-4 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px;">Tutup</button>
                 </div>
             </div>
         </div>
@@ -1558,6 +1721,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let attendanceChart = null;
+    const isLomba = @json($event->jenis === 'Lomba');
 
     function initChart(labels, data) {
         const canvas = document.getElementById('attendanceChart');
@@ -1571,7 +1735,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Persentase Kehadiran (%)',
+                    label: isLomba ? 'Jumlah Pendaftar' : 'Persentase Kehadiran (%)',
                     data: data,
                     backgroundColor: 'rgba(99, 102, 241, 0.85)',
                     borderColor: 'rgba(99, 102, 241, 1)',
@@ -1586,9 +1750,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 100,
+                        max: isLomba ? undefined : 100,
                         ticks: {
-                            callback: function(value) { return value + "%"; }
+                            callback: function(value) { return isLomba ? value : value + "%"; }
                         }
                     }
                 },
@@ -1596,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function(context) { return context.parsed.y + "% Kehadiran"; }
+                            label: function(context) { return isLomba ? context.parsed.y + " Pendaftar" : context.parsed.y + "% Kehadiran"; }
                         }
                     }
                 }
@@ -1631,16 +1795,30 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             const col = document.createElement('div');
                             col.className = 'col-md-4';
-                            col.innerHTML = `
-                                <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm">
-                                    <small class="text-muted d-block mb-1">Kehadiran Hari ${day.day_number}</small>
-                                    <div class="d-flex align-items-baseline gap-2">
-                                        <h3 class="mb-0 fw-bold text-dark">${day.checked_in}/${day.total}</h3>
-                                        <span class="badge bg-success-subtle text-success small">${day.percent}%</span>
+                            
+                            if (isLomba) {
+                                col.innerHTML = `
+                                    <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm">
+                                        <small class="text-muted d-block mb-1">Pendaftar Hari ${day.day_number}</small>
+                                        <div class="d-flex align-items-baseline gap-2">
+                                            <h3 class="mb-0 fw-bold text-dark">${day.checked_in}</h3>
+                                            <span class="small text-muted">pendaftar baru</span>
+                                        </div>
+                                        <small class="text-muted mt-1" style="font-size: 11px;">Tanggal: ${day.date}</small>
                                     </div>
-                                    <small class="text-muted mt-1" style="font-size: 11px;">Tanggal: ${day.date}</small>
-                                </div>
-                            `;
+                                `;
+                            } else {
+                                col.innerHTML = `
+                                    <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm">
+                                        <small class="text-muted d-block mb-1">Kehadiran Hari ${day.day_number}</small>
+                                        <div class="d-flex align-items-baseline gap-2">
+                                            <h3 class="mb-0 fw-bold text-dark">${day.checked_in}/${day.total}</h3>
+                                            <span class="badge bg-success-subtle text-success small">${day.percent}%</span>
+                                        </div>
+                                        <small class="text-muted mt-1" style="font-size: 11px;">Tanggal: ${day.date}</small>
+                                    </div>
+                                `;
+                            }
                             statsGrid.appendChild(col);
                         });
                         
@@ -1652,22 +1830,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     const feed = document.getElementById('liveCheckinFeed');
                     if (feed) {
                         if (data.logs.length === 0) {
-                            feed.innerHTML = '<div class="text-center text-muted py-5 small">Belum ada riwayat check-in.</div>';
+                            feed.innerHTML = isLomba 
+                                ? '<div class="text-center text-muted py-5 small">Belum ada riwayat pendaftaran.</div>'
+                                : '<div class="text-center text-muted py-5 small">Belum ada riwayat check-in.</div>';
                         } else {
                             feed.innerHTML = '';
                             data.logs.forEach(log => {
                                 const item = document.createElement('div');
                                 item.className = 'd-flex align-items-start gap-2 mb-3 border-bottom pb-2';
+                                
+                                const iconClass = isLomba ? 'bi-person-plus-fill' : 'bi-person-check-fill';
+                                const badgeHtml = isLomba ? '' : `<span class="badge bg-primary-subtle text-primary" style="font-size:8.5px;">Hari ${log.day_number}</span> &bull; `;
+                                
                                 item.innerHTML = `
                                     <div class="p-2 bg-success-subtle text-success rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px; flex-shrink:0;">
-                                        <i class="bi bi-person-check-fill" style="font-size:14px;"></i>
+                                        <i class="bi ${iconClass}" style="font-size:14px;"></i>
                                     </div>
                                     <div class="flex-grow-1 min-w-0" style="line-height:1.35;">
                                         <div class="fw-semibold text-dark text-truncate small">${log.name}</div>
                                         <div class="text-muted text-truncate" style="font-size:10.5px;">${log.email}</div>
                                         <div class="text-muted mt-1" style="font-size:10px;">
-                                            <span class="badge bg-primary-subtle text-primary" style="font-size:8.5px;">Hari ${log.day_number}</span>
-                                            &bull; ${log.scanned_at}
+                                            ${badgeHtml}${log.date} ${log.scanned_at}
                                         </div>
                                     </div>
                                 `;
@@ -1684,7 +1867,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             })
-            .catch(err => console.error('Gagal mengambil statistik kehadiran:', err));
+            .catch(err => console.error('Gagal mengambil statistik:', err));
     }
 
     // Trigger on load
@@ -1725,7 +1908,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (hasAttended) {
                     statusBadge = '<span class="badge bg-success-subtle text-success border border-success fw-semibold py-1 px-2.5 d-inline-flex align-items-center gap-1" style="font-size: 10.5px; border-radius: 15px;"><i class="bi bi-check-circle-fill"></i> Hadir</span>';
                     actionBtn = `
-                        <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 py-1 px-2.5 fw-semibold text-danger" 
+                        <button class="btn btn-sm btn-outline-danger btn-batal-hadir d-inline-flex align-items-center gap-1 py-1 px-2.5 fw-semibold text-danger" 
                                 style="border-radius: 6px; font-size: 10.5px;" 
                                 onclick="toggleDailyPresenceModal(${regId}, ${d}, 'cancel', this)">
                             <i class="bi bi-x-circle"></i> Batal Hadir
