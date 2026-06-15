@@ -2798,13 +2798,43 @@
                                                 {{-- Check if payment is required before allowing Stage 2 upload --}}
                                                 @if($reg->stage2_payment_status === 'pending')
                                                     {{-- Payment required --}}
+                                                    @php
+                                                        $now = \Carbon\Carbon::now(config('app.timezone'));
+                                                        $paymentNotStarted = $event->finalist_payment_start && $now->lt($event->finalist_payment_start);
+                                                        $paymentEnded = $event->finalist_payment_end && $now->gt($event->finalist_payment_end);
+                                                        $paymentOpen = !$paymentNotStarted && !$paymentEnded;
+                                                    @endphp
                                                     <div class="text-center py-4">
                                                         <div class="fs-1 mb-2">💰</div>
                                                         <h6 class="fw-bold text-dark mb-1">Stage 2 Payment Required</h6>
                                                         <p class="small text-muted mb-3">Complete the payment of <strong>Rp {{ number_format($event->price_stage2 ?? 0, 0, ',', '.') }}</strong> to access the stage 2 submission upload form.</p>
-                                                        <a href="{{ route('events.payment.stage2', $event) }}" class="btn btn-warning fw-bold px-4 rounded-3">
-                                                            <i class="bi bi-credit-card-fill me-2"></i> Pay Now
-                                                        </a>
+
+                                                        @if($event->finalist_payment_start || $event->finalist_payment_end)
+                                                            <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-inline-block text-start" style="max-width: 100%;">
+                                                                <i class="bi bi-calendar-event me-1"></i> <strong>Payment Period:</strong><br>
+                                                                @if($event->finalist_payment_start)
+                                                                    From: {{ $event->finalist_payment_start->translatedFormat('d M Y, H:i') }} WIB<br>
+                                                                @endif
+                                                                @if($event->finalist_payment_end)
+                                                                    Until: {{ $event->finalist_payment_end->translatedFormat('d M Y, H:i') }} WIB
+                                                                @endif
+                                                            </div>
+                                                            <br>
+                                                        @endif
+
+                                                        @if($paymentNotStarted)
+                                                            <div class="alert alert-warning py-2 px-3 small rounded-3 mb-0 d-inline-block">
+                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Stage 2 payment is not open yet.
+                                                            </div>
+                                                        @elseif($paymentEnded)
+                                                            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-0 d-inline-block">
+                                                                <i class="bi bi-x-circle-fill me-1"></i> Stage 2 payment is closed.
+                                                            </div>
+                                                        @else
+                                                            <a href="{{ route('events.payment.stage2', $event) }}" class="btn btn-warning fw-bold px-4 rounded-3">
+                                                                <i class="bi bi-credit-card-fill me-2"></i> Pay Now
+                                                            </a>
+                                                        @endif
                                                     </div>
                                                 @else
                                                     {{-- Payment settled or not required — show normal upload flow --}}

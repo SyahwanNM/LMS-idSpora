@@ -312,6 +312,8 @@ class EventController extends Controller
             'announcement_date' => 'required_if:jenis,Lomba|nullable|date|after:until_submission',
             'until_submission_2' => 'required_if:jenis,Lomba|nullable|date|after:announcement_date',
             'price_stage2' => 'nullable|numeric|min:0',
+            'finalist_payment_start' => 'nullable|date',
+            'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
         ]);
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
@@ -437,6 +439,8 @@ class EventController extends Controller
             'announcement_date' => $request->announcement_date,
             'until_submission_2' => $request->until_submission_2,
             'price_stage2' => (float) ($request->price_stage2 ?? 0),
+            'finalist_payment_start' => $request->finalist_payment_start,
+            'finalist_payment_end' => $request->finalist_payment_end,
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -1102,6 +1106,8 @@ class EventController extends Controller
             'announcement_date' => 'required_if:jenis,Lomba|nullable|date|after:until_submission',
             'until_submission_2' => 'required_if:jenis,Lomba|nullable|date|after:announcement_date',
             'price_stage2' => 'nullable|numeric|min:0',
+            'finalist_payment_start' => 'nullable|date',
+            'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
         ]);
 
         $data = $request->only([
@@ -1143,6 +1149,8 @@ class EventController extends Controller
             'announcement_date',
             'until_submission_2',
             'price_stage2',
+            'finalist_payment_start',
+            'finalist_payment_end',
         ]);
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.

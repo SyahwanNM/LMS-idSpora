@@ -209,6 +209,14 @@
                                         <label for="until_submission_2" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Kedua/Lanjutan <span class="text-danger">*</span></label>
                                         <input type="datetime-local" name="until_submission_2" id="until_submission_2" class="form-control form-control-sm" value="{{ old('until_submission_2', $event->until_submission_2 ? $event->until_submission_2->format('Y-m-d\TH:i') : '') }}">
                                     </div>
+                                    <div class="col-md-6 mb-2">
+                                         <label for="finalist_payment_start" class="form-label small fw-semibold mb-1">Mulai Registrasi Finalis</label>
+                                         <input type="datetime-local" name="finalist_payment_start" id="finalist_payment_start" class="form-control form-control-sm" value="{{ old('finalist_payment_start', $event->finalist_payment_start ? $event->finalist_payment_start->format('Y-m-d\TH:i') : '') }}">
+                                     </div>
+                                     <div class="col-md-6 mb-2">
+                                         <label for="finalist_payment_end" class="form-label small fw-semibold mb-1">Batas Registrasi Finalis</label>
+                                         <input type="datetime-local" name="finalist_payment_end" id="finalist_payment_end" class="form-control form-control-sm" value="{{ old('finalist_payment_end', $event->finalist_payment_end ? $event->finalist_payment_end->format('Y-m-d\TH:i') : '') }}">
+                                     </div>
                                     <div class="col-12 mb-2">
                                         <hr class="my-1">
                                         <label for="price_stage2_edit" class="form-label small fw-semibold mb-1">

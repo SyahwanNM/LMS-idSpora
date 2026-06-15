@@ -110,18 +110,28 @@
                             @foreach($events as $event)
                             @php $rowPct = $event->documents_completion_percent; @endphp
                             @php
-                                // Hitung rowPct konsisten dengan logika blade
+                                // Hitung rowPct konsisten dengan logika blade & jenis event
                                 $rowHasMaps = !empty($event->maps_url);
                                 $rowHasZoom = !empty($event->zoom_link);
-                                $rowRequiresVbg = !($rowHasMaps && !$rowHasZoom); // VBG wajib kecuali offline-only
-                                $rowTotal = $rowRequiresVbg ? 3 : 2;
-                                $rowIsMultiDay = !empty($event->event_until_date)
-                                    && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
-                                $rowHasDailyAbs = $rowIsMultiDay && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
-                                $rowDone  = ($rowRequiresVbg ? (!empty($event->vbg_path) ? 1 : 0) : 0)
-                                          + (!empty($event->module_path) ? 1 : 0)
-                                          + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token) || $rowHasDailyAbs) ? 1 : 0);
-                                $rowPct = $rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 0;
+                                $rowIsOfflineOnly = $rowHasMaps && !$rowHasZoom;
+                                $rowIsLomba = ($event->jenis === 'Lomba');
+
+                                if ($rowIsLomba) {
+                                    $rowRequiresVbg = !$rowIsOfflineOnly;
+                                    $rowTotal = $rowRequiresVbg ? 1 : 0;
+                                    $rowDone = ($rowRequiresVbg && !empty($event->vbg_path)) ? 1 : 0;
+                                    $rowPct = $rowIsOfflineOnly ? 100 : ($rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 100);
+                                } else {
+                                    $rowRequiresVbg = !$rowIsOfflineOnly; // VBG wajib kecuali offline-only
+                                    $rowTotal = $rowRequiresVbg ? 3 : 2;
+                                    $rowIsMultiDay = !empty($event->event_until_date)
+                                        && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                    $rowHasDailyAbs = $rowIsMultiDay && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
+                                    $rowDone  = ($rowRequiresVbg ? (!empty($event->vbg_path) ? 1 : 0) : 0)
+                                              + (!empty($event->module_path) ? 1 : 0)
+                                              + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token) || $rowHasDailyAbs) ? 1 : 0);
+                                    $rowPct = $rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 0;
+                                }
                             @endphp
                             @php
                                 // Tentukan status event: upcoming, ongoing, finished berdasarkan tanggal mulai/selesai
@@ -188,32 +198,44 @@
                                 </td>
                                 <td>
                                     @php 
-                                        $hasMapsLink = !empty($event->maps_url);
-                                        $hasZoomLink = !empty($event->zoom_link);
-                                        $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-                                        $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
-                                        $hasVbg = !empty($event->vbg_path);
-                                        $hasModule = $event->has_approved_modules;
-                                        $hasAbsFile = !empty($event->attendance_path);
-                                        $hasAbsQrImg = !empty($event->attendance_qr_image);
-                                        $hasAbsQrToken = !empty($event->attendance_qr_token);
-                                        $isMultiDayEvent = !empty($event->event_until_date)
-                                            && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
-                                        $hasDailyAbs = $isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
-                                        $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken || $hasDailyAbs;
-                                        $totalDisplay = $requiresVbg ? 3 : 2;
-                                        $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                        $pct = $totalDisplay > 0
-                                            ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
-                                            : 0;
-                                        $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        $tooltip = $requiresVbg
-                                            ? 'Virtual Background: '.($hasVbg ? '?' : '?').', Module (Trainer): '.($hasModule ? '?' : '?').', Absensi (QR/File): '.($hasAbs ? '?' : '?')
-                                            : 'Module (Trainer): '.($hasModule ? '?' : '?').', Absensi (QR/File): '.($hasAbs ? '?' : '?');
-                                        $missing = [];
-                                        if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
-                                        if (!$hasModule) $missing[] = 'Module (Trainer)';
-                                        if (!$hasAbs) $missing[] = 'Absensi';
+                                         $hasMapsLink = !empty($event->maps_url);
+                                         $hasZoomLink = !empty($event->zoom_link);
+                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                                         $isLomba = ($event->jenis === 'Lomba');
+
+                                         $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
+                                         $hasVbg = !empty($event->vbg_path);
+                                         $hasModule = $event->has_approved_modules;
+                                         $hasAbsFile = !empty($event->attendance_path);
+                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
+                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
+                                         $isMultiDayEvent = !empty($event->event_until_date)
+                                             && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                         $hasDailyAbs = $isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
+                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken || $hasDailyAbs;
+
+                                         if ($isLomba) {
+                                             $totalDisplay = $isOfflineOnly ? 0 : 1;
+                                             $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0));
+                                             $pct = $isOfflineOnly ? 100 : ($hasVbg ? 100 : 0);
+                                             $tooltip = $isOfflineOnly ? 'Lomba Offline: No document required' : 'Virtual Background: ' . ($hasVbg ? '✓' : '✗');
+                                             $missing = [];
+                                             if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+                                         } else {
+                                             $totalDisplay = $requiresVbg ? 3 : 2;
+                                             $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                             $pct = $totalDisplay > 0
+                                                 ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                                 : 0;
+                                             $tooltip = $requiresVbg
+                                                 ? 'Virtual Background: '.($hasVbg ? '✓' : '✗').', Module (Trainer): '.($hasModule ? '✓' : '✗').', Absensi (QR/File): '.($hasAbs ? '✓' : '✗')
+                                                 : 'Module (Trainer): '.($hasModule ? '✓' : '✗').', Absensi (QR/File): '.($hasAbs ? '✓' : '✗');
+                                             $missing = [];
+                                             if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
+                                             if (!$hasModule) $missing[] = 'Module (Trainer)';
+                                             if (!$hasAbs) $missing[] = 'Absensi';
+                                         }
+                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $tooltip }}">{{ $pct }}%</span>
@@ -587,11 +609,19 @@
                                         && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
                                     $hasDailyAbs = $isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
                                     $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken || $hasDailyAbs;
-                                    $totalDisplay = $requiresVbg ? 3 : 2;
-                                    $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                    $pct = $totalDisplay > 0
-                                        ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
-                                        : 0;
+
+                                    $isLomba = ($event->jenis === 'Lomba');
+                                    if ($isLomba) {
+                                        $totalDisplay = $isOfflineOnly ? 0 : 1;
+                                        $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0));
+                                        $pct = $isOfflineOnly ? 100 : ($hasVbg ? 100 : 0);
+                                    } else {
+                                        $totalDisplay = $requiresVbg ? 3 : 2;
+                                        $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        $pct = $totalDisplay > 0
+                                            ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                            : 0;
+                                    }
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -618,75 +648,88 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
-                                        <span style="flex-shrink:0; color:{{ $hasModule ? '#198754' : '#dc3545' }}; font-weight:500;">Module (Trainer)</span>
-                                        <span style="margin-left:auto; flex-shrink:0;" class="d-flex flex-column align-items-end gap-1">
-                                            @if($eventTrainerModulesApproved->isNotEmpty())
-                                                @foreach($eventTrainerModulesApproved as $etm)
-                                                    @php
-                                                        $isLink = preg_match('#^https?://#i', $etm->path);
-                                                    @endphp
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <a href="{{ $etm->download_url }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
-                                                            <i class="bi {{ $isLink ? 'bi-link-45deg' : 'bi-file-earmark-arrow-down' }} me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
-                                                            @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
-                                                        </a>
-                                                        @if(!empty($etm->survey_link ?: $etm->feedback_link))
-                                                            <a href="{{ $etm->survey_link ?: $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
-                                                                <i class="bi bi-chat-left-text me-1"></i>Feedback
+                                    @if(!$isLomba)
+                                        <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
+                                            <span style="flex-shrink:0; color:{{ $hasModule ? '#198754' : '#dc3545' }}; font-weight:500;">Module (Trainer)</span>
+                                            <span style="margin-left:auto; flex-shrink:0;" class="d-flex flex-column align-items-end gap-1">
+                                                @if($eventTrainerModulesApproved->isNotEmpty())
+                                                    @foreach($eventTrainerModulesApproved as $etm)
+                                                        @php
+                                                            $isLink = preg_match('#^https?://#i', $etm->path);
+                                                        @endphp
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <a href="{{ $etm->download_url }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
+                                                                <i class="bi {{ $isLink ? 'bi-link-45deg' : 'bi-file-earmark-arrow-down' }} me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
+                                                                @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
                                                             </a>
-                                                        @endif
-                                                    </div>
-                                                @endforeach
-                                            @else
-                                                <span class="text-muted">Not available</span>
-                                            @endif
-                                        </span>
-                                    </li>
-                                    <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
-                                        <span style="flex-shrink:0; color:{{ $hasAbs ? '#198754' : '#dc3545' }}; font-weight:500;">Absensi</span>
-                                        <span style="margin-left:auto; flex-shrink:0;">
-                                            @if($hasAbs)
-                                                @if($isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists())
-                                                    @php
-                                                        $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('day_number')->get();
-                                                    @endphp
-                                                    <div class="d-flex gap-1 flex-wrap align-items-center justify-content-end" style="max-width:300px;">
-                                                        @foreach($dailyQrs as $dqr)
-                                                            @if($dqr->qr_image_url)
-                                                                <a href="{{ $dqr->qr_image_url }}" target="_blank" class="position-relative d-inline-block text-decoration-none" title="Hari {{ $dqr->day_number }} ({{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }})">
-                                                                    <img src="{{ $dqr->qr_image_url }}" alt="QR Hari {{ $dqr->day_number }}" class="rounded border" style="width:36px;height:36px;object-fit:cover;">
-                                                                    <span class="position-absolute bottom-0 end-0 bg-dark text-white px-1" style="font-size:8px; border-radius:3px 0 3px 0; opacity:0.85;">H{{ $dqr->day_number }}</span>
+                                                            @if(!empty($etm->survey_link ?: $etm->feedback_link))
+                                                                <a href="{{ $etm->survey_link ?: $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
+                                                                    <i class="bi bi-chat-left-text me-1"></i>Feedback
                                                                 </a>
-                                                            @else
-                                                                <span class="badge bg-secondary" title="{{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }}">H{{ $dqr->day_number }}</span>
                                                             @endif
-                                                        @endforeach
-                                                    </div>
-                                                @elseif($hasAbsFile)
-                                                    @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
-                                                    @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank"><img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;"></a>
-                                                    @elseif($aExt === 'pdf')
-                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
-                                                    @else
-                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
-                                                    @endif
-                                                @elseif($hasAbsQrImg)
-                                                    <a href="{{ $event->attendance_qr_image_url }}" target="_blank"><img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;"></a>
+                                                        </div>
+                                                    @endforeach
                                                 @else
-                                                    <span class="badge bg-success">Attendance QR Active</span>
+                                                    <span class="text-muted">Not available</span>
                                                 @endif
-                                            @else
-                                                <span class="text-muted">Not available</span>
-                                            @endif
-                                        </span>
-                                    </li>
+                                            </span>
+                                        </li>
+                                        <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
+                                            <span style="flex-shrink:0; color:{{ $hasAbs ? '#198754' : '#dc3545' }}; font-weight:500;">Absensi</span>
+                                            <span style="margin-left:auto; flex-shrink:0;">
+                                                @if($hasAbs)
+                                                    @if($isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists())
+                                                        @php
+                                                            $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('day_number')->get();
+                                                        @endphp
+                                                        <div class="d-flex gap-1 flex-wrap align-items-center justify-content-end" style="max-width:300px;">
+                                                            @foreach($dailyQrs as $dqr)
+                                                                @if($dqr->qr_image_url)
+                                                                    <a href="{{ $dqr->qr_image_url }}" target="_blank" class="position-relative d-inline-block text-decoration-none" title="Hari {{ $dqr->day_number }} ({{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }})">
+                                                                        <img src="{{ $dqr->qr_image_url }}" alt="QR Hari {{ $dqr->day_number }}" class="rounded border" style="width:36px;height:36px;object-fit:cover;">
+                                                                        <span class="position-absolute bottom-0 end-0 bg-dark text-white px-1" style="font-size:8px; border-radius:3px 0 3px 0; opacity:0.85;">H{{ $dqr->day_number }}</span>
+                                                                    </a>
+                                                                @else
+                                                                    <span class="badge bg-secondary" title="{{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }}">H{{ $dqr->day_number }}</span>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif($hasAbsFile)
+                                                        @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
+                                                        @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                            <a href="{{ Storage::url($event->attendance_path) }}" target="_blank"><img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;"></a>
+                                                        @elseif($aExt === 'pdf')
+                                                            <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                        @else
+                                                            <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                        @endif
+                                                    @elseif($hasAbsQrImg)
+                                                        <a href="{{ $event->attendance_qr_image_url }}" target="_blank"><img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;"></a>
+                                                    @else
+                                                        <span class="badge bg-success">Attendance QR Active</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">Not available</span>
+                                                @endif
+                                            </span>
+                                        </li>
+                                    @endif
+                                    @if($isLomba && $isOfflineOnly)
+                                        <li class="list-group-item px-0 text-muted">
+                                            <i class="bi bi-info-circle me-1"></i> Lomba Offline: No document required.
+                                        </li>
+                                    @endif
                                 </ul>
 
                                 <form action="{{ route('admin.events.documents.upload', $event) }}" method="post" enctype="multipart/form-data" id="docForm-{{ $event->id }}">
                                     @csrf
-                                    @php $adminDocsComplete = $isOfflineOnly ? ($hasAbs) : ($hasVbg && $hasAbs); @endphp
+                                    @php
+                                        if ($isLomba) {
+                                            $adminDocsComplete = $isOfflineOnly ? true : $hasVbg;
+                                        } else {
+                                            $adminDocsComplete = $isOfflineOnly ? ($hasAbs) : ($hasVbg && $hasAbs);
+                                        }
+                                    @endphp
                                     @if($adminDocsComplete)
                                       
                                         <div class="doc-edit-wrapper d-none" id="docEditWrapper-{{ $event->id }}">
@@ -888,6 +931,28 @@
                                         <div class="col-md-6 mb-2">
                                             <label for="until_submission_2" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Kedua/Lanjutan <span class="text-danger">*</span></label>
                                             <input type="datetime-local" name="until_submission_2" id="until_submission_2" class="form-control form-control-sm" value="{{ old('until_submission_2') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="finalist_payment_start" class="form-label small fw-semibold mb-1">Mulai Registrasi Finalis</label>
+                                            <input type="datetime-local" name="finalist_payment_start" id="finalist_payment_start" class="form-control form-control-sm" value="{{ old('finalist_payment_start') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="finalist_payment_end" class="form-label small fw-semibold mb-1">Batas Registrasi Finalis</label>
+                                            <input type="datetime-local" name="finalist_payment_end" id="finalist_payment_end" class="form-control form-control-sm" value="{{ old('finalist_payment_end') }}">
+                                        </div>
+                                        <div class="col-12 mb-2">
+                                            <hr class="my-1">
+                                            <label for="price_stage2_display" class="form-label small fw-semibold mb-1">
+                                                💰 Biaya Pembayaran Tahap 2 (Rp)
+                                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;">Opsional</span>
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">Rp</span>
+                                                <input type="text" id="price_stage2_display" class="form-control" placeholder="0"
+                                                    value="{{ number_format((int)old('price_stage2', 0), 0, ',', '.') }}">
+                                                <input type="hidden" name="price_stage2" id="price_stage2" value="{{ (int)old('price_stage2', 0) }}">
+                                            </div>
+                                            <div class="form-text text-muted">Isi 0 atau kosongkan jika gratis. Peserta yang lolos Tahap 1 wajib membayar ini sebelum bisa upload Submission Tahap 2.</div>
                                         </div>
                                     </div>
                                     <div class="form-text text-muted mt-1 small">Wajib diatur jika jenis event adalah Lomba. Peserta yang lolos pengumuman awal dapat mengunggah submission kedua.</div>
@@ -1156,6 +1221,10 @@
         </div>
 
         <script>
+        window.unformatNumber = window.unformatNumber || function(str){ return parseInt(String(str).replace(/\D/g,'')||'0',10); };
+        window.formatThousands = window.formatThousands || function(val){ return String(val).replace(/\B(?=(\d{3})+(?!\d))/g, "."); };
+        const unformatNumber = window.unformatNumber;
+        const formatThousands = window.formatThousands;
         document.addEventListener('DOMContentLoaded', function() {
             // Payment method toggle logic
             const acceptManualCheckbox = document.getElementById('accept_manual_transfer');
@@ -2203,6 +2272,25 @@
                 sync();            });
         })();
 
+        // price_stage2 currency formatting (add form)
+        (function initStage2PriceInput() {
+            const disp = document.getElementById('price_stage2_display');
+            const hidn = document.getElementById('price_stage2');
+            if (!disp || !hidn) return;
+            const sync = function() {
+                const raw = unformatNumber(disp.value);
+                disp.value = formatThousands(raw);
+                hidn.value = raw;
+            };
+            disp.addEventListener('keydown', function(e) {
+                const allowed = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
+                if (allowed.includes(e.key)) return;
+                if (!/\d/.test(e.key)) e.preventDefault();
+            });
+            disp.addEventListener('input', sync);
+            sync();
+        })();
+
         // Enable/disable discount_until based on diskon value
         const diskonInput = document.getElementById('diskon');
         const discountUntilInput = document.getElementById('discount_until');
@@ -2486,11 +2574,18 @@
                     benefitHidden.value = items.join(' | ');
                 }
                 // Ensure hidden price numeric sync before submit
-                if(hargaDisplay && hargaHidden){
-                    hargaHidden.value = unformatNumber(hargaDisplay.value);
+                const hargaDisplayEl = document.getElementById('hargaDisplay');
+                const hargaHiddenEl = document.getElementById('harga');
+                if(hargaDisplayEl && hargaHiddenEl){
+                    hargaHiddenEl.value = unformatNumber(hargaDisplayEl.value);
+                }
+                const pStage2Disp = document.getElementById('price_stage2_display');
+                const pStage2Hidn = document.getElementById('price_stage2');
+                if(pStage2Disp && pStage2Hidn){
+                    pStage2Hidn.value = unformatNumber(pStage2Disp.value);
                 }
                 let ok = true;
-                form.querySelectorAll('[required]').forEach(f => {
+                getRequiredFields().forEach(f => {
                     if (!String(f.value || '').trim()) {
                         f.classList.add('border-danger');
                         ok = false;
@@ -2533,6 +2628,8 @@
             const isElementVisible = (el) => {
                 if (!el) return false;
                 if (el.closest('.d-none')) return false;
+                // Treat description and terms as visible conceptually even if ClassicEditor hides them
+                if (el.id === 'deskripsi' || el.id === 'terms') return true;
                 // More reliable than offsetParent (offsetParent can be null for some positioned elements)
                 return !!(el.getClientRects && el.getClientRects().length);
             };
@@ -2602,7 +2699,7 @@
                 if(submitHint){
                     if(!filled){
                         const missingNames = missingRequired().map(fieldFriendlyName);
-                        submitHint.textContent = 'Lengkapi: ' + missingnames.join('|') + '.';
+                        submitHint.textContent = 'Lengkapi: ' + missingNames.join('|') + '.';
                         submitHint.style.display = 'block';
                     } else if(overLimit){
                         submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ' kata).';
@@ -2834,6 +2931,8 @@
             }, true);
 
             document.addEventListener('DOMContentLoaded', function() {
+                window.unformatNumber = function(str){ return parseInt(String(str).replace(/\D/g,'')||'0',10); };
+                window.formatThousands = function(val){ return String(val).replace(/\B(?=(\d{3})+(?!\d))/g, "."); };
                 const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
                 if (ta) updateCounter(ta);
             });
