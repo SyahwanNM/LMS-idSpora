@@ -445,13 +445,21 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Schedule <span
                                         class="text-muted small">(Optional)</span></label>
+                                @php
+                                    $jenisVal = old('jenis', $event->jenis ?? '');
+                                    $isLomba = strtolower(trim($jenisVal)) === 'lomba';
+                                    $inputType = $isLomba ? 'date' : 'time';
+                                    $placeholder = $isLomba ? 'YYYY-MM-DD' : '00:00';
+                                    $titlePlaceholder = $isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                                    $descStyle = $isLomba ? 'style="display: none;"' : '';
+                                @endphp
                                 <table class="table table-sm align-middle" id="scheduleTable">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width:180px">Start Time</th>
-                                            <th style="width:180px">End Time</th>
-                                            <th>Activity</th>
-                                            <th>Description</th>
+                                            <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Dari' : 'Start Time' }}</th>
+                                            <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Sampai' : 'End Time' }}</th>
+                                            <th>{{ $isLomba ? 'Nama Timeline' : 'Activity' }}</th>
+                                            <th {!! $descStyle !!}>Description</th>
                                             <th style="width:80px" class="text-center">Actions</th>
                                         </tr>
                                     </thead>
@@ -460,14 +468,14 @@
                                         @if(is_array($existingSchedule) && count($existingSchedule))
                                             @foreach($existingSchedule as $i => $row)
                                                 <tr>
-                                                    <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][start]" value="{{ $row['start'] ?? '' }}"></td>
-                                                    <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][end]" value="{{ $row['end'] ?? '' }}"></td>
+                                                    <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                            name="schedule[{{ $i }}][start]" placeholder="{{ $placeholder }}" value="{{ $row['start'] ?? '' }}"></td>
+                                                    <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                            name="schedule[{{ $i }}][end]" placeholder="{{ $placeholder }}" value="{{ $row['end'] ?? '' }}"></td>
                                                     <td><input type="text" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][title]" placeholder="Nama kegiatan"
+                                                            name="schedule[{{ $i }}][title]" placeholder="{{ $titlePlaceholder }}"
                                                             value="{{ $row['title'] ?? '' }}"></td>
-                                                    <td><input type="text" class="form-control form-control-sm"
+                                                    <td {!! $descStyle !!}><input type="text" class="form-control form-control-sm"
                                                             name="schedule[{{ $i }}][description]" placeholder="Deskripsi singkat"
                                                             value="{{ $row['description'] ?? '' }}"></td>
                                                     <td class="text-center"><button type="button"
@@ -1286,16 +1294,83 @@
             const addScheduleBtn = document.getElementById('addScheduleRow');
             let scheduleIndex = 0;
             if (scheduleTableBody) scheduleIndex = scheduleTableBody.querySelectorAll('tr').length;
+
+            function syncScheduleTable() {
+                const jenisSelect = document.getElementById('jenis');
+                if (!jenisSelect) return;
+                const isLomba = jenisSelect.value === 'Lomba';
+                const table = document.getElementById('scheduleTable');
+                if (!table) return;
+
+                const ths = table.querySelectorAll('thead th');
+                if (ths.length >= 4) {
+                    ths[0].textContent = isLomba ? 'Tanggal Dari' : 'Start Time';
+                    ths[0].style.width = isLomba ? '200px' : '180px';
+                    ths[1].textContent = isLomba ? 'Tanggal Sampai' : 'End Time';
+                    ths[1].style.width = isLomba ? '200px' : '180px';
+                    ths[2].textContent = isLomba ? 'Nama Timeline' : 'Activity';
+                    ths[3].style.display = isLomba ? 'none' : '';
+                }
+
+                const trs = table.querySelectorAll('tbody tr');
+                trs.forEach(tr => {
+                    const tds = tr.querySelectorAll('td');
+                    if (tds.length >= 4) {
+                        const startInput = tds[0].querySelector('input');
+                        const endInput = tds[1].querySelector('input');
+                        const titleInput = tds[2].querySelector('input');
+                        const descTd = tds[3];
+
+                        if (startInput) {
+                            const currentType = isLomba ? 'date' : 'time';
+                            if (startInput.type !== currentType) {
+                                startInput.type = currentType;
+                                startInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                            }
+                        }
+                        if (endInput) {
+                            const currentType = isLomba ? 'date' : 'time';
+                            if (endInput.type !== currentType) {
+                                endInput.type = currentType;
+                                endInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                            }
+                        }
+                        if (titleInput) {
+                            titleInput.placeholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                        }
+                        descTd.style.display = isLomba ? 'none' : '';
+                    }
+                });
+            }
+
             function createScheduleRow(idx) {
+                const jenisSelect = document.getElementById('jenis');
+                const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+                const inputType = isLomba ? 'date' : 'time';
+                const placeholderStartEnd = isLomba ? 'YYYY-MM-DD' : '00:00';
+                const titlePlaceholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                const descStyle = isLomba ? 'style="display: none;"' : '';
+
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
+                tr.innerHTML = `<td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="${placeholderStartEnd}"></td><td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="${placeholderStartEnd}"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="${titlePlaceholder}"></td><td ${descStyle}><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
                 return tr;
             }
             function addScheduleRow() { if (!scheduleTableBody) return; console.debug('addScheduleRow()', scheduleIndex); scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
             // prefer delegated click so handler works even if button moves or is re-rendered
-            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addScheduleRow')) { console.debug('delegated addScheduleRow click'); addScheduleRow(); } });
+            document.addEventListener('click', (e) => {
+                if (e.target.closest && e.target.closest('#addScheduleRow')) {
+                    console.debug('delegated addScheduleRow click');
+                    addScheduleRow();
+                    syncScheduleTable();
+                }
+            });
             // also attach directly to the button when available (reliability across browsers/modal states)
-            if (addScheduleBtn) addScheduleBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addScheduleBtn click'); addScheduleRow(); });
+            if (addScheduleBtn) addScheduleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.debug('direct addScheduleBtn click');
+                addScheduleRow();
+                syncScheduleTable();
+            });
             scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } });
             // only add an initial row if there are no existing rows
             if (scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0) { addScheduleRow(); }
@@ -1508,6 +1583,7 @@
 
                     if (typeof updateSpeakerRowsState === 'function') updateSpeakerRowsState();
                     if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                    if (typeof syncScheduleTable === 'function') syncScheduleTable();
 
                     if (startSubmissionInput) startSubmissionInput.required = isLomba;
                     if (untilSubmissionInput) untilSubmissionInput.required = isLomba;

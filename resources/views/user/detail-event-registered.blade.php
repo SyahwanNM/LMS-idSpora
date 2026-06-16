@@ -2594,7 +2594,7 @@
                                         })->values();
                                     }
                                 }
-                                $formatTime = function ($t) {
+                                                          $formatTime = function ($t) {
                                     if (empty($t))
                                         return null;
                                     try {
@@ -2603,21 +2603,39 @@
                                         return is_string($t) ? $t : null;
                                     }
                                 };
+                                $formatDate = function ($d) {
+                                    if (empty($d))
+                                        return null;
+                                    try {
+                                        return \Carbon\Carbon::parse($d)->translatedFormat('d F Y');
+                                    } catch (\Throwable $e) {
+                                        return is_string($d) ? $d : null;
+                                    }
+                                };
+                                $isLomba = isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba';
                             @endphp
                             @forelse($items as $idx => $it)
                                 @php
-                                    $start = $formatTime($it->start ?? null);
-                                    $end = $formatTime($it->end ?? null);
-                                    $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
-                                    if ($timeStr)
-                                        $timeStr .= ' WIB';
+                                    if ($isLomba) {
+                                        $start = $formatDate($it->start ?? null);
+                                        $end = $formatDate($it->end ?? null);
+                                        $timeStr = trim(($start ?: '') . ($end ? ' – ' . $end : ''));
+                                    } else {
+                                        $start = $formatTime($it->start ?? null);
+                                        $end = $formatTime($it->end ?? null);
+                                        $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                                        if ($timeStr)
+                                            $timeStr .= ' WIB';
+                                    }
                                 @endphp
                                 <div class="schedule-item-box">
                                     <div class="schedule-line"></div>
                                     <div class="schedule-item">
                                         <p class="time">{{ $timeStr ?: '-' }}</p>
                                         <p class="activity">{{ $it->title ?? '' }}</p>
-                                        <p class="desc">{{ $it->description ?? '' }}</p>
+                                        @if(!$isLomba)
+                                            <p class="desc">{{ $it->description ?? '' }}</p>
+                                        @endif
                                     </div>
                                 </div>
                                 <br>

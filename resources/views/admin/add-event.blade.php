@@ -1134,17 +1134,46 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Schedule <span class="text-muted small">(Opsional)</span></label>
+                                    @php
+                                        $jenisVal = old('jenis', '');
+                                        $isLomba = strtolower(trim($jenisVal)) === 'lomba';
+                                        $inputType = $isLomba ? 'date' : 'time';
+                                        $placeholder = $isLomba ? 'YYYY-MM-DD' : '00:00';
+                                        $titlePlaceholder = $isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                                        $descStyle = $isLomba ? 'style="display: none;"' : '';
+                                        $existingSchedule = old('schedule', []);
+                                    @endphp
                                     <table class="table table-sm align-middle" id="scheduleTable">
                                         <thead class="table-light">
                                             <tr>
-                                                <th style="width:180px">Start Time</th>
-                                                <th style="width:180px">End Time</th>
-                                                <th>Activity</th>
-                                                <th>Description</th>
+                                                <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Dari' : 'Start Time' }}</th>
+                                                <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Sampai' : 'End Time' }}</th>
+                                                <th>{{ $isLomba ? 'Nama Timeline' : 'Activity' }}</th>
+                                                <th {!! $descStyle !!}>Description</th>
                                                 <th style="width:80px" class="text-center">Action</th>
                                             </tr>
                                         </thead>
-                                        <tbody></tbody>
+                                        <tbody>
+                                            @if(is_array($existingSchedule) && count($existingSchedule))
+                                                @foreach($existingSchedule as $i => $row)
+                                                    <tr>
+                                                        <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][start]" placeholder="{{ $placeholder }}" value="{{ $row['start'] ?? '' }}"></td>
+                                                        <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][end]" placeholder="{{ $placeholder }}" value="{{ $row['end'] ?? '' }}"></td>
+                                                        <td><input type="text" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][title]" placeholder="{{ $titlePlaceholder }}"
+                                                                value="{{ $row['title'] ?? '' }}"></td>
+                                                        <td {!! $descStyle !!}><input type="text" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][description]" placeholder="Deskripsi singkat"
+                                                                value="{{ $row['description'] ?? '' }}"></td>
+                                                        <td class="text-center"><button type="button"
+                                                                class="btn btn-outline-danger btn-sm" data-action="remove"
+                                                                title="Delete"><i class="bi bi-x"></i></button></td>
+                                                    </tr>
+                                                @endforeach
+                                            @endif
+                                        </tbody>
                                     </table>
                                     <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i class="bi bi-plus-circle me-1"></i>Add Row</button>
                                     <div class="form-text">Optional. Add a schedule/ agenda per session if needed.</div>
@@ -1283,6 +1312,7 @@
 
                     if (typeof updateSpeakerRowsState === 'function') updateSpeakerRowsState();
                     if (typeof updateSubmitState === 'function') updateSubmitState();
+                    if (typeof syncScheduleTable === 'function') syncScheduleTable();
 
                     if (startSubmissionInput) startSubmissionInput.required = isLomba;
                     if (untilSubmissionInput) untilSubmissionInput.required = isLomba;
@@ -2372,14 +2402,70 @@
         // Dynamic Schedule rows
         const scheduleTableBody = document.querySelector('#scheduleTable tbody');
         const addScheduleBtn = document.getElementById('addScheduleRow');
-        let scheduleIndex = 0;
+        let scheduleIndex = scheduleTableBody ? scheduleTableBody.querySelectorAll('tr').length : 0;
+
+        function syncScheduleTable() {
+            const jenisSelect = document.getElementById('jenis');
+            if (!jenisSelect) return;
+            const isLomba = jenisSelect.value === 'Lomba';
+            const table = document.getElementById('scheduleTable');
+            if (!table) return;
+
+            const ths = table.querySelectorAll('thead th');
+            if (ths.length >= 4) {
+                ths[0].textContent = isLomba ? 'Tanggal Dari' : 'Start Time';
+                ths[0].style.width = isLomba ? '200px' : '180px';
+                ths[1].textContent = isLomba ? 'Tanggal Sampai' : 'End Time';
+                ths[1].style.width = isLomba ? '200px' : '180px';
+                ths[2].textContent = isLomba ? 'Nama Timeline' : 'Activity';
+                ths[3].style.display = isLomba ? 'none' : '';
+            }
+
+            const trs = table.querySelectorAll('tbody tr');
+            trs.forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                if (tds.length >= 4) {
+                    const startInput = tds[0].querySelector('input');
+                    const endInput = tds[1].querySelector('input');
+                    const titleInput = tds[2].querySelector('input');
+                    const descTd = tds[3];
+
+                    if (startInput) {
+                        const currentType = isLomba ? 'date' : 'time';
+                        if (startInput.type !== currentType) {
+                            startInput.type = currentType;
+                            startInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                        }
+                    }
+                    if (endInput) {
+                        const currentType = isLomba ? 'date' : 'time';
+                        if (endInput.type !== currentType) {
+                            endInput.type = currentType;
+                            endInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                        }
+                    }
+                    if (titleInput) {
+                        titleInput.placeholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                    }
+                    descTd.style.display = isLomba ? 'none' : '';
+                }
+            });
+        }
+
         function createScheduleRow(idx) {
+            const jenisSelect = document.getElementById('jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+            const inputType = isLomba ? 'date' : 'time';
+            const placeholderStartEnd = isLomba ? 'YYYY-MM-DD' : '00:00';
+            const titlePlaceholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+            const descStyle = isLomba ? 'style="display: none;"' : '';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="00:00" /></td>
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="00:00" /></td>
-                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
-                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
+                <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="${placeholderStartEnd}" /></td>
+                <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="${placeholderStartEnd}" /></td>
+                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="${titlePlaceholder}" /></td>
+                <td ${descStyle}><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Delete">
                         <i class="bi bi-x"></i>
@@ -2390,13 +2476,17 @@
         function addScheduleRow() {
             const row = createScheduleRow(scheduleIndex++);
             scheduleTableBody.appendChild(row);
-            // Initialize timepicker for new row
-            if (typeof initTimePicker === 'function') {
+            const jenisSelect = document.getElementById('jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+            if (!isLomba && typeof initTimePicker === 'function') {
                 initTimePicker(row.querySelectorAll('.js-timepicker'));
             }
         }
         if (addScheduleBtn && scheduleTableBody) {
-            addScheduleBtn.addEventListener('click', addScheduleRow);
+            addScheduleBtn.addEventListener('click', () => {
+                addScheduleRow();
+                syncScheduleTable();
+            });
             scheduleTableBody.addEventListener('click', (e) => {
                 const btn = e.target.closest('button[data-action="remove"]');
                 if (btn) {
@@ -2404,8 +2494,19 @@
                     tr.remove();
                 }
             });
-            // Initial one row
-            addScheduleRow();
+
+            // Sync schedule table initially and listen for event type changes
+            const jenisSelect = document.getElementById('jenis');
+            if (jenisSelect) {
+                jenisSelect.addEventListener('change', syncScheduleTable);
+            }
+            window.syncScheduleTable = syncScheduleTable;
+
+            // Initial one row if empty
+            if (scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0) {
+                addScheduleRow();
+            }
+            syncScheduleTable();
         }
 
         // Expenses (Expenses) dynamic rows and totals
@@ -3382,13 +3483,68 @@ function initEditEventDynamicTables(modalEl){
     const addScheduleBtn = modalEl.querySelector('#addScheduleRow');
     let scheduleIndex = scheduleTableBody ? scheduleTableBody.querySelectorAll('tr').length : 0;
 
+    function syncScheduleTable() {
+        const jenisSelect = modalEl.querySelector('#jenis') || modalEl.querySelector('[name="jenis"]');
+        if (!jenisSelect) return;
+        const isLomba = jenisSelect.value === 'Lomba';
+        const table = modalEl.querySelector('#scheduleTable');
+        if (!table) return;
+
+        const ths = table.querySelectorAll('thead th');
+        if (ths.length >= 4) {
+            ths[0].textContent = isLomba ? 'Tanggal Dari' : 'Start Time';
+            ths[0].style.width = isLomba ? '200px' : '180px';
+            ths[1].textContent = isLomba ? 'Tanggal Sampai' : 'End Time';
+            ths[1].style.width = isLomba ? '200px' : '180px';
+            ths[2].textContent = isLomba ? 'Nama Timeline' : 'Activity';
+            ths[3].style.display = isLomba ? 'none' : '';
+        }
+
+        const trs = table.querySelectorAll('tbody tr');
+        trs.forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length >= 4) {
+                const startInput = tds[0].querySelector('input');
+                const endInput = tds[1].querySelector('input');
+                const titleInput = tds[2].querySelector('input');
+                const descTd = tds[3];
+
+                if (startInput) {
+                    const currentType = isLomba ? 'date' : 'time';
+                    if (startInput.type !== currentType) {
+                        startInput.type = currentType;
+                        startInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                    }
+                }
+                if (endInput) {
+                    const currentType = isLomba ? 'date' : 'time';
+                    if (endInput.type !== currentType) {
+                        endInput.type = currentType;
+                        endInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                    }
+                }
+                if (titleInput) {
+                    titleInput.placeholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                }
+                descTd.style.display = isLomba ? 'none' : '';
+            }
+        });
+    }
+
     function createScheduleRow(idx){
+        const jenisSelect = modalEl.querySelector('#jenis') || modalEl.querySelector('[name="jenis"]');
+        const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+        const inputType = isLomba ? 'date' : 'time';
+        const placeholderStartEnd = isLomba ? 'YYYY-MM-DD' : '00:00';
+        const titlePlaceholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+        const descStyle = isLomba ? 'style="display: none;"' : '';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td>
-            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td>
-            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td>
-            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td>
+            <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="${placeholderStartEnd}"></td>
+            <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="${placeholderStartEnd}"></td>
+            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="${titlePlaceholder}"></td>
+            <td ${descStyle}><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td>
             <td class="text-center">
                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Delete">
                     <i class="bi bi-x"></i>
@@ -3405,6 +3561,7 @@ function initEditEventDynamicTables(modalEl){
     addScheduleBtn?.addEventListener('click', function(e){
         e.preventDefault();
         addScheduleRow();
+        syncScheduleTable();
     });
 
     scheduleTableBody?.addEventListener('click', function(e){
@@ -3414,8 +3571,17 @@ function initEditEventDynamicTables(modalEl){
         }
     });
 
+    const jenisSelect = modalEl.querySelector('#jenis') || modalEl.querySelector('[name="jenis"]');
+    if (jenisSelect) {
+        jenisSelect.addEventListener('change', syncScheduleTable);
+    }
+
+    // Run sync initially
+    syncScheduleTable();
+
     if(scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0){
         addScheduleRow();
+        syncScheduleTable();
     }
 
     const expensesTableBody = modalEl.querySelector('#expensesTable tbody');
