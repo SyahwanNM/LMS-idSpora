@@ -445,13 +445,21 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Schedule <span
                                         class="text-muted small">(Optional)</span></label>
+                                @php
+                                    $jenisVal = old('jenis', $event->jenis ?? '');
+                                    $isLomba = strtolower(trim($jenisVal)) === 'lomba';
+                                    $inputType = $isLomba ? 'date' : 'time';
+                                    $placeholder = $isLomba ? 'YYYY-MM-DD' : '00:00';
+                                    $titlePlaceholder = $isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                                    $descStyle = $isLomba ? 'style="display: none;"' : '';
+                                @endphp
                                 <table class="table table-sm align-middle" id="scheduleTable">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width:180px">Start Time</th>
-                                            <th style="width:180px">End Time</th>
-                                            <th>Activity</th>
-                                            <th>Description</th>
+                                            <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Dari' : 'Start Time' }}</th>
+                                            <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Sampai' : 'End Time' }}</th>
+                                            <th>{{ $isLomba ? 'Nama Timeline' : 'Activity' }}</th>
+                                            <th {!! $descStyle !!}>Description</th>
                                             <th style="width:80px" class="text-center">Actions</th>
                                         </tr>
                                     </thead>
@@ -460,14 +468,14 @@
                                         @if(is_array($existingSchedule) && count($existingSchedule))
                                             @foreach($existingSchedule as $i => $row)
                                                 <tr>
-                                                    <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][start]" value="{{ $row['start'] ?? '' }}"></td>
-                                                    <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][end]" value="{{ $row['end'] ?? '' }}"></td>
+                                                    <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                            name="schedule[{{ $i }}][start]" placeholder="{{ $placeholder }}" value="{{ $row['start'] ?? '' }}"></td>
+                                                    <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                            name="schedule[{{ $i }}][end]" placeholder="{{ $placeholder }}" value="{{ $row['end'] ?? '' }}"></td>
                                                     <td><input type="text" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][title]" placeholder="Nama kegiatan"
+                                                            name="schedule[{{ $i }}][title]" placeholder="{{ $titlePlaceholder }}"
                                                             value="{{ $row['title'] ?? '' }}"></td>
-                                                    <td><input type="text" class="form-control form-control-sm"
+                                                    <td {!! $descStyle !!}><input type="text" class="form-control form-control-sm"
                                                             name="schedule[{{ $i }}][description]" placeholder="Deskripsi singkat"
                                                             value="{{ $row['description'] ?? '' }}"></td>
                                                     <td class="text-center"><button type="button"
