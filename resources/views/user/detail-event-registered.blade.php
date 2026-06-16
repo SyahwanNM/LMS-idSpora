@@ -12,6 +12,33 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        .detail-box-right {
+            height: auto !important;
+            max-height: none !important;
+        }
+        .event-benefit-list {
+            max-height: 180px;
+            overflow-y: auto;
+            padding-left: 20px;
+            padding-right: 8px;
+            margin-bottom: 0;
+        }
+        /* Custom thin scrollbar for benefit list */
+        .event-benefit-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .event-benefit-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .event-benefit-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .event-benefit-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         html,
 
         .container-ungu {
