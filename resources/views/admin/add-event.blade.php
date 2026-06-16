@@ -1283,6 +1283,7 @@
 
                     if (typeof updateSpeakerRowsState === 'function') updateSpeakerRowsState();
                     if (typeof updateSubmitState === 'function') updateSubmitState();
+                    if (typeof syncScheduleTable === 'function') syncScheduleTable();
 
                     if (startSubmissionInput) startSubmissionInput.required = isLomba;
                     if (untilSubmissionInput) untilSubmissionInput.required = isLomba;
@@ -2373,13 +2374,69 @@
         const scheduleTableBody = document.querySelector('#scheduleTable tbody');
         const addScheduleBtn = document.getElementById('addScheduleRow');
         let scheduleIndex = 0;
+
+        function syncScheduleTable() {
+            const jenisSelect = document.getElementById('jenis');
+            if (!jenisSelect) return;
+            const isLomba = jenisSelect.value === 'Lomba';
+            const table = document.getElementById('scheduleTable');
+            if (!table) return;
+
+            const ths = table.querySelectorAll('thead th');
+            if (ths.length >= 4) {
+                ths[0].textContent = isLomba ? 'Tanggal Dari' : 'Start Time';
+                ths[0].style.width = isLomba ? '200px' : '180px';
+                ths[1].textContent = isLomba ? 'Tanggal Sampai' : 'End Time';
+                ths[1].style.width = isLomba ? '200px' : '180px';
+                ths[2].textContent = isLomba ? 'Nama Timeline' : 'Activity';
+                ths[3].style.display = isLomba ? 'none' : '';
+            }
+
+            const trs = table.querySelectorAll('tbody tr');
+            trs.forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                if (tds.length >= 4) {
+                    const startInput = tds[0].querySelector('input');
+                    const endInput = tds[1].querySelector('input');
+                    const titleInput = tds[2].querySelector('input');
+                    const descTd = tds[3];
+
+                    if (startInput) {
+                        const currentType = isLomba ? 'date' : 'time';
+                        if (startInput.type !== currentType) {
+                            startInput.type = currentType;
+                            startInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                        }
+                    }
+                    if (endInput) {
+                        const currentType = isLomba ? 'date' : 'time';
+                        if (endInput.type !== currentType) {
+                            endInput.type = currentType;
+                            endInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                        }
+                    }
+                    if (titleInput) {
+                        titleInput.placeholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                    }
+                    descTd.style.display = isLomba ? 'none' : '';
+                }
+            });
+        }
+
         function createScheduleRow(idx) {
+            const jenisSelect = document.getElementById('jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+            const inputType = isLomba ? 'date' : 'time';
+            const placeholderStartEnd = isLomba ? 'YYYY-MM-DD' : '00:00';
+            const titlePlaceholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+            const descStyle = isLomba ? 'style="display: none;"' : '';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="00:00" /></td>
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="00:00" /></td>
-                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
-                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
+                <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="${placeholderStartEnd}" /></td>
+                <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="${placeholderStartEnd}" /></td>
+                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="${titlePlaceholder}" /></td>
+                <td ${descStyle}><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Delete">
                         <i class="bi bi-x"></i>
@@ -2390,13 +2447,17 @@
         function addScheduleRow() {
             const row = createScheduleRow(scheduleIndex++);
             scheduleTableBody.appendChild(row);
-            // Initialize timepicker for new row
-            if (typeof initTimePicker === 'function') {
+            const jenisSelect = document.getElementById('jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+            if (!isLomba && typeof initTimePicker === 'function') {
                 initTimePicker(row.querySelectorAll('.js-timepicker'));
             }
         }
         if (addScheduleBtn && scheduleTableBody) {
-            addScheduleBtn.addEventListener('click', addScheduleRow);
+            addScheduleBtn.addEventListener('click', () => {
+                addScheduleRow();
+                syncScheduleTable();
+            });
             scheduleTableBody.addEventListener('click', (e) => {
                 const btn = e.target.closest('button[data-action="remove"]');
                 if (btn) {
