@@ -513,20 +513,37 @@ class FinanceController extends Controller
             $t->can_disburse = ($t->wallet_balance ?? 0) >= $minDisburse;
         }
 
-        // 3. Ambil event yang sudah selesai (untuk tab Fee Event)
-        // Kriteria: ada trainer, ada ended_at, ended_at sudah lewat
-        $endedEvents = Event::whereNotNull('trainer_id')
-            ->whereNotNull('ended_at')
+        // 3. Auto-generate pending fee requests for speakers of finished events
+        $finishedEvents = Event::whereNotNull('ended_at')
             ->where('ended_at', '<', now())
-            ->with('trainer')
-            ->get()
-            ->filter(function ($event) {
-                // Filter event yang BELUM memiliki record TrainerPayment (fee event)
-                return !TrainerPayment::where('event_id', $event->id)
-                    ->whereIn('status', ['pending', 'approved'])
-                    ->where('type', 'event_fee')
-                    ->exists();
-            });
+            ->with('speakers')
+            ->get();
+
+        foreach ($finishedEvents as $event) {
+            foreach ($event->speakers as $speaker) {
+                if ($speaker->trainer_id && $speaker->salary > 0) {
+                    $paymentExists = TrainerPayment::where('event_id', $event->id)
+                        ->where('user_id', $speaker->trainer_id)
+                        ->where('type', 'event_fee')
+                        ->exists();
+
+                    if (!$paymentExists) {
+                        TrainerPayment::create([
+                            'user_id'      => $speaker->trainer_id,
+                            'type'         => 'event_fee',
+                            'event_id'     => $event->id,
+                            'trainer_name' => $speaker->name,
+                            'title'        => 'Fee Event: ' . $event->title,
+                            'amount'       => $speaker->salary,
+                            'status'       => 'pending',
+                            'notes'        => 'Fee mengajar otomatis dari data event.',
+                        ]);
+                    }
+                }
+            }
+        }
+
+        $endedEvents = collect();
 
         // 4. Permintaan fee event yang sedang pending
         $pendingEventFees = TrainerPayment::with(['trainer', 'event'])
