@@ -459,61 +459,6 @@
             <!-- SECTION 2: FEE EVENT -->
             <div class="tab-pane fade" id="event-fee" role="tabpanel" aria-labelledby="event-tab">
                 
-                <!-- PART A: Ended Events needing input fee -->
-                <div class="premium-card mb-5">
-                    <div class="p-4 border-bottom border-light d-flex justify-content-between align-items-center bg-light-subtle">
-                        <div>
-                            <h5 class="fw-800 text-dark mb-1"><i class="bi bi-calendar2-check-fill text-warning me-2"></i>Event Selesai (Butuh Input Fee)</h5>
-                            <p class="text-muted small mb-0">Pelatihan yang telah selesai diselenggarakan dan membutuhkan penetapan fee bagi trainer terkait.</p>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="premium-table">
-                            <thead>
-                                <tr>
-                                    <th>Event & Harga</th>
-                                    <th>Trainer Pengajar</th>
-                                    <th>Tanggal Selesai</th>
-                                    <th class="text-end">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($endedEvents as $event)
-                                <tr>
-                                    <td>
-                                        <div class="fw-bold text-dark">{{ $event->title }}</div>
-                                        <div class="text-muted small">Harga Tiket: Rp {{ number_format($event->price, 0, ',', '.') }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="avatar-initials bg-dark-subtle text-dark font-weight-700" style="width: 28px; height: 28px; font-size: 0.75rem; border-radius: 8px;">
-                                                {{ strtoupper(substr($event->trainer->name ?? 'N', 0, 2)) }}
-                                            </div>
-                                            <span class="fw-bold">{{ $event->trainer->name ?? 'N/A' }}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="text-dark small"><i class="bi bi-calendar-event me-1 text-muted"></i>{{ \Carbon\Carbon::parse($event->ended_at)->format('d M Y') }}</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-premium-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#requestFeeModal{{ $event->id }}">
-                                            <i class="bi bi-plus-lg me-1"></i> Input Fee
-                                        </button>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="4" class="text-center py-5 text-muted">
-                                        <div class="p-3"><i class="bi bi-check2-circle text-success fs-1 mb-2"></i></div>
-                                        Tidak ada event selesai yang menunggu penetapan fee. Semua sudah diproses!
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
                 <!-- PART B: Pending Fee Requests needing payment -->
                 <div class="premium-card">
                     <div class="p-4 border-bottom border-light d-flex justify-content-between align-items-center" style="background: #FFFBF2;">
@@ -718,44 +663,6 @@
                 </div>
             </div>
             @endif
-        @endforeach
-
-        <!-- 2. Request Fee Modals (Fee Event) -->
-        @foreach($endedEvents as $event)
-            <div class="modal fade" id="requestFeeModal{{ $event->id }}" tabindex="-1" aria-labelledby="requestFeeModalLabel{{ $event->id }}" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content text-start">
-                        <form action="{{ route('admin.finance.events.fee-request', $event->id) }}" method="POST">
-                            @csrf
-                            <div class="modal-header border-0 pb-0">
-                                <div>
-                                    <h5 class="modal-title fw-800 text-dark" id="requestFeeModalLabel{{ $event->id }}">Input Fee Trainer Event</h5>
-                                    <p class="text-muted small mb-0">Tentukan jumlah komisi/fee mengajar untuk event ini.</p>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body p-4">
-                                <div class="mb-3">
-                                    <label class="form-label modal-form-label">Nama Pelatihan/Event</label>
-                                    <input type="text" class="form-control form-control-premium bg-light" value="{{ $event->title }}" readonly>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label modal-form-label">Fee Pengajar (Rp)</label>
-                                    <input type="number" name="amount" class="form-control form-control-premium" placeholder="Masukkan jumlah fee, contoh: 1500000" required>
-                                </div>
-                                <div class="mb-0">
-                                    <label class="form-label modal-form-label">Keterangan / Catatan</label>
-                                    <textarea name="notes" class="form-control form-control-premium" rows="2" placeholder="Fee mengajar event..."></textarea>
-                                </div>
-                            </div>
-                            <div class="modal-footer border-0 pt-0">
-                                <button type="button" class="btn btn-premium-secondary px-4 py-2" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-premium-primary px-4 py-2">Buat Permintaan</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
         @endforeach
 
         <!-- 3. Pay Fee & Reject Fee Modals (Permintaan Fee Event) -->
