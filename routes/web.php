@@ -75,9 +75,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
     // Pull non-admin users with event participations for the Manage User table and view modal
-    $users = \App\Models\User::with(['eventRegistrations' => function ($q) {
-        $q->with('event')->orderBy('created_at', 'desc');
-    }])
+    $users = \App\Models\User::with([
+        'eventRegistrations' => function ($q) {
+            $q->with('event')->orderBy('created_at', 'desc');
+        }
+    ])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
         ->where('role', '!=', 'admin')
         ->orderBy('name')
@@ -360,8 +362,10 @@ Route::middleware('auth')->group(function () {
             $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
         } catch (\Throwable $e) {
         }
-        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+        if (!$startTime && $eventDate)
+            $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate)
+            $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
