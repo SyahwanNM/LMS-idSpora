@@ -308,7 +308,7 @@
                 <div class="modal-content border-0 rounded-4 shadow-lg">
                     <div class="modal-header border-0 pb-0 bg-white p-4">
                         <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-                            <i class="bi bi-person-badge-fill text-dark"></i> Detail Kemitraan Reseller
+                            <i class="bi bi-person-badge-fill text-dark"></i> Detail Performa Reseller
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -364,7 +364,7 @@
                                 <div class="row g-3 mb-4">
                                     <div class="col-sm-6 col-md-3">
                                         <div class="card border-0 bg-primary-subtle-custom p-3 rounded-4 text-center h-100 shadow-none">
-                                            <span class="text-muted small d-block mb-1">Total Cuan</span>
+                                            <span class="text-muted small d-block mb-1">Total Komisi</span>
                                             <h5 class="fw-bold text-primary-dark mb-0">Rp {{ number_format($reseller->total_earned ?? 0, 0, ',', '.') }}</h5>
                                         </div>
                                     </div>

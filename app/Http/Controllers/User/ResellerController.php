@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 class ResellerController extends Controller
 {
     // Fungsi 1: Khusus nampilin Dashboard & Grafik Admin
-    public function adminDashboard()
+    public function adminDashboard(Request $request)
     {
         $activeResellersCount = User::whereNotNull('referral_code')->count();
         $totalSalesCount = Referral::where('status', 'paid')->count();
@@ -32,22 +32,53 @@ class ResellerController extends Controller
             ->take(5)
             ->get();
 
+        // Chart Data berdasarkan range (7_days, 30_days, 3_months, 1_year)
+        $range = $request->query('range', '7_days');
+        if (!in_array($range, ['7_days', '30_days', '3_months', '1_year'])) {
+            $range = '7_days';
+        }
 
-        // Chart Data (12 Bulan Terakhir) - MENGHITUNG TRANSAKSI REFERRAL SUKSES
         $chartLabels = [];
         $chartValues = [];
-        
-        for ($i = 11; $i >= 0; $i--) { 
-            $date = \Carbon\Carbon::now()->startOfMonth()->subMonths($i);
-            
-            // menghitung jumlah Transaksi Referral yang PAID
-            $count = Referral::where('status', 'paid')
-                ->whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
-                ->count();
-            
-            $chartLabels[] = $date->format('M Y'); 
-            $chartValues[] = $count;
+
+        if ($range === '7_days') {
+            for ($i = 6; $i >= 0; $i--) {
+                $date = \Carbon\Carbon::now()->subDays($i);
+                $count = Referral::where('status', 'paid')
+                    ->whereDate('created_at', $date->toDateString())
+                    ->count();
+                $chartLabels[] = $date->translatedFormat('d M');
+                $chartValues[] = $count;
+            }
+        } elseif ($range === '30_days') {
+            for ($i = 29; $i >= 0; $i--) {
+                $date = \Carbon\Carbon::now()->subDays($i);
+                $count = Referral::where('status', 'paid')
+                    ->whereDate('created_at', $date->toDateString())
+                    ->count();
+                $chartLabels[] = $date->translatedFormat('d M');
+                $chartValues[] = $count;
+            }
+        } elseif ($range === '3_months') {
+            for ($i = 11; $i >= 0; $i--) {
+                $startOfWeek = \Carbon\Carbon::now()->startOfWeek()->subWeeks($i);
+                $endOfWeek = $startOfWeek->copy()->endOfWeek();
+                $count = Referral::where('status', 'paid')
+                    ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                    ->count();
+                $chartLabels[] = $startOfWeek->translatedFormat('d M');
+                $chartValues[] = $count;
+            }
+        } else { // 1_year
+            for ($i = 11; $i >= 0; $i--) {
+                $date = \Carbon\Carbon::now()->startOfMonth()->subMonths($i);
+                $count = Referral::where('status', 'paid')
+                    ->whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->count();
+                $chartLabels[] = $date->translatedFormat('M Y');
+                $chartValues[] = $count;
+            }
         }
 
         return view('admin.reseller.dashboard', compact(
@@ -56,7 +87,8 @@ class ResellerController extends Controller
             'totalPendingReferrals',
             'topResellers',
             'chartLabels',
-            'chartValues'
+            'chartValues',
+            'range'
         ));
     }
 
@@ -76,13 +108,21 @@ class ResellerController extends Controller
 
     public function adminKatalog(Request $request)
     {
-        $courses = Course::select('id', 'name', 'price', 'is_reseller_course', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')->latest()->get();
-        $events = Event::select('id', 'title', 'price', 'is_reseller_event', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')->latest()->get();
+        $courses = Course::where('status', 'active')
+            ->select('id', 'name', 'price', 'is_reseller_course', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')
+            ->latest()
+            ->get();
+
+        $events = Event::where('is_published', 1)
+            ->active()
+            ->select('id', 'title', 'price', 'is_reseller_event', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')
+            ->latest()
+            ->get();
 
         return view('admin.reseller.katalog', compact('courses', 'events'));
     }
 
-    public function adminLaporan()
+    public function adminLaporan(Request $request)
     {
         $totalResellers = User::whereNotNull('referral_code')->count();
         $activeResellers = User::whereNotNull('referral_code')->has('referrals')->count();
@@ -126,50 +166,105 @@ class ResellerController extends Controller
         $silverPercent = $totalResellers > 0 ? round(($silverCount / $totalResellers) * 100) : 0;
         $goldPercent = $totalResellers > 0 ? round(($goldCount / $totalResellers) * 100) : 0;
 
-        // Total komisi 6 bulan terakhir
-        $sixMonthsAgo = now()->subMonths(6);
-        $totalKomisi6Bulan = Referral::where('status', 'paid')
-            ->where('created_at', '>=', $sixMonthsAgo)
-            ->sum('amount');
-
-        // Komisi bulanan tertinggi dan bulan terbaik dalam 6 bulan terakhir
-        $monthlyCommissions = Referral::where('status', 'paid')
-            ->where('created_at', '>=', $sixMonthsAgo)
-            ->select(
-                \DB::raw('SUM(amount) as total_amount'),
-                \DB::raw('DATE_FORMAT(created_at, "%M %Y") as month_year')
-            )
-            ->groupBy('month_year')
-            ->orderByDesc('total_amount')
-            ->get();
-
-        $highestKomisi = 0;
-        $highestKomisiMonth = '-';
-        $bestMonth = '-';
-
-        if ($monthlyCommissions->count() > 0) {
-            $highestKomisi = $monthlyCommissions->first()->total_amount;
-            $highestKomisiMonth = $monthlyCommissions->first()->month_year;
-            $bestMonth = $monthlyCommissions->first()->month_year;
+        // Dynamic range filter
+        $range = $request->query('range', '6_months');
+        if (!in_array($range, ['30_days', '6_months', '1_year'])) {
+            $range = '6_months';
         }
 
-        $totalKomisi6BulanVal = $totalKomisi6Bulan > 0 ? $totalKomisi6Bulan : 617000;
-        $highestKomisiVal = $highestKomisi > 0 ? $highestKomisi : 450000;
-        $highestKomisiMonthVal = $highestKomisiMonth !== '-' ? $highestKomisiMonth : 'Juni 2026';
-        $bestMonthVal = $bestMonth !== '-' ? $bestMonth : 'Juni 2026';
-
-        // Chart values - sum amount of paid referrals
         $chartLabels = [];
         $chartValues = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
-            $sum = Referral::where('status', 'paid')
-                ->whereYear('created_at', $date->year)
-                ->whereMonth('created_at', $date->month)
+
+        if ($range === '30_days') {
+            $startDate = now()->subDays(30);
+            $totalKomisiVal = Referral::where('status', 'paid')
+                ->where('created_at', '>=', $startDate)
                 ->sum('amount');
-            $chartLabels[] = $date->format('M Y');
-            $chartValues[] = (float) $sum;
+
+            $bestPeriod = Referral::where('status', 'paid')
+                ->where('created_at', '>=', $startDate)
+                ->select(
+                    \DB::raw('SUM(amount) as total_amount'),
+                    \DB::raw('DATE(created_at) as period')
+                )
+                ->groupBy('period')
+                ->orderByDesc('total_amount')
+                ->first();
+
+            $bestMonthVal = $bestPeriod ? \Carbon\Carbon::parse($bestPeriod->period)->translatedFormat('d M Y') : '-';
+            $labelTotalKomisi = 'Total Komisi 30 Hari Terakhir';
+            $labelBestPeriod = 'Hari Terbaik';
+
+            for ($i = 29; $i >= 0; $i--) {
+                $date = now()->subDays($i);
+                $sum = Referral::where('status', 'paid')
+                    ->whereDate('created_at', $date->toDateString())
+                    ->sum('amount');
+                $chartLabels[] = $date->translatedFormat('d M');
+                $chartValues[] = (float) $sum;
+            }
+        } elseif ($range === '1_year') {
+            $startDate = now()->subMonths(12);
+            $totalKomisiVal = Referral::where('status', 'paid')
+                ->where('created_at', '>=', $startDate)
+                ->sum('amount');
+
+            $bestPeriod = Referral::where('status', 'paid')
+                ->where('created_at', '>=', $startDate)
+                ->select(
+                    \DB::raw('SUM(amount) as total_amount'),
+                    \DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period')
+                )
+                ->groupBy('period')
+                ->orderByDesc('total_amount')
+                ->first();
+
+            $bestMonthVal = $bestPeriod ? \Carbon\Carbon::parse($bestPeriod->period . '-01')->translatedFormat('F Y') : '-';
+            $labelTotalKomisi = 'Total Komisi 1 Tahun Terakhir';
+            $labelBestPeriod = 'Bulan Terbaik';
+
+            for ($i = 11; $i >= 0; $i--) {
+                $date = now()->subMonths($i);
+                $sum = Referral::where('status', 'paid')
+                    ->whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->sum('amount');
+                $chartLabels[] = $date->translatedFormat('M Y');
+                $chartValues[] = (float) $sum;
+            }
+        } else { // 6_months (default)
+            $startDate = now()->subMonths(6);
+            $totalKomisiVal = Referral::where('status', 'paid')
+                ->where('created_at', '>=', $startDate)
+                ->sum('amount');
+
+            $bestPeriod = Referral::where('status', 'paid')
+                ->where('created_at', '>=', $startDate)
+                ->select(
+                    \DB::raw('SUM(amount) as total_amount'),
+                    \DB::raw('DATE_FORMAT(created_at, "%Y-%m") as period')
+                )
+                ->groupBy('period')
+                ->orderByDesc('total_amount')
+                ->first();
+
+            $bestMonthVal = $bestPeriod ? \Carbon\Carbon::parse($bestPeriod->period . '-01')->translatedFormat('F Y') : '-';
+            $labelTotalKomisi = 'Total Komisi 6 Bulan Terakhir';
+            $labelBestPeriod = 'Bulan Terbaik';
+
+            for ($i = 5; $i >= 0; $i--) {
+                $date = now()->subMonths($i);
+                $sum = Referral::where('status', 'paid')
+                    ->whereYear('created_at', $date->year)
+                    ->whereMonth('created_at', $date->month)
+                    ->sum('amount');
+                $chartLabels[] = $date->translatedFormat('M Y');
+                $chartValues[] = (float) $sum;
+            }
         }
+
+        $totalKomisi6BulanVal = $totalKomisiVal;
+        $highestKomisiVal = $totalKomisiVal;
 
         return view('admin.reseller.laporan', compact(
             'totalResellers',
@@ -188,11 +283,158 @@ class ResellerController extends Controller
             'goldPercent',
             'totalKomisi6BulanVal',
             'highestKomisiVal',
-            'highestKomisiMonthVal',
             'bestMonthVal',
             'chartLabels',
-            'chartValues'
+            'chartValues',
+            'range',
+            'labelTotalKomisi',
+            'labelBestPeriod'
         ));
+    }
+
+    public function adminExportExcel(Request $request)
+    {
+        $range = $request->query('range');
+        $query = Referral::where('status', 'paid')->with(['user', 'referredUser']);
+
+        if ($range === '7_days') {
+            $query->where('created_at', '>=', now()->subDays(7));
+        } elseif ($range === '30_days') {
+            $query->where('created_at', '>=', now()->subDays(30));
+        } elseif ($range === '3_months') {
+            $query->where('created_at', '>=', now()->subMonths(3));
+        } elseif ($range === '6_months') {
+            $query->where('created_at', '>=', now()->subMonths(6));
+        } elseif ($range === '1_year') {
+            $query->where('created_at', '>=', now()->subMonths(12));
+        }
+
+        $referrals = $query->latest()->get();
+
+        $filename = 'laporan-reseller-' . now()->format('Y-m-d-His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function() use ($referrals) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+
+            fputcsv($file, [
+                'No',
+                'Tanggal Transaksi',
+                'Nama Reseller',
+                'Email Reseller',
+                'Nama Pembeli',
+                'Email Pembeli',
+                'Deskripsi Produk',
+                'Komisi (IDR)',
+                'Status'
+            ], ';');
+
+            foreach ($referrals as $index => $ref) {
+                fputcsv($file, [
+                    $index + 1,
+                    $ref->created_at->format('Y-m-d H:i:s'),
+                    $ref->user->name ?? '-',
+                    $ref->user->email ?? '-',
+                    $ref->referredUser->name ?? '-',
+                    $ref->referredUser->email ?? '-',
+                    $ref->description ?? '-',
+                    (int) $ref->amount,
+                    strtoupper($ref->status)
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function adminExportPdf(Request $request)
+    {
+        $range = $request->query('range');
+        $type = $request->query('type', 'referrals');
+
+        if ($range === '7_days') {
+            $rangeText = '7 Hari Terakhir';
+        } elseif ($range === '30_days') {
+            $rangeText = '30 Hari Terakhir';
+        } elseif ($range === '3_months') {
+            $rangeText = '3 Bulan Terakhir';
+        } elseif ($range === '6_months') {
+            $rangeText = '6 Bulan Terakhir';
+        } elseif ($range === '1_year') {
+            $rangeText = '1 Tahun Terakhir';
+        } else {
+            $rangeText = 'Semua Periode';
+        }
+
+        $activeResellersCount = User::whereNotNull('referral_code')->count();
+
+        if ($type === 'withdrawals') {
+            $query = Withdrawal::query()->with('user');
+
+            if ($range === '7_days') {
+                $query->where('created_at', '>=', now()->subDays(7));
+            } elseif ($range === '30_days') {
+                $query->where('created_at', '>=', now()->subDays(30));
+            } elseif ($range === '3_months') {
+                $query->where('created_at', '>=', now()->subMonths(3));
+            } elseif ($range === '6_months') {
+                $query->where('created_at', '>=', now()->subMonths(6));
+            } elseif ($range === '1_year') {
+                $query->where('created_at', '>=', now()->subMonths(12));
+            }
+
+            $withdrawals = $query->latest()->get();
+
+            $totalWithdrawalsCount = $withdrawals->count();
+            $totalApprovedAmount = $withdrawals->where('status', 'approved')->sum('amount');
+            $totalPendingAmount = $withdrawals->where('status', 'pending')->sum('amount');
+
+            return view('admin.reseller.print_withdraw_report', compact(
+                'withdrawals',
+                'totalWithdrawalsCount',
+                'totalApprovedAmount',
+                'totalPendingAmount',
+                'activeResellersCount',
+                'rangeText'
+            ));
+        } else {
+            $query = Referral::where('status', 'paid')->with(['user', 'referredUser']);
+
+            if ($range === '7_days') {
+                $query->where('created_at', '>=', now()->subDays(7));
+            } elseif ($range === '30_days') {
+                $query->where('created_at', '>=', now()->subDays(30));
+            } elseif ($range === '3_months') {
+                $query->where('created_at', '>=', now()->subMonths(3));
+            } elseif ($range === '6_months') {
+                $query->where('created_at', '>=', now()->subMonths(6));
+            } elseif ($range === '1_year') {
+                $query->where('created_at', '>=', now()->subMonths(12));
+            }
+
+            $referrals = $query->latest()->get();
+
+            $totalSalesCount = $referrals->count();
+            $totalKomisi = $referrals->sum('amount');
+
+            return view('admin.reseller.print_report', compact(
+                'referrals',
+                'totalSalesCount',
+                'totalKomisi',
+                'activeResellersCount',
+                'rangeText'
+            ));
+        }
     }
 
     public function toggleResellerStatus(Request $request)
@@ -261,18 +503,35 @@ class ResellerController extends Controller
 
         $id = $request->id;
         $type = $request->type;
+        $bronze = (int) $request->bronze;
+        $silver = (int) $request->silver;
+        $gold = (int) $request->gold;
+
+        // Validation rule: Bronze <= Silver <= Gold
+        if ($bronze > $silver) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Komisi Bronze tidak boleh lebih besar dari Silver.'
+            ], 422);
+        }
+        if ($silver > $gold) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Komisi Silver tidak boleh lebih besar dari Gold.'
+            ], 422);
+        }
 
         if ($type === 'Course') {
             $product = Course::findOrFail($id);
-            $product->reseller_commission_bronze = $request->bronze;
-            $product->reseller_commission_silver = $request->silver;
-            $product->reseller_commission_gold = $request->gold;
+            $product->reseller_commission_bronze = $bronze;
+            $product->reseller_commission_silver = $silver;
+            $product->reseller_commission_gold = $gold;
             $product->save();
         } else {
             $product = Event::findOrFail($id);
-            $product->reseller_commission_bronze = $request->bronze;
-            $product->reseller_commission_silver = $request->silver;
-            $product->reseller_commission_gold = $request->gold;
+            $product->reseller_commission_bronze = $bronze;
+            $product->reseller_commission_silver = $silver;
+            $product->reseller_commission_gold = $gold;
             $product->save();
         }
 
@@ -422,6 +681,7 @@ class ResellerController extends Controller
 
         $eventProducts = Event::query()
             ->where('is_published', 1)
+            ->active()
             ->where('is_reseller_event', 1)
             ->select('id', 'title', 'jenis', 'price', 'image', 'reseller_commission_bronze', 'reseller_commission_silver', 'reseller_commission_gold')
             ->latest()
@@ -495,7 +755,7 @@ class ResellerController extends Controller
         // --- 5. Top Resellers ---
         // Ngambil 6 User dengan referral terbanyak (Global Leaderboard)
         $topResellers = User::withCount('referrals') // Hitung jumlah referral
-            ->withSum(['referrals' => function ($q) { // Hitung total cuan mereka (status paid)
+            ->withSum(['referrals' => function ($q) { // Hitung total komisi mereka (status paid)
                 $q->where('status', 'paid');
             }], 'amount')
             ->orderByDesc('referrals_count')

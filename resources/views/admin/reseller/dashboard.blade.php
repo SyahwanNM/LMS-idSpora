@@ -266,14 +266,10 @@
                         <h2 class="fw-bold mb-1 text-dark fs-2">Dashboard Reseller</h2>
                         <p class="text-secondary mb-0" style="font-size: 1.05rem;">Kelola program reseller dengan mudah dan pantau performa secara real-time.</p>
                     </div>
-                    <div class="dropdown">
-                        <button class="btn btn-primary-custom dropdown-toggle rounded-pill px-4 fw-bold shadow-sm" type="button" data-bs-toggle="dropdown" style="height: 44px; display: flex; align-items: center; gap: 8px;">
-                            <i class="bi bi-download"></i> Export Laporan
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
-                            <li><a class="dropdown-item py-2" href="#"><i class="bi bi-file-earmark-excel-fill text-success me-2"></i> Export Excel</a></li>
-                            <li><a class="dropdown-item py-2" href="#"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i> Export PDF</a></li>
-                        </ul>
+                    <div>
+                        <a href="{{ route('admin.reseller.export.pdf', ['range' => $range ?? '7_days']) }}" target="_blank" class="btn btn-primary-custom rounded-3 px-4 fw-bold shadow-sm d-flex align-items-center gap-2" style="height: 44px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
+                        </a>
                     </div>
                 </div>
 
@@ -380,10 +376,10 @@
                                         <i class="bi bi-activity"></i> Tren Penjualan Referral
                                     </h5>
                                     <div class="btn-group btn-group-sm" role="group" aria-label="Time Filter">
-                                        <button type="button" class="btn btn-outline-secondary active">7 Hari</button>
-                                        <button type="button" class="btn btn-outline-secondary">30 Hari</button>
-                                        <button type="button" class="btn btn-outline-secondary">3 Bulan</button>
-                                        <button type="button" class="btn btn-outline-secondary">1 Tahun</button>
+                                        <a href="{{ route('admin.reseller.dashboard', ['range' => '7_days']) }}" class="btn btn-outline-secondary {{ ($range ?? '7_days') === '7_days' ? 'active' : '' }}">7 Hari</a>
+                                        <a href="{{ route('admin.reseller.dashboard', ['range' => '30_days']) }}" class="btn btn-outline-secondary {{ ($range ?? '7_days') === '30_days' ? 'active' : '' }}">30 Hari</a>
+                                        <a href="{{ route('admin.reseller.dashboard', ['range' => '3_months']) }}" class="btn btn-outline-secondary {{ ($range ?? '7_days') === '3_months' ? 'active' : '' }}">3 Bulan</a>
+                                        <a href="{{ route('admin.reseller.dashboard', ['range' => '1_year']) }}" class="btn btn-outline-secondary {{ ($range ?? '7_days') === '1_year' ? 'active' : '' }}">1 Tahun</a>
                                     </div>
                                 </div>
                                 <div style="position: relative; height: 320px; width: 100%;">

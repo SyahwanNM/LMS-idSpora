@@ -235,7 +235,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light px-3" style="border-radius: 8px;" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-primary-custom px-4" style="border-radius: 8px;" data-bs-dismiss="modal" onclick="saveCommissionSetting()">Simpan</button>
+                    <button type="button" class="btn btn-primary-custom px-4" style="border-radius: 8px;" onclick="saveCommissionSetting()">Simpan</button>
                 </div>
             </div>
         </div>
@@ -246,19 +246,27 @@
         <div id="actionToast" class="toast align-items-center text-white border-0 bg-dark" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 12px;">
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center gap-2">
-                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                    <i id="toastIcon" class="bi bi-check-circle-fill text-success fs-5"></i>
                     <span id="toastMessage">Tindakan berhasil diselesaikan!</span>
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>
-
+ 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Toast Helper
-        function showToast(msg) {
+        function showToast(msg, isSuccess = true) {
             document.getElementById('toastMessage').innerText = msg;
+            const iconEl = document.getElementById('toastIcon');
+            if (iconEl) {
+                if (isSuccess) {
+                    iconEl.className = 'bi bi-check-circle-fill text-success fs-5';
+                } else {
+                    iconEl.className = 'bi bi-exclamation-circle-fill text-danger fs-5';
+                }
+            }
             const toastEl = document.getElementById('actionToast');
             const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
             toast.show();
@@ -293,6 +301,19 @@
             const silver = document.getElementById('modalCommSilver').value || '12';
             const gold = document.getElementById('modalCommGold').value || '15';
             
+            const bVal = parseInt(bronze, 10);
+            const sVal = parseInt(silver, 10);
+            const gVal = parseInt(gold, 10);
+            
+            if (bVal > sVal) {
+                showToast("Gagal: Komisi Bronze tidak boleh lebih besar dari Silver.", false);
+                return;
+            }
+            if (sVal > gVal) {
+                showToast("Gagal: Komisi Silver tidak boleh lebih besar dari Gold.", false);
+                return;
+            }
+            
             fetch("{{ route('api.admin.reseller.save-commission') }}", {
                 method: "POST",
                 headers: {
@@ -304,6 +325,13 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    // Close modal
+                    const modalEl = document.getElementById('editCommissionModal');
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    
                     // Update row data attributes
                     const rowId = type.toLowerCase() + 'Row' + id;
                     const row = document.getElementById(rowId);
@@ -319,16 +347,16 @@
                             commDisplay.innerText = `${sorted[0]}% - ${sorted[2]}%`;
                         }
                     }
-                    showToast(`Komisi khusus untuk "${prodName}" berhasil disimpan! (Bronze: ${bronze}%, Silver: ${silver}%, Gold: ${gold}%)`);
+                    showToast(`Komisi khusus untuk "${prodName}" berhasil disimpan! (Bronze: ${bronze}%, Silver: ${silver}%, Gold: ${gold}%)`, true);
                 } else {
-                    showToast(`Gagal menyimpan komisi: ${data.message || 'Error'}`);
+                    showToast(`Gagal menyimpan komisi: ${data.message || 'Error'}`, false);
                 }
             })
             .catch(err => {
-                showToast(`Terjadi kesalahan jaringan.`);
+                showToast(`Terjadi kesalahan jaringan.`, false);
             });
         }
-
+ 
         // Toggle reseller status via API
         function toggleResellerStatus(id, type, el) {
             const status = el.checked ? 1 : 0;
@@ -345,15 +373,15 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    showToast(`Status reseller ${label} berhasil diperbarui!`);
+                    showToast(`Status reseller ${label} berhasil diperbarui!`, true);
                 } else {
                     el.checked = !el.checked;
-                    showToast(`Gagal memperbarui status reseller: ${data.message || 'Error'}`);
+                    showToast(`Gagal memperbarui status reseller: ${data.message || 'Error'}`, false);
                 }
             })
             .catch(err => {
                 el.checked = !el.checked;
-                showToast(`Terjadi kesalahan jaringan.`);
+                showToast(`Terjadi kesalahan jaringan.`, false);
             });
         }
 

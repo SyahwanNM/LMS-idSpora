@@ -433,7 +433,7 @@
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>
                             <p class="mt-3 text-body-secondary">Dapatkan komisi 10-15% dari setiap transaksi yang
-                                sukses. Makin banyak ajak teman, makin cuan!</p>
+                                sukses. Semakin banyak rekan yang Anda ajak, semakin besar komisi yang didapatkan!</p>
                         </div>
                     </div>
                 </div>
@@ -690,7 +690,7 @@
                                             }} referrals</small>
                                     </div>
 
-                                    {{-- Total Cuan (Badge) --}}
+                                    {{-- Total Komisi (Badge) --}}
                                     <span
                                         class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
                                         Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k

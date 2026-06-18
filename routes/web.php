@@ -487,6 +487,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/reseller/data', [\App\Http\Controllers\User\ResellerController::class, 'adminData'])->name('admin.reseller.data');
         Route::get('/admin/reseller/katalog', [\App\Http\Controllers\User\ResellerController::class, 'adminKatalog'])->name('admin.reseller.katalog');
         Route::get('/admin/reseller/laporan', [\App\Http\Controllers\User\ResellerController::class, 'adminLaporan'])->name('admin.reseller.laporan');
+        Route::get('/admin/reseller/export/excel', [\App\Http\Controllers\User\ResellerController::class, 'adminExportExcel'])->name('admin.reseller.export.excel');
+        Route::get('/admin/reseller/export/pdf', [\App\Http\Controllers\User\ResellerController::class, 'adminExportPdf'])->name('admin.reseller.export.pdf');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');

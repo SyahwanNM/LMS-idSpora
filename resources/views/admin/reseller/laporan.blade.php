@@ -39,6 +39,18 @@
             border-color: #3b1673 !important;
         }
 
+        .btn-outline-primary-custom {
+            color: var(--primary-dark) !important;
+            border: 1px solid var(--primary-dark) !important;
+            background-color: transparent !important;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-primary-custom:hover {
+            color: #ffffff !important;
+            background-color: var(--primary-dark) !important;
+        }
+
         .hover-card-up {
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             border-radius: 16px !important;
@@ -60,10 +72,13 @@
                     <h2 class="fw-bold mb-1 text-dark fs-2">Laporan Performa</h2>
                     <p class="text-secondary mb-0">Analisis dan ekspor pertumbuhan mitra reseller IdSpora.</p>
                 </div>
-                <div class="btn-group btn-group-sm" role="group" aria-label="Reporting Range">
-                    <button type="button" class="btn btn-outline-secondary">Mingguan</button>
-                    <button type="button" class="btn btn-outline-secondary active">Bulanan</button>
-                    <button type="button" class="btn btn-outline-secondary">Tahunan</button>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.reseller.export.pdf', ['type' => 'referrals', 'range' => $range ?? '6_months']) }}" target="_blank" class="btn btn-primary-custom rounded-3 px-4 shadow-sm d-flex align-items-center gap-2" style="height: 44px;">
+                        <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF Penjualan
+                    </a>
+                    <a href="{{ route('admin.reseller.export.pdf', ['type' => 'withdrawals', 'range' => $range ?? '6_months']) }}" target="_blank" class="btn btn-outline-primary-custom rounded-3 px-4 shadow-sm d-flex align-items-center gap-2" style="height: 44px;">
+                        <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF Penarikan
+                    </a>
                 </div>
             </div>
 
@@ -143,10 +158,10 @@
                                 <i class="bi bi-bar-chart-line-fill text-primary-dark"></i> Grafik Penjualan Referral
                             </h5>
                             <div>
-                                <select class="form-select form-select-sm text-secondary bg-light border-light-subtle rounded-3" style="width: auto; font-size: 0.85rem; font-weight: 500; height: 36px; padding-right: 30px;">
-                                    <option>6 Bulan Terakhir</option>
-                                    <option>30 Hari Terakhir</option>
-                                    <option>1 Tahun Terakhir</option>
+                                <select class="form-select form-select-sm text-secondary bg-light border-light-subtle rounded-3" onchange="location = this.value;" style="width: auto; font-size: 0.85rem; font-weight: 500; height: 36px; padding-right: 30px;">
+                                    <option value="{{ route('admin.reseller.laporan', ['range' => '6_months']) }}" {{ ($range ?? '6_months') === '6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                                    <option value="{{ route('admin.reseller.laporan', ['range' => '30_days']) }}" {{ ($range ?? '6_months') === '30_days' ? 'selected' : '' }}>30 Hari Terakhir</option>
+                                    <option value="{{ route('admin.reseller.laporan', ['range' => '1_year']) }}" {{ ($range ?? '6_months') === '1_year' ? 'selected' : '' }}>1 Tahun Terakhir</option>
                                 </select>
                             </div>
                         </div>
@@ -156,27 +171,27 @@
                         
                         <!-- Stats at the bottom of chart card -->
                         <div class="row g-3 mt-3 justify-content-center">
-                            <!-- Stat 1: Total Komisi 6 Bulan -->
+                            <!-- Stat 1: Total Komisi -->
                             <div class="col-12 col-md-6">
                                 <div class="d-flex align-items-center p-3 border border-light-subtle rounded-3 bg-light bg-opacity-25 h-100">
                                     <div class="d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-3 me-3" style="width: 44px; height: 44px; flex-shrink: 0;">
                                         <i class="bi bi-wallet2 fs-5"></i>
                                     </div>
                                     <div>
-                                        <small class="text-secondary d-block" style="font-size: 0.75rem; font-weight: 500; line-height: 1.2;">Total Komisi 6 Bulan</small>
+                                        <small class="text-secondary d-block" style="font-size: 0.75rem; font-weight: 500; line-height: 1.2;">{{ $labelTotalKomisi ?? 'Total Komisi' }}</small>
                                         <span class="fw-bold text-dark" style="font-size: 1.05rem;">Rp {{ number_format($totalKomisi6BulanVal, 0, ',', '.') }}</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Stat 2: Bulan Terbaik -->
+                            <!-- Stat 2: Periode Terbaik -->
                             <div class="col-12 col-md-6">
                                 <div class="d-flex align-items-center p-3 border border-light-subtle rounded-3 bg-light bg-opacity-25 h-100">
                                     <div class="d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-3 me-3" style="width: 44px; height: 44px; flex-shrink: 0;">
                                         <i class="bi bi-calendar-check fs-5"></i>
                                     </div>
                                     <div>
-                                        <small class="text-secondary d-block" style="font-size: 0.75rem; font-weight: 500; line-height: 1.2;">Bulan Terbaik</small>
+                                        <small class="text-secondary d-block" style="font-size: 0.75rem; font-weight: 500; line-height: 1.2;">{{ $labelBestPeriod ?? 'Bulan Terbaik' }}</small>
                                         <span class="fw-bold text-dark" style="font-size: 1.05rem;">{{ $bestMonthVal }}</span>
                                     </div>
                                 </div>
@@ -264,7 +279,7 @@
                                     </div>
                                     <div>
                                         <small class="text-secondary">Update Terakhir</small>
-                                        <span class="fw-bold text-dark">{{ now()->translatedFormat('d M Y, H:i') }} WIB</span>
+                                        <div class="fw-medium text-dark" style="font-size: 12px;">{{ now()->translatedFormat('d M Y, H:i') }} WIB</div>
                                     </div>
                                 </div>
                             </div>
@@ -273,25 +288,7 @@
                 </div>
             </div>
 
-            <!-- Bottom Banner Card -->
-            <div class="card border-0 shadow-sm rounded-4 p-4 mt-4 bg-white">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="d-flex align-items-center justify-content-center bg-primary-subtle text-primary-dark rounded-circle" style="width: 48px; height: 48px; flex-shrink: 0; background-color: var(--primary-subtle) !important;">
-                            <i class="bi bi-download fs-5" style="color: var(--primary-dark);"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Butuh data lebih detail?</h6>
-                            <p class="text-muted mb-0 small" style="font-size: 0.82rem;">Ekspor laporan performa reseller dalam format Excel untuk analisis lebih lanjut.</p>
-                        </div>
-                    </div>
-                    <div>
-                        <a href="#" class="btn btn-primary-custom px-4 py-2 fw-bold d-flex align-items-center gap-2" style="border-radius: 8px; font-size: 0.9rem;">
-                            <i class="bi bi-file-earmark-excel"></i> Export Excel
-                        </a>
-                    </div>
-                </div>
-            </div>
+
 
         </div>
     </main>

@@ -212,8 +212,8 @@
             <button class="navbar-toggler text-dark border-0 p-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu">
                 <i class="bi bi-list fs-2"></i>
             </button>
-            <a class="navbar-brand d-flex align-items-center text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
-                <img src="{{ asset('logo-idspora.png') }}" alt="IdSpora" style="height:12px; margin-right:6px; width:auto;">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
+                <img src="{{ asset('logo-idspora_hitam.png') }}" alt="IdSpora" style="height: 24px; width: auto; object-fit: contain;">
                 <span class="fw-bold small">Admin Reseller</span>
             </a>
         </div>
@@ -293,10 +293,10 @@
 
 <!-- DESKTOP FIXED SIDEBAR -->
 <div class="sidebar-desktop d-none d-lg-flex">
-    <div class="p-4 d-flex align-items-center gap-3 mb-2">
-        <a class="navbar-brand text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
-            <img src="{{ asset('logo-idspora.png') }}" alt="IdSpora" style="height:16px; margin-right:10px; width:auto;">
-            <h5 class="fw-bold mb-0">Admin Reseller</h5>
+    <div class="p-4 mb-2">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
+            <img src="{{ asset('logo-idspora_hitam.png') }}" alt="IdSpora" style="height: 28px; width: auto; object-fit: contain;">
+            <h5 class="fw-bold mb-0" style="font-size: 1.1rem; letter-spacing: -0.5px;">Admin Reseller</h5>
         </a>
     </div>
 
