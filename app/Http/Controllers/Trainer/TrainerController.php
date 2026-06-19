@@ -1025,6 +1025,10 @@ class TrainerController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        foreach ($courses as $c) {
+            $c->is_locked = $this->isCourseMaterialLockedForTrainer((int) $c->id, (int) $user->id);
+        }
+
         $certifiedCourseIds = \App\Models\TrainerCertificate::query()
             ->where('trainer_id', $user->id)
             ->whereIn('status', ['sent', 'published'])
@@ -1166,6 +1170,9 @@ class TrainerController extends Controller
             3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
         ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
 
+        $courseInvitationStatus = $courseInvitation?->effectiveInvitationStatus() ?? '';
+        $courseMaterialLocked = $this->isCourseMaterialLockedForTrainer((int) $course->id, $trainerId);
+
         return view('trainer.detail-course', compact(
             'course',
             'enrollmentCount',
@@ -1176,7 +1183,9 @@ class TrainerController extends Controller
             'classAverage',
             'totalSubmissions',
             'processingSummary',
-            'schemePermissions'
+            'schemePermissions',
+            'courseMaterialLocked',
+            'courseInvitationStatus'
         ));
     }
     public function events(Request $request)

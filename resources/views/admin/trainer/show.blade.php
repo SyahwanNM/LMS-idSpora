@@ -41,7 +41,7 @@
             width: 90px;
             height: 90px;
             border-radius: 50%;
-            background-color: #1e3a8a;
+            background-color: #1e1b4b;
             color: #fff;
             display: flex;
             align-items: center;
@@ -512,7 +512,7 @@
         }
 
         .event-course-icon.event {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #1e1b4b 0%, #3b82f6 100%);
         }
 
         .event-course-icon.course {

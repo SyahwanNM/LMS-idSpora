@@ -48,7 +48,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
     :root {
-        --cert-primary: #2f3fcb;
+        --cert-primary: #1e1b4b;
         --cert-primary-soft: #eef1ff;
         --cert-navy: #1a237e;
         --cert-border: #e6eaf2;
@@ -86,14 +86,14 @@
     }
 
     .cert-hero {
-        background: linear-gradient(135deg, #2935b8 0%, #4858db 58%, #dce3ff 100%);
+        background: #1e1b4b;
         border-radius: 22px;
         padding: 34px 38px;
         color: #fff;
         min-height: 155px;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 18px 40px rgba(47, 63, 203, .14);
+        box-shadow: 0 18px 40px rgba(30, 27, 75, .14);
         margin-bottom: 22px;
     }
 
@@ -195,7 +195,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 8px 18px rgba(47,63,203,.25);
+        box-shadow: 0 8px 18px rgba(30, 27, 75,.25);
     }
 
     .cert-section-title {
@@ -284,7 +284,7 @@
 
     .template-option input:checked + .template-card {
         border-color: var(--cert-primary);
-        box-shadow: 0 0 0 3px rgba(47,63,203,.12);
+        box-shadow: 0 0 0 3px rgba(30, 27, 75,.12);
     }
 
     .template-check {
@@ -301,7 +301,7 @@
         justify-content: center;
         z-index: 2;
         font-size: 12px;
-        box-shadow: 0 2px 6px rgba(47, 63, 203, .25);
+        box-shadow: 0 2px 6px rgba(30, 27, 75, .25);
     }
 
     .template-option input:checked + .template-card .template-check {
@@ -576,7 +576,7 @@
     .btn-save-config {
         border: 0;
         border-radius: 12px;
-        background: linear-gradient(135deg, #2f3fcb, #2636bd);
+        background: #1e1b4b;
         color: #fff;
         font-weight: 900;
         cursor: pointer;
@@ -856,7 +856,7 @@
         margin: 0 20px !important;
     }
     #cert-preview-scaler .sig-line { width: 170px; border-bottom: 1.5px solid #0f172a; margin: 8px auto; }
-    #cert-preview-scaler .template_3 .sig-line { border-bottom-color: #4f46e5; }
+    #cert-preview-scaler .template_3 .sig-line { border-bottom-color: #1e1b4b; }
     
     #cert-preview-scaler .cert-id { position: absolute; bottom: 25px; right: 40px; font-size: 8.5pt; color: #94a3b8; font-weight: 600; z-index: 3; }
     #cert-preview-scaler .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
@@ -1004,7 +1004,7 @@
         <section class="cert-hero">
             <div class="cert-hero-content">
                 <div class="page-eyebrow">Sistem Rekognisi</div>
-                <h1>Konfigurasi Sertifikat</h1>
+                <h1 style="color: #FFF;">Konfigurasi Sertifikat</h1>
                 <p>
                     {{ strtoupper($context === 'course' ? 'Kursus' : 'Acara') }}: {{ $modelTitle }}<br>
                     Trainer: {{ $trainer->name }}
@@ -1035,7 +1035,7 @@
                         <div class="section-content">
                             <div class="template-grid">
                                 @foreach([
-                                    'template_1' => ['Classic Royal', 'Elegan dengan aksen emas dan navy.', 'bi-award', 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', '#fff'],
+                                    'template_1' => ['Classic Royal', 'Elegan dengan aksen emas dan navy.', 'bi-award', 'linear-gradient(135deg, #1e1b4b 0%, #1e1b4b 100%)', '#fff'],
                                     'template_2' => ['Modern Minimal', 'Bersih, fokus pada tipografi modern.', 'bi-file-earmark-text', '#f1f5f9', '#1e293b'],
                                     'template_3' => ['Creative Dynamic', 'Enerjik dengan gradien dan pola.', 'bi-palette', 'linear-gradient(135deg, #6d28d9 0%, #db2777 100%)', '#fff'],
                                     'template_4' => ['Blue Shield', 'Biru navy elegan dengan aksen emas.', 'bi-shield-fill-check', 'linear-gradient(155deg, #001060 0%, #0033cc 60%, #0050ff 100%)', '#fff'],

@@ -83,8 +83,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
         :root {
-            --cert-primary: #2f3fcb;
-            --cert-primary-2: #4858db;
+            --cert-primary: #1e1b4b;
+            --cert-primary-2: #1e1b4b;
             --cert-border: #e6eaf2;
             --cert-muted: #6b7a99;
             --cert-success: #059669;
@@ -121,14 +121,14 @@
         }
 
         .detail-hero {
-            background: linear-gradient(135deg, #2935b8 0%, #4858db 58%, #dce3ff 100%);
+            background: #1e1b4b;
             border-radius: 20px;
             padding: 34px 36px;
             color: #fff;
             min-height: 170px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 18px 40px rgba(47, 63, 203, .14);
+            box-shadow: 0 18px 40px rgba(30, 27, 75, .14);
             margin-bottom: 24px;
         }
 
@@ -458,7 +458,7 @@
             margin: 0 20px !important;
         }
         #cert-preview-scaler .sig-line { width: 170px; border-bottom: 1.5px solid #0f172a; margin: 8px auto; }
-        #cert-preview-scaler .template_3 .sig-line { border-bottom-color: #4f46e5; }
+        #cert-preview-scaler .template_3 .sig-line { border-bottom-color: #1e1b4b; }
         
         #cert-preview-scaler .cert-id { position: absolute; bottom: 25px; right: 40px; font-size: 8.5pt; color: #94a3b8; font-weight: 600; z-index: 3; }
         #cert-preview-scaler .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
@@ -744,7 +744,7 @@
             width: 100%;
             height: 48px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #2f3fcb, #2636bd);
+            background: #1e1b4b;
             color: #fff;
             text-decoration: none;
             font-weight: 700;
@@ -844,7 +844,7 @@
                 <section class="detail-hero">
                     <div class="hero-content">
                         <div class="page-eyebrow">Sistem Rekognisi</div>
-                        <h1>Detail Sertifikat</h1>
+                        <h1 style="color:#fff">Detail Sertifikat</h1>
                         <p>
                             Informasi lengkap sertifikat yang telah diterbitkan.
                         </p>
@@ -1012,7 +1012,7 @@
                                                         @else
                                                             <div style="height: 90px;"></div>
                                                         @endif
-                                                        <div class="sig-line" style="width: 170px; border-bottom: 1.5px {{ $templateName === 'template_1' ? 'dashed #7f1d1d' : ($templateName === 'template_3' ? 'solid #4f46e5' : 'solid #0f172a') }}; margin: 8px auto;"></div>
+                                                        <div class="sig-line" style="width: 170px; border-bottom: 1.5px {{ $templateName === 'template_1' ? 'dashed #7f1d1d' : ($templateName === 'template_3' ? 'solid #1e1b4b' : 'solid #0f172a') }}; margin: 8px auto;"></div>
                                                         <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $signature->name ?? 'Authorized Signature' }}</p>
                                                         <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $signature->position ?? 'Authorized Position' }}</p>
                                                     </div>

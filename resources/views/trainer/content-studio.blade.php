@@ -3875,16 +3875,25 @@ main.detail-course {
                     class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
                     data-tab="module" type="button" {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
                     MODUL
+                    @if((!$isAdmin && $courseMaterialLocked) || !$schemePermissions['can_module'])
+                        <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
+                    @endif
                 </button>
                 <button
                     class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
                     data-tab="video" type="button" {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
                     VIDEO
+                    @if((!$isAdmin && $courseMaterialLocked) || !$schemePermissions['can_video'])
+                        <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
+                    @endif
                 </button>
                 <button
                     class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
                     data-tab="quiz" type="button" {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
                     PENYUSUNAN QUIZ
+                    @if((!$isAdmin && $courseMaterialLocked) || !$schemePermissions['can_quiz'])
+                        <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
+                    @endif
                 </button>
             </div>
         </header>
@@ -3979,7 +3988,12 @@ main.detail-course {
 
                         <div class="text-upload-shell">
                             <div class="text-upload-header">
-                                <h3>Tulis Materi Seperti Modul Teks</h3>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-sm);">
+                                    <h3>Tulis Materi Seperti Modul Teks</h3>
+                                    <button type="button" class="btn-propose" data-bs-toggle="modal" data-bs-target="#styleGuideModal" style="border: 1.5px solid var(--main-navy-clr, #1a1d78); color: var(--main-navy-clr, #1a1d78); font-weight: 700; height: 34px; padding: 0 var(--spacing-md); font-size: 0.72rem; border-radius: 8px;">
+                                        <i class="bi bi-journal-text" style="color: var(--yellow-clr, #ffcd00);"></i> STYLE GUIDE
+                                    </button>
+                                </div>
                                 <p>Susun penjelasan materi dalam bentuk teks, lalu sisipkan gambar jika perlu supaya materi
                                     lebih mudah dipahami admin dan peserta.</p>
                                 <ul class="material-outline">
@@ -5786,6 +5800,100 @@ main.detail-course {
             });
         });
     </script>
+
+    <!-- Modal Style Guide (Panduan Gaya Penulisan Editor) -->
+    <div class="modal fade" id="styleGuideModal" tabindex="-1" aria-labelledby="styleGuideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 18px 24px;">
+                    <h5 class="modal-title" id="styleGuideModalLabel" style="font-weight: 800; color: #1a1d78; display: flex; align-items: center; gap: 8px; margin: 0;">
+                        <i class="bi bi-journal-text" style="color: #ffcd00; font-size: 1.35rem;"></i> Panduan Gaya Penulisan Editor (Style Guide)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 24px 32px; color: #334155; font-size: 0.92rem; line-height: 1.6; max-height: 65vh; overflow-y: auto;">
+                    <p style="font-weight: 500; margin-bottom: 20px; color: #64748b;">
+                        Gunakan panduan visual ini untuk memastikan materi pembelajaran yang Anda buat di editor teks seragam, rapi, dan mudah dipahami oleh Admin dan Peserta.
+                    </p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        
+                        <!-- Section 1 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); font-weight: bold; flex-shrink: 0;">
+                                H
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">1. Penggunaan Heading (Tajuk)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">Gunakan tingkat heading secara hierarkis:</p>
+                                <ul style="margin: 4px 0 0; padding-left: 20px; color: #475569; font-size: 0.86rem; list-style-type: disc;">
+                                    <li><strong>Heading 1 (H1)</strong> untuk judul materi utama.</li>
+                                    <li><strong>Heading 2 (H2)</strong> untuk judul sub-bab atau topik penting.</li>
+                                    <li><strong>Heading 3 (H3)</strong> untuk detail sub-topik.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Section 2 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-type-bold"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">2. Penyorotan Teks (Emphasis)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan tombol <strong>Bold (Tebal)</strong> hanya untuk istilah kunci, definisi krusial, atau kata penting. Gunakan <strong>Italic (Miring)</strong> untuk istilah asing atau kutipan. Hindari pemformatan berlebihan agar modul tetap mudah dipindai secara visual.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Section 3 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-code-square"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">3. Penulisan Kode (Code Blocks)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan tombol <strong>Code Block (&lt;/&gt;)</strong> untuk menyisipkan perintah sintaksis, baris kode program, atau perintah terminal. Jangan menuliskan kode langsung di teks paragraf biasa demi kerapian tampilan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Section 4 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-image"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">4. Integrasi Gambar & Media</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan tombol <strong>Insert Image</strong> untuk diagram, tangkapan layar, atau ilustrasi relevan. Pastikan ukuran file gambar optimal (resolusi tajam namun ukuran file tetap ringan) dan diletakkan di baris baru.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Section 5 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-list-ul"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">5. Struktur Daftar Rincian (List)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan <strong>Bullet List</strong> untuk rincian tak berurutan (misal: fitur, kelebihan). Gunakan penomoran manual jika langkah-langkah harus diikuti secara berurutan.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px;">
+                    <button type="button" class="secondary-btn" data-bs-dismiss="modal" style="border-radius: 10px; font-weight: 700; font-size: 0.84rem; padding: 8px 20px; cursor: pointer;">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 

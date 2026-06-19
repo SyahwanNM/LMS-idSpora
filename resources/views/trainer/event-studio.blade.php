@@ -1839,6 +1839,28 @@
                             <p class="hint">Gunakan format ini agar proses audit lebih cepat.</p>
                         </div>
                     </article>
+                    <article class="status-card">
+                        <div class="icon"
+                            style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1e40af;"><i
+                                class="bi bi-people"></i></div>
+                        <div>
+                            <p class="label">Target Peserta</p>
+                            <p class="value">
+                                @php
+                                    $titleLower = strtolower($event->title ?? '');
+                                    if (str_contains($titleLower, 'dosen') || str_contains($titleLower, 'guru') || str_contains($titleLower, 'pendidik')) {
+                                        $targetAudience = 'Dosen & Pendidik';
+                                    } elseif (str_contains($titleLower, 'lomba') || str_contains($titleLower, 'mahasiswa') || str_contains($titleLower, 'siswa')) {
+                                        $targetAudience = 'Mahasiswa & Siswa';
+                                    } else {
+                                        $targetAudience = 'Mahasiswa, Dosen, & Umum';
+                                    }
+                                @endphp
+                                {{ $targetAudience }}
+                            </p>
+                            <p class="hint">Profil target peserta sesi ini.</p>
+                        </div>
+                    </article>
                 </aside>
             </section>
         </div>

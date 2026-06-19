@@ -391,9 +391,7 @@ body {
 }
 
 .dashboard-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 32px 24px;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -1087,7 +1085,6 @@ body {
         <div>
             <div class="dash-card-header" style="margin-bottom: 16px;">
                 <h3 class="dash-card-title">Kelas & Event Berjalan</h3>
-                <a href="{{ route('trainer.courses') }}" class="dash-card-link">Lihat Semua</a>
             </div>
             
             <div class="ongoing-grid">

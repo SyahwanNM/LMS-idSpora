@@ -124,7 +124,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --cert-primary: #4f46e5;
+            --cert-primary: #1e1b4b;
             --cert-primary-2: #6366f1;
             --cert-soft: #f5f3ff;
             --cert-border: #f1f5f9;
@@ -138,8 +138,8 @@
             --cert-configured-color: #475569;
             --cert-missing-bg: #f1f5f9;
             --cert-missing-color: #475569;
-            --btn-start: #4f46e5;
-            --btn-end: #4f46e5;
+            --btn-start: #1e1b4b;
+            --btn-end: #1e1b4b;
             --btn-soft-bg: #eef2ff;
         }
 
@@ -154,7 +154,7 @@
         }
 
         .cert-hero {
-            background: linear-gradient(135deg, #312e81 0%, #4f46e5 55%, #818cf8 100%);
+            background: #1e1b4b;
             border-radius: 24px;
             padding: 42px 48px;
             color: #fff;
@@ -607,7 +607,7 @@
 
         .status-badge.configured {
             background: #eef2ff;
-            color: #4f46e5;
+            color: #1e1b4b;
             border-color: #cbd5e1;
         }
 
@@ -630,7 +630,7 @@
         }
 
         .pulse-dot.configured {
-            background-color: #4f46e5;
+            background-color: #1e1b4b;
         }
 
         .pulse-dot.missing {
@@ -864,7 +864,7 @@
 
         /* Button styles based on config status */
         .btn-manage-template:not(.soft):not(.warning) {
-            background: #4f46e5;
+            background: #1e1b4b;
             color: #fff;
         }
 
@@ -875,7 +875,7 @@
 
         .btn-manage-template.soft {
             background: #eef2ff;
-            color: #4f46e5;
+            color: #1e1b4b;
             border: 1px solid #e0e7ff;
         }
 
@@ -991,7 +991,7 @@
         }
         .btn-action-small.view {
             background: #eef2ff;
-            color: #4f46e5;
+            color: #1e1b4b;
             border: 1px solid #e0e7ff;
         }
         .btn-action-small.view:hover {
@@ -1015,7 +1015,7 @@
             gap: 6px;
             padding: 6px 12px;
             border-radius: 8px;
-            background: #4f46e5;
+            background: #1e1b4b;
             color: white;
             border: none;
             font-size: 0.75rem;
@@ -1057,11 +1057,11 @@
                 <div class="col-xl-6">
                     <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
                         <!-- Ribbon Icon Circle -->
-                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #eef2ff; display: flex; align-items: center; justify-content: center; color: #4f46e5; font-size: 24px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08); flex-shrink: 0;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #eef2ff; display: flex; align-items: center; justify-content: center; color: #1e1b4b; font-size: 24px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08); flex-shrink: 0;">
                             <i class="bi bi-award-fill"></i>
                         </div>
                         <div>
-                            <div style="font-size: 0.72rem; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px;">Sistem Rekognisi</div>
+                            <div style="font-size: 0.72rem; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px;">Sistem Rekognisi</div>
                             <h1 style="font-size: 2.1rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px;">Sertifikat & Penghargaan</h1>
                         </div>
                     </div>
@@ -1070,7 +1070,7 @@
 
                 <!-- Right Dark Blue Card Banner -->
                 <div class="col-xl-6">
-                    <div class="header-banner-card" style="background: linear-gradient(135deg, #1e1b4b 0%, #2e2a72 40%, #3b359c 100%); border-radius: 24px; padding: 24px; color: white; display: flex; position: relative; overflow: hidden; min-height: 140px; align-items: center; box-shadow: 0 12px 30px rgba(30, 27, 75, 0.2);">
+                    <div class="header-banner-card" style="background: #1e1b4b; border-radius: 24px; padding: 24px; color: white; display: flex; position: relative; overflow: hidden; min-height: 140px; align-items: center; box-shadow: 0 12px 30px rgba(30, 27, 75, 0.2);">
                         <!-- Stats Items -->
                         <div style="display: flex; flex-wrap: wrap; gap: 20px 32px; z-index: 2; flex: 1; justify-content: flex-start; padding-right: 140px;">
                             <!-- Stat 1 -->
@@ -1122,7 +1122,7 @@
                         <!-- Floating Graphics (Certificate mockups) -->
                         <div style="position: absolute; right: -20px; top: -10px; width: 180px; height: 160px; z-index: 1; pointer-events: none; opacity: 0.95;">
                             <!-- Back Card -->
-                            <div style="position: absolute; right: 35px; top: 30px; width: 120px; height: 85px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(79, 70, 229, 0.35)); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; transform: rotate(15deg); backdrop-filter: blur(6px);"></div>
+                            <div style="position: absolute; right: 35px; top: 30px; width: 120px; height: 85px; background: rgba(30, 27, 75, 0.35); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; transform: rotate(15deg); backdrop-filter: blur(6px);"></div>
                             <!-- Front Card -->
                             <div style="position: absolute; right: 20px; top: 20px; width: 130px; height: 90px; background: rgba(255, 255, 255, 0.96); border-radius: 10px; transform: rotate(-5deg); box-shadow: 0 10px 25px rgba(0,0,0,0.25); padding: 10px; display: flex; flex-direction: column; justify-content: space-between; border: 1.5px solid white;">
                                 <div style="font-size: 0.62rem; font-weight: 900; color: #4338ca; text-transform: uppercase; letter-spacing: 0.5px;">Sertifikat</div>
@@ -1533,7 +1533,7 @@
                 <!-- Quick Summary Card -->
                 <div class="card" style="background: #white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); margin-bottom: 24px; border-top: none;">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-                        <i class="bi bi-bar-chart-line-fill" style="color: #4f46e5; font-size: 16px;"></i>
+                        <i class="bi bi-bar-chart-line-fill" style="color: #1e1b4b; font-size: 16px;"></i>
                         <h5 style="font-size: 0.90rem; font-weight: 800; color: #0f172a; margin: 0;">Ringkasan Cepat</h5>
                     </div>
                     
@@ -1604,10 +1604,10 @@
                 <div class="card" style="background: #white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); border-top: none;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <i class="bi bi-clock-history" style="color: #4f46e5; font-size: 16px;"></i>
+                            <i class="bi bi-clock-history" style="color: #1e1b4b; font-size: 16px;"></i>
                             <h5 style="font-size: 0.90rem; font-weight: 800; color: #0f172a; margin: 0;">Aktivitas Terakhir</h5>
                         </div>
-                        <a href="#" style="font-size: 0.75rem; font-weight: 700; color: #4f46e5; text-decoration: none; transition: color 0.2s;">Lihat Semua</a>
+                        <a href="#" style="font-size: 0.75rem; font-weight: 700; color: #1e1b4b; text-decoration: none; transition: color 0.2s;">Lihat Semua</a>
                     </div>
 
                     <div style="display: flex; flex-direction: column; gap: 16px;">

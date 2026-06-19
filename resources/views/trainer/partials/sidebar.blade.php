@@ -638,7 +638,7 @@ html.sidebar-collapsed .trainer-page #sidebar + .main-wrapper {
             </div>
             <h6>Pusat Bantuan</h6>
             <p>Butuh bantuan? Silakan hubungi tim support.</p>
-            <a href="https://wa.me/628989260731" target="_blank" class="btn-help">Hubungi</a>
+            <a href="https://wa.me/628989260731" target="_blank" class="btn-help" style="color: white">Hubungi</a>
         </div>
     </div>
 </nav>

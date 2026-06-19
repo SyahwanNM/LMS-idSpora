@@ -1345,6 +1345,33 @@
                 @endif
               </div>
             </div>
+            <div class="info-card">
+              <div class="info-icon-shell">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <div class="info-card-content">
+                <span class="info-card-label">TARGET PESERTA</span>
+                <span class="info-card-value">
+                  @php
+                    $titleLower = strtolower($event->title ?? '');
+                    if (str_contains($titleLower, 'dosen') || str_contains($titleLower, 'guru') || str_contains($titleLower, 'pendidik')) {
+                        $targetAudience = 'Dosen & Pendidik';
+                    } elseif (str_contains($titleLower, 'lomba') || str_contains($titleLower, 'mahasiswa') || str_contains($titleLower, 'siswa')) {
+                        $targetAudience = 'Mahasiswa & Siswa';
+                    } else {
+                        $targetAudience = 'Mahasiswa, Dosen, & Umum';
+                    }
+                  @endphp
+                  {{ $targetAudience }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
