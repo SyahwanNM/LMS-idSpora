@@ -1431,11 +1431,33 @@ class PaymentController extends Controller
 
         try {
             $this->configureMidtrans();
-            $status = (array) \Midtrans\Transaction::status($orderId);
-            $internalStatus = $this->mapMidtransToInternalStatus(
-                $status['transaction_status'] ?? null,
-                $status['fraud_status'] ?? null
-            );
+            try {
+                $status = (array) \Midtrans\Transaction::status($orderId);
+                $internalStatus = $this->mapMidtransToInternalStatus(
+                    $status['transaction_status'] ?? null,
+                    $status['fraud_status'] ?? null
+                );
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
+
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $status = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $status = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
             $wasSettled = $payment->status === 'settled';
@@ -1525,14 +1547,14 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
-                // Only expire if snap token is older than 24 hours (Midtrans token TTL).
+                // Only expire if snap token is older than expiry duration.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours = $tokenCreatedAt
-                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                         : 0;
 
-                    if ($tokenAgeHours >= 24) {
+                    if ($tokenAgeMinutes >= 5) {
                         // Token truly expired — mark as expired
                         $payment->status = 'expired';
                         $payment->save();
@@ -1625,13 +1647,13 @@ class PaymentController extends Controller
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
                     // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
-                    // Only expire if snap token is older than 24 hours.
-                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours = $tokenCreatedAt
-                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                    // Only expire if snap token is older than expiry duration.
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                         : 0;
 
-                    if ($tokenAgeHours >= 24) {
+                    if ($tokenAgeMinutes >= 5) {
                         $payment->status = 'expired';
                         $payment->save();
                         if ($payment->enrollment_id) {
@@ -1691,11 +1713,33 @@ class PaymentController extends Controller
 
         try {
             $this->configureMidtrans();
-            $status = (array) \Midtrans\Transaction::status($orderId);
-            $internalStatus = $this->mapMidtransToInternalStatus(
-                $status['transaction_status'] ?? null,
-                $status['fraud_status'] ?? null
-            );
+            try {
+                $status = (array) \Midtrans\Transaction::status($orderId);
+                $internalStatus = $this->mapMidtransToInternalStatus(
+                    $status['transaction_status'] ?? null,
+                    $status['fraud_status'] ?? null
+                );
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
+
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $status = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $status = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
             $wasSettled = $payment->status === 'settled';

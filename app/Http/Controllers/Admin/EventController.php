@@ -70,7 +70,8 @@ class EventController extends Controller
 
         foreach ($speakerNames as $i => $name) {
             $name = trim((string) $name);
-            if ($name === '') continue;
+            if ($name === '')
+                continue;
 
             $salary = (float) preg_replace('/[^\d.]/', '', (string) ($salaries[$i] ?? 0));
 
@@ -80,11 +81,11 @@ class EventController extends Controller
                 ->first();
 
             \App\Models\EventSpeaker::create([
-                'event_id'   => $event->id,
+                'event_id' => $event->id,
                 'trainer_id' => $trainer?->id,
-                'name'       => $name,
-                'salary'     => $salary,
-                'order'      => $i,
+                'name' => $name,
+                'salary' => $salary,
+                'order' => $i,
             ]);
         }
     }
@@ -147,9 +148,11 @@ class EventController extends Controller
         // Show Add Event modal UI with ALL events list (active + finished) for full filtering in the UI
         $query = Event::query()
             ->with(['speakers'])
-            ->withCount(['trainerModules as approved_modules_count' => function ($q) {
-                $q->where('status', 'approved');
-            }]);
+            ->withCount([
+                'trainerModules as approved_modules_count' => function ($q) {
+                    $q->where('status', 'approved');
+                }
+            ]);
 
         if ($user && $user->role === 'event_admin') {
             $query->whereIn('id', $user->assignedEventIds());
@@ -204,7 +207,7 @@ class EventController extends Controller
         $locMode = strtolower(trim((string) $request->input('location_mode', 'offline')));
         if ($locMode === 'hybrid') {
             $priceOffline = (int) $request->input('price_offline', 0);
-            $priceOnline  = (int) $request->input('price_online', 0);
+            $priceOnline = (int) $request->input('price_online', 0);
             $request->merge(['price' => min($priceOffline, $priceOnline)]);
         }
 
@@ -248,7 +251,7 @@ class EventController extends Controller
 
         $price = (int) $request->input('price', 0);
         $priceOffline = (int) $request->input('price_offline', 0);
-        $priceOnline  = (int) $request->input('price_online', 0);
+        $priceOnline = (int) $request->input('price_online', 0);
         $isPaid = $price > 0 || $priceOffline > 0 || $priceOnline > 0;
 
         if ($isPaid && !$acceptOnline && !$acceptManual) {
@@ -605,7 +608,7 @@ class EventController extends Controller
         }
 
         $totalActiveReg = $event->registrations()
-            ->whereHas('user', function($q) {
+            ->whereHas('user', function ($q) {
                 $q->where('role', '!=', 'admin');
             })
             ->where('status', 'active')
@@ -615,28 +618,28 @@ class EventController extends Controller
         if ($isLomba) {
             $startDate = $event->start_submission ? \Carbon\Carbon::parse($event->start_submission) : $event->created_at;
             $now = \Carbon\Carbon::now();
-            
+
             // Limit to at most 10 days ending today
             $diffInDays = $startDate->diffInDays($now);
             if ($diffInDays > 9) {
                 $startDate = $now->copy()->subDays(9);
             }
-            
+
             $daysData = [];
             $current = $startDate->copy()->startOfDay();
             $targetEnd = $now->copy()->startOfDay();
-            
+
             $dayNum = 1;
             while ($current->lte($targetEnd)) {
                 $dateStr = $current->format('Y-m-d');
                 $count = $event->registrations()
-                    ->whereHas('user', function($q) {
+                    ->whereHas('user', function ($q) {
                         $q->where('role', '!=', 'admin');
                     })
                     ->where('status', 'active')
                     ->whereDate('created_at', $dateStr)
                     ->count();
-                    
+
                 $daysData[] = [
                     'day_number' => $dayNum,
                     'date' => $current->format('d M Y'),
@@ -645,14 +648,14 @@ class EventController extends Controller
                     'total' => $totalActiveReg,
                     'percent' => $count
                 ];
-                
+
                 $current->addDay();
                 $dayNum++;
             }
 
             // Fetch recent registrations as logs
             $recentRegs = $event->registrations()
-                ->whereHas('user', function($q) {
+                ->whereHas('user', function ($q) {
                     $q->where('role', '!=', 'admin');
                 })
                 ->where('status', 'active')
@@ -661,7 +664,7 @@ class EventController extends Controller
                 ->limit(15)
                 ->get();
 
-            $logs = $recentRegs->map(function($reg) {
+            $logs = $recentRegs->map(function ($reg) {
                 return [
                     'id' => $reg->id,
                     'name' => $reg->user->name ?? 'User',
@@ -687,11 +690,11 @@ class EventController extends Controller
         if ($dailyQrs->isNotEmpty()) {
             foreach ($dailyQrs as $dqr) {
                 $checkedInCount = \App\Models\EventDailyAttendance::where('event_daily_qr_id', $dqr->id)
-                    ->whereHas('registration', function($q) {
+                    ->whereHas('registration', function ($q) {
                         $q->where('status', 'active')
-                          ->whereHas('user', function($qu) {
-                              $qu->where('role', '!=', 'admin');
-                          });
+                            ->whereHas('user', function ($qu) {
+                                $qu->where('role', '!=', 'admin');
+                            });
                     })
                     ->count();
                 $percent = $totalActiveReg > 0 ? round(($checkedInCount / $totalActiveReg) * 100) : 0;
@@ -706,20 +709,20 @@ class EventController extends Controller
             }
 
             // Fetch recent check-ins
-            $recentAttendances = \App\Models\EventDailyAttendance::whereIn('event_registration_id', function($q) use ($event) {
-                    $q->select('event_registrations.id')
-                      ->from('event_registrations')
-                      ->join('users', 'event_registrations.user_id', '=', 'users.id')
-                      ->where('event_registrations.event_id', $event->id)
-                      ->where('event_registrations.status', 'active')
-                      ->where('users.role', '!=', 'admin');
-                })
+            $recentAttendances = \App\Models\EventDailyAttendance::whereIn('event_registration_id', function ($q) use ($event) {
+                $q->select('event_registrations.id')
+                    ->from('event_registrations')
+                    ->join('users', 'event_registrations.user_id', '=', 'users.id')
+                    ->where('event_registrations.event_id', $event->id)
+                    ->where('event_registrations.status', 'active')
+                    ->where('users.role', '!=', 'admin');
+            })
                 ->with('registration.user')
                 ->latest('scanned_at')
                 ->limit(15)
                 ->get();
 
-            $logs = $recentAttendances->map(function($att) {
+            $logs = $recentAttendances->map(function ($att) {
                 return [
                     'id' => $att->id,
                     'name' => $att->registration->user->name ?? 'User',
@@ -732,13 +735,13 @@ class EventController extends Controller
         } else {
             // Fallback for single day / legacy check-ins
             $checkedInCount = $event->registrations()
-                ->whereHas('user', function($q) {
+                ->whereHas('user', function ($q) {
                     $q->where('role', '!=', 'admin');
                 })
                 ->where('status', 'active')
-                ->where(function($q) {
+                ->where(function ($q) {
                     $q->whereNotNull('attended_at')
-                      ->orWhere('attendance_status', 'yes');
+                        ->orWhere('attendance_status', 'yes');
                 })->count();
             $percent = $totalActiveReg > 0 ? round(($checkedInCount / $totalActiveReg) * 100) : 0;
             $daysData[] = [
@@ -752,7 +755,7 @@ class EventController extends Controller
 
             // Fetch recent check-ins based on event_registrations.attended_at
             $recentRegs = $event->registrations()
-                ->whereHas('user', function($q) {
+                ->whereHas('user', function ($q) {
                     $q->where('role', '!=', 'admin');
                 })
                 ->where('status', 'active')
@@ -762,7 +765,7 @@ class EventController extends Controller
                 ->limit(15)
                 ->get();
 
-            $logs = $recentRegs->map(function($reg) {
+            $logs = $recentRegs->map(function ($reg) {
                 return [
                     'id' => $reg->id,
                     'name' => $reg->user->name ?? 'User',
@@ -806,7 +809,8 @@ class EventController extends Controller
                 $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
                     ->where('day_number', $dayNumber)
                     ->first();
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
 
         if ($dailyQr) {
@@ -822,10 +826,10 @@ class EventController extends Controller
             if (!$attendance) {
                 \App\Models\EventDailyAttendance::create([
                     'event_registration_id' => $registration->id,
-                    'event_daily_qr_id'     => $dailyQr->id,
-                    'attendance_date'       => $qrDayDate,
-                    'day_number'            => $dayNumber,
-                    'scanned_at'            => \Carbon\Carbon::now(config('app.timezone')),
+                    'event_daily_qr_id' => $dailyQr->id,
+                    'attendance_date' => $qrDayDate,
+                    'day_number' => $dayNumber,
+                    'scanned_at' => \Carbon\Carbon::now(config('app.timezone')),
                 ]);
             }
         } else {
@@ -834,15 +838,15 @@ class EventController extends Controller
             $attendance = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
                 ->where('day_number', $dayNumber)
                 ->first();
-            
+
             if (!$attendance) {
                 try {
                     \App\Models\EventDailyAttendance::create([
                         'event_registration_id' => $registration->id,
-                        'event_daily_qr_id'     => null,
-                        'attendance_date'       => \Carbon\Carbon::now(config('app.timezone'))->format('Y-m-d'),
-                        'day_number'            => $dayNumber,
-                        'scanned_at'            => \Carbon\Carbon::now(config('app.timezone')),
+                        'event_daily_qr_id' => null,
+                        'attendance_date' => \Carbon\Carbon::now(config('app.timezone'))->format('Y-m-d'),
+                        'day_number' => $dayNumber,
+                        'scanned_at' => \Carbon\Carbon::now(config('app.timezone')),
                     ]);
                 } catch (\Exception $e) {
                     // Ignore if event_daily_qr_id is not nullable, it will rely on top-level status
@@ -1042,7 +1046,7 @@ class EventController extends Controller
 
         $price = (int) $request->input('price', 0);
         $priceOffline = (int) $request->input('price_offline', 0);
-        $priceOnline  = (int) $request->input('price_online', 0);
+        $priceOnline = (int) $request->input('price_online', 0);
         $isPaid = $price > 0 || $priceOffline > 0 || $priceOnline > 0;
 
         if ($isPaid && !$acceptOnline && !$acceptManual) {
@@ -1340,33 +1344,46 @@ class EventController extends Controller
     public function duplicate(Event $event)
     {
         $copy = $event->replicate([
-            'is_published', 'published_at',
-            'vbg_path', 'module_path', 'module_submission_path', 'certificate_path',
-            'material_status', 'material_approved_at', 'material_approved_by', 'material_rejection_reason',
-            'module_submitted_at', 'module_verified_at', 'module_verified_by',
-            'module_rejected_at', 'module_rejected_by', 'module_rejection_reason',
-            'attendance_qr_token', 'attendance_qr_image', 'attendance_qr_generated_at',
+            'is_published',
+            'published_at',
+            'vbg_path',
+            'module_path',
+            'module_submission_path',
+            'certificate_path',
+            'material_status',
+            'material_approved_at',
+            'material_approved_by',
+            'material_rejection_reason',
+            'module_submitted_at',
+            'module_verified_at',
+            'module_verified_by',
+            'module_rejected_at',
+            'module_rejected_by',
+            'module_rejection_reason',
+            'attendance_qr_token',
+            'attendance_qr_image',
+            'attendance_qr_generated_at',
         ]);
 
-        $copy->title                      = $event->title . ' (Copy)';
-        $copy->is_published               = false;
-        $copy->published_at               = null;
-        $copy->vbg_path                   = null;
-        $copy->module_path                = null;
-        $copy->module_submission_path     = null;
-        $copy->certificate_path           = null;
-        $copy->material_status            = 'pending'; // NOT NULL, reset to default
-        $copy->material_approved_at       = null;
-        $copy->material_approved_by       = null;
-        $copy->material_rejection_reason  = null;
-        $copy->module_submitted_at        = null;
-        $copy->module_verified_at         = null;
-        $copy->module_verified_by         = null;
-        $copy->module_rejected_at         = null;
-        $copy->module_rejected_by         = null;
-        $copy->module_rejection_reason    = null;
-        $copy->attendance_qr_token        = null;
-        $copy->attendance_qr_image        = null;
+        $copy->title = $event->title . ' (Copy)';
+        $copy->is_published = false;
+        $copy->published_at = null;
+        $copy->vbg_path = null;
+        $copy->module_path = null;
+        $copy->module_submission_path = null;
+        $copy->certificate_path = null;
+        $copy->material_status = 'pending'; // NOT NULL, reset to default
+        $copy->material_approved_at = null;
+        $copy->material_approved_by = null;
+        $copy->material_rejection_reason = null;
+        $copy->module_submitted_at = null;
+        $copy->module_verified_at = null;
+        $copy->module_verified_by = null;
+        $copy->module_rejected_at = null;
+        $copy->module_rejected_by = null;
+        $copy->module_rejection_reason = null;
+        $copy->attendance_qr_token = null;
+        $copy->attendance_qr_image = null;
         $copy->attendance_qr_generated_at = null;
 
         // Pastikan relasi trainerModules tidak ikut di-carry oleh replicate()
@@ -1390,21 +1407,33 @@ class EventController extends Controller
         // Copy schedule items
         foreach ($event->scheduleItems as $item) {
             $copy->scheduleItems()->create($item->only([
-                'time_start', 'time_end', 'activity', 'speaker', 'order',
+                'time_start',
+                'time_end',
+                'activity',
+                'speaker',
+                'order',
             ]));
         }
 
         // Copy expenses
         foreach ($event->expenses as $expense) {
             $copy->expenses()->create($expense->only([
-                'item', 'quantity', 'unit_price', 'total', 'note',
+                'item',
+                'quantity',
+                'unit_price',
+                'total',
+                'note',
             ]));
         }
 
         // Salin EventSpeaker records agar assignment trainer tetap terjaga
         foreach ($event->speakers as $speaker) {
             $copy->speakers()->create($speaker->only([
-                'trainer_id', 'name', 'salary', 'notes', 'order',
+                'trainer_id',
+                'name',
+                'salary',
+                'notes',
+                'order',
             ]));
         }
 
@@ -1412,9 +1441,9 @@ class EventController extends Controller
         $this->generateAttendanceQrForEvent($copy);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Event duplicated successfully.',
-            'data'    => ['id' => $copy->id, 'title' => $copy->title],
+            'data' => ['id' => $copy->id, 'title' => $copy->title],
         ], 201);
     }
 
@@ -1424,10 +1453,10 @@ class EventController extends Controller
     private function generateAttendanceQrForEvent(Event $event): void
     {
         try {
-            $token    = bin2hex(random_bytes(16));
-            $content  = url('/events/' . $event->id . '?t=' . $token);
+            $token = bin2hex(random_bytes(16));
+            $content = url('/events/' . $event->id . '?t=' . $token);
             $filename = null;
-            $png      = null;
+            $png = null;
 
             try {
                 if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
@@ -1460,8 +1489,8 @@ class EventController extends Controller
                 }
             }
 
-            $event->attendance_qr_token        = $token;
-            $event->attendance_qr_image        = $filename;
+            $event->attendance_qr_token = $token;
+            $event->attendance_qr_image = $filename;
             $event->attendance_qr_generated_at = now();
             $event->save();
         } catch (\Throwable $e) {
@@ -1484,20 +1513,21 @@ class EventController extends Controller
         }
 
         // Prevent publishing if operational documents are incomplete
-        $hasMapsLink   = !empty($event->maps_url);
-        $hasZoomLink   = !empty($event->zoom_link);
+        $hasMapsLink = !empty($event->maps_url);
+        $hasZoomLink = !empty($event->zoom_link);
         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-        $requiresVbg   = !$isOfflineOnly;
-        $hasVbg        = !empty($event->vbg_path);
+        $requiresVbg = !$isOfflineOnly;
+        $hasVbg = !empty($event->vbg_path);
 
         if ($event->jenis === 'Lomba') {
             $totalDocs = $requiresVbg ? 1 : 0;
-            $doneDocs  = $requiresVbg ? ($hasVbg ? 1 : 0) : 0;
-            $pct       = $totalDocs > 0 ? ($doneDocs >= $totalDocs ? 100 : (int) floor(($doneDocs / $totalDocs) * 100)) : 100;
+            $doneDocs = $requiresVbg ? ($hasVbg ? 1 : 0) : 0;
+            $pct = $totalDocs > 0 ? ($doneDocs >= $totalDocs ? 100 : (int) floor(($doneDocs / $totalDocs) * 100)) : 100;
 
             if ($pct < 100) {
                 $missing = [];
-                if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
+                if ($requiresVbg && !$hasVbg)
+                    $missing[] = 'Virtual Background';
 
                 $msg = 'Kelengkapan dokumen belum 100%.';
                 if (!empty($missing)) {
@@ -1509,22 +1539,25 @@ class EventController extends Controller
             }
         } else {
             // Module: cek module_path ATAU approved trainer modules
-            $hasModule     = !empty($event->module_path)
-                             || $event->approvedTrainerModules()->exists();
-            $hasAbsFile    = !empty($event->attendance_path);
-            $hasAbsQrImg   = !empty($event->attendance_qr_image);
+            $hasModule = !empty($event->module_path)
+                || $event->approvedTrainerModules()->exists();
+            $hasAbsFile = !empty($event->attendance_path);
+            $hasAbsQrImg = !empty($event->attendance_qr_image);
             $hasAbsQrToken = !empty($event->attendance_qr_token);
-            $hasAbs        = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
+            $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
 
-            $totalDocs     = $requiresVbg ? 3 : 2;
-            $doneDocs      = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-            $pct           = $totalDocs > 0 ? ($doneDocs >= $totalDocs ? 100 : (int) floor(($doneDocs / $totalDocs) * 100)) : 0;
+            $totalDocs = $requiresVbg ? 3 : 2;
+            $doneDocs = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+            $pct = $totalDocs > 0 ? ($doneDocs >= $totalDocs ? 100 : (int) floor(($doneDocs / $totalDocs) * 100)) : 0;
 
             if ($pct < 100) {
                 $missing = [];
-                if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
-                if (!$hasModule) $missing[] = 'Module (Trainer)';
-                if (!$hasAbs) $missing[] = 'Absensi';
+                if ($requiresVbg && !$hasVbg)
+                    $missing[] = 'Virtual Background';
+                if (!$hasModule)
+                    $missing[] = 'Module (Trainer)';
+                if (!$hasAbs)
+                    $missing[] = 'Absensi';
 
                 $msg = 'Kelengkapan dokumen belum 100%.';
                 if (!empty($missing)) {
@@ -1594,16 +1627,21 @@ class EventController extends Controller
         // Sync profile fields
         $profileUpdates = [];
         $fullName = $request->input('full_name') ?: $user->name;
-        $email    = $request->input('email')     ?: $user->email;
-        $phone    = $request->input('whatsapp')  ?: $user->phone;
+        $email = $request->input('email') ?: $user->email;
+        $phone = $request->input('whatsapp') ?: $user->phone;
         $university = $request->input('university_origin') ?: $user->institution;
-        $position   = $request->input('position')          ?: $user->profession;
+        $position = $request->input('position') ?: $user->profession;
 
-        if ($fullName !== $user->name)  $profileUpdates['name']  = $fullName;
-        if ($email    !== $user->email) $profileUpdates['email'] = $email;
-        if ($phone    !== $user->phone) $profileUpdates['phone'] = $phone;
-        if ($university !== $user->institution) $profileUpdates['institution'] = $university;
-        if ($position !== $user->profession)   $profileUpdates['profession']  = $position;
+        if ($fullName !== $user->name)
+            $profileUpdates['name'] = $fullName;
+        if ($email !== $user->email)
+            $profileUpdates['email'] = $email;
+        if ($phone !== $user->phone)
+            $profileUpdates['phone'] = $phone;
+        if ($university !== $user->institution)
+            $profileUpdates['institution'] = $university;
+        if ($position !== $user->profession)
+            $profileUpdates['profession'] = $position;
 
         if (!empty($profileUpdates)) {
             $user->update($profileUpdates);
@@ -1646,8 +1684,8 @@ class EventController extends Controller
                 'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => 0.00,
                 'university_origin' => $request->input('university_origin'),
-                'study_program'     => $request->input('study_program'),
-                'position'          => $request->input('position'),
+                'study_program' => $request->input('study_program'),
+                'position' => $request->input('position'),
             ]);
 
             // Track in Finance (Amount 0)
@@ -1671,8 +1709,8 @@ class EventController extends Controller
                 'registration_code' => 'EVT-' . strtoupper(uniqid()),
                 'total_price' => $event->discounted_price ?? $event->price,
                 'university_origin' => $request->input('university_origin'),
-                'study_program'     => $request->input('study_program'),
-                'position'          => $request->input('position'),
+                'study_program' => $request->input('study_program'),
+                'position' => $request->input('position'),
             ];
             // handle proof upload if present (this API used by web/mobile)
             if ($request->hasFile('payment_proof')) {
@@ -1783,7 +1821,7 @@ class EventController extends Controller
                 ->firstOrFail();
 
             $module->update([
-                'status'      => 'approved',
+                'status' => 'approved',
                 'reviewed_by' => auth()->id(),
                 'reviewed_at' => now(),
                 'rejection_reason' => null,
@@ -1793,17 +1831,18 @@ class EventController extends Controller
             try {
                 \App\Models\TrainerNotification::create([
                     'trainer_id' => $module->trainer_id,
-                    'type'       => 'event_material_approved',
-                    'title'      => 'Materi Event Diterima',
-                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
-                    'data'       => [
+                    'type' => 'event_material_approved',
+                    'title' => 'Materi Event Diterima',
+                    'message' => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                    'data' => [
                         'entity_type' => 'event',
-                        'entity_id'   => (int) $event->id,
-                        'url'         => route('trainer.events.show', $event->id),
+                        'entity_id' => (int) $event->id,
+                        'url' => route('trainer.events.show', $event->id),
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         } else {
             // Legacy: approve all pending modules for this event
             $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
@@ -1817,7 +1856,7 @@ class EventController extends Controller
 
             foreach ($pending as $module) {
                 $module->update([
-                    'status'      => 'approved',
+                    'status' => 'approved',
                     'reviewed_by' => auth()->id(),
                     'reviewed_at' => now(),
                     'rejection_reason' => null,
@@ -1826,17 +1865,18 @@ class EventController extends Controller
                 try {
                     \App\Models\TrainerNotification::create([
                         'trainer_id' => $module->trainer_id,
-                        'type'       => 'event_material_approved',
-                        'title'      => 'Materi Event Diterima',
-                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
-                        'data'       => [
+                        'type' => 'event_material_approved',
+                        'title' => 'Materi Event Diterima',
+                        'message' => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" telah disetujui.',
+                        'data' => [
                             'entity_type' => 'event',
-                            'entity_id'   => (int) $event->id,
-                            'url'         => route('trainer.events.show', $event->id),
+                            'entity_id' => (int) $event->id,
+                            'url' => route('trainer.events.show', $event->id),
                         ],
                         'expires_at' => now()->addDays(30),
                     ]);
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                }
             }
         }
 
@@ -1845,7 +1885,7 @@ class EventController extends Controller
             ->where('status', 'pending_review')->count();
         if ($stillPending === 0) {
             $event->update([
-                'material_status'    => 'approved',
+                'material_status' => 'approved',
                 'material_approved_at' => now(),
                 'material_approved_by' => auth()->id(),
                 'material_rejection_reason' => null,
@@ -1871,7 +1911,7 @@ class EventController extends Controller
         }
 
         $validated = $request->validate([
-            'reason'    => ['required', 'string', 'max:500'],
+            'reason' => ['required', 'string', 'max:500'],
             'module_id' => ['nullable', 'integer'],
         ]);
 
@@ -1883,27 +1923,28 @@ class EventController extends Controller
                 ->firstOrFail();
 
             $module->update([
-                'status'           => 'rejected',
-                'reviewed_by'      => auth()->id(),
-                'reviewed_at'      => now(),
+                'status' => 'rejected',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
                 'rejection_reason' => $validated['reason'],
             ]);
 
             try {
                 \App\Models\TrainerNotification::create([
                     'trainer_id' => $module->trainer_id,
-                    'type'       => 'event_material_rejected',
-                    'title'      => 'Materi Event Ditolak',
-                    'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
-                    'data'       => [
-                        'entity_type'      => 'event',
-                        'entity_id'        => (int) $event->id,
-                        'url'              => route('trainer.events.show', $event->id),
+                    'type' => 'event_material_rejected',
+                    'title' => 'Materi Event Ditolak',
+                    'message' => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                    'data' => [
+                        'entity_type' => 'event',
+                        'entity_id' => (int) $event->id,
+                        'url' => route('trainer.events.show', $event->id),
                         'rejection_reason' => $validated['reason'],
                     ],
                     'expires_at' => now()->addDays(30),
                 ]);
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         } else {
             // Legacy: reject all pending
             $pending = \App\Models\EventTrainerModule::where('event_id', $event->id)
@@ -1917,39 +1958,40 @@ class EventController extends Controller
 
             foreach ($pending as $module) {
                 $module->update([
-                    'status'           => 'rejected',
-                    'reviewed_by'      => auth()->id(),
-                    'reviewed_at'      => now(),
+                    'status' => 'rejected',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
                     'rejection_reason' => $validated['reason'],
                 ]);
 
                 try {
                     \App\Models\TrainerNotification::create([
                         'trainer_id' => $module->trainer_id,
-                        'type'       => 'event_material_rejected',
-                        'title'      => 'Materi Event Ditolak',
-                        'message'    => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
-                        'data'       => [
-                            'entity_type'      => 'event',
-                            'entity_id'        => (int) $event->id,
-                            'url'              => route('trainer.events.show', $event->id),
+                        'type' => 'event_material_rejected',
+                        'title' => 'Materi Event Ditolak',
+                        'message' => 'Modul "' . $module->original_name . '" untuk event "' . $event->title . '" ditolak. Alasan: ' . $validated['reason'],
+                        'data' => [
+                            'entity_type' => 'event',
+                            'entity_id' => (int) $event->id,
+                            'url' => route('trainer.events.show', $event->id),
                             'rejection_reason' => $validated['reason'],
                         ],
                         'expires_at' => now()->addDays(30),
                     ]);
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                }
             }
 
             $event->update([
-                'material_status'           => 'rejected',
-                'material_approved_at'      => null,
-                'material_approved_by'      => null,
+                'material_status' => 'rejected',
+                'material_approved_at' => null,
+                'material_approved_by' => null,
                 'material_rejection_reason' => $validated['reason'],
-                'module_verified_at'        => null,
-                'module_verified_by'        => null,
-                'module_rejected_at'        => now(),
-                'module_rejected_by'        => auth()->id(),
-                'module_rejection_reason'   => $validated['reason'],
+                'module_verified_at' => null,
+                'module_verified_by' => null,
+                'module_rejected_at' => now(),
+                'module_rejected_by' => auth()->id(),
+                'module_rejection_reason' => $validated['reason'],
             ]);
         }
 
@@ -2005,20 +2047,21 @@ class EventController extends Controller
 
             // Also keep legacy single QR (for backward compat with older scan views)
             if (empty($event->attendance_qr_token)) {
-                $token   = bin2hex(random_bytes(16));
+                $token = bin2hex(random_bytes(16));
                 $content = url('/events/' . $event->id . '?t=' . $token);
                 $png = null;
                 try {
                     if (class_exists(\SimpleSoftwareIO\QrCode\Facades\QrCode::class)) {
                         $png = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(600)->margin(1)->generate($content);
                     }
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                }
 
                 $filename = 'events/qr/event-' . $event->id . '-qr.png';
                 \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $png ?: base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/58BAgMDAv8x2WQAAAAASUVORK5CYII='));
 
-                $event->attendance_qr_token        = $token;
-                $event->attendance_qr_image        = $filename;
+                $event->attendance_qr_token = $token;
+                $event->attendance_qr_image = $filename;
                 $event->attendance_qr_generated_at = now();
                 $event->save();
             }
@@ -2050,7 +2093,7 @@ class EventController extends Controller
             $history = $res->getHeader('X-Guzzle-Redirect-History');
             $finalUrl = empty($history) ? (string) $res->getUri() : end($history);
             $decoded = urldecode($finalUrl);
-            
+
             // Parse coords with extended patterns
             $lat = null;
             $lng = null;
@@ -2124,7 +2167,7 @@ class EventController extends Controller
         if ($isStage2) {
             $registration->update([
                 'stage2_payment_status' => 'settled',
-                'stage2_payment_at'     => now(),
+                'stage2_payment_at' => now(),
             ]);
 
             $pendingPayment->update(['status' => 'settled']);
@@ -2132,23 +2175,24 @@ class EventController extends Controller
             // Notify user for stage 2 confirmation
             try {
                 \App\Models\UserNotification::create([
-                    'user_id'    => $registration->user_id,
-                    'type'       => 'event_registration_approved',
-                    'title'      => 'Stage 2 Payment Confirmed',
-                    'message'    => 'Your Stage 2 transfer payment for the event "' . ($event->title ?? 'Event') . '" has been confirmed. You can now upload your second submission.',
-                    'data'       => ['event_id' => $event->id, 'url' => route('events.registered.detail', $event)],
+                    'user_id' => $registration->user_id,
+                    'type' => 'event_registration_approved',
+                    'title' => 'Stage 2 Payment Confirmed',
+                    'message' => 'Your Stage 2 transfer payment for the event "' . ($event->title ?? 'Event') . '" has been confirmed. You can now upload your second submission.',
+                    'data' => ['event_id' => $event->id, 'url' => route('events.registered.detail', $event)],
                     'expires_at' => now()->addDays(14),
                 ]);
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
 
             return back()->with('success', 'Pembayaran Tahap 2 berhasil dikonfirmasi.');
         }
 
         $registration->update([
-            'status'               => 'active',
-            'payment_verified_at'  => now(),
-            'payment_verified_by'  => auth()->id(),
-            'rejection_reason'     => null,
+            'status' => 'active',
+            'payment_verified_at' => now(),
+            'payment_verified_by' => auth()->id(),
+            'rejection_reason' => null,
         ]);
 
         if ($pendingPayment) {
@@ -2158,14 +2202,15 @@ class EventController extends Controller
         // Notify user
         try {
             \App\Models\UserNotification::create([
-                'user_id'    => $registration->user_id,
-                'type'       => 'event_registration_approved',
-                'title'      => 'Registration Confirmed',
-                'message'    => 'Your transfer payment for the event "' . ($event->title ?? 'Event') . '" has been confirmed.',
-                'data'       => ['event_id' => $event->id, 'url' => route('events.show', $event)],
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_approved',
+                'title' => 'Registration Confirmed',
+                'message' => 'Your transfer payment for the event "' . ($event->title ?? 'Event') . '" has been confirmed.',
+                'data' => ['event_id' => $event->id, 'url' => route('events.show', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return back()->with('success', 'Pendaftaran berhasil dikonfirmasi.');
     }
@@ -2197,20 +2242,21 @@ class EventController extends Controller
             // Notify user
             try {
                 \App\Models\UserNotification::create([
-                    'user_id'    => $registration->user_id,
-                    'type'       => 'event_registration_rejected',
-                    'title'      => 'Stage 2 Payment Rejected',
-                    'message'    => 'Stage 2 payment proof for the event "' . ($event->title ?? 'Event') . '" was rejected. Reason: ' . $reason,
-                    'data'       => ['event_id' => $event->id, 'url' => route('events.payment.stage2', $event)],
+                    'user_id' => $registration->user_id,
+                    'type' => 'event_registration_rejected',
+                    'title' => 'Stage 2 Payment Rejected',
+                    'message' => 'Stage 2 payment proof for the event "' . ($event->title ?? 'Event') . '" was rejected. Reason: ' . $reason,
+                    'data' => ['event_id' => $event->id, 'url' => route('events.payment.stage2', $event)],
                     'expires_at' => now()->addDays(14),
                 ]);
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
 
             return back()->with('success', 'Pembayaran Tahap 2 berhasil ditolak.');
         }
 
         $registration->update([
-            'status'           => 'rejected',
+            'status' => 'rejected',
             'rejection_reason' => $reason,
         ]);
 
@@ -2221,14 +2267,15 @@ class EventController extends Controller
         // Notify user
         try {
             \App\Models\UserNotification::create([
-                'user_id'    => $registration->user_id,
-                'type'       => 'event_registration_rejected',
-                'title'      => 'Registration Rejected',
-                'message'    => 'Payment proof for the event "' . ($event->title ?? 'Event') . '" was rejected. Reason: ' . $reason,
-                'data'       => ['event_id' => $event->id, 'url' => route('payment', $event)],
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_rejected',
+                'title' => 'Registration Rejected',
+                'message' => 'Payment proof for the event "' . ($event->title ?? 'Event') . '" was rejected. Reason: ' . $reason,
+                'data' => ['event_id' => $event->id, 'url' => route('payment', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return back()->with('success', 'Pendaftaran berhasil ditolak.');
     }
@@ -2252,7 +2299,7 @@ class EventController extends Controller
         if ($isStage2) {
             $registration->update([
                 'stage2_payment_status' => 'pending',
-                'stage2_payment_at'     => null,
+                'stage2_payment_at' => null,
             ]);
 
             $payment->update(['status' => 'pending']);
@@ -2260,14 +2307,15 @@ class EventController extends Controller
             // Notify user
             try {
                 \App\Models\UserNotification::create([
-                    'user_id'    => $registration->user_id,
-                    'type'       => 'event_registration_cancelled',
-                    'title'      => 'Stage 2 Payment Confirmation Cancelled',
-                    'message'    => 'Your Stage 2 payment confirmation for the event "' . ($event->title ?? 'Event') . '" has been cancelled by the admin.',
-                    'data'       => ['event_id' => $event->id, 'url' => route('events.payment.stage2', $event)],
+                    'user_id' => $registration->user_id,
+                    'type' => 'event_registration_cancelled',
+                    'title' => 'Stage 2 Payment Confirmation Cancelled',
+                    'message' => 'Your Stage 2 payment confirmation for the event "' . ($event->title ?? 'Event') . '" has been cancelled by the admin.',
+                    'data' => ['event_id' => $event->id, 'url' => route('events.payment.stage2', $event)],
                     'expires_at' => now()->addDays(14),
                 ]);
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
 
             return back()->with('success', 'Konfirmasi pembayaran Tahap 2 berhasil dibatalkan.');
         }
@@ -2277,9 +2325,9 @@ class EventController extends Controller
         }
 
         $registration->update([
-            'status'               => 'pending',
-            'payment_verified_at'  => null,
-            'payment_verified_by'  => null,
+            'status' => 'pending',
+            'payment_verified_at' => null,
+            'payment_verified_by' => null,
         ]);
 
         if ($payment) {
@@ -2289,14 +2337,15 @@ class EventController extends Controller
         // Notify user
         try {
             \App\Models\UserNotification::create([
-                'user_id'    => $registration->user_id,
-                'type'       => 'event_registration_cancelled',
-                'title'      => 'Payment Confirmation Cancelled',
-                'message'    => 'Your payment confirmation for the event "' . ($event->title ?? 'Event') . '" has been cancelled by the admin. Please contact the admin for further information.',
-                'data'       => ['event_id' => $event->id, 'url' => route('payment', $event)],
+                'user_id' => $registration->user_id,
+                'type' => 'event_registration_cancelled',
+                'title' => 'Payment Confirmation Cancelled',
+                'message' => 'Your payment confirmation for the event "' . ($event->title ?? 'Event') . '" has been cancelled by the admin. Please contact the admin for further information.',
+                'data' => ['event_id' => $event->id, 'url' => route('payment', $event)],
                 'expires_at' => now()->addDays(14),
             ]);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return back()->with('success', 'Konfirmasi pembayaran berhasil dibatalkan.');
     }
