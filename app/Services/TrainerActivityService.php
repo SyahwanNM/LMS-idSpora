@@ -261,7 +261,7 @@ class TrainerActivityService
                     $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
                 }
             })
-            ->where('material_status', 'approved')
+            ->whereHas('approvedTrainerModules')
             ->whereNotNull('event_date');
 
         if (\Illuminate\Support\Facades\DB::getDriverName() === 'sqlite') {
@@ -299,7 +299,7 @@ class TrainerActivityService
                     $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
                 }
             })
-            ->where('material_status', 'approved')
+            ->whereHas('approvedTrainerModules')
             ->max('event_date');
 
         $lastCourse = $courseLastApprovedAt ? Carbon::parse($courseLastApprovedAt) : null;

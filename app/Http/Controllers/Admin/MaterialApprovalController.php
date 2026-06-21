@@ -19,52 +19,7 @@ class MaterialApprovalController extends Controller
 {
     private function syncLegacyEventMaterialsToAssignments(): void
     {
-        $legacyEvents = Event::query()
-            ->whereNotNull('trainer_id')
-            ->whereNotNull('module_path')
-            ->get([
-                'id',
-                'trainer_id',
-                'module_path',
-                'material_status',
-                'module_submitted_at',
-                'material_approved_at',
-                'material_approved_by',
-                'material_rejection_reason',
-                'updated_at',
-            ]);
-
-        foreach ($legacyEvents as $event) {
-            $assignment = TrainerAssignment::query()
-                ->where('event_id', (int) $event->id)
-                ->where('trainer_id', (int) $event->trainer_id)
-                ->orderByDesc('id')
-                ->first();
-
-            if ($assignment && !empty($assignment->material_path)) {
-                continue;
-            }
-
-            $payload = [
-                'material_path' => $event->module_path,
-                'material_status' => $event->material_status ?: 'pending_review',
-                'material_submitted_at' => $event->module_submitted_at ?: $event->updated_at,
-                'material_approved_at' => $event->material_approved_at,
-                'material_approved_by' => $event->material_approved_by,
-                'material_rejection_reason' => $event->material_rejection_reason,
-                'status' => $assignment?->status ?: 'accepted',
-            ];
-
-            if ($assignment) {
-                $assignment->update($payload);
-                continue;
-            }
-
-            TrainerAssignment::query()->create(array_merge($payload, [
-                'event_id' => (int) $event->id,
-                'trainer_id' => (int) $event->trainer_id,
-            ]));
-        }
+        // No-op: legacy database columns have been dropped and data migrated.
     }
 
     private function assessStructureCompleteness(Course $course): array

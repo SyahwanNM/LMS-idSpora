@@ -68,27 +68,21 @@ class EventModuleSubmissionController extends Controller
         $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
         $path = $file->storeAs('events/modules/submissions/' . $event->id, $filename, 'public');
 
-        $event->update([
-            'module_path' => $path,
-            'module_submitted_at' => now(),
-            'material_status' => 'pending_review',
-            'material_approved_at' => null,
-            'material_approved_by' => null,
-            'material_rejection_reason' => null,
-            'module_verified_at' => null,
-            'module_verified_by' => null,
-            'module_rejected_at' => null,
-            'module_rejected_by' => null,
-            'module_rejection_reason' => null,
+        $module = \App\Models\EventTrainerModule::create([
+            'event_id' => $event->id,
+            'trainer_id' => $user->id,
+            'original_name' => $file->getClientOriginalName(),
+            'path' => $path,
+            'status' => 'pending_review',
         ]);
 
         return response()->json([
             'message' => 'Module berhasil diupload dan menunggu verifikasi admin.',
             'data' => [
                 'event_id' => $event->id,
-                'module_submission_path' => $event->module_path,
-                'module_submission_url' => $event->module_file_url,
-                'module_submitted_at' => $event->module_submitted_at,
+                'module_submission_path' => $module->path,
+                'module_submission_url' => $module->download_url,
+                'module_submitted_at' => $module->created_at,
             ],
         ], 201);
     }

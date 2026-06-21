@@ -764,9 +764,8 @@ class TrainerController extends Controller
         $activeEventCount = (clone $activeEventsQuery)->count();
 
         $todoMaterials = (clone $activeEventsQuery)
-            ->where(function ($q) {
-                $q->whereNull('module_path')
-                    ->orWhere('module_path', '');
+            ->whereDoesntHave('trainerModules', function ($q) use ($user) {
+                $q->where('trainer_id', $user->id);
             })
             ->orderBy('event_date', 'asc')
             ->orderBy('event_time', 'asc')
@@ -1889,21 +1888,7 @@ class TrainerController extends Controller
         $lastDraft = end($draftFiles);
         $primaryMaterialPath = $lastDraft['path'];
 
-        if ($isPrimaryTrainer || !$assignment) {
-            $event->update([
-                'module_path' => $primaryMaterialPath,
-                'material_status' => 'pending_review',
-                'module_submitted_at' => now(),
-                'material_approved_at' => null,
-                'material_approved_by' => null,
-                'material_rejection_reason' => null,
-                'module_verified_at' => null,
-                'module_verified_by' => null,
-                'module_rejected_at' => null,
-                'module_rejected_by' => null,
-                'module_rejection_reason' => null,
-            ]);
-        } else {
+        if (!$isPrimaryTrainer && $assignment) {
             $assignment->update([
                 'material_path' => $primaryMaterialPath,
                 'materials_uploaded_at' => now(),
@@ -1935,9 +1920,6 @@ class TrainerController extends Controller
         $updates = [];
         if ($latestImagePath) {
             $updates['vbg_path'] = $latestImagePath;
-        }
-        if ($latestModuleDocPath) {
-            $updates['module_path'] = $latestModuleDocPath;
         }
         if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
             $event->update($updates);
@@ -2026,39 +2008,6 @@ class TrainerController extends Controller
             }
 
             $assignment->update($payload);
-        }
-
-        // Synchronize with Event if this trainer is the primary trainer
-        if ((int) $event->trainer_id === (int) $trainerId) {
-            $eventPayload = [
-                'material_status' => $newStatus,
-                'module_path' => $latestPath,
-            ];
-
-            if ($newStatus === 'approved') {
-                $eventPayload['material_approved_at'] = now();
-                $eventPayload['material_approved_by'] = $event->material_approved_by ?: 1;
-                $eventPayload['material_rejection_reason'] = null;
-                $eventPayload['module_verified_at'] = now();
-                $eventPayload['module_verified_by'] = $event->module_verified_by ?: 1;
-            } elseif ($newStatus === 'rejected') {
-                if (empty($event->material_rejection_reason)) {
-                    $firstRejected = $modules->where('status', 'rejected')->first();
-                    $eventPayload['material_rejection_reason'] = $firstRejected?->rejection_reason;
-                }
-                $eventPayload['material_approved_at'] = null;
-                $eventPayload['material_approved_by'] = null;
-                $eventPayload['module_verified_at'] = null;
-                $eventPayload['module_verified_by'] = null;
-            } else { // pending_review / pending
-                $eventPayload['material_approved_at'] = null;
-                $eventPayload['material_approved_by'] = null;
-                $eventPayload['material_rejection_reason'] = null;
-                $eventPayload['module_verified_at'] = null;
-                $eventPayload['module_verified_by'] = null;
-            }
-
-            $event->update($eventPayload);
         }
     }
 

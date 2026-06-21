@@ -1682,24 +1682,23 @@
                         @endif
 
                         @if($canUploadMaterials)
-                            <!-- Canva idSpora Template Banner -->
-                            <div class="canva-template-banner" style="margin-bottom: 24px; padding: 22px 28px; border-radius: 20px; background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 1px solid #f0abfc; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 10px 25px rgba(81, 55, 108, 0.04); flex-wrap: wrap;">
+                            <!-- Download idSpora Logo Banner -->
+                            <div class="logo-download-banner" style="margin-bottom: 24px; padding: 22px 28px; border-radius: 20px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 1px solid #e9d5ff; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 10px 25px rgba(81, 55, 108, 0.04); flex-wrap: wrap;">
                                 <div style="display: flex; align-items: center; gap: 16px; min-width: 280px; flex: 1;">
-                                    <div style="width: 48px; height: 48px; border-radius: 14px; background: #a21caf; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(162, 28, 175, 0.2);">
-                                        <i class="bi bi-palette-fill"></i>
+                                    <div style="width: 48px; height: 48px; border-radius: 14px; background: #51376c; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2);">
+                                        <i class="bi bi-file-earmark-image"></i>
                                     </div>
                                     <div>
-                                        <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1e1b4b; font-family: 'Outfit', 'Inter', sans-serif;">Template Presentasi Resmi idSpora (Canva)</h4>
-                                        <p style="margin: 0; font-size: 12.5px; color: #701a75; line-height: 1.5; font-family: 'Inter', sans-serif;">
-                                            Gunakan template presentasi resmi idSpora di Canva untuk membuat slide materi berkualitas tinggi. 
-                                            <span style="font-weight: 700; color: #475569;">(Opsional / Tidak Wajib)</span>
+                                        <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1e1b4b; font-family: 'Outfit', 'Inter', sans-serif;">Logo Resmi idSpora untuk Slide Presentasi</h4>
+                                        <p style="margin: 0; font-size: 12.5px; color: #51376c; line-height: 1.5; font-family: 'Inter', sans-serif;">
+                                            Silakan unduh logo resmi di bawah ini. Harap <span style="font-weight: 700;">menambahkan logo idSpora di setiap slide</span> presentasi Anda demi standarisasi materi.
                                         </p>
                                     </div>
                                 </div>
-                                <a href="https://canva.link/jejnm0h5awo766v" target="_blank" class="primary-btn" style="padding: 12px 24px; font-size: 13px; font-weight: 700; border-radius: 12px; background: #a21caf; color: white; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(162, 28, 175, 0.2); border: none; cursor: pointer; transition: all 0.2s;"
-                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(162, 28, 175, 0.3)';"
-                                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(162, 28, 175, 0.2)';">
-                                    <i class="bi bi-box-arrow-up-right"></i> Gunakan Template Canva
+                                <a href="{{ asset('aset/logo.png') }}" download="logo-idSpora.png" class="primary-btn" style="padding: 12px 24px; font-size: 13px; font-weight: 700; border-radius: 12px; background: #51376c; color: white; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2); border: none; cursor: pointer; transition: all 0.2s;"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(81, 55, 108, 0.3)';"
+                                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(81, 55, 108, 0.2)';">
+                                    <i class="bi bi-download"></i> Unduh Logo (.PNG)
                                 </a>
                             </div>
 

@@ -1347,19 +1347,7 @@ class EventController extends Controller
             'is_published',
             'published_at',
             'vbg_path',
-            'module_path',
-            'module_submission_path',
             'certificate_path',
-            'material_status',
-            'material_approved_at',
-            'material_approved_by',
-            'material_rejection_reason',
-            'module_submitted_at',
-            'module_verified_at',
-            'module_verified_by',
-            'module_rejected_at',
-            'module_rejected_by',
-            'module_rejection_reason',
             'attendance_qr_token',
             'attendance_qr_image',
             'attendance_qr_generated_at',
@@ -1369,19 +1357,7 @@ class EventController extends Controller
         $copy->is_published = false;
         $copy->published_at = null;
         $copy->vbg_path = null;
-        $copy->module_path = null;
-        $copy->module_submission_path = null;
         $copy->certificate_path = null;
-        $copy->material_status = 'pending'; // NOT NULL, reset to default
-        $copy->material_approved_at = null;
-        $copy->material_approved_by = null;
-        $copy->material_rejection_reason = null;
-        $copy->module_submitted_at = null;
-        $copy->module_verified_at = null;
-        $copy->module_verified_by = null;
-        $copy->module_rejected_at = null;
-        $copy->module_rejected_by = null;
-        $copy->module_rejection_reason = null;
         $copy->attendance_qr_token = null;
         $copy->attendance_qr_image = null;
         $copy->attendance_qr_generated_at = null;

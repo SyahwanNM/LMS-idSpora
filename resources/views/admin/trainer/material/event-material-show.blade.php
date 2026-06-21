@@ -836,8 +836,7 @@
             padding: 0 16px;
             border: none;
             border-radius: 12px;
-            font-weight: 700;
-            margin-bottom: 10px;
+            font-weight: 700;            
             font-size: 0.9rem;
             display: inline-flex;
             align-items: center;
@@ -1173,7 +1172,7 @@
                                             $previewUrl = $rawContent;
                                             $previewKind = 'link';
                                         } else {
-                                            $previewUrl = route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=0';
+                                            $previewUrl = route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=0' . '&t=' . ($module->updated_at ? $module->updated_at->timestamp : time());
                                             if (in_array($ext, ['mp4', 'mov', 'webm', 'm4v'], true)) {
                                                 $previewKind = 'video';
                                             } elseif ($ext === 'pdf') {
@@ -1188,7 +1187,7 @@
                                     }
 
                                     $downloadUrl = $rawContent !== '' && !$isHttp
-                                        ? route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=1'
+                                        ? route('admin.event-material.stream', $event->id) . '?module_id=' . $module->id . '&download=1' . '&t=' . ($module->updated_at ? $module->updated_at->timestamp : time())
                                         : null;
                                     
                                     $reviewStatus = in_array(($module->status ?? ''), ['approved', 'rejected', 'pending_review', 'pending'], true)
@@ -1267,17 +1266,29 @@
                                                 @endif
                                             </span>
 
+                                            @if($module->logo_stamped)
+                                                <div style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:800; color:#4f46e5; background:rgba(79, 70, 229, 0.08); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.15); width:fit-content;">
+                                                    <i class="bi bi-patch-check-fill"></i> Logo idSpora Terpasang
+                                                </div>
+                                            @endif
+
                                             {{-- Inline action buttons if pending review --}}
                                             @if((($materialStatus ?? 'pending') === 'pending' || ($materialStatus ?? 'pending') === 'pending_review') && $reviewStatus !== 'approved')
-                                                <div class="module-decision-stack">
-                                                    <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" class="module-action-form">
+                                                <div class="module-decision-stack" style="align-items: flex-end;">
+                                                    <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" class="module-action-form" style="display:flex; flex-direction:column; gap:6px;">
                                                         @csrf
                                                         <input type="hidden" name="module_id" value="{{ $module->id }}">
+                                                        <div class="form-check form-switch mb-1" style="margin-left: 2px;">
+                                                            <input class="form-check-input" type="checkbox" name="stamp_logo" value="1" id="stamp_logo_module_{{ $module->id }}" style="cursor: pointer;">
+                                                            <label class="form-check-label" for="stamp_logo_module_{{ $module->id }}" style="font-size:0.78rem; font-weight:700; color:var(--admin-text-muted); cursor: pointer;">
+                                                                Bubuhkan Logo idSpora
+                                                            </label>
+                                                        </div>
                                                         <button type="submit" class="module-btn-approve">
                                                             Setujui Modul
                                                         </button>
                                                     </form>
-                                                    <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}">
+                                                    <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}" style="margin-bottom: 0;">
                                                         Revisi
                                                     </button>
                                                 </div>
@@ -1332,8 +1343,9 @@
                                 } elseif (in_array($legacyExt, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
                                     $legacyKind = 'image';
                                 }
-                                $legacyPreviewUrl = route('admin.event-material.stream', $event->id) . '?download=0';
-                                $legacyDownloadUrl = route('admin.event-material.stream', $event->id) . '?download=1';
+                                $legacyT = ($assignment?->updated_at ? $assignment->updated_at->timestamp : ($event->updated_at ? $event->updated_at->timestamp : time()));
+                                $legacyPreviewUrl = route('admin.event-material.stream', $event->id) . '?download=0&t=' . $legacyT;
+                                $legacyDownloadUrl = route('admin.event-material.stream', $event->id) . '?download=1&t=' . $legacyT;
                             @endphp
                             <div class="module-item pending">
                                 <div class="module-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
@@ -1500,11 +1512,17 @@
                         <div class="card-custom side-card">
                             <div class="side-card-title">Keputusan Akhir</div>
                             
-                            <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" style="margin-bottom:12px;">
+                            <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" style="margin-bottom:12px; display:flex; flex-direction:column; gap:8px;">
                                 @csrf
                                 @if($assignment)
                                     <input type="hidden" name="assignment_id" value="{{ $assignment->id }}">
                                 @endif
+                                <div class="form-check form-switch mb-1" style="margin-left: 2px;">
+                                    <input class="form-check-input" type="checkbox" name="stamp_logo" value="1" id="stamp_logo_global" style="cursor: pointer;">
+                                    <label class="form-check-label" for="stamp_logo_global" style="font-size:0.82rem; font-weight:700; color:var(--admin-text-muted); cursor: pointer;">
+                                        Bubuhkan Logo idSpora
+                                    </label>
+                                </div>
                                 <button type="submit" class="btn-approve">
                                     Setujui Semua Materi
                                 </button>
@@ -1517,18 +1535,25 @@
                     @else
                         <div class="card-custom side-card">
                             <div class="side-card-title">Keputusan Akhir</div>
-                            <div class="review-locked-notice mb-3" style="text-align: left; padding: 0; color: var(--admin-text-main); font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                                <i class="bi bi-info-circle-fill text-primary"></i> 
-                                <span>Status: 
-                                    @if(($materialStatus ?? 'pending') === 'approved')
-                                        <span class="text-success">Disetujui</span>
-                                    @elseif(($materialStatus ?? 'pending') === 'rejected')
-                                        <span class="text-danger">Ditolak / Revisi</span>
-                                    @else
-                                        <span class="text-muted">{{ ucfirst($materialStatus ?? 'pending') }}</span>
-                                    @endif
-                                </span>
-                            </div>
+                             <div class="review-locked-notice mb-3" style="text-align: left; padding: 0; color: var(--admin-text-main); font-weight: 700; display: flex; flex-direction: column; gap: 8px;">
+                                 <div style="display: flex; align-items: center; gap: 8px;">
+                                     <i class="bi bi-info-circle-fill text-primary"></i> 
+                                     <span>Status: 
+                                         @if(($materialStatus ?? 'pending') === 'approved')
+                                             <span class="text-success">Disetujui</span>
+                                         @elseif(($materialStatus ?? 'pending') === 'rejected')
+                                             <span class="text-danger">Ditolak / Revisi</span>
+                                         @else
+                                             <span class="text-muted">{{ ucfirst($materialStatus ?? 'pending') }}</span>
+                                         @endif
+                                     </span>
+                                 </div>
+                                 @if(($assignment?->logo_stamped ?? false) || ($event->logo_stamped ?? false))
+                                     <div style="display:flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:800; color:#4f46e5; background:rgba(79, 70, 229, 0.08); padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(79, 70, 229, 0.15); width:fit-content; margin-top: 4px;">
+                                         <i class="bi bi-patch-check-fill"></i> Logo idSpora Terpasang
+                                     </div>
+                                 @endif
+                             </div>
                             
                             <form method="POST" action="{{ route('admin.event-material.revoke', $event->id) }}">
                                 @csrf
