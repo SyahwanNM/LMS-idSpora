@@ -723,6 +723,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/certificates/events/{event}/download', [TrainerController::class, 'certificateEventDownload'])->name('certificates.events.download');
     Route::get('/certificates/courses/{course}', [TrainerController::class, 'certificateCourseShow'])->name('certificates.courses.show');
     Route::get('/certificates/courses/{course}/download', [TrainerController::class, 'certificateCourseDownload'])->name('certificates.courses.download');
+    Route::post('/certificates/{context}/{id}/publish', [TrainerController::class, 'publishCertificate'])->name('certificates.publish');
     // (moved) kirim sertifikat sekarang di area admin
 });
 
@@ -733,7 +734,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // Trainer Certificates
     Route::get('/admin/trainer/certificates', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'index'])->name('admin.trainer.certificates.index');
-    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'queue'])->name('admin.trainer.certificates.queue');
     Route::get('/admin/trainer/certificates/detail/{certificate}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'detail'])->name('admin.trainer.certificates.detail');
     Route::get('/admin/trainer/certificates/{trainer}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'show'])->name('admin.trainer.certificates.show');
     Route::get('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'edit'])->name('admin.trainer.certificates.edit');

@@ -83,7 +83,7 @@
                             <td class="px-4 py-3"><span class="font-medium ${statusCls}">${status}</span></td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-col gap-2">
-                                    ${download}
+                                    ${modulesHtml}
                                     <form method="POST" action="${uploadUrlTemplate.replace('__EVENT_ID__', encodeURIComponent(it.id))}" enctype="multipart/form-data" class="flex items-center gap-2">
                                         <input type="hidden" name="_token" value="${escapeHtml(csrf)}" />
                                         <input type="file" name="module" required class="block w-full text-sm" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar,.7z" />

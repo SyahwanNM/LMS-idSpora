@@ -222,6 +222,13 @@
 
         #cert-preview-scaler {
             font-family: 'Poppins', sans-serif;
+            transform-origin: top left !important;
+            -webkit-transform-origin: top left !important;
+        }
+
+        #cert-preview-scaler .header {
+            position: relative !important;
+            z-index: 10 !important;
         }
 
         /* Live Preview Styles from CRM */
@@ -265,7 +272,7 @@
             text-transform: uppercase !important;
             letter-spacing: 5px !important;
             margin-top: 4px !important;
-            margin-bottom: 25px !important;
+            margin-bottom: 15px !important;
         }
         #cert-preview-scaler .template_1 #preview-line-t12 {
             display: none !important;
@@ -283,13 +290,14 @@
             position: relative;
             z-index: 2;
         }
-        #cert-preview-scaler .template_1 .content { text-align: center; position: relative; z-index: 2; }
+        #cert-preview-scaler .template_1 .cert-content { text-align: center; position: relative; z-index: 2; }
         #cert-preview-scaler .template_1 .sig-box {
             display: inline-block !important;
+            vertical-align: bottom !important;
             float: none !important;
             text-align: center !important;
-            width: 230px !important;
-            margin: 0 30px !important;
+            width: 200px !important;
+            margin: 0 15px !important;
         }
         #cert-preview-scaler .template_1 .sig-line {
             width: 170px !important;
@@ -322,22 +330,25 @@
             letter-spacing: 2px;
             text-transform: uppercase;
         }
-        #cert-preview-scaler .template_2 .sub-title {
-            font-family: 'Helvetica', sans-serif;
-            font-size: 13pt;
-            color: #475569;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-top: 5px;
-            margin-bottom: 25px;
+        #cert-preview-scaler .template_2 #preview-subtitle-t12 {
+            font-family: 'Helvetica', sans-serif !important;
+            font-size: 11pt !important;
+            color: #475569 !important;
+            font-weight: bold !important;
+            text-transform: uppercase !important;
+            letter-spacing: 5px !important;
+            margin-top: 4px !important;
+            margin-bottom: 12px !important;
+        }
+        #cert-preview-scaler .template_2 #preview-line-t12 {
+            display: none !important;
         }
         #cert-preview-scaler .template_2 .recipient-name { 
             font-family: 'Great Vibes', 'Georgia', serif;
             font-size: 38pt; 
             font-weight: normal; 
             color: #0f172a; 
-            margin: 15px auto;
+            margin: 8px auto;
             display: inline-block;
             font-style: italic;
             border-bottom: 2px solid #0f172a;
@@ -371,10 +382,11 @@
         }
         #cert-preview-scaler .template_2 .sig-box {
             display: inline-block !important;
+            vertical-align: bottom !important;
             float: none !important;
             text-align: center !important;
-            width: 250px !important;
-            margin: 0 30px !important;
+            width: 200px !important;
+            margin: 0 15px !important;
         }
 
         /* Template 3: Creative Professional */
@@ -397,17 +409,23 @@
         #cert-preview-scaler .template_3 .header-bg {
             height: auto;
             background: transparent;
-            padding: 60px 70px 10px 70px;
+            padding: 15px 40px 5px 40px;
             color: #1e1b4b;
             position: relative;
             z-index: 2;
             text-align: center;
         }
+        #cert-preview-scaler .template_3 .header-bg p {
+            margin-top: 2px !important;
+            margin-bottom: 6px !important;
+            font-size: 9.5pt !important;
+            letter-spacing: 4px !important;
+        }
         #cert-preview-scaler .template_3 .header-bg::after {
             display: none;
         }
         #cert-preview-scaler .template_3 h1 { 
-            font-size: 30pt; 
+            font-size: 26pt; 
             font-weight: 900; 
             margin: 0; 
             text-transform: uppercase;
@@ -416,26 +434,52 @@
             color: #1e1b4b;
             text-shadow: none;
         }
-        #cert-preview-scaler .template_3 .main-content {
-            padding: 10px 70px;
-            position: relative;
-            z-index: 2;
-            text-align: center;
+        #cert-preview-scaler .template_3 .cert-content {
+            position: absolute !important;
+            top: 175px !important;
+            left: 40px !important;
+            right: 40px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            z-index: 2 !important;
+            text-align: center !important;
         }
         #cert-preview-scaler .template_3 .recipient-name { 
             font-family: 'Great Vibes', 'Georgia', serif;
-            font-size: 38pt; 
+            font-size: 28pt; 
             font-weight: normal; 
             color: #4c1d95; 
-            margin: 10px auto;
+            margin: 4px auto;
             display: inline-block;
             border-bottom: 2px solid #d97706;
-            padding-bottom: 5px;
+            padding-bottom: 3px;
             -webkit-background-clip: initial;
             -webkit-text-fill-color: initial;
         }
+        #cert-preview-scaler .template_3 #preview-certify-text {
+            font-size: 12pt !important;
+            margin-bottom: 2px !important;
+        }
+        #cert-preview-scaler .template_3 #preview-completed-text {
+            font-size: 10.5pt !important;
+            margin-top: 4px !important;
+            line-height: 1.3 !important;
+        }
+        #cert-preview-scaler .template_3 #preview-course-name {
+            font-size: 14pt !important;
+            margin: 4px 0 !important;
+            line-height: 1.2 !important;
+        }
+        #cert-preview-scaler .template_3 #preview-date-text {
+            font-size: 9.5pt !important;
+            margin-top: 3px !important;
+        }
         #cert-preview-scaler .template_3 .award-line {
             display: none;
+        }
+        #cert-preview-scaler .template_3 .cert-footer {
+            bottom: 95px !important;
+            padding: 0 40px !important;
         }
 
         /* Shared / Layout Components */
@@ -443,22 +487,53 @@
         #cert-preview-scaler .logo-container { display: inline-block; vertical-align: middle; }
         #cert-preview-scaler .logo-item { height: 48px; width: auto; margin: 0 10px; vertical-align: middle; }
         
-        #cert-preview-scaler .cert-footer { position: absolute; bottom: 70px; width: 100%; left: 0; padding: 0 70px; box-sizing: border-box; z-index: 3; }
+        #cert-preview-scaler .cert-footer { position: absolute; bottom: 50px; width: 100%; left: 0; padding: 0 70px; box-sizing: border-box; z-index: 3; white-space: nowrap !important; }
         
-        #cert-preview-scaler .sig-box { float: right; text-align: center; margin-left: 35px; }
+        #cert-preview-scaler .sig-box {
+            display: inline-block !important;
+            vertical-align: bottom !important;
+            float: none !important;
+            text-align: center !important;
+            margin-left: 35px;
+        }
         #cert-preview-scaler .template_3 .sig-box {
             display: inline-block !important;
+            vertical-align: bottom !important;
             float: none !important;
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            padding: 10px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
-            backdrop-filter: blur(6px);
-            margin: 0 20px !important;
+            background: transparent !important;
+            border: none !important;
+            padding: 0 12px !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            margin: 0 15px !important;
+        }
+        #cert-preview-scaler .template_3 .sig-box img {
+            height: 38px !important;
+            margin: 0 auto !important;
+        }
+        #cert-preview-scaler .template_3 .sig-box div[style*="height: 50px"] {
+            height: 38px !important;
         }
         #cert-preview-scaler .sig-line { width: 170px; border-bottom: 1.5px solid #0f172a; margin: 8px auto; }
-        #cert-preview-scaler .template_3 .sig-line { border-bottom-color: #1e1b4b; }
+        #cert-preview-scaler .template_3 .sig-line {
+            width: 140px !important;
+            border-bottom-color: #1e1b4b !important;
+            margin: 4px auto !important;
+        }
+        #cert-preview-scaler .template_3 .sig-box p {
+            font-size: 9.5pt !important;
+            margin: 0 !important;
+            color: #1e1b4b !important;
+            font-weight: bold !important;
+        }
+        #cert-preview-scaler .template_3 .sig-box p + p {
+            font-size: 8pt !important;
+            margin-top: 1px !important;
+            color: #64748b !important;
+            font-style: italic !important;
+            font-weight: normal !important;
+        }
         
         #cert-preview-scaler .cert-id { position: absolute; bottom: 25px; right: 40px; font-size: 8.5pt; color: #94a3b8; font-weight: 600; z-index: 3; }
         #cert-preview-scaler .verification-tag { position: absolute; bottom: 25px; left: 40px; font-size: 7.5pt; color: #94a3b8; font-family: monospace; letter-spacing: 1.5px; font-weight: 600; z-index: 3; }
@@ -534,9 +609,11 @@
         }
         #cert-preview-scaler .template_4 .sig-box {
             display: inline-block !important;
+            vertical-align: bottom !important;
             float: none !important;
-            width: 264px !important;
-            margin: 0 30px !important;
+            text-align: center !important;
+            width: 200px !important;
+            margin: 0 15px !important;
         }
         #cert-preview-scaler .template_4 .sig-position {
             font-weight: bold;
@@ -556,7 +633,7 @@
             object-fit: contain;
         }
         #cert-preview-scaler .template_4 .sig-line {
-            width: 208px;
+            width: 150px !important;
             border-bottom: 1.5px solid #1a1a1a;
             margin: 2px auto;
         }
@@ -958,7 +1035,7 @@
                                             @endforeach
                                         </div>
                                         <h1>Sertifikat Penghargaan</h1>
-                                        <p style="color: #d97706; font-family: 'Helvetica', sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 5px; margin-top: 4px; margin-bottom: 25px;">NARASUMBER</p>
+                                        <p style="color: #d97706; font-family: 'Helvetica', sans-serif; font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 5px; margin-top: 4px; margin-bottom: 12px;">NARASUMBER</p>
                                     </div>
 
                                     <!-- Template 1 & 2 Header Area -->
@@ -974,23 +1051,23 @@
                                                 @endforeach
                                             </div>
                                         </div>
-                                        <h1 style="margin-top: 15px; font-size: 42pt;" id="preview-h1-t12">Sertifikat Penghargaan</h1>
+                                        <h1 style="margin-top: 15px; font-size: 32pt;" id="preview-h1-t12">Sertifikat Penghargaan</h1>
                                         <p style="color: #fbbf24; font-weight: bold; letter-spacing: 5px; font-size: 16pt; margin: 0; text-transform: uppercase;" id="preview-subtitle-t12">NARASUMBER</p>
                                         <div style="width: 200px; height: 2px; background: #fbbf24; margin: 15px auto;" id="preview-line-t12"></div>
                                     </div>
 
                                     <!-- Content Box -->
-                                    <div class="content" id="preview-content-box" style="{{ $templateName === 'template_4' ? 'display: none;' : ($templateName === 'template_2' ? 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;' : ($templateName === 'template_3' ? 'padding: 10px 70px; text-align: center; margin-top: 0;' : 'margin-top: 40px; text-align: center;')) }}">
+                                    <div class="cert-content" id="preview-content-box" style="{{ $templateName === 'template_4' ? 'display: none;' : ($templateName === 'template_2' ? 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;' : ($templateName === 'template_3' ? 'position: absolute; top: 175px; left: 40px; right: 40px; padding: 0; text-align: center; margin: 0; z-index: 2;' : 'margin-top: 25px; text-align: center;')) }}">
                                         <p style="font-size: 16pt; color: #64748b; font-style: italic; margin-bottom: 5px;" id="preview-certify-text">Diberikan kepada:</p>
                                         <div class="recipient-name" style="font-family: inherit;">{{ $templateName === 'template_1' ? $trainerName : strtoupper($trainerName) }}</div>
-                                        <div id="preview-name-divider-t1" style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 15px auto; display: {{ $templateName === 'template_1' ? 'block' : 'none' }};"></div>
+                                        <div id="preview-name-divider-t1" style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 10px auto; display: {{ $templateName === 'template_1' ? 'block' : 'none' }};"></div>
                                         <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;" id="preview-completed-text">Atas kontribusinya sebagai narasumber dalam</p>
-                                        <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;" id="preview-course-name">"{{ $modelTitle }}"</h2>
+                                        <h2 style="font-size: 18pt; color: #1e1b4b; margin: 8px 0; font-family: 'Georgia', serif; line-height: 1.3;" id="preview-course-name">"{{ $modelTitle }}"</h2>
                                         <p style="font-size: 12pt; color: #64748b;" id="preview-date-text">diterbitkan pada {{ $issuedDate ? \Carbon\Carbon::parse($issuedDate)->translatedFormat('d M Y') : '-' }}</p>
                                     </div>
 
                                     <!-- Signature Footer -->
-                                    <div class="cert-footer">
+                                    <div class="cert-footer" style="{{ $templateName === 'template_3' ? 'bottom: 95px !important; padding: 0 40px !important;' : ($templateName === 'template_4' ? 'bottom: 45px !important; padding: 0 !important; left: 75px !important; right: 75px !important; width: auto !important;' : 'bottom: 50px !important; padding: 0 70px !important;') }}">
                                         <div style="float: right; text-align: center; width: 100%;" id="preview-signatures-container">
                                             @foreach($signatures->take(3) as $signature)
                                                 @php $sigUrl = $assetUrl($signature->image_path); @endphp
@@ -1006,11 +1083,11 @@
                                                         <p class="sig-name">{{ $signature->name ?? 'Authorized Signature' }}</p>
                                                     </div>
                                                 @else
-                                                    <div class="sig-box" style="{{ $templateName === 'template_3' ? 'display: inline-block !important; float: none !important; background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(226, 232, 240, 0.8); padding: 10px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); backdrop-filter: blur(6px); margin: 0 20px !important;' : 'display: inline-block !important; float: none !important; text-align: center !important; margin: 0 30px !important; width: ' . ($templateName === 'template_2' ? '250px' : '230px') . ' !important;' }}">
+                                                    <div class="sig-box" style="{{ $templateName === 'template_3' ? 'display: inline-block !important; vertical-align: bottom !important; float: none !important; background: transparent; border: none; padding: 0 12px; border-radius: 0; box-shadow: none; backdrop-filter: none; margin: 0 15px !important;' : 'display: inline-block !important; vertical-align: bottom !important; float: none !important; text-align: center !important; margin: 0 30px !important; width: ' . ($templateName === 'template_2' ? '250px' : '230px') . ' !important;' }}">
                                                         @if($sigUrl)
-                                                            <img src="{{ $sigUrl }}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">
+                                                            <img src="{{ $sigUrl }}" style="height: 50px; width: auto; display: block; margin: 0 auto; object-fit: contain;">
                                                         @else
-                                                            <div style="height: 90px;"></div>
+                                                            <div style="height: 50px;"></div>
                                                         @endif
                                                         <div class="sig-line" style="width: 170px; border-bottom: 1.5px {{ $templateName === 'template_1' ? 'dashed #7f1d1d' : ($templateName === 'template_3' ? 'solid #1e1b4b' : 'solid #0f172a') }}; margin: 8px auto;"></div>
                                                         <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $signature->name ?? 'Authorized Signature' }}</p>
@@ -1206,7 +1283,7 @@
                                 'id' => $model->id,
                             ]) }}" class="btn-template btn-outline">
                                 <i class="bi bi-gear"></i>
-                                Kelola Template
+                                Kelola Template / Aset
                             </a>
                         @else
                             <a href="{{ route('admin.trainer.certificates.index') }}" class="btn-template">
@@ -1237,6 +1314,9 @@
         const certNaturalW = 1020;
         const scale = containerW / certNaturalW;
         
+        scaler.style.webkitTransformOrigin = 'top left';
+        scaler.style.transformOrigin = 'top left';
+        scaler.style.webkitTransform = 'scale(' + scale + ')';
         scaler.style.transform = 'scale(' + scale + ')';
         container.style.height = (scale * 642) + 'px';
     }

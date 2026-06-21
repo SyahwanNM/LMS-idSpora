@@ -5,9 +5,9 @@
 @php
     $pageTitle = 'Course Detail';
     $breadcrumbs = [
-        ['label' => 'Home', 'url' => route('trainer.dashboard')],
+        ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
         ['label' => 'Courses', 'url' => route('trainer.courses')],
-        ['label' => 'Detail']
+        ['label' => 'Detail Course']
     ];
 
     $courseModules = $course->modules ?? collect();

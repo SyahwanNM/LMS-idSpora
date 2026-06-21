@@ -1,5 +1,8 @@
 @php
     $isAdmin = $isAdmin ?? false;
+    $moduleLocked = $isAdmin ? !($schemePermissions['can_module'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_module'] ?? false));
+    $videoLocked = $isAdmin ? !($schemePermissions['can_video'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_video'] ?? false));
+    $quizLocked = $isAdmin ? !($schemePermissions['can_quiz'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_quiz'] ?? false));
 @endphp
 @extends($isAdmin ? 'layouts.admin-trainer' : 'layouts.trainer')
 
@@ -3861,7 +3864,7 @@ main.detail-course {
     <main class="content-studio-main">
         <header class="studio-header">
             <div class="studio-title-wrap">
-                <a class="back-btn" href="{{ route('trainer.detail-course', $course->id) }}">
+                <a class="back-btn" href="{{ $isAdmin ? route('admin.trainer.studio.list') : route('trainer.detail-course', $course->id) }}">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div>
@@ -3872,26 +3875,26 @@ main.detail-course {
 
             <div class="studio-tabs" role="tablist">
                 <button
-                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
-                    data-tab="module" type="button" {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ $moduleLocked ? 'is-locked' : '' }}"
+                    data-tab="module" type="button" {{ $moduleLocked ? 'data-locked="1"' : '' }}>
                     MODUL
-                    @if((!$isAdmin && $courseMaterialLocked) || !$schemePermissions['can_module'])
+                    @if($moduleLocked)
                         <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
                     @endif
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
-                    data-tab="video" type="button" {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ $videoLocked ? 'is-locked' : '' }}"
+                    data-tab="video" type="button" {{ $videoLocked ? 'data-locked="1"' : '' }}>
                     VIDEO
-                    @if((!$isAdmin && $courseMaterialLocked) || !$schemePermissions['can_video'])
+                    @if($videoLocked)
                         <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
                     @endif
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
-                    data-tab="quiz" type="button" {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ $quizLocked ? 'is-locked' : '' }}"
+                    data-tab="quiz" type="button" {{ $quizLocked ? 'data-locked="1"' : '' }}>
                     PENYUSUNAN QUIZ
-                    @if((!$isAdmin && $courseMaterialLocked) || !$schemePermissions['can_quiz'])
+                    @if($quizLocked)
                         <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
                     @endif
                 </button>
@@ -4006,26 +4009,26 @@ main.detail-course {
                             <div class="text-editor-block">
                                 <p class="text-editor-label mb-2">Editor Materi</p>
                                 <div class="wysiwyg-toolbar" id="wysiwygToolbar">
-                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-type-bold"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic" {{ $courseMaterialLocked ? 'disabled' : '' }}><i
+                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-type-bold"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic" {{ $moduleLocked ? 'disabled' : '' }}><i
                                             class="bi bi-type-italic"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1" {{ $courseMaterialLocked ? 'disabled' : '' }}>H1</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2" {{ $courseMaterialLocked ? 'disabled' : '' }}>H2</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3" {{ $courseMaterialLocked ? 'disabled' : '' }}>H3</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-list-ul"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-image"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-text-left"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1" {{ $moduleLocked ? 'disabled' : '' }}>H1</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2" {{ $moduleLocked ? 'disabled' : '' }}>H2</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3" {{ $moduleLocked ? 'disabled' : '' }}>H3</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-list-ul"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-image"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-text-left"></i></button>
                                     <button type="button" class="wysiwyg-btn" data-action="align-center"
                                         title="Rata Tengah"><i class="bi bi-text-center"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-right" {{ $courseMaterialLocked ? 'disabled' : '' }} title="Rata Kanan"><i
+                                    <button type="button" class="wysiwyg-btn" data-action="align-right" {{ $moduleLocked ? 'disabled' : '' }} title="Rata Kanan"><i
                                             class="bi bi-text-right"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="code" {{ $courseMaterialLocked ? 'disabled' : '' }} title="Insert Code Block"><i
+                                    <button type="button" class="wysiwyg-btn" data-action="code" {{ $moduleLocked ? 'disabled' : '' }} title="Insert Code Block"><i
                                             class="bi bi-code-square"></i></button>
                                 </div>
-                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" {{ $courseMaterialLocked ? 'disabled' : '' }} />
+                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" {{ $moduleLocked ? 'disabled' : '' }} />
                                 <div id="moduleWysiwygEditor" class="wysiwyg-editor"
-                                    contenteditable="{{ $courseMaterialLocked ? 'false' : 'true' }}" spellcheck="true"
-                                    style="{{ $courseMaterialLocked ? 'pointer-events:none; opacity:.72; background:#f8fafc;' : '' }}">
+                                    contenteditable="{{ $moduleLocked ? 'false' : 'true' }}" spellcheck="true"
+                                    style="{{ $moduleLocked ? 'pointer-events:none; opacity:.72; background:#f8fafc;' : '' }}">
                                     <p>Tulis pengantar materi di sini...</p>
                                 </div>
                                 <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk menyisipkan gambar
@@ -4038,7 +4041,7 @@ main.detail-course {
                             <button type="button" class="secondary-btn" id="previewModuleBtn">
                                 <i class="bi bi-eye"></i> PREVIEW MODUL
                             </button>
-                            <button type="submit" id="uploadSubmitBtn" class="primary-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_module']) ? 'disabled' : '' }}>
+                            <button type="submit" id="uploadSubmitBtn" class="primary-btn" {{ $moduleLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-cloud-arrow-up-fill"></i> SIMPAN MATERI TEKS
                             </button>
                         </div>
@@ -4077,9 +4080,9 @@ main.detail-course {
                             </div>
 
                             <div class="dropzone" id="videoDropzone"
-                                style="{{ $courseMaterialLocked ? 'pointer-events:none; opacity:.72;' : '' }}">
+                                style="{{ $videoLocked ? 'pointer-events:none; opacity:.72;' : '' }}">
                                 <input type="file" id="videoFileInput" multiple accept=".mp4" name="files[]"
-                                    style="display: none" {{ $courseMaterialLocked ? 'disabled' : '' }} />
+                                    style="display: none" {{ $videoLocked ? 'disabled' : '' }} />
                                 <i class="bi bi-camera-video"></i>
                                 <h2>Lampiran Video</h2>
                                 <p>Format: MP4</p>
@@ -4151,7 +4154,7 @@ main.detail-course {
                                                 onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                 <i class="bi bi-eye-fill"></i>
                                             </button>
-                                            <button type="button" class="select-replace-btn" {{ $courseMaterialLocked ? 'disabled' : '' }} data-module-id="{{ $material->id }}" data-module-type="video"
+                                            <button type="button" class="select-replace-btn" {{ $videoLocked ? 'disabled' : '' }} data-module-id="{{ $material->id }}" data-module-type="video"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
                                                 title="Ganti File"
                                                 style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
@@ -4165,7 +4168,7 @@ main.detail-course {
                         </div>
 
                         <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn" {{ ($courseMaterialLocked || !$schemePermissions['can_video']) ? 'disabled' : '' }}>
+                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn" {{ $videoLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-send"></i> SUBMIT FOR REVIEW
                             </button>
                         </div>
@@ -4251,7 +4254,7 @@ main.detail-course {
                                                     {{ $isFilledQuiz ? 'Tersimpan' : 'Belum Diisi' }}
                                                 </span>
                                                 <button type="button" class="quiz-edit-btn" data-module-id="{{ $quizModule->id }}"
-                                                    {{ $courseMaterialLocked ? 'disabled' : '' }}
+                                                    {{ $quizLocked ? 'disabled' : '' }}
                                                     title="{{ $isFilledQuiz ? 'Edit Quiz' : 'Buat Quiz' }}"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
@@ -4328,10 +4331,10 @@ main.detail-course {
                         </div>
 
                         <div class="quiz-actions" style="margin-top: 24px;">
-                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_quiz']) ? 'disabled' : '' }}>
+                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn" {{ $quizLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-plus-lg"></i> TAMBAH SOAL
                             </button>
-                            <button type="submit" class="primary-btn quiz-save-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_quiz']) ? 'disabled' : '' }}>
+                            <button type="submit" class="primary-btn quiz-save-btn" {{ $quizLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-check-lg"></i> SIMPAN QUIZ
                             </button>
                         </div>

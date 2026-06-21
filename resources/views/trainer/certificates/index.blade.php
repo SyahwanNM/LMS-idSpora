@@ -3,10 +3,10 @@
 @section('title', 'Riwayat Kegiatan - Trainer')
 
 @php
-  $pageTitle = 'Riwayat Kegiatan';
+  $pageTitle = 'Sertifikat';
   $breadcrumbs = [
-    ['label' => 'Home', 'url' => route('trainer.dashboard')],
-    ['label' => 'Riwayat Kegiatan']
+    ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
+    ['label' => 'Sertifikat']
   ];
 @endphp
 
@@ -24,10 +24,10 @@
   .top-page-content { display: flex; flex-direction: column; gap: 24px; flex: 1; }
   .badge-top { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 100px; color: rgba(255, 255, 255, 0.9); font-size: 9px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; backdrop-filter: blur(10px); width: fit-content; }
   .badge-top svg { width: 12px; height: 12px; color: var(--yellow-clr); flex-shrink: 0; }
-  .title-page { display: flex; flex-direction: column; gap: 12px; max-width: 600px; }
+  .title-page { display: flex; flex-direction: column; gap: 12px; max-width: 800px; }
   .title-page h1 { margin: 0; color: var(--white-clr); font-size: 40px; font-weight: 800; line-height: 1.2; }
   .title-page h1 span { color: #fbb034; }
-  .title-page h5 { margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px; font-weight: 500; line-height: 1.6; max-width: 500px; }
+  .title-page h5 { margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px; font-weight: 500; line-height: 1.6; max-width: none; }
   .upcoming-card { display: flex; align-items: center; gap: 16px; padding: 20px 24px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; min-width: 200px; backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
   .upcoming-icon { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; background: #fbb034; border-radius: 14px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(251, 176, 52, 0.3); }
   .upcoming-icon svg { width: 24px; height: 24px; color: var(--main-navy-clr); }
@@ -381,6 +381,31 @@
     box-shadow: 0 4px 10px rgba(27, 23, 99, 0.15);
   }
 
+  .certificate-card .btn-cert-publish {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 20px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    flex-grow: 1;
+    background: #2e2050;
+    color: #fff;
+    border: 1.5px solid #2e2050;
+  }
+  .certificate-card .btn-cert-publish:hover {
+    background: #51376c;
+    border-color: #51376c;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(27, 23, 99, 0.2);
+  }
+
   /* Disabled State Buttons */
   .btn-cert-download.disabled, .btn-cert-download:disabled {
     border: 1.5px solid #e2e8f0 !important;
@@ -588,6 +613,26 @@
 @section('content')
   <div class="courses-page cert-page">
 
+    @if(session('success'))
+      <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 p-3" role="alert" style="border-radius: 12px; margin-top: 10px; margin-bottom: 24px; background-color: #ecfdf5; color: #065f46; display: flex; align-items: center; justify-content: space-between;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-check-circle-fill" style="font-size: 1.2rem;"></i>
+          <span>{{ session('success') }}</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="position: static; padding: 0.5rem; margin: -0.5rem -0.5rem -0.5rem auto;"></button>
+      </div>
+    @endif
+
+    @if(session('error'))
+      <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 p-3" role="alert" style="border-radius: 12px; margin-top: 10px; margin-bottom: 24px; background-color: #fef2f2; color: #991b1b; display: flex; align-items: center; justify-content: space-between;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem;"></i>
+          <span>{{ session('error') }}</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="position: static; padding: 0.5rem; margin: -0.5rem -0.5rem -0.5rem auto;"></button>
+      </div>
+    @endif
+
     {{-- â”€â”€â”€ Hero Header â”€â”€â”€ --}}
     <section class="top-page">
       <div class="glow-circle glow-circle-1"></div>
@@ -600,10 +645,10 @@
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3l1.912 5.813a2 2 0 001.899 1.374h6.098l-4.931 3.582a2 2 0 00-.728 2.236l1.912 5.813-4.931-3.582a2 2 0 00-2.342 0l-4.931 3.582 1.912-5.813a2 2 0 00-.728-2.236L2.091 10.187h6.098a2 2 0 001.899-1.374L12 3z" />
               </svg>
-              <span>RIWAYAT KEGIATAN</span>
+              <span>SERTIFIKAT</span>
             </span>
-            <h1>Riwayat <span>Kegiatan</span></h1>
-            <h5>Semua aktivitas, kelas, dan event yang pernah Anda ikuti atau ajar, lengkap dengan status dan sertifikat.</h5>
+            <h1>Sertifikat <span>Anda</span></h1>
+            <h5>Semua sertifikat yang pernah Anda dapatkan, lengkap dengan status dan sertifikat.</h5>
           </div>
         </div>
 
@@ -764,11 +809,14 @@
                   <i class="bi bi-eye"></i>
                 </a>
               @else
-                <button class="btn-cert-download disabled" disabled>
-                  <i class="bi bi-hourglass-split"></i>
-                  Menunggu
-                </button>
-                <button class="btn-cert-view-circle disabled" disabled>
+                <form action="{{ route('trainer.certificates.publish', ['context' => $type, 'id' => $item['id']]) }}" method="POST" style="flex-grow: 1; display: flex; margin: 0; padding: 0;">
+                  @csrf
+                  <button type="submit" class="btn-cert-publish" style="width: 100%; border: none;" title="Terbitkan Sertifikat">
+                    <i class="bi bi-send-fill"></i>
+                    Terbitkan
+                  </button>
+                </form>
+                <button class="btn-cert-view-circle disabled" disabled style="margin: 0;">
                   <i class="bi bi-eye-slash"></i>
                 </button>
               @endif

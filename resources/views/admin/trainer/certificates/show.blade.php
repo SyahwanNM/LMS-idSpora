@@ -582,20 +582,28 @@
                                         </td>
 
                                         <td class="text-end">
-                                            <form method="POST"
-                                                action="{{ route('admin.trainer.certificates.publish', [
+                                            <div class="d-inline-flex gap-2">
+                                                <a href="{{ route('admin.trainer.certificates.edit', [
                                                     'trainer' => $trainer->id,
                                                     'context' => $context,
                                                     'id' => $item['id'],
-                                                ]) }}"
-                                                class="d-inline">
-                                                @csrf
-
-                                                <button type="submit" class="btn-publish">
-                                                    Terbitkan
-                                                    <i class="bi bi-chevron-right"></i>
-                                                </button>
-                                            </form>
+                                                ]) }}" class="btn-publish" style="background: #e2e8f0; color: #334155; min-width: auto; width: 34px; padding: 0;" title="Konfigurasi Sertifikat">
+                                                    <i class="bi bi-gear-fill"></i>
+                                                </a>
+                                                <form method="POST"
+                                                    action="{{ route('admin.trainer.certificates.publish', [
+                                                        'trainer' => $trainer->id,
+                                                        'context' => $context,
+                                                        'id' => $item['id'],
+                                                    ]) }}"
+                                                    class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn-publish">
+                                                        Terbitkan
+                                                        <i class="bi bi-chevron-right"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty

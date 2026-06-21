@@ -165,28 +165,6 @@
             box-shadow: 0 20px 40px rgba(79, 70, 229, 0.15);
         }
 
-        .cert-hero::after {
-            content: '';
-            position: absolute;
-            right: 78px;
-            top: 28px;
-            width: 255px;
-            height: 145px;
-            background: rgba(255, 255, 255, .1);
-            border-radius: 28px;
-            backdrop-filter: blur(4px);
-        }
-
-        .cert-hero::before {
-            content: '✦';
-            position: absolute;
-            right: 112px;
-            top: 82px;
-            color: rgba(255, 255, 255, .6);
-            font-size: 52px;
-            z-index: 2;
-        }
-
         .cert-hero-content {
             position: relative;
             z-index: 4;
@@ -353,7 +331,15 @@
         .cert-tab-wrapper {
             display: flex;
             gap: 8px;
-            margin-top: 32px;
+            margin-top: 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .cert-tab-wrapper::-webkit-scrollbar {
+            display: none;
         }
 
         .cert-tab-btn {
@@ -364,7 +350,7 @@
             padding: 16px 32px;
             border-radius: 16px 16px 0 0;
             font-weight: 700;
-            min-width: 220px;
+            min-width: auto;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -472,9 +458,30 @@
 
         /* ── Certificate Grid ── */
         .certificate-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(300px, 1fr));
+            display: flex !important;
+            flex-wrap: nowrap !important;
             gap: 24px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+
+        .certificate-grid::-webkit-scrollbar {
+            height: 8px;
+        }
+        .certificate-grid::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 99px;
+        }
+        .certificate-grid::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 99px;
+            border: 2px solid #f1f5f9;
+        }
+        .certificate-grid::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
 
         /* ── Certificate Card ── */
@@ -487,6 +494,7 @@
             flex-direction: column;
             overflow: hidden;
             transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+            flex: 0 0 350px;
         }
 
         .certificate-card:hover {
@@ -1051,95 +1059,50 @@
     <div class="cert-dashboard">
 
         <!-- Header Section -->
-        <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 32px;">
-            <div class="row align-items-center g-4">
-                <!-- Left Title Block -->
-                <div class="col-xl-6">
-                    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
-                        <!-- Ribbon Icon Circle -->
-                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #eef2ff; display: flex; align-items: center; justify-content: center; color: #1e1b4b; font-size: 24px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08); flex-shrink: 0;">
-                            <i class="bi bi-award-fill"></i>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.72rem; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px;">Sistem Rekognisi</div>
-                            <h1 style="font-size: 2.1rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px;">Sertifikat & Penghargaan</h1>
-                        </div>
-                    </div>
-                    <p style="font-size: 0.95rem; color: #64748b; line-height: 1.5; margin: 0; max-width: 560px;">Pantau program yang masih dalam proses pengiriman sertifikat dan lihat yang sudah berhasil diselesaikan.</p>
-                </div>
+        <section class="cert-hero">
+            <div class="cert-hero-content">
+                <div class="page-eyebrow">Sistem Rekognisi</div>
+                <h1 style="color: #fff;">Sertifikat & Penghargaan</h1>
+                <p>
+                    Pantau program yang masih dalam proses pengiriman sertifikat dan lihat yang sudah berhasil diselesaikan.
+                </p>
+            </div>
 
-                <!-- Right Dark Blue Card Banner -->
-                <div class="col-xl-6">
-                    <div class="header-banner-card" style="background: #1e1b4b; border-radius: 24px; padding: 24px; color: white; display: flex; position: relative; overflow: hidden; min-height: 140px; align-items: center; box-shadow: 0 12px 30px rgba(30, 27, 75, 0.2);">
-                        <!-- Stats Items -->
-                        <div style="display: flex; flex-wrap: wrap; gap: 20px 32px; z-index: 2; flex: 1; justify-content: flex-start; padding-right: 140px;">
-                            <!-- Stat 1 -->
-                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
-                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(20, 184, 166, 0.15); display: flex; align-items: center; justify-content: center; color: #2dd4bf; font-size: 18px; flex-shrink: 0;">
-                                    <i class="bi bi-send-fill"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $siapDikirimCount }}</div>
-                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Siap Dikirim</div>
-                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
-                                </div>
-                            </div>
-                            <!-- Stat 2 -->
-                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
-                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: #fb923c; font-size: 18px; flex-shrink: 0;">
-                                    <i class="bi bi-folder-fill"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $menungguAssetCount }}</div>
-                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Menunggu Asset</div>
-                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
-                                </div>
-                            </div>
-                            <!-- Stat 3 -->
-                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
-                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 18px; flex-shrink: 0;">
-                                    <i class="bi bi-check-circle-fill"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $dalamProsesCount }}</div>
-                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Dalam Proses</div>
-                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
-                                </div>
-                            </div>
-                            <!-- Stat 4 -->
-                            <div style="display: flex; align-items: center; gap: 12px; min-width: 100px;">
-                                <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; color: #c084fc; font-size: 18px; flex-shrink: 0;">
-                                    <i class="bi bi-award-fill"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size: 1.4rem; font-weight: 800; line-height: 1.1;">{{ $terkirimHariIni }}</div>
-                                    <div style="font-size: 0.72rem; color: #e2e8f0; font-weight: 500;">Terkirim Hari Ini</div>
-                                    <div style="font-size: 0.65rem; color: #94a3b8;">Program</div>
-                                </div>
-                            </div>
+            <!-- Floating Graphics (Certificate mockups) -->
+            <div style="position: absolute; right: 50px; top: 50%; transform: translateY(-50%); width: 280px; height: 200px; pointer-events: none; opacity: 0.98; display: block;">
+                <!-- Back Card (Glassmorphic) -->
+                <div style="position: absolute; right: 60px; top: 40px; width: 190px; height: 130px; background: rgba(255, 255, 255, 0.05); border: 1.5px solid rgba(255, 255, 255, 0.12); border-radius: 12px; transform: rotate(12deg); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);"></div>
+                <!-- Front Card (Premium White/Gold) -->
+                <div style="position: absolute; right: 20px; top: 15px; width: 210px; height: 145px; background: #ffffff; border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 12px; transform: rotate(-8deg); box-shadow: 0 15px 35px rgba(15, 23, 42, 0.25); padding: 10px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="border: 1px solid rgba(197, 160, 89, 0.45); padding: 8px 10px; height: 100%; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; background: #fafafa;">
+                        <div style="font-size: 0.7rem; font-weight: 800; color: #1e1b4b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; text-align: center;">SERTIFIKAT</div>
+                        <div style="height: 1px; background: rgba(197, 160, 89, 0.35); width: 80%; margin: 2px auto 6px;"></div>
+                        
+                        <!-- Mock text lines -->
+                        <div style="display: flex; flex-direction: column; gap: 4px; align-items: center;">
+                            <div style="height: 3px; background: #e2e8f0; width: 75%; border-radius: 1px;"></div>
+                            <div style="height: 3px; background: #f1f5f9; width: 55%; border-radius: 1px;"></div>
                         </div>
 
-                        <!-- Floating Graphics (Certificate mockups) -->
-                        <div style="position: absolute; right: -20px; top: -10px; width: 180px; height: 160px; z-index: 1; pointer-events: none; opacity: 0.95;">
-                            <!-- Back Card -->
-                            <div style="position: absolute; right: 35px; top: 30px; width: 120px; height: 85px; background: rgba(30, 27, 75, 0.35); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; transform: rotate(15deg); backdrop-filter: blur(6px);"></div>
-                            <!-- Front Card -->
-                            <div style="position: absolute; right: 20px; top: 20px; width: 130px; height: 90px; background: rgba(255, 255, 255, 0.96); border-radius: 10px; transform: rotate(-5deg); box-shadow: 0 10px 25px rgba(0,0,0,0.25); padding: 10px; display: flex; flex-direction: column; justify-content: space-between; border: 1.5px solid white;">
-                                <div style="font-size: 0.62rem; font-weight: 900; color: #4338ca; text-transform: uppercase; letter-spacing: 0.5px;">Sertifikat</div>
-                                <div style="height: 2px; background: #e0e7ff; width: 60%; border-radius: 1px;"></div>
-                                <div style="height: 2px; background: #e0e7ff; width: 45%; border-radius: 1px;"></div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                                    <div style="font-size: 0.48rem; font-weight: 700; color: #94a3b8; font-family: 'Georgia', serif; font-style: italic;">idSpora</div>
-                                    <div style="width: 14px; height: 14px; border-radius: 50%; background: #fbbf24; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
-                                        <i class="bi bi-award-fill" style="font-size: 8px; color: white;"></i>
-                                    </div>
-                                </div>
+                        <!-- Seal & Signature section -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 6px; padding: 0 2px;">
+                            <!-- Signature line -->
+                            <div style="display: flex; flex-direction: column; gap: 2px; width: 35%;">
+                                <div style="height: 8px; border-bottom: 1px solid #cbd5e1;"></div>
+                                <div style="font-size: 0.35rem; color: #94a3b8; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.2px;">Signature</div>
+                            </div>
+                            <!-- Gold Seal Badge -->
+                            <div style="width: 24px; height: 24px; border-radius: 50%; background: #d4af37; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(212, 175, 55, 0.3); position: relative; flex-shrink: 0;">
+                                <i class="bi bi-award-fill" style="font-size: 12px; color: white;"></i>
+                                <!-- Ribbon tails -->
+                                <div style="position: absolute; bottom: -5px; left: 5px; width: 4px; height: 7px; background: #b89025; transform: rotate(15deg); clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 70%, 0% 100%);"></div>
+                                <div style="position: absolute; bottom: -5px; right: 5px; width: 4px; height: 7px; background: #b89025; transform: rotate(-15deg); clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 70%, 0% 100%);"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- 4 Metrics Progress Cards Section -->
         <div class="row g-4 mb-4">
@@ -1251,23 +1214,23 @@
             <div class="col-xl-9 col-lg-8">
                 
                 <!-- Tab Buttons Row -->
-                <div class="cert-tab-wrapper" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 0;">
-                    <button type="button" class="cert-tab-btn filter-tab active" data-tab-value="all" style="border: 1px solid #cbd5e1; background: #fff; color: #475569; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                <div class="cert-tab-wrapper" style="display: flex; flex-wrap: nowrap; gap: 8px; margin-bottom: 0; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none;">
+                    <button type="button" class="cert-tab-btn filter-tab active" data-tab-value="all" style="border: 1px solid #cbd5e1; background: #fff; color: #475569; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; flex: 1;">
                         <i class="bi bi-grid-fill"></i> Semua
                     </button>
-                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="ready" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="ready" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; flex: 1;">
                         <i class="bi bi-send-fill"></i> Siap Dikirim
                         <span style="background: #d1fae5; color: #065f46; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $siapDikirimCount }}</span>
                     </button>
-                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="not-configured" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="not-configured" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; flex: 1;">
                         <i class="bi bi-folder-fill"></i> Menunggu Asset
                         <span style="background: #ffedd5; color: #9a3412; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $menungguAssetCount }}</span>
                     </button>
-                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="configured" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="configured" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; flex: 1;">
                         <i class="bi bi-check-circle-fill"></i> Dalam Proses
                         <span style="background: #dbeafe; color: #1e40af; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $dalamProsesCount }}</span>
                     </button>
-                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="sent" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                    <button type="button" class="cert-tab-btn filter-tab" data-tab-value="sent" style="border: 1px solid #e2e8f0; background: #fff; color: #64748b; padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; flex: 1;">
                         <i class="bi bi-award-fill"></i> Sudah Dikirim
                         <span style="background: #f1f5f9; color: #475569; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 20px; margin-left: 2px;">{{ $sudahDikirimCount }}</span>
                     </button>
@@ -1277,30 +1240,25 @@
                 <div class="filter-card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 16px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); margin-top: 16px; margin-bottom: 24px;">
                     <div class="row g-3 align-items-center">
                         <!-- Search bar -->
-                        <div class="col-lg-5">
+                        <div class="col-lg-7">
                             <div class="search-wrap" style="position: relative;">
                                 <i class="bi bi-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 15px;"></i>
                                 <input type="text" id="certSearch" class="filter-input" placeholder="Cari program..." style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0 16px 0 44px; outline: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;">
                             </div>
                         </div>
-                        <!-- Status Dropdown -->
+                        <!-- Tipe Dropdown -->
                         <div class="col-lg-4">
                             <div style="position: relative;">
-                                <select id="certStatus" class="filter-input" style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0 36px 0 16px; outline: none; font-size: 0.9rem; font-weight: 600; color: #475569; appearance: none; background: white;">
-                                    <option value="all">Semua Status</option>
-                                    <option value="ready">Siap Terbit</option>
-                                    <option value="configured">Dikonfigurasi</option>
-                                    <option value="not-configured">Belum Dikonfigurasi</option>
-                                    <option value="sent">Sudah Terbit</option>
+                                <select id="certType" class="filter-input" style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 12px; padding: 0 36px 0 16px; outline: none; font-size: 0.9rem; font-weight: 600; color: #475569; appearance: none; background: white;">
+                                    <option value="all">Semua Tipe</option>
+                                    <option value="event">Event</option>
+                                    <option value="course">Course</option>
                                 </select>
                                 <i class="bi bi-chevron-down" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none;"></i>
                             </div>
                         </div>
-                        <!-- Filter & Reset Button -->
-                        <div class="col-lg-3" style="display: flex; gap: 8px;">
-                            <button type="button" id="certFilterBtn" class="btn-reset-filter" style="height: 42px; flex: 1; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; font-weight: 700; font-size: 0.85rem; color: #475569; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; cursor: pointer;">
-                                <i class="bi bi-funnel"></i> Filter
-                            </button>
+                        <!-- Reset Button -->
+                        <div class="col-lg-1" style="display: flex; justify-content: flex-end;">
                             <button type="button" id="certReset" class="btn-reset-filter" style="height: 42px; width: 42px; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; font-weight: 700; color: #475569; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer;" title="Reset Filter">
                                 <i class="bi bi-arrow-counterclockwise" style="font-size: 16px;"></i>
                             </button>
@@ -1308,8 +1266,23 @@
                     </div>
                 </div>
 
+                <!-- Section Header with Slide Navigation -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 32px; margin-bottom: 16px;">
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-folder2-open" style="color: #1e1b4b;"></i> Daftar Program & Sertifikat
+                    </h3>
+                    <div id="slideArrowsContainer" style="display: flex; gap: 8px;">
+                        <button type="button" id="slidePrevBtn" class="btn-action-small view" style="width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Slide Left">
+                            <i class="bi bi-chevron-left" style="font-size: 16px;"></i>
+                        </button>
+                        <button type="button" id="slideNextBtn" class="btn-action-small view" style="width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Slide Right">
+                            <i class="bi bi-chevron-right" style="font-size: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Certificate Program Cards Grid -->
-                <div class="certificate-grid" id="certificateGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px;">
+                <div class="certificate-grid" id="certificateGrid">
                     @php
                         $allPrograms = $unsentItems->concat($sentItems);
                     @endphp
@@ -1325,7 +1298,7 @@
                             $isEvent = $item instanceof \App\Models\Event;
                             $title = $isEvent ? ($item->title ?? '-') : ($item->name ?? '-');
                             $context = $isEvent ? 'event' : 'course';
-                            $typeBadge = $isEvent ? 'ACARA' : 'KURSUS';
+                            $typeBadge = $isEvent ? 'Event' : 'Course';
                             
                             $metaCount = $isEvent ? ($item->registrations_count ?? 0) : ($item->enrollments_count ?? 0);
 
@@ -1351,7 +1324,8 @@
                         <div class="certificate-card cert-row" 
                              data-title="{{ strtolower($title) }}"
                              data-status="{{ $isSent ? 'sent' : $status }}"
-                             data-tab-cat="{{ $tabCategory }}">
+                             data-tab-cat="{{ $tabCategory }}"
+                             data-type="{{ $context }}">
                              
                              <!-- Top Banner Header -->
                              <div class="card-header-banner {{ $context }}">
@@ -1527,81 +1501,10 @@
                 </div>
             </div>
 
-            <!-- Right Column: Sidebar (Quick Summary & Recent Activities) -->
+            <!-- Right Column: Sidebar (Recent Activities) -->
             <div class="col-xl-3 col-lg-4">
-                
-                <!-- Quick Summary Card -->
-                <div class="card" style="background: #white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); margin-bottom: 24px; border-top: none;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-                        <i class="bi bi-bar-chart-line-fill" style="color: #1e1b4b; font-size: 16px;"></i>
-                        <h5 style="font-size: 0.90rem; font-weight: 800; color: #0f172a; margin: 0;">Ringkasan Cepat</h5>
-                    </div>
-                    
-                    <div style="display: flex; flex-direction: column; gap: 16px;">
-                        <!-- Item 1 -->
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
-                                    <i class="bi bi-send-fill"></i>
-                                </div>
-                                <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">Program Siap Dikirim</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">{{ $siapDikirimCount }}</span>
-                                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-left: 2px;">{{ $siapDikirimPercent }}%</span>
-                            </div>
-                        </div>
-
-                        <!-- Item 2 -->
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
-                                    <i class="bi bi-folder-fill"></i>
-                                </div>
-                                <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">Menunggu Asset</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="font-size: 0.9rem; font-weight: 800; color: #0f172a;">{{ $menungguAssetCount }}</span>
-                                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; margin-left: 2px;">{{ $menungguAssetPercent }}%</span>
-                            </div>
-                        </div>
-
-                        <!-- Item 3 -->
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
-                                    <i class="bi bi-people-fill"></i>
-                                </div>
-                                <div>
-                                    <span style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block;">Total Peserta</span>
-                                    <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 500; display: block; margin-top: -2px;">Seluruh program</span>
-                                </div>
-                            </div>
-                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">
-                                {{ $totalParticipants }}
-                            </div>
-                        </div>
-
-                        <!-- Item 4 -->
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="width: 32px; height: 32px; border-radius: 8px; background: #f5f3ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
-                                    <i class="bi bi-person-badge-fill"></i>
-                                </div>
-                                <div>
-                                    <span style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block;">Total Trainer</span>
-                                    <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 500; display: block; margin-top: -2px;">Aktif terlibat</span>
-                                </div>
-                            </div>
-                            <div style="font-size: 0.95rem; font-weight: 800; color: #0f172a;">
-                                {{ $totalActiveTrainers }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Recent Activities Card -->
-                <div class="card" style="background: #white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); border-top: none;">
+                <div class="card" style="background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); border-top: none;">
                     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <i class="bi bi-clock-history" style="color: #1e1b4b; font-size: 16px;"></i>
@@ -1636,18 +1539,19 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('certSearch');
-            const statusFilter = document.getElementById('certStatus');
+            const typeFilter = document.getElementById('certType');
             const resetBtn = document.getElementById('certReset');
             const tabBtns = document.querySelectorAll('.filter-tab');
             let activeTabValue = 'all';
+            let updateArrowButtons = null;
 
             function runFilter() {
                 const term = (searchInput?.value || '').toLowerCase().trim();
-                const status = statusFilter?.value || 'all';
+                const type = typeFilter?.value || 'all';
 
                 document.querySelectorAll('.cert-row').forEach(row => {
                     const title = row.getAttribute('data-title') || '';
-                    const rowStatus = row.getAttribute('data-status') || '';
+                    const rowType = row.getAttribute('data-type') || '';
                     const rowTabCat = row.getAttribute('data-tab-cat') || '';
 
                     const matchSearch = term === '' || title.includes(term);
@@ -1666,15 +1570,19 @@
                         matchTab = true;
                     }
 
-                    // Match dropdown status filter
-                    const matchStatus = status === 'all' || rowStatus === status;
+                    // Match dropdown type filter
+                    const matchType = type === 'all' || rowType === type;
 
-                    if (matchSearch && matchTab && matchStatus) {
+                    if (matchSearch && matchTab && matchType) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
                     }
                 });
+
+                if (typeof updateArrowButtons === 'function') {
+                    setTimeout(updateArrowButtons, 50);
+                }
             }
 
             // Bind tab buttons
@@ -1698,7 +1606,7 @@
 
             // Bind search and select inputs
             searchInput?.addEventListener('input', runFilter);
-            statusFilter?.addEventListener('change', function() {
+            typeFilter?.addEventListener('change', function() {
                 // If dropdown changes, reflect it as the search filter
                 runFilter();
             });
@@ -1706,7 +1614,7 @@
             // Bind reset button
             resetBtn?.addEventListener('click', function () {
                 if (searchInput) searchInput.value = '';
-                if (statusFilter) statusFilter.value = 'all';
+                if (typeFilter) typeFilter.value = 'all';
                 
                 // Reset active tab to "All"
                 tabBtns.forEach((b, index) => {
@@ -1725,6 +1633,67 @@
                 activeTabValue = 'all';
                 runFilter();
             });
+
+            // Slide Navigation Logic
+            const grid = document.getElementById('certificateGrid');
+            const prevBtn = document.getElementById('slidePrevBtn');
+            const nextBtn = document.getElementById('slideNextBtn');
+            const arrowsContainer = document.getElementById('slideArrowsContainer');
+
+            if (grid && prevBtn && nextBtn) {
+                const cardWidth = 374; // 350px card width + 24px gap
+
+                updateArrowButtons = function() {
+                    const scrollLeft = grid.scrollLeft;
+                    const maxScrollLeft = grid.scrollWidth - grid.clientWidth;
+
+                    // If content is not scrollable, hide the arrow buttons container
+                    if (grid.scrollWidth <= grid.clientWidth) {
+                        if (arrowsContainer) arrowsContainer.style.display = 'none';
+                        return;
+                    } else {
+                        if (arrowsContainer) arrowsContainer.style.display = 'flex';
+                    }
+
+                    // Disable/opacity-fade prev button
+                    if (scrollLeft <= 5) {
+                        prevBtn.style.opacity = '0.4';
+                        prevBtn.style.pointerEvents = 'none';
+                    } else {
+                        prevBtn.style.opacity = '1';
+                        prevBtn.style.pointerEvents = 'auto';
+                    }
+
+                    // Disable/opacity-fade next button
+                    if (scrollLeft >= maxScrollLeft - 5) {
+                        nextBtn.style.opacity = '0.4';
+                        nextBtn.style.pointerEvents = 'none';
+                    } else {
+                        nextBtn.style.opacity = '1';
+                        nextBtn.style.pointerEvents = 'auto';
+                    }
+                }
+
+                prevBtn.addEventListener('click', function () {
+                    grid.scrollBy({
+                        left: -cardWidth,
+                        behavior: 'smooth'
+                    });
+                });
+
+                nextBtn.addEventListener('click', function () {
+                    grid.scrollBy({
+                        left: cardWidth,
+                        behavior: 'smooth'
+                    });
+                });
+
+                grid.addEventListener('scroll', updateArrowButtons);
+                window.addEventListener('resize', updateArrowButtons);
+                
+                // Initial check
+                setTimeout(updateArrowButtons, 100);
+            }
         });
     </script>
 @endpush

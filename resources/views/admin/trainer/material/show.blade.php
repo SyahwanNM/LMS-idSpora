@@ -1891,6 +1891,25 @@
                 }
             });
 
+            // Preset rejection reason button click handler
+            document.addEventListener('click', function (e) {
+                const presetBtn = e.target.closest('.reject-preset-btn');
+                if (!presetBtn) return;
+                
+                const formOrDiv = presetBtn.closest('form');
+                if (formOrDiv) {
+                    const textarea = formOrDiv.querySelector('textarea');
+                    const presetText = presetBtn.getAttribute('data-preset');
+                    if (textarea && presetText) {
+                        if (textarea.value.trim() === '') {
+                            textarea.value = presetText;
+                        } else {
+                            textarea.value = textarea.value.trim() + "\n" + presetText;
+                        }
+                    }
+                }
+            });
+
         })();
     </script>
 @endpush

@@ -5,9 +5,9 @@
 @php
     $pageTitle = 'Event Studio';
     $breadcrumbs = [
-        ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
-        ['label' => 'Acara', 'url' => route('trainer.events')],
-        ['label' => 'Studio'],
+        ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
+        ['label' => 'Course', 'url' => route('trainer.events')],
+        ['label' => 'Studio Event'],
     ];
 
     $materialStatus = (string) ($event->material_status ?? 'draft');
@@ -1682,6 +1682,27 @@
                         @endif
 
                         @if($canUploadMaterials)
+                            <!-- Canva idSpora Template Banner -->
+                            <div class="canva-template-banner" style="margin-bottom: 24px; padding: 22px 28px; border-radius: 20px; background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); border: 1px solid #f0abfc; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 10px 25px rgba(81, 55, 108, 0.04); flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 16px; min-width: 280px; flex: 1;">
+                                    <div style="width: 48px; height: 48px; border-radius: 14px; background: #a21caf; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(162, 28, 175, 0.2);">
+                                        <i class="bi bi-palette-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1e1b4b; font-family: 'Outfit', 'Inter', sans-serif;">Template Presentasi Resmi idSpora (Canva)</h4>
+                                        <p style="margin: 0; font-size: 12.5px; color: #701a75; line-height: 1.5; font-family: 'Inter', sans-serif;">
+                                            Gunakan template presentasi resmi idSpora di Canva untuk membuat slide materi berkualitas tinggi. 
+                                            <span style="font-weight: 700; color: #475569;">(Opsional / Tidak Wajib)</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <a href="https://canva.link/jejnm0h5awo766v" target="_blank" class="primary-btn" style="padding: 12px 24px; font-size: 13px; font-weight: 700; border-radius: 12px; background: #a21caf; color: white; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(162, 28, 175, 0.2); border: none; cursor: pointer; transition: all 0.2s;"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(162, 28, 175, 0.3)';"
+                                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(162, 28, 175, 0.2)';">
+                                    <i class="bi bi-box-arrow-up-right"></i> Gunakan Template Canva
+                                </a>
+                            </div>
+
                             <div class="upload-hints">
                                 <div class="hint-card">
                                     <div class="icon"><i class="bi bi-file-earmark-arrow-up"></i></div>

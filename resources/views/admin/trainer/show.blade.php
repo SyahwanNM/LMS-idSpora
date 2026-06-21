@@ -2397,7 +2397,7 @@
                                     <span class="badge bg-light text-dark border">Ops</span>
                                 </div>
                                 <div class="row g-3">
-                                    <div class="col-6"><a href="{{ route('admin.trainer.certificates.queue') }}"
+                                    <div class="col-6"><a href="{{ route('admin.trainer.certificates.index', ['tab' => 'unsentItems']) }}"
                                             class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10 d-block text-decoration-none"><i
                                                 class="bi bi-files fs-4 d-block mb-2"></i><span class="fw-bold"
                                                 style="font-size: 13px;">Terbitkan Massal</span></a></div>

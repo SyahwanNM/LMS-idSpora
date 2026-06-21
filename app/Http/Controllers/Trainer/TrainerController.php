@@ -386,9 +386,16 @@ class TrainerController extends Controller
         }
 
         $finishedEvents = Event::query()
-            ->where('trainer_id', $trainerId)
+            ->where(function ($query) use ($trainerId) {
+                $query->where('trainer_id', $trainerId)
+                      ->orWhereIn('id', function ($sub) use ($trainerId) {
+                          $sub->select('event_id')
+                              ->from('event_speakers')
+                              ->where('trainer_id', $trainerId);
+                      });
+            })
             ->whereNotNull('event_date')
-            ->whereDate('event_date', '<', now()->toDateString())
+            ->whereDate('event_date', '<=', now()->toDateString())
             ->get(['id', 'title', 'event_date', 'jenis', 'certificate_logo', 'certificate_signature']);
 
         $finishedCourses = Course::query()
@@ -438,14 +445,13 @@ class TrainerController extends Controller
             return;
         }
 
-        $alreadyExists = TrainerCertificate::query()
+        $trainerCertificate = TrainerCertificate::query()
             ->where('trainer_id', $trainerId)
-            ->whereIn('status', ['sent', 'published'])
             ->where('certifiable_type', $certifiableType)
             ->where('certifiable_id', $certifiableId)
-            ->exists();
+            ->first();
 
-        if ($alreadyExists) {
+        if ($trainerCertificate && in_array($trainerCertificate->status, ['sent', 'published'])) {
             return;
         }
 
@@ -471,38 +477,52 @@ class TrainerController extends Controller
             : 'ELR';
         $typeCode = 'TRN';
 
-        // Get the maximum sequence for this period to avoid duplicates
-        $monthYear = $issuedAt->format('m-Y');
-        $maxSequence = TrainerCertificate::query()
-            ->where('trainer_id', $trainerId)
-            ->where('activity_code', strtoupper($activityCode))
-            ->where('type_code', $typeCode)
-            ->whereRaw("date_format(issued_at, '%m-%Y') = ?", [$monthYear])
-            ->max(\DB::raw("CAST(SUBSTRING(sequence, -3) AS UNSIGNED)")) ?? 0;
+        if ($trainerCertificate) {
+            $sequence = $trainerCertificate->sequence;
+            $certificateNumber = $trainerCertificate->certificate_number;
+            $issuedAt = $trainerCertificate->issued_at ?: $issuedAt;
+        } else {
+            // Get the maximum sequence for this period to avoid duplicates
+            $monthYear = $issuedAt->format('m-Y');
+            $maxSequence = TrainerCertificate::query()
+                ->where('trainer_id', $trainerId)
+                ->where('activity_code', strtoupper($activityCode))
+                ->where('type_code', $typeCode)
+                ->whereRaw("date_format(issued_at, '%m-%Y') = ?", [$monthYear])
+                ->max(\DB::raw("CAST(SUBSTRING(sequence, -3) AS UNSIGNED)")) ?? 0;
 
-        $sequenceNum = $maxSequence + 1;
-        $sequence = str_pad((string) $sequenceNum, 3, '0', STR_PAD_LEFT);
+            $sequenceNum = $maxSequence + 1;
+            $sequence = str_pad((string) $sequenceNum, 3, '0', STR_PAD_LEFT);
 
-        $certificateNumber = $this->buildIdsporaCertificateNumber($activityCode, $typeCode, $sequence, $issuedAt);
+            $certificateNumber = $this->buildIdsporaCertificateNumber($activityCode, $typeCode, $sequence, $issuedAt);
 
-        // Check if certificate already exists - skip if it does
-        $existingCert = TrainerCertificate::where('certificate_number', $certificateNumber)->first();
-        if ($existingCert) {
-            return;
+            // Check if certificate already exists - skip if it does
+            $existingCert = TrainerCertificate::where('certificate_number', $certificateNumber)->first();
+            if ($existingCert) {
+                return;
+            }
         }
 
-        $trainerCertificate = TrainerCertificate::create([
-            'trainer_id' => $trainerId,
-            'certifiable_type' => $certifiableType,
-            'certifiable_id' => $certifiableId,
-            'activity_code' => strtoupper($activityCode),
-            'type_code' => $typeCode,
-            'sequence' => $sequence,
-            'certificate_number' => $certificateNumber,
-            'issued_at' => $issuedAt,
-            'issued_by' => null,
-            'status' => 'sent',
-        ]);
+        if ($trainerCertificate) {
+            $trainerCertificate->update([
+                'status' => 'sent',
+                'issued_at' => $issuedAt,
+                'issued_by' => null,
+            ]);
+        } else {
+            $trainerCertificate = TrainerCertificate::create([
+                'trainer_id' => $trainerId,
+                'certifiable_type' => $certifiableType,
+                'certifiable_id' => $certifiableId,
+                'activity_code' => strtoupper($activityCode),
+                'type_code' => $typeCode,
+                'sequence' => $sequence,
+                'certificate_number' => $certificateNumber,
+                'issued_at' => $issuedAt,
+                'issued_by' => null,
+                'status' => 'sent',
+            ]);
+        }
 
         [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($certifiable);
 
@@ -1148,16 +1168,28 @@ class TrainerController extends Controller
             'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
         ];
 
-        $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
-        $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
-        if ($invitationSchemeType === 0) {
-            $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
-            $invitationSchemeType = match ($contribScheme) {
+        $invitationSchemeType = 0;
+        if (!empty($course->trainer_contribution_scheme)) {
+            $invitationSchemeType = match ($course->trainer_contribution_scheme) {
                 'e2e' => 1,
                 'module_video' => 2,
-                'video_only' => 3, // Note: video_only means scheme 3 (10%)
+                'video_only' => 3,
                 default => 0,
             };
+        }
+
+        if ($invitationSchemeType === 0) {
+            $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
+            $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
+            if ($invitationSchemeType === 0) {
+                $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
+                $invitationSchemeType = match ($contribScheme) {
+                    'e2e' => 1,
+                    'module_video' => 2,
+                    'video_only' => 3,
+                    default => 0,
+                };
+            }
         }
 
         $activeSchemeType = in_array($invitationSchemeType, [1, 2, 3], true)
@@ -1614,15 +1646,27 @@ class TrainerController extends Controller
         $courseInvitationStatus = $courseInvitation?->effectiveInvitationStatus() ?? '';
         $courseMaterialLocked = $this->isCourseMaterialLockedForTrainer((int) $course->id, $trainerId);
 
-        $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
-        if ($invitationSchemeType === 0) {
-            $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
-            $invitationSchemeType = match ($contribScheme) {
+        $invitationSchemeType = 0;
+        if (!empty($course->trainer_contribution_scheme)) {
+            $invitationSchemeType = match ($course->trainer_contribution_scheme) {
                 'e2e' => 1,
                 'module_video' => 2,
-                'video_only' => 3, // Note: video_only means scheme 3 (10%)
+                'video_only' => 3,
                 default => 0,
             };
+        }
+
+        if ($invitationSchemeType === 0) {
+            $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
+            if ($invitationSchemeType === 0) {
+                $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
+                $invitationSchemeType = match ($contribScheme) {
+                    'e2e' => 1,
+                    'module_video' => 2,
+                    'video_only' => 3,
+                    default => 0,
+                };
+            }
         }
 
         $requestedSchemeType = (int) $request->query('scheme', 0);
@@ -2026,11 +2070,12 @@ class TrainerController extends Controller
             'passingGrade' => 'required|integer|min:0|max:100',
         ]);
 
-        $trainerId = Auth::id();
+        $trainer = Auth::user();
+        $event = \App\Models\Event::findOrFail($id);
 
-        $event = \App\Models\Event::where('id', $id)
-            ->where('trainer_id', $trainerId)
-            ->firstOrFail();
+        if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
+            abort(403, 'Anda tidak memiliki akses untuk mengubah kuis event ini.');
+        }
 
 
         $questionsData = json_decode($request->questions, true);
@@ -2227,14 +2272,13 @@ class TrainerController extends Controller
             ->take(3)
             ->get();
 
-        $upcomingEvents = (clone $trainerEventsQuery)
-            ->whereDate('event_date', '>=', now()->toDateString())
+        $recentEvents = (clone $trainerEventsQuery)
             ->withCount([
                 'registrations as participants_count' => function ($query) {
                     $query->where('status', 'active');
                 }
             ])
-            ->orderBy('event_date', 'asc')
+            ->orderByDesc('created_at')
             ->take(3)
             ->get();
 
@@ -2298,7 +2342,7 @@ class TrainerController extends Controller
             'totalStudents',
             'averageRating',
             'recentFeedbacks',
-            'upcomingEvents',
+            'recentEvents',
             'totalEarned',
             'ledgerPayments',
             'trainerCertificates',
@@ -3378,15 +3422,22 @@ class TrainerController extends Controller
     public function certificatesIndex()
     {
         $trainer = Auth::user();
-        $this->ensureTrainerCertificatesSynced($trainer);
+        // $this->ensureTrainerCertificatesSynced($trainer);
 
         $context = (string) request()->query('context', '');
         $targetId = (int) request()->query('id', 0);
 
         $finishedEvents = Event::query()
-            ->where('trainer_id', $trainer->id)
+            ->where(function ($query) use ($trainer) {
+                $query->where('trainer_id', $trainer->id)
+                      ->orWhereIn('id', function ($sub) use ($trainer) {
+                          $sub->select('event_id')
+                              ->from('event_speakers')
+                              ->where('trainer_id', $trainer->id);
+                      });
+            })
             ->whereNotNull('event_date')
-            ->whereDate('event_date', '<', now()->toDateString())
+            ->whereDate('event_date', '<=', now()->toDateString())
             ->withCount('registrations')
             ->orderByDesc('event_date')
             ->get(['id', 'title', 'jenis', 'event_date', 'certificate_logo', 'certificate_signature', 'certificate_template']);
@@ -3401,7 +3452,8 @@ class TrainerController extends Controller
         $certificates = TrainerCertificate::query()
             ->where('trainer_id', $trainer->id)
             ->whereIn('status', ['sent', 'published'])
-            ->get(['certifiable_type', 'certifiable_id', 'certificate_number', 'issued_at', 'file_path', 'type_code', 'status']);
+            ->with('certifiable')
+            ->get();
 
         $certMap = [];
         foreach ($certificates as $cert) {
@@ -3410,6 +3462,7 @@ class TrainerController extends Controller
         }
 
         $historyItems = collect();
+        $addedKeys = [];
 
         foreach ($finishedEvents as $event) {
             $key = Event::class . ':' . (int) $event->id;
@@ -3438,6 +3491,7 @@ class TrainerController extends Controller
                 'template' => $template,
                 'model' => $event,
             ]);
+            $addedKeys[$key] = true;
         }
 
         foreach ($finishedCourses as $course) {
@@ -3467,6 +3521,47 @@ class TrainerController extends Controller
                 'template' => $template,
                 'model' => $course,
             ]);
+            $addedKeys[$key] = true;
+        }
+
+        foreach ($certificates as $cert) {
+            $key = $cert->certifiable_type . ':' . (int) $cert->certifiable_id;
+            if (isset($addedKeys[$key])) {
+                continue;
+            }
+
+            $model = $cert->certifiable;
+            if (!$model) {
+                continue;
+            }
+
+            [$logosBase64, $signaturesBase64, $signaturesData, $template] = $this->extractTrainerAssetsBase64($model);
+            $hasLogo = !empty($model->certificate_logo);
+            $isEvent = $cert->certifiable_type === Event::class;
+            $hasSig = !empty($model->certificate_signature);
+            $hasTemplate = !empty($model->certificate_template);
+
+            $historyItems->push([
+                'type' => $isEvent ? 'event' : 'course',
+                'id' => (int) $model->id,
+                'title' => $isEvent ? $model->title : $model->name,
+                'date' => $isEvent ? $model->event_date : ($model->approved_at ?? $model->updated_at),
+                'statusLabel' => 'Diterbitkan',
+                'certificate' => $cert,
+                'downloadUrl' => $isEvent ? route('trainer.certificates.events.download', $model) : route('trainer.certificates.courses.download', $model),
+                'showUrl' => $isEvent ? route('trainer.certificates.events.show', $model) : route('trainer.certificates.courses.show', $model),
+                'highlight' => $context === ($isEvent ? 'event' : 'course') && $targetId === (int) $model->id,
+                'registrations_count' => $isEvent ? (int) ($model->registrations_count ?? 0) : (int) ($model->enrollments_count ?? 0),
+                'has_logo' => $hasLogo,
+                'has_signature' => $hasSig,
+                'has_template' => $hasTemplate,
+                'logosBase64' => $logosBase64,
+                'signaturesBase64' => $signaturesBase64,
+                'signaturesData' => $signaturesData,
+                'template' => $template,
+                'model' => $model,
+            ]);
+            $addedKeys[$key] = true;
         }
 
         $historyItems = $historyItems->sortByDesc(fn($item) => $item['date'] ?? now());
@@ -3937,5 +4032,58 @@ class TrainerController extends Controller
             'message' => 'Reply saved successfully',
             'data' => $reply
         ]);
+    }
+
+    public function publishCertificate(string $context, int $id)
+    {
+        $trainer = Auth::user();
+        if (!$trainer || $trainer->role !== 'trainer') {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $model = $this->getCertifiableModel($context, $id);
+
+        // Authorization check
+        if ($context === 'event') {
+            $isAuthorized = $this->trainerMatchesEvent($model, $trainer->id, $trainer->name);
+        } else { // course
+            $isAuthorized = ((int) $model->trainer_id === (int) $trainer->id);
+        }
+
+        if (!$isAuthorized) {
+            return back()->with('error', 'Anda tidak memiliki wewenang untuk menerbitkan sertifikat program ini.');
+        }
+
+        try {
+            $this->issueAutoTrainerCertificate($trainer, $model, $context);
+            
+            // Check if the certificate was successfully created/updated and file generated
+            $certifiableType = $context === 'event' ? Event::class : Course::class;
+            $cert = TrainerCertificate::query()
+                ->where('trainer_id', $trainer->id)
+                ->where('certifiable_type', $certifiableType)
+                ->where('certifiable_id', $model->id)
+                ->whereIn('status', ['sent', 'published'])
+                ->first();
+                
+            if (!$cert) {
+                return back()->with('error', 'Gagal menerbitkan sertifikat. Silakan hubungi admin untuk melengkapi konfigurasi tanda tangan/template.');
+            }
+
+            return back()->with('success', 'Sertifikat berhasil diterbitkan.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Terjadi kesalahan saat menerbitkan sertifikat: ' . $e->getMessage());
+        }
+    }
+
+    private function getCertifiableModel(string $context, int $id)
+    {
+        if ($context === 'event') {
+            return Event::findOrFail($id);
+        } elseif ($context === 'course') {
+            return Course::findOrFail($id);
+        }
+
+        abort(400, 'Context tidak valid.');
     }
 }
