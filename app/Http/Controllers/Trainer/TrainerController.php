@@ -3983,48 +3983,6 @@ class TrainerController extends Controller
         ]);
     }
 
-    public function publishCertificate(string $context, int $id)
-    {
-        $trainer = Auth::user();
-        if (!$trainer || $trainer->role !== 'trainer') {
-            abort(403, 'Akses ditolak.');
-        }
-
-        $model = $this->getCertifiableModel($context, $id);
-
-        // Authorization check
-        if ($context === 'event') {
-            $isAuthorized = $this->trainerMatchesEvent($model, $trainer->id, $trainer->name);
-        } else { // course
-            $isAuthorized = ((int) $model->trainer_id === (int) $trainer->id);
-        }
-
-        if (!$isAuthorized) {
-            return back()->with('error', 'Anda tidak memiliki wewenang untuk menerbitkan sertifikat program ini.');
-        }
-
-        try {
-            $this->issueAutoTrainerCertificate($trainer, $model, $context);
-            
-            // Check if the certificate was successfully created/updated and file generated
-            $certifiableType = $context === 'event' ? Event::class : Course::class;
-            $cert = TrainerCertificate::query()
-                ->where('trainer_id', $trainer->id)
-                ->where('certifiable_type', $certifiableType)
-                ->where('certifiable_id', $model->id)
-                ->whereIn('status', ['sent', 'published'])
-                ->first();
-                
-            if (!$cert) {
-                return back()->with('error', 'Gagal menerbitkan sertifikat. Silakan hubungi admin untuk melengkapi konfigurasi tanda tangan/template.');
-            }
-
-            return back()->with('success', 'Sertifikat berhasil diterbitkan.');
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Terjadi kesalahan saat menerbitkan sertifikat: ' . $e->getMessage());
-        }
-    }
-
     private function getCertifiableModel(string $context, int $id)
     {
         if ($context === 'event') {

@@ -723,7 +723,6 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/certificates/events/{event}/download', [TrainerController::class, 'certificateEventDownload'])->name('certificates.events.download');
     Route::get('/certificates/courses/{course}', [TrainerController::class, 'certificateCourseShow'])->name('certificates.courses.show');
     Route::get('/certificates/courses/{course}/download', [TrainerController::class, 'certificateCourseDownload'])->name('certificates.courses.download');
-    Route::post('/certificates/{context}/{id}/publish', [TrainerController::class, 'publishCertificate'])->name('certificates.publish');
     // (moved) kirim sertifikat sekarang di area admin
 });
 

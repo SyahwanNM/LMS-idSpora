@@ -809,15 +809,9 @@
                   <i class="bi bi-eye"></i>
                 </a>
               @else
-                <form action="{{ route('trainer.certificates.publish', ['context' => $type, 'id' => $item['id']]) }}" method="POST" style="flex-grow: 1; display: flex; margin: 0; padding: 0;">
-                  @csrf
-                  <button type="submit" class="btn-cert-publish" style="width: 100%; border: none;" title="Terbitkan Sertifikat">
-                    <i class="bi bi-send-fill"></i>
-                    Terbitkan
-                  </button>
-                </form>
-                <button class="btn-cert-view-circle disabled" disabled style="margin: 0;">
-                  <i class="bi bi-eye-slash"></i>
+                <button class="btn-cert-download disabled" disabled style="width: 100%;" title="Sertifikat Belum Diterbitkan">
+                  <i class="bi bi-hourglass-split"></i>
+                  Belum Diterbitkan
                 </button>
               @endif
             </div>
