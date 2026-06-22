@@ -2337,7 +2337,7 @@ section.event .header-card h3 {
     border-bottom: 1px solid #fff;
 }
 
-label {
+.filter-container label {
     color: white;
 }
 
