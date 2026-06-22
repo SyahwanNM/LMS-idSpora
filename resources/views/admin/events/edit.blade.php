@@ -217,6 +217,18 @@
                                          <label for="finalist_payment_end" class="form-label small fw-semibold mb-1">Batas Registrasi Finalis</label>
                                          <input type="datetime-local" name="finalist_payment_end" id="finalist_payment_end" class="form-control form-control-sm" value="{{ old('finalist_payment_end', $event->finalist_payment_end ? $event->finalist_payment_end->format('Y-m-d\TH:i') : '') }}">
                                      </div>
+                                     <div class="col-md-6 mb-2">
+                                         <label for="lomba_kategori" class="form-label small fw-semibold mb-1">Kategori Lomba <span class="text-danger">*</span></label>
+                                         <select name="lomba_kategori" id="lomba_kategori" class="form-select form-select-sm" required>
+                                             <option value="individual" {{ old('lomba_kategori', $event->lomba_kategori ?? 'individual') === 'individual' ? 'selected' : '' }}>Individual</option>
+                                             <option value="team" {{ old('lomba_kategori', $event->lomba_kategori ?? 'individual') === 'team' ? 'selected' : '' }}>Team</option>
+                                             <option value="both" {{ old('lomba_kategori', $event->lomba_kategori ?? 'individual') === 'both' ? 'selected' : '' }}>Both (Individual & Team)</option>
+                                         </select>
+                                     </div>
+                                     <div class="col-md-6 mb-2" id="max_team_members_wrapper" style="{{ in_array(old('lomba_kategori', $event->lomba_kategori ?? 'individual'), ['team', 'both']) ? '' : 'display: none;' }}">
+                                         <label for="max_team_members" class="form-label small fw-semibold mb-1">Maksimal Anggota Tim <span class="text-danger">*</span></label>
+                                         <input type="number" name="max_team_members" id="max_team_members" class="form-control form-control-sm" min="2" value="{{ old('max_team_members', $event->max_team_members ?? 5) }}">
+                                     </div>
                                     <div class="col-12 mb-2">
                                         <hr class="my-1">
                                         <label for="price_stage2_edit" class="form-label small fw-semibold mb-1">
@@ -1593,6 +1605,26 @@
 
                 jenisSelect.addEventListener('change', toggleLombaFields);
                 toggleLombaFields(); // run initially
+            }
+
+            // Toggle max_team_members based on lomba_kategori
+            const lombaKategoriSelect = document.getElementById('lomba_kategori');
+            const maxTeamMembersWrapper = document.getElementById('max_team_members_wrapper');
+            const maxTeamMembersInput = document.getElementById('max_team_members');
+
+            if (lombaKategoriSelect) {
+                const toggleMaxTeamMembers = () => {
+                    const isTeam = ['team', 'both'].includes(lombaKategoriSelect.value);
+                    if (maxTeamMembersWrapper) {
+                        maxTeamMembersWrapper.style.display = isTeam ? '' : 'none';
+                    }
+                    if (maxTeamMembersInput) {
+                        maxTeamMembersInput.required = isTeam;
+                        maxTeamMembersInput.disabled = !isTeam;
+                    }
+                };
+                lombaKategoriSelect.addEventListener('change', toggleMaxTeamMembers);
+                toggleMaxTeamMembers(); // run initially
             }
         });
     </script>

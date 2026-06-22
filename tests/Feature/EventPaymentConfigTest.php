@@ -207,4 +207,47 @@ class EventPaymentConfigTest extends TestCase
         $this->assertEquals(90000, $payment->amount);
         $this->assertEquals('RESELLER123', $payment->referral_code);
     }
+
+    public function test_individual_registration_captures_and_saves_team_name(): void
+    {
+        $buyer = User::factory()->create();
+
+        $event = Event::create([
+            'title' => 'Lomba Individu Test',
+            'image' => 'uploads/events/test.jpg',
+            'speaker' => 'Speaker Test',
+            'description' => 'Test event description',
+            'location' => 'Offline',
+            'price' => 100000,
+            'event_time' => '10:00:00',
+            'event_date' => now()->addDay()->toDateString(),
+            'accept_online_payment' => false,
+            'accept_manual_transfer' => true,
+            'is_reseller_event' => false,
+            'bank_name' => 'Bank Mandiri',
+            'bank_account_number' => '123456',
+            'bank_account_holder' => 'Holder Name',
+        ]);
+
+        $response = $this->actingAs($buyer)->post(route('payment.manual.register', $event->id), [
+            'payment_method' => 'transfer',
+            'full_name' => $buyer->name,
+            'whatsapp' => '081234567890',
+            'university_origin' => 'Telkom University',
+            'study_program' => 'Teknik',
+            'position' => 'Mahasiswa',
+            'team_name' => 'Team Alpha Omega',
+            'payment_proof' => UploadedFile::fake()->image('proof.jpg'),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $registration = \App\Models\EventRegistration::where('user_id', $buyer->id)
+            ->where('event_id', $event->id)
+            ->first();
+
+        $this->assertNotNull($registration);
+        $this->assertEquals('Team Alpha Omega', $registration->team_name);
+    }
 }
