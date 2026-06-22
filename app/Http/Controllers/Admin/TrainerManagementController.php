@@ -1095,6 +1095,7 @@ class TrainerManagementController extends Controller
                 'linkedin_url' => ['nullable', 'url', 'max:255'],
                 'user_status' => ['nullable', 'in:active,inactive,suspended'],
                 'trainer_skills' => ['nullable', 'string'],
+                'trainer_specializations' => ['nullable', 'string'],
                 'trainer_experiences' => ['nullable', 'string'],
                 'trainer_educations' => ['nullable', 'string'],
                 'trainer_certifications' => ['nullable', 'string'],
@@ -1121,6 +1122,7 @@ class TrainerManagementController extends Controller
                 'bio' => ['nullable', 'string'],
                 'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'trainer_skills' => ['nullable', 'string'],
+                'trainer_specializations' => ['nullable', 'string'],
                 'trainer_experiences' => ['nullable', 'string'],
                 'trainer_educations' => ['nullable', 'string'],
                 'trainer_certifications' => ['nullable', 'string'],
@@ -1142,7 +1144,7 @@ class TrainerManagementController extends Controller
         }
 
         // Process array fields
-        $arrayFields = ['trainer_skills', 'trainer_experiences', 'trainer_educations', 'trainer_certifications'];
+        $arrayFields = ['trainer_skills', 'trainer_specializations', 'trainer_experiences', 'trainer_educations', 'trainer_certifications'];
         foreach ($arrayFields as $field) {
             if (isset($data[$field])) {
                 $data[$field] = array_values(array_filter(array_map('trim', explode(',', $data[$field]))));

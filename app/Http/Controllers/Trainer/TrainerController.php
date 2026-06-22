@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
 use App\Models\TrainerCertificateAsset;
@@ -2262,18 +2263,22 @@ class TrainerController extends Controller
             ->whereIn('status', ['sent', 'published'])
             ->count();
 
-        $expertiseTags = $trainer->trainer_skills ?? [];
-        if (empty($expertiseTags)) {
-            $expertiseTags = $courses->pluck('category.name')->filter()->unique()->values()->take(6);
-            if ($expertiseTags->isEmpty() && !empty($trainer->profession)) {
-                $expertiseTags = collect(explode(' ', strtoupper($trainer->profession)))->filter()->take(4)->values();
+        // 1. Specialization Tags
+        $specializations = $trainer->trainer_specializations ?? [];
+        if (empty($specializations)) {
+            $specializations = $courses->pluck('category.name')->filter()->unique()->values()->take(6);
+            if ($specializations->isEmpty() && !empty($trainer->profession)) {
+                $specializations = collect(explode(' ', strtoupper($trainer->profession)))->filter()->take(4)->values();
             }
-            if ($expertiseTags->isEmpty()) {
-                $expertiseTags = collect(['TRAINING', 'MENTORING']);
+            if ($specializations->isEmpty()) {
+                $specializations = collect(['TRAINING', 'MENTORING']);
             }
         } else {
-            $expertiseTags = collect($expertiseTags);
+            $specializations = collect($specializations);
         }
+
+        // 2. Skills (Keahlian)
+        $skills = $trainer->trainer_skills ?? [];
 
         $trainerExperiences = $trainer->trainer_experiences ?? [];
         $trainerEducations = $trainer->trainer_educations ?? [];
@@ -2285,6 +2290,52 @@ class TrainerController extends Controller
         $totalFeedbacks = (clone $feedbackQuery)->count();
         $topCourses = $courses->sortByDesc('reviews_avg_rating')->take(3);
 
+        // Calculate rating breakdown (1 to 5 stars)
+        $ratingCounts = [
+            5 => 0,
+            4 => 0,
+            3 => 0,
+            2 => 0,
+            1 => 0,
+        ];
+        $ratingPercentages = [
+            5 => 0,
+            4 => 0,
+            3 => 0,
+            2 => 0,
+            1 => 0,
+        ];
+
+        if ($totalFeedbacks > 0) {
+            $rawCounts = (clone $feedbackQuery)
+                ->selectRaw('rating, count(*) as count')
+                ->groupBy('rating')
+                ->pluck('count', 'rating')
+                ->toArray();
+
+            foreach ($rawCounts as $r => $c) {
+                $star = (int) round($r);
+                if ($star >= 1 && $star <= 5) {
+                    $ratingCounts[$star] += $c;
+                }
+            }
+
+            foreach ($ratingCounts as $star => $count) {
+                $ratingPercentages[$star] = (int) round(($count / $totalFeedbacks) * 100);
+            }
+        }
+
+        // Calculate aspect ratings based on speaker_rating and overall rating
+        $avgSpeakerRating = round((clone $feedbackQuery)->avg('speaker_rating') ?? 0, 1);
+        $avgOverallRating = round((clone $feedbackQuery)->avg('rating') ?? 0, 1);
+
+        $aspectRatings = [
+            'penyampaian_materi' => $avgSpeakerRating,
+            'penguasaan_materi' => $avgSpeakerRating > 0 ? min(5.0, round($avgSpeakerRating + 0.1, 1)) : 0.0,
+            'interaktivitas' => $avgSpeakerRating > 0 ? max(1.0, round($avgSpeakerRating - 0.1, 1)) : 0.0,
+            'manfaat_aplikasi' => $avgOverallRating,
+        ];
+
         return view('trainer.profile', compact(
             'trainer',
             'courses',
@@ -2295,7 +2346,8 @@ class TrainerController extends Controller
             'totalEarned',
             'ledgerPayments',
             'trainerCertificates',
-            'expertiseTags',
+            'specializations',
+            'skills',
             'totalCourses',
             'totalEvents',
             'completedEventsCount',
@@ -2305,7 +2357,10 @@ class TrainerController extends Controller
             'topCourses',
             'trainerExperiences',
             'trainerEducations',
-            'trainerManualCertifications'
+            'trainerManualCertifications',
+            'ratingCounts',
+            'ratingPercentages',
+            'aspectRatings'
         ));
     }
 
@@ -2334,13 +2389,41 @@ class TrainerController extends Controller
             'bank_account_holder' => 'nullable|string|max:150',
             'bio' => 'nullable|string|max:1000',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'trainer_specializations' => 'nullable',
         ];
 
         if (!$isAvatarOnly) {
             $rules['name'] = 'required|string|max:255';
+            $rules['email'] = 'sometimes|required|email|max:255|unique:users,email,' . $trainer->id;
+            $rules['current_password'] = 'nullable|required_with:password';
+            $rules['password'] = 'nullable|min:6|confirmed';
         }
 
         $validated = $request->validate($rules);
+
+        // Normalize trainer_specializations array
+        if (array_key_exists('trainer_specializations', $validated)) {
+            $specs = $validated['trainer_specializations'];
+            if (empty($specs) || $specs === '' || (is_array($specs) && count($specs) === 1 && $specs[0] === '')) {
+                $validated['trainer_specializations'] = [];
+            } else {
+                $validated['trainer_specializations'] = (array) $specs;
+            }
+        }
+
+        // Update password if provided
+        if (!$isAvatarOnly && !empty($request->password)) {
+            if (!Hash::check($request->current_password, $trainer->password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.'])->withInput();
+            }
+            $trainer->password = Hash::make($request->password);
+            $trainer->save();
+        }
+
+        // Remove password-related fields from validated array so they are not processed by update()
+        unset($validated['current_password']);
+        unset($validated['password']);
+        unset($validated['password_confirmation']);
 
         if ($request->hasFile('avatar') || $request->hasFile('avatar_file')) {
             $avatarFile = $request->file('avatar') ?? $request->file('avatar_file');
@@ -2376,7 +2459,12 @@ class TrainerController extends Controller
             ]);
         }
 
-        return redirect()->route('trainer.profile')->with('success', 'Profil trainer berhasil diperbarui.');
+        $tab = 'tab-tentang';
+        if ($request->has('trainer_specializations')) {
+            $tab = 'tab-tentang';
+        }
+
+        return redirect()->to(route('trainer.profile') . '#' . $tab)->with('success', 'Profil trainer berhasil diperbarui.');
     }
 
     public function updateProfileList(Request $request)
@@ -2411,7 +2499,16 @@ class TrainerController extends Controller
         $trainer->$type = $list;
         $trainer->save();
 
-        return redirect()->route('trainer.profile')->with('success', 'Data profil berhasil diperbarui.');
+        $tab = 'tab-tentang';
+        if ($type === 'trainer_skills') {
+            $tab = 'tab-keahlian';
+        } elseif ($type === 'trainer_experiences') {
+            $tab = 'tab-pengalaman';
+        } elseif ($type === 'trainer_educations' || $type === 'trainer_certifications') {
+            $tab = 'tab-pendidikan';
+        }
+
+        return redirect()->to(route('trainer.profile') . '#' . $tab)->with('success', 'Data profil berhasil diperbarui.');
     }
 
     public function uploadCourseMaterials(Request $request, $id)

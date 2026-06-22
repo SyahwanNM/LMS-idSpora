@@ -1676,17 +1676,17 @@
                                 $maxPoints = max(1, (int) $trainers->max('points'));
                                 $scorePct = min(100, (int) round(($score / $maxPoints) * 100));
                                 
-                                // Fetch real skills from User model 'trainer_skills' cast
+                                // Fetch real specializations from User model 'trainer_specializations' cast
                                 $skillsHtml = '';
-                                $skills = $trainerItem->trainer_skills;
-                                if (!is_array($skills)) {
-                                    $skills = [];
+                                $specs = $trainerItem->trainer_specializations;
+                                if (!is_array($specs)) {
+                                    $specs = [];
                                 }
-                                if (empty($skills)) {
+                                if (empty($specs)) {
                                     $skillsHtml = '<span style="display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;">-</span>';
                                 } else {
-                                    $takeSkills = array_slice($skills, 0, 3);
-                                    $restCount = count($skills) - count($takeSkills);
+                                    $takeSpecs = array_slice($specs, 0, 3);
+                                    $restCount = count($specs) - count($takeSpecs);
                                     
                                     $colors = [
                                         ['#eff6ff', '#1e1b4b', '#dbeafe'], // Dark Blue
@@ -1694,7 +1694,7 @@
                                         ['#f1f5f9', '#475569', '#cbd5e1'], // Slate
                                     ];
                                     
-                                    foreach ($takeSkills as $idx => $s) {
+                                    foreach ($takeSpecs as $idx => $s) {
                                         $colorSet = $colors[$idx % count($colors)];
                                         $skillsHtml .= '<span style="display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: ' . $colorSet[0] . '; color: ' . $colorSet[1] . '; border: ' . $colorSet[2] . '; margin-right: 4px;">' . e($s) . '</span>';
                                     }
