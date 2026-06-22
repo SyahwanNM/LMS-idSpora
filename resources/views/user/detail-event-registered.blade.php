@@ -12,6 +12,33 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        .detail-box-right {
+            height: auto !important;
+            max-height: none !important;
+        }
+        .event-benefit-list {
+            max-height: 180px;
+            overflow-y: auto;
+            padding-left: 20px;
+            padding-right: 8px;
+            margin-bottom: 0;
+        }
+        /* Custom thin scrollbar for benefit list */
+        .event-benefit-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .event-benefit-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .event-benefit-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .event-benefit-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         html,
 
         .container-ungu {
@@ -679,25 +706,30 @@
             </div>
             <div class="box-event-creator">
                 <div class="event-creator">
-                    <p><span class="highlite-yellow">Event</span> by
-                        @php
-                            $allSpeakers = $event->speakers()->with('trainer')->get();
-                            if ($allSpeakers->isEmpty()) {
-                                $allSpeakers = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)['name' => trim($name), 'trainer' => null])->values();
-                            }
-                        @endphp
-                        @if($allSpeakers->isNotEmpty())
-                            @foreach($allSpeakers as $idx => $sp)
-                                @if($idx > 0), @endif
-                                @if($sp->trainer)
-                                    <a href="{{ route('public.trainer-profile.show', $sp->trainer->id) }}"
-                                        style="color: var(--secondary); text-decoration: none; font-weight: 600;">{{ $sp->name }}</a>
-                                @else
-                                    <span style="font-weight:600;">{{ $sp->name }}</span>
-                                @endif
-                            @endforeach
+                    <p>
+                        @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                            <span class="highlite-yellow">Lomba</span>
                         @else
-                            idSpora Team
+                            <span class="highlite-yellow">Event</span> by
+                            @php
+                                $allSpeakers = $event->speakers()->with('trainer')->get();
+                                if ($allSpeakers->isEmpty()) {
+                                    $allSpeakers = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)['name' => trim($name), 'trainer' => null])->values();
+                                }
+                            @endphp
+                            @if($allSpeakers->isNotEmpty())
+                                @foreach($allSpeakers as $idx => $sp)
+                                    @if($idx > 0), @endif
+                                    @if($sp->trainer)
+                                        <a href="{{ route('public.trainer-profile.show', $sp->trainer->id) }}"
+                                            style="color: var(--secondary); text-decoration: none; font-weight: 600;">{{ $sp->name }}</a>
+                                    @else
+                                        <span style="font-weight:600;">{{ $sp->name }}</span>
+                                    @endif
+                                @endforeach
+                            @else
+                                idSpora Team
+                            @endif
                         @endif
                     </p>
                 </div>
@@ -710,6 +742,7 @@
                         $eventPageUrl = url()->current();
                         $detailsCal = trim($descRaw . "\n\nMore info: " . $eventPageUrl);
                         // Compute local start/end times safely (similar to logic used below)
+                        $isLombaTop = isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba';
                         $eventDateTop = isset($event) && !empty($event->event_date) ? (\Carbon\Carbon::parse($event->event_date)) : null;
                         $parseEvtTimeTop = function ($date, $raw) {
                             if (empty($raw))
@@ -738,13 +771,20 @@
                                 return null;
                             }
                         };
-                        $startTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time ?? null) : null;
-                        $endTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time_end ?? null) : null;
-                        if (!$startTop && $eventDateTop) {
-                            $startTop = $eventDateTop->copy()->startOfDay();
-                        }
-                        if (!$endTop && $eventDateTop) {
-                            $endTop = $eventDateTop->copy()->endOfDay();
+                        if ($isLombaTop) {
+                            $startTop = $event->start_submission ? \Carbon\Carbon::parse($event->start_submission) : null;
+                            $endTop = $event->until_submission_2 ? \Carbon\Carbon::parse($event->until_submission_2) : (
+                                $event->until_submission ? \Carbon\Carbon::parse($event->until_submission) : null
+                            );
+                        } else {
+                            $startTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time ?? null) : null;
+                            $endTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time_end ?? null) : null;
+                            if (!$startTop && $eventDateTop) {
+                                $startTop = $eventDateTop->copy()->startOfDay();
+                            }
+                            if (!$endTop && $eventDateTop) {
+                                $endTop = $eventDateTop->copy()->endOfDay();
+                            }
                         }
                         // Prepare UTC date range for Google Calendar
                         $startUtcStr = $startTop ? $startTop->copy()->utc()->format('Ymd\THis\Z') : null;
@@ -886,6 +926,15 @@
                         $eventStarted = $startTime ? $nowTs->gte($startTime) : $nowTs->isSameDay($eventDate);
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                     }
+                    if (isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba') {
+                        $eventEndDate = $event->until_submission_2 ?: $event->until_submission;
+                    } else {
+                        $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    }
+                    $isFeedbackDay = false;
+                    if ($eventEndDate) {
+                        $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
+                    }
                     // Attendance via QR verification (check-in)
                     $hasFeedback = $registration && ((isset($registration->feedback_submitted_at) && $registration->feedback_submitted_at) || $registration->certificate_issued_at);
                     $hasCertificate = $registration && $registration->certificate_issued_at;
@@ -898,12 +947,33 @@
                             || !empty($registration->attendance_code_used_at)
                         );
                     }
+
+                    // Multi-day attendance progress
+                    $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('qr_date')->get();
+                    $isMultiDayEvent = $dailyQrs->count() > 1;
+                    $dailyAttendedDates = [];
+                    if ($registration && $dailyQrs->isNotEmpty()) {
+                        $dailyAttendedDates = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                            ->pluck('attendance_date')
+                            ->map(fn($d) => $d instanceof \Carbon\Carbon ? $d->format('Y-m-d') : \Carbon\Carbon::parse($d)->format('Y-m-d'))
+                            ->toArray();
+                        // If any daily attendance exists, mark attendanceSubmitted = true
+                        if (count($dailyAttendedDates) > 0) {
+                            $attendanceSubmitted = true;
+                        }
+                    }
+                    $totalDays    = $dailyQrs->count();
+                    $attendedDays = count($dailyAttendedDates);
+                    $allDaysAttended = $totalDays > 0 && $attendedDays >= $totalDays;
+                    $isAttendanceOk = (strtolower(trim($event->jenis ?? '')) === 'lomba' || $attendanceSubmitted);
                     $stepStates = [
                         'Registered' => $isRegistered,
-                        'Attendance' => $attendanceSubmitted,
-                        'Feedback' => $hasFeedback,
-                        'Certificate' => $hasCertificate,
                     ];
+                    if (strtolower(trim($event->jenis ?? '')) !== 'lomba') {
+                        $stepStates['Attendance'] = $attendanceSubmitted;
+                    }
+                    $stepStates['Feedback'] = $hasFeedback;
+                    $stepStates['Certificate'] = $hasCertificate;
                 @endphp
                 <section class="progress-box">
                     <h5>Your Progress</h5>
@@ -944,24 +1014,44 @@
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                         $eventStarted = $nowTs->gte($startTime ? $startTime : $eventDate->copy()->startOfDay());
                     }
+                    if (isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba') {
+                        $eventEndDate = $event->until_submission_2 ?: $event->until_submission;
+                    } else {
+                        $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    }
+                    $isFeedbackDay = false;
+                    if ($eventEndDate) {
+                        $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
+                    }
                     // Pricing state
                     $hasActiveDiscount = false;
                     $basePrice = $eventObj ? (float) ($eventObj->price ?? 0) : 0.0;
                     $finalPrice = $basePrice;
                     $discountMsg = null;
-                    if ($eventObj && !empty($eventObj->discount_percentage) && !empty($eventObj->discount_until)) {
-                        $discountUntil = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
-                        $hasActiveDiscount = ($eventObj->discount_percentage > 0) && $nowTs->lte($discountUntil);
-                        if ($hasActiveDiscount) {
-                            $finalPrice = (float) ($eventObj->discounted_price ?? $basePrice);
-                            $startOfToday = $nowTs->copy()->startOfDay();
-                            $diffDaysInt = (int) $startOfToday->diffInDays($discountUntil, false);
-                            if ($diffDaysInt > 1) {
-                                $discountMsg = $diffDaysInt . ' Days left at this price!';
-                            } elseif ($diffDaysInt === 1) {
-                                $discountMsg = '1 Day left at this price!';
+                    if ($eventObj && !empty($eventObj->discount_percentage)) {
+                        $discountPct = (int) $eventObj->discount_percentage;
+                        if ($discountPct > 0) {
+                            // Aktif jika discount_until kosong (tidak ada batas waktu) ATAU belum lewat
+                            if (empty($eventObj->discount_until)) {
+                                $hasActiveDiscount = true;
                             } else {
-                                $discountMsg = null;
+                                $discountUntil = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
+                                $hasActiveDiscount = $nowTs->lte($discountUntil);
+                            }
+                            if ($hasActiveDiscount) {
+                                $finalPrice = (float) ($eventObj->discounted_price ?? $basePrice);
+                                if (!empty($eventObj->discount_until)) {
+                                    $discountUntil = \Carbon\Carbon::parse($eventObj->discount_until)->endOfDay();
+                                    $startOfToday = $nowTs->copy()->startOfDay();
+                                    $diffDaysInt = (int) $startOfToday->diffInDays($discountUntil, false);
+                                    if ($diffDaysInt > 1) {
+                                        $discountMsg = $diffDaysInt . ' Days left at this price!';
+                                    } elseif ($diffDaysInt === 1) {
+                                        $discountMsg = '1 Day left at this price!';
+                                    } else {
+                                        $discountMsg = null;
+                                    }
+                                }
                             }
                         }
                     }
@@ -1060,7 +1150,7 @@
                         @endif
                     @endif
                 </div>
-                <hr class="line-info">
+                @if(strtolower(trim($event->jenis ?? '')) !== 'lomba')
                 <div class="event-info-item d-flex align-items-center justify-content-between">
 
                     <div class="event-info-left d-flex align-items-center gap-2">
@@ -1119,6 +1209,7 @@
                 </div>
 
                 <hr class="line-info">
+                @endif
                 <div class="info-boxluar">
                     <div class="event-info-item">
                         <div class="event-info-left">
@@ -1132,7 +1223,24 @@
                             <span class="event-info-label">Date</span>
                         </div>
                         <span
-                            class="event-info-value">{{ isset($event) && $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-' }}</span>
+                            class="event-info-value">@php
+                                if (isset($event) && $event->event_date) {
+                                    $startDate = \Carbon\Carbon::parse($event->event_date);
+                                    if (!empty($event->event_until_date)) {
+                                        $untilDate = \Carbon\Carbon::parse($event->event_until_date);
+                                        // Same month: "06 - 07 June 2026"
+                                        if ($startDate->format('F Y') === $untilDate->format('F Y')) {
+                                            echo $startDate->format('d') . ' – ' . $untilDate->translatedFormat('d F Y');
+                                        } else {
+                                            echo $startDate->translatedFormat('d F Y') . ' – ' . $untilDate->translatedFormat('d F Y');
+                                        }
+                                    } else {
+                                        echo $startDate->translatedFormat('d F Y');
+                                    }
+                                } else {
+                                    echo '-';
+                                }
+                            @endphp</span>
                     </div>
                     <div class="event-info-item">
                         <div class="event-info-left">
@@ -1161,6 +1269,10 @@
                             };
                             $startT = isset($event) ? $formatTimeOnly($event->event_time) : null;
                             $endT = isset($event) ? $formatTimeOnly($event->event_time_end) : null;
+                            // If until_time is set, use it as the end time display
+                            if (isset($event) && !empty($event->event_until_time)) {
+                                $endT = $formatTimeOnly($event->event_until_time);
+                            }
                             if ($startT && $endT) {
                                 $timeRange = $startT . ' – ' . $endT . ' WIB';
                             } elseif ($startT) {
@@ -1195,6 +1307,22 @@
                         <span
                             class="event-info-value">{{ isset($event) ? $event->registrations()->where('status', 'active')->count() : 0 }}</span>
                     </div>
+                    @if(strtolower(trim($event->jenis ?? '')) === 'lomba' && !empty($event->until_submission))
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-check" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                            </svg>
+                            <span class="event-info-label">Last Register</span>
+                        </div>
+                        @php
+                            $lastRegisterDate = \Carbon\Carbon::parse($event->until_submission);
+                            $formattedLastRegister = $lastRegisterDate->translatedFormat('d F Y, H.i') . ' WIB';
+                        @endphp
+                        <span class="event-info-value">{{ $formattedLastRegister }}</span>
+                    </div>
+                    @endif
                 </div>
                 <hr>
                 @php
@@ -1252,14 +1380,32 @@
                         // "Ditinjau" hanya untuk pembayaran manual yang sudah upload bukti bayar
                         $paymentUnderReview = $registration && $registrationStatus === 'pending' && !$isMidtransFlow && !empty($registration->payment_proof);
 
-                        $canRegister = (!$isRegistered) && (
-                            $eventDate
-                            ? (
-                                    // For FREE events: block booking once started or finished
-                                ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
-                            )
-                            : true
-                        );
+                        if (strtolower(trim($event->jenis ?? '')) === 'lomba') {
+                            $canRegister = (!$isRegistered) && (
+                                $event->until_submission
+                                ? \Carbon\Carbon::now(config('app.timezone'))->lt(\Carbon\Carbon::parse($event->until_submission, config('app.timezone')))
+                                : true
+                            );
+                        } else {
+                            $canRegister = (!$isRegistered) && (
+                                $eventDate
+                                ? (
+                                        // For FREE events: block booking once started or finished
+                                    ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
+                                )
+                                : true
+                            );
+                        }
+
+                        // Cek kuota — jika penuh dan user belum register, tidak bisa book
+                        $evQuotaDetail   = !empty($event->max_participants) ? (int) $event->max_participants : null;
+                        $evFilledDetail  = \App\Models\EventRegistration::where('event_id', $event->id)
+                                            ->whereIn('status', ['active', 'pending'])
+                                            ->count();
+                        $evIsFullDetail  = $evQuotaDetail && $evFilledDetail >= $evQuotaDetail;
+                        if ($evIsFullDetail && !$isRegistered) {
+                            $canRegister = false;
+                        }
                         // Pre-compute saved state for current user to render initial label
                         $isSaved = false;
                         if (isset($event) && auth()->check()) {
@@ -1272,32 +1418,38 @@
                     @endphp
                     @if($midtransPending)
                         <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
-                            style="text-decoration:none;">Lanjutkan pembayaran Midtrans</a>
+                            style="text-decoration:none;">Continue Your Payment</a>
                     @elseif($midtransExpired)
                         <a class="bookseat text-white text-center"
                             href="{{ route('payment', ['event' => $event->id, 'force_new' => 1]) }}"
                             style="text-decoration:none;">Payment Again</a>
                     @elseif($paymentUnderReview)
-                        <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
+                        <button class="bookseat" disabled>Payments are under review</button>
                     @elseif($canRegister)
                         @if(!auth()->check())
                             <a class="bookseat text-white text-center"
                                 href="{{ route('login', ['redirect' => request()->fullUrl()]) }}"
-                                style="text-decoration:none;">Book Seat</a>
+                                style="text-decoration:none;">Register</a>
                         @else
                             @if($isFree)
                                 <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
-                                    style="text-decoration:none;">Book Seat</a>
+                                    style="text-decoration:none;">Register</a>
                             @else
                                 <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
-                                    style="text-decoration:none;">Book Seat</a>
+                                    style="text-decoration:none;">Register</a>
                             @endif
                         @endif
                     @else
                         @if(!$isRegistered && $eventFinished)
                             <button class="bookseat" disabled>Event has finished</button>
+                        @elseif($evIsFullDetail && !$isRegistered)
+                            <button class="bookseat" disabled style="background:#6b7280;">Full Booked</button>
                         @elseif(!$isRegistered && $eventStarted)
-                            <button class="bookseat" disabled>Event Has Started</button>
+                            @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                                <button class="bookseat" disabled>Registration Closed</button>
+                            @else
+                                <button class="bookseat" disabled>Event Has Started</button>
+                            @endif
                         @elseif($isRegistered)
                             <button class="bookseat" disabled>Seat Booked</button>
                         @else
@@ -1553,10 +1705,12 @@
                 @php
                     $eventIsFinished = isset($event) && method_exists($event, 'isFinished') ? $event->isFinished() : false;
                     $approvedModules = $event->approvedTrainerModules()->with('trainer')->get();
-                    // Unlock saat user selesai mengisi feedback (sertifikat dan modul)
-                    $moduleUnlocked = $isRegistered && isset($hasFeedback) && $hasFeedback;
+                    // Unlock materi saat event sudah mulai (hari H) DAN user sudah terdaftar aktif
+                    // Tidak perlu menunggu event selesai atau feedback diisi
+                    $eventStarted = isset($event) && $event->start_at && $event->start_at->lte(\Carbon\Carbon::now());
+                    $moduleUnlocked = $isRegistered && $eventStarted;
                 @endphp
-                @if($isRegistered || $approvedModules->isNotEmpty())
+                @if(strtolower(trim($event->jenis ?? '')) !== 'lomba' && ($isRegistered || $approvedModules->isNotEmpty()))
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -1569,11 +1723,11 @@
                         </svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Modules</h6>
+                        <h6>Modules Access</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
-                        @elseif(!isset($hasFeedback) || !$hasFeedback)
-                            <p>Available after send feedback.</p>
+                        @elseif(!$eventStarted)
+                            <p>Available when event starts</p>
                         @elseif($approvedModules->isEmpty())
                             <p>Not available</p>
                         @else
@@ -1597,7 +1751,7 @@
                 @endif
 
                 {{-- Modal unduh modul --}}
-                @if($moduleUnlocked)
+                @if($moduleUnlocked && strtolower(trim($event->jenis ?? '')) !== 'lomba')
                 <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content" style="border-radius:16px;">
@@ -1608,33 +1762,117 @@
                                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
                                         <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
                                     </svg>
-                                    Download Modules 
+                                    Modules Access
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
-                                <div class="d-flex flex-column gap-2">
-                                    @foreach($approvedModules as $mod)
-                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
-                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
-                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
-                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
-                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                                                </svg>
-                                            </div>
-                                            <div style="overflow:hidden;">
-                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
-                                                @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
-                                                @endif
-                                            </div>
-                                        </a>
-                                    @endforeach
-                                </div>
+                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to access:</p>
+                                @php
+                                    $fileModules = [];
+                                    $linkModules = [];
+                                    foreach($approvedModules as $mod) {
+                                        if (preg_match('#^https?://#i', $mod->path)) {
+                                            $linkModules[] = $mod;
+                                        } else {
+                                            $fileModules[] = $mod;
+                                        }
+                                    }
+                                @endphp
+
+                                @if(!empty($fileModules))
+                                    <div class="mb-4">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+                                                <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zm-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">File Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($fileModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
+                                                                <path d="M.5 9.9a.5.5 0 0 1 .5-.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($linkModules))
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-link" viewBox="0 0 16 16">
+                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">Link Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($linkModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       target="_blank" rel="noopener noreferrer"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" class="bi bi-link" viewBox="0 0 16 16">
+                                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                             <div class="modal-footer border-0 pt-0">
                             </div>
@@ -1643,8 +1881,8 @@
                 </div>
                 @endif
 
-                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">
-                    <div class="img-resource">
+                @if(strtolower(trim($event->jenis ?? '')) !== 'lomba')
+                <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">                    <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
                             <path d="M2 2h2v2H2V2Z" />
@@ -1675,15 +1913,52 @@
                     </div>
                     <div class="resource-value">
                         <h6>Attendance QR Event</h6>
-                        @if(isset($attendanceSubmitted) && $attendanceSubmitted)
-                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                        @if($isMultiDayEvent)
+                            {{-- Multi-day: show day-by-day progress --}}
+                            <div class="mt-1" style="display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
+                                @foreach($dailyQrs as $dqr)
+                                    @php
+                                        $dqrDateStr = $dqr->qr_date instanceof \Carbon\Carbon ? $dqr->qr_date->format('Y-m-d') : \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d');
+                                        $isAttendedDay = in_array($dqrDateStr, $dailyAttendedDates);
+                                        $nowDay = \Carbon\Carbon::now(config('app.timezone'))->startOfDay();
+                                        $dqrDay = \Carbon\Carbon::parse($dqrDateStr)->startOfDay();
+                                        $isPastDay = $dqrDay->lt($nowDay);
+                                        $isTodayDay = $dqrDay->isSameDay($nowDay);
+                                    @endphp
+                                    <span style="
+                                        display:inline-flex; align-items:center; gap:4px;
+                                        padding:3px 8px; border-radius:20px; font-size:11px; font-weight:600;
+                                        background:{{ $isAttendedDay ? '#dcfce7' : ($isTodayDay ? '#eff6ff' : '#f3f4f6') }};
+                                        color:{{ $isAttendedDay ? '#15803d' : ($isTodayDay ? '#1d4ed8' : '#6b7280') }};
+                                        border:1.5px solid {{ $isAttendedDay ? '#86efac' : ($isTodayDay ? '#bfdbfe' : '#d1d5db') }};
+                                    ">
+                                        @if($isAttendedDay)
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="#15803d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 10"/></svg>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" stroke="{{ $isTodayDay ? '#1d4ed8' : '#9ca3af' }}" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
+                                        @endif
+                                        Hari {{ $dqr->day_number }}
+                                    </span>
+                                @endforeach
+                            </div>
+                            <p class="mb-0 mt-1" style="font-size:11px; color:{{ $allDaysAttended ? '#15803d' : '#6b7280' }}; font-weight:{{ $allDaysAttended ? '600' : '400' }};">
+                                {{ $attendedDays }}/{{ $totalDays }} hari hadir
+                                @if($allDaysAttended) &nbsp;✓ Selesai @endif
+                            </p>
+                        @elseif($attendanceSubmitted)
+                            <p class="text-success mb-0" style="font-weight:600;">Done Successfully</p>
                         @else
-                            <p>Scan the event QR for attendance.</p>
+                            <p class="mb-0">Scan the event QR for attendance.</p>
                         @endif
                     </div>
-                    @if(isset($isRegistered) && $isRegistered && isset($attendanceSubmitted) && $attendanceSubmitted)
-                        <span class="d-inline-flex align-items-center""
-                            title="Berhasil Dilakukan">
+                    @php
+                        // Show checkmark only if ALL days attended (multi-day) or single-day attended
+                        $showCheckmark = $isRegistered && ($isMultiDayEvent ? $allDaysAttended : $attendanceSubmitted);
+                        // Show scan link if registered, event started, and not all days attended yet
+                        $showScanLink  = $isRegistered && $eventStarted && !($isMultiDayEvent ? $allDaysAttended : $attendanceSubmitted);
+                    @endphp
+                    @if($showCheckmark)
+                        <span class="d-inline-flex align-items-center" title="Berhasil Dilakukan">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                                 stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                 aria-label="Attendance Successful">
@@ -1691,7 +1966,7 @@
                                 <polyline points="8 12 11 15 16 10"></polyline>
                             </svg>
                         </span>
-                    @elseif(isset($isRegistered) && $isRegistered && isset($eventStarted) && $eventStarted)
+                    @elseif($showScanLink)
                         <a class="link-share" href="{{ route('events.scan', $event) }}" title="Buka Halaman Scan"
                             style="position:absolute; top:24px; right:10px; text-decoration:none;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -1708,6 +1983,7 @@
                             title="Scan tersedia saat acara dimulai"></span>
                     @endif
                 </div>
+                @endif
 
                 <div
                     class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
@@ -1816,52 +2092,54 @@
                     @endif
                 </div>
                 @endif
-            <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && $eventFinished) ? '' : 'locked' }}"
-                    style="position:relative;">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            class="bi bi-star-fill" viewBox="0 0 16 16">
-                            <path
-                                d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Feedback and Ratings</h6>
-                        @if(isset($hasFeedback) && $hasFeedback)
-                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
-                        @else
-                            <p style="width: 70%;">Available after the event ends</p>
-                        @endif
-                    </div>
+                <div class="resource-card {{ ($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay)) ? '' : 'locked' }}"
+                     style="position:relative;">
+                     <div class="img-resource">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-star-fill" viewBox="0 0 16 16">
+                             <path
+                                 d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                         </svg>
+                     </div>
+                     <div class="resource-value">
+                         <h6>Feedback and Ratings</h6>
+                         @if(isset($hasFeedback) && $hasFeedback)
+                             <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                         @elseif($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
+                             <p style="width: 70%;" class="text-primary">Please submit your feedback</p>
+                         @else
+                             <p style="width: 70%;">Available after the event ends</p>
+                         @endif
+                     </div>
 
-                    @if($isRegistered && $attendanceSubmitted && $eventFinished)
-                        <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
-                            style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
-                            @if(isset($hasFeedback) && $hasFeedback)
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                                    stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    aria-label="Feedback berhasil">
-                                    <circle cx="12" cy="12" r="9"></circle>
-                                    <polyline points="8 12 11 15 16 10"></polyline>
-                                </svg>
-                            @else
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd"
-                                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                    <path fill-rule="evenodd"
-                                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                                </svg>
-                            @endif
-                        </button>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                    @endif
-                </div>
-            </div>
-        </section>
+                     @if($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
+                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
+                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
+                             @if(isset($hasFeedback) && $hasFeedback)
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                     stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     aria-label="Feedback berhasil">
+                                     <circle cx="12" cy="12" r="9"></circle>
+                                     <polyline points="8 12 11 15 16 10"></polyline>
+                                 </svg>
+                             @else
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                     class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                     <path fill-rule="evenodd"
+                                         d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                     <path fill-rule="evenodd"
+                                         d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                 </svg>
+                             @endif
+                         </button>
+                     @else
+                         <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
+                     @endif
+                 </div>
+             </div>
+         </section>
 
-        @if($isRegistered && $attendanceSubmitted && $eventFinished)
+         @if($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
                     <div class="d-flex justify-content-between align-items-center"
@@ -1944,6 +2222,11 @@
                 <button class="nav-event nav-link" id="nav-contact-tab" data-bs-toggle="tab"
                     data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact"
                     aria-selected="false">Terms & Condition</button>
+                @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                <button class="nav-event nav-link" id="nav-submission-tab" data-bs-toggle="tab"
+                    data-bs-target="#nav-submission" type="button" role="tab" aria-controls="nav-submission"
+                    aria-selected="false">🏆 Submission</button>
+                @endif
                 <span class="ms-auto d-flex align-items-center" style="gap:8px; font-size:12px;">
                     @if($hasCertificate && $event->certificate_path)
                         <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
@@ -2338,7 +2621,7 @@
                                         })->values();
                                     }
                                 }
-                                $formatTime = function ($t) {
+                                                          $formatTime = function ($t) {
                                     if (empty($t))
                                         return null;
                                     try {
@@ -2347,21 +2630,39 @@
                                         return is_string($t) ? $t : null;
                                     }
                                 };
+                                $formatDate = function ($d) {
+                                    if (empty($d))
+                                        return null;
+                                    try {
+                                        return \Carbon\Carbon::parse($d)->translatedFormat('d F Y');
+                                    } catch (\Throwable $e) {
+                                        return is_string($d) ? $d : null;
+                                    }
+                                };
+                                $isLomba = isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba';
                             @endphp
                             @forelse($items as $idx => $it)
                                 @php
-                                    $start = $formatTime($it->start ?? null);
-                                    $end = $formatTime($it->end ?? null);
-                                    $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
-                                    if ($timeStr)
-                                        $timeStr .= ' WIB';
+                                    if ($isLomba) {
+                                        $start = $formatDate($it->start ?? null);
+                                        $end = $formatDate($it->end ?? null);
+                                        $timeStr = trim(($start ?: '') . ($end ? ' – ' . $end : ''));
+                                    } else {
+                                        $start = $formatTime($it->start ?? null);
+                                        $end = $formatTime($it->end ?? null);
+                                        $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                                        if ($timeStr)
+                                            $timeStr .= ' WIB';
+                                    }
                                 @endphp
                                 <div class="schedule-item-box">
                                     <div class="schedule-line"></div>
                                     <div class="schedule-item">
                                         <p class="time">{{ $timeStr ?: '-' }}</p>
                                         <p class="activity">{{ $it->title ?? '' }}</p>
-                                        <p class="desc">{{ $it->description ?? '' }}</p>
+                                        @if(!$isLomba)
+                                            <p class="desc">{{ $it->description ?? '' }}</p>
+                                        @endif
                                     </div>
                                 </div>
                                 <br>
@@ -2387,6 +2688,266 @@
                         @endif
                     </div>
                 </div>
+                @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                <div class="tab-pane fade" id="nav-submission" role="tabpanel" aria-labelledby="nav-submission-tab" tabindex="0">
+                    <div style="margin-left: 40px; margin-right: 40px; padding: 20px 0;">
+                        <h4 class="fw-bold mb-4 text-dark d-flex align-items-center gap-2">
+                            <span>🏆 Competition / Contest Submission</span>
+                        </h4>
+
+                        @php
+                            $now = \Carbon\Carbon::now();
+                            $reg = $registration;
+                        @endphp
+
+                        @if(!$reg || $reg->status !== 'active')
+                            <div class="alert alert-warning border-0 shadow-sm rounded-3">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i> You are not registered in this competition or your registration is not active.
+                            </div>
+                        @else
+                            {{-- TIMELINE PROGRESS BAR --}}
+                            <div class="row mb-5 justify-content-center text-center g-3">
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Submission Start</div>
+                                        <div class="fw-bold text-primary">{{ $event->start_submission ? $event->start_submission->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Initial Submission Deadline</div>
+                                        <div class="fw-bold text-danger">{{ $event->until_submission ? $event->until_submission->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Qualification Announcement</div>
+                                        <div class="fw-bold text-success">{{ $event->announcement_date ? $event->announcement_date->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Final Submission Deadline</div>
+                                        <div class="fw-bold text-danger">{{ $event->until_submission_2 ? $event->until_submission_2->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                {{-- STAGE 1 CARD --}}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                                        <div class="card-header bg-light border-0 py-3 rounded-top-4">
+                                            <h5 class="fw-bold mb-0 text-dark">Stage 1: Initial Upload</h5>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            @if($reg->submission_path)
+                                                <div class="mb-4">
+                                                    <span class="small text-muted d-block">Qualification Status:</span>
+                                                    @if($reg->submission_status === 'lolos')
+                                                        <span class="badge bg-success px-3 py-2 rounded-pill mt-1"><i class="bi bi-patch-check-fill me-1"></i> Qualified to Next Stage</span>
+                                                    @elseif($reg->submission_status === 'tidak_lolos')
+                                                        <span class="badge bg-danger px-3 py-2 rounded-pill mt-1"><i class="bi bi-patch-exclamation-fill me-1"></i> Not Qualified</span>
+                                                    @else
+                                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill mt-1"><i class="bi bi-hourglass-split me-1"></i> Awaiting Assessment</span>
+                                                    @endif
+
+                                                    @if($reg->submission_notes)
+                                                        <div class="alert alert-info mt-3 mb-0 py-2 px-3 small border-0 shadow-sm rounded-3">
+                                                            <div class="fw-bold mb-1"><i class="bi bi-chat-left-text-fill text-info me-1"></i> Judge Notes/Revisions:</div>
+                                                            <p class="mb-0 text-dark" style="white-space: pre-line;">{{ $reg->submission_notes }}</p>
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                <div class="p-3 bg-light rounded-3 mb-3 border">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="fw-semibold text-dark"><i class="bi bi-file-earmark-check-fill text-primary me-2"></i> Submitted File:</span>
+                                                        <span class="small text-muted">{{ $reg->submission_uploaded_at ? $reg->submission_uploaded_at->translatedFormat('d M Y, H:i') : '' }}</span>
+                                                    </div>
+                                                    
+                                                    @php
+                                                        $filePath1 = Storage::disk('public')->url($reg->submission_path);
+                                                        $fileExt1 = strtolower(pathinfo($reg->submission_path, PATHINFO_EXTENSION));
+                                                    @endphp
+
+                                                    <div class="d-flex gap-2 mb-3">
+                                                        <a href="{{ $filePath1 }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
+                                                            <i class="bi bi-eye"></i> Preview / View File
+                                                        </a>
+                                                        <a href="{{ $filePath1 }}" download class="btn btn-sm btn-primary rounded-pill">
+                                                            <i class="bi bi-download"></i> Download File
+                                                        </a>
+                                                    </div>
+
+                                                    @if($fileExt1 === 'pdf')
+                                                        <div class="ratio ratio-16x9 border rounded overflow-hidden shadow-sm" style="max-height: 250px;">
+                                                            <iframe src="{{ $filePath1 }}" frameborder="0"></iframe>
+                                                        </div>
+                                                    @else
+                                                        <div class="text-muted small"><i class="bi bi-info-circle me-1"></i> File format is {{ strtoupper($fileExt1) }}. Use the download button to view submission.</div>
+                                                    @endif
+                                                </div>
+                                            @endif
+
+                                            {{-- UPLOAD / RE-UPLOAD FORM --}}
+                                            @if($reg->submission_status === 'tidak_lolos')
+                                                <div class="alert alert-danger text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-x-circle-fill me-1"></i> You have been declared not qualified to the next stage. Submission upload is disabled.
+                                                </div>
+                                            @elseif($reg->submission_status === 'lolos')
+                                                <div class="alert alert-success text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-patch-check-fill me-1"></i> You have been declared <strong>Qualified</strong>. Submission can no longer be updated.
+                                                </div>
+                                            @elseif($now->between($event->start_submission, $event->until_submission))
+                                                <form action="{{ route('events.submit.initial', $event) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                                                    @csrf
+                                                    <div class="mb-3">
+                                                        <label for="submission_file" class="form-label fw-semibold text-dark">
+                                                            {{ $reg->submission_path ? 'Update Submission File:' : 'Upload Submission File:' }}
+                                                        </label>
+                                                        <input class="form-control" type="file" id="submission_file" name="submission_file" accept=".pdf" required>
+                                                        <div class="form-text small">File format: PDF. Max file size: 10 MB.</div>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-3">
+                                                        <i class="bi bi-cloud-upload-fill me-2"></i> {{ $reg->submission_path ? 'Update Submission' : 'Submit Submission' }}
+                                                    </button>
+                                                </form>
+                                            @elseif($now->lt($event->start_submission))
+                                                <div class="alert alert-secondary text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-clock-history me-1"></i> Submission upload has not opened yet.
+                                                </div>
+                                            @else
+                                                <div class="alert alert-danger text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-exclamation-octagon-fill me-1"></i> The deadline for initial submission has ended.
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- STAGE 2 CARD --}}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                                        <div class="card-header bg-light border-0 py-3 rounded-top-4">
+                                            <h5 class="fw-bold mb-0 text-dark">Stage 2: Final Upload</h5>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            @if($reg->submission_status !== 'lolos')
+                                                <div class="text-center py-5 text-muted">
+                                                    <div class="fs-1 mb-3">🔒</div>
+                                                    <h6 class="fw-bold text-dark">Stage 2 Upload Locked</h6>
+                                                    <p class="small mb-0">Only for participants declared qualified in Stage 1 after the announcement date.</p>
+                                                </div>
+                                            @else
+                                                {{-- Check if payment is required before allowing Stage 2 upload --}}
+                                                @if($reg->stage2_payment_status === 'pending')
+                                                    {{-- Payment required --}}
+                                                    @php
+                                                        $now = \Carbon\Carbon::now(config('app.timezone'));
+                                                        $paymentNotStarted = $event->finalist_payment_start && $now->lt($event->finalist_payment_start);
+                                                        $paymentEnded = $event->finalist_payment_end && $now->gt($event->finalist_payment_end);
+                                                        $paymentOpen = !$paymentNotStarted && !$paymentEnded;
+                                                    @endphp
+                                                    <div class="text-center py-4">
+                                                        <div class="fs-1 mb-2">💰</div>
+                                                        <h6 class="fw-bold text-dark mb-1">Stage 2 Payment Required</h6>
+                                                        <p class="small text-muted mb-3">Complete the payment of <strong>Rp {{ number_format($event->price_stage2 ?? 0, 0, ',', '.') }}</strong> to access the stage 2 submission upload form.</p>
+
+                                                        @if($event->finalist_payment_start || $event->finalist_payment_end)
+                                                            <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-inline-block text-start" style="max-width: 100%;">
+                                                                <i class="bi bi-calendar-event me-1"></i> <strong>Payment Period:</strong><br>
+                                                                @if($event->finalist_payment_start)
+                                                                    From: {{ $event->finalist_payment_start->translatedFormat('d M Y, H:i') }} WIB<br>
+                                                                @endif
+                                                                @if($event->finalist_payment_end)
+                                                                    Until: {{ $event->finalist_payment_end->translatedFormat('d M Y, H:i') }} WIB
+                                                                @endif
+                                                            </div>
+                                                            <br>
+                                                        @endif
+
+                                                        @if($paymentNotStarted)
+                                                            <div class="alert alert-warning py-2 px-3 small rounded-3 mb-0 d-inline-block">
+                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Stage 2 payment is not open yet.
+                                                            </div>
+                                                        @elseif($paymentEnded)
+                                                            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-0 d-inline-block">
+                                                                <i class="bi bi-x-circle-fill me-1"></i> Stage 2 payment is closed.
+                                                            </div>
+                                                        @else
+                                                            <a href="{{ route('events.payment.stage2', $event) }}" class="btn btn-warning fw-bold px-4 rounded-3">
+                                                                <i class="bi bi-credit-card-fill me-2"></i> Pay Now
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    {{-- Payment settled or not required — show normal upload flow --}}
+                                                    @if($reg->submission_path_2)
+                                                        <div class="p-3 bg-light rounded-3 mb-3 border">
+                                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                                <span class="fw-semibold text-dark"><i class="bi bi-file-earmark-check-fill text-success me-2"></i> Submitted File (Stage 2):</span>
+                                                                <span class="small text-muted">{{ $reg->submission_2_uploaded_at ? $reg->submission_2_uploaded_at->translatedFormat('d M Y, H:i') : '' }}</span>
+                                                            </div>
+
+                                                            @php
+                                                                $filePath2 = Storage::disk('public')->url($reg->submission_path_2);
+                                                                $fileExt2 = strtolower(pathinfo($reg->submission_path_2, PATHINFO_EXTENSION));
+                                                            @endphp
+
+                                                            <div class="d-flex gap-2 mb-3">
+                                                                <a href="{{ $filePath2 }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill">
+                                                                    <i class="bi bi-eye"></i> Preview / View File
+                                                                </a>
+                                                                <a href="{{ $filePath2 }}" download class="btn btn-sm btn-success rounded-pill">
+                                                                    <i class="bi bi-download"></i> Download File
+                                                                </a>
+                                                            </div>
+
+                                                            @if($fileExt2 === 'pdf')
+                                                                <div class="ratio ratio-16x9 border rounded overflow-hidden shadow-sm" style="max-height: 250px;">
+                                                                    <iframe src="{{ $filePath2 }}" frameborder="0"></iframe>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-muted small"><i class="bi bi-info-circle me-1"></i> File format is {{ strtoupper($fileExt2) }}. Use the download button to view submission.</div>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+
+                                                    {{-- UPLOAD / RE-UPLOAD FORM TAHAP 2 --}}
+                                                    @if($now->lt($event->announcement_date))
+                                                        <div class="alert alert-secondary text-center py-3 rounded-3">
+                                                            <i class="bi bi-clock-history me-1"></i> Second stage submission upload will open after the qualification announcement date.
+                                                        </div>
+                                                    @elseif($event->until_submission_2 && $now->gt($event->until_submission_2))
+                                                        <div class="alert alert-danger text-center py-3 rounded-3">
+                                                            <i class="bi bi-exclamation-octagon-fill me-1"></i> The deadline for the second submission has ended.
+                                                        </div>
+                                                    @else
+                                                        <form action="{{ route('events.submit.second', $event) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                                                            @csrf
+                                                            <div class="mb-3">
+                                                                <label for="submission_file_2" class="form-label fw-semibold text-dark">
+                                                                    {{ $reg->submission_path_2 ? 'Update Stage 2 Submission File:' : 'Upload Stage 2 Submission File:' }}
+                                                                </label>
+                                                                <input class="form-control" type="file" id="submission_file_2" name="submission_file_2" accept=".pdf" required>
+                                                                <div class="form-text small">File format: PDF. Max file size: 10 MB.</div>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 rounded-3">
+                                                                <i class="bi bi-cloud-upload-fill me-2"></i> {{ $reg->submission_path_2 ? 'Update Submission' : 'Submit Submission' }}
+                                                            </button>
+                                                        </form>
+                                                    @endif
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
             </div>
             
 </main>

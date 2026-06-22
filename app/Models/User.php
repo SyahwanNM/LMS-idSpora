@@ -96,6 +96,39 @@ class User extends Authenticatable
         return $this->hasMany(EventRegistration::class);
     }
 
+    /**
+     * Check if this user is a full admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if this user is an event_admin for a given event.
+     */
+    public function isEventAdmin(int $eventId): bool
+    {
+        if ($this->role === 'admin') return true;
+        if ($this->role !== 'event_admin') return false;
+        return \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+            ->where('user_id', $this->id)
+            ->where('event_id', $eventId)
+            ->exists();
+    }
+
+    /**
+     * Get all event IDs this event_admin is assigned to.
+     */
+    public function assignedEventIds(): array
+    {
+        if ($this->role === 'admin') return []; // admin has access to all
+        return \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+            ->where('user_id', $this->id)
+            ->pluck('event_id')
+            ->toArray();
+    }
+
     public function savedEvents()
     {
         return $this->belongsToMany(Event::class, 'user_saved_events', 'user_id', 'event_id')->withTimestamps();
@@ -439,6 +472,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(Withdrawal::class);
     }
+
+    public function pointTransactions()
+    {
+        return $this->hasMany(PointTransaction::class);
+    }
+
+    public function voucherRedemptions()
+    {
+        return $this->hasMany(VoucherRedemption::class);
+    }
+
     protected static function boot()
     {
         parent::boot();

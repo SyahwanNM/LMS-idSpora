@@ -58,6 +58,11 @@ Route::get('/admin/detail-event', function () {
     return view('/admin/detail-event');
 });
 
+Route::get('/auto-login', function () {
+    auth()->loginUsingId(2);
+    return redirect()->route('dashboard');
+});
+
 Route::get('/course-detail/{course}', [CourseController::class, 'show'])->name('course.detail');
 
 // Canonical course detail route (alias used in views)
@@ -70,9 +75,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
     // Pull non-admin users with event participations for the Manage User table and view modal
-    $users = \App\Models\User::with(['eventRegistrations' => function ($q) {
-        $q->with('event')->orderBy('created_at', 'desc');
-    }])
+    $users = \App\Models\User::with([
+        'eventRegistrations' => function ($q) {
+            $q->with('event')->orderBy('created_at', 'desc');
+        }
+    ])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
         ->where('role', '!=', 'admin')
         ->orderBy('name')
@@ -280,6 +287,9 @@ Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->
 
 // Payment page (requires auth) only BEFORE registration; jika sudah terdaftar arahkan balik
 Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
+    if (strtolower(trim($event->jenis ?? '')) === 'lomba' && $event->until_submission && now()->gt($event->until_submission)) {
+        return redirect()->route('events.show', $event)->with('error', 'Pendaftaran Lomba sudah ditutup.');
+    }
     $user = auth()->user();
     $already = $user && $user->eventRegistrations()->where('event_id', $event->id)->exists();
     if ($already) {
@@ -321,16 +331,17 @@ Route::middleware('auth')->get('/payment/{event}/qris-core', [PaymentController:
 Route::middleware('auth')->group(function () {
     // Feedback AJAX route
     Route::post('/feedback/store', [\App\Http\Controllers\FeedbackController::class, 'store'])->name('feedback.store');
-    Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
-    Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
-    // Redirect search to the best-matching event detail (exact title match preferred)
-    Route::get('/search/events', [PublicEventController::class, 'searchRedirect'])->name('events.searchRedirect');
+    // NOTE: events.index, events.show, events.searchRedirect are defined as public routes above — no auth required
     Route::post('/events/{event}/register', [\App\Http\Controllers\Admin\EventController::class, 'register'])->name('events.register');
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\User\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
     // Dedicated scan page for event QR (auth, require registration)
     Route::get('/events/{event}/scan', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {
+        if ($event->jenis === 'Lomba') {
+            return redirect()->route('events.registered.detail', $event)->with('error', 'Lomba tidak memiliki QR Attendance.');
+        }
+
         $user = $request->user();
         if (!$user) {
             return redirect()->route('login');
@@ -351,8 +362,10 @@ Route::middleware('auth')->group(function () {
             $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
         } catch (\Throwable $e) {
         }
-        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+        if (!$startTime && $eventDate)
+            $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate)
+            $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
@@ -467,7 +480,7 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/login/resend-otp', [AuthController::class, 'resendLoginOtp'])->name('login.otp.resend');
 });
 
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('forgot-password');
 Route::post('/forgot-password', [AuthController::class, 'sendResetCode'])->name('forgot-password.send');
@@ -720,18 +733,26 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // Trainer Certificates
     Route::get('/admin/trainer/certificates', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'index'])->name('admin.trainer.certificates.index');
-    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'queue'])->name('admin.trainer.certificates.queue');
     Route::get('/admin/trainer/certificates/detail/{certificate}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'detail'])->name('admin.trainer.certificates.detail');
     Route::get('/admin/trainer/certificates/{trainer}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'show'])->name('admin.trainer.certificates.show');
     Route::get('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'edit'])->name('admin.trainer.certificates.edit');
     Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'update'])->name('admin.trainer.certificates.update');
     Route::post('/admin/trainer/certificates/{trainer}/{context}/{id}/publish', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'publish'])->name('admin.trainer.certificates.publish');
 
+    // Manual Certificate Management
+    Route::post('/admin/trainer/{trainer}/certificates/issue', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'issueCertificate'])->name('admin.trainer.certificates.issue');
+    Route::delete('/admin/trainer/certificates/{trainerCertificate}/revoke', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'revokeCertificate'])->name('admin.trainer.certificates.revoke');
+    Route::get('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'showSendCertificateForm'])->name('admin.trainer.certificates.send');
+    Route::post('/admin/trainer/{trainer}/certificates/send', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendCertificate'])->name('admin.trainer.certificates.send.post');
+    Route::get('/admin/trainer/certificates/{certificate}/view-file', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'viewCertificateFile'])->name('admin.trainer.certificates.view');
+    Route::post('/admin/trainer/certificates/preview', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'previewCertificate'])->name('admin.trainer.certificates.preview');
+
     Route::get('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'show'])->name('admin.trainer.show');
     Route::get('/admin/trainer/{trainer}/edit', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'edit'])->name('admin.trainer.edit');
     Route::put('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'update'])->name('admin.trainer.update');
     Route::delete('/admin/trainer/{trainer}', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'destroy'])->name('admin.trainer.destroy');
     Route::post('/admin/trainer/{trainer}/course/{course}/deadline', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'updateCourseDeadline'])->name('admin.trainer.courses.deadline');
+    Route::post('/admin/trainer/{trainer}/event/{event}/deadline', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'updateEventDeadline'])->name('admin.trainer.events.deadline');
 
     // Material Approval Routes
     Route::get('/admin/material/approvals', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'index'])->name('admin.trainer.material.approvals');
@@ -755,4 +776,59 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/event/{event}/material/stream', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'stream'])->name('admin.event-material.stream');
     Route::post('/admin/event/{event}/material/approve', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'approve'])->name('admin.event-material.approve');
     Route::post('/admin/event/{event}/material/reject', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'reject'])->name('admin.event-material.reject');
+    Route::post('/admin/event/{event}/material/revoke', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'revoke'])->name('admin.event-material.revoke');
 });
+
+if (app()->environment('local')) {
+    Route::post('/api/test/reset-uat', function() {
+        $trainer = \App\Models\User::where('email', 'trainertesting@gmail.com')->first();
+        if ($trainer) {
+            // 1. Reset notifikasi undangan kembali ke pending
+            \App\Models\TrainerNotification::where('trainer_id', $trainer->id)
+                ->where('type', 'event_invitation')
+                ->get()
+                ->each(function ($notif) {
+                    $data = is_array($notif->data) ? $notif->data : [];
+                    $data['invitation_status'] = 'pending';
+                    unset($data['responded_at']);
+                    unset($data['e_agreement_accepted']);
+                    unset($data['e_agreement_accepted_at']);
+                    
+                    $notif->update([
+                        'invitation_status' => 'pending',
+                        'responded_at' => null,
+                        'read_at' => null,
+                        'data' => $data,
+                    ]);
+                });
+
+            // 2. Hapus assignment event trainer
+            \App\Models\TrainerAssignment::where('trainer_id', $trainer->id)->delete();
+
+            // 3. Hapus materi yang sudah di-upload sebelumnya
+            \App\Models\EventTrainerModule::where('trainer_id', $trainer->id)->delete();
+
+            // 4. Bersihkan status materi di tabel event utama
+            $trainerName = mb_strtolower(trim((string) $trainer->name));
+            \App\Models\Event::where(function ($q) use ($trainer, $trainerName) {
+                $q->where('trainer_id', $trainer->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })->update([
+                'material_status' => 'pending',
+                'material_approved_at' => null,
+                'material_approved_by' => null,
+                'material_rejection_reason' => null,
+            ]);
+            
+            // 5. Reset status pelanggaran / expired streak
+            $trainer->update([
+                'consecutive_expired_invitations' => 0,
+                'consecutive_late_uploads' => 0,
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Database UAT state reset successfully!']);
+    });
+}

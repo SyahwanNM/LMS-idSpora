@@ -42,11 +42,14 @@ class Event extends Model
         'price',
         'price_offline',
         'price_online',
+        'max_participants',
         'discount_percentage',
         'discount_until',
         'event_time',
         'event_time_end',
         'event_date',
+        'event_until_date',
+        'event_until_time',
         'material_deadline',
         'material_revision_deadline',
         'benefit',
@@ -63,19 +66,30 @@ class Event extends Model
         'expenses_json',
         'manage_action',
         'is_reseller_event',
+        'is_published',
+        'published_at',
+        'accept_online_payment',
+        'accept_manual_transfer',
+        'bank_account_number',
+        'bank_name',
+        'bank_account_holder',
+        'start_submission',
+        'until_submission',
+        'announcement_date',
+        'until_submission_2',
+        'price_stage2',
+        'finalist_payment_start',
+        'finalist_payment_end',
     ];
 
     protected $casts = [
         'event_date' => 'date',
+        'event_until_date' => 'date',
         'material_deadline' => 'datetime',
         'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
-        'module_submitted_at' => 'datetime',
-        'module_verified_at' => 'datetime',
-        'module_rejected_at' => 'datetime',
         'discount_until' => 'date',
-        'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
         'discount_percentage' => 'integer',
         'latitude' => 'decimal:7',
@@ -84,29 +98,202 @@ class Event extends Model
         'expenses_json' => 'array',
         'benefit' => 'array',
         'is_reseller_event' => 'boolean',
+        'accept_online_payment' => 'boolean',
+        'accept_manual_transfer' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
-        'module_path' => 'array', // Added to support multiple trainer modules
+        'start_submission' => 'datetime',
+        'until_submission' => 'datetime',
+        'announcement_date' => 'datetime',
+        'until_submission_2' => 'datetime',
+        'price_stage2' => 'decimal:2',
+        'finalist_payment_start' => 'datetime',
+        'finalist_payment_end' => 'datetime',
     ];
+
+    protected $virtualAttributes = [];
+
+    public function setRawAttributes(array $attributes, $sync = false)
+    {
+        $this->virtualAttributes = [];
+        return parent::setRawAttributes($attributes, $sync);
+    }
+
+    public function setVirtualAttribute($key, $value)
+    {
+        $this->virtualAttributes[$key] = $value;
+    }
+
+    public function getVirtualAttribute($key, $fallback = null)
+    {
+        return $this->virtualAttributes[$key] ?? $fallback;
+    }
+
+    // Setters
+    public function setModulePathAttribute($value) { $this->setVirtualAttribute('module_path', $value); }
+    public function setMaterialStatusAttribute($value) { $this->setVirtualAttribute('material_status', $value); }
+    public function setModuleSubmissionPathAttribute($value) { $this->setVirtualAttribute('module_submission_path', $value); }
+    public function setModuleSubmittedAtAttribute($value) { $this->setVirtualAttribute('module_submitted_at', $value); }
+    public function setModuleVerifiedAtAttribute($value) { $this->setVirtualAttribute('module_verified_at', $value); }
+    public function setModuleVerifiedByAttribute($value) { $this->setVirtualAttribute('module_verified_by', $value); }
+    public function setMaterialApprovedAtAttribute($value) { $this->setVirtualAttribute('material_approved_at', $value); }
+    public function setMaterialApprovedByAttribute($value) { $this->setVirtualAttribute('material_approved_by', $value); }
+    public function setMaterialRejectionReasonAttribute($value) { $this->setVirtualAttribute('material_rejection_reason', $value); }
+    public function setModuleRejectedAtAttribute($value) { $this->setVirtualAttribute('module_rejected_at', $value); }
+    public function setModuleRejectedByAttribute($value) { $this->setVirtualAttribute('module_rejected_by', $value); }
+    public function setModuleRejectionReasonAttribute($value) { $this->setVirtualAttribute('module_rejection_reason', $value); }
+
+    // Getters
+    public function getModulePathAttribute()
+    {
+        if (array_key_exists('module_path', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_path'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->path : null;
+    }
+
+    public function getMaterialStatusAttribute()
+    {
+        if (array_key_exists('material_status', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_status'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->status : 'pending';
+    }
+
+    public function getModuleSubmissionPathAttribute()
+    {
+        if (array_key_exists('module_submission_path', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_submission_path'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->path : null;
+    }
+
+    public function getModuleSubmittedAtAttribute()
+    {
+        $val = array_key_exists('module_submitted_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_submitted_at']
+            : $this->trainerModules()->latest()->first()?->created_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleVerifiedAtAttribute()
+    {
+        $val = array_key_exists('module_verified_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_verified_at']
+            : $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleVerifiedByAttribute()
+    {
+        if (array_key_exists('module_verified_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_verified_by'];
+        }
+        return $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_by;
+    }
+
+    public function getMaterialApprovedAtAttribute()
+    {
+        $val = array_key_exists('material_approved_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['material_approved_at']
+            : $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getMaterialApprovedByAttribute()
+    {
+        if (array_key_exists('material_approved_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_approved_by'];
+        }
+        return $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_by;
+    }
+
+    public function getMaterialRejectionReasonAttribute()
+    {
+        if (array_key_exists('material_rejection_reason', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_rejection_reason'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->rejection_reason;
+    }
+
+    public function getModuleRejectedAtAttribute()
+    {
+        $val = array_key_exists('module_rejected_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_rejected_at']
+            : $this->trainerModules()->where('status', 'rejected')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleRejectedByAttribute()
+    {
+        if (array_key_exists('module_rejected_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_rejected_by'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->reviewed_by;
+    }
+
+    public function getModuleRejectionReasonAttribute()
+    {
+        if (array_key_exists('module_rejection_reason', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_rejection_reason'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->rejection_reason;
+    }
+
+
+    public function getHasApprovedModulesAttribute(): bool
+    {
+        $assignedTrainerIds = collect();
+        if ($this->trainer_id) {
+            $assignedTrainerIds->push((int) $this->trainer_id);
+        }
+        $speakerTrainerIds = $this->speakers()->whereNotNull('trainer_id')->pluck('trainer_id')->map(fn($id) => (int) $id);
+        $assignedTrainerIds = $assignedTrainerIds->merge($speakerTrainerIds)->unique()->values();
+
+        if ($assignedTrainerIds->isNotEmpty()) {
+            $approvedTrainerIds = $this->approvedTrainerModules()->distinct('trainer_id')->pluck('trainer_id')->map(fn($id) => (int) $id)->toArray();
+            
+            foreach ($assignedTrainerIds as $tId) {
+                if (!in_array($tId, $approvedTrainerIds, true)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Tidak ada trainer yang di-assign → secara otomatis benar (karena tidak ada modul yang perlu di-upload)
+        return true;
+    }
 
     /**
      * Count how many operational documents have been uploaded.
      */
     public function getDocumentsCompletedCountAttribute(): int
     {
-        // Count completed items for the UI-perceived requirements.
-        // Business rule (used across admin views):
-        // - For offline-only events (has maps link, no zoom link) required items: Module, Attendance (2 items)
-        // - Otherwise required items: Virtual Background, Module, Attendance (3 items)
         $hasVbg = !empty($this->vbg_path);
-        // Module: cek module_path ATAU approved trainer modules
-        $hasModule     = !empty($this->module_path)
-                         || $this->approvedTrainerModules()->exists();
-        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
-
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
 
-        // Return the raw count of completed items (not the denominator-aware percent).
+        if ($this->jenis === 'Lomba') {
+            $count = 0;
+            if (!$isOfflineOnly && $hasVbg) {
+                $count++;
+            }
+            return $count;
+        }
+
+        $hasModule = $this->has_approved_modules;
+
+        $isMultiDay = !empty($this->event_until_date)
+            && \Carbon\Carbon::parse($this->event_until_date)->gt(\Carbon\Carbon::parse($this->event_date));
+        $hasDailyAbs = false;
+        if ($isMultiDay && $this->id) {
+            $hasDailyAbs = \App\Models\EventDailyQr::where('event_id', $this->id)->exists();
+        }
+        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token) || $hasDailyAbs;
+
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {
             $count++;
@@ -127,11 +314,15 @@ class Event extends Model
     {
         // Determine denominator according to offline/online rule
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
-        $total = $isOfflineOnly ? 2 : 3;
+        if ($this->jenis === 'Lomba') {
+            $total = $isOfflineOnly ? 0 : 1;
+        } else {
+            $total = $isOfflineOnly ? 2 : 3;
+        }
         $done = (int) $this->documents_completed_count;
         $done = max(0, min($total, $done));
         if ($total === 0)
-            return 0;
+            return 100;
         if ($done === $total)
             return 100;
         return (int) floor(($done / $total) * 100);
@@ -276,6 +467,11 @@ class Event extends Model
         return $this->hasMany(\App\Models\EventTrainerModule::class);
     }
 
+    public function trainerAssignments()
+    {
+        return $this->hasMany(\App\Models\TrainerAssignment::class);
+    }
+
     public function approvedTrainerModules()
     {
         return $this->hasMany(\App\Models\EventTrainerModule::class)->where('status', 'approved');
@@ -284,6 +480,18 @@ class Event extends Model
     public function speakers()
     {
         return $this->hasMany(\App\Models\EventSpeaker::class)->orderBy('order');
+    }
+
+    public function dailyAttendances()
+    {
+        return $this->hasManyThrough(
+            EventDailyAttendance::class,
+            EventRegistration::class,
+            'event_id',
+            'event_registration_id',
+            'id',
+            'id'
+        );
     }
 
     public function getStartAtAttribute(): ?Carbon
@@ -349,6 +557,23 @@ class Event extends Model
 
     public function getEndAtAttribute(): ?Carbon
     {
+        // If event_until_date is set, use it (+ event_until_time or 23:59:59) as the deadline
+        if (!empty($this->event_until_date)) {
+            $dateStr = $this->event_until_date instanceof Carbon
+                ? $this->event_until_date->format('Y-m-d')
+                : (string) $this->event_until_date;
+            $timeStr = '23:59:59';
+            if (!empty($this->event_until_time)) {
+                $timeStr = is_string($this->event_until_time)
+                    ? $this->event_until_time
+                    : ($this->event_until_time instanceof Carbon ? $this->event_until_time->format('H:i:s') : '23:59:59');
+            }
+            try {
+                return Carbon::parse($dateStr . ' ' . $timeStr, config('app.timezone'));
+            } catch (\Throwable $ex) {}
+        }
+
+        // Fallback: event_date + event_time_end (or end of day)
         $start = $this->start_at;
         if (!$start)
             return null;
@@ -368,7 +593,8 @@ class Event extends Model
     }
 
     /**
-     * Determine if event finished (end time < now()).
+     * Determine if event finished (end_at < now).
+     * When event_until_date is set, it acts as the real end deadline.
      */
     public function isFinished(): bool
     {
@@ -377,14 +603,18 @@ class Event extends Model
     }
 
     /**
-     * Scope: active (not finished). Treat events without date as active (legacy drafts).
+     * Scope: active (not finished).
+     * Uses COALESCE(event_until_date, event_date) + COALESCE(event_until_time, event_time_end, event_time)
      */
     public function scopeActive($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
-        return $query->where(function ($q) use ($now) {
+        $rawSql = \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite'
+            ? "COALESCE(event_until_date, event_date) || ' ' || COALESCE(event_until_time, event_time_end, event_time, '23:59:59')"
+            : "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59'))";
+        return $query->where(function ($q) use ($now, $rawSql) {
             $q->whereNull('event_date')
-                ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) >= ?", [$now]);
+                ->orWhereRaw("{$rawSql} >= ?", [$now]);
         });
     }
 
@@ -394,8 +624,11 @@ class Event extends Model
     public function scopeFinished($query)
     {
         $now = Carbon::now()->format('Y-m-d H:i:s');
+        $rawSql = \Illuminate\Support\Facades\DB::getDriverName() === 'sqlite'
+            ? "COALESCE(event_until_date, event_date) || ' ' || COALESCE(event_until_time, event_time_end, event_time, '23:59:59')"
+            : "TIMESTAMP(COALESCE(event_until_date, event_date), COALESCE(event_until_time, event_time_end, event_time, '23:59:59'))";
         return $query->whereNotNull('event_date')
-            ->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time,'23:59:59'))) < ?", [$now]);
+            ->whereRaw("{$rawSql} < ?", [$now]);
     }
 
     /**

@@ -98,17 +98,92 @@ class EventAttendanceController extends Controller
             $token = $text;
         }
 
+        $today = Carbon::now(config('app.timezone'))->format('Y-m-d');
+        $isMultiDay = \App\Models\EventDailyQr::where('event_id', $event->id)->count() > 1;
+        $dailyQr = null;
+
+        if ($token) {
+            $dailyQr = \App\Models\EventDailyQr::where('event_id', $event->id)
+                ->where('token', $token)
+                ->first();
+        }
+
+        if ($dailyQr) {
+            $qrDayDate = $dailyQr->qr_date instanceof Carbon
+                ? $dailyQr->qr_date->format('Y-m-d')
+                : (string) $dailyQr->qr_date;
+
+            if ($qrDayDate !== $today) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'QR tidak valid. Harap scan QR yang telah dibagikan oleh Panitia Penyelenggara',
+                ], 422);
+            }
+
+            $alreadyScanned = \App\Models\EventDailyAttendance::where('event_registration_id', $registration->id)
+                ->where('attendance_date', $today)
+                ->exists();
+
+            if ($alreadyScanned) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Kehadiran sudah tercatat sebelumnya.',
+                    'data'    => ['attended_at' => $registration->attended_at?->toISOString()],
+                ]);
+            }
+
+            \Illuminate\Support\Facades\DB::transaction(function () use ($registration, $dailyQr, $today) {
+                \App\Models\EventDailyAttendance::create([
+                    'event_registration_id' => $registration->id,
+                    'event_daily_qr_id' => $dailyQr->id,
+                    'attendance_date' => $today,
+                    'day_number' => $dailyQr->day_number,
+                    'scanned_at' => Carbon::now(),
+                ]);
+
+                if (empty($registration->attended_at)) {
+                    $registration->attendance_status = 'yes';
+                    $registration->attended_at = Carbon::now();
+                    $registration->attendance_scan_qr = Carbon::now();
+                    $registration->save();
+                }
+            });
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Kehadiran berhasil dicatat.',
+                'data'    => [
+                    'attended_at'       => $registration->fresh()->attended_at->toISOString(),
+                    'attendance_status' => $registration->attendance_status,
+                ],
+            ]);
+        }
+
+        if ($isMultiDay) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'QR tidak valid. Harap scan QR yang telah dibagikan oleh Panitia Penyelenggara',
+            ], 422);
+        }
+
         $tokenOk = !empty($event->attendance_qr_token) && $token
             && hash_equals((string) $event->attendance_qr_token, (string) $token);
 
-        // Fallback: legacy QR that encodes the event URL
-        $urlOk = (bool) preg_match(sprintf('/\/events\/%d(\?|$)/', (int) $event->id), $text);
-
-        if (!$tokenOk && !$urlOk) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'QR tidak valid untuk event ini. Gunakan QR terbaru dari panitia.',
-            ], 422);
+        if (!empty($event->attendance_qr_token)) {
+            if (!$tokenOk) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'QR tidak valid. Harap scan QR yang telah dibagikan oleh Panitia Penyelenggara',
+                ], 422);
+            }
+        } else {
+            $urlOk = (bool) preg_match(sprintf('/\/events\/%d(\?|$)/', (int) $event->id), $text);
+            if (!$urlOk) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'QR tidak valid. Harap scan QR yang telah dibagikan oleh Panitia Penyelenggara',
+                ], 422);
+            }
         }
 
         $now = Carbon::now();

@@ -48,55 +48,93 @@
                                     value="{{ old('title', $event->title) }}" placeholder="Masukkan Nama Event">
                                 <div class="form-text">Use a clear and specific title (example: "Webinar Laravel Dasar").</div>
                             </div>
+                            <!-- Jenis Acara (autocomplete after 2 chars) -->
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Speaker Name <span
-                                        class="text-danger">*</span></label>
-                                @php
-                                    $speakerList = collect(explode(',', old('speaker', $event->speaker)))->map(fn($s) => trim($s))->filter()->values();
-                                    $existingSpeakers = $event->speakers()->get()->keyBy(fn($s) => mb_strtolower(trim($s->name)));
-                                @endphp
-                                <div id="speakersContainer" class="d-flex flex-column gap-2">
-                                    @if($speakerList->count())
-                                        @foreach($speakerList as $i => $sp)
-                                            @php $spData = $existingSpeakers->get(mb_strtolower($sp)); @endphp
+                                <label for="jenis" class="form-label fw-semibold">Event Type <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    @php
+                                        $jenisDefaults = ['Webinar','Seminar','Workshop','Lomba'];
+                                        $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
+                                        $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))
+                                            ->map(fn($v) => trim((string)$v))
+                                            ->filter()
+                                            ->unique(fn($v) => mb_strtolower($v))
+                                            ->values()
+                                            ->all();
+
+                                        $currentJenis = trim((string) old('jenis', $event->jenis));
+                                    @endphp
+                                    <select name="jenis" id="jenis" class="form-select" required>
+                                        <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Choice event type</option>
+                                        @foreach($jenisMerged as $opt)
+                                            @php $optStr = (string) $opt; @endphp
+                                            <option value="{{ $optStr }}" {{ $currentJenis === $optStr ? 'selected' : '' }}>{{ $optStr }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-text">Choice event type for this event.</div>
+                            </div>
+                            <div class="box-trainer-event">
+                                <div class="mb-3 w-100">
+                                    <label class="form-label fw-semibold">Speaker Name <span
+                                            class="text-danger">*</span></label>
+                                    @php
+                                        // Pisah speaker berdasarkan '|' jika ada, fallback ke '\n', hindari split by comma
+                                        // karena nama dengan gelar (Dr. Erna, S.Kom.) mengandung koma
+                                        $rawSpeaker = old('speaker', $event->speaker ?? '');
+                                        if (str_contains($rawSpeaker, '|')) {
+                                            $speakerList = collect(explode('|', $rawSpeaker))->map(fn($s) => trim($s))->filter()->values();
+                                        } elseif (str_contains($rawSpeaker, "\n")) {
+                                            $speakerList = collect(explode("\n", $rawSpeaker))->map(fn($s) => trim($s))->filter()->values();
+                                        } else {
+                                            // Single speaker — jangan split by comma
+                                            $speakerList = collect([trim($rawSpeaker)])->filter()->values();
+                                        }
+                                        $existingSpeakers = $event->speakers()->get()->keyBy(fn($s) => mb_strtolower(trim($s->name)));
+                                    @endphp
+                                    <div id="speakersContainer" class="d-flex flex-column gap-2">
+                                        @if($speakerList->count())
+                                            @foreach($speakerList as $i => $sp)
+                                                @php $spData = $existingSpeakers->get(mb_strtolower($sp)); @endphp
+                                                <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
+                                                    <div class="d-flex gap-2 align-items-center">
+                                                        <select name="speakers[]" class="form-select speaker-select"
+                                                            data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
+                                                            <option value="" disabled>Loading speaker...</option>
+                                                            <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                        </select>
+                                                        <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
+                                                    </div>
+                                                    <div class="mt-2">
+                                                        <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
+                                                            placeholder="Gaji Pembicara/Trainer (Rp)"
+                                                            value="{{ old('speaker_salaries.'.$i, $spData?->salary ?? '') }}"
+                                                            min="0" step="1000">
+                                                        <div class="form-text">Gaji untuk {{ $sp ?: 'pembicara ini' }}</div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        @else
                                             <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
                                                 <div class="d-flex gap-2 align-items-center">
-                                                    <select name="speakers[]" class="form-select speaker-select"
-                                                        data-selected="{{ $sp }}" {{ $i === 0 ? 'required' : '' }}>
-                                                        <option value="" disabled>Loading speaker...</option>
-                                                        <option value="{{ $sp }}" selected>{{ $sp }}</option>
+                                                    <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
+                                                        <option value="" selected disabled>Choice Speaker</option>
                                                     </select>
                                                     <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
                                                 </div>
                                                 <div class="mt-2">
                                                     <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
-                                                        placeholder="Gaji Pembicara/Trainer (Rp)"
-                                                        value="{{ old('speaker_salaries.'.$i, $spData?->salary ?? '') }}"
-                                                        min="0" step="1000">
-                                                    <div class="form-text">Gaji untuk {{ $sp ?: 'pembicara ini' }}</div>
+                                                        placeholder="Salary Speaker(Rp)" min="0" step="1000">
                                                 </div>
                                             </div>
-                                        @endforeach
-                                    @else
-                                        <div class="speaker-row border rounded p-2" style="background:#f8fafc;">
-                                            <div class="d-flex gap-2 align-items-center">
-                                                <select name="speakers[]" class="form-select speaker-select" data-selected="" required>
-                                                    <option value="" selected disabled>Choice Speaker</option>
-                                                </select>
-                                                <button type="button" class="btn btn-outline-danger remove-speaker" title="Delete"><i class="bi bi-trash"></i></button>
-                                            </div>
-                                            <div class="mt-2">
-                                                <input type="number" name="speaker_salaries[]" class="form-control form-control-sm"
-                                                    placeholder="Salary Speaker(Rp)" min="0" step="1000">
-                                            </div>
-                                        </div>
-                                    @endif
+                                        @endif
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i
+                                            class="bi bi-plus-circle me-1"></i>Add Speaker</button>
+                                    <input type="hidden" name="speaker" id="speakerCombined"
+                                        value="{{ old('speaker', $event->speaker) }}">
+                                    <div class="form-text" id="speakerHelpText">Min. 1 speaker (required). Add speaker is optional.</div>
                                 </div>
-                                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i
-                                        class="bi bi-plus-circle me-1"></i>Add Speaker</button>
-                                <input type="hidden" name="speaker" id="speakerCombined"
-                                    value="{{ old('speaker', $event->speaker) }}">
-                                <div class="form-text">Min. 1 speaker (required). Add speaker is optional.</div>
                             </div>
                             <!-- Materi (kategori konten) -->
                             <div class="mb-3">
@@ -149,31 +187,52 @@
 
                             </div>
 
-                            <!-- Jenis Acara (autocomplete after 2 chars) -->
-                            <div class="mb-3">
-                                <label for="jenis" class="form-label fw-semibold">Event Type <span class="text-danger">*</span></label>
-                                <div class="position-relative">
-                                    @php
-                                        $jenisDefaults = ['Webinar','Seminar','Workshop'];
-                                        $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
-                                        $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))
-                                            ->map(fn($v) => trim((string)$v))
-                                            ->filter()
-                                            ->unique(fn($v) => mb_strtolower($v))
-                                            ->values()
-                                            ->all();
 
-                                        $currentJenis = trim((string) old('jenis', $event->jenis));
-                                    @endphp
-                                    <select name="jenis" id="jenis" class="form-select" required>
-                                        <option value="" disabled {{ $currentJenis !== '' ? '' : 'selected' }}>Choice event type</option>
-                                        @foreach($jenisMerged as $opt)
-                                            @php $optStr = (string) $opt; @endphp
-                                            <option value="{{ $optStr }}" {{ $currentJenis === $optStr ? 'selected' : '' }}>{{ $optStr }}</option>
-                                        @endforeach
-                                    </select>
+
+                            {{-- Competition settings block — shown only when event type is Lomba --}}
+                            <div id="lombaSettingsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('jenis', $event->jenis) === 'Lomba' ? '' : 'display: none;' }}">
+                                <h6 class="fw-bold mb-3 text-primary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏆 Pengaturan Kompetisi / Lomba</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="start_submission" class="form-label small fw-semibold mb-1">Mulai Pengiriman Submission <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" name="start_submission" id="start_submission" class="form-control form-control-sm" value="{{ old('start_submission', $event->start_submission ? $event->start_submission->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="until_submission" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Awal <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" name="until_submission" id="until_submission" class="form-control form-control-sm" value="{{ old('until_submission', $event->until_submission ? $event->until_submission->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="announcement_date" class="form-label small fw-semibold mb-1">Tanggal Pengumuman Kelolosan <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" name="announcement_date" id="announcement_date" class="form-control form-control-sm" value="{{ old('announcement_date', $event->announcement_date ? $event->announcement_date->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="until_submission_2" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Kedua/Lanjutan <span class="text-danger">*</span></label>
+                                        <input type="datetime-local" name="until_submission_2" id="until_submission_2" class="form-control form-control-sm" value="{{ old('until_submission_2', $event->until_submission_2 ? $event->until_submission_2->format('Y-m-d\TH:i') : '') }}">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                         <label for="finalist_payment_start" class="form-label small fw-semibold mb-1">Mulai Registrasi Finalis</label>
+                                         <input type="datetime-local" name="finalist_payment_start" id="finalist_payment_start" class="form-control form-control-sm" value="{{ old('finalist_payment_start', $event->finalist_payment_start ? $event->finalist_payment_start->format('Y-m-d\TH:i') : '') }}">
+                                     </div>
+                                     <div class="col-md-6 mb-2">
+                                         <label for="finalist_payment_end" class="form-label small fw-semibold mb-1">Batas Registrasi Finalis</label>
+                                         <input type="datetime-local" name="finalist_payment_end" id="finalist_payment_end" class="form-control form-control-sm" value="{{ old('finalist_payment_end', $event->finalist_payment_end ? $event->finalist_payment_end->format('Y-m-d\TH:i') : '') }}">
+                                     </div>
+                                    <div class="col-12 mb-2">
+                                        <hr class="my-1">
+                                        <label for="price_stage2_edit" class="form-label small fw-semibold mb-1">
+                                            💰 Biaya Pembayaran Tahap 2 (Rp)
+                                            <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;">Opsional</span>
+                                        </label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">Rp</span>
+                                            <input type="text" id="price_stage2_display_edit" class="form-control" placeholder="0"
+                                                value="{{ number_format(old('price_stage2', $event->price_stage2 ?? 0), 0, ',', '.') }}">
+                                            <input type="hidden" name="price_stage2" id="price_stage2_edit" value="{{ old('price_stage2', $event->price_stage2 ?? 0) }}">
+                                        </div>
+                                        <div class="form-text text-muted">Isi 0 atau kosongkan jika gratis. Peserta yang lolos Tahap 1 wajib membayar ini sebelum bisa upload Submission Tahap 2.</div>
+                                    </div>
                                 </div>
-                                <div class="form-text">Choice event type for this event.</div>
+                                <div class="form-text text-muted mt-1 small">Wajib diatur jika jenis event adalah Lomba. Peserta yang lolos pengumuman awal dapat mengunggah submission kedua.</div>
                             </div>
                             <!-- Penjelasan Singkat (maks 40 kata) -->
                             <div class="mb-3">
@@ -208,6 +267,18 @@
                                         value="{{ old('event_time_end', $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : '') }}">
                                 </div>
                                 <div class="form-text">Isi jam mulai (wajib). Jam selesai opsional.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Event Until (Custom End Deadline) <span class="text-muted small">(Optional)</span></label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="date" name="event_until_date" class="form-control"
+                                        value="{{ old('event_until_date', $event->event_until_date ? \Carbon\Carbon::parse($event->event_until_date)->format('Y-m-d') : '') }}"
+                                        placeholder="YYYY-MM-DD">
+                                    <input type="time" name="event_until_time" class="form-control"
+                                        value="{{ old('event_until_time', $event->event_until_time ?? '') }}"
+                                        placeholder="00:00">
+                                </div>
+                                <div class="form-text">Set a custom deadline after which the event is considered finished. Minimum: one day after event date. Leave empty to use default (event date + end time).</div>
                             </div>
                             <div class="mb-3">
                                 <label for="lokasi" class="form-label fw-semibold">Event Location <span
@@ -288,6 +359,47 @@
                                 <small class="form-text">Discount end date (maximum one day before event date).</small>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label fw-semibold">Metode Pembayaran</label>
+                                <div class="d-flex gap-3 align-items-center mb-2">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="accept_online_payment" id="accept_online_payment" value="1" {{ old('accept_online_payment', $event->accept_online_payment) ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-medium text-dark" for="accept_online_payment">💳 Online Payment</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="accept_manual_transfer" id="accept_manual_transfer" value="1" {{ old('accept_manual_transfer', $event->accept_manual_transfer) ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-medium text-dark" for="accept_manual_transfer">🏦 Transfer Manual</label>
+                                    </div>
+                                </div>
+                                <div class="form-text text-muted">Pilih metode pembayaran yang diperbolehkan untuk event ini.</div>
+                            </div>
+
+                            {{-- Bank details container — shown only when accept_manual_transfer is checked --}}
+                            <div id="bankDetailsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('accept_manual_transfer', $event->accept_manual_transfer) ? '' : 'display: none;' }}">
+                                <h6 class="fw-bold mb-3 text-secondary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏦 Informasi Rekening Transfer</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label for="bank_name" class="form-label small fw-semibold mb-1">Nama Bank <span class="text-danger">*</span></label>
+                                        <input type="text" name="bank_name" id="bank_name" class="form-control form-control-sm" value="{{ old('bank_name', $event->bank_name) }}" placeholder="Contoh: Bank BCA ">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="bank_account_number" class="form-label small fw-semibold mb-1">Nomor Rekening <span class="text-danger">*</span></label>
+                                        <input type="text" name="bank_account_number" id="bank_account_number" class="form-control form-control-sm" value="{{ old('bank_account_number', $event->bank_account_number) }}" placeholder="Contoh: 2305-294-592">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="bank_account_holder" class="form-label small fw-semibold mb-1">Nama Pemilik Rekening <span class="text-danger">*</span></label>
+                                        <input type="text" name="bank_account_holder" id="bank_account_holder" class="form-control form-control-sm" value="{{ old('bank_account_holder', $event->bank_account_holder) }}" placeholder="Contoh: Yayasan Abdi Masyarakat">
+                                    </div>
+                                </div>
+                                <div class="form-text text-muted mt-1 small">Wajib diisi jika Transfer Manual diaktifkan. Informasi ini akan ditampilkan di halaman pembayaran peserta.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="max_participants" class="form-label fw-semibold">Participant Quota</label>
+                                <input type="number" name="max_participants" id="max_participants" class="form-control" min="1" step="1"
+                                    value="{{ old('max_participants', $event->max_participants) }}"
+                                    placeholder="Leave empty for unlimited">
+                                <div class="form-text">Maximum number of participants. Leave empty for unlimited seats.</div>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label fw-semibold">Benefit <span
                                         class="text-muted">(Opsional)</span></label>
                                 <div id="benefitsContainer"></div>
@@ -333,13 +445,21 @@
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Schedule <span
                                         class="text-muted small">(Optional)</span></label>
+                                @php
+                                    $jenisVal = old('jenis', $event->jenis ?? '');
+                                    $isLomba = strtolower(trim($jenisVal)) === 'lomba';
+                                    $inputType = $isLomba ? 'date' : 'time';
+                                    $placeholder = $isLomba ? 'YYYY-MM-DD' : '00:00';
+                                    $titlePlaceholder = $isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                                    $descStyle = $isLomba ? 'style="display: none;"' : '';
+                                @endphp
                                 <table class="table table-sm align-middle" id="scheduleTable">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width:180px">Start Time</th>
-                                            <th style="width:180px">End Time</th>
-                                            <th>Activity</th>
-                                            <th>Description</th>
+                                            <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Dari' : 'Start Time' }}</th>
+                                            <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Sampai' : 'End Time' }}</th>
+                                            <th>{{ $isLomba ? 'Nama Timeline' : 'Activity' }}</th>
+                                            <th {!! $descStyle !!}>Description</th>
                                             <th style="width:80px" class="text-center">Actions</th>
                                         </tr>
                                     </thead>
@@ -348,14 +468,14 @@
                                         @if(is_array($existingSchedule) && count($existingSchedule))
                                             @foreach($existingSchedule as $i => $row)
                                                 <tr>
-                                                    <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][start]" value="{{ $row['start'] ?? '' }}"></td>
-                                                    <td><input type="time" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][end]" value="{{ $row['end'] ?? '' }}"></td>
+                                                    <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                            name="schedule[{{ $i }}][start]" placeholder="{{ $placeholder }}" value="{{ $row['start'] ?? '' }}"></td>
+                                                    <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                            name="schedule[{{ $i }}][end]" placeholder="{{ $placeholder }}" value="{{ $row['end'] ?? '' }}"></td>
                                                     <td><input type="text" class="form-control form-control-sm"
-                                                            name="schedule[{{ $i }}][title]" placeholder="Nama kegiatan"
+                                                            name="schedule[{{ $i }}][title]" placeholder="{{ $titlePlaceholder }}"
                                                             value="{{ $row['title'] ?? '' }}"></td>
-                                                    <td><input type="text" class="form-control form-control-sm"
+                                                    <td {!! $descStyle !!}><input type="text" class="form-control form-control-sm"
                                                             name="schedule[{{ $i }}][description]" placeholder="Deskripsi singkat"
                                                             value="{{ $row['description'] ?? '' }}"></td>
                                                     <td class="text-center"><button type="button"
@@ -594,6 +714,37 @@
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Payment method toggle logic
+            const acceptManualCheckbox = document.getElementById('accept_manual_transfer');
+            const bankDetailsContainer = document.getElementById('bankDetailsContainer');
+            const bankNameInput = document.getElementById('bank_name');
+            const bankAccNoInput = document.getElementById('bank_account_number');
+            const bankAccHolderInput = document.getElementById('bank_account_holder');
+
+            if (acceptManualCheckbox && bankDetailsContainer) {
+                const toggleBankDetails = () => {
+                    const checked = acceptManualCheckbox.checked;
+                    bankDetailsContainer.style.display = checked ? '' : 'none';
+                    if (bankNameInput) bankNameInput.required = checked;
+                    if (bankAccNoInput) bankAccNoInput.required = checked;
+                    if (bankAccHolderInput) bankAccHolderInput.required = checked;
+                };
+                acceptManualCheckbox.addEventListener('change', toggleBankDetails);
+                toggleBankDetails(); // run initially
+            }
+
+            // Lomba/Competition dynamic form logic
+            const jenisSelect = document.getElementById('jenis');
+            const boxTrainerEvent = document.querySelector('.box-trainer-event');
+            const lombaSettingsContainer = document.getElementById('lombaSettingsContainer');
+
+            const startSubmissionInput = document.getElementById('start_submission');
+            const untilSubmissionInput = document.getElementById('until_submission');
+            const announcementDateInput = document.getElementById('announcement_date');
+            const untilSubmission2Input = document.getElementById('until_submission_2');
+
+            // toggleLombaFields moved to the bottom of DOMContentLoaded to prevent TDZ errors
+
             // Bootstrap tooltips
             try {
                 if (window.bootstrap && typeof bootstrap.Tooltip === 'function') {
@@ -603,14 +754,31 @@
                 }
             } catch (_) { }
 
-            // Auto-show edit modal when visiting the edit page
-            try {
-                const modalEl = document.getElementById('editEventModal');
-                if (modalEl && window.bootstrap && typeof bootstrap.Modal === 'function') {
-                    const editModal = new bootstrap.Modal(modalEl);
-                    editModal.show();
-                }
-            } catch (e) { console.error(e); }
+            // Auto-show edit modal when visiting the edit page (with robust bootstrap polling)
+            const showEditModal = () => {
+                try {
+                    const modalEl = document.getElementById('editEventModal');
+                    const bs = window.bootstrap || (typeof bootstrap !== 'undefined' ? bootstrap : null);
+                    if (modalEl && bs && typeof bs.Modal === 'function') {
+                        const editModal = new bs.Modal(modalEl);
+                        editModal.show();
+                        return true;
+                    }
+                } catch (e) { console.error(e); }
+                return false;
+            };
+
+            if (!showEditModal()) {
+                let checkCount = 0;
+                const interval = setInterval(() => {
+                    if (showEditModal()) {
+                        clearInterval(interval);
+                    }
+                    if (++checkCount > 50) {
+                        clearInterval(interval);
+                    }
+                }, 100);
+            }
             // Jenis Acara autocomplete (show after 2 chars)
             (function setupJenisAutocomplete(){
                 const jenisInput = document.getElementById('jenis');
@@ -894,7 +1062,12 @@
                         body: JSON.stringify({ url })
                     });
                     const data = await resp.json();
-                    if (resp.ok && data.lat && data.lng) { showMap(data.lat, data.lng); }
+                    if (resp.ok && data.lat && data.lng) {
+                        showMap(data.lat, data.lng);
+                        if (data.place_name && placeNameInput) {
+                            placeNameInput.value = data.place_name;
+                        }
+                    }
                     else alert(data.message || 'Koordinat tidak ditemukan.');
                 } catch (e) {
                     alert('Gagal mendeteksi koordinat.');
@@ -909,9 +1082,9 @@
             syncLocationModeUI();
 
             // Speakers (from Trainer API)
-            const speakersContainer = document.getElementById('speakersContainer');
-            const addSpeakerBtn = document.getElementById('addSpeakerRow');
-            const speakerCombined = document.getElementById('speakerCombined');
+            const speakersContainer = document.querySelector('#editEventModal #speakersContainer');
+            const addSpeakerBtn = document.querySelector('#editEventModal #addSpeakerRow');
+            const speakerCombined = document.querySelector('#editEventModal #speakerCombined');
             const trainersUrl = @json(route('admin.api.trainers'));
             let trainersCache = null;
 
@@ -924,14 +1097,16 @@
             function updateSpeakerRowsState() {
                 if (!speakersContainer) return;
                 const rows = speakersContainer.querySelectorAll('.speaker-row');
+                const jenisSelect = document.getElementById('jenis');
+                const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
                 rows.forEach((row, idx) => {
                     const sel = row.querySelector('select[name="speakers[]"]');
                     const rm = row.querySelector('.remove-speaker');
-                    if (sel) sel.required = (idx === 0);
+                    if (sel) sel.required = (idx === 0 && !isLomba);
                     if (rm) rm.disabled = (rows.length <= 1);
                 });
             }
-            function updateSpeakerCombined() { if (!speakerCombined || !speakersContainer) return; const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s => String(s.value || '').trim()).filter(Boolean); speakerCombined.value = names.join(', '); }
+            function updateSpeakerCombined() { if (!speakerCombined || !speakersContainer) return; const names = Array.from(speakersContainer.querySelectorAll('select[name="speakers[]"]')).map(s => String(s.value || '').trim()).filter(Boolean); speakerCombined.value = names.join('|'); }
             function populateSpeakerSelect(selectEl, selectedName, trainers) {
                 if (!selectEl) return;
                 const selected = String(selectedName || '').trim();
@@ -1036,6 +1211,24 @@
                     sync();
                 });
             })();
+            // price_stage2 currency formatting (edit form)
+            (function initStage2PriceInput() {
+                const disp = document.getElementById('price_stage2_display_edit');
+                const hidn = document.getElementById('price_stage2_edit');
+                if (!disp || !hidn) return;
+                const sync = function() {
+                    const raw = unformatNumber(disp.value);
+                    disp.value = formatThousands(raw);
+                    hidn.value = raw;
+                };
+                disp.addEventListener('keydown', function(e) {
+                    const allowed = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
+                    if (allowed.includes(e.key)) return;
+                    if (!/\d/.test(e.key)) e.preventDefault();
+                });
+                disp.addEventListener('input', sync);
+                sync();
+            })();
             // Diskon input clamp + toggle discount_until
             function toggleDiscountUntil() {
                 if (!discountUntilInput) return;
@@ -1101,16 +1294,83 @@
             const addScheduleBtn = document.getElementById('addScheduleRow');
             let scheduleIndex = 0;
             if (scheduleTableBody) scheduleIndex = scheduleTableBody.querySelectorAll('tr').length;
+
+            function syncScheduleTable() {
+                const jenisSelect = document.getElementById('jenis');
+                if (!jenisSelect) return;
+                const isLomba = jenisSelect.value === 'Lomba';
+                const table = document.getElementById('scheduleTable');
+                if (!table) return;
+
+                const ths = table.querySelectorAll('thead th');
+                if (ths.length >= 4) {
+                    ths[0].textContent = isLomba ? 'Tanggal Dari' : 'Start Time';
+                    ths[0].style.width = isLomba ? '200px' : '180px';
+                    ths[1].textContent = isLomba ? 'Tanggal Sampai' : 'End Time';
+                    ths[1].style.width = isLomba ? '200px' : '180px';
+                    ths[2].textContent = isLomba ? 'Nama Timeline' : 'Activity';
+                    ths[3].style.display = isLomba ? 'none' : '';
+                }
+
+                const trs = table.querySelectorAll('tbody tr');
+                trs.forEach(tr => {
+                    const tds = tr.querySelectorAll('td');
+                    if (tds.length >= 4) {
+                        const startInput = tds[0].querySelector('input');
+                        const endInput = tds[1].querySelector('input');
+                        const titleInput = tds[2].querySelector('input');
+                        const descTd = tds[3];
+
+                        if (startInput) {
+                            const currentType = isLomba ? 'date' : 'time';
+                            if (startInput.type !== currentType) {
+                                startInput.type = currentType;
+                                startInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                            }
+                        }
+                        if (endInput) {
+                            const currentType = isLomba ? 'date' : 'time';
+                            if (endInput.type !== currentType) {
+                                endInput.type = currentType;
+                                endInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                            }
+                        }
+                        if (titleInput) {
+                            titleInput.placeholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                        }
+                        descTd.style.display = isLomba ? 'none' : '';
+                    }
+                });
+            }
+
             function createScheduleRow(idx) {
+                const jenisSelect = document.getElementById('jenis');
+                const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+                const inputType = isLomba ? 'date' : 'time';
+                const placeholderStartEnd = isLomba ? 'YYYY-MM-DD' : '00:00';
+                const titlePlaceholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                const descStyle = isLomba ? 'style="display: none;"' : '';
+
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td><td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
+                tr.innerHTML = `<td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="${placeholderStartEnd}"></td><td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="${placeholderStartEnd}"></td><td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="${titlePlaceholder}"></td><td ${descStyle}><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td><td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Hapus"><i class="bi bi-x"></i></button></td>`;
                 return tr;
             }
             function addScheduleRow() { if (!scheduleTableBody) return; console.debug('addScheduleRow()', scheduleIndex); scheduleTableBody.appendChild(createScheduleRow(scheduleIndex++)); }
             // prefer delegated click so handler works even if button moves or is re-rendered
-            document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('#addScheduleRow')) { console.debug('delegated addScheduleRow click'); addScheduleRow(); } });
+            document.addEventListener('click', (e) => {
+                if (e.target.closest && e.target.closest('#addScheduleRow')) {
+                    console.debug('delegated addScheduleRow click');
+                    addScheduleRow();
+                    syncScheduleTable();
+                }
+            });
             // also attach directly to the button when available (reliability across browsers/modal states)
-            if (addScheduleBtn) addScheduleBtn.addEventListener('click', (e) => { e.preventDefault(); console.debug('direct addScheduleBtn click'); addScheduleRow(); });
+            if (addScheduleBtn) addScheduleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.debug('direct addScheduleBtn click');
+                addScheduleRow();
+                syncScheduleTable();
+            });
             scheduleTableBody?.addEventListener('click', e => { const b = e.target.closest('button[data-action="remove"]'); if (b) { b.closest('tr').remove(); } });
             // only add an initial row if there are no existing rows
             if (scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0) { addScheduleRow(); }
@@ -1166,9 +1426,9 @@
                 const submitBtn = document.getElementById('editSubmitBtn');
                 const submitHint = document.getElementById('editSubmitHint');
                 const getRequiredFields = () => {
+                    const jenisVal = document.getElementById('jenis')?.value || '';
                     const fields = [
                         document.getElementById('nama'),
-                        form.querySelector('select[name="speakers[]"]'),
                         document.getElementById('materi'),
                         document.getElementById('manage_action'),
                         document.getElementById('jenis'),
@@ -1179,6 +1439,11 @@
                         document.getElementById('lokasi'),
                         document.getElementById('hargaDisplay'),
                     ];
+
+                    if (jenisVal !== 'Lomba') {
+                        const firstSpeaker = form.querySelector('select[name="speakers[]"]');
+                        if (firstSpeaker) fields.push(firstSpeaker);
+                    }
 
                     const mode = String(document.getElementById('lokasi')?.value || '').toLowerCase();
                     if (mode === 'offline' || mode === 'hybrid') {
@@ -1290,6 +1555,45 @@
             // Event listener for add benefit button
             addBenefitBtn?.addEventListener('click', () => renderBenefitRow());
 
+            if (jenisSelect) {
+                const toggleLombaFields = () => {
+                    const isLomba = jenisSelect.value === 'Lomba';
+                    
+                    if (lombaSettingsContainer) lombaSettingsContainer.style.display = isLomba ? '' : 'none';
+
+                    if (boxTrainerEvent) {
+                        boxTrainerEvent.style.display = isLomba ? 'none' : '';
+                        
+                        // Disable inputs so they are not validated/submitted when hidden
+                        const inputs = boxTrainerEvent.querySelectorAll('select, input');
+                        inputs.forEach(input => {
+                            input.disabled = isLomba;
+                        });
+
+                        const star = boxTrainerEvent.querySelector('label span.text-danger');
+                        if (star) star.style.display = isLomba ? 'none' : '';
+                        
+                        const helpText = boxTrainerEvent.querySelector('#speakerHelpText');
+                        if (helpText) {
+                            helpText.textContent = isLomba 
+                                ? 'Speaker/Trainer is optional. Add speaker is optional.' 
+                                : 'Min. 1 speaker (required). Add speaker is optional.';
+                        }
+                    }
+
+                    if (typeof updateSpeakerRowsState === 'function') updateSpeakerRowsState();
+                    if (typeof window.updateSubmitState === 'function') window.updateSubmitState();
+                    if (typeof syncScheduleTable === 'function') syncScheduleTable();
+
+                    if (startSubmissionInput) startSubmissionInput.required = isLomba;
+                    if (untilSubmissionInput) untilSubmissionInput.required = isLomba;
+                    if (announcementDateInput) announcementDateInput.required = isLomba;
+                    if (untilSubmission2Input) untilSubmission2Input.required = isLomba;
+                };
+
+                jenisSelect.addEventListener('change', toggleLombaFields);
+                toggleLombaFields(); // run initially
+            }
         });
     </script>
 @endsection

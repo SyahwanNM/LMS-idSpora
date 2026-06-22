@@ -34,6 +34,7 @@ class CourseCertificateController extends Controller
             || $progressPercent >= 100;
 
         if ($certificateReady) {
+            $isNewCompletion = ($enrollment->status !== 'completed' || !$enrollment->completed_at);
             if ($enrollment->status !== 'completed') {
                 $enrollment->status = 'completed';
             }
@@ -47,6 +48,15 @@ class CourseCertificateController extends Controller
                 $enrollment->certificate_number = CertificateController::generateCertificateNumberCourse($course, $enrollment);
             }
             $enrollment->save();
+
+            if ($isNewCompletion) {
+                try {
+                    $pointsService = app(\App\Services\UserPointsService::class);
+                    $pointsService->addCoursePoints($user, $course, $enrollment);
+                } catch (\Throwable $e) {
+                    \Log::error('Error awarding course points on certificate show: ' . $e->getMessage());
+                }
+            }
         }
 
         $logosBase64 = [];

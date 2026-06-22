@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Support\Facades\Route::middleware(['web', 'auth', 'admin'])->group(base_path('routes/admin.php'));
             \Illuminate\Support\Facades\Route::middleware(['web', 'auth', 'admin'])->group(base_path('routes/crm.php'));
             \Illuminate\Support\Facades\Route::middleware(['web', 'auth'])->group(base_path('routes/user.php'));
+            \Illuminate\Support\Facades\Route::middleware(['web'])->group(base_path('routes/web_manual_payment.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'event_admin_middleware' => \App\Http\Middleware\EventAdminMiddleware::class,
             'profile.complete' => 
             \App\Http\Middleware\RequireProfileComplete::class,
             'trainer' => \App\Http\Middleware\TrainerMiddleware::class,

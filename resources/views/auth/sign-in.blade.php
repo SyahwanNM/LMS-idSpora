@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -7,6 +7,7 @@
   <title>Sign In - idSPORA</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
   <style>
     body {
@@ -25,7 +26,8 @@
     }
 
     /* Background Decorations */
-    body::before, body::after {
+    body::before,
+    body::after {
       content: "";
       position: absolute;
       width: 500px;
@@ -51,8 +53,13 @@
     }
 
     @keyframes float {
-      0% { transform: translate(0, 0) scale(1); }
-      100% { transform: translate(40px, 40px) scale(1.05); }
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      100% {
+        transform: translate(40px, 40px) scale(1.05);
+      }
     }
 
     .main-container {
@@ -107,7 +114,7 @@
       width: 100%;
       max-width: 400px;
       height: auto;
-      filter: drop-shadow(0 15px 25px rgba(0,0,0,0.3));
+      filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.3));
     }
 
     .kiri-text {
@@ -123,7 +130,7 @@
     }
 
     .kiri-text p {
-      color: rgba(255,255,255,0.7);
+      color: rgba(255, 255, 255, 0.7);
       font-size: 1.2rem;
       font-weight: 300;
     }
@@ -142,13 +149,27 @@
     }
 
     @keyframes fadeInSide {
-      from { opacity: 0; transform: translateX(-40px); }
-      to { opacity: 1; transform: translateX(0); }
+      from {
+        opacity: 0;
+        transform: translateX(-40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     @keyframes fadeInSlideUp {
-      from { opacity: 0; transform: translateY(40px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .kanan h3 {
@@ -159,7 +180,7 @@
     }
 
     .subtitle {
-      color: rgba(255,255,255,0.6);
+      color: rgba(255, 255, 255, 0.6);
       margin-bottom: 35px;
       font-size: 1rem;
       text-align: center;
@@ -174,7 +195,7 @@
       margin-bottom: 10px;
       font-size: 0.95rem;
       font-weight: 500;
-      color: rgba(255,255,255,0.9);
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .form-control {
@@ -232,8 +253,13 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .garis:not(:empty)::before { margin-right: 1.5em; }
-    .garis:not(:empty)::after { margin-left: 1.5em; }
+    .garis:not(:empty)::before {
+      margin-right: 1.5em;
+    }
+
+    .garis:not(:empty)::after {
+      margin-left: 1.5em;
+    }
 
     .btn-google {
       background: white;
@@ -255,14 +281,14 @@
     .btn-google:hover {
       background: #f1f1f1;
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     }
 
     .text-login {
       margin-top: 30px;
       text-align: center;
       font-size: 0.95rem;
-      color: rgba(255,255,255,0.6);
+      color: rgba(255, 255, 255, 0.6);
     }
 
     .text-login a {
@@ -271,7 +297,9 @@
       text-decoration: none;
     }
 
-    .text-login a:hover { text-decoration: underline; }
+    .text-login a:hover {
+      text-decoration: underline;
+    }
 
     .input-group .btn-outline-light {
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -291,27 +319,46 @@
         padding: 100px 20px 60px;
         gap: 50px;
       }
+
       .kiri {
         margin-bottom: 0;
       }
-      .logo { max-width: 300px; }
-      .kanan { padding: 40px; }
-      .kiri-text h1 { font-size: 2.5rem; }
+
+      .logo {
+        max-width: 300px;
+      }
+
+      .kanan {
+        padding: 40px;
+      }
+
+      .kiri-text h1 {
+        font-size: 2.5rem;
+      }
     }
 
     @media (max-width: 576px) {
-      .kanan { padding: 30px; }
-      .kanan h3 { font-size: 1.8rem; }
-      .kiri-text h1 { font-size: 2rem; }
+      .kanan {
+        padding: 30px;
+      }
+
+      .kanan h3 {
+        font-size: 1.8rem;
+      }
+
+      .kiri-text h1 {
+        font-size: 2rem;
+      }
     }
   </style>
 </head>
 
 <body>
   <a href="{{ route('landing-page') }}" class="back">
-     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-     </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5M12 19l-7-7 7-7" />
+    </svg>
   </a>
   <div class="main-container">
     <div class="kiri">
@@ -325,14 +372,15 @@
       <form action="{{ route('login') }}" method="POST" novalidate id="signinForm">
         @csrf
         @php
-          $redirectTarget = old('redirect', request('redirect'));
+          $redirectTarget = old('redirect', request('redirect', request('return')));
         @endphp
         @if(!empty($redirectTarget))
           <input type="hidden" name="redirect" value="{{ $redirectTarget }}">
         @endif
 
         @if ($errors->any())
-          <div class="alert alert-danger" style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.2); border-radius: 15px; color: #ff8e97; padding: 15px; margin-bottom: 25px; font-size: 0.9rem;">
+          <div class="alert alert-danger"
+            style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.2); border-radius: 15px; color: #ff8e97; padding: 15px; margin-bottom: 25px; font-size: 0.9rem;">
             <ul class="mb-0" style="list-style: none; padding-left: 0;">
               @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
@@ -340,33 +388,39 @@
             </ul>
           </div>
         @endif
-        
+
         @if (session('success'))
-          <div class="alert alert-success" style="background: rgba(40, 167, 69, 0.1); border: 1px solid rgba(40, 167, 69, 0.2); border-radius: 15px; color: #72f38e; padding: 15px; margin-bottom: 25px; font-size: 0.9rem;">
+          <div class="alert alert-success"
+            style="background: rgba(40, 167, 69, 0.1); border: 1px solid rgba(40, 167, 69, 0.2); border-radius: 15px; color: #72f38e; padding: 15px; margin-bottom: 25px; font-size: 0.9rem;">
             {{ session('success') }}
           </div>
         @endif
 
         <div class="input-group-custom">
           <label>Email</label>
-          <input type="email" name="email" autocomplete="username" class="form-control" 
-                 value="{{ old('email') }}" placeholder="user@example.com" required>
+          <input type="email" name="email" autocomplete="username" class="form-control" value="{{ old('email') }}"
+            placeholder="user@example.com" required>
         </div>
 
         <div class="input-group-custom">
           <label>Password</label>
           <div class="input-group">
-            <input id="signin-password" type="password" name="password" autocomplete="current-password" class="form-control" placeholder="••••••••" required>
-            <button type="button" class="btn btn-outline-light" id="toggle-password" aria-label="Tampilkan/Sembunyikan Password">
-              <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                <circle cx="12" cy="12" r="3"/>
+            <input id="signin-password" type="password" name="password" autocomplete="current-password"
+              class="form-control" placeholder="••••••••" required>
+            <button type="button" class="btn btn-outline-light" id="toggle-password"
+              aria-label="Tampilkan/Sembunyikan Password">
+              <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                <circle cx="12" cy="12" r="3" />
               </svg>
-              <svg id="icon-eye-slash" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                <line x1="2" y1="2" x2="22" y2="22"/>
+              <svg id="icon-eye-slash" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                style="display:none;">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                <line x1="2" y1="2" x2="22" y2="22" />
               </svg>
             </button>
           </div>
@@ -383,6 +437,12 @@
             <a href="{{ route('forgot-password') }}">Forgot Password?</a>
           </div>
         </div>
+
+        @if(config('services.recaptcha.site_key'))
+          <div class="input-group-custom d-flex flex-column align-items-center mb-4">
+            <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}" data-theme="dark"></div>
+          </div>
+        @endif
 
         <button type="submit" class="btn-register">Sign In</button>
       </form>
@@ -401,13 +461,13 @@
   </div>
 
   <script>
-    (function(){
+    (function () {
       const input = document.getElementById('signin-password');
       const btn = document.getElementById('toggle-password');
       const eye = document.getElementById('icon-eye');
       const eyeSlash = document.getElementById('icon-eye-slash');
       if (input && btn && eye && eyeSlash) {
-        btn.addEventListener('click', function(){
+        btn.addEventListener('click', function () {
           const isHidden = input.type === 'password';
           input.type = isHidden ? 'text' : 'password';
           eye.style.display = isHidden ? 'none' : '';
@@ -415,7 +475,7 @@
         });
       }
     })();
-    (function(){
+    (function () {
       const emailInput = document.querySelector('input[name="email"]');
       const rememberCb = document.getElementById('remember');
       if (!emailInput || !rememberCb) return;
@@ -427,7 +487,7 @@
         }
         const form = emailInput.form;
         if (form) {
-          form.addEventListener('submit', function(){
+          form.addEventListener('submit', function () {
             if (rememberCb.checked) {
               localStorage.setItem('remember_email', emailInput.value || '');
             } else {
@@ -435,32 +495,57 @@
             }
           });
         }
-      } catch(e){}
+      } catch (e) { }
     })();
   </script>
   <script>
     // Validate all required fields at once
-    document.getElementById('signinForm')?.addEventListener('submit', function(e) {
-        const fields = this.querySelectorAll('[required]');
-        let hasError = false;
-        fields.forEach(function(field) {
-            field.style.borderColor = '';
-            const wrapper = field.closest('.input-group-custom') || field.parentNode;
-            const prev = wrapper.querySelector('.field-error');
-            if (prev) prev.remove();
+    document.getElementById('signinForm')?.addEventListener('submit', function (e) {
+      const fields = this.querySelectorAll('[required]');
+      let hasError = false;
 
-            if (!field.value.trim()) {
-                hasError = true;
-                field.style.borderColor = '#dc3545';
-                const err = document.createElement('small');
-                err.className = 'field-error';
-                err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;';
-                err.textContent = 'This field is required.';
-                wrapper.appendChild(err);
+      // Remove all old error messages and reset borders
+      this.querySelectorAll('.field-error').forEach(function (el) {
+        el.remove();
+      });
+      fields.forEach(function (field) {
+        field.style.borderColor = '';
+      });
+
+      fields.forEach(function (field) {
+        if (!field.value.trim()) {
+          hasError = true;
+          field.style.borderColor = '#dc3545';
+          const wrapper = field.closest('.input-group-custom') || field.parentNode;
+          const err = document.createElement('small');
+          err.className = 'field-error';
+          err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;';
+          err.textContent = 'This field is required.';
+          wrapper.appendChild(err);
+        }
+      });
+
+      @if(config('services.recaptcha.site_key'))
+        if (typeof grecaptcha !== 'undefined') {
+          const recaptchaResponse = grecaptcha.getResponse();
+          if (!recaptchaResponse) {
+            hasError = true;
+            const recaptchaContainer = document.querySelector('.g-recaptcha');
+            if (recaptchaContainer) {
+              const wrapper = recaptchaContainer.closest('.input-group-custom');
+              const err = document.createElement('small');
+              err.className = 'field-error';
+              err.style.cssText = 'color:#dc3545;font-size:12px;display:block;margin-top:4px;text-align:center;';
+              err.textContent = 'Please complete the reCAPTCHA verification.';
+              wrapper.appendChild(err);
             }
-        });
+          }
+        }
+      @endif
+
         if (hasError) e.preventDefault();
     });
   </script>
 </body>
+
 </html>

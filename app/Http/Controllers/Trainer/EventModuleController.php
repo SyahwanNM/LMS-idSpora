@@ -48,7 +48,7 @@ class EventModuleController extends Controller
                     'id'          => $m->id,
                     'name'        => $m->original_name,
                     'path'        => $m->path,
-                    'url'         => \Illuminate\Support\Facades\Storage::disk('public')->url($m->path),
+                    'url'         => $m->download_url,
                     'status'      => $m->status,
                     'uploaded_at' => $m->created_at?->toDateTimeString(),
                     'rejection_reason' => $m->rejection_reason,
@@ -89,7 +89,7 @@ class EventModuleController extends Controller
         }
 
         $request->validate([
-            'module' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
+            'module' => 'required|file|mimes:pdf,mp4,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
         ]);
 
         $file = $request->file('module');
@@ -97,35 +97,13 @@ class EventModuleController extends Controller
         $filename = time() . '_' . str_replace(' ', '_', $originalName);
         $path = $file->storeAs('events/modules/submissions/' . $event->id, $filename, 'public');
 
-        $event->update([
-            'module_path' => $path,
-            'module_submitted_at' => now(),
-            'material_status' => 'pending_review',
-            'material_approved_at' => null,
-            'material_approved_by' => null,
-            'material_rejection_reason' => null,
-            'module_verified_at' => null,
-            'module_verified_by' => null,
-            'module_rejected_at' => null,
-            'module_rejected_by' => null,
-            'module_rejection_reason' => null,
+        \App\Models\EventTrainerModule::create([
+            'event_id' => $event->id,
+            'trainer_id' => $user->id,
+            'original_name' => $originalName,
+            'path' => $path,
+            'status' => 'pending_review',
         ]);
-
-        // Update event material_status to pending_review if not already approved
-        if ($event->material_status !== 'approved') {
-            $event->update([
-                'material_status'          => 'pending_review',
-                'module_submitted_at'      => now(),
-                'module_verified_at'       => null,
-                'module_verified_by'       => null,
-                'module_rejected_at'       => null,
-                'module_rejected_by'       => null,
-                'module_rejection_reason'  => null,
-                'material_approved_at'     => null,
-                'material_approved_by'     => null,
-                'material_rejection_reason'=> null,
-            ]);
-        }
 
         return back()->with('success', 'Module berhasil diupload dan menunggu verifikasi admin.');
     }

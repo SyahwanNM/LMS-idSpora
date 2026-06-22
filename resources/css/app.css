@@ -7653,18 +7653,12 @@ textarea::placeholder {
     border-radius: 10px;
 }
 
-/* Sembunyikan semua tab content secara default, kecuali yang aktif */
-.tab-content {
+/* Custom tab panels (tanpa Bootstrap .tab-pane): sembunyikan kecuali .active */
+.tab-content:not(:has(.tab-pane)) {
     display: none;
 }
 
-/* Bootstrap tabs compatibility: show tab-content container.
-       (Bootstrap controls visibility via .tab-pane, not .tab-content.active) */
-.nav-tabs+.tab-content {
-    display: block;
-}
-
-.tab-content.active {
+.tab-content:not(:has(.tab-pane)).active {
     display: block;
     background-color: transparent;
 }
@@ -9402,4 +9396,24 @@ textarea::placeholder {
         flex-wrap: wrap !important;
         gap: 8px !important;
     }
+}
+
+/* Prevent global full-width .btn-secondary overrides inside modals */
+.modal-footer .btn-secondary,
+.modal-footer button.btn-secondary {
+    width: auto !important;
+    background: #6c757d !important;
+    border: none !important;
+    padding: .5rem 1.25rem !important;
+    font-size: .875rem !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.modal-footer .btn-secondary:hover,
+.modal-footer button.btn-secondary:hover {
+    background: #5a6268 !important;
+    transform: none !important;
 }

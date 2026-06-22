@@ -78,7 +78,7 @@ Route::get('/admin/preview-pendapatan', function () {
 
 // Admin dashboard (only for admin users)
 Route::middleware(['admin'])->group(function () {
-    Route::get('/admin/reseller', [ResellerController::class, 'admin'])->name('admin.reseller');
+    Route::get('/admin/reseller', [ResellerController::class, 'adminDashboard'])->name('admin.reseller');
     // Admin view: Pendapatan (financial breakdown)
     Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
         ->name('admin.view-pendapatan');
@@ -192,6 +192,12 @@ Route::middleware(['admin'])->group(function () {
     // Utility: resolve Google Maps short links to lat/lng
     Route::post('/admin/maps/resolve', [EventController::class, 'resolveMap'])->name('admin.maps.resolve');
 
+    // Event Daily Attendance Real-time Monitoring & Manual Check-in
+    Route::get('/admin/events/{event}/attendance/stats', [EventController::class, 'getAttendanceStats'])->name('admin.events.attendance.stats');
+    Route::post('/admin/events/{event}/registrations/{registration}/check-in', [EventController::class, 'manualCheckIn'])->name('admin.events.registrations.manual-check-in');
+    Route::post('/admin/events/{event}/registrations/{registration}/cancel-day', [EventController::class, 'cancelDailyAttendance'])->name('admin.events.registrations.cancel-day');
+    Route::post('/admin/events/{event}/registrations/{registration}/review-submission', [EventController::class, 'reviewSubmission'])->name('admin.events.submissions.review');
+
     // Quiz management routes
     Route::get('/admin/courses/{course}/modules/{module}/quiz', [QuizController::class, 'index'])->name('admin.courses.modules.quiz.index');
     Route::get('/admin/courses/{course}/modules/{module}/quiz/create', [QuizController::class, 'create'])->name('admin.courses.modules.quiz.create');
@@ -203,6 +209,7 @@ Route::middleware(['admin'])->group(function () {
 });
 Route::middleware(['auth', 'admin'])->group(function () {
     // Remove the default create route; use /admin/add-event (named admin.add-event) instead
+
     Route::resource('admin/events', \App\Http\Controllers\Admin\EventController::class, [
         'except' => ['create'],
         'names' => [

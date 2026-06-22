@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\EventRegistration;
+use App\Models\Voucher;
+use App\Models\VoucherRedemption;
+use App\Models\Course;
+use App\Models\Event;
 use App\Services\ProfileReminderService;
 use Carbon\Carbon;
 
@@ -29,8 +33,14 @@ class ProfileController extends Controller
             ->where('user_id', $user->id)
             ->whereIn('status', ['active', 'pending'])
             ->count();
+
+        $vouchers = Voucher::where('active', true)->get();
+        $myVouchers = VoucherRedemption::where('user_id', $user->id)
+            ->with('voucher')
+            ->orderBy('created_at', 'desc')
+            ->get();
         
-        return view('profile.index', compact('eventsCount', 'coursesCount'));
+        return view('profile.index', compact('eventsCount', 'coursesCount', 'vouchers', 'myVouchers'));
     }
     
     public function edit()
@@ -321,5 +331,158 @@ class ProfileController extends Controller
         $user->save();
         
         return redirect()->route('profile.account-settings')->with('success', 'Pengaturan akun berhasil diperbarui!');
+    }
+
+    public function redeemVoucher(Request $request, Voucher $voucher)
+    {
+        $user = Auth::user();
+
+        $alreadyRedeemed = VoucherRedemption::where('user_id', $user->id)
+            ->where('voucher_id', $voucher->id)
+            ->exists();
+        if ($alreadyRedeemed) {
+            return back()->with('error', 'Anda sudah menukarkan voucher ini.');
+        }
+
+        if ($user->points < $voucher->points_required) {
+            return back()->with('error', 'Poin Anda tidak cukup untuk menukarkan voucher ini.');
+        }
+
+        if (!$voucher->isValid()) {
+            return back()->with('error', 'Voucher ini tidak valid atau batas penukaran telah habis.');
+        }
+
+        $pointsService = app(\App\Services\UserPointsService::class);
+        $redemptionCode = 'IDSP-VCH-' . strtoupper(substr(md5(uniqid()), 0, 6));
+
+        DB::beginTransaction();
+        try {
+            $redemption = VoucherRedemption::create([
+                'user_id' => $user->id,
+                'voucher_id' => $voucher->id,
+                'code' => $redemptionCode,
+                'is_used' => false,
+                'redeemed_at' => now(),
+                'expires_at' => now()->addDays(30),
+            ]);
+
+            $pointsService->deductPoints(
+                $user, 
+                $voucher->points_required, 
+                'redemption', 
+                $redemption->id, 
+                "Penukaran voucher: " . $voucher->name
+            );
+
+            $voucher->increment('times_redeemed');
+
+            DB::commit();
+            return back()->with('success', 'Berhasil menukarkan voucher! Kode Anda: ' . $redemptionCode);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menukarkan voucher: ' . $e->getMessage());
+        }
+    }
+
+    public function checkVoucher(Request $request, Course $course)
+    {
+        $code = trim((string) $request->get('code'));
+        $user = Auth::user();
+
+        $redemption = VoucherRedemption::where('user_id', $user->id)
+            ->where('code', $code)
+            ->first();
+
+        if (!$redemption || !$redemption->isUsable()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Voucher tidak valid atau sudah kedaluwarsa.'
+            ]);
+        }
+
+        $voucher = $redemption->voucher;
+        $baseAmount = (float) ($course->hasDiscount() ? ($course->discounted_price ?? $course->price) : ($course->price ?? 0));
+
+        // Apply referral discount if valid referral code is provided
+        $referralCode = trim((string) $request->get('referral_code'));
+        if ($referralCode !== '' && (bool) ($course->is_reseller_course ?? false)) {
+            $referrer = User::query()->where('referral_code', $referralCode)->first();
+            if ($referrer && (int) $referrer->id !== (int) $user->id) {
+                $baseAmount = max(0.0, round($baseAmount * 0.90, 2));
+            }
+        }
+
+        if ($baseAmount < $voucher->min_purchase) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Minimal pembelian untuk menggunakan voucher ini adalah Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.'
+            ]);
+        }
+
+        $discount = $voucher->calculateDiscount($baseAmount);
+        $finalAmount = max(0.0, $baseAmount - $discount);
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Voucher berhasil diterapkan! Potongan Rp' . number_format($discount, 0, ',', '.'),
+            'discount' => (int) $discount,
+            'final_amount' => (int) $finalAmount
+        ]);
+    }
+
+    public function checkVoucherEvent(Request $request, Event $event)
+    {
+        $code = trim((string) $request->get('code'));
+        $user = Auth::user();
+
+        $redemption = VoucherRedemption::where('user_id', $user->id)
+            ->where('code', $code)
+            ->first();
+
+        if (!$redemption || !$redemption->isUsable()) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Voucher tidak valid atau sudah kedaluwarsa.'
+            ]);
+        }
+
+        $voucher = $redemption->voucher;
+
+        $attendanceType = strtolower(trim((string) $request->query('attendance_type', $request->input('attendance_type', 'offline'))));
+        $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link) && ($event->price_offline > 0 || $event->price_online > 0);
+
+        if ($isHybridEvent) {
+            $rawHybridPrice = $attendanceType === 'online' ? (float) ($event->price_online ?? 0) : (float) ($event->price_offline ?? 0);
+            $discountPct = ($event->hasDiscount()) ? (float) ($event->discount_percentage ?? 0) : 0.0;
+            $baseAmount = $discountPct > 0 ? round($rawHybridPrice * (1 - $discountPct / 100), 2) : $rawHybridPrice;
+        } else {
+            $baseAmount = (float) ($event->hasDiscount() ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+        }
+
+        // Apply referral discount if valid referral code is provided
+        $referralCode = trim((string) $request->get('referral_code'));
+        if ($referralCode !== '' && (bool) ($event->is_reseller_event ?? false)) {
+            $referrer = User::query()->where('referral_code', $referralCode)->first();
+            if ($referrer && (int) $referrer->id !== (int) $user->id) {
+                $baseAmount = max(0.0, round($baseAmount * 0.90, 2));
+            }
+        }
+
+        if ($baseAmount < $voucher->min_purchase) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Minimal pembelian untuk menggunakan voucher ini adalah Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.'
+            ]);
+        }
+
+        $discount = $voucher->calculateDiscount($baseAmount);
+        $finalAmount = max(0.0, $baseAmount - $discount);
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Voucher berhasil diterapkan! Potongan Rp' . number_format($discount, 0, ',', '.'),
+            'discount' => (int) $discount,
+            'final_amount' => (int) $finalAmount
+        ]);
     }
 }

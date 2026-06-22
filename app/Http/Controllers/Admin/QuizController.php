@@ -51,6 +51,15 @@ class QuizController extends Controller
                 'completed' => true,
             ]
         );
+
+        try {
+            $user = \App\Models\User::find($attempt->user_id);
+            if ($user) {
+                $enrollment->checkAndComplete($user);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Error checking course completion in Admin/QuizController: ' . $e->getMessage());
+        }
     }
 
     // Admin methods for managing quiz questions

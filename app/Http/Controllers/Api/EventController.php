@@ -161,14 +161,39 @@ class EventController extends Controller
 
         return $this->jsonSuccess('Detail Event', new EventResource($event));
     }
-    
-   public function register(Request $request, $id)
+
+    public function register(Request $request, $id)
     {
         $user = $request->user();
         $validated = $request->validate([
+            'full_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'whatsapp_number' => 'nullable|string|max:20',
             'referral_code' => 'nullable|string|max:64',
         ]);
+
+        // Fallback ke data user jika field tidak dikirim / kosong
+        $validated['full_name'] = $validated['full_name'] ?: $user->name;
+        $validated['email'] = $validated['email'] ?: $user->email;
+        $validated['whatsapp_number'] = $validated['whatsapp_number'] ?: $user->phone;
+
         $event = Event::find($id);
+
+        // Sync profil user dengan data yang dikirim
+        $profileUpdates = [];
+        if ($validated['full_name'] !== $user->name) {
+            $profileUpdates['name'] = $validated['full_name'];
+        }
+        if ($validated['email'] !== $user->email) {
+            $profileUpdates['email'] = $validated['email'];
+        }
+        if ($validated['whatsapp_number'] !== $user->phone) {
+            $profileUpdates['phone'] = $validated['whatsapp_number'];
+        }
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
 
         // 1. Validasi Event
         if (!$event) {
@@ -184,6 +209,17 @@ class EventController extends Controller
         // 1b. Cek apakah event sudah selesai
         if (method_exists($event, 'isFinished') && $event->isFinished()) {
             return $this->jsonError('Event sudah selesai, pendaftaran ditutup.', 422);
+        }
+
+        // 1c. Cek kuota peserta
+        if (!empty($event->max_participants)) {
+            $filledSlots = \App\Models\EventRegistration::query()
+                ->where('event_id', $event->id)
+                ->whereIn('status', ['active', 'pending'])
+                ->count();
+            if ($filledSlots >= (int) $event->max_participants) {
+                return $this->jsonError('Kuota peserta sudah penuh.', 422);
+            }
         }
 
         // 2. Hitung Harga (jangan treat discounted_price null sebagai gratis)
@@ -303,7 +339,7 @@ class EventController extends Controller
 
             // 5. JIKA BERBAYAR -> Arahkan ke Manual Payment
             // Tidak perlu panggil Midtrans. User akan upload bukti bayar nanti.
-           
+
             // 6. Track in Finance (ManualPayment Trace)
             ManualPayment::query()->create([
                 'event_id' => $event->id,
@@ -335,12 +371,12 @@ class EventController extends Controller
                 201
             );
 
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return $this->jsonError('Gagal memproses pendaftaran: ' . $e->getMessage(), 500);
-            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->jsonError('Gagal memproses pendaftaran: ' . $e->getMessage(), 500);
         }
-    
+    }
+
     /**
      * Cek status pendaftaran event untuk user saat ini.
      */
@@ -449,7 +485,7 @@ class EventController extends Controller
                 ->where('event_id', $event->id)
                 ->where('event_registration_id', $registration->id)
                 ->where('user_id', $user->id)
-                    ->whereIn('status', ['pending', 'rejected', 'expired'])
+                ->whereIn('status', ['pending', 'rejected', 'expired'])
                 ->latest('id')
                 ->first();
 
@@ -580,7 +616,7 @@ class EventController extends Controller
      */
     public function submitFeedback(Request $request, $id)
     {
-        $user  = $request->user();
+        $user = $request->user();
         $event = Event::find($id);
 
         if (!$event) {
@@ -601,16 +637,16 @@ class EventController extends Controller
         }
 
         $validated = $request->validate([
-            'rating'         => 'required|integer|min:1|max:5',
-            'feedback_text'  => 'nullable|string|max:1000',
+            'rating' => 'required|integer|min:1|max:5',
+            'feedback_text' => 'nullable|string|max:1000',
             'speaker_rating' => 'nullable|integer|min:1|max:5',
         ]);
 
         \App\Models\Feedback::create([
-            'event_id'       => $event->id,
-            'user_id'        => $user->id,
-            'rating'         => $validated['rating'],
-            'comment'        => $validated['feedback_text'] ?? null,
+            'event_id' => $event->id,
+            'user_id' => $user->id,
+            'rating' => $validated['rating'],
+            'comment' => $validated['feedback_text'] ?? null,
             'speaker_rating' => $validated['speaker_rating'] ?? null,
         ]);
 
@@ -628,7 +664,7 @@ class EventController extends Controller
      */
     public function materials(Request $request, $id)
     {
-        $user  = $request->user();
+        $user = $request->user();
         $event = Event::find($id);
 
         if (!$event) {
@@ -644,8 +680,9 @@ class EventController extends Controller
             return $this->jsonError('Anda tidak terdaftar di event ini', 403);
         }
 
-        if (!method_exists($event, 'isFinished') || !$event->isFinished()) {
-            return $this->jsonError('Materi tersedia setelah event selesai', 403);
+        $startAt = $event->start_at;
+        if (!$startAt || now()->lt($startAt)) {
+            return $this->jsonError('Materi tersedia setelah event dimulai', 403);
         }
 
         $modules = \App\Models\EventTrainerModule::where('event_id', $event->id)
@@ -653,11 +690,11 @@ class EventController extends Controller
             ->with('trainer:id,name')
             ->get()
             ->map(fn($m) => [
-                'id'            => $m->id,
+                'id' => $m->id,
                 'original_name' => $m->original_name,
-                'download_url'  => route('events.modules.download', [$event->id, 'module_id' => $m->id]),
-                'trainer'       => $m->trainer ? ['id' => $m->trainer->id, 'name' => $m->trainer->name] : null,
-                'uploaded_at'   => $m->created_at?->toISOString(),
+                'download_url' => route('events.modules.download', [$event->id, 'module_id' => $m->id]),
+                'trainer' => $m->trainer ? ['id' => $m->trainer->id, 'name' => $m->trainer->name] : null,
+                'uploaded_at' => $m->created_at?->toISOString(),
             ]);
 
         return $this->jsonSuccess('Materi event', $modules);
@@ -675,7 +712,7 @@ class EventController extends Controller
      */
     public function midtransSnapToken(Request $request, $id): JsonResponse
     {
-        $user  = $request->user();
+        $user = $request->user();
         $event = Event::find($id);
 
         if (!$event) {
@@ -698,17 +735,19 @@ class EventController extends Controller
             return $this->jsonError('Event ini gratis, tidak perlu Midtrans.', 400);
         }
 
-        $forceNew       = $request->boolean('force_new', false);
-        $rawReferral    = trim((string) $request->input('referral_code', ''));
-        $referrer       = (bool) ($event->is_reseller_event ?? false)
+        $forceNew = $request->boolean('force_new', false);
+        $rawReferral = trim((string) $request->input('referral_code', ''));
+        $referrer = (bool) ($event->is_reseller_event ?? false)
             ? $this->resolveValidReferrer($user, $rawReferral)
             : null;
-        $referralCode   = $referrer ? $rawReferral : null;
-        $finalAmount    = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
+        $referralCode = $referrer ? $rawReferral : null;
+        $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
-        $dial  = trim((string) $request->input('dial_code', ''));
-        $wa    = trim((string) $request->input('whatsapp', ''));
+        $dial = trim((string) $request->input('dial_code', ''));
+        $wa = trim((string) $request->input('whatsapp', ''));
         $phone = trim($dial . $wa) ?: (string) ($user->phone ?? '');
+        $fullName = trim((string) $request->input('full_name', '')) ?: (string) ($user->name ?? 'User');
+        $email = trim((string) $request->input('email', '')) ?: (string) ($user->email ?? '');
 
         DB::beginTransaction();
         try {
@@ -724,14 +763,14 @@ class EventController extends Controller
 
             if (!$registration) {
                 $registration = EventRegistration::create([
-                    'user_id'           => $user->id,
-                    'event_id'          => $event->id,
-                    'status'            => 'pending',
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'status' => 'pending',
                     'registration_code' => 'EVT-' . strtoupper(uniqid()),
-                    'total_price'       => $finalAmount,
+                    'total_price' => $finalAmount,
                 ]);
             } else {
-                $registration->status      = 'pending';
+                $registration->status = 'pending';
                 $registration->total_price = $finalAmount;
                 $registration->save();
             }
@@ -753,18 +792,18 @@ class EventController extends Controller
                     DB::commit();
 
                     return $this->jsonSuccess('Lanjutkan pembayaran yang tertunda.', [
-                        'snap_token'    => $existingToken,
-                        'order_id'      => $payment->order_id,
-                        'amount'        => (int) round((float) $payment->amount),
-                        'client_key'    => (string) config('midtrans.client_key'),
+                        'snap_token' => $existingToken,
+                        'order_id' => $payment->order_id,
+                        'amount' => (int) round((float) $payment->amount),
+                        'client_key' => (string) config('midtrans.client_key'),
                         'is_production' => (bool) config('midtrans.is_production', false),
-                        'is_continue'   => true,
+                        'is_continue' => true,
                     ]);
                 }
             }
 
             if ($payment && $forceNew) {
-                $payment->status           = 'rejected';
+                $payment->status = 'rejected';
                 $payment->rejection_reason = 'Diganti karena membuat transaksi Midtrans baru.';
                 $payment->save();
                 $payment = null;
@@ -772,41 +811,43 @@ class EventController extends Controller
 
             $orderId = 'MT-EVT-' . strtoupper(uniqid());
             $payment = ManualPayment::create([
-                'event_id'              => $event->id,
+                'event_id' => $event->id,
                 'event_registration_id' => $registration->id,
-                'user_id'               => $user->id,
-                'order_id'              => $orderId,
-                'amount'                => $finalAmount,
-                'currency'              => 'IDR',
-                'method'                => 'midtrans',
-                'status'                => 'pending',
-                'whatsapp_number'       => $phone ?: null,
-                'referral_code'         => $referralCode,
-                'metadata'              => [
-                    'source'        => 'event',
-                    'base_amount'   => $baseAmount,
+                'user_id' => $user->id,
+                'order_id' => $orderId,
+                'amount' => $finalAmount,
+                'currency' => 'IDR',
+                'method' => 'midtrans',
+                'status' => 'pending',
+                'whatsapp_number' => $phone ?: null,
+                'referral_code' => $referralCode,
+                'metadata' => [
+                    'source' => 'event',
+                    'base_amount' => $baseAmount,
                     'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
-                    'event_id'      => $event->id,
-                    'event_title'   => $event->title,
+                    'event_id' => $event->id,
+                    'event_title' => $event->title,
                 ],
             ]);
 
             $grossAmount = (int) round($finalAmount);
-            $snapParams  = [
+            $snapParams = [
                 'transaction_details' => [
-                    'order_id'     => $orderId,
+                    'order_id' => $orderId,
                     'gross_amount' => $grossAmount,
                 ],
-                'item_details' => [[
-                    'id'       => 'event-' . $event->id,
-                    'price'    => $grossAmount,
-                    'quantity' => 1,
-                    'name'     => (string) ($event->title ?? 'Event'),
-                ]],
+                'item_details' => [
+                    [
+                        'id' => 'event-' . $event->id,
+                        'price' => $grossAmount,
+                        'quantity' => 1,
+                        'name' => (string) ($event->title ?? 'Event'),
+                    ]
+                ],
                 'customer_details' => [
-                    'first_name' => (string) ($user->name ?? 'User'),
-                    'email'      => (string) ($user->email ?? ''),
-                    'phone'      => $phone,
+                    'first_name' => $fullName,
+                    'email' => $email,
+                    'phone' => $phone,
                 ],
                 'callbacks' => [
                     'finish' => route('payment.finish'),
@@ -816,7 +857,7 @@ class EventController extends Controller
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
 
             $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
-                'snap_token'            => $snapToken,
+                'snap_token' => $snapToken,
                 'snap_token_created_at' => now()->toIso8601String(),
             ]);
             $payment->save();
@@ -824,10 +865,10 @@ class EventController extends Controller
             DB::commit();
 
             return $this->jsonSuccess('Snap token berhasil dibuat.', [
-                'snap_token'    => $snapToken,
-                'order_id'      => $orderId,
-                'amount'        => $grossAmount,
-                'client_key'    => (string) config('midtrans.client_key'),
+                'snap_token' => $snapToken,
+                'order_id' => $orderId,
+                'amount' => $grossAmount,
+                'client_key' => (string) config('midtrans.client_key'),
                 'is_production' => (bool) config('midtrans.is_production', false),
             ]);
         } catch (\Throwable $e) {
@@ -845,7 +886,7 @@ class EventController extends Controller
      */
     public function midtransFinalize(Request $request, $id): JsonResponse
     {
-        $user  = $request->user();
+        $user = $request->user();
         $event = Event::find($id);
 
         if (!$event) {
@@ -869,19 +910,40 @@ class EventController extends Controller
 
         try {
             $this->configureMidtrans();
-            $midtransStatus = (array) \Midtrans\Transaction::status($orderId);
+            try {
+                $midtransStatus = (array) \Midtrans\Transaction::status($orderId);
+                $ts = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
+                $fs = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
+                $internalStatus = $this->mapMidtransStatus($ts, $fs);
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
 
-            $ts             = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
-            $fs             = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
-            $internalStatus = $this->mapMidtransStatus($ts, $fs);
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $midtransStatus = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $midtransStatus = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
 
-            $wasSettled    = $payment->status === 'settled';
-            $payment->status   = $internalStatus;
+            $wasSettled = $payment->status === 'settled';
+            $payment->status = $internalStatus;
             $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
                 'midtrans_status' => $midtransStatus,
-                'finalized_at'    => now()->toIso8601String(),
+                'finalized_at' => now()->toIso8601String(),
             ]);
             $payment->save();
 
@@ -891,9 +953,9 @@ class EventController extends Controller
                     : null;
 
                 if ($registration && $registration->status !== 'active') {
-                    $registration->status               = 'active';
-                    $registration->payment_verified_at  = now();
-                    $registration->payment_verified_by  = null;
+                    $registration->status = 'active';
+                    $registration->payment_verified_at = now();
+                    $registration->payment_verified_by = null;
                     $registration->save();
                 }
 
@@ -916,7 +978,7 @@ class EventController extends Controller
 
             return $this->jsonSuccess('Status pembayaran diperbarui.', [
                 'order_id' => $orderId,
-                'status'   => $internalStatus,
+                'status' => $internalStatus,
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -933,7 +995,7 @@ class EventController extends Controller
      */
     public function midtransPendingOrder(Request $request, $id): JsonResponse
     {
-        $user  = $request->user();
+        $user = $request->user();
         $event = Event::find($id);
 
         if (!$event) {
@@ -952,19 +1014,20 @@ class EventController extends Controller
         if ($payment && $payment->order_id) {
             // Cek umur snap token — Midtrans return 404 jika user belum membuka popup
             // sama sekali (transaksi belum diinisiasi di sisi Midtrans). Ini normal
-            // selama token masih dalam masa berlaku (< 24 jam).
-            $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-            $tokenAgeHours  = $tokenCreatedAt
-                ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+            // selama token masih dalam masa berlaku (< expiry duration).
+            $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+            $tokenAgeMinutes = $tokenCreatedAt
+                ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                 : 0;
-            $tokenStillValid = $tokenAgeHours < 24;
+            
+            $tokenStillValid = $tokenAgeMinutes < 5;
 
             try {
                 $this->configureMidtrans();
                 $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
-                $ts             = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
-                $fs             = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
-                $actualStatus   = $this->mapMidtransStatus($ts, $fs);
+                $ts = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
+                $fs = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
+                $actualStatus = $this->mapMidtransStatus($ts, $fs);
 
                 if ($actualStatus !== 'pending') {
                     $payment->status = $actualStatus;
@@ -988,11 +1051,11 @@ class EventController extends Controller
                     // Token masih valid dan user belum membuka popup Midtrans sama sekali.
                     // Midtrans belum mengenal order ini → biarkan tetap pending, jangan expired.
                     Log::info('midtransPendingOrder: 404 dari Midtrans tapi token masih valid, biarkan pending.', [
-                        'order_id'        => $payment->order_id,
-                        'token_age_hours' => $tokenAgeHours,
+                        'order_id' => $payment->order_id,
+                        'token_age_minutes' => $tokenAgeMinutes,
                     ]);
                 } elseif ($is404 && !$tokenStillValid) {
-                    // Token sudah > 24 jam dan Midtrans tidak mengenal order → benar-benar expired.
+                    // Token sudah expired dan Midtrans tidak mengenal order → benar-benar expired.
                     $payment->status = 'expired';
                     $payment->save();
                     $reg = EventRegistration::find($payment->event_registration_id);
@@ -1027,13 +1090,13 @@ class EventController extends Controller
         }
 
         return $this->jsonSuccess('Status pending order.', [
-            'pending'          => (bool) $payment,
-            'order_id'         => $payment?->order_id,
-            'amount'           => $payment ? (int) round((float) $payment->amount) : null,
-            'snap_token'       => $snapToken,
-            'whatsapp_number'  => $payment?->whatsapp_number,
-            'referral_code'    => $payment?->referral_code,
-            'needs_force_new'  => $registrationExpired && !$payment,
+            'pending' => (bool) $payment,
+            'order_id' => $payment?->order_id,
+            'amount' => $payment ? (int) round((float) $payment->amount) : null,
+            'snap_token' => $snapToken,
+            'whatsapp_number' => $payment?->whatsapp_number,
+            'referral_code' => $payment?->referral_code,
+            'needs_force_new' => $registrationExpired && !$payment,
         ]);
     }
 
@@ -1047,10 +1110,10 @@ class EventController extends Controller
         if (trim($serverKey) === '') {
             throw new \RuntimeException('Midtrans server key belum dikonfigurasi.');
         }
-        \Midtrans\Config::$serverKey    = $serverKey;
+        \Midtrans\Config::$serverKey = $serverKey;
         \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
-        \Midtrans\Config::$isSanitized  = (bool) config('midtrans.sanitize', true);
-        \Midtrans\Config::$is3ds        = (bool) config('midtrans.3ds', true);
+        \Midtrans\Config::$isSanitized = (bool) config('midtrans.sanitize', true);
+        \Midtrans\Config::$is3ds = (bool) config('midtrans.3ds', true);
     }
 
     private function mapMidtransStatus(string $ts, string $fs): string
@@ -1058,9 +1121,12 @@ class EventController extends Controller
         if ($ts === 'capture') {
             return $fs === 'challenge' ? 'pending' : 'settled';
         }
-        if ($ts === 'settlement') return 'settled';
-        if ($ts === 'pending')    return 'pending';
-        if ($ts === 'expire')     return 'expired';
+        if ($ts === 'settlement')
+            return 'settled';
+        if ($ts === 'pending')
+            return 'pending';
+        if ($ts === 'expire')
+            return 'expired';
         return 'rejected';
     }
 
@@ -1076,7 +1142,8 @@ class EventController extends Controller
         }
 
         $commission = ((float) $payment->amount) * self::REFERRAL_DISCOUNT_RATE;
-        if ($commission <= 0) return;
+        if ($commission <= 0)
+            return;
 
         $exists = Referral::query()
             ->where('user_id', $referrer->id)
@@ -1084,14 +1151,15 @@ class EventController extends Controller
             ->where('description', 'Komisi Event: ' . $event->title)
             ->exists();
 
-        if ($exists) return;
+        if ($exists)
+            return;
 
         Referral::create([
-            'user_id'          => $referrer->id,
+            'user_id' => $referrer->id,
             'referred_user_id' => $payment->user_id,
-            'amount'           => $commission,
-            'status'           => 'paid',
-            'description'      => 'Komisi Event: ' . $event->title,
+            'amount' => $commission,
+            'status' => 'paid',
+            'description' => 'Komisi Event: ' . $event->title,
         ]);
 
         $referrer->increment('wallet_balance', $commission);
@@ -1106,14 +1174,15 @@ class EventController extends Controller
                 ->where('data->order_id', $payment->order_id)
                 ->exists();
 
-            if ($exists) return;
+            if ($exists)
+                return;
 
             UserNotification::create([
-                'user_id'    => $payment->user_id,
-                'type'       => 'event_registration_midtrans_success',
-                'title'      => 'Pendaftaran Dikonfirmasi',
-                'message'    => 'Anda berhasil terdaftar di event "' . ($event->title ?? 'Event') . '".',
-                'data'       => [
+                'user_id' => $payment->user_id,
+                'type' => 'event_registration_midtrans_success',
+                'title' => 'Registration Confirmed',
+                'message' => 'You have successfully registered for the event "' . ($event->title ?? 'Event') . '".',
+                'data' => [
                     'event_id' => $event->id,
                     'order_id' => $payment->order_id,
                 ],
@@ -1122,7 +1191,7 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             Log::warning('Failed to create midtrans event success notification', [
                 'order_id' => $payment->order_id,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }

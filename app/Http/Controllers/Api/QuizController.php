@@ -38,6 +38,14 @@ class QuizController extends Controller
             ['user_id' => $attempt->user_id, 'course_module_id' => $module->id],
             ['completed_at' => $attempt->completed_at ?? now(), 'course_id' => $course->id]
         );
+
+        $enrollment = Enrollment::where('user_id', $attempt->user_id)
+            ->where('course_id', $course->id)
+            ->first();
+        if ($enrollment) {
+            $user = User::find($attempt->user_id);
+            $enrollment->checkAndComplete($user);
+        }
     }
 
     // -------------------------------------------------------------------------

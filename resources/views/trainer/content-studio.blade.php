@@ -1,5 +1,8 @@
 @php
     $isAdmin = $isAdmin ?? false;
+    $moduleLocked = $isAdmin ? !($schemePermissions['can_module'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_module'] ?? false));
+    $videoLocked = $isAdmin ? !($schemePermissions['can_video'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_video'] ?? false));
+    $quizLocked = $isAdmin ? !($schemePermissions['can_quiz'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_quiz'] ?? false));
 @endphp
 @extends($isAdmin ? 'layouts.admin-trainer' : 'layouts.trainer')
 
@@ -3861,7 +3864,7 @@ main.detail-course {
     <main class="content-studio-main">
         <header class="studio-header">
             <div class="studio-title-wrap">
-                <a class="back-btn" href="{{ route('trainer.detail-course', $course->id) }}">
+                <a class="back-btn" href="{{ $isAdmin ? route('admin.trainer.studio.list') : route('trainer.detail-course', $course->id) }}">
                     <i class="bi bi-arrow-left"></i>
                 </a>
                 <div>
@@ -3872,19 +3875,28 @@ main.detail-course {
 
             <div class="studio-tabs" role="tablist">
                 <button
-                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
-                    data-tab="module" type="button" {{ (!$isAdmin && (!$schemePermissions['can_module'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ $moduleLocked ? 'is-locked' : '' }}"
+                    data-tab="module" type="button" {{ $moduleLocked ? 'data-locked="1"' : '' }}>
                     MODUL
+                    @if($moduleLocked)
+                        <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
+                    @endif
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
-                    data-tab="video" type="button" {{ (!$isAdmin && (!$schemePermissions['can_video'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ $videoLocked ? 'is-locked' : '' }}"
+                    data-tab="video" type="button" {{ $videoLocked ? 'data-locked="1"' : '' }}>
                     VIDEO
+                    @if($videoLocked)
+                        <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
+                    @endif
                 </button>
                 <button
-                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'is-locked' : '' }}"
-                    data-tab="quiz" type="button" {{ (!$isAdmin && (!$schemePermissions['can_quiz'] || $courseMaterialLocked)) ? 'data-locked="1"' : '' }}>
+                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ $quizLocked ? 'is-locked' : '' }}"
+                    data-tab="quiz" type="button" {{ $quizLocked ? 'data-locked="1"' : '' }}>
                     PENYUSUNAN QUIZ
+                    @if($quizLocked)
+                        <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
+                    @endif
                 </button>
             </div>
         </header>
@@ -3979,7 +3991,12 @@ main.detail-course {
 
                         <div class="text-upload-shell">
                             <div class="text-upload-header">
-                                <h3>Tulis Materi Seperti Modul Teks</h3>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-sm);">
+                                    <h3>Tulis Materi Seperti Modul Teks</h3>
+                                    <button type="button" class="btn-propose" data-bs-toggle="modal" data-bs-target="#styleGuideModal" style="border: 1.5px solid var(--main-navy-clr, #1a1d78); color: var(--main-navy-clr, #1a1d78); font-weight: 700; height: 34px; padding: 0 var(--spacing-md); font-size: 0.72rem; border-radius: 8px;">
+                                        <i class="bi bi-journal-text" style="color: var(--yellow-clr, #ffcd00);"></i> STYLE GUIDE
+                                    </button>
+                                </div>
                                 <p>Susun penjelasan materi dalam bentuk teks, lalu sisipkan gambar jika perlu supaya materi
                                     lebih mudah dipahami admin dan peserta.</p>
                                 <ul class="material-outline">
@@ -3992,26 +4009,26 @@ main.detail-course {
                             <div class="text-editor-block">
                                 <p class="text-editor-label mb-2">Editor Materi</p>
                                 <div class="wysiwyg-toolbar" id="wysiwygToolbar">
-                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-type-bold"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic" {{ $courseMaterialLocked ? 'disabled' : '' }}><i
+                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-type-bold"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic" {{ $moduleLocked ? 'disabled' : '' }}><i
                                             class="bi bi-type-italic"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1" {{ $courseMaterialLocked ? 'disabled' : '' }}>H1</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2" {{ $courseMaterialLocked ? 'disabled' : '' }}>H2</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3" {{ $courseMaterialLocked ? 'disabled' : '' }}>H3</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-list-ul"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-image"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri" {{ $courseMaterialLocked ? 'disabled' : '' }}><i class="bi bi-text-left"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1" {{ $moduleLocked ? 'disabled' : '' }}>H1</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2" {{ $moduleLocked ? 'disabled' : '' }}>H2</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3" {{ $moduleLocked ? 'disabled' : '' }}>H3</button>
+                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-list-ul"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-image"></i></button>
+                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-text-left"></i></button>
                                     <button type="button" class="wysiwyg-btn" data-action="align-center"
                                         title="Rata Tengah"><i class="bi bi-text-center"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-right" {{ $courseMaterialLocked ? 'disabled' : '' }} title="Rata Kanan"><i
+                                    <button type="button" class="wysiwyg-btn" data-action="align-right" {{ $moduleLocked ? 'disabled' : '' }} title="Rata Kanan"><i
                                             class="bi bi-text-right"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="code" {{ $courseMaterialLocked ? 'disabled' : '' }} title="Insert Code Block"><i
+                                    <button type="button" class="wysiwyg-btn" data-action="code" {{ $moduleLocked ? 'disabled' : '' }} title="Insert Code Block"><i
                                             class="bi bi-code-square"></i></button>
                                 </div>
-                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" {{ $courseMaterialLocked ? 'disabled' : '' }} />
+                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" {{ $moduleLocked ? 'disabled' : '' }} />
                                 <div id="moduleWysiwygEditor" class="wysiwyg-editor"
-                                    contenteditable="{{ $courseMaterialLocked ? 'false' : 'true' }}" spellcheck="true"
-                                    style="{{ $courseMaterialLocked ? 'pointer-events:none; opacity:.72; background:#f8fafc;' : '' }}">
+                                    contenteditable="{{ $moduleLocked ? 'false' : 'true' }}" spellcheck="true"
+                                    style="{{ $moduleLocked ? 'pointer-events:none; opacity:.72; background:#f8fafc;' : '' }}">
                                     <p>Tulis pengantar materi di sini...</p>
                                 </div>
                                 <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk menyisipkan gambar
@@ -4024,7 +4041,7 @@ main.detail-course {
                             <button type="button" class="secondary-btn" id="previewModuleBtn">
                                 <i class="bi bi-eye"></i> PREVIEW MODUL
                             </button>
-                            <button type="submit" id="uploadSubmitBtn" class="primary-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_module']) ? 'disabled' : '' }}>
+                            <button type="submit" id="uploadSubmitBtn" class="primary-btn" {{ $moduleLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-cloud-arrow-up-fill"></i> SIMPAN MATERI TEKS
                             </button>
                         </div>
@@ -4063,9 +4080,9 @@ main.detail-course {
                             </div>
 
                             <div class="dropzone" id="videoDropzone"
-                                style="{{ $courseMaterialLocked ? 'pointer-events:none; opacity:.72;' : '' }}">
+                                style="{{ $videoLocked ? 'pointer-events:none; opacity:.72;' : '' }}">
                                 <input type="file" id="videoFileInput" multiple accept=".mp4" name="files[]"
-                                    style="display: none" {{ $courseMaterialLocked ? 'disabled' : '' }} />
+                                    style="display: none" {{ $videoLocked ? 'disabled' : '' }} />
                                 <i class="bi bi-camera-video"></i>
                                 <h2>Lampiran Video</h2>
                                 <p>Format: MP4</p>
@@ -4137,7 +4154,7 @@ main.detail-course {
                                                 onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                 <i class="bi bi-eye-fill"></i>
                                             </button>
-                                            <button type="button" class="select-replace-btn" {{ $courseMaterialLocked ? 'disabled' : '' }} data-module-id="{{ $material->id }}" data-module-type="video"
+                                            <button type="button" class="select-replace-btn" {{ $videoLocked ? 'disabled' : '' }} data-module-id="{{ $material->id }}" data-module-type="video"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
                                                 title="Ganti File"
                                                 style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
@@ -4151,7 +4168,7 @@ main.detail-course {
                         </div>
 
                         <div class="panel-footer">
-                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn" {{ ($courseMaterialLocked || !$schemePermissions['can_video']) ? 'disabled' : '' }}>
+                            <button type="submit" class="primary-btn" id="videoUploadSubmitBtn" {{ $videoLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-send"></i> SUBMIT FOR REVIEW
                             </button>
                         </div>
@@ -4237,7 +4254,7 @@ main.detail-course {
                                                     {{ $isFilledQuiz ? 'Tersimpan' : 'Belum Diisi' }}
                                                 </span>
                                                 <button type="button" class="quiz-edit-btn" data-module-id="{{ $quizModule->id }}"
-                                                    {{ $courseMaterialLocked ? 'disabled' : '' }}
+                                                    {{ $quizLocked ? 'disabled' : '' }}
                                                     title="{{ $isFilledQuiz ? 'Edit Quiz' : 'Buat Quiz' }}"
                                                     style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 6px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
@@ -4314,10 +4331,10 @@ main.detail-course {
                         </div>
 
                         <div class="quiz-actions" style="margin-top: 24px;">
-                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_quiz']) ? 'disabled' : '' }}>
+                            <button type="button" id="addQuestionBtn" class="primary-btn quiz-add-btn" {{ $quizLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-plus-lg"></i> TAMBAH SOAL
                             </button>
-                            <button type="submit" class="primary-btn quiz-save-btn" {{ ($courseMaterialLocked || !$schemePermissions['can_quiz']) ? 'disabled' : '' }}>
+                            <button type="submit" class="primary-btn quiz-save-btn" {{ $quizLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-check-lg"></i> SIMPAN QUIZ
                             </button>
                         </div>
@@ -5786,6 +5803,100 @@ main.detail-course {
             });
         });
     </script>
+
+    <!-- Modal Style Guide (Panduan Gaya Penulisan Editor) -->
+    <div class="modal fade" id="styleGuideModal" tabindex="-1" aria-labelledby="styleGuideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 18px 24px;">
+                    <h5 class="modal-title" id="styleGuideModalLabel" style="font-weight: 800; color: #1a1d78; display: flex; align-items: center; gap: 8px; margin: 0;">
+                        <i class="bi bi-journal-text" style="color: #ffcd00; font-size: 1.35rem;"></i> Panduan Gaya Penulisan Editor (Style Guide)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 24px 32px; color: #334155; font-size: 0.92rem; line-height: 1.6; max-height: 65vh; overflow-y: auto;">
+                    <p style="font-weight: 500; margin-bottom: 20px; color: #64748b;">
+                        Gunakan panduan visual ini untuk memastikan materi pembelajaran yang Anda buat di editor teks seragam, rapi, dan mudah dipahami oleh Admin dan Peserta.
+                    </p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        
+                        <!-- Section 1 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); font-weight: bold; flex-shrink: 0;">
+                                H
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">1. Penggunaan Heading (Tajuk)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">Gunakan tingkat heading secara hierarkis:</p>
+                                <ul style="margin: 4px 0 0; padding-left: 20px; color: #475569; font-size: 0.86rem; list-style-type: disc;">
+                                    <li><strong>Heading 1 (H1)</strong> untuk judul materi utama.</li>
+                                    <li><strong>Heading 2 (H2)</strong> untuk judul sub-bab atau topik penting.</li>
+                                    <li><strong>Heading 3 (H3)</strong> untuk detail sub-topik.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Section 2 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-type-bold"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">2. Penyorotan Teks (Emphasis)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan tombol <strong>Bold (Tebal)</strong> hanya untuk istilah kunci, definisi krusial, atau kata penting. Gunakan <strong>Italic (Miring)</strong> untuk istilah asing atau kutipan. Hindari pemformatan berlebihan agar modul tetap mudah dipindai secara visual.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Section 3 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-code-square"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">3. Penulisan Kode (Code Blocks)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan tombol <strong>Code Block (&lt;/&gt;)</strong> untuk menyisipkan perintah sintaksis, baris kode program, atau perintah terminal. Jangan menuliskan kode langsung di teks paragraf biasa demi kerapian tampilan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Section 4 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-image"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">4. Integrasi Gambar & Media</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan tombol <strong>Insert Image</strong> untuk diagram, tangkapan layar, atau ilustrasi relevan. Pastikan ukuran file gambar optimal (resolusi tajam namun ukuran file tetap ringan) dan diletakkan di baris baru.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Section 5 -->
+                        <div style="display: flex; gap: 14px; align-items: flex-start;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(26, 29, 120, 0.08); display: flex; align-items: center; justify-content: center; color: var(--main-navy-clr, #1a1d78); flex-shrink: 0;">
+                                <i class="bi bi-list-ul"></i>
+                            </div>
+                            <div>
+                                <h6 style="font-weight: 800; margin: 0 0 6px; color: var(--main-navy-clr, #1a1d78); font-size: 0.95rem;">5. Struktur Daftar Rincian (List)</h6>
+                                <p style="margin: 0; color: #475569; font-size: 0.88rem;">
+                                    Gunakan <strong>Bullet List</strong> untuk rincian tak berurutan (misal: fitur, kelebihan). Gunakan penomoran manual jika langkah-langkah harus diikuti secara berurutan.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 14px 24px;">
+                    <button type="button" class="secondary-btn" data-bs-dismiss="modal" style="border-radius: 10px; font-weight: 700; font-size: 0.84rem; padding: 8px 20px; cursor: pointer;">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 

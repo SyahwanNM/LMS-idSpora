@@ -1,0 +1,72 @@
+@startuml
+title Sequence Diagram Penerbitan Sertifikat Trainer
+
+skinparam backgroundColor white
+skinparam shadowing false
+
+skinparam sequence {
+    ArrowColor #24364B
+    LifeLineBorderColor #B8C7D9
+    LifeLineBackgroundColor white
+
+    ActorBorderColor #24364B
+    ActorBackgroundColor white
+
+    BoundaryBorderColor #24364B
+    BoundaryBackgroundColor white
+
+    DatabaseBorderColor #24364B
+    DatabaseBackgroundColor white
+
+    ParticipantBackgroundColor #1F2D3D
+    ParticipantBorderColor #1F2D3D
+    ParticipantFontColor white
+}
+
+actor "Admin Trainer" as Admin
+boundary "Dashboard Admin Trainer" as AdminDash
+participant "Sistem" as System
+database "Database" as DB
+boundary "Dashboard Trainer" as TrainerDash
+actor "Trainer" as Trainer
+
+Admin -> AdminDash : Pilih event/course selesai
+activate AdminDash
+
+AdminDash -> System : Request generate sertifikat
+activate System
+
+System -> DB : Ambil data trainer dan kegiatan
+activate DB
+DB --> System : Data trainer dan kegiatan
+deactivate DB
+
+System -> DB : Simpan data sertifikat
+activate DB
+DB --> System : Sertifikat tersimpan
+deactivate DB
+
+System --> AdminDash : Generate sertifikat berhasil
+deactivate System
+deactivate AdminDash
+
+Trainer -> TrainerDash : Buka halaman sertifikat
+activate TrainerDash
+
+TrainerDash -> System : Request data sertifikat
+activate System
+
+System -> DB : Ambil data sertifikat
+activate DB
+DB --> System : Data sertifikat
+deactivate DB
+
+System --> TrainerDash : Tampilkan sertifikat
+
+Trainer -> TrainerDash : Download sertifikat
+TrainerDash --> Trainer : Sertifikat berhasil diunduh
+
+deactivate System
+deactivate TrainerDash
+
+@enduml

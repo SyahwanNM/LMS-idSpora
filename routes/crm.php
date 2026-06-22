@@ -47,6 +47,15 @@ use App\Http\Controllers\User\ResellerController;
             Route::get('/customers/{customer}/edit', [\App\Http\Controllers\CRM\CRMController::class, 'editCustomer'])->name('customers.edit');
             Route::put('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'updateCustomer'])->name('customers.update');
             Route::delete('/customers/{customer}', [\App\Http\Controllers\CRM\CRMController::class, 'destroyCustomer'])->name('customers.destroy');
+            Route::post('/customers/{customer}/adjust-points', [\App\Http\Controllers\CRM\CRMController::class, 'adjustPoints'])->name('customers.adjust-points');
+
+            // Voucher Management CRUD
+            Route::get('/vouchers', [\App\Http\Controllers\CRM\CRMController::class, 'vouchersIndex'])->name('vouchers.index');
+            Route::get('/vouchers/create', [\App\Http\Controllers\CRM\CRMController::class, 'vouchersCreate'])->name('vouchers.create');
+            Route::post('/vouchers', [\App\Http\Controllers\CRM\CRMController::class, 'vouchersStore'])->name('vouchers.store');
+            Route::get('/vouchers/{voucher}/edit', [\App\Http\Controllers\CRM\CRMController::class, 'vouchersEdit'])->name('vouchers.edit');
+            Route::put('/vouchers/{voucher}', [\App\Http\Controllers\CRM\CRMController::class, 'vouchersUpdate'])->name('vouchers.update');
+            Route::delete('/vouchers/{voucher}', [\App\Http\Controllers\CRM\CRMController::class, 'vouchersDestroy'])->name('vouchers.destroy');
 
 
             // Feedback Analysis
@@ -60,4 +69,6 @@ use App\Http\Controllers\User\ResellerController;
             Route::get('/broadcast', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastIndex'])->name('broadcast.index');
             Route::get('/broadcast/create', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastCreate'])->name('broadcast.create');
             Route::post('/broadcast/send', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastSend'])->name('broadcast.send');
+            Route::get('/broadcast/estimate-count', [\App\Http\Controllers\CRM\CRMController::class, 'estimateCount'])->name('broadcast.estimate-count');
         });
+

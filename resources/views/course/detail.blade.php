@@ -1682,8 +1682,8 @@
             @endif
           @elseif($paymentUnderReview)
             <button type="button" class="enroll" disabled
-              style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Pembayaran
-              sedang ditinjau</button>
+              style="display:block;width:100%;text-align:center;text-decoration:none;color:#000;font-weight:600;opacity:.7;cursor:not-allowed;">Payment
+              under review</button>
           @else
             <a href="{{ route('course.payment', $course->id) }}" class="enroll"
               style="display:block;text-align:center;text-decoration:none;color:#000;font-weight:600;">

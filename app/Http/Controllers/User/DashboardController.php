@@ -30,6 +30,17 @@ class DashboardController extends Controller
             if ($role === 'trainer') {
                 return redirect()->route('trainer.dashboard');
             }
+
+            if ($role === 'event_admin') {
+                // Redirect to the first event assigned to this event_admin
+                $assignedEventId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                    ->where('user_id', Auth::id())
+                    ->value('event_id');
+                if ($assignedEventId) {
+                    return redirect()->route('admin.events.show', $assignedEventId);
+                }
+                return redirect()->route('admin.dashboard');
+            }
         }
 
         // Upcoming events: tampilkan event yang baru DITAMBAHKAN (created_at terbaru) di paling kiri.

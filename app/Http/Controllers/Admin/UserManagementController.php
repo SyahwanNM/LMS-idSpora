@@ -14,8 +14,8 @@ class UserManagementController extends Controller
 {
     public function index(Request $request)
     {
-        // Only show admin accounts and allow filtering
-        $query = User::where('role', 'admin');
+        // Show admin, event_admin, and allow filtering
+        $query = User::whereIn('role', ['admin', 'event_admin']);
         if($search = $request->get('q')){
             $query->where(function($q) use ($search){
                 $q->where('name','like',"%{$search}%")
@@ -37,12 +37,12 @@ class UserManagementController extends Controller
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','string','min:6','confirmed'],
-            'role' => ['required', Rule::in(['admin'])],
+            'role' => ['required', Rule::in(['admin', 'event_admin'])],
             'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
             'avatar_base64' => ['nullable','string'],
         ]);
-        // Force role to admin
-        $data['role'] = 'admin';
+        // email_verified_at set now so user can login immediately
+        $data['email_verified_at'] = now();
         $data['password'] = Hash::make($data['password']);
         // Handle avatar upload (optional)
         if($request->hasFile('avatar')){
@@ -77,7 +77,14 @@ class UserManagementController extends Controller
 
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $events = \App\Models\Event::select('id', 'title', 'event_date')
+            ->orderBy('event_date', 'desc')
+            ->get();
+        $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+            ->where('user_id', $user->id)
+            ->pluck('event_id')
+            ->toArray();
+        return view('admin.users.edit', compact('user', 'events', 'assignedEventIds'));
     }
 
     public function update(Request $request, User $user)
@@ -86,13 +93,13 @@ class UserManagementController extends Controller
             'name' => ['required','string','max:255'],
             'email' => ['required','email','max:255', Rule::unique('users','email')->ignore($user->id)],
             'password' => ['nullable','string','min:6'],
-            'role' => ['required', Rule::in(['admin'])],
+            'role' => ['required', Rule::in(['admin', 'event_admin'])],
+            'assigned_events' => ['nullable', 'array'],
+            'assigned_events.*' => ['integer', 'exists:events,id'],
             'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:4096'],
             'avatar_base64' => ['nullable','string'],
             'remove_avatar' => ['nullable'],
         ]);
-        // Force role to admin
-        $data['role'] = 'admin';
         if(!empty($data['password'])){
             $data['password'] = Hash::make($data['password']);
         } else {
@@ -151,6 +158,28 @@ class UserManagementController extends Controller
             }
         }
         $user->update($data);
+
+        // Sync event_admin_assignments
+        if ($data['role'] === 'event_admin') {
+            $assignedIds = array_map('intval', $request->input('assigned_events', []));
+            \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->delete();
+            foreach ($assignedIds as $eventId) {
+                \Illuminate\Support\Facades\DB::table('event_admin_assignments')->insert([
+                    'user_id'    => $user->id,
+                    'event_id'   => $eventId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        } else {
+            // Clear assignments if role changed away from event_admin
+            \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->delete();
+        }
+
         return redirect()->route('admin.users.index')->with('success','User updated');
     }
 

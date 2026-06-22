@@ -14,6 +14,8 @@ use App\Models\Enrollment;
 use App\Models\Referral;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Models\Voucher;
+use App\Models\VoucherRedemption;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -41,8 +43,8 @@ class PaymentController extends Controller
             UserNotification::create([
                 'user_id' => $payment->user_id,
                 'type' => 'event_registration_midtrans_success',
-                'title' => 'Pendaftaran Dikonfirmasi',
-                'message' => 'Anda berhasil terdaftar di event "' . ($event->title ?? 'Event') . '".',
+                'title' => 'Registration Confirmed',
+                'message' => 'You have successfully registered for the event "' . ($event->title ?? 'Event') . '".',
                 'data' => [
                     'event_id' => $event->id,
                     'order_id' => $payment->order_id,
@@ -66,7 +68,7 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $payments = ManualPayment::with(['event', 'registration'])
             ->where('user_id', $user->id)
             ->latest()
@@ -128,15 +130,15 @@ class PaymentController extends Controller
         }
 
         if ($manualPayment->status == 'paid' || $manualPayment->status == 'verified') {
-             return response()->json(['status' => 'error', 'message' => 'Pembayaran yang sudah diverifikasi tidak dapat dibatalkan.'], 400);
+            return response()->json(['status' => 'error', 'message' => 'Pembayaran yang sudah diverifikasi tidak dapat dibatalkan.'], 400);
         }
 
         DB::beginTransaction();
         try {
             $manualPayment->update(['status' => 'cancelled']); // or 'canceled' check enum consistency
-            
+
             $registration = EventRegistration::find($manualPayment->event_registration_id);
-            if($registration){
+            if ($registration) {
                 $registration->update(['status' => 'canceled']);
             }
 
@@ -148,7 +150,7 @@ class PaymentController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-             return response()->json(['status' => 'error', 'message' => 'Gagal membatalkan: ' . $e->getMessage()], 500);
+            return response()->json(['status' => 'error', 'message' => 'Gagal membatalkan: ' . $e->getMessage()], 500);
         }
     }
 
@@ -369,6 +371,25 @@ class PaymentController extends Controller
         $referrer->increment('wallet_balance', $commissionAmount);
     }
 
+    private function markVoucherUsedIfApplicable(ManualPayment $payment): void
+    {
+        $redemptionId = data_get($payment->metadata, 'voucher_redemption_id');
+        if ($redemptionId) {
+            $redemption = VoucherRedemption::find($redemptionId);
+            if ($redemption && !$redemption->is_used) {
+                $redemption->update([
+                    'is_used' => true,
+                    'used_at' => now(),
+                ]);
+                Log::info('Voucher redemption marked as used', [
+                    'redemption_id' => $redemption->id,
+                    'code' => $redemption->code,
+                    'payment_id' => $payment->id,
+                ]);
+            }
+        }
+    }
+
     /**
      * Midtrans Snap token for paid Event (auth required).
      */
@@ -385,21 +406,21 @@ class PaymentController extends Controller
 
         // Resolve base amount — for hybrid events use attendance_type to pick the right price
         $attendanceType = strtolower(trim((string) $request->query('attendance_type', $request->input('attendance_type', 'offline'))));
-        $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link)
-                          && ($event->price_offline > 0 || $event->price_online > 0);
+        $isHybridEvent = !empty($event->maps_url) && !empty($event->zoom_link)
+            && ($event->price_offline > 0 || $event->price_online > 0);
 
         if ($isHybridEvent) {
             $rawHybridPrice = $attendanceType === 'online'
-                              ? (float) ($event->price_online ?? 0)
-                              : (float) ($event->price_offline ?? 0);
-            $discountPct    = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
-                              ? (float) ($event->discount_percentage ?? 0) : 0.0;
-            $baseAmount     = $discountPct > 0
-                              ? round($rawHybridPrice * (1 - $discountPct / 100), 2)
-                              : $rawHybridPrice;
+                ? (float) ($event->price_online ?? 0)
+                : (float) ($event->price_offline ?? 0);
+            $discountPct = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
+                ? (float) ($event->discount_percentage ?? 0) : 0.0;
+            $baseAmount = $discountPct > 0
+                ? round($rawHybridPrice * (1 - $discountPct / 100), 2)
+                : $rawHybridPrice;
         } else {
             $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
-            $baseAmount  = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+            $baseAmount = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
         }
 
         if ($baseAmount <= 0) {
@@ -412,6 +433,34 @@ class PaymentController extends Controller
             : null;
         $referralCode = $referrer ? $rawReferralCode : null;
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
+
+        $voucherCode = trim((string) $request->query('voucher_code', $request->input('voucher_code')));
+        $redemption = null;
+        $discountAmount = 0.0;
+
+        if ($voucherCode !== '') {
+            $redemption = VoucherRedemption::where('user_id', $user->id)
+                ->where('code', $voucherCode)
+                ->first();
+
+            if (!$redemption) {
+                return response()->json(['message' => 'Voucher tidak ditemukan.'], 422);
+            }
+
+            if (!$redemption->isUsable()) {
+                return response()->json(['message' => 'Voucher tidak valid atau sudah kedaluwarsa.'], 422);
+            }
+
+            $voucher = $redemption->voucher;
+            if ($finalAmount < $voucher->min_purchase) {
+                return response()->json([
+                    'message' => 'Minimal pembelian untuk menggunakan voucher ini adalah Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.'
+                ], 422);
+            }
+
+            $discountAmount = $voucher->calculateDiscount($finalAmount);
+            $finalAmount = max(0.0, $finalAmount - $discountAmount);
+        }
 
         $dial = trim((string) $request->query('dial_code', $request->input('dial_code')));
         $wa = trim((string) $request->query('whatsapp', $request->input('whatsapp')));
@@ -431,6 +480,83 @@ class PaymentController extends Controller
             if ($registration && $registration->status === 'active') {
                 DB::rollBack();
                 return response()->json(['message' => 'Anda sudah terdaftar.'], 409);
+            }
+
+            if ($finalAmount <= 0) {
+                if (!$registration) {
+                    $registration = EventRegistration::create([
+                        'user_id' => $user->id,
+                        'event_id' => $event->id,
+                        'status' => 'active',
+                        'registration_code' => 'EVT-' . strtoupper(uniqid()),
+                        'total_price' => 0.00,
+                        'payment_verified_at' => now(),
+                    ]);
+                } else {
+                    $registration->status = 'active';
+                    $registration->total_price = 0.00;
+                    $registration->payment_verified_at = now();
+                    $registration->save();
+                }
+
+                $method = $redemption ? 'voucher' : 'free';
+                $orderId = 'VCH-EVT-' . strtoupper(uniqid());
+
+                $payment = ManualPayment::create([
+                    'event_id' => $event->id,
+                    'event_registration_id' => $registration->id,
+                    'user_id' => $user->id,
+                    'order_id' => $orderId,
+                    'amount' => 0,
+                    'currency' => 'IDR',
+                    'method' => $method,
+                    'status' => 'settled',
+                    'whatsapp_number' => $phone ?: null,
+                    'referral_code' => $referralCode,
+                    'metadata' => [
+                        'source' => 'event',
+                        'type' => 'voucher_free',
+                        'base_amount' => $baseAmount,
+                        'voucher_code' => $voucherCode ?: null,
+                        'voucher_redemption_id' => $redemption?->id ?? null,
+                        'voucher_discount' => $discountAmount,
+                        'attendance_type' => $attendanceType,
+                    ]
+                ]);
+
+                if ($redemption) {
+                    $redemption->update([
+                        'is_used' => true,
+                        'used_at' => now(),
+                    ]);
+                }
+
+                try {
+                    $pointsService = app(\App\Services\UserPointsService::class);
+                    $pointsService->addEventPoints($user, $event, $registration);
+                } catch (\Throwable $e) {
+                    Log::error('Error awarding event points: ' . $e->getMessage());
+                }
+
+                try {
+                    UserNotification::create([
+                        'user_id' => $user->id,
+                        'type' => 'event_registration',
+                        'title' => 'Registration Confirmed',
+                        'message' => 'Registration for "' . $event->title . '" has been confirmed.',
+                        'data' => ['url' => route('events.show', $event)],
+                        'expires_at' => now()->addDays(14),
+                    ]);
+                } catch (\Throwable $e) { /* ignore */
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'redirect_url' => route('events.registered.detail', $event->id),
+                    'amount' => 0,
+                    'message' => 'Pendaftaran berhasil menggunakan voucher.'
+                ]);
             }
 
             if (!$registration) {
@@ -455,6 +581,14 @@ class PaymentController extends Controller
                 ->where('status', 'pending')
                 ->latest('id')
                 ->first();
+
+            if ($payment && !$forceNew) {
+                $paymentVoucherCode = data_get($payment->metadata, 'voucher_code');
+                $paymentReferral = $payment->referral_code;
+                if ($paymentVoucherCode !== $voucherCode || $paymentReferral !== $referralCode) {
+                    $forceNew = true;
+                }
+            }
 
             if ($payment && !$forceNew) {
                 $existingToken = $this->getSnapTokenFromPayment($payment);
@@ -504,6 +638,9 @@ class PaymentController extends Controller
                     'event_id' => $event->id,
                     'event_title' => $event->title,
                     'attendance_type' => $attendanceType,
+                    'voucher_code' => $voucherCode ?: null,
+                    'voucher_redemption_id' => $redemption?->id ?? null,
+                    'voucher_discount' => $discountAmount,
                 ]),
             ]);
             $payment->save();
@@ -512,12 +649,14 @@ class PaymentController extends Controller
             $snapParams = $this->buildMidtransSnapParams(
                 (string) $payment->order_id,
                 $grossAmount,
-                [[
-                    'id' => 'event-' . $event->id,
-                    'price' => $grossAmount,
-                    'quantity' => 1,
-                    'name' => (string) ($event->title ?? 'Event'),
-                ]],
+                [
+                    [
+                        'id' => 'event-' . $event->id,
+                        'price' => $grossAmount,
+                        'quantity' => 1,
+                        'name' => (string) ($event->title ?? 'Event'),
+                    ]
+                ],
                 [
                     'first_name' => (string) ($user->name ?? 'User'),
                     'email' => (string) ($user->email ?? ''),
@@ -528,7 +667,7 @@ class PaymentController extends Controller
             Log::info('Midtrans snapParams(event)', ['params' => $snapParams]);
 
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
-            
+
             Log::info('Midtrans snapToken(event) created', [
                 'order_id' => $payment->order_id,
                 'snap_token' => $snapToken
@@ -600,6 +739,9 @@ class PaymentController extends Controller
                             'retry_reason' => 'order_id_conflict',
                             'event_id' => $event->id,
                             'event_title' => $event->title,
+                            'voucher_code' => $voucherCode ?: null,
+                            'voucher_redemption_id' => $redemption?->id ?? null,
+                            'voucher_discount' => $discountAmount,
                         ],
                     ]);
                     $newPayment->save();
@@ -608,12 +750,14 @@ class PaymentController extends Controller
                     $snapParams = $this->buildMidtransSnapParams(
                         (string) $newPayment->order_id,
                         $grossAmount,
-                        [[
-                            'id' => 'event-' . $event->id,
-                            'price' => $grossAmount,
-                            'quantity' => 1,
-                            'name' => (string) ($event->title ?? 'Event'),
-                        ]],
+                        [
+                            [
+                                'id' => 'event-' . $event->id,
+                                'price' => $grossAmount,
+                                'quantity' => 1,
+                                'name' => (string) ($event->title ?? 'Event'),
+                            ]
+                        ],
                         [
                             'first_name' => (string) ($user->name ?? 'User'),
                             'email' => (string) ($user->email ?? ''),
@@ -691,6 +835,34 @@ class PaymentController extends Controller
         $referralCode = $referrer ? $rawReferralCode : null;
         $finalAmount = $this->applyReferralDiscountAmount($baseAmount, $referrer !== null);
 
+        $voucherCode = trim((string) $request->query('voucher_code', $request->input('voucher_code')));
+        $redemption = null;
+        $discountAmount = 0.0;
+
+        if ($voucherCode !== '') {
+            $redemption = VoucherRedemption::where('user_id', $user->id)
+                ->where('code', $voucherCode)
+                ->first();
+
+            if (!$redemption) {
+                return response()->json(['message' => 'Voucher tidak ditemukan.'], 422);
+            }
+
+            if (!$redemption->isUsable()) {
+                return response()->json(['message' => 'Voucher tidak valid atau sudah kedaluwarsa.'], 422);
+            }
+
+            $voucher = $redemption->voucher;
+            if ($finalAmount < $voucher->min_purchase) {
+                return response()->json([
+                    'message' => 'Minimal pembelian untuk menggunakan voucher ini adalah Rp' . number_format($voucher->min_purchase, 0, ',', '.') . '.'
+                ], 422);
+            }
+
+            $discountAmount = $voucher->calculateDiscount($finalAmount);
+            $finalAmount = max(0.0, $finalAmount - $discountAmount);
+        }
+
         $dial = trim((string) $request->query('dial_code', $request->input('dial_code')));
         $wa = trim((string) $request->query('whatsapp', $request->input('whatsapp')));
         $phone = trim($dial . $wa);
@@ -706,6 +878,52 @@ class PaymentController extends Controller
                 $enrollment->save();
             }
 
+            if ($finalAmount <= 0) {
+                $enrollment->status = 'active';
+                $enrollment->save();
+
+                $method = $redemption ? 'voucher' : 'free';
+                $orderId = 'VCH-CRS-' . strtoupper(uniqid());
+
+                $payment = ManualPayment::create([
+                    'course_id' => $course->id,
+                    'enrollment_id' => $enrollment->id,
+                    'user_id' => $user->id,
+                    'order_id' => $orderId,
+                    'amount' => 0,
+                    'currency' => 'IDR',
+                    'method' => $method,
+                    'status' => 'settled',
+                    'whatsapp_number' => $phone ?: null,
+                    'referral_code' => $referralCode,
+                    'metadata' => [
+                        'source' => 'course',
+                        'type' => 'voucher_free',
+                        'base_amount' => $baseAmount,
+                        'voucher_code' => $voucherCode ?: null,
+                        'voucher_redemption_id' => $redemption?->id ?? null,
+                        'voucher_discount' => $discountAmount,
+                    ]
+                ]);
+
+                if ($redemption) {
+                    $redemption->update([
+                        'is_used' => true,
+                        'used_at' => now(),
+                    ]);
+                }
+
+                $enrollment->checkAndComplete($user);
+
+                DB::commit();
+
+                return response()->json([
+                    'redirect_url' => route('course.learn', $course->id),
+                    'amount' => 0,
+                    'message' => 'Pendaftaran berhasil menggunakan voucher.'
+                ]);
+            }
+
             // Reuse existing pending midtrans order if any
             $payment = ManualPayment::query()
                 ->where('course_id', $course->id)
@@ -714,6 +932,14 @@ class PaymentController extends Controller
                 ->where('status', 'pending')
                 ->latest('id')
                 ->first();
+
+            if ($payment && !$forceNew) {
+                $paymentVoucherCode = data_get($payment->metadata, 'voucher_code');
+                $paymentReferral = $payment->referral_code;
+                if ($paymentVoucherCode !== $voucherCode || $paymentReferral !== $referralCode) {
+                    $forceNew = true;
+                }
+            }
 
             if ($payment && !$forceNew) {
                 $existingToken = $this->getSnapTokenFromPayment($payment);
@@ -758,6 +984,9 @@ class PaymentController extends Controller
                     'discount_rate' => $referrer ? self::REFERRAL_DISCOUNT_RATE : 0,
                     'course_id' => $course->id,
                     'course_name' => $course->name,
+                    'voucher_code' => $voucherCode ?: null,
+                    'voucher_redemption_id' => $redemption?->id ?? null,
+                    'voucher_discount' => $discountAmount,
                 ]),
             ]);
             $payment->save();
@@ -766,12 +995,14 @@ class PaymentController extends Controller
             $snapParams = $this->buildMidtransSnapParams(
                 (string) $payment->order_id,
                 $grossAmount,
-                [[
-                    'id' => 'course-' . $course->id,
-                    'price' => $grossAmount,
-                    'quantity' => 1,
-                    'name' => (string) ($course->name ?? 'Course'),
-                ]],
+                [
+                    [
+                        'id' => 'course-' . $course->id,
+                        'price' => $grossAmount,
+                        'quantity' => 1,
+                        'name' => (string) ($course->name ?? 'Course'),
+                    ]
+                ],
                 [
                     'first_name' => (string) ($user->name ?? 'User'),
                     'email' => (string) ($user->email ?? ''),
@@ -780,14 +1011,14 @@ class PaymentController extends Controller
             );
 
             Log::info('Midtrans snapParams(course)', ['params' => $snapParams]);
-            
+
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
 
             Log::info('Midtrans courseSnapToken created', [
                 'order_id' => $payment->order_id,
                 'snap_token' => $snapToken
             ]);
-            
+
             $this->storeSnapTokenToPayment($payment, $snapToken);
             DB::commit();
 
@@ -846,6 +1077,9 @@ class PaymentController extends Controller
                             'retry_reason' => 'order_id_conflict',
                             'course_id' => $course->id,
                             'course_name' => $course->name,
+                            'voucher_code' => $voucherCode ?: null,
+                            'voucher_redemption_id' => $redemption?->id ?? null,
+                            'voucher_discount' => $discountAmount,
                         ],
                     ]);
                     $newPayment->save();
@@ -854,12 +1088,14 @@ class PaymentController extends Controller
                     $snapParams = $this->buildMidtransSnapParams(
                         (string) $newPayment->order_id,
                         $grossAmount,
-                        [[
-                            'id' => 'course-' . $course->id,
-                            'price' => $grossAmount,
-                            'quantity' => 1,
-                            'name' => (string) ($course->name ?? 'Course'),
-                        ]],
+                        [
+                            [
+                                'id' => 'course-' . $course->id,
+                                'price' => $grossAmount,
+                                'quantity' => 1,
+                                'name' => (string) ($course->name ?? 'Course'),
+                            ]
+                        ],
                         [
                             'first_name' => (string) ($user->name ?? 'User'),
                             'email' => (string) ($user->email ?? ''),
@@ -940,19 +1176,32 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 // Activate related entities
                 if ($payment->event_registration_id) {
                     $registration = EventRegistration::find($payment->event_registration_id);
-                    if ($registration && $registration->status !== 'active') {
-                        $registration->status = 'active';
-                        $registration->payment_verified_at = now();
-                        $registration->payment_verified_by = null;
-                        $registration->save();
+                    if ($registration) {
+                        $isStage2 = (data_get($payment->metadata, 'stage') == 2 || str_starts_with($payment->order_id, 'STG2-'));
+                        if ($isStage2) {
+                            $registration->stage2_payment_status = 'settled';
+                            $registration->stage2_payment_at = now();
+                            $registration->save();
+                        } else {
+                            if ($registration->status !== 'active') {
+                                $registration->status = 'active';
+                                $registration->payment_verified_at = now();
+                                $registration->payment_verified_by = null;
+                                $registration->save();
+                            }
+                        }
                     }
 
                     $event = $payment->event_id ? Event::find($payment->event_id) : null;
                     if ($event) {
-                        $this->processEventReferralCommission($event, $payment);
+                        $isStage2 = (data_get($payment->metadata, 'stage') == 2 || str_starts_with($payment->order_id, 'STG2-'));
+                        if (!$isStage2) {
+                            $this->processEventReferralCommission($event, $payment);
+                        }
                         $this->notifyEventMidtransRegistrationSuccess($event, $payment);
                         $this->sendPaymentInvoice($payment, 'event', (string) ($event->title ?? 'Event'));
                     }
@@ -1064,6 +1313,7 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 // Activate related entities (mirrors notify/finalize behavior).
                 if ($payment->event_registration_id) {
                     $registration = EventRegistration::find($payment->event_registration_id);
@@ -1181,11 +1431,33 @@ class PaymentController extends Controller
 
         try {
             $this->configureMidtrans();
-            $status = (array) \Midtrans\Transaction::status($orderId);
-            $internalStatus = $this->mapMidtransToInternalStatus(
-                $status['transaction_status'] ?? null,
-                $status['fraud_status'] ?? null
-            );
+            try {
+                $status = (array) \Midtrans\Transaction::status($orderId);
+                $internalStatus = $this->mapMidtransToInternalStatus(
+                    $status['transaction_status'] ?? null,
+                    $status['fraud_status'] ?? null
+                );
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
+
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $status = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $status = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
             $wasSettled = $payment->status === 'settled';
@@ -1197,6 +1469,7 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 $registration = $payment->event_registration_id ? EventRegistration::find($payment->event_registration_id) : null;
                 if ($registration && $registration->status !== 'active') {
                     $registration->status = 'active';
@@ -1274,14 +1547,14 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
-                // Only expire if snap token is older than 24 hours (Midtrans token TTL).
+                // Only expire if snap token is older than expiry duration.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours  = $tokenCreatedAt
-                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                         : 0;
 
-                    if ($tokenAgeHours >= 24) {
+                    if ($tokenAgeMinutes >= 5) {
                         // Token truly expired — mark as expired
                         $payment->status = 'expired';
                         $payment->save();
@@ -1374,13 +1647,13 @@ class PaymentController extends Controller
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
                     // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
-                    // Only expire if snap token is older than 24 hours.
-                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours  = $tokenCreatedAt
-                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                    // Only expire if snap token is older than expiry duration.
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                         : 0;
 
-                    if ($tokenAgeHours >= 24) {
+                    if ($tokenAgeMinutes >= 5) {
                         $payment->status = 'expired';
                         $payment->save();
                         if ($payment->enrollment_id) {
@@ -1440,11 +1713,33 @@ class PaymentController extends Controller
 
         try {
             $this->configureMidtrans();
-            $status = (array) \Midtrans\Transaction::status($orderId);
-            $internalStatus = $this->mapMidtransToInternalStatus(
-                $status['transaction_status'] ?? null,
-                $status['fraud_status'] ?? null
-            );
+            try {
+                $status = (array) \Midtrans\Transaction::status($orderId);
+                $internalStatus = $this->mapMidtransToInternalStatus(
+                    $status['transaction_status'] ?? null,
+                    $status['fraud_status'] ?? null
+                );
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
+
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $status = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $status = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
             $wasSettled = $payment->status === 'settled';
@@ -1456,6 +1751,7 @@ class PaymentController extends Controller
             $payment->save();
 
             if (!$wasSettled && $internalStatus === 'settled') {
+                $this->markVoucherUsedIfApplicable($payment);
                 if ($payment->enrollment_id) {
                     $enrollment = Enrollment::find($payment->enrollment_id);
                     if ($enrollment && $enrollment->status !== 'active') {
@@ -1523,26 +1819,26 @@ class PaymentController extends Controller
                 return;
             }
 
-            $prefix        = $itemType === 'event' ? 'INV-EVT-' : 'INV-CRS-';
+            $prefix = $itemType === 'event' ? 'INV-EVT-' : 'INV-CRS-';
             $invoiceNumber = $prefix . strtoupper(substr(md5($payment->id . $payment->order_id), 0, 8));
 
             Mail::to($invoiceUser->email)->send(new PaymentInvoiceMail(
                 invoiceNumber: $invoiceNumber,
-                userName:      (string) ($invoiceUser->name ?? 'User'),
-                userEmail:     (string) ($invoiceUser->email),
-                itemType:      $itemType,
-                itemTitle:     $itemTitle,
-                amount:        (float) ($payment->amount ?? 0),
+                userName: (string) ($invoiceUser->name ?? 'User'),
+                userEmail: (string) ($invoiceUser->email),
+                itemType: $itemType,
+                itemTitle: $itemTitle,
+                amount: (float) ($payment->amount ?? 0),
                 paymentMethod: (string) ($payment->method ?? 'midtrans'),
-                paidAt:        now()->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
-                orderId:       (string) ($payment->order_id ?? '-'),
+                paidAt: now()->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
+                orderId: (string) ($payment->order_id ?? '-'),
             ));
 
             // Mark invoice as sent so we don't resend on duplicate webhook calls
             $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
-                'invoice_sent'    => true,
+                'invoice_sent' => true,
                 'invoice_sent_at' => now()->toIso8601String(),
-                'invoice_number'  => $invoiceNumber,
+                'invoice_number' => $invoiceNumber,
             ]);
             $payment->save();
 
@@ -1550,7 +1846,7 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             Log::warning('PaymentInvoice send failed', [
                 'order_id' => $payment->order_id,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -1563,7 +1859,7 @@ class PaymentController extends Controller
                 $trainerShare = ($payment->amount * $course->trainer_revenue_percent) / 100;
                 if ($trainerShare > 0) {
                     $trainer->increment('wallet_balance', $trainerShare);
-                    
+
                     \App\Models\TrainerNotification::create([
                         'trainer_id' => $trainer->id,
                         'type' => 'revenue_share',
@@ -1623,16 +1919,16 @@ class PaymentController extends Controller
         // Prepare data
         $data = [
             'invoiceNumber' => $invoiceNumber,
-            'userName'      => $invoiceUser ? $invoiceUser->name : 'User',
-            'userEmail'     => $invoiceUser ? $invoiceUser->email : '',
-            'itemType'      => $itemType,
-            'itemTitle'     => $itemTitle,
-            'amount'        => (float) $payment->amount,
+            'userName' => $invoiceUser ? $invoiceUser->name : 'User',
+            'userEmail' => $invoiceUser ? $invoiceUser->email : '',
+            'itemType' => $itemType,
+            'itemTitle' => $itemTitle,
+            'amount' => (float) $payment->amount,
             'paymentMethod' => $payment->method ?? 'midtrans',
-            'paidAt'        => $paidAt,
-            'orderId'       => $payment->order_id,
-            'logoSrc'       => $logoSrc,
-            'isPdf'         => true,
+            'paidAt' => $paidAt,
+            'orderId' => $payment->order_id,
+            'logoSrc' => $logoSrc,
+            'isPdf' => true,
         ];
 
         // Generate PDF using Dompdf
@@ -1641,7 +1937,7 @@ class PaymentController extends Controller
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', true);
         $options->set('defaultFont', 'Helvetica');
-        
+
         $dompdf = new \Dompdf\Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
@@ -1655,4 +1951,3 @@ class PaymentController extends Controller
         ]);
     }
 }
-

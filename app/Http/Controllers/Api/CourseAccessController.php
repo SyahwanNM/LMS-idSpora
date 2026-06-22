@@ -129,6 +129,8 @@ class CourseAccessController extends Controller
             ]
         );
 
+        $enrollment->checkAndComplete($user);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Progress tersimpan',

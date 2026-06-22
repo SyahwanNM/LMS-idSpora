@@ -129,5 +129,46 @@ class Enrollment extends Model
 
         return $completedModules >= $totalModules;
     }
+
+    /**
+     * Check if course is fully completed, mark status, and award points.
+     */
+    public function checkAndComplete(?User $user = null): bool
+    {
+        if (!$this->relationLoaded('course') || !$this->course) {
+            $this->loadMissing('course');
+        }
+
+        if ($this->isFullyCompleted()) {
+            $isNewCompletion = ($this->status !== 'completed' || !$this->completed_at);
+            if ($this->status !== 'completed') {
+                $this->status = 'completed';
+            }
+            if (!$this->completed_at) {
+                $this->completed_at = now();
+            }
+            if (!$this->certificate_issued_at) {
+                $this->certificate_issued_at = now();
+            }
+            if (empty($this->certificate_number)) {
+                $this->certificate_number = \App\Http\Controllers\CRM\CertificateController::generateCertificateNumberCourse($this->course, $this);
+            }
+            $this->save();
+
+            if ($isNewCompletion) {
+                try {
+                    $resolvedUser = $user ?? $this->user ?? User::find($this->user_id);
+                    if ($resolvedUser) {
+                        $pointsService = app(\App\Services\UserPointsService::class);
+                        $pointsService->addCoursePoints($resolvedUser, $this->course, $this);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('Error awarding course completion points: ' . $e->getMessage());
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 }
 

@@ -3,6 +3,8 @@
 @section('title', 'Profile - Trainer')
 
 @push('styles')
+<!-- Cropper.js CSS CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 <style>
 .profile-wrap {
     display: grid;
@@ -1195,8 +1197,8 @@
 @php
     $pageTitle = 'Profile';
     $breadcrumbs = [
-        ['label' => 'Home', 'url' => route('trainer.dashboard')],
-        ['label' => 'Profile']
+        ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
+        ['label' => 'Profil']
     ];
 
     $displayRole = $trainer->profession ?: 'Trainer';
@@ -1241,10 +1243,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
     <style>
         :root {
-            --primary: #1e3a8a;
-            --primary-light: #3b82f6;
-            --primary-soft: #eff6ff;
-            --primary-border: #bfdbfe;
+            --primary: #624388;
+            --primary-light: #8562b3;
+            --primary-soft: #f7f5fa;
+            --primary-border: #e9d5ff;
             --text-dark: #111827;
             --text-muted: #6b7280;
             --bg-gray: #f9fafb;
@@ -1281,14 +1283,14 @@
 
         /* HERO CARD (LEFT) - ULTRA PREMIUM EDITION */
         .hero-card {
-            background: linear-gradient(120deg, #0f172a, #1e3a8a, #4c1d95, #0f172a);
+            background: linear-gradient(120deg, #2e2050, #51376c, #624388, #2e2050);
             background-size: 300% 300%;
             animation: gradientMove 12s ease infinite;
             border-radius: var(--radius-xl);
             padding: 40px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             position: relative;
-            box-shadow: 0 20px 50px -10px rgba(30, 58, 138, 0.4), 0 10px 20px -15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 50px -10px rgba(98, 67, 136, 0.4), 0 10px 20px -15px rgba(0, 0, 0, 0.5);
             display: flex;
             gap: 40px;
             align-items: center;
@@ -1304,7 +1306,7 @@
         }
 
         .hero-card:hover {
-            box-shadow: 0 30px 60px -15px rgba(30, 58, 138, 0.5), 0 15px 25px -10px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 30px 60px -15px rgba(98, 67, 136, 0.5), 0 15px 25px -10px rgba(0, 0, 0, 0.6);
             transform: translateY(-4px);
         }
 
@@ -1329,7 +1331,7 @@
             left: 10%;
             width: 300px;
             height: 300px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.3) 0%, rgba(255,255,255,0) 70%);
             border-radius: 50%;
             filter: blur(40px);
             z-index: -1;
@@ -1389,13 +1391,13 @@
             border: 4px solid rgba(255, 255, 255, 0.3);
             padding: 4px;
             background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
-            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(133, 98, 179, 0.4);
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .hero-card:hover .hero-avatar img {
             transform: scale(1.08) rotate(-3deg);
-            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.4), 0 0 30px rgba(59, 130, 246, 0.6);
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.4), 0 0 30px rgba(133, 98, 179, 0.6);
             border-color: rgba(255, 255, 255, 0.5);
         }
 
@@ -1403,7 +1405,7 @@
             position: absolute;
             bottom: 8px;
             right: 8px;
-            background: #38bdf8;
+            background: #a78bfa;
             color: #ffffff;
             border-radius: 50%;
             width: 40px;
@@ -1411,7 +1413,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.5);
+            box-shadow: 0 4px 15px rgba(167, 139, 250, 0.5);
             border: 3px solid rgba(255,255,255,0.8);
             cursor: pointer;
             font-size: 16px;
@@ -1419,7 +1421,7 @@
         }
 
         .hero-avatar .edit-photo:hover {
-            background: #0ea5e9;
+            background: #8b5cf6;
             transform: scale(1.15) rotate(15deg);
         }
 
@@ -1444,9 +1446,9 @@
         }
 
         .hero-info h1 i {
-            color: #38bdf8;
+            color: #a78bfa;
             font-size: 24px;
-            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+            filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.6));
         }
 
         .role-badge {
@@ -1492,7 +1494,7 @@
 
         .hero-meta i {
             font-size: 18px;
-            color: #7dd3fc;
+            color: #c4b5fd;
         }
 
         .hero-contacts {
@@ -1519,7 +1521,7 @@
         }
 
         .hero-contacts i {
-            color: #38bdf8;
+            color: #a78bfa;
             font-size: 18px;
             background: rgba(255, 255, 255, 0.1);
             padding: 8px;
@@ -1530,9 +1532,9 @@
         }
 
         .hero-contacts span:hover i {
-            background: #38bdf8;
+            background: #a78bfa;
             color: #ffffff;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
         }
 
         /* ACTIVITY CARD (RIGHT) */
@@ -1602,9 +1604,9 @@
             color: #f59e0b;
         }
 
-        .activity-icon.blue {
-            background: #eff6ff;
-            color: #3b82f6;
+        .activity-icon.plum {
+            background: #f7f5fa;
+            color: #8562b3;
         }
 
         .activity-text h4 {
@@ -1981,17 +1983,26 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 16px;
+            margin-top: 24px;
             margin-bottom: 0;
         }
 
         .stat-h-box {
             background: #f9fafb;
             border-radius: var(--radius-md);
-            padding: 16px;
+            padding: 14px 16px;
             border: 1px solid var(--border-light);
             display: flex;
             align-items: center;
             gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .stat-h-box:hover {
+            background: #f3f4f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            border-color: #e5e7eb;
         }
 
         .stat-h-icon {
@@ -2003,8 +2014,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--primary-light);
             font-size: 16px;
+            flex-shrink: 0;
         }
 
         .stat-h-text p {
@@ -2242,9 +2253,9 @@
             color: #f5b041;
         }
 
-        .ec-icon.blue {
-            background: #eff6ff;
-            color: #3b82f6;
+        .ec-icon.plum {
+            background: #f7f5fa;
+            color: #8562b3;
         }
 
         .ec-icon.navy {
@@ -2308,9 +2319,9 @@
             color: var(--primary);
         }
 
-        .ec-badge.blue {
-            background: #eff6ff;
-            color: #3b82f6;
+        .ec-badge.plum {
+            background: #f7f5fa;
+            color: #8562b3;
         }
 
         .ec-badge.green {
@@ -2597,7 +2608,8 @@
 
         /* ---------------- RESPONSIVE DESIGN ---------------- */
         @media (max-width: 1200px) {
-            .top-grid {
+            .top-grid,
+            .main-grid {
                 grid-template-columns: 1fr;
             }
             .hero-card {
@@ -2607,9 +2619,6 @@
         }
 
         @media (max-width: 992px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
 
             .hero-card {
                 flex-direction: column;
@@ -2634,7 +2643,6 @@
                 flex-wrap: wrap;
             }
 
-            .stat-horizontal-grid,
             .expertise-grid,
             .edu-cert-grid,
             .event-course-grid {
@@ -2664,10 +2672,10 @@
                 font-size: 14px;
             }
             
-            .stat-horizontal-grid,
             .expertise-grid,
             .edu-cert-grid,
-            .event-course-grid {
+            .event-course-grid,
+            .stat-horizontal-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -2913,7 +2921,7 @@
         }
 
         .tag-item {
-            background: #eff6ff;
+            background: #f7f5fa;
             color: #1e3a8a;
             padding: 4px 10px;
             border-radius: 99px;
@@ -3011,6 +3019,155 @@
                 width: 100%;
             }
         }
+
+        /* Cropper Modal CSS */
+        .crop-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.25s ease-in-out;
+        }
+        .crop-modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+        .crop-modal-container {
+            background: #ffffff;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 480px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            transform: translateY(30px);
+            transition: transform 0.25s ease-in-out;
+        }
+        .crop-modal-overlay.show .crop-modal-container {
+            transform: translateY(0);
+        }
+        .crop-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 12px;
+        }
+        .crop-modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e1b4b; /* Navy */
+        }
+        .crop-modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #64748b;
+            transition: color 0.15s ease;
+        }
+        .crop-modal-close:hover {
+            color: #1e293b;
+        }
+        .crop-workspace {
+            width: 100%;
+            height: 300px;
+            background-color: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 1px dashed #e2e8f0;
+        }
+        .crop-workspace img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+        .crop-footer {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .crop-zoom-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid #f1f5f9;
+        }
+        .crop-zoom-wrapper i {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .crop-zoom-slider {
+            flex: 1;
+            height: 5px;
+            background: #cbd5e1;
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .crop-zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2e2050;
+            cursor: pointer;
+        }
+        .crop-button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .btn-crop-cancel {
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #334155;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-crop-cancel:hover {
+            background: #f8fafc;
+        }
+        .btn-crop-submit {
+            border: none;
+            background: #2e2050;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-crop-submit:hover {
+            background: #19102c;
+        }
+
+        /* Rounded square cropper box style (to match the profile avatar preview radius) */
+        .cropper-view-box {
+            border-radius: 16px;
+            outline: 2px solid #2e2050;
+            outline-color: rgba(46, 32, 80, 0.75);
+        }
+        .cropper-face {
+            border-radius: 16px;
+            background-color: transparent;
+        }
+        .cropper-line, .cropper-point {
+            display: none !important;
+        }
     </style>
 @endpush
 
@@ -3032,8 +3189,7 @@
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="name" value="{{ $trainer->name }}">
-                        <input type="file" id="photo-upload" name="avatar" accept="image/*"
-                            onchange="document.getElementById('avatar-form').submit()">
+                        <input type="file" id="photo-upload" name="avatar" accept="image/*">
                     </form>
                 </div>
                 <div class="hero-info">
@@ -3082,7 +3238,7 @@
                         </div>
                     </div>
                     <div class="activity-item">
-                        <div class="activity-icon blue"><i class="bi bi-person-badge"></i></div>
+                        <div class="activity-icon plum"><i class="bi bi-person-badge"></i></div>
                         <div class="activity-text">
                             <h4>{{ number_format($averageRating ?? 0, 1) }} <i class="bi bi-star-fill"
                                     style="font-size:12px; color:#facc15;"></i></h4>
@@ -3120,21 +3276,21 @@
                 <div style="padding: 0 32px 32px 32px;">
                     <!-- TAB: TENTANG SAYA -->
                     <div id="tab-tentang" class="tab-panel active">
-                        <div class="section-header-flex">
-                            <h3 class="section-title mb-0" style="font-size:18px; text-align:left; text-transform:none;">
+                        <div class="section-header-flex" style="margin-bottom: 8px;">
+                            <h3 class="section-title" style="font-size:18px; text-align:left; text-transform:none; margin: 0;">
                                 Tentang Saya</h3>
                             <button class="btn-icon-edit" onclick="openModal('modal-edit-tentang')"><i
                                     class="bi bi-pencil"></i></button>
                         </div>
-                        <p id="ui-about-text" class="about-text">{{ $displayBio }}</p>
+                        <p id="ui-about-text" class="about-text" style="margin-bottom: 24px;">{{ $displayBio }}</p>
 
-                        <div class="section-header-flex mb-0 mt-2">
-                            <h3 class="section-title mb-0" style="font-size:18px; text-align:left; text-transform:none;">
+                        <div class="section-header-flex" style="margin-top: 24px; margin-bottom: 8px;">
+                            <h3 class="section-title" style="font-size:18px; text-align:left; text-transform:none; margin: 0;">
                                 Spesialisasi Saya</h3>
                             <button class="btn-icon-edit" onclick="openModalSpesialisasi()"><i
                                     class="bi bi-pencil"></i></button>
                         </div>
-                        <div class="pill-list" id="ui-spesialisasi-list">
+                        <div class="pill-list" id="ui-spesialisasi-list" style="margin-top: 12px; margin-bottom: 24px;">
                             @if(empty($expertiseTags))
                                 <span class="pill active">Leadership</span>
                                 <span class="pill active">Team Building</span>
@@ -3148,27 +3304,49 @@
                             @endif
                         </div>
 
-                        <div class="stat-horizontal-grid">
+                        <div class="section-header-flex" style="margin-top: 24px; margin-bottom: 8px;">
+                            <h3 class="section-title" style="font-size:18px; text-align:left; text-transform:none; margin: 0;">
+                                Rekening Bank</h3>
+                            <button class="btn-icon-edit" onclick="openModal('modal-edit-profil')"><i
+                                    class="bi bi-pencil"></i></button>
+                        </div>
+                        <div style="background: var(--bg-gray); border: 1px solid var(--border-light); border-radius: 16px; padding: 20px; margin-top: 12px; margin-bottom: 28px; text-align: left; display: grid; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                            <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--primary);">
+                                <i class="bi bi-bank" style="font-size: 20px;"></i>
+                                <span id="ui-bank-name" style="font-size: 15px;">{{ $displayBankName }}</span>
+                            </div>
+                            <div style="font-size: 13px; color: var(--text-muted); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                                <div>
+                                    <span style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Nomor Rekening</span>
+                                    <strong id="ui-bank-account-number" style="font-size: 14px; color: var(--text-dark);">{{ $displayBankAccountNumber }}</strong>
+                                </div>
+                                <div>
+                                    <span style="display: block; font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;">Nama Pemilik Rekening</span>
+                                    <strong id="ui-bank-account-holder" style="font-size: 14px; color: var(--text-dark);">{{ $displayBankAccountHolder }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-horizontal-grid" style="margin-top: 28px;">
                             <div class="stat-h-box">
-                                <div class="stat-h-icon"><i class="bi bi-person-workspace"></i></div>
+                                <div class="stat-h-icon" style="background: rgba(98, 67, 136, 0.1); color: #624388; border-color: rgba(98, 67, 136, 0.15);"><i class="bi bi-person-workspace"></i></div>
                                 <div class="stat-h-text">
                                     <p>Event Selesai</p>
-                                    <h4>{{ $completedEventsCount ?? 0 }} Event</h4>
+                                    <h4 style="margin: 4px 0 0; font-size: 16px; font-weight: 700; color: var(--text-dark); letter-spacing: -0.5px;">{{ $completedEventsCount ?? 0 }} Event</h4>
                                 </div>
                             </div>
                             <div class="stat-h-box">
-                                <div class="stat-h-icon" style="color: #3b82f6;"><i class="bi bi-journal-check"></i></div>
+                                <div class="stat-h-icon" style="background: rgba(133, 98, 179, 0.1); color: #8562b3; border-color: rgba(133, 98, 179, 0.15);"><i class="bi bi-journal-check"></i></div>
                                 <div class="stat-h-text">
                                     <p>Course Selesai</p>
-                                    <h4>{{ $completedCoursesCount ?? 0 }} Course</h4>
+                                    <h4 style="margin: 4px 0 0; font-size: 16px; font-weight: 700; color: var(--text-dark); letter-spacing: -0.5px;">{{ $completedCoursesCount ?? 0 }} Course</h4>
                                 </div>
                             </div>
                             <div class="stat-h-box">
-                                <div class="stat-h-icon" style="color: #3b82f6;"><i class="bi bi-star"></i></div>
+                                <div class="stat-h-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: rgba(245, 158, 11, 0.15);"><i class="bi bi-star-fill"></i></div>
                                 <div class="stat-h-text">
                                     <p>Rata-rata Rating</p>
-                                    <h4><i class="bi bi-star-fill" style="font-size:12px; color:#111827;"></i>
-                                        {{ number_format($averageRating ?? 0, 1) }} / 5.0</h4>
+                                    <h4 style="margin: 4px 0 0; font-size: 16px; font-weight: 700; color: var(--text-dark); letter-spacing: -0.5px;">{{ number_format($averageRating ?? 0, 1) }}<span style="font-size: 12px; color: var(--text-muted); font-weight: 500; margin-left: 2px;">/ 5.0</span></h4>
                                 </div>
                             </div>
                         </div>
@@ -3636,7 +3814,7 @@
             <div class="event-course-grid">
                 @php
                     $mixedItems = collect();
-                    foreach ($upcomingEvents as $event) {
+                    foreach ($recentEvents as $event) {
                         $img = null;
                         if (!empty($event->image_url))
                             $img = $event->image_url;
@@ -3655,7 +3833,8 @@
                             'image' => $img,
                             'url' => route('trainer.events.show', $event->id),
                             'meta_icon' => 'bi-calendar3',
-                            'badge_color' => '#10b981'
+                            'badge_color' => '#10b981',
+                            'created_at' => $event->created_at
                         ]);
                     }
                     foreach ($courses->sortByDesc('created_at')->take(3) as $course) {
@@ -3677,10 +3856,11 @@
                             'image' => $img,
                             'url' => route('trainer.detail-course', $course->id),
                             'meta_icon' => 'bi-star-fill',
-                            'badge_color' => '#3b82f6'
+                            'badge_color' => '#8562b3',
+                            'created_at' => $course->created_at
                         ]);
                     }
-                    $displayItems = $mixedItems->take(3);
+                    $displayItems = $mixedItems->sortByDesc('created_at')->take(3);
                 @endphp
 
                 @forelse($displayItems as $item)
@@ -3728,19 +3908,31 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="form-label">Nama Lengkap</label>
-                        <input type="text" name="name" class="form-control" value="{{ $trainer->name }}" required>
+                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $trainer->name) }}" required>
+                        @error('name')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jabatan / Peran</label>
-                        <input type="text" name="profession" class="form-control" value="{{ $trainer->profession }}">
+                        <input type="text" name="profession" class="form-control @error('profession') is-invalid @enderror" value="{{ old('profession', $trainer->profession) }}">
+                        @error('profession')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Institusi</label>
-                        <input type="text" name="institution" class="form-control" value="{{ $trainer->institution }}">
+                        <input type="text" name="institution" class="form-control @error('institution') is-invalid @enderror" value="{{ old('institution', $trainer->institution) }}">
+                        @error('institution')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div class="form-group">
                         <label class="form-label">Bio Singkat</label>
-                        <textarea name="bio" class="form-control" rows="3">{{ $trainer->bio }}</textarea>
+                        <textarea name="bio" class="form-control @error('bio') is-invalid @enderror" rows="3">{{ old('bio', $trainer->bio) }}</textarea>
+                        @error('bio')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                     <div style="display:flex; flex-wrap:wrap; gap:16px;">
                         <div class="form-group" style="flex:1; min-width:200px;">
@@ -3751,7 +3943,37 @@
                         </div>
                         <div class="form-group" style="flex:1; min-width:200px;">
                             <label class="form-label">Nomor Telepon</label>
-                            <input type="text" name="phone" class="form-control" value="{{ $trainer->phone }}">
+                            <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone', $trainer->phone) }}">
+                            @error('phone')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-credit-card-2-front" style="color: #624388;"></i> Informasi Rekening Bank
+                    </h4>
+                    <div class="form-group">
+                        <label class="form-label">Nama Bank</label>
+                        <input type="text" name="bank_name" class="form-control @error('bank_name') is-invalid @enderror" value="{{ old('bank_name', $trainer->bank_name) }}" placeholder="Contoh: BCA, Mandiri, BNI, dll">
+                        @error('bank_name')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                        <div class="form-group" style="flex:1; min-width:200px;">
+                            <label class="form-label">Nomor Rekening</label>
+                            <input type="text" name="bank_account_number" class="form-control @error('bank_account_number') is-invalid @enderror" value="{{ old('bank_account_number', $trainer->bank_account_number) }}">
+                            @error('bank_account_number')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:200px;">
+                            <label class="form-label">Nama Pemilik Rekening</label>
+                            <input type="text" name="bank_account_holder" class="form-control @error('bank_account_holder') is-invalid @enderror" value="{{ old('bank_account_holder', $trainer->bank_account_holder) }}">
+                            @error('bank_account_holder')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -3781,7 +4003,10 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label class="form-label">Deskripsi Tentang Saya</label>
-                        <textarea name="bio" class="form-control" rows="5">{{ $trainer->bio }}</textarea>
+                        <textarea name="bio" class="form-control @error('bio') is-invalid @enderror" rows="5">{{ old('bio', $trainer->bio) }}</textarea>
+                        @error('bio')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
                 <div class="modal-footer"
@@ -4076,6 +4301,30 @@
         </div>
     </div>
 
+    <!-- Cropper Modal -->
+    <div id="cropModal" class="crop-modal-overlay">
+        <div class="crop-modal-container">
+            <div class="crop-modal-header">
+                <span class="crop-modal-title">Atur Posisi & Ukuran Foto</span>
+                <button type="button" class="crop-modal-close" onclick="closeCropModal()">&times;</button>
+            </div>
+            <div class="crop-workspace">
+                <img id="crop-image" src="" alt="Crop Area" />
+            </div>
+            <div class="crop-footer">
+                <div class="crop-zoom-wrapper">
+                    <i class="bi bi-zoom-out"></i>
+                    <input type="range" id="crop-zoom-slider" class="crop-zoom-slider" min="0" max="100" value="0" />
+                    <i class="bi bi-zoom-in"></i>
+                </div>
+                <div class="crop-button-group">
+                    <button type="button" class="btn-crop-cancel" onclick="closeCropModal()">Batal</button>
+                    <button type="button" id="btn-crop-save" class="btn-crop-submit">Selesai</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Script for Tab Switching & Sidebar Toggling & Modals -->
     <script>
         // Modal Logic
@@ -4103,6 +4352,17 @@
                 closeModal(modalId);
             }
         }
+
+        // Auto open modal on validation errors
+        document.addEventListener('DOMContentLoaded', function () {
+            @if ($errors->any())
+                @if ($errors->has('bio') && !$errors->has('name') && !$errors->has('phone') && !$errors->has('bank_name') && !$errors->has('bank_account_number') && !$errors->has('bank_account_holder'))
+                    openModal('modal-edit-tentang');
+                @else
+                    openModal('modal-edit-profil');
+                @endif
+            @endif
+        });
 
         // --- Advanced Mock Save Functions for Simulation ---
         let currentEditCard = null;
@@ -4356,4 +4616,158 @@
         }
     </script>
 @endsection
+
+@push('scripts')
+<!-- Cropper.js JS CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script>
+    let cropper = null;
+    let originalFile = null;
+    const photoUploadInput = document.getElementById('photo-upload');
+    const avatarForm = document.getElementById('avatar-form');
+    const cropModal = document.getElementById('cropModal');
+    const cropImage = document.getElementById('crop-image');
+    const zoomSlider = document.getElementById('crop-zoom-slider');
+    const btnCropSave = document.getElementById('btn-crop-save');
+    let isCropConfirmed = false;
+
+    // Reset crop modal
+    function closeCropModal() {
+        cropModal.classList.remove('show');
+        setTimeout(() => {
+            cropModal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            // If crop was not confirmed and they selected a new file, reset input
+            if (!isCropConfirmed && originalFile) {
+                photoUploadInput.value = '';
+            }
+        }, 250);
+    }
+
+    if (photoUploadInput) {
+        photoUploadInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                isCropConfirmed = false;
+                const file = files[0];
+                originalFile = file;
+                
+                // Set image in modal
+                const fileReader = new FileReader();
+                fileReader.onload = function(event) {
+                    cropImage.src = event.target.result;
+                    openCropper();
+                };
+                fileReader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function openCropper() {
+        // Show modal
+        cropModal.style.display = 'flex';
+        cropModal.offsetHeight; // Force reflow
+        cropModal.classList.add('show');
+        
+        // Initialize Cropper
+        if (cropper) {
+            cropper.destroy();
+        }
+        
+        cropper = new Cropper(cropImage, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            cropBoxMovable: false,
+            cropBoxResizable: false,
+            toggleDragModeOnDblclick: false,
+            background: false,
+            autoCropArea: 1,
+            checkCrossOrigin: false, // Prevent adding crossorigin attribute
+            ready: function() {
+                zoomSlider.value = 0;
+            }
+        });
+
+        // Listen to mousewheel or zoom events to update slider
+        cropImage.addEventListener('zoom', function(e) {
+            const imageData = cropper.getImageData();
+            const minZoom = imageData.width / imageData.naturalWidth;
+            const maxZoom = 3.0;
+            const ratio = e.detail.ratio;
+            const percent = Math.min(100, Math.max(0, ((ratio - minZoom) / (maxZoom - minZoom)) * 100));
+            zoomSlider.value = percent;
+        });
+    }
+
+    // Zoom slider control
+    zoomSlider.addEventListener('input', function() {
+        if (!cropper) return;
+        const zoomPercent = parseFloat(this.value);
+        const imageData = cropper.getImageData();
+        const minZoom = imageData.width / imageData.naturalWidth;
+        const maxZoom = 3.0;
+        const targetZoom = minZoom + (maxZoom - minZoom) * (zoomPercent / 100);
+        cropper.zoomTo(targetZoom);
+    });
+
+    // Handle crop save
+    btnCropSave.addEventListener('click', function() {
+        if (!cropper) return;
+        
+        try {
+            // Get high quality cropped canvas
+            const canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+            
+            if (!canvas) {
+                alert("Gagal memotong gambar. Kanvas tidak valid.");
+                return;
+            }
+            
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    alert("Gagal memproses potongan gambar.");
+                    return;
+                }
+                
+                isCropConfirmed = true;
+                
+                // Create cropped file object
+                let fileName = 'cropped_avatar.png';
+                let fileType = 'image/png';
+                if (originalFile) {
+                    fileName = originalFile.name;
+                    fileType = originalFile.type;
+                }
+                
+                const croppedFile = new File([blob], fileName, { type: fileType });
+                
+                // Put cropped file into hidden file input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(croppedFile);
+                photoUploadInput.files = dataTransfer.files;
+                
+                // Close modal
+                closeCropModal();
+
+                // Programmatically submit the avatar form
+                if (avatarForm) {
+                    avatarForm.submit();
+                }
+            }, originalFile ? originalFile.type : 'image/png');
+        } catch (error) {
+            console.error("Error cropping image:", error);
+            alert("Terjadi kesalahan saat memproses gambar.");
+        }
+    });
+</script>
+@endpush
 

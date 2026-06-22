@@ -1,4 +1,7 @@
-@if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat Kursus</title>@endif<style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');@if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;height:210mm;overflow:hidden;background:white;font-family:'Helvetica','Arial',sans-serif;}@endif
+@php
+    $template = $course->certificate_template ?? 'template_1';
+@endphp
+@if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat Kursus</title>@endif<style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');@if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;@if($template != 'template_4')height:210mm;overflow:hidden;@endif background:white;font-family:'Helvetica','Arial',sans-serif;}@endif
         
         .certificate-page { 
             width: 270mm; 
@@ -18,6 +21,52 @@
                 transform: scale(var(--cert-scale, 1));
                 transform-origin: top left;
             @endif
+        }
+
+        @if(!isset($is_preview) || !$is_preview)
+            .template_4.certificate-page {
+                position: relative !important;
+                top: 20mm !important;
+                left: 13.5mm !important;
+                display: block !important;
+                float: none !important;
+            }
+            .template_4.page-1 {
+                page-break-after: always !important;
+                margin-bottom: 40mm !important;
+            }
+            .template_4.page-2 {
+                page-break-after: avoid !important;
+            }
+        @endif
+
+        /* Curriculum Table styling for Template 4 Page 2 */
+        .template_4 .curriculum-table {
+            width: 85%;
+            margin: 5px auto;
+            border-collapse: collapse;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 9.5pt;
+            z-index: 10;
+            position: relative;
+        }
+        .template_4 .curriculum-table th {
+            background-color: #7cc2f7;
+            color: #000000;
+            border: 1.5px solid #000000;
+            padding: 8px 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .template_4 .curriculum-table td {
+            background-color: #faf9f6;
+            color: #000000;
+            border: 1.5px solid #000000;
+            padding: 6px 12px;
+            font-weight: bold;
+        }
+        .template_4 .curriculum-table td.center {
+            text-align: center;
         }
 
         /* Template 1: Premium Royal (Elegant Maroon & Gold Waves) */
@@ -169,6 +218,118 @@
             position: relative;
             overflow: hidden;
         }
+
+
+        /* Template 4: Blue Shield (Navy Blue & Gold Pentagon) */
+        .template_4 { 
+            padding: 0; 
+            height: 170mm; 
+            width: 270mm;
+            box-sizing: border-box;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        .template_4 .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 270mm;
+            height: 170mm;
+            z-index: 1;
+        }
+        .template_4 .logo-banner-container {
+            position: absolute;
+            top: 0;
+            left: 28%;
+            width: 44%;
+            background-color: #ffffff;
+            border-radius: 0 0 15px 15px;
+            padding: 8px 20px;
+            text-align: center;
+            z-index: 10;
+        }
+        .template_4 .logo-poster-img {
+            height: 45px;
+            width: auto;
+            vertical-align: middle;
+            display: inline-block;
+        }
+        .template_4 .logo-item-top {
+            height: 38px;
+            width: auto;
+            vertical-align: middle;
+            display: inline-block;
+            margin: 0 5px;
+        }
+        .template_4 .content-blue {
+            position: absolute;
+            top: 36mm;
+            left: 0;
+            width: 270mm;
+            text-align: center;
+            z-index: 5;
+            padding: 0;
+            box-sizing: border-box;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .template_4 .recipient-underline {
+            width: 160mm;
+            height: 1.5px;
+            background-color: #ffffff;
+            margin: 2mm auto 4mm auto;
+        }
+        .template_4 .cert-footer {
+            position: absolute !important;
+            bottom: 12mm !important;
+            left: 20mm !important;
+            right: 20mm !important;
+            text-align: center !important;
+            width: auto !important;
+            z-index: 6 !important;
+            padding: 0 !important;
+        }
+        .template_4 .sig-box {
+            display: inline-block !important;
+            vertical-align: bottom !important;
+            float: none !important;
+            text-align: center !important;
+            width: 70mm !important;
+            margin: 0 8mm !important;
+        }
+        .template_4 .sig-position {
+            font-weight: bold;
+            margin: 0 0 1mm 0;
+            font-size: 8pt;
+            color: #1a1a1a;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .template_4 .sig-image-wrap {
+            height: 48px;
+            margin: 1mm auto;
+            text-align: center;
+        }
+        .template_4 .sig-img {
+            height: 48px;
+            width: auto;
+            display: block;
+            margin: 0 auto;
+            object-fit: contain;
+        }
+        .template_4 .sig-line {
+            width: 55mm;
+            border-bottom: 1.5px solid #1a1a1a;
+            margin: 2px auto;
+        }
+        .template_4 .sig-name {
+            font-weight: bold;
+            margin: 1.5mm 0 0 0;
+            font-size: 8.5pt;
+            color: #1a1a1a;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
         .template_3 .content-wrap {
             padding: 40px 20px 20px 20px;
             text-align: center;
@@ -260,119 +421,232 @@
 @if(!isset($is_preview) || !$is_preview)</head><body>@endif
 
     @php $template = $course->certificate_template ?? 'template_1'; @endphp
-    <div class="certificate-page {{ $template }}">
-        @if($template == 'template_1') 
-            <!-- Top Left Gold Bar -->
-            <div style="position: absolute; top: 15mm; left: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
-            <!-- Bottom Right Gold Bar -->
-            <div style="position: absolute; bottom: 15mm; right: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
+    
+    @if($template == 'template_4')
+        {{-- Template 4: Blue Shield - 2-page layout --}}
+        @php 
+            $bgBlueShieldUrl = request()->schemeAndHttpHost() . '/aset/bg-blue-shield.png';
+            $logoPosterUrl = request()->schemeAndHttpHost() . '/aset/logo poster.png';
+            $logosToRender4 = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64;
+        @endphp
 
-            <!-- Top Right Maroon & Gold Waves -->
-            <div style="position: absolute; top: 0; right: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
-                <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                    <path d="M 30,0 C 50,40 70,60 100,80 L 100,0 Z" fill="#7f1d1d" />
-                    <path d="M 40,0 C 58,38 74,54 100,70 L 100,0 Z" fill="#eab308" />
-                    <path d="M 50,0 C 66,34 78,46 100,60 L 100,0 Z" fill="#991b1b" />
-                    <path d="M 65,0 C 78,26 86,34 100,45 L 100,0 Z" fill="#eab308" />
-                    <path d="M 75,0 C 85,20 90,25 100,35 L 100,0 Z" fill="#7f1d1d" />
-                </svg>
+        {{-- PAGE 1 --}}
+        <div class="certificate-page template_4 page-1">
+            <img src="{{ $bgBlueShieldUrl }}" class="bg-image">
+
+            {{-- Top content: Logo Header Banner --}}
+            <div class="logo-banner-container">
+                <img src="{{ $logoPosterUrl }}" class="logo-poster-img">
+                @foreach(array_slice($logosToRender4, 0, 2) as $logo)
+                    <img src="{{ $logo }}" class="logo-item-top">
+                @endforeach
             </div>
 
-            <!-- Bottom Left Maroon & Gold Waves -->
-            <div style="position: absolute; bottom: 0; left: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
-                <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                    <path d="M 0,30 C 40,50 60,70 80,100 L 0,100 Z" fill="#7f1d1d" />
-                    <path d="M 0,40 C 38,58 54,74 70,100 L 0,100 Z" fill="#eab308" />
-                    <path d="M 0,50 C 34,66 46,78 60,100 L 0,100 Z" fill="#991b1b" />
-                    <path d="M 0,65 C 26,78 34,86 45,100 L 0,100 Z" fill="#eab308" />
-                    <path d="M 0,75 C 20,85 25,90 35,100 L 0,100 Z" fill="#7f1d1d" />
-                </svg>
-            </div>
-        @elseif($template == 'template_2')
-            <!-- SVG background decorations -->
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
-                <svg width="100%" height="100%" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                    <!-- Top-left diagonal gold ribbon -->
-                    <polygon points="0,0 60,0 0,60" fill="#d4af37" />
-                    <polygon points="0,0 55,0 0,55" fill="#fef08a" />
-                    <polygon points="0,0 40,0 0,40" fill="#ca8a04" />
-                    
-                    <!-- Right side navy & gold triangles -->
-                    <polygon points="297,0 215,0 297,125" fill="#0f172a" />
-                    <polygon points="297,210 185,210 297,135" fill="#ca8a04" />
-                    <polygon points="297,210 190,210 297,137" fill="#fbbf24" />
-                </svg>
-            </div>
-            
-            <div class="gold-badge">
-                <div class="gold-badge-inner"></div>
-            </div>
-        @endif
-
-        @if($template == 'template_3')
-            @php 
-                $bgCreativeUrl = request()->schemeAndHttpHost() . '/aset/bg-creative.png';
-            @endphp
-            <img src="{{ $bgCreativeUrl }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
-            
-            <div class="content-wrap">
-                <div class="logo-row">
-                    @php 
-                        $logoFileName = 'logo-idspora.png';
-                        $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
-                    @endphp
-                    <img src="{{ $mainLogoUrl }}" class="logo-item" style="height: 50px; width: auto;">
-
-                    @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
-                    @foreach($logosToRender as $logo)
-                        <img src="{{ $logo }}" class="logo-item" style="height: 50px; width: auto;">
-                    @endforeach
-                </div>
-                <h1>COURSE CERTIFICATE</h1>
-                <div class="sub-title">PROFESSIONAL EDUCATION</div>
+            {{-- Blue Area Content --}}
+            <div class="content-blue">
+                <h1 style="font-size: 22pt; font-weight: 900; margin: 0; letter-spacing: 3px; font-family: Arial, Helvetica, sans-serif;">SERTIFIKAT</h1>
+                <p style="font-size: 8.5pt; font-weight: bold; letter-spacing: 4px; margin: 2.5mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">DIBERIKAN KEPADA</p>
                 
-                <p style="font-size: 14pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This certificate is proudly awarded to</p>
-                <div class="recipient-name">{{ strtoupper($user->name) }}</div>
-                <p style="font-size: 12pt; color: #1e293b; margin-top: 10px;">for successful completion and mastery of the online course</p>
-                <h2 style="font-size: 24pt; color: #1e1b4b; margin: 10px 0; font-family: 'Georgia', serif;">"{{ $course->name }}"</h2>
-                <p style="font-size: 11pt; color: #64748b;">Issued by IdSPora Learning Academy on {{ $issuedAt->format('d F Y') }}</p>
-            </div>
-        @else
-            <div class="header" style="{{ ($template == 'template_1' || $template == 'template_2') ? 'padding: 40px 10px 0 10px; text-align: center;' : '' }}">
-                @if($template == 'template_1')
-                    <div class="logo-row">
-                        <div class="logo-container">
-                            @php 
-                                $logoFileName = 'logo idspora_dark.png';
-                                $mainLogoPath = public_path('aset/' . $logoFileName); 
-                                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
-                            @endphp
-                            @if(isset($is_preview) && $is_preview)
-                                <img src="{{ $mainLogoUrl }}" class="logo-item">
-                            @elseif(file_exists($mainLogoPath))
-                                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
-                            @endif
+                <div style="font-size: 20pt; font-weight: bold; margin: 3mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    {{ strtoupper($user->name) }}
+                </div>
+                <div class="recipient-underline"></div>
 
-                            @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
-                            @foreach(array_slice($logosToRender, 0, 3) as $logo)
-                                <img src="{{ $logo }}" class="logo-item">
-                            @endforeach
+                <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Atas Keberhasilannya Menyelesaikan Seluruh Persyaratan</p>
+                <p style="font-size: 13pt; font-weight: bold; margin: 1mm 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">PROGRAM KURSUS</p>
+                <p style="font-size: 8.5pt; margin: 2mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">Dalam Pembelajaran Materi</p>
+                
+                <h2 style="font-size: 14pt; font-weight: bold; margin: 1mm 0 1mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    "{{ $course->name }}"
+                </h2>
+                <p style="font-size: 8.5pt; margin: 0 0 2mm 0; font-family: Arial, Helvetica, sans-serif;">
+                    Designing Learning Experiences to Develop Real Competencies and Professional Portfolios
+                </p>
+                
+                <p style="font-size: 8pt; margin: 2.5mm 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+                    Yang diselenggarakan oleh: 
+                    <strong>IdSPora Learning Academy</strong> pada tanggal 
+                    <strong>{{ $issuedAt->format('d F Y') }}</strong>
+                </p>
+            </div>
+
+            {{-- Signature footer for template_4 inside the white area --}}
+            <div class="cert-footer">
+                <div style="text-align: center; width: 100%;">
+                    @php 
+                        $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64' => $b, 'name' => '', 'position' => ''], $signaturesBase64);
+                    @endphp
+                    @forelse($sigsToRender as $sig)
+                        <div class="sig-box">
+                            <p class="sig-position">{{ $sig['position'] ?? 'Authorized Position' }}</p>
+                            <div class="sig-image-wrap">
+                                @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
+                                <img src="{{ $sigSrc }}" class="sig-img">
+                            </div>
+                            <div class="sig-line"></div>
+                            <p class="sig-name">{{ $sig['name'] ?? 'Authorized Signature' }}</p>
                         </div>
-                    </div>
-                    <h1 style="margin-top: 10px; font-size: 38pt; font-family: 'Georgia', serif; color: #1e1b4b;">Course Certificate</h1>
-                    <div class="sub-title">Certificate of Completion</div>
-                @elseif($template == 'template_2')
+                    @empty
+                        <div class="sig-box">
+                            <p class="sig-position">Authorized Position</p>
+                            <div class="sig-image-wrap">
+                                <div style="height:48px;"></div>
+                            </div>
+                            <div class="sig-line"></div>
+                            <p class="sig-name">Authorized Signature</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="verification-tag">VERIFIED BY IDSPORA.COM ACADEMY</div>
+            <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
+        </div>
+
+        {{-- PAGE 2 --}}
+        <div class="certificate-page template_4 page-2">
+            <img src="{{ $bgBlueShieldUrl }}" class="bg-image">
+
+            {{-- Top content: Logo Header Banner --}}
+            <div class="logo-banner-container">
+                <img src="{{ $logoPosterUrl }}" class="logo-poster-img">
+                @foreach(array_slice($logosToRender4, 0, 2) as $logo)
+                    <img src="{{ $logo }}" class="logo-item-top">
+                @endforeach
+            </div>
+
+            {{-- Table Content --}}
+            <div class="content-blue" style="top: 36mm;">
+                <h2 style="font-size: 14pt; font-weight: bold; margin: 0 0 1mm 0; font-family: Arial, Helvetica, sans-serif; color: #ffffff;">
+                    {{ $course->name }}
+                </h2>
+                <p style="font-size: 9.5pt; margin: 0 0 4mm 0; font-family: Arial, Helvetica, sans-serif; color: #ffffff; font-weight: bold;">
+                    Designing Learning Experiences to Develop Real Competencies and Professional Portfolios
+                </p>
+
+                <table class="curriculum-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">No.</th>
+                            <th style="width: 74%; text-align: left; padding-left: 15px;">Materi</th>
+                            <th style="width: 18%;">Jam Pelajaran (JP)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="center">1.</td>
+                            <td style="text-align: left; padding-left: 15px;">OBE Canvas</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">2.</td>
+                            <td style="text-align: left; padding-left: 15px;">Transforming Teaching: From Content Delivery to Active Learning Design</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">3.</td>
+                            <td style="text-align: left; padding-left: 15px;">Design Thinking for OBE: From Learning to Real-World Product & Portfolio</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">4.</td>
+                            <td style="text-align: left; padding-left: 15px;">Meningkatkan Engagement di Ruang Kelas</td>
+                            <td class="center">3</td>
+                        </tr>
+                        <tr>
+                            <td class="center">5.</td>
+                            <td style="text-align: left; padding-left: 15px;">Project-Based Learning for Outcome Based Education</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">6.</td>
+                            <td style="text-align: left; padding-left: 15px;">Pemetaan KKNI dan SKKNI ke dalam OBE</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">7.</td>
+                            <td style="text-align: left; padding-left: 15px;">Penggunaan AI untuk Pembelajaran</td>
+                            <td class="center">2</td>
+                        </tr>
+                        <tr>
+                            <td class="center">8.</td>
+                            <td style="text-align: left; padding-left: 15px;">From Learning to Real Output: Membuat Portfolio + Showcase</td>
+                            <td class="center">3</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="text-align: center; font-weight: bold; background-color: #faf9f6; color: #000000; border: 1.5px solid #000000; padding: 6px 12px;">Total Jam Pelajaran</td>
+                            <td class="center" style="font-weight: bold; background-color: #faf9f6; color: #000000; border: 1.5px solid #000000; padding: 6px 12px;">18 JP</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="verification-tag">VERIFIED BY IDSPORA.COM ACADEMY</div>
+            <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
+        </div>
+    @else
+        <div class="certificate-page {{ $template }}">
+            @if($template == 'template_1') 
+                <!-- Top Left Gold Bar -->
+                <div style="position: absolute; top: 15mm; left: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
+                <!-- Bottom Right Gold Bar -->
+                <div style="position: absolute; bottom: 15mm; right: 15mm; width: 140mm; height: 4px; background: #eab308; z-index: 2;"></div>
+
+                <!-- Top Right Maroon & Gold Waves -->
+                <div style="position: absolute; top: 0; right: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
+                    <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <path d="M 30,0 C 50,40 70,60 100,80 L 100,0 Z" fill="#7f1d1d" />
+                        <path d="M 40,0 C 58,38 74,54 100,70 L 100,0 Z" fill="#eab308" />
+                        <path d="M 50,0 C 66,34 78,46 100,60 L 100,0 Z" fill="#991b1b" />
+                        <path d="M 65,0 C 78,26 86,34 100,45 L 100,0 Z" fill="#eab308" />
+                        <path d="M 75,0 C 85,20 90,25 100,35 L 100,0 Z" fill="#7f1d1d" />
+                    </svg>
+                </div>
+
+                <!-- Bottom Left Maroon & Gold Waves -->
+                <div style="position: absolute; bottom: 0; left: 0; width: 120mm; height: 120mm; z-index: 1; pointer-events: none;">
+                    <svg width="120mm" height="120mm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <path d="M 0,30 C 40,50 60,70 80,100 L 0,100 Z" fill="#7f1d1d" />
+                        <path d="M 0,40 C 38,58 54,74 70,100 L 0,100 Z" fill="#eab308" />
+                        <path d="M 0,50 C 34,66 46,78 60,100 L 0,100 Z" fill="#991b1b" />
+                        <path d="M 0,65 C 26,78 34,86 45,100 L 0,100 Z" fill="#eab308" />
+                        <path d="M 0,75 C 20,85 25,90 35,100 L 0,100 Z" fill="#7f1d1d" />
+                    </svg>
+                </div>
+            @elseif($template == 'template_2')
+                <!-- SVG background decorations -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;">
+                    <svg width="100%" height="100%" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                        <!-- Top-left diagonal gold ribbon -->
+                        <polygon points="0,0 60,0 0,60" fill="#d4af37" />
+                        <polygon points="0,0 55,0 0,55" fill="#fef08a" />
+                        <polygon points="0,0 40,0 0,40" fill="#ca8a04" />
+                        
+                        <!-- Right side navy & gold triangles -->
+                        <polygon points="297,0 215,0 297,125" fill="#0f172a" />
+                        <polygon points="297,210 185,210 297,135" fill="#ca8a04" />
+                        <polygon points="297,210 190,210 297,137" fill="#fbbf24" />
+                    </svg>
+                </div>
+                
+                <div class="gold-badge">
+                    <div class="gold-badge-inner"></div>
+                </div>
+            @endif
+
+            @if($template == 'template_3')
+                @php 
+                    $bgCreativeUrl = request()->schemeAndHttpHost() . '/aset/bg-creative.png';
+                @endphp
+                <img src="{{ $bgCreativeUrl }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
+                
+                <div class="content-wrap">
                     <div class="logo-row">
                         @php 
-                            $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
-                            $mainLogoPath = public_path('aset/' . $logoFileName); 
+                            $logoFileName = 'logo-idspora.png';
                             $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
                         @endphp
-                        @if(isset($is_preview) && $is_preview)
-                            <img src="{{ $mainLogoUrl }}" class="logo-item" style="height: 50px; width: auto;">
-                        @elseif(file_exists($mainLogoPath))
-                            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item" style="height: 50px; width: auto;">
-                        @endif
+                        <img src="{{ $mainLogoUrl }}" class="logo-item" style="height: 50px; width: auto;">
 
                         @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
                         @foreach($logosToRender as $logo)
@@ -380,55 +654,107 @@
                         @endforeach
                     </div>
                     <h1>COURSE CERTIFICATE</h1>
-                    <div class="sub-title">Completion & Mastery</div>
-                @endif
-            </div>
-            <div class="content" style="{{ ($template == 'template_1' || $template == 'template_2') ? 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;' : 'margin-top: 40px;' }}">
-                <p style="font-size: 16pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This is to certify that</p>
-                @if($template == 'template_1')
-                    <div class="recipient-name">{{ ucwords(strtolower($user->name)) }}</div>
-                    <div style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 15px auto;"></div>
-                @else
+                    <div class="sub-title">PROFESSIONAL EDUCATION</div>
+                    
+                    <p style="font-size: 14pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This certificate is proudly awarded to</p>
                     <div class="recipient-name">{{ strtoupper($user->name) }}</div>
-                @endif
-                <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;">has successfully completed all requirements of the course</p>
-                <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;">"{{ $course->name }}"</h2>
-                <p style="font-size: 12pt; color: #64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Academy</p>
-            </div>
-        @endif
+                    <p style="font-size: 12pt; color: #1e293b; margin-top: 10px;">for successful completion and mastery of the online course</p>
+                    <h2 style="font-size: 24pt; color: #1e1b4b; margin: 10px 0; font-family: 'Georgia', serif;">"{{ $course->name }}"</h2>
+                    <p style="font-size: 11pt; color: #64748b;">Issued by IdSPora Learning Academy on {{ $issuedAt->format('d F Y') }}</p>
+                </div>
+            @else
+                <div class="header" style="{{ ($template == 'template_1' || $template == 'template_2') ? 'padding: 40px 10px 0 10px; text-align: center;' : '' }}">
+                    @if($template == 'template_1')
+                        <div class="logo-row">
+                            <div class="logo-container">
+                                @php 
+                                    $logoFileName = 'logo idspora_dark.png';
+                                    $mainLogoPath = public_path('aset/' . $logoFileName); 
+                                    $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
+                                @endphp
+                                @if(isset($is_preview) && $is_preview)
+                                    <img src="{{ $mainLogoUrl }}" class="logo-item">
+                                @elseif(file_exists($mainLogoPath))
+                                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item">
+                                @endif
 
-        <div class="cert-footer">
-            <div style="text-align: center; width: 100%;">
-                @php 
-                    $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64' => $b, 'name' => '', 'position' => ''], $signaturesBase64);
-                @endphp
-                @forelse($sigsToRender as $sig)
-                    <div class="sig-box">
-                        @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
-                        <img src="{{ $sigSrc }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
-                        <div class="sig-line"></div>
-                        @if(!empty($sig['name']))
-                            <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $sig['name'] }}</p>
-                            @if(!empty($sig['position']))
-                                <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $sig['position'] }}</p>
+                                @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                                @foreach(array_slice($logosToRender, 0, 3) as $logo)
+                                    <img src="{{ $logo }}" class="logo-item">
+                                @endforeach
+                            </div>
+                        </div>
+                        <h1 style="margin-top: 10px; font-size: 38pt; font-family: 'Georgia', serif; color: #1e1b4b;">Course Certificate</h1>
+                        <div class="sub-title">Certificate of Completion</div>
+                    @elseif($template == 'template_2')
+                        <div class="logo-row">
+                            @php 
+                                $logoFileName = ($template == 'template_3') ? 'logo.png' : 'logo idspora_dark.png';
+                                $mainLogoPath = public_path('aset/' . $logoFileName); 
+                                $mainLogoUrl = request()->schemeAndHttpHost() . '/aset/' . $logoFileName;
+                            @endphp
+                            @if(isset($is_preview) && $is_preview)
+                                <img src="{{ $mainLogoUrl }}" class="logo-item" style="height: 50px; width: auto;">
+                            @elseif(file_exists($mainLogoPath))
+                                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($mainLogoPath)) }}" class="logo-item" style="height: 50px; width: auto;">
                             @endif
-                        @else
-                            <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
-                        @endif
-                    </div>
-                @empty
-                    <div class="sig-box">
-                        <div style="height: 90px;"></div>
-                        <div class="sig-line"></div>
-                        <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
-                    </div>
-                @endforelse
-            </div>
-        </div>
 
-        <div class="verification-tag">VERIFIED BY IDSPORA.COM ACADEMY</div>
-        <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
-    </div>
+                            @php $logosToRender = (isset($is_preview) && $is_preview && !empty($logosUrl)) ? $logosUrl : $logosBase64; @endphp
+                            @foreach($logosToRender as $logo)
+                                <img src="{{ $logo }}" class="logo-item" style="height: 50px; width: auto;">
+                            @endforeach
+                        </div>
+                        <h1>COURSE CERTIFICATE</h1>
+                        <div class="sub-title">Completion & Mastery</div>
+                    @endif
+                </div>
+                <div class="content" style="{{ ($template == 'template_1' || $template == 'template_2') ? 'padding: 20px 10px 0 10px; text-align: center; margin-top: 0;' : 'margin-top: 40px;' }}">
+                    <p style="font-size: 16pt; color: #64748b; font-style: italic; margin-bottom: 5px;">This is to certify that</p>
+                    @if($template == 'template_1')
+                        <div class="recipient-name">{{ ucwords(strtolower($user->name)) }}</div>
+                        <div style="width: 70%; border-top: 1.5px dotted #7f1d1d; margin: 15px auto;"></div>
+                    @else
+                        <div class="recipient-name">{{ strtoupper($user->name) }}</div>
+                    @endif
+                    <p style="font-size: 14pt; line-height: 1.5; color: #1e293b; margin-top: 10px;">has successfully completed all requirements of the course</p>
+                    <h2 style="font-size: 26pt; color: #1e1b4b; margin: 15px 0; font-family: 'Georgia', serif;">"{{ $course->name }}"</h2>
+                    <p style="font-size: 12pt; color: #64748b;">Issued on {{ $issuedAt->format('d F Y') }} by idSpora Academy</p>
+                </div>
+            @endif
+
+            <div class="cert-footer">
+                <div style="text-align: center; width: 100%;">
+                    @php 
+                        $sigsToRender = !empty($signaturesData) ? $signaturesData : array_map(fn($b) => ['base64' => $b, 'name' => '', 'position' => ''], $signaturesBase64);
+                    @endphp
+                    @forelse($sigsToRender as $sig)
+                        <div class="sig-box">
+                            @php $sigSrc = (isset($is_preview) && $is_preview && !empty($sig['url'])) ? $sig['url'] : $sig['base64']; @endphp
+                            <img src="{{ $sigSrc }}" style="height: 90px; width: auto; display: block; margin: 0 auto;">
+                            <div class="sig-line"></div>
+                            @if(!empty($sig['name']))
+                                <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">{{ $sig['name'] }}</p>
+                                @if(!empty($sig['position']))
+                                    <p style="margin: 2px 0 0; font-size: 9pt; color: #64748b; font-style: italic;">{{ $sig['position'] }}</p>
+                                @endif
+                            @else
+                                <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="sig-box">
+                            <div style="height: 90px;"></div>
+                            <div class="sig-line"></div>
+                            <p style="font-weight: bold; margin: 0; font-size: 11pt; color: #1e1b4b;">Authorized Signature</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="verification-tag">VERIFIED BY IDSPORA.COM ACADEMY</div>
+            <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: {{ $certificateNumber }}</div>
+        </div>
+    @endif
 
     @if(isset($is_preview) && $is_preview)
     <script>

@@ -31,20 +31,25 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-    $rules = [
-    'email' => ['required', 'email'],
-    'password' => ['required', 'min:6'],
-    'redirect' => ['sometimes', 'string', 'nullable'],
-    ];
+        $rules = [
+            'email' => ['required', 'email'],
+            'password' => ['required', 'min:6'],
+            'redirect' => ['sometimes', 'string', 'nullable'],
+        ];
 
-    $messages = [
-    'email.required' => 'Email harus diisi',
-    'email.email' => 'Format email tidak valid',
-    'password.required' => 'Kata sandi harus diisi',
-    'password.min' => 'Kata sandi minimal 6 karakter',
-    ];
+        if (config('services.recaptcha.secret_key')) {
+            $rules['g-recaptcha-response'] = ['required', new \App\Rules\ReCaptcha];
+        }
 
-$validator = Validator::make($request->all(), $rules, $messages);
+        $messages = [
+            'email.required' => 'Email harus diisi',
+            'email.email' => 'Format email tidak valid',
+            'password.required' => 'Kata sandi harus diisi',
+            'password.min' => 'Kata sandi minimal 6 karakter',
+            'g-recaptcha-response.required' => 'Harap selesaikan verifikasi reCAPTCHA',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return redirect()->back()
@@ -91,10 +96,14 @@ $validator = Validator::make($request->all(), $rules, $messages);
         // For regular users, redirect back to intended URL (protected page) when available.
         // Also honor explicit internal redirect param (used by guest-only links).
         $redirect = trim((string) $request->input('redirect', ''));
-        if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
-            return redirect($redirect);
+        // Fallback: some pages pass 'return' instead of 'redirect' (e.g. Save button on event detail)
+        if ($redirect === '') {
+            $redirect = trim((string) $request->input('return', ''));
         }
-        return redirect()->intended('/dashboard');
+        if ($redirect !== '' && str_starts_with($redirect, '/') && !str_starts_with($redirect, '//')) {
+            return redirect($redirect)->with('login_success', 'Success, Welcome to IdSpora LMS!');
+        }
+        return redirect()->intended('/dashboard')->with('login_success', 'Success, Welcome to IdSpora LMS!');
     }
 
     public function register(Request $request)

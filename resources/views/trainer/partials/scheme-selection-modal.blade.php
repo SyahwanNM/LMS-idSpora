@@ -1,5 +1,5 @@
 {{-- Scheme Selection & E-Agreement Modal for Event Invitations --}}
-<div class="modal fade scheme-modal" id="schemeSelectionModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade scheme-modal" id="schemeSelectionModal" tabindex="-1" aria-hidden="true" style="display: none;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0">
             <form id="schemeSelectionForm" method="POST" style="display: none;">
@@ -614,17 +614,9 @@
 
             if (confirmBtn.disabled) return;
 
-            // Set form action and payload based on invitation entity type
+            // Set form action and payload
             const notificationId = document.getElementById('notification_id').value;
-            const entityType = modal.getAttribute('data-entity-type') || 'event';
-
-            if (entityType === 'event') {
-                form.action = acceptWithSchemeUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
-            } else {
-                form.action = respondUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
-            }
-
-            // Add scheme and agreement values to form
+            const entityType = modal.getAttribute('data-entity-type');
             const schemeSelected = document.querySelector('.scheme-radio:checked');
             if (!schemeSelected) {
                 return;
@@ -634,11 +626,12 @@
             const agreement2 = document.getElementById('agreement2').checked ? '1' : '';
 
             if (entityType === 'event') {
-                // Event flow uses dedicated endpoint
+                form.action = acceptWithSchemeUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
                 upsertHiddenInput('scheme_type', schemeValue);
-                upsertHiddenInput('legal_agreement_1', agreement1);
-                upsertHiddenInput('legal_agreement_2', agreement2);
+                upsertHiddenInput('legal_agreement_1', agreement1 ? '1' : '');
+                upsertHiddenInput('legal_agreement_2', agreement2 ? '1' : '');
             } else {
+                form.action = respondUrlTemplate.replace('__NOTIFICATION_ID__', encodeURIComponent(notificationId));
                 // Course flow uses standard respond endpoint
                 upsertHiddenInput('decision', 'accept');
                 upsertHiddenInput('scheme_type', schemeValue);
@@ -664,11 +657,14 @@
 
         // Window function for opening modal with invitation info
         window.openSchemeSelectionModal = function (notificationId, eventTitle, entityType) {
-            modal.setAttribute('data-entity-type', entityType || 'event');
+            modal.setAttribute('data-entity-type', entityType || 'course');
             document.getElementById('notification_id').value = notificationId;
-            document.getElementById('invitationTitle').textContent = (entityType === 'course')
-                ? 'Anda menerima penugasan untuk course:'
-                : 'Anda menerima undangan untuk mengajar kelas:';
+            
+            if (entityType === 'event') {
+                document.getElementById('invitationTitle').textContent = 'Anda menerima penugasan untuk event:';
+            } else {
+                document.getElementById('invitationTitle').textContent = 'Anda menerima penugasan untuk course:';
+            }
             document.getElementById('invitationDesc').textContent = eventTitle;
 
             // Reset form

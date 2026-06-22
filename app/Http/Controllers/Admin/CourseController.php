@@ -99,6 +99,8 @@ class CourseController extends Controller
             ['completed' => true, 'video_watched' => true]
         );
 
+        $enrollment->checkAndComplete($user);
+
         return response()->json(['ok' => true]);
     }
 
@@ -312,6 +314,8 @@ class CourseController extends Controller
                         'completed' => true,
                     ]
                 );
+
+                $enrollment->checkAndComplete($user);
             }
         }
 
@@ -514,7 +518,7 @@ class CourseController extends Controller
         for ($unit = $startUnit; $unit <= $minUnits; $unit++) {
             $rows[] = [
                 'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - PDF Material',
+                'title' => 'Module ' . $unit . ' - Material',
                 'description' => null,
                 'type' => 'pdf',
                 'is_required' => true,

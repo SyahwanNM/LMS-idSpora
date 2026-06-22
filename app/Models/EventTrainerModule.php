@@ -13,14 +13,18 @@ class EventTrainerModule extends Model
         'trainer_id',
         'original_name',
         'path',
+        'survey_link',
         'status',
+        'logo_stamped',
         'rejection_reason',
         'reviewed_by',
         'reviewed_at',
+        'feedback_link',
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'logo_stamped' => 'boolean',
     ];
 
     public function event(): BelongsTo
@@ -40,6 +44,9 @@ class EventTrainerModule extends Model
 
     public function getDownloadUrlAttribute(): string
     {
+        if (preg_match('#^https?://#i', $this->path)) {
+            return $this->path;
+        }
         return Storage::disk('public')->url($this->path);
     }
 
