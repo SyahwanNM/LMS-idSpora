@@ -124,9 +124,8 @@
     @php
         $tab = request('tab', 'dashboard');
         
-        // Helper queries for layout
-        $totalResellers = \App\Models\User::whereNotNull('referral_code')->count();
-        $activeResellers = \App\Models\User::whereNotNull('referral_code')->has('referrals')->count();
+        $totalResellers = \App\Models\User::where('role', 'user')->whereNotNull('referral_code')->count();
+        $activeResellers = \App\Models\User::where('role', 'user')->whereNotNull('referral_code')->has('referrals')->count();
         $activeResellerProducts = \App\Models\Course::where('is_reseller_course', 1)->count() + \App\Models\Event::where('is_reseller_event', 1)->count();
         
         // Top performer reseller
@@ -196,12 +195,12 @@
         }
             
         // Reseller status distribution count (2 status: Aktif & Suspend)
-        $statusActiveCount = \App\Models\User::whereNotNull('referral_code')->where('reseller_status', 'active')->count();
-        $statusSuspendedCount = \App\Models\User::whereNotNull('referral_code')->where('reseller_status', 'suspended')->count();
+        $statusActiveCount = \App\Models\User::where('role', 'user')->whereNotNull('referral_code')->where('reseller_status', 'active')->count();
+        $statusSuspendedCount = \App\Models\User::where('role', 'user')->whereNotNull('referral_code')->where('reseller_status', 'suspended')->count();
         $totalStatus = max(1, $statusActiveCount + $statusSuspendedCount);
 
         // Count reseller levels dynamically
-        $resellersWithCount = \App\Models\User::whereNotNull('referral_code')
+        $resellersWithCount = \App\Models\User::where('role', 'user')->whereNotNull('referral_code')
             ->withCount('referrals')
             ->get();
         

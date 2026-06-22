@@ -19,12 +19,13 @@ class ResellerController extends Controller
     // Fungsi 1: Khusus nampilin Dashboard & Grafik Admin
     public function adminDashboard(Request $request)
     {
-        $activeResellersCount = User::whereNotNull('referral_code')->count();
+        $activeResellersCount = User::where('role', 'user')->whereNotNull('referral_code')->count();
         $totalSalesCount = Referral::where('status', 'paid')->count();
         $totalPendingReferrals = Referral::where('status', 'pending')->count();
 
         // Ambil top 5 reseller
-        $topResellers = User::whereNotNull('referral_code')
+        $topResellers = User::where('role', 'user')
+            ->whereNotNull('referral_code')
             ->withSum(['referrals as total_earned' => function ($q) {
                 $q->where('status', 'paid');
             }], 'amount')
@@ -95,7 +96,8 @@ class ResellerController extends Controller
     // Fungsi 2: Khusus nampilin Tabel Data Reseller untuk Admin
     public function adminData()
     {
-        $resellers = User::whereNotNull('referral_code')
+        $resellers = User::where('role', 'user')
+            ->whereNotNull('referral_code')
             ->withCount('referrals')
             ->withSum(['referrals as total_earned' => function ($q) {
                 $q->where('status', 'paid');
@@ -124,8 +126,8 @@ class ResellerController extends Controller
 
     public function adminLaporan(Request $request)
     {
-        $totalResellers = User::whereNotNull('referral_code')->count();
-        $activeResellers = User::whereNotNull('referral_code')->has('referrals')->count();
+        $totalResellers = User::where('role', 'user')->whereNotNull('referral_code')->count();
+        $activeResellers = User::where('role', 'user')->whereNotNull('referral_code')->has('referrals')->count();
         $activeResellerProducts = Course::where('is_reseller_course', 1)->count() + Event::where('is_reseller_event', 1)->count();
         
         // Top performer reseller
@@ -137,13 +139,14 @@ class ResellerController extends Controller
             ->get();
             
         // Reseller status distribution count
-        $statusActiveCount = User::whereNotNull('referral_code')->where(fn($q) => $q->whereNull('reseller_status')->orWhere('reseller_status', 'active'))->count();
-        $statusSuspendedCount = User::whereNotNull('referral_code')->where('reseller_status', 'suspended')->count();
+        $statusActiveCount = User::where('role', 'user')->whereNotNull('referral_code')->where(fn($q) => $q->whereNull('reseller_status')->orWhere('reseller_status', 'active'))->count();
+        $statusSuspendedCount = User::where('role', 'user')->whereNotNull('referral_code')->where('reseller_status', 'suspended')->count();
         $statusPendingCount = 0;
         $totalStatus = max(1, $statusActiveCount + $statusSuspendedCount);
 
         // Count reseller levels dynamically
-        $resellersWithCount = User::whereNotNull('referral_code')
+        $resellersWithCount = User::where('role', 'user')
+            ->whereNotNull('referral_code')
             ->withCount('referrals')
             ->get();
         
@@ -376,7 +379,7 @@ class ResellerController extends Controller
             $rangeText = 'Semua Periode';
         }
 
-        $activeResellersCount = User::whereNotNull('referral_code')->count();
+        $activeResellersCount = User::where('role', 'user')->whereNotNull('referral_code')->count();
 
         if ($type === 'withdrawals') {
             $query = Withdrawal::query()->with('user');
@@ -754,7 +757,8 @@ class ResellerController extends Controller
 
         // --- 5. Top Resellers ---
         // Ngambil 6 User dengan referral terbanyak (Global Leaderboard)
-        $topResellers = User::withCount('referrals') // Hitung jumlah referral
+        $topResellers = User::where('role', 'user')
+            ->withCount('referrals') // Hitung jumlah referral
             ->withSum(['referrals' => function ($q) { // Hitung total komisi mereka (status paid)
                 $q->where('status', 'paid');
             }], 'amount')
@@ -764,7 +768,8 @@ class ResellerController extends Controller
 
         // --- 6. Ranking User Saat Ini (Sticky Rank) ---
         // Hitung ada berapa orang yang referralnya LEBIH BANYAK dari kita
-        $usersAhead = User::withCount('referrals')
+        $usersAhead = User::where('role', 'user')
+            ->withCount('referrals')
             ->having('referrals_count', '>', $totalReferrals)
             ->count();
 
