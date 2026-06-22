@@ -491,7 +491,7 @@
                                     </td>
                                     <td class="py-3 text-start">
                                         <button type="button"
-                                            class="btn btn-warning text-light fw-bold shadow-sm reseller-action-btn"
+                                            class="btn btn-border-warning btn-outline-warning fw-bold shadow-sm reseller-action-btn"
                                             onclick="copyTextValue(this, @js($product['referral_link']))"
                                             title="Salin link referral">
                                             <i class="bi bi-link-45deg"></i>

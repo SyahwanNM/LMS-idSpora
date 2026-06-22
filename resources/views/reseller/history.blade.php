@@ -11,6 +11,19 @@
         integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        .btn-pdf-download {
+            border: 1px solid var(--primary) !important;
+            color: var(--primary) !important;
+            background-color: transparent !important;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-pdf-download:hover {
+            background-color: var(--primary) !important;
+            color: #ffffff !important;
+            border-color: var(--primary) !important;
+        }
+    </style>
 </head>
 
 <body class="bg-light" style="font-family: 'Inter', system-ui, -apple-system, sans-serif;">
@@ -142,7 +155,7 @@
                             <span class="badge rounded-pill bg-light text-secondary border border-light-subtle px-3 py-2 ms-2" style="font-weight: 500; font-size: 0.75rem;">{{ $history->total() }} hasil</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="{{ route('reseller.history.download') }}" class="btn btn-outline-primary btn-sm fw-medium px-3 py-1.5 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.85rem; border-color: var(--primary); color: var(--primary);" target="_blank">
+                            <a href="{{ route('reseller.history.download') }}" class="btn btn-pdf-download btn-sm fw-medium px-3 py-1.5 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.85rem;" target="_blank">
                                 <i class="bi bi-cloud-arrow-down-fill"></i>
                                 <span>Unduh PDF</span>
                             </a>
@@ -238,14 +251,14 @@
             </div>
 
             <!-- Info Banner -->
-            <div class="alert alert-primary border-0 p-4 shadow-sm animate-fade-in delay-3" style="background-color: var(--primary-subtle); border-radius: 16px; color: var(--primary-dark);">
-                <div class="d-flex align-items-start gap-3">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-white shadow-sm" style="width: 36px; height: 36px; min-width: 36px; color: var(--primary);">
+            <div class="alert alert-primary border-0 p-4 shadow-sm animate-fade-in delay-3" style="background-color:var(--primary-dark); border-radius: 16px;">
+                <div class="d-flex align-items-start gap-3 text-white">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-white shadow-sm" style="color:var(--primary-dark); width: 36px; height: 36px; min-width: 36px;">
                         <i class="bi bi-info-circle-fill fs-5"></i>
                     </div>
                     <div>
-                        <h6 class="fw-bold mb-1" style="color: var(--primary-dark);">Informasi Penting</h6>
-                        <p class="mb-0 small" style="color: var(--primary); line-height: 1.6;">Komisi referral akan diverifikasi secara otomatis setelah pembayaran pembeli berhasil dikonfirmasi. Saldo dompet Anda akan bertambah secara real-time untuk transaksi referral dengan status PAID. Pencairan komisi dapat diajukan melalui halaman dashboard reseller jika saldo dompet telah mencapai batas minimum penarikan.</p>
+                        <h6 class="fw-bold mb-1">Informasi Penting</h6>
+                        <p class="mb-0 small">Komisi referral akan diverifikasi secara otomatis setelah pembayaran pembeli berhasil dikonfirmasi. Saldo dompet Anda akan bertambah secara real-time untuk transaksi referral dengan status PAID. Pencairan komisi dapat diajukan melalui halaman dashboard reseller jika saldo dompet telah mencapai batas minimum penarikan.</p>
                     </div>
                 </div>
             </div>

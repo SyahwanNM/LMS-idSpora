@@ -17,6 +17,17 @@
                 border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
             }
         }
+        .btn-pdf-download {
+            border: 1px solid var(--primary) !important;
+            color: var(--primary) !important;
+            background-color: transparent !important;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-pdf-download:hover {
+            background-color: var(--primary-dark) !important;
+            color: #ffffff !important;
+            border-color: var(--primary-dark) !important;
+        }
     </style>
 </head>
 
@@ -149,7 +160,7 @@
                             <span class="badge rounded-pill bg-light text-secondary border border-light-subtle px-3 py-1 ms-2" style="font-weight: 500; font-size: 0.75rem;">{{ $withdrawals->total() }} hasil</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="{{ route('reseller.withdraw.download') }}" class="btn btn-outline-primary btn-sm fw-medium px-3 py-1.5 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.85rem; border-color: var(--primary); color: var(--primary);" target="_blank">
+                            <a href="{{ route('reseller.withdraw.download') }}" class="btn btn-pdf-download btn-sm fw-medium px-3 py-1.5 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.85rem;" target="_blank">
                                 <i class="bi bi-cloud-arrow-down-fill"></i>
                                 <span>Unduh PDF</span>
                             </a>
