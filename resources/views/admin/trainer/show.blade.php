@@ -41,7 +41,7 @@
             width: 90px;
             height: 90px;
             border-radius: 50%;
-            background-color: #1e3a8a;
+            background-color: #1e1b4b;
             color: #fff;
             display: flex;
             align-items: center;
@@ -512,7 +512,7 @@
         }
 
         .event-course-icon.event {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            background: linear-gradient(135deg, #1e1b4b 0%, #3b82f6 100%);
         }
 
         .event-course-icon.course {
@@ -2397,7 +2397,7 @@
                                     <span class="badge bg-light text-dark border">Ops</span>
                                 </div>
                                 <div class="row g-3">
-                                    <div class="col-6"><a href="{{ route('admin.trainer.certificates.queue') }}"
+                                    <div class="col-6"><a href="{{ route('admin.trainer.certificates.index', ['tab' => 'unsentItems']) }}"
                                             class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10 d-block text-decoration-none"><i
                                                 class="bi bi-files fs-4 d-block mb-2"></i><span class="fw-bold"
                                                 style="font-size: 13px;">Terbitkan Massal</span></a></div>

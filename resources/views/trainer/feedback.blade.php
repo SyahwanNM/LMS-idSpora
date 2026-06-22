@@ -5,7 +5,7 @@
 @php
   $pageTitle = 'Ulasan';
   $breadcrumbs = [
-    ['label' => 'Home', 'url' => route('trainer.dashboard')],
+    ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
     ['label' => 'Ulasan']
   ];
 @endphp

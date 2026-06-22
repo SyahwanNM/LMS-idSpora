@@ -15,6 +15,7 @@ class EventTrainerModule extends Model
         'path',
         'survey_link',
         'status',
+        'logo_stamped',
         'rejection_reason',
         'reviewed_by',
         'reviewed_at',
@@ -23,6 +24,7 @@ class EventTrainerModule extends Model
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'logo_stamped' => 'boolean',
     ];
 
     public function event(): BelongsTo

@@ -89,11 +89,7 @@ class Event extends Model
         'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
-        'module_submitted_at' => 'datetime',
-        'module_verified_at' => 'datetime',
-        'module_rejected_at' => 'datetime',
         'discount_until' => 'date',
-        'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
         'discount_percentage' => 'integer',
         'latitude' => 'decimal:7',
@@ -106,7 +102,6 @@ class Event extends Model
         'accept_manual_transfer' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
-        'module_path' => 'array', // Added to support multiple trainer modules
         'start_submission' => 'datetime',
         'until_submission' => 'datetime',
         'announcement_date' => 'datetime',
@@ -115,6 +110,139 @@ class Event extends Model
         'finalist_payment_start' => 'datetime',
         'finalist_payment_end' => 'datetime',
     ];
+
+    protected $virtualAttributes = [];
+
+    public function setRawAttributes(array $attributes, $sync = false)
+    {
+        $this->virtualAttributes = [];
+        return parent::setRawAttributes($attributes, $sync);
+    }
+
+    public function setVirtualAttribute($key, $value)
+    {
+        $this->virtualAttributes[$key] = $value;
+    }
+
+    public function getVirtualAttribute($key, $fallback = null)
+    {
+        return $this->virtualAttributes[$key] ?? $fallback;
+    }
+
+    // Setters
+    public function setModulePathAttribute($value) { $this->setVirtualAttribute('module_path', $value); }
+    public function setMaterialStatusAttribute($value) { $this->setVirtualAttribute('material_status', $value); }
+    public function setModuleSubmissionPathAttribute($value) { $this->setVirtualAttribute('module_submission_path', $value); }
+    public function setModuleSubmittedAtAttribute($value) { $this->setVirtualAttribute('module_submitted_at', $value); }
+    public function setModuleVerifiedAtAttribute($value) { $this->setVirtualAttribute('module_verified_at', $value); }
+    public function setModuleVerifiedByAttribute($value) { $this->setVirtualAttribute('module_verified_by', $value); }
+    public function setMaterialApprovedAtAttribute($value) { $this->setVirtualAttribute('material_approved_at', $value); }
+    public function setMaterialApprovedByAttribute($value) { $this->setVirtualAttribute('material_approved_by', $value); }
+    public function setMaterialRejectionReasonAttribute($value) { $this->setVirtualAttribute('material_rejection_reason', $value); }
+    public function setModuleRejectedAtAttribute($value) { $this->setVirtualAttribute('module_rejected_at', $value); }
+    public function setModuleRejectedByAttribute($value) { $this->setVirtualAttribute('module_rejected_by', $value); }
+    public function setModuleRejectionReasonAttribute($value) { $this->setVirtualAttribute('module_rejection_reason', $value); }
+
+    // Getters
+    public function getModulePathAttribute()
+    {
+        if (array_key_exists('module_path', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_path'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->path : null;
+    }
+
+    public function getMaterialStatusAttribute()
+    {
+        if (array_key_exists('material_status', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_status'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->status : 'pending';
+    }
+
+    public function getModuleSubmissionPathAttribute()
+    {
+        if (array_key_exists('module_submission_path', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_submission_path'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->path : null;
+    }
+
+    public function getModuleSubmittedAtAttribute()
+    {
+        $val = array_key_exists('module_submitted_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_submitted_at']
+            : $this->trainerModules()->latest()->first()?->created_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleVerifiedAtAttribute()
+    {
+        $val = array_key_exists('module_verified_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_verified_at']
+            : $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleVerifiedByAttribute()
+    {
+        if (array_key_exists('module_verified_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_verified_by'];
+        }
+        return $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_by;
+    }
+
+    public function getMaterialApprovedAtAttribute()
+    {
+        $val = array_key_exists('material_approved_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['material_approved_at']
+            : $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getMaterialApprovedByAttribute()
+    {
+        if (array_key_exists('material_approved_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_approved_by'];
+        }
+        return $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_by;
+    }
+
+    public function getMaterialRejectionReasonAttribute()
+    {
+        if (array_key_exists('material_rejection_reason', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_rejection_reason'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->rejection_reason;
+    }
+
+    public function getModuleRejectedAtAttribute()
+    {
+        $val = array_key_exists('module_rejected_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_rejected_at']
+            : $this->trainerModules()->where('status', 'rejected')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleRejectedByAttribute()
+    {
+        if (array_key_exists('module_rejected_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_rejected_by'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->reviewed_by;
+    }
+
+    public function getModuleRejectionReasonAttribute()
+    {
+        if (array_key_exists('module_rejection_reason', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_rejection_reason'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->rejection_reason;
+    }
+
 
     public function getHasApprovedModulesAttribute(): bool
     {

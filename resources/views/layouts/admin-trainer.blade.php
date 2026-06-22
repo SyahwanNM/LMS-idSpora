@@ -6,9 +6,12 @@
 
 @section('styles')
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
             :root {
                 --admin-primary: #1e1b4b;
-                --admin-secondary: #3949ab;
+                --admin-secondary: #1e1b4b;
+                --admin-accent: #1e1b4b;
                 --admin-bg: #f8fafc;
                 --admin-border: #e2e8f0;
                 --admin-text-muted: #64748b;
@@ -16,6 +19,7 @@
 
             body {
                 background-color: var(--admin-bg);
+                font-family: 'Plus Jakarta Sans', sans-serif !important;
             }
 
             html {
@@ -52,8 +56,8 @@
                 width: 100%;
                 border-radius: 14px;
                 font-weight: 700;
-                background: #3949ab;
-                border-color: #3949ab;
+                background: var(--admin-secondary);
+                border-color: var(--admin-secondary);
             }
 
             .admin-trainer-offcanvas {
@@ -99,6 +103,24 @@
                 gap: 12px;
                 border: 0;
                 width: 100%;
+                position: relative;
+            }
+
+            .sidebar-link::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 20%;
+                height: 60%;
+                width: 4px;
+                background-color: var(--admin-accent);
+                border-radius: 0 4px 4px 0;
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .sidebar-link.active::before {
+                opacity: 1;
             }
 
             .sidebar-link i {
@@ -108,17 +130,18 @@
             }
 
             .sidebar-link:hover {
-                background-color: #f8fafc;
-                color: #3949ab;
+                background-color: #eff6ff;
+                color: var(--admin-secondary);
             }
 
             .sidebar-link:hover i {
-                color: #3949ab;
+                color: var(--admin-secondary);
             }
 
             .sidebar-link.active {
-                background-color: #3949ab;
+                background-color: var(--admin-secondary);
                 color: #fff;
+                box-shadow: 0 4px 12px rgba(30, 27, 75, 0.15);
             }
 
             .sidebar-link.active i {
@@ -162,7 +185,7 @@
             }
 
             .admin-trainer-hero {
-                background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
+                background-color: var(--admin-secondary);
                 border-radius: 24px;
                 padding: 36px;
                 color: #fff;
@@ -170,7 +193,7 @@
                 position: relative;
                 overflow: hidden;
                 border: 1px solid rgba(255, 255, 255, 0.1);
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+                box-shadow: 0 20px 40px rgba(30, 27, 75, 0.12);
             }
 
             .admin-card {
@@ -307,14 +330,14 @@
 
                 .trainer-sidebar .sidebar-link:hover {
                     transform: translateY(-2px) !important;
-                    background-color: rgba(27, 23, 99, 0.05) !important;
+                    background-color: rgba(30, 27, 75, 0.08) !important;
                     color: #1e1b4b !important;
                 }
 
                 .trainer-sidebar .sidebar-link.active {
-                    background: linear-gradient(135deg, #1e1b4b 0%, #3949ab 100%) !important;
+                    background-color: var(--admin-secondary) !important;
                     color: #ffffff !important;
-                    box-shadow: 0 4px 12px rgba(27, 23, 99, 0.3) !important;
+                    box-shadow: 0 4px 12px rgba(30, 27, 75, 0.3) !important;
                     transform: translateY(-2px) !important;
                 }
 

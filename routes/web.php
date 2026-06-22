@@ -75,9 +75,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
     // Pull non-admin users with event participations for the Manage User table and view modal
-    $users = \App\Models\User::with(['eventRegistrations' => function ($q) {
-        $q->with('event')->orderBy('created_at', 'desc');
-    }])
+    $users = \App\Models\User::with([
+        'eventRegistrations' => function ($q) {
+            $q->with('event')->orderBy('created_at', 'desc');
+        }
+    ])
         ->select('id', 'name', 'email', 'phone', 'profession', 'institution', 'avatar', 'created_at', 'bio')
         ->where('role', '!=', 'admin')
         ->orderBy('name')
@@ -360,8 +362,10 @@ Route::middleware('auth')->group(function () {
             $endTime = $event->event_time_end ? \Carbon\Carbon::parse($event->event_time_end) : null;
         } catch (\Throwable $e) {
         }
-        if (!$startTime && $eventDate) $startTime = $eventDate->copy()->startOfDay();
-        if (!$endTime && $eventDate) $endTime = $eventDate->copy()->endOfDay();
+        if (!$startTime && $eventDate)
+            $startTime = $eventDate->copy()->startOfDay();
+        if (!$endTime && $eventDate)
+            $endTime = $eventDate->copy()->endOfDay();
         $now = \Carbon\Carbon::now(config('app.timezone'));
         $eventStarted = $eventDate ? $now->gte($startTime ?: $eventDate->copy()->startOfDay()) : true;
         $eventFinished = $eventDate ? $now->gt($endTime ?: $eventDate->copy()->endOfDay()) : false;
@@ -729,7 +733,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     // Trainer Certificates
     Route::get('/admin/trainer/certificates', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'index'])->name('admin.trainer.certificates.index');
-    Route::get('/admin/trainer/certificates/queue', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'queue'])->name('admin.trainer.certificates.queue');
     Route::get('/admin/trainer/certificates/detail/{certificate}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'detail'])->name('admin.trainer.certificates.detail');
     Route::get('/admin/trainer/certificates/{trainer}', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'show'])->name('admin.trainer.certificates.show');
     Route::get('/admin/trainer/certificates/{trainer}/{context}/{id}/edit', [\App\Http\Controllers\Admin\TrainerCertificateController::class, 'edit'])->name('admin.trainer.certificates.edit');
@@ -775,3 +778,57 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/event/{event}/material/reject', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'reject'])->name('admin.event-material.reject');
     Route::post('/admin/event/{event}/material/revoke', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'revoke'])->name('admin.event-material.revoke');
 });
+
+if (app()->environment('local')) {
+    Route::post('/api/test/reset-uat', function() {
+        $trainer = \App\Models\User::where('email', 'trainertesting@gmail.com')->first();
+        if ($trainer) {
+            // 1. Reset notifikasi undangan kembali ke pending
+            \App\Models\TrainerNotification::where('trainer_id', $trainer->id)
+                ->where('type', 'event_invitation')
+                ->get()
+                ->each(function ($notif) {
+                    $data = is_array($notif->data) ? $notif->data : [];
+                    $data['invitation_status'] = 'pending';
+                    unset($data['responded_at']);
+                    unset($data['e_agreement_accepted']);
+                    unset($data['e_agreement_accepted_at']);
+                    
+                    $notif->update([
+                        'invitation_status' => 'pending',
+                        'responded_at' => null,
+                        'read_at' => null,
+                        'data' => $data,
+                    ]);
+                });
+
+            // 2. Hapus assignment event trainer
+            \App\Models\TrainerAssignment::where('trainer_id', $trainer->id)->delete();
+
+            // 3. Hapus materi yang sudah di-upload sebelumnya
+            \App\Models\EventTrainerModule::where('trainer_id', $trainer->id)->delete();
+
+            // 4. Bersihkan status materi di tabel event utama
+            $trainerName = mb_strtolower(trim((string) $trainer->name));
+            \App\Models\Event::where(function ($q) use ($trainer, $trainerName) {
+                $q->where('trainer_id', $trainer->id);
+                if ($trainerName !== '') {
+                    $q->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })->update([
+                'material_status' => 'pending',
+                'material_approved_at' => null,
+                'material_approved_by' => null,
+                'material_rejection_reason' => null,
+            ]);
+            
+            // 5. Reset status pelanggaran / expired streak
+            $trainer->update([
+                'consecutive_expired_invitations' => 0,
+                'consecutive_late_uploads' => 0,
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Database UAT state reset successfully!']);
+    });
+}

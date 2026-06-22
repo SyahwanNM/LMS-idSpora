@@ -5,9 +5,9 @@
 @php
     $pageTitle = 'Event Studio';
     $breadcrumbs = [
-        ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
-        ['label' => 'Acara', 'url' => route('trainer.events')],
-        ['label' => 'Studio'],
+        ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
+        ['label' => 'Course', 'url' => route('trainer.events')],
+        ['label' => 'Studio Event'],
     ];
 
     $materialStatus = (string) ($event->material_status ?? 'draft');
@@ -1682,6 +1682,26 @@
                         @endif
 
                         @if($canUploadMaterials)
+                            <!-- Download idSpora Logo Banner -->
+                            <div class="logo-download-banner" style="margin-bottom: 24px; padding: 22px 28px; border-radius: 20px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 1px solid #e9d5ff; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 10px 25px rgba(81, 55, 108, 0.04); flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 16px; min-width: 280px; flex: 1;">
+                                    <div style="width: 48px; height: 48px; border-radius: 14px; background: #51376c; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2);">
+                                        <i class="bi bi-file-earmark-image"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1e1b4b; font-family: 'Outfit', 'Inter', sans-serif;">Logo Resmi idSpora untuk Slide Presentasi</h4>
+                                        <p style="margin: 0; font-size: 12.5px; color: #51376c; line-height: 1.5; font-family: 'Inter', sans-serif;">
+                                            Silakan unduh logo resmi di bawah ini. Harap <span style="font-weight: 700;">menambahkan logo idSpora di setiap slide</span> presentasi Anda demi standarisasi materi.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a href="{{ asset('aset/logo.png') }}" download="logo-idSpora.png" class="primary-btn" style="padding: 12px 24px; font-size: 13px; font-weight: 700; border-radius: 12px; background: #51376c; color: white; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2); border: none; cursor: pointer; transition: all 0.2s;"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(81, 55, 108, 0.3)';"
+                                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(81, 55, 108, 0.2)';">
+                                    <i class="bi bi-download"></i> Unduh Logo (.PNG)
+                                </a>
+                            </div>
+
                             <div class="upload-hints">
                                 <div class="hint-card">
                                     <div class="icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
@@ -1837,6 +1857,28 @@
                             <p class="label">Format</p>
                             <p class="value">PDF, MP4, PPTX, DOCX</p>
                             <p class="hint">Gunakan format ini agar proses audit lebih cepat.</p>
+                        </div>
+                    </article>
+                    <article class="status-card">
+                        <div class="icon"
+                            style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1e40af;"><i
+                                class="bi bi-people"></i></div>
+                        <div>
+                            <p class="label">Target Peserta</p>
+                            <p class="value">
+                                @php
+                                    $titleLower = strtolower($event->title ?? '');
+                                    if (str_contains($titleLower, 'dosen') || str_contains($titleLower, 'guru') || str_contains($titleLower, 'pendidik')) {
+                                        $targetAudience = 'Dosen & Pendidik';
+                                    } elseif (str_contains($titleLower, 'lomba') || str_contains($titleLower, 'mahasiswa') || str_contains($titleLower, 'siswa')) {
+                                        $targetAudience = 'Mahasiswa & Siswa';
+                                    } else {
+                                        $targetAudience = 'Mahasiswa, Dosen, & Umum';
+                                    }
+                                @endphp
+                                {{ $targetAudience }}
+                            </p>
+                            <p class="hint">Profil target peserta sesi ini.</p>
                         </div>
                     </article>
                 </aside>

@@ -401,8 +401,7 @@
     <!-- Hero Section -->
     <div class="trainer-hero mb-4">
         <div>
-            <span class="hero-label"><i class="bi bi-shield-check me-2"></i>Panel Admin</span>
-            <h1 class="hero-title">Daftarkan Trainer Baru</h1>
+            <h1 class="hero-title" style="color:#fff;">Daftarkan Trainer Baru</h1>
             <p class="hero-subtitle">Tambahkan instruktur baru ke platform idSpora. Atur kredensial akses dan informasi pribadi dengan mudah.</p>
         </div>
     </div>

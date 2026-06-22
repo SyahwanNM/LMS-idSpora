@@ -910,11 +910,32 @@ class EventController extends Controller
 
         try {
             $this->configureMidtrans();
-            $midtransStatus = (array) \Midtrans\Transaction::status($orderId);
+            try {
+                $midtransStatus = (array) \Midtrans\Transaction::status($orderId);
+                $ts = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
+                $fs = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
+                $internalStatus = $this->mapMidtransStatus($ts, $fs);
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
 
-            $ts = strtolower((string) ($midtransStatus['transaction_status'] ?? ''));
-            $fs = strtolower((string) ($midtransStatus['fraud_status'] ?? ''));
-            $internalStatus = $this->mapMidtransStatus($ts, $fs);
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $midtransStatus = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $midtransStatus = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
 
@@ -993,12 +1014,13 @@ class EventController extends Controller
         if ($payment && $payment->order_id) {
             // Cek umur snap token — Midtrans return 404 jika user belum membuka popup
             // sama sekali (transaksi belum diinisiasi di sisi Midtrans). Ini normal
-            // selama token masih dalam masa berlaku (< 24 jam).
-            $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-            $tokenAgeHours = $tokenCreatedAt
-                ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+            // selama token masih dalam masa berlaku (< expiry duration).
+            $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+            $tokenAgeMinutes = $tokenCreatedAt
+                ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                 : 0;
-            $tokenStillValid = $tokenAgeHours < 24;
+            
+            $tokenStillValid = $tokenAgeMinutes < 5;
 
             try {
                 $this->configureMidtrans();
@@ -1030,10 +1052,10 @@ class EventController extends Controller
                     // Midtrans belum mengenal order ini → biarkan tetap pending, jangan expired.
                     Log::info('midtransPendingOrder: 404 dari Midtrans tapi token masih valid, biarkan pending.', [
                         'order_id' => $payment->order_id,
-                        'token_age_hours' => $tokenAgeHours,
+                        'token_age_minutes' => $tokenAgeMinutes,
                     ]);
                 } elseif ($is404 && !$tokenStillValid) {
-                    // Token sudah > 24 jam dan Midtrans tidak mengenal order → benar-benar expired.
+                    // Token sudah expired dan Midtrans tidak mengenal order → benar-benar expired.
                     $payment->status = 'expired';
                     $payment->save();
                     $reg = EventRegistration::find($payment->event_registration_id);

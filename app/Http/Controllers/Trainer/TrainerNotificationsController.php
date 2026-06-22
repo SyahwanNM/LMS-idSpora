@@ -660,11 +660,50 @@ HTML;
                     }
                     if ((int) $course->trainer_id !== (int) $uid) {
                         $course->trainer_id = $uid;
-                        $course->save();
                     }
+
+                    // Save scheme info to course
+                    $schemeType = (int) $request->input('scheme_type', 0);
+                    $contribScheme = $request->input('contribution_scheme');
+
+                    if ($schemeType === 0 && !empty($contribScheme)) {
+                        $schemeType = match ($contribScheme) {
+                            'e2e' => 1,
+                            'module_video' => 2,
+                            'video_only' => 3,
+                            default => 0,
+                        };
+                    } elseif (!empty($schemeType) && empty($contribScheme)) {
+                        $contribScheme = match ($schemeType) {
+                            1 => 'e2e',
+                            2 => 'module_video',
+                            3 => 'video_only',
+                            default => 'e2e',
+                        };
+                    }
+
+                    if (empty($contribScheme)) {
+                        $contribScheme = 'e2e';
+                        $schemeType = 1;
+                    }
+
+                    $revenuePercent = match ($contribScheme) {
+                        'e2e' => 35,
+                        'module_video' => 25,
+                        'video_only' => 10,
+                        default => 35
+                    };
+
+                    $course->trainer_contribution_scheme = $contribScheme;
+                    $course->trainer_revenue_percent = $revenuePercent;
+                    $course->trainer_scheme_accepted_at = now();
+                    $course->save();
                 } else {
                     if ((int) $course->trainer_id === (int) $uid) {
                         $course->trainer_id = null;
+                        $course->trainer_contribution_scheme = null;
+                        $course->trainer_revenue_percent = null;
+                        $course->trainer_scheme_accepted_at = null;
                         $course->save();
                     }
                 }

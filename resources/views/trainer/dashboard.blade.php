@@ -4,8 +4,7 @@
 @php
   $pageTitle = 'Dashboard';
   $breadcrumbs = [
-    ['label' => 'Home', 'url' => route('trainer.dashboard')],
-    ['label' => 'Dashboard']
+    ['label' => 'Dasbor', 'url' => route('trainer.dashboard')]
   ];
 
   $trainer = Auth::user();
@@ -353,23 +352,97 @@
   }
 
   // Pre-fetch all event detail links for the Javascript Calendar
-  $allTrainerEvents = \App\Models\Event::where('trainer_id', $trainer->id)->whereNotNull('event_date')->get();
+  $allTrainerEvents = \App\Models\Event::query()
+    ->whereNotNull('event_date')
+    ->where(function ($query) use ($trainer) {
+        $query->where('trainer_id', $trainer->id)
+            ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                $speakerQuery->where('trainer_id', $trainer->id);
+            })
+            ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
+                $assignmentQuery->where('trainer_id', $trainer->id)
+                    ->where('status', 'accepted');
+            });
+        
+        $trainerName = trim((string) ($trainer->name ?? ''));
+        if ($trainerName !== '') {
+            $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+        }
+    })
+    ->get();
+
   $eventDetailLinks = [];
   foreach($allTrainerEvents as $ev) {
       $dateStr = \Carbon\Carbon::parse($ev->event_date)->format('Y-m-d');
-      $eventDetailLinks[$dateStr] = route('trainer.events.show', $ev->id);
+      $eventDetailLinks[$dateStr] = [
+          'url' => route('trainer.events.show', $ev->id),
+          'title' => $ev->title
+      ];
+  }
+
+  // Course approved dates
+  $courseDetailLinks = [];
+  $allTrainerCourses = $trainer->coursesAsTrainer()->whereNotNull('approved_at')->get();
+  foreach($allTrainerCourses as $c) {
+      $dateStr = \Carbon\Carbon::parse($c->approved_at)->format('Y-m-d');
+      $courseDetailLinks[$dateStr] = [
+          'url' => route('trainer.courses.studio', $c->id),
+          'title' => $c->name
+      ];
+  }
+
+  // Deadline dates from tugasItems
+  $deadlineDetailLinks = [];
+  foreach($tugasItems as $task) {
+      if (!empty($task['deadline'])) {
+          $dateStr = \Carbon\Carbon::parse($task['deadline'])->format('Y-m-d');
+          $deadlineDetailLinks[$dateStr] = [
+              'url' => $task['url'],
+              'title' => $task['title']
+          ];
+      }
   }
 
   // 8. Agenda Items (today's events + fallback to upcoming)
-  $agendaEvents = \App\Models\Event::where('trainer_id', $trainer->id)
+  $agendaEvents = \App\Models\Event::query()
     ->whereNotNull('event_date')
+    ->where(function ($query) use ($trainer) {
+        $query->where('trainer_id', $trainer->id)
+            ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                $speakerQuery->where('trainer_id', $trainer->id);
+            })
+            ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
+                $assignmentQuery->where('trainer_id', $trainer->id)
+                    ->where('status', 'accepted');
+            });
+        
+        $trainerName = trim((string) ($trainer->name ?? ''));
+        if ($trainerName !== '') {
+            $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+        }
+    })
     ->whereDate('event_date', $today->toDateString())
     ->orderBy('event_time', 'asc')
     ->get();
 
   if ($agendaEvents->isEmpty()) {
-    $agendaEvents = \App\Models\Event::where('trainer_id', $trainer->id)
+    $agendaEvents = \App\Models\Event::query()
       ->whereNotNull('event_date')
+      ->where(function ($query) use ($trainer) {
+          $query->where('trainer_id', $trainer->id)
+              ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                  $speakerQuery->where('trainer_id', $trainer->id);
+              })
+              ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
+                  $assignmentQuery->where('trainer_id', $trainer->id)
+                      ->where('status', 'accepted');
+              });
+          
+          $trainerName = trim((string) ($trainer->name ?? ''));
+          if ($trainerName !== '') {
+              $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+          }
+      })
       ->whereDate('event_date', '>=', $today->toDateString())
       ->orderBy('event_date', 'asc')
       ->orderBy('event_time', 'asc')
@@ -391,9 +464,7 @@ body {
 }
 
 .dashboard-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 32px 24px;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -620,6 +691,7 @@ body {
 .cal-date.selected-orange { border: 2px solid #f97316; color: #f97316; }
 .cal-date.selected-blue { border: 2px solid #3b82f6; color: #3b82f6; }
 .cal-date.selected-green { border: 2px solid #10b981; color: #10b981; }
+.cal-date.selected-purple { border: 2px solid #624388; color: #624388; }
 .cal-date.today-fill { background: #624388; color: white; }
 .cal-legend { display: flex; justify-content: center; gap: 24px; font-size: 12px; font-weight: 600; color: #475569; }
 .legend-item { display: flex; align-items: center; gap: 8px; }
@@ -1087,7 +1159,6 @@ body {
         <div>
             <div class="dash-card-header" style="margin-bottom: 16px;">
                 <h3 class="dash-card-title">Kelas & Event Berjalan</h3>
-                <a href="{{ route('trainer.courses') }}" class="dash-card-link">Lihat Semua</a>
             </div>
             
             <div class="ongoing-grid">
@@ -1300,6 +1371,8 @@ function handleStatusToggle(checkbox) {
       
       let currentCalDate = new Date();
       const globalEventLinks = @json($eventDetailLinks);
+      const globalCourseLinks = @json($courseDetailLinks);
+      const globalDeadlineLinks = @json($deadlineDetailLinks);
       
       function renderLocalCalendar(dateObj) {
           const year = dateObj.getFullYear();
@@ -1332,16 +1405,34 @@ function handleStatusToggle(checkbox) {
                   let formattedDate = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(dayCount).padStart(2, '0');
                   
                   if (globalEventLinks[formattedDate]) {
-                      classes += ' selected-blue';
+                      classes += ' selected-purple';
+                  } else if (globalCourseLinks[formattedDate]) {
+                      classes += ' selected-green';
+                  } else if (globalDeadlineLinks[formattedDate]) {
+                      classes += ' selected-orange';
                   }
                   
                   if (year === today.getFullYear() && month === today.getMonth() && dayCount === today.getDate()) {
                       classes += ' today-fill';
                   }
                   
-                  let targetUrl = globalEventLinks[formattedDate] ? globalEventLinks[formattedDate] : `{{ route('trainer.events') }}?date=${formattedDate}`;
+                  let targetUrl = '#';
+                  let tooltip = '';
+                  if (globalEventLinks[formattedDate]) {
+                      targetUrl = globalEventLinks[formattedDate].url;
+                      tooltip = `Event: ${globalEventLinks[formattedDate].title}`;
+                  } else if (globalCourseLinks[formattedDate]) {
+                      targetUrl = globalCourseLinks[formattedDate].url;
+                      tooltip = `Kelas: ${globalCourseLinks[formattedDate].title}`;
+                  } else if (globalDeadlineLinks[formattedDate]) {
+                      targetUrl = globalDeadlineLinks[formattedDate].url;
+                      tooltip = `Deadline: ${globalDeadlineLinks[formattedDate].title}`;
+                  } else {
+                      targetUrl = `{{ route('trainer.events') }}?date=${formattedDate}`;
+                  }
                   
-                  html += `<a href="${targetUrl}" class="${classes}">${dayCount}</a>`;
+                  let titleAttr = tooltip ? `title="${tooltip.replace(/"/g, '&quot;')}"` : '';
+                  html += `<a href="${targetUrl}" class="${classes}" ${titleAttr}>${dayCount}</a>`;
                   dayCount++;
               } else {
                   html += `<a href="#" class="cal-date muted" onclick="event.preventDefault()">${nextMonthDay++}</a>`;

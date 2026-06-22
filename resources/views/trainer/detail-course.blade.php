@@ -5,14 +5,20 @@
 @php
     $pageTitle = 'Course Detail';
     $breadcrumbs = [
-        ['label' => 'Home', 'url' => route('trainer.dashboard')],
+        ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
         ['label' => 'Courses', 'url' => route('trainer.courses')],
-        ['label' => 'Detail']
+        ['label' => 'Detail Course']
     ];
 
     $courseModules = $course->modules ?? collect();
     $units = $course->units->sortBy('unit_no');
     $moduleChunks = $courseModules->values()->chunk(3);
+    $courseMaterialLocked = (bool) ($courseMaterialLocked ?? false);
+    $schemePermissions = $schemePermissions ?? [
+        'can_module' => true,
+        'can_video' => true,
+        'can_quiz' => true,
+    ];
 @endphp
 
 @push('styles')
@@ -401,6 +407,14 @@
     display: flex;
     align-items: center;
     gap: 14px;
+    cursor: pointer;
+    padding: 6px 12px;
+    margin: -6px -12px;
+    border-radius: 12px;
+    transition: background-color 0.2s ease;
+}
+.unit-top:hover {
+    background-color: rgba(27, 23, 99, 0.04);
 }
 
 .unit-index {
@@ -610,7 +624,7 @@
     transform: rotate(0deg);
 }
 
-.unit-card.compact .unit-toggle i {
+.unit-card.compact.collapsed .unit-toggle i {
     transform: rotate(0deg);
 }
 
@@ -640,20 +654,22 @@
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: pointer;
 }
-.asset-mini:hover {
+.asset-mini:not(.locked):hover {
     background: #ffffff;
     border-color: rgba(27, 23, 99, 0.2);
     box-shadow: 0 10px 30px rgba(27, 23, 99, 0.08);
     transform: translateY(-3px);
 }
-.asset-mini:hover {
-    background: #ffffff;
-    border-color: rgba(27, 23, 99, 0.2);
-    box-shadow: 0 10px 30px rgba(27, 23, 99, 0.08);
-    transform: translateY(-3px);
+.asset-mini.locked {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
-.asset-mini i {
+.asset-mini > i {
     width: 32px;
     height: 32px;
     border-radius: var(--radius-lg);
@@ -666,12 +682,12 @@
     flex-shrink: 0;
 }
 
-.asset-mini:nth-child(2) i {
+.asset-mini:nth-child(2) > i {
     background: var(--warning-bg);
     color: #e5a91e;
 }
 
-.asset-mini:nth-child(3) i {
+.asset-mini:nth-child(3) > i {
     background: var(--success-bg);
     color: var(--success-clr);
 }
@@ -1692,6 +1708,14 @@ main.detail-course {
     display: flex;
     align-items: center;
     gap: 14px;
+    cursor: pointer;
+    padding: 6px 12px;
+    margin: -6px -12px;
+    border-radius: 12px;
+    transition: background-color 0.2s ease;
+}
+.unit-top:hover {
+    background-color: rgba(27, 23, 99, 0.04);
 }
 
 .unit-index {
@@ -1901,7 +1925,7 @@ main.detail-course {
     transform: rotate(0deg);
 }
 
-.unit-card.compact .unit-toggle i {
+.unit-card.compact.collapsed .unit-toggle i {
     transform: rotate(0deg);
 }
 
@@ -1931,20 +1955,22 @@ main.detail-course {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: pointer;
 }
-.asset-mini:hover {
+.asset-mini:not(.locked):hover {
     background: #ffffff;
     border-color: rgba(27, 23, 99, 0.2);
     box-shadow: 0 10px 30px rgba(27, 23, 99, 0.08);
     transform: translateY(-3px);
 }
-.asset-mini:hover {
-    background: #ffffff;
-    border-color: rgba(27, 23, 99, 0.2);
-    box-shadow: 0 10px 30px rgba(27, 23, 99, 0.08);
-    transform: translateY(-3px);
+.asset-mini.locked {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: none !important;
+    transform: none !important;
 }
 
-.asset-mini i {
+.asset-mini > i {
     width: 32px;
     height: 32px;
     border-radius: var(--radius-lg);
@@ -1957,12 +1983,12 @@ main.detail-course {
     flex-shrink: 0;
 }
 
-.asset-mini:nth-child(2) i {
+.asset-mini:nth-child(2) > i {
     background: var(--warning-bg);
     color: #e5a91e;
 }
 
-.asset-mini:nth-child(3) i {
+.asset-mini:nth-child(3) > i {
     background: var(--success-bg);
     color: var(--success-clr);
 }
@@ -2703,7 +2729,7 @@ main.detail-course {
             <div class="hero-body">
                 <div class="hero-copy">
                     <p class="hero-kicker">
-                        <i class="bi bi-star-fill kicker-icon"></i>ACADEMIC CURRICULUM • DETAIL
+                        <i class="bi bi-star-fill kicker-icon"></i>ACADEMIC CURRICULUM ï¿½ DETAIL
                     </p>
                     <h1>{{ Str::limit($course->name, 50) }}</h1>
                     <p class="text-white opacity-75 mt-2 mb-4" style="font-size: 14px; line-height: 1.6;">
@@ -2729,6 +2755,21 @@ main.detail-course {
                             <div>
                                 <p class="stat-label">RATING</p>
                                 <p class="stat-value">{{ $averageRating ?? '0.0' }} / 5.0</p>
+                            </div>
+                        </div>
+                        <div class="stat-chip">
+                            <i class="bi bi-people-fill"></i>
+                            <div>
+                                <p class="stat-label">TARGET PESERTA</p>
+                                <p class="stat-value">
+                                    @if(($course->level ?? '') === 'beginner')
+                                        Mahasiswa & Pemula
+                                    @elseif(($course->level ?? '') === 'intermediate')
+                                        Dosen & Profesional
+                                    @else
+                                        Praktisi & Akademisi
+                                    @endif
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -2796,12 +2837,41 @@ main.detail-course {
                     <p>ACADEMIC UNITS (ADMIN MANAGED)</p>
                 </div>
 
+                @if($courseMaterialLocked)
+                    <div style="margin-bottom:20px; padding: 16px; border: 1px solid #f59e0b; border-radius: 12px; background: #fffbeb; color: #92400e; font-size: 13px; display: flex; align-items: start; gap: 12px;">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem; color: #d97706; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Materi Course Terkunci</strong>
+                            Materi course masih terkunci sampai undangan trainer diterima. Anda masih dapat melihat detail struktur kurikulum di bawah ini, tetapi pengeditan dan pengunggahan materi di dalam Course Studio dinonaktifkan sementara.
+                        </div>
+                    </div>
+                @elseif(!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz'])
+                    <div style="margin-bottom:20px; padding: 16px; border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; color: #475569; font-size: 13px; display: flex; align-items: start; gap: 12px;">
+                        <i class="bi bi-info-circle-fill" style="font-size: 1.2rem; color: #64748b; margin-top: 2px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Akses Terbatas Skema Beban Kerja</strong>
+                            Berdasarkan skema beban kerja yang dipilih, beberapa jenis materi dikunci untuk akun Anda:
+                            <ul style="margin: 6px 0 0 0; padding-left: 20px; font-size: 12px; line-height: 1.5; color: #64748b;">
+                                @if(!$schemePermissions['can_module'])
+                                    <li><strong>Modul Teks (PDF)</strong> dikunci (dikelola oleh Admin).</li>
+                                @endif
+                                @if(!$schemePermissions['can_video'])
+                                    <li><strong>Materi Video</strong> dikunci (dikelola oleh Admin).</li>
+                                @endif
+                                @if(!$schemePermissions['can_quiz'])
+                                    <li><strong>Penyusunan Kuis</strong> dikunci (dikelola oleh Admin).</li>
+                                @endif
+                            </ul>
+                        </div>
+                    </div>
+                @endif
+
                 @if($units->count() > 0)
                     @foreach($units as $idx => $unit)
                         @php
                             $chunk = $moduleChunks->get($idx, collect());
                         @endphp
-                        <div class="unit-card {{ $idx > 0 ? 'compact' : '' }}">
+                        <div class="unit-card {{ $idx > 0 ? 'compact collapsed' : '' }}">
                             <div class="unit-top">
                                 <div class="unit-index {{ $idx > 0 ? 'muted' : '' }}">{{ str_pad($unit->unit_no, 2, '0', STR_PAD_LEFT) }}
                                 </div>
@@ -2822,7 +2892,9 @@ main.detail-course {
                                         $assetTab = $module->type === 'quiz' ? 'quiz' : ($module->type === 'video' ? 'video' : 'module');
 
                                         $isLocked = false;
-                                        if ($module->type === 'quiz' && empty($schemePermissions['can_quiz'])) {
+                                        if ($courseMaterialLocked) {
+                                            $isLocked = true;
+                                        } elseif ($module->type === 'quiz' && empty($schemePermissions['can_quiz'])) {
                                             $isLocked = true;
                                         } elseif ($module->type === 'video' && empty($schemePermissions['can_video'])) {
                                             $isLocked = true;
@@ -2848,7 +2920,7 @@ main.detail-course {
                                         </div>
 
                                         @if($isLocked)
-                                            <div class="asset-status" style="position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 50%; color: #94a3b8; font-size: 13px;" title="Locked">
+                                            <div class="asset-status" style="position: absolute; top: 14px; right: 14px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #f3f0f7; border: 1px solid rgba(46, 32, 80, 0.18); border-radius: 50%; color: #2e2050; font-size: 11px;" title="Locked">
                                                 <i class="bi bi-lock-fill"></i>
                                             </div>
                                         @elseif($isUploaded)

@@ -41,54 +41,76 @@ class EventMaterialApprovalController extends Controller
         return null;
     }
 
+    private function stampLogo(string $materialPath): void
+    {
+        $absolutePath = $this->resolveReadableMaterialPath($materialPath);
+        if (!$absolutePath) {
+            \Illuminate\Support\Facades\Log::warning('stampLogo failed to resolve readable path for: ' . $materialPath);
+            return;
+        }
+
+        $extension = strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
+        if (!in_array($extension, ['pdf', 'pptx', 'png', 'jpg', 'jpeg'], true)) {
+            \Illuminate\Support\Facades\Log::warning('stampLogo skipped due to unsupported extension: ' . $extension);
+            return;
+        }
+
+        // Backup the original file if it hasn't been backed up yet
+        $backupPath = $absolutePath . '.original';
+        if (!file_exists($backupPath)) {
+            copy($absolutePath, $backupPath);
+            \Illuminate\Support\Facades\Log::info('Created original backup at: ' . $backupPath);
+        }
+
+        $logoPath = public_path('aset/logo idspora_dark.png');
+        if (!file_exists($logoPath)) {
+            \Illuminate\Support\Facades\Log::warning('stampLogo skipped because logo file was not found at: ' . $logoPath);
+            return;
+        }
+
+        $pythonScript = app_path('Scripts/stamp_logo.py');
+        if (!file_exists($pythonScript)) {
+            \Illuminate\Support\Facades\Log::warning('stampLogo skipped because python script was not found at: ' . $pythonScript);
+            return;
+        }
+
+        // Call the python script using escapeshellarg for safety
+        $command = sprintf(
+            'python %s --file %s --logo %s',
+            escapeshellarg($pythonScript),
+            escapeshellarg($absolutePath),
+            escapeshellarg($logoPath)
+        );
+
+        $output = [];
+        $resultCode = 0;
+        exec($command, $output, $resultCode);
+
+        if ($resultCode !== 0) {
+            \Illuminate\Support\Facades\Log::error('Logo stamping failed for: ' . $absolutePath . '. Output: ' . implode("\n", $output));
+        } else {
+            \Illuminate\Support\Facades\Log::info('stampLogo command finished with code 0. Output: ' . implode("\n", $output));
+        }
+    }
+
+    private function restoreOriginal(string $materialPath): void
+    {
+        $absolutePath = $this->resolveReadableMaterialPath($materialPath);
+        if (!$absolutePath) {
+            return;
+        }
+
+        $backupPath = $absolutePath . '.original';
+        if (file_exists($backupPath)) {
+            copy($backupPath, $absolutePath);
+            unlink($backupPath);
+            \Illuminate\Support\Facades\Log::info('Restored original file and removed backup: ' . $backupPath);
+        }
+    }
+
     private function syncLegacyEventMaterialsToAssignments(): void
     {
-        $legacyEvents = Event::query()
-            ->whereNotNull('trainer_id')
-            ->whereNotNull('module_path')
-            ->get([
-                'id',
-                'trainer_id',
-                'module_path',
-                'material_status',
-                'module_submitted_at',
-                'material_approved_at',
-                'material_approved_by',
-                'material_rejection_reason',
-                'updated_at',
-            ]);
-
-        foreach ($legacyEvents as $event) {
-            $assignment = TrainerAssignment::query()
-                ->where('event_id', (int) $event->id)
-                ->where('trainer_id', (int) $event->trainer_id)
-                ->orderByDesc('id')
-                ->first();
-
-            if ($assignment && !empty($assignment->material_path)) {
-                continue;
-            }
-
-            $payload = [
-                'material_path' => $event->module_path,
-                'material_status' => $event->material_status ?: 'pending_review',
-                'material_submitted_at' => $event->module_submitted_at ?: $event->updated_at,
-                'material_approved_at' => $event->material_approved_at,
-                'material_approved_by' => $event->material_approved_by,
-                'material_rejection_reason' => $event->material_rejection_reason,
-                'status' => $assignment?->status ?: 'accepted',
-            ];
-
-            if ($assignment) {
-                $assignment->update($payload);
-                continue;
-            }
-
-            TrainerAssignment::query()->create(array_merge($payload, [
-                'event_id' => (int) $event->id,
-                'trainer_id' => (int) $event->trainer_id,
-            ]));
-        }
+        // No-op: legacy database columns have been dropped and data migrated.
     }
 
     private function resolveTargetAssignment(Event $event, Request $request): ?TrainerAssignment
@@ -309,13 +331,19 @@ class EventMaterialApprovalController extends Controller
         }
 
         $filename = basename($materialPath);
+        $headers = [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ];
+
         if ((string) $request->query('download', '0') === '1') {
-            return response()->download($absolutePath, $filename);
+            return response()->download($absolutePath, $filename, $headers);
         }
 
-        return response()->file($absolutePath, [
+        return response()->file($absolutePath, array_merge([
             'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]);
+        ], $headers));
     }
 
     private function syncEventMaterialStatus(int $eventId, int $trainerId): void
@@ -428,6 +456,7 @@ class EventMaterialApprovalController extends Controller
 
         $moduleId = $request->input('module_id');
         $assignmentId = $request->input('assignment_id');
+        $stampLogo = $request->boolean('stamp_logo');
 
         // Case 1: Approval for a specific EventTrainerModule
         if ($moduleId) {
@@ -435,8 +464,13 @@ class EventMaterialApprovalController extends Controller
                 ->where('event_id', $event->id)
                 ->firstOrFail();
 
+            if ($stampLogo && !empty($etm->path)) {
+                $this->stampLogo($etm->path);
+            }
+
             $etm->update([
                 'status'           => 'approved',
+                'logo_stamped'     => $stampLogo && !empty($etm->path),
                 'reviewed_by'      => Auth::id(),
                 'reviewed_at'      => now(),
                 'rejection_reason' => null,
@@ -461,8 +495,26 @@ class EventMaterialApprovalController extends Controller
                 ->where('event_id', $event->id)
                 ->firstOrFail();
 
+            if ($stampLogo) {
+                // Fetch pending modules before bulk update
+                $pendingModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                    ->where('trainer_id', $assignment->trainer_id)
+                    ->where('status', '!=', 'approved')
+                    ->get();
+                foreach ($pendingModules as $etm) {
+                    if (!empty($etm->path)) {
+                        $this->stampLogo($etm->path);
+                        $etm->update(['logo_stamped' => true]);
+                    }
+                }
+                if (!empty($assignment->material_path)) {
+                    $this->stampLogo($assignment->material_path);
+                }
+            }
+
             $assignment->update([
                 'material_status'           => 'approved',
+                'logo_stamped'              => $stampLogo && !empty($assignment->material_path),
                 'material_approved_at'      => now(),
                 'material_approved_by'      => Auth::id(),
                 'material_rejection_reason' => null,
@@ -474,6 +526,7 @@ class EventMaterialApprovalController extends Controller
                 ->where('status', '!=', 'approved')
                 ->update([
                     'status'           => 'approved',
+                    'logo_stamped'     => $stampLogo,
                     'reviewed_by'      => Auth::id(),
                     'reviewed_at'      => now(),
                     'rejection_reason' => null,
@@ -494,6 +547,21 @@ class EventMaterialApprovalController extends Controller
         }
         // Case 3: Fallback - Approve whatever material is currently associated with the event (Legacy)
         else {
+            if ($stampLogo) {
+                $pendingModules = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                    ->where('status', '!=', 'approved')
+                    ->get();
+                foreach ($pendingModules as $etm) {
+                    if (!empty($etm->path)) {
+                        $this->stampLogo($etm->path);
+                        $etm->update(['logo_stamped' => true]);
+                    }
+                }
+                if (!empty($event->module_path)) {
+                    $this->stampLogo($event->module_path);
+                }
+            }
+
             $event->update([
                 'material_status'           => 'approved',
                 'material_approved_at'      => now(),
@@ -508,6 +576,7 @@ class EventMaterialApprovalController extends Controller
                 ->where('status', '!=', 'approved')
                 ->update([
                     'status'           => 'approved',
+                    'logo_stamped'     => $stampLogo,
                     'reviewed_by'      => Auth::id(),
                     'reviewed_at'      => now(),
                     'rejection_reason' => null,
@@ -519,6 +588,7 @@ class EventMaterialApprovalController extends Controller
                     ->where('trainer_id', $event->trainer_id)
                     ->update([
                         'material_status'      => 'approved',
+                        'logo_stamped'         => $stampLogo,
                         'material_approved_at' => now(),
                         'material_approved_by' => Auth::id(),
                     ]);
@@ -675,8 +745,13 @@ class EventMaterialApprovalController extends Controller
                 ->where('event_id', $event->id)
                 ->firstOrFail();
 
+            if (!empty($etm->path)) {
+                $this->restoreOriginal($etm->path);
+            }
+
             $etm->update([
                 'status'           => 'pending_review',
+                'logo_stamped'     => false,
                 'reviewed_by'      => null,
                 'reviewed_at'      => null,
                 'rejection_reason' => null,
@@ -702,14 +777,35 @@ class EventMaterialApprovalController extends Controller
                 ->firstOrFail();
 
             // Set all modules associated with this trainer for this event back to pending_review
-            \App\Models\EventTrainerModule::where('event_id', $event->id)
+            $modules = \App\Models\EventTrainerModule::where('event_id', $event->id)
                 ->where('trainer_id', $assignment->trainer_id)
-                ->update([
+                ->get();
+            foreach ($modules as $etm) {
+                if (!empty($etm->path)) {
+                    $this->restoreOriginal($etm->path);
+                }
+                $etm->update([
                     'status'           => 'pending_review',
+                    'logo_stamped'     => false,
                     'reviewed_by'      => null,
                     'reviewed_at'      => null,
                     'rejection_reason' => null,
                 ]);
+            }
+
+            if (!empty($assignment->material_path)) {
+                $this->restoreOriginal($assignment->material_path);
+            }
+
+            $assignment->update([
+                'material_status'           => 'pending_review',
+                'logo_stamped'              => false,
+                'material_approved_at'      => null,
+                'material_approved_by'      => null,
+                'material_rejected_at'      => null,
+                'material_rejected_by'      => null,
+                'material_rejection_reason' => null,
+            ]);
 
             $this->syncEventMaterialStatus($event->id, $assignment->trainer_id);
 
@@ -734,18 +830,40 @@ class EventMaterialApprovalController extends Controller
                     ->first();
                 
                 if ($assignment) {
-                    \App\Models\EventTrainerModule::where('event_id', $event->id)
+                    $modules = \App\Models\EventTrainerModule::where('event_id', $event->id)
                         ->where('trainer_id', $assignment->trainer_id)
-                        ->update([
+                        ->get();
+                    foreach ($modules as $etm) {
+                        if (!empty($etm->path)) {
+                            $this->restoreOriginal($etm->path);
+                        }
+                        $etm->update([
                             'status'           => 'pending_review',
+                            'logo_stamped'     => false,
                             'reviewed_by'      => null,
                             'reviewed_at'      => null,
                             'rejection_reason' => null,
                         ]);
+                    }
+                    if (!empty($assignment->material_path)) {
+                        $this->restoreOriginal($assignment->material_path);
+                    }
+                    $assignment->update([
+                        'material_status'      => 'pending_review',
+                        'logo_stamped'         => false,
+                        'material_approved_at' => null,
+                        'material_approved_by' => null,
+                        'material_rejected_at' => null,
+                        'material_rejected_by' => null,
+                    ]);
                     $this->syncEventMaterialStatus($event->id, $assignment->trainer_id);
                 } else {
+                    if (!empty($event->module_path)) {
+                        $this->restoreOriginal($event->module_path);
+                    }
                     $event->update([
                         'material_status'           => 'pending_review',
+                        'logo_stamped'              => false,
                         'material_approved_at'      => null,
                         'material_approved_by'      => null,
                         'material_rejection_reason' => null,
@@ -754,8 +872,12 @@ class EventMaterialApprovalController extends Controller
                     ]);
                 }
             } else {
+                if (!empty($event->module_path)) {
+                    $this->restoreOriginal($event->module_path);
+                }
                 $event->update([
                     'material_status'           => 'pending_review',
+                    'logo_stamped'              => false,
                     'material_approved_at'      => null,
                     'material_approved_by'      => null,
                     'material_rejection_reason' => null,

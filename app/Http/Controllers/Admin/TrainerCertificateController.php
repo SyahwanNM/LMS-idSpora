@@ -598,6 +598,26 @@ class TrainerCertificateController extends Controller
             'file_path' => null,
         ]);
 
+        $contextLabel = $context === 'event' ? 'event' : 'course';
+        $contextTitle = $context === 'event'
+            ? (string) ($model->title ?? '')
+            : (string) ($model->name ?? '');
+        $trainerUrl = route('trainer.certificates.index') . '?context=' . $context . '&id=' . (int) $model->id;
+
+        \App\Models\TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type' => 'certificate_issued',
+            'title' => 'Sertifikat telah diterbitkan',
+            'message' => 'Sertifikat untuk ' . $contextLabel . ($contextTitle !== '' ? ' "' . $contextTitle . '"' : '') . ' sudah tersedia. No: ' . $certificate->certificate_number,
+            'data' => [
+                'entity_type' => $context,
+                'entity_id' => (int) $model->id,
+                'certificate_number' => $certificate->certificate_number,
+                'url' => $trainerUrl,
+            ],
+            'expires_at' => now()->addDays(30),
+        ]);
+
         return redirect()
             ->route('admin.trainer.certificates.detail', ['certificate' => $certificate->id])
             ->with('success', 'Sertifikat berhasil diterbitkan.');

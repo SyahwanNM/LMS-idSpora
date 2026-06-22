@@ -6,7 +6,8 @@
     <style>
         :root {
             --admin-primary: #1e1b4b;
-            --admin-secondary: #4338ca;
+            --admin-secondary: #1e1b4b;
+            --admin-accent: #1e1b4b;
             --admin-bg: #f8fafc;
             --admin-card-bg: #ffffff;
             --admin-border: #e2e8f0;
@@ -59,6 +60,13 @@
             border-radius: 8px;
             font-size: 14px;
             background: white;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--admin-secondary);
+            box-shadow: 0 0 0 3px rgba(30, 27, 75, 0.1);
         }
 
         .material-card {
@@ -129,8 +137,8 @@
         }
 
         .deadline-warning {
-            background: #fef3c7;
-            color: #92400e;
+            background: #f1f5f9;
+            color: #475569;
         }
 
         .deadline-urgent {
@@ -157,8 +165,8 @@
         }
 
         .btn-primary:hover {
-            opacity: 0.9;
-            box-shadow: 0 2px 8px rgba(67, 56, 202, 0.2);
+            background: #1e1b4b;
+            box-shadow: 0 4px 12px rgba(30, 27, 75, 0.2);
         }
 
         .empty-state {

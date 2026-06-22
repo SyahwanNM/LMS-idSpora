@@ -506,7 +506,8 @@ class EventParticipationController extends Controller
     public function showStage2Payment(Event $event)
     {
         $user = Auth::user();
-        if (!$user) return redirect()->route('login');
+        if (!$user)
+            return redirect()->route('login');
 
         $registration = EventRegistration::where('event_id', $event->id)
             ->where('user_id', $user->id)->first();
@@ -548,7 +549,8 @@ class EventParticipationController extends Controller
     public function submitStage2ManualPayment(Event $event, Request $request)
     {
         $user = Auth::user();
-        if (!$user) return redirect()->route('login');
+        if (!$user)
+            return redirect()->route('login');
 
         $registration = EventRegistration::where('event_id', $event->id)
             ->where('user_id', $user->id)->first();
@@ -573,23 +575,23 @@ class EventParticipationController extends Controller
         }
 
         $request->validate([
-            'whatsapp'      => 'required|string|max:30',
+            'whatsapp' => 'required|string|max:30',
             'payment_proof' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
         ]);
 
         $orderId = 'STG2-' . $registration->id . '-' . strtoupper(Str::random(6));
 
         $payment = ManualPayment::create([
-            'event_id'              => $event->id,
+            'event_id' => $event->id,
             'event_registration_id' => $registration->id,
-            'user_id'               => $user->id,
-            'order_id'              => $orderId,
-            'amount'                => (float) ($event->price_stage2 ?? 0),
-            'currency'              => 'IDR',
-            'method'                => 'manual_transfer',
-            'whatsapp_number'       => $request->whatsapp,
-            'status'                => 'pending',
-            'metadata'              => ['stage' => 2, 'source' => 'stage2_payment'],
+            'user_id' => $user->id,
+            'order_id' => $orderId,
+            'amount' => (float) ($event->price_stage2 ?? 0),
+            'currency' => 'IDR',
+            'method' => 'manual_transfer',
+            'whatsapp_number' => $request->whatsapp,
+            'status' => 'pending',
+            'metadata' => ['stage' => 2, 'source' => 'stage2_payment'],
         ]);
 
         // Upload proof
@@ -616,7 +618,8 @@ class EventParticipationController extends Controller
     public function createStage2MidtransOrder(Event $event, Request $request)
     {
         $user = Auth::user();
-        if (!$user) return response()->json(['error' => 'Unauthenticated'], 401);
+        if (!$user)
+            return response()->json(['error' => 'Unauthenticated'], 401);
 
         $registration = EventRegistration::where('event_id', $event->id)
             ->where('user_id', $user->id)->first();
@@ -650,9 +653,9 @@ class EventParticipationController extends Controller
             ->where('user_id', $user->id)
             ->where('method', 'midtrans')
             ->where('status', 'pending')
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereJsonContains('metadata->stage', 2)
-                  ->orWhere('order_id', 'like', 'STG2-%');
+                    ->orWhere('order_id', 'like', 'STG2-%');
             })
             ->latest('id')
             ->first();
@@ -678,43 +681,50 @@ class EventParticipationController extends Controller
         }
 
         try {
-            \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
             \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
-            \Midtrans\Config::$isSanitized  = true;
-            \Midtrans\Config::$is3ds        = true;
+            \Midtrans\Config::$isSanitized = true;
+            \Midtrans\Config::$is3ds = true;
 
             $params = [
                 'transaction_details' => [
-                    'order_id'     => $orderId,
+                    'order_id' => $orderId,
                     'gross_amount' => (int) $amount,
                 ],
                 'customer_details' => [
                     'first_name' => $user->name,
-                    'email'      => $user->email,
-                    'phone'      => $phone,
+                    'email' => $user->email,
+                    'phone' => $phone,
                 ],
-                'item_details' => [[
-                    'id'       => 'stage2-' . $event->id,
-                    'price'    => (int) $amount,
-                    'quantity' => 1,
-                    'name'     => 'Pembayaran Tahap 2 - ' . $event->title,
-                ]],
+                'item_details' => [
+                    [
+                        'id' => 'stage2-' . $event->id,
+                        'price' => (int) $amount,
+                        'quantity' => 1,
+                        'name' => 'Pembayaran Tahap 2 - ' . $event->title,
+                    ]
+                ],
             ];
 
             $snapToken = \Midtrans\Snap::getSnapToken($params);
 
             // Record pending midtrans payment
             ManualPayment::create([
-                'event_id'              => $event->id,
+                'event_id' => $event->id,
                 'event_registration_id' => $registration->id,
-                'user_id'               => $user->id,
-                'order_id'              => $orderId,
-                'amount'                => $amount,
-                'currency'              => 'IDR',
-                'method'                => 'midtrans',
-                'status'                => 'pending',
-                'whatsapp_number'       => $phone ?: null,
-                'metadata'              => ['stage' => 2, 'snap_token' => $snapToken, 'source' => 'stage2_payment'],
+                'user_id' => $user->id,
+                'order_id' => $orderId,
+                'amount' => $amount,
+                'currency' => 'IDR',
+                'method' => 'midtrans',
+                'status' => 'pending',
+                'whatsapp_number' => $phone ?: null,
+                'metadata' => [
+                    'stage' => 2, 
+                    'snap_token' => $snapToken, 
+                    'snap_token_created_at' => now()->toIso8601String(),
+                    'source' => 'stage2_payment'
+                ],
             ]);
 
             return response()->json(['snap_token' => $snapToken, 'order_id' => $orderId]);
@@ -744,23 +754,23 @@ class EventParticipationController extends Controller
             ->where('user_id', $user->id)
             ->where('method', 'midtrans')
             ->where('status', 'pending')
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereJsonContains('metadata->stage', 2)
-                  ->orWhere('order_id', 'like', 'STG2-%');
+                    ->orWhere('order_id', 'like', 'STG2-%');
             })
             ->latest('id')
             ->first();
 
         if ($payment && $payment->order_id) {
             try {
-                \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+                \Midtrans\Config::$serverKey = config('midtrans.server_key');
                 \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
-                
+
                 $midtransStatus = (array) \Midtrans\Transaction::status($payment->order_id);
-                
+
                 $transactionStatus = $midtransStatus['transaction_status'] ?? null;
                 $fraudStatus = $midtransStatus['fraud_status'] ?? null;
-                
+
                 $actualStatus = 'pending';
                 if ($transactionStatus == 'capture') {
                     if ($fraudStatus == 'challenge') {
@@ -791,7 +801,12 @@ class EventParticipationController extends Controller
                 }
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    if ($payment->created_at && now()->diffInHours($payment->created_at) >= 24) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
                         $payment->status = 'expired';
                         $payment->save();
                         $payment = null;
@@ -855,25 +870,44 @@ class EventParticipationController extends Controller
         }
 
         try {
-            \Midtrans\Config::$serverKey    = config('midtrans.server_key');
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
             \Midtrans\Config::$isProduction = config('midtrans.is_production', false);
-            
-            $status = (array) \Midtrans\Transaction::status($request->order_id);
-            
-            $transactionStatus = $status['transaction_status'] ?? null;
-            $fraudStatus = $status['fraud_status'] ?? null;
-            
-            $actualStatus = 'pending';
-            if ($transactionStatus == 'capture') {
-                if ($fraudStatus == 'challenge') {
-                    $actualStatus = 'pending';
-                } else if ($fraudStatus == 'accept') {
+
+            try {
+                $status = (array) \Midtrans\Transaction::status($request->order_id);
+                $transactionStatus = $status['transaction_status'] ?? null;
+                $fraudStatus = $status['fraud_status'] ?? null;
+
+                $actualStatus = 'pending';
+                if ($transactionStatus == 'capture') {
+                    if ($fraudStatus == 'challenge') {
+                        $actualStatus = 'pending';
+                    } else if ($fraudStatus == 'accept') {
+                        $actualStatus = 'settled';
+                    }
+                } else if ($transactionStatus == 'settlement') {
                     $actualStatus = 'settled';
+                } else if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
+                    $actualStatus = 'expired';
                 }
-            } else if ($transactionStatus == 'settlement') {
-                $actualStatus = 'settled';
-            } else if (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
-                $actualStatus = 'expired';
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
+
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $actualStatus = 'expired';
+                    } else {
+                        $actualStatus = 'pending';
+                    }
+                } else {
+                    throw $statusException;
+                }
             }
 
             $payment->status = $actualStatus;
@@ -892,8 +926,8 @@ class EventParticipationController extends Controller
                 return response()->json([
                     'success' => $actualStatus === 'settled',
                     'status' => $actualStatus,
-                    'message' => $actualStatus === 'settled' 
-                        ? 'Pembayaran Tahap 2 berhasil dikonfirmasi!' 
+                    'message' => $actualStatus === 'settled'
+                        ? 'Pembayaran Tahap 2 berhasil dikonfirmasi!'
                         : 'Status pembayaran: ' . $actualStatus,
                     'redirect' => route('events.registered.detail', $event)
                 ]);

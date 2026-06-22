@@ -11,8 +11,8 @@
 @push('admin-trainer-styles')
 <style>
     :root {
-        --cert-primary: #2f3fcb;
-        --cert-primary-2: #4858db;
+        --cert-primary: #1e1b4b;
+        --cert-primary-2: #1e1b4b;
         --cert-border: #e6eaf2;
         --cert-muted: #6b7a99;
         --cert-success: #059669;
@@ -43,14 +43,14 @@
     }
 
     .publish-hero {
-        background: linear-gradient(135deg, #2935b8 0%, #4858db 58%, #dce3ff 100%);
+        background: #1e1b4b;
         border-radius: 20px;
         padding: 34px 36px;
         color: #fff;
         min-height: 185px;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 18px 40px rgba(47,63,203,.14);
+        box-shadow: 0 18px 40px rgba(30, 27, 75,.14);
         margin-bottom: 28px;
     }
 
@@ -277,7 +277,7 @@
         min-width: 96px;
         border: 0;
         border-radius: 8px;
-        background: linear-gradient(135deg,#2f3fcb,#2636bd);
+        background: #1e1b4b;
         color: #fff;
         font-size: 12px;
         font-weight: 900;
@@ -582,20 +582,28 @@
                                         </td>
 
                                         <td class="text-end">
-                                            <form method="POST"
-                                                action="{{ route('admin.trainer.certificates.publish', [
+                                            <div class="d-inline-flex gap-2">
+                                                <a href="{{ route('admin.trainer.certificates.edit', [
                                                     'trainer' => $trainer->id,
                                                     'context' => $context,
                                                     'id' => $item['id'],
-                                                ]) }}"
-                                                class="d-inline">
-                                                @csrf
-
-                                                <button type="submit" class="btn-publish">
-                                                    Terbitkan
-                                                    <i class="bi bi-chevron-right"></i>
-                                                </button>
-                                            </form>
+                                                ]) }}" class="btn-publish" style="background: #e2e8f0; color: #334155; min-width: auto; width: 34px; padding: 0;" title="Konfigurasi Sertifikat">
+                                                    <i class="bi bi-gear-fill"></i>
+                                                </a>
+                                                <form method="POST"
+                                                    action="{{ route('admin.trainer.certificates.publish', [
+                                                        'trainer' => $trainer->id,
+                                                        'context' => $context,
+                                                        'id' => $item['id'],
+                                                    ]) }}"
+                                                    class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn-publish">
+                                                        Terbitkan
+                                                        <i class="bi bi-chevron-right"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty

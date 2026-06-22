@@ -595,8 +595,8 @@ main {
 @php
   $pageTitle = 'Acara';
   $breadcrumbs = [
-    ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
-    ['label' => 'Acara']
+    ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
+    ['label' => 'Event']
   ];
 @endphp
 
