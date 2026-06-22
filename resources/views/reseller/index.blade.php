@@ -111,6 +111,102 @@
                 border-radius: 10px;
             }
         }
+
+        /* Onboarding Tour Style Rules */
+        .tour-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.55);
+            z-index: 1040;
+            transition: opacity 0.3s ease;
+        }
+
+        .tour-highlighted-element {
+            position: relative;
+            z-index: 1045 !important;
+            box-shadow: 0 0 0 10px rgba(109, 40, 217, 0.25), 0 0 0 9999px rgba(0, 0, 0, 0.65) !important;
+            pointer-events: none; /* disable pointer events during highlighting */
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .tour-popover {
+            position: absolute;
+            z-index: 1050;
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            width: 320px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+        }
+
+        .tour-popover.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .tour-popover-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e1b4b; /* Navy */
+            margin-bottom: 8px;
+        }
+
+        .tour-popover-desc {
+            font-size: 0.85rem;
+            color: #64748b; /* Slate 500 */
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+
+        .tour-popover-progress {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        /* Popover Arrow */
+        .tour-popover-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        /* Positioning variations for popover arrow */
+        .tour-popover[data-popper-placement^="top"] .tour-popover-arrow {
+            bottom: -8px;
+            left: calc(50% - 8px);
+            border-width: 8px 8px 0 8px;
+            border-color: #ffffff transparent transparent transparent;
+        }
+
+        .tour-popover[data-popper-placement^="bottom"] .tour-popover-arrow {
+            top: -8px;
+            left: calc(50% - 8px);
+            border-width: 0 8px 8px 8px;
+            border-color: transparent transparent #ffffff transparent;
+        }
+
+        .tour-popover[data-popper-placement^="left"] .tour-popover-arrow {
+            right: -8px;
+            top: calc(50% - 8px);
+            border-width: 8px 0 8px 8px;
+            border-color: transparent transparent transparent #ffffff;
+        }
+
+        .tour-popover[data-popper-placement^="right"] .tour-popover-arrow {
+            left: -8px;
+            top: calc(50% - 8px);
+            border-width: 8px 8px 8px 0;
+            border-color: transparent #ffffff transparent transparent;
+        }
     </style>
 </head>
 
@@ -179,12 +275,18 @@
             <!-- End of Card for Target Komisi Bulan Ini -->
 
             <!-- Withdraw Komisi Content -->
-            <div class="card mb-4 border-0 shadow-sm animate-fade-in" style="border-radius: 16px;">
+            <div id="tour-withdraw-box" class="card mb-4 border-0 shadow-sm animate-fade-in" style="border-radius: 16px;">
                 <div class="card-body p-4">
-                    <h5 class="mb-4 d-flex align-items-center gap-2 text-dark">
-                        <i class="bi bi-cash-coin text-warning fs-3"></i>
-                        <span class="fw-semibold" style="letter-spacing: -0.2px;">Withdraw Komisi</span>
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="m-0 d-flex align-items-center gap-2 text-dark">
+                            <i class="bi bi-cash-coin text-warning fs-3"></i>
+                            <span class="fw-semibold" style="letter-spacing: -0.2px;">Withdraw Komisi</span>
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center gap-1 fw-semibold px-3 py-1.5" onclick="startOnboardingTour()" style="font-size: 0.8rem;">
+                            <i class="bi bi-question-circle"></i>
+                            <span>Panduan Pengguna</span>
+                        </button>
+                    </div>
 
                     <div class="row g-4 align-items-center">
                         <!-- Saldo Bisa Ditarik -->
@@ -353,7 +455,7 @@
 
 
             <!-- Referral Tools Section -->
-            <div class="card mb-4  shadow-sm">
+            <div id="tour-tools-box" class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">
                         <i class="bi bi-megaphone-fill text-warning me-3"></i>
@@ -441,7 +543,7 @@
             <!-- End of Referral Tools Section -->
 
             <!-- List Produk Komisi Reseller -->
-            <div class="card mb-4 shadow-sm rounded-3">
+            <div id="tour-products-box" class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                         <h5 class="fw-bold mb-0">
@@ -522,7 +624,7 @@
             <div class="row g-4 mb-4">
                 {{-- Level Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-3">
+                    <div id="tour-level-box" class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
                         <div class="card-body p-4">
                             <h5 class="fw-bold mb-4">Level Anda</h5>
 
@@ -651,7 +753,7 @@
 
                 {{-- Top Resellers Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-3">
+                    <div id="tour-rank-box" class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0">Top Resellers (Monthly)</h5>
@@ -753,7 +855,7 @@
 
                 {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-3">
+                    <div id="tour-history-box" class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column gap-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <h5 class="fw-bold mb-0">Riwayat Referral</h5>
@@ -812,7 +914,7 @@
             </div>
 
             <!-- Withdraw History -->
-            <div class="card mb-4 shadow-sm rounded-3">
+            <div id="tour-withdraw-history-box" class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold mb-0">
@@ -885,7 +987,7 @@
                                         </td>
                                         <td class="py-3">
                                             <div class="d-flex align-items-center gap-2 {{ $isRejected ? 'opacity-50' : '' }}">
-                                                <i class="bi bi-bank text-primary fs-5"></i>
+                                                <i class="bi bi-bank fs-5" style="color: var(--primary);"></i>
                                                 <span class="fw-medium text-dark">{{ $wd->bank_name }}</span>
                                             </div>
                                         </td>
@@ -929,7 +1031,7 @@
 
 
             {{-- <div class="card mb-4"> --}}
-                <div class="card mb-4  shadow-sm">
+                <div class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-4">
                             <i class="bi bi-question-circle-fill text-warning me-3"></i>
@@ -1318,7 +1420,221 @@
             animateCopyIcon(button);
             showCopyToast('Link Disalin', 'Link referral produk berhasil disalin ke clipboard.');
         }
+
+        // Onboarding Tour JS Logic
+        let tourSteps = [
+            {
+                elementId: 'tour-withdraw-box',
+                title: 'Tarik Komisi & Saldo',
+                description: 'Di sini Anda dapat melihat saldo dompet terkini, saldo pending, dan mengajukan penarikan dana.',
+                placement: 'bottom'
+            },
+            {
+                elementId: 'tour-tools-box',
+                title: 'Alat Promosi Referral',
+                description: 'Salin kode unik, link referral, atau caption broadcast secara instan untuk dibagikan ke media sosial Anda.',
+                placement: 'bottom'
+            },
+            {
+                elementId: 'tour-products-box',
+                title: 'Katalog Produk Komisi',
+                description: 'Cari course atau event yang aktif, salin tautan referral uniknya, lalu sebarkan untuk mendapatkan komisi 10% - 15%.',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-level-box',
+                title: 'Tingkatan Level Anda',
+                description: 'Tingkatkan jumlah referral sukses untuk naik level dari Bronze ke Silver atau Gold, guna mendapatkan rate komisi yang lebih besar.',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-rank-box',
+                title: 'Leaderboard & Top Reseller',
+                description: 'Pantau peringkat performa terbaik bulanan. Pacu promosi Anda untuk menduduki peringkat teratas secara global!',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-history-box',
+                title: 'Riwayat Referral',
+                description: 'Lihat daftar transaksi referral Anda di sini. Riwayat ini menampilkan nama pembeli yang menggunakan kode Anda beserta nominal komisi dan statusnya.',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-withdraw-history-box',
+                title: 'Riwayat Penarikan Dana',
+                description: 'Pantau status pencairan dana Anda di sini, mulai dari pengajuan pending, disetujui (approved), hingga ditolak (rejected) oleh admin.',
+                placement: 'top'
+            }
+        ];
+
+        let currentTourStep = 0;
+
+        function startOnboardingTour() {
+            currentTourStep = 0;
+            const overlay = document.getElementById('tour-overlay');
+            const popover = document.getElementById('tour-popover');
+            
+            if (overlay && popover) {
+                overlay.style.display = 'block';
+                popover.style.display = 'block';
+                // Trigger reflow for transition
+                popover.offsetHeight;
+                popover.classList.add('show');
+                showStep(currentTourStep);
+            }
+        }
+
+        function showStep(stepIndex) {
+            let step = tourSteps[stepIndex];
+            
+            // Clean previous highlight
+            document.querySelectorAll('.tour-highlighted-element').forEach(el => {
+                el.classList.remove('tour-highlighted-element');
+            });
+
+            let targetEl = document.getElementById(step.elementId);
+            if (!targetEl) {
+                // If element is not found, skip to next step
+                nextTourStep();
+                return;
+            }
+
+            // Highlight target element
+            targetEl.classList.add('tour-highlighted-element');
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Set content
+            document.getElementById('tour-title').innerText = step.title;
+            document.getElementById('tour-description').innerText = step.description;
+            document.getElementById('tour-progress').innerText = `${stepIndex + 1} dari ${tourSteps.length}`;
+
+            // Handle Buttons visibility/label
+            document.getElementById('tour-btn-prev').style.display = stepIndex === 0 ? 'none' : 'inline-block';
+            document.getElementById('tour-btn-next').innerText = stepIndex === tourSteps.length - 1 ? 'Selesai' : 'Lanjut';
+
+            // Wait a tiny bit for scrolling to complete, then calculate position
+            setTimeout(() => {
+                positionPopover(targetEl, step.placement);
+            }, 150);
+        }
+
+        function positionPopover(targetEl, placement) {
+            let popover = document.getElementById('tour-popover');
+            if (!popover) return;
+            
+            let rect = targetEl.getBoundingClientRect();
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+            let popoverWidth = popover.offsetWidth;
+            let popoverHeight = popover.offsetHeight;
+
+            let top = 0;
+            let left = 0;
+
+            // Simple placement calculation
+            if (placement === 'bottom') {
+                top = rect.bottom + scrollTop + 12;
+                left = rect.left + scrollLeft + (rect.width / 2) - (popoverWidth / 2);
+            } else if (placement === 'top') {
+                top = rect.top + scrollTop - popoverHeight - 12;
+                left = rect.left + scrollLeft + (rect.width / 2) - (popoverWidth / 2);
+            } else if (placement === 'left') {
+                top = rect.top + scrollTop + (rect.height / 2) - (popoverHeight / 2);
+                left = rect.left + scrollLeft - popoverWidth - 12;
+            } else if (placement === 'right') {
+                top = rect.top + scrollTop + (rect.height / 2) - (popoverHeight / 2);
+                left = rect.right + scrollLeft + 12;
+            }
+
+            // Adjust bounding to screen edges
+            if (left < 10) left = 10;
+            if (left + popoverWidth > window.innerWidth - 10) {
+                left = window.innerWidth - popoverWidth - 10;
+            }
+            if (top < 10) top = 10;
+
+            popover.style.top = `${top}px`;
+            popover.style.left = `${left}px`;
+            popover.setAttribute('data-popper-placement', placement);
+        }
+
+        function nextTourStep() {
+            currentTourStep++;
+            if (currentTourStep >= tourSteps.length) {
+                finishTour();
+            } else {
+                showStep(currentTourStep);
+            }
+        }
+
+        function prevTourStep() {
+            currentTourStep--;
+            if (currentTourStep < 0) {
+                currentTourStep = 0;
+            }
+            showStep(currentTourStep);
+        }
+
+        // Allow close overlay when click outside
+        function skipTour() {
+            finishTour();
+        }
+
+        function finishTour() {
+            const overlay = document.getElementById('tour-overlay');
+            const popover = document.getElementById('tour-popover');
+            
+            if (overlay) overlay.style.display = 'none';
+            if (popover) {
+                popover.style.display = 'none';
+                popover.classList.remove('show');
+            }
+            document.querySelectorAll('.tour-highlighted-element').forEach(el => {
+                el.classList.remove('tour-highlighted-element');
+            });
+            localStorage.setItem('idspora_reseller_tour_done', 'true');
+        }
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            let popover = document.getElementById('tour-popover');
+            if (popover && popover.style.display !== 'none') {
+                let step = tourSteps[currentTourStep];
+                let targetEl = document.getElementById(step.elementId);
+                if (targetEl) {
+                    positionPopover(targetEl, step.placement);
+                }
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Auto run tour on first visit
+            if (!localStorage.getItem('idspora_reseller_tour_done')) {
+                setTimeout(() => {
+                    startOnboardingTour();
+                }, 1000);
+            }
+        });
     </script>
+
+    <!-- Onboarding Tour Elements -->
+    <div id="tour-overlay" class="tour-overlay" style="display: none;" onclick="skipTour()"></div>
+    <div id="tour-popover" class="tour-popover" style="display: none;" role="dialog">
+        <div class="tour-popover-arrow"></div>
+        <div class="tour-popover-content">
+            <h6 id="tour-title" class="tour-popover-title">Judul Panduan</h6>
+            <p id="tour-description" class="tour-popover-desc">Penjelasan langkah panduan...</p>
+        </div>
+        <div class="tour-popover-footer d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+            <span id="tour-progress" class="tour-popover-progress text-muted small fw-medium">Langkah 1 dari 5</span>
+            <div class="d-flex gap-2">
+                <button type="button" id="tour-btn-skip" class="btn btn-sm btn-link text-decoration-none text-muted fw-semibold px-2 py-1" onclick="skipTour()" style="font-size: 0.85rem;">Lewati</button>
+                <button type="button" id="tour-btn-prev" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold" onclick="prevTourStep()" style="display: none; font-size: 0.85rem;">Kembali</button>
+                <button type="button" id="tour-btn-next" class="btn btn-sm btn-warning rounded-pill px-3 py-1 fw-bold text-dark shadow-sm" onclick="nextTourStep()" style="font-size: 0.85rem;">Lanjut</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
