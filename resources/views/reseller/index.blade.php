@@ -1510,7 +1510,13 @@
 
             // Handle Buttons visibility/label
             document.getElementById('tour-btn-prev').style.display = stepIndex === 0 ? 'none' : 'inline-block';
-            document.getElementById('tour-btn-next').innerText = stepIndex === tourSteps.length - 1 ? 'Selesai' : 'Lanjut';
+            if (stepIndex === tourSteps.length - 1) {
+                document.getElementById('tour-btn-next').style.display = 'none';
+                document.getElementById('tour-btn-finish').style.display = 'inline-block';
+            } else {
+                document.getElementById('tour-btn-next').style.display = 'inline-block';
+                document.getElementById('tour-btn-finish').style.display = 'none';
+            }
 
             // Wait a tiny bit for scrolling to complete, then calculate position
             setTimeout(() => {
@@ -1632,6 +1638,7 @@
                 <button type="button" id="tour-btn-skip" class="btn btn-sm btn-link text-decoration-none text-muted fw-semibold px-2 py-1" onclick="skipTour()" style="font-size: 0.85rem;">Lewati</button>
                 <button type="button" id="tour-btn-prev" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold" onclick="prevTourStep()" style="display: none; font-size: 0.85rem;">Kembali</button>
                 <button type="button" id="tour-btn-next" class="btn btn-sm btn-warning rounded-pill px-3 py-1 fw-bold text-dark shadow-sm" onclick="nextTourStep()" style="font-size: 0.85rem;">Lanjut</button>
+                <button type="button" id="tour-btn-finish" class="btn btn-sm btn-warning rounded-pill px-3 py-1 fw-bold text-dark shadow-sm" onclick="finishTour()" style="display: none; font-size: 0.85rem;">Selesai</button>
             </div>
         </div>
     </div>
