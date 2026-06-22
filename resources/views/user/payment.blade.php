@@ -122,6 +122,28 @@
         @media (max-width: 992px) {
             .grid-layout { grid-template-columns: 1fr; }
         }
+
+        .form-scroll-container {
+            max-height: 420px;
+            overflow-y: auto;
+            padding-right: 8px;
+            margin-right: -4px;
+        }
+        
+        .form-scroll-container::-webkit-scrollbar {
+            width: 5px;
+        }
+        .form-scroll-container::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+        .form-scroll-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .form-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 
@@ -171,6 +193,7 @@
                 <div class="left-col">
                     <div class="card-custom">
                         <h3>{{ $isStage2 ? 'Participant Data (Konfirmasi)' : 'Participant Data' }}</h3>
+                        <div class="form-scroll-container">
                         
                         <div class="mb-custom">
                             <label class="form-label-custom">Email</label>
@@ -213,6 +236,45 @@
                             <label class="form-label-custom">Position <span style="color:#ef4444;">*</span></label>
                             <input type="text" class="form-control-custom" name="position" value="{{ old('position', $isStage2 ? ($registration->position ?? auth()->user()->profession) : (auth()->user()->profession ?? '')) }}" placeholder="Example: Lecturer / Student / Staff" required {{ $isStage2 ? 'readonly' : '' }}>
                         </div>
+
+                        @if(isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba')
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Team Name (Optional)</label>
+                            <input type="text" class="form-control-custom" name="team_name" value="{{ old('team_name', $isStage2 ? ($registration->team_name ?? '') : '') }}" placeholder="Example: Code Crusaders" {{ $isStage2 ? 'readonly' : '' }}>
+                        </div>
+                        @endif
+
+                        <!-- Lokasi Institusi / Organisasi -->
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Institution/Organization Location <span style="color:#ef4444;">*</span></label>
+                            <input type="text" class="form-control-custom" name="institution_location" value="{{ old('institution_location', $isStage2 ? ($registration->institution_location ?? '') : '') }}" placeholder="Example: Bandung, Indonesia" required {{ $isStage2 ? 'readonly' : '' }}>
+                        </div>
+
+                        <!-- Sumber Informasi Lomba -->
+                        <div class="mb-custom">
+                            <label class="form-label-custom">Where did you get the information about the competition? <span style="color:#ef4444;">*</span></label>
+                            <select class="form-select-custom" name="info_source" id="payment_info_source" required {{ $isStage2 ? 'disabled' : '' }}>
+                                <option value="" disabled selected>Select an option</option>
+                                <option value="Social media" {{ old('info_source', $isStage2 ? ($registration->info_source ?? '') : '') === 'Social media' ? 'selected' : '' }}>Social media</option>
+                                <option value="Website" {{ old('info_source', $isStage2 ? ($registration->info_source ?? '') : '') === 'Website' ? 'selected' : '' }}>Website</option>
+                                <option value="lecturer" {{ old('info_source', $isStage2 ? ($registration->info_source ?? '') : '') === 'lecturer' ? 'selected' : '' }}>Lecturer</option>
+                                <option value="Friends" {{ old('info_source', $isStage2 ? ($registration->info_source ?? '') : '') === 'Friends' ? 'selected' : '' }}>Friends</option>
+                                <option value="Other" {{ old('info_source', $isStage2 ? ($registration->info_source ?? '') : '') === 'Other' || (old('info_source') && !in_array(old('info_source'), ['Social media', 'Website', 'lecturer', 'Friends'])) ? 'selected' : '' }}>Other</option>
+                            </select>
+                            <input type="text" id="payment_info_source_other" class="form-control-custom mt-2" value="{{ !in_array(old('info_source', $isStage2 ? ($registration->info_source ?? '') : ''), ['Social media', 'Website', 'lecturer', 'Friends', '']) ? old('info_source', $isStage2 ? ($registration->info_source ?? '') : '') : '' }}" placeholder="Specify other source..." style="display:none;" required {{ $isStage2 ? 'readonly' : '' }}>
+                        </div>
+
+                        <!-- Latar Belakang Pendidikan -->
+                        <div class="mb-custom">
+                            <label class="form-label-custom">What is your educational background? <span style="color:#ef4444;">*</span></label>
+                            <select class="form-select-custom" name="educational_background" id="payment_educational_background" required {{ $isStage2 ? 'disabled' : '' }}>
+                                <option value="" disabled selected>Select educational background</option>
+                                <option value="Bachelor's Degree" {{ old('educational_background', $isStage2 ? ($registration->educational_background ?? '') : '') === "Bachelor's Degree" ? 'selected' : '' }}>Bachelor's Degree</option>
+                                <option value="Diploma" {{ old('educational_background', $isStage2 ? ($registration->educational_background ?? '') : '') === 'Diploma' ? 'selected' : '' }}>Diploma</option>
+                                <option value="other" {{ old('educational_background', $isStage2 ? ($registration->educational_background ?? '') : '') === 'other' || (old('educational_background') && !in_array(old('educational_background'), ["Bachelor's Degree", "Diploma"])) ? 'selected' : '' }}>Other</option>
+                            </select>
+                            <input type="text" id="payment_educational_background_other" class="form-control-custom mt-2" value="{{ !in_array(old('educational_background', $isStage2 ? ($registration->educational_background ?? '') : ''), ["Bachelor's Degree", "Diploma", '']) ? old('educational_background', $isStage2 ? ($registration->educational_background ?? '') : '') : '' }}" placeholder="Specify other educational background..." style="display:none;" required {{ $isStage2 ? 'readonly' : '' }}>
+                        </div>
                         @if(isset($event) && (bool) ($event->is_reseller_event ?? false) && !$isStage2)
                         <div class="mb-custom">
                             <label class="form-label-custom">Referral Code (opsional)</label>
@@ -254,6 +316,7 @@
                             </div>
                         </div>
                         @endif
+                        </div> <!-- form-scroll-container -->
                     </div>
                     
                     
@@ -941,6 +1004,22 @@
             const studyOk = !studyProgramInput || studyProgramInput.value.trim().length >= 2;
             const posOk = !positionInput || positionInput.value.trim().length >= 2;
             
+            const instLocInput = document.querySelector('input[name="institution_location"]');
+            const infoSrcSelect = document.getElementById('payment_info_source') || document.querySelector('select[name="info_source"]');
+            const eduBgSelect = document.getElementById('payment_educational_background') || document.querySelector('select[name="educational_background"]');
+
+            const instLocOk = !instLocInput || instLocInput.value.trim().length >= 2;
+            
+            const infoSrcOther = document.getElementById('payment_info_source_other');
+            const eduBgOther = document.getElementById('payment_educational_background_other');
+
+            const infoSrcOk = !infoSrcSelect || 
+                              ((infoSrcSelect.value !== '' && infoSrcSelect.value !== 'Other' && infoSrcSelect.value !== 'other') || 
+                               (infoSrcOther && infoSrcOther.value.trim().length >= 2));
+            const eduBgOk = !eduBgSelect || 
+                            ((eduBgSelect.value !== '' && eduBgSelect.value !== 'Other' && eduBgSelect.value !== 'other') || 
+                             (eduBgOther && eduBgOther.value.trim().length >= 2));
+
             let refOk = true;
             if (referralInput && referralInput.value.trim() !== '') {
                 refOk = (referralState === 'valid');
@@ -951,7 +1030,7 @@
                 vchOk = (voucherState === 'valid');
             }
 
-            const allOk = nameOk && waOk && univOk && studyOk && posOk && refOk && vchOk;
+            const allOk = nameOk && waOk && univOk && studyOk && posOk && instLocOk && infoSrcOk && eduBgOk && refOk && vchOk;
 
             if(isFree){
                 const freeBtn = document.getElementById('freeRegBtn');
@@ -988,8 +1067,57 @@
             if(universityInput) universityInput.addEventListener(evt, validate);
             if(studyProgramInput) studyProgramInput.addEventListener(evt, validate);
             if(positionInput) positionInput.addEventListener(evt, validate);
+
+            const teamNameInput = form.querySelector('input[name="team_name"]');
+            if(teamNameInput) teamNameInput.addEventListener(evt, validate);
+
+            const instLocInput = document.querySelector('input[name="institution_location"]');
+            const infoSrcSelect = document.getElementById('payment_info_source') || document.querySelector('select[name="info_source"]');
+            const eduBgSelect = document.getElementById('payment_educational_background') || document.querySelector('select[name="educational_background"]');
+            const infoSrcOther = document.getElementById('payment_info_source_other');
+            const eduBgOther = document.getElementById('payment_educational_background_other');
+
+            if(instLocInput) instLocInput.addEventListener(evt, validate);
+            if(infoSrcSelect) infoSrcSelect.addEventListener(evt, validate);
+            if(eduBgSelect) eduBgSelect.addEventListener(evt, validate);
+            if(infoSrcOther) infoSrcOther.addEventListener(evt, validate);
+            if(eduBgOther) eduBgOther.addEventListener(evt, validate);
+
             if(referralInput) referralInput.addEventListener(evt, updateReferralUI);
         });
+
+        function initOtherFieldToggle(selectId, otherInputId) {
+            const selectEl = document.getElementById(selectId);
+            const otherInputEl = document.getElementById(otherInputId);
+            if (!selectEl || !otherInputEl) return;
+
+            const originalName = selectEl.getAttribute('name') || selectEl.getAttribute('data-original-name');
+            if (originalName && !selectEl.getAttribute('data-original-name')) {
+                selectEl.setAttribute('data-original-name', originalName);
+            }
+
+            function toggle() {
+                const isOther = selectEl.value === 'Other' || selectEl.value === 'other';
+                if (isOther) {
+                    otherInputEl.style.display = 'block';
+                    otherInputEl.setAttribute('name', selectEl.getAttribute('data-original-name') || 'info_source');
+                    selectEl.removeAttribute('name');
+                    otherInputEl.required = true;
+                } else {
+                    otherInputEl.style.display = 'none';
+                    otherInputEl.removeAttribute('name');
+                    selectEl.setAttribute('name', selectEl.getAttribute('data-original-name') || 'info_source');
+                    otherInputEl.required = false;
+                }
+                validate();
+            }
+
+            selectEl.addEventListener('change', toggle);
+            toggle();
+        }
+
+        initOtherFieldToggle('payment_info_source', 'payment_info_source_other');
+        initOtherFieldToggle('payment_educational_background', 'payment_educational_background_other');
 
         // Init payment method UI
         syncMethodUI();
@@ -1162,7 +1290,8 @@
                         referral_code: referralInput ? referralInput.value.trim() : '',
                         voucher_code: voucherVal,
                         force_new: forceNew ? '1' : '0',
-                        attendance_type: document.getElementById('attendanceTypeInput')?.value || ''
+                        attendance_type: document.getElementById('attendanceTypeInput')?.value || '',
+                        team_name: document.querySelector('input[name="team_name"]')?.value || ''
                     });
                 } else {
                     if(dialVal) url.searchParams.set('dial_code', dialVal);
@@ -1173,6 +1302,40 @@
                     
                     const attendanceTypeEl = document.getElementById('attendanceTypeInput');
                     if(attendanceTypeEl && attendanceTypeEl.value) url.searchParams.set('attendance_type', attendanceTypeEl.value);
+
+                    const fullNameEl = document.querySelector('input[name="full_name"]');
+                    if(fullNameEl) url.searchParams.set('full_name', fullNameEl.value.trim());
+                    
+                    const univEl = document.querySelector('input[name="university_origin"]');
+                    if(univEl) url.searchParams.set('university_origin', univEl.value.trim());
+                    
+                    const studyEl = document.querySelector('input[name="study_program"]');
+                    if(studyEl) url.searchParams.set('study_program', studyEl.value.trim());
+                    
+                    const posEl = document.querySelector('input[name="position"]');
+                    if(posEl) url.searchParams.set('position', posEl.value.trim());
+
+                    const teamNameEl = document.querySelector('input[name="team_name"]');
+                    if(teamNameEl) url.searchParams.set('team_name', teamNameEl.value.trim());
+                    
+                    const instLocEl = document.querySelector('input[name="institution_location"]');
+                    if(instLocEl) url.searchParams.set('institution_location', instLocEl.value.trim());
+                    
+                    const infoSrcSelect = document.getElementById('payment_info_source');
+                    const infoSrcOther = document.getElementById('payment_info_source_other');
+                    if (infoSrcSelect && (infoSrcSelect.value === 'Other' || infoSrcSelect.value === 'other') && infoSrcOther) {
+                        url.searchParams.set('info_source', infoSrcOther.value.trim());
+                    } else if (infoSrcSelect) {
+                        url.searchParams.set('info_source', infoSrcSelect.value);
+                    }
+                    
+                    const eduBgSelect = document.getElementById('payment_educational_background');
+                    const eduBgOther = document.getElementById('payment_educational_background_other');
+                    if (eduBgSelect && (eduBgSelect.value === 'Other' || eduBgSelect.value === 'other') && eduBgOther) {
+                        url.searchParams.set('educational_background', eduBgOther.value.trim());
+                    } else if (eduBgSelect) {
+                        url.searchParams.set('educational_background', eduBgSelect.value);
+                    }
                 }
 
                 const fetchOptions = {
