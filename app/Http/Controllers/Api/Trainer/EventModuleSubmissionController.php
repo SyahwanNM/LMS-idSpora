@@ -61,7 +61,7 @@ class EventModuleSubmissionController extends Controller
         }
 
         $request->validate([
-            'module' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
+            'module' => 'required|file|mimes:pdf,mp4,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
         ]);
 
         $file = $request->file('module');
