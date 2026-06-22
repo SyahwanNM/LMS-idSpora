@@ -494,7 +494,7 @@
                                             class="btn btn-warning text-light fw-bold shadow-sm reseller-action-btn"
                                             onclick="copyTextValue(this, @js($product['referral_link']))"
                                             title="Salin link referral">
-                                            <i class="bi bi-clipboard"></i>
+                                            <i class="bi bi-link-45deg"></i>
                                             <span class="visually-hidden">Salin link referral</span>
                                         </button>
                                     </td>                                    
@@ -1065,6 +1065,7 @@
 
     <!-- Container Toast Notifikasi Real-time -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+        <!-- Real-time Notif Toast -->
         <div id="resellerToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 12px; background: linear-gradient(135deg, #FF9F1C 0%, #FF6B6B 100%) !important;">
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center gap-2">
@@ -1075,6 +1076,22 @@
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+
+        <!-- Copy Clipboard Toast (White) -->
+        <div id="copyToast" class="toast align-items-center text-dark border-0 bg-white shadow-sm" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 12px; border: 1px solid #e5e7eb !important;">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2 py-3 px-3">
+                    <div class="d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle" style="width: 28px; height: 28px;">
+                        <i class="bi bi-check-lg" style="font-size: 1rem;"></i>
+                    </div>
+                    <div>
+                        <strong id="copyToastTitle" class="d-block text-dark" style="font-size: 13px; font-weight: 600;">Berhasil Disalin</strong>
+                        <span id="copyToastMessage" class="text-secondary" style="font-size: 11px;">Teks telah disalin ke clipboard.</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close me-3 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>
@@ -1238,6 +1255,16 @@
     </script>
 
     <script>
+        function showCopyToast(title, message) {
+            const toastEl = document.getElementById('copyToast');
+            if (toastEl) {
+                document.getElementById('copyToastTitle').innerText = title;
+                document.getElementById('copyToastMessage').innerText = message;
+                const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                toast.show();
+            }
+        }
+
         function animateCopyIcon(button) {
             var icon = button.querySelector('i');
             if (!icon) return;
@@ -1275,6 +1302,13 @@
             setTimeout(function () {
                 icon.className = originalClass;
             }, 2000);
+
+            // Tampilkan Toast
+            let label = 'Teks';
+            if (elementId === 'referralCode') label = 'Kode referral';
+            if (elementId === 'referralLink') label = 'Link referral';
+            if (elementId === 'referralCaption') label = 'Caption broadcast';
+            showCopyToast('Berhasil Disalin', `${label} berhasil disalin ke clipboard.`);
         }
 
         function copyTextValue(button, value) {
@@ -1282,6 +1316,7 @@
 
             navigator.clipboard.writeText(value);
             animateCopyIcon(button);
+            showCopyToast('Link Disalin', 'Link referral produk berhasil disalin ke clipboard.');
         }
     </script>
 </body>
