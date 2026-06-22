@@ -28,28 +28,40 @@ class CourseStudioController extends Controller
     {
         $course = Course::findOrFail($id);
         
-        // 1. Get the trainer's selected scheme from the course invitation
+        // 1. Get the trainer's selected scheme from the course or fallback to course invitation
         $trainerId = $course->trainer_id;
-        $courseInvitation = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
-            ->where('type', 'course_invitation')
-            ->where(function ($query) use ($course) {
-                $query->where('data', 'like', '%"entity_id":' . $course->id . '%')
-                      ->orWhere('data', 'like', '%"course_id":' . $course->id . '%')
-                      ->orWhere('data', 'like', '%"entity_id":"' . $course->id . '"%')
-                      ->orWhere('data', 'like', '%"course_id":"' . $course->id . '"%');
-            })
-            ->latest()
-            ->first();
-
-        $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
-        if ($invitationSchemeType === 0) {
-            $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
-            $invitationSchemeType = match ($contribScheme) {
+        $invitationSchemeType = 0;
+        if (!empty($course->trainer_contribution_scheme)) {
+            $invitationSchemeType = match ($course->trainer_contribution_scheme) {
                 'e2e' => 1,
                 'module_video' => 2,
-                'video_only' => 3, 
-                default => 1,
+                'video_only' => 3,
+                default => 0,
             };
+        }
+
+        if ($invitationSchemeType === 0) {
+            $courseInvitation = \App\Models\TrainerNotification::where('trainer_id', $trainerId)
+                ->where('type', 'course_invitation')
+                ->where(function ($query) use ($course) {
+                    $query->where('data', 'like', '%"entity_id":' . $course->id . '%')
+                          ->orWhere('data', 'like', '%"course_id":' . $course->id . '%')
+                          ->orWhere('data', 'like', '%"entity_id":"' . $course->id . '"%')
+                          ->orWhere('data', 'like', '%"course_id":"' . $course->id . '"%');
+                })
+                ->latest()
+                ->first();
+
+            $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
+            if ($invitationSchemeType === 0) {
+                $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
+                $invitationSchemeType = match ($contribScheme) {
+                    'e2e' => 1,
+                    'module_video' => 2,
+                    'video_only' => 3, 
+                    default => 1,
+                };
+            }
         }
 
         $activeSchemeType = in_array($invitationSchemeType, [1, 2, 3], true) ? $invitationSchemeType : 1;

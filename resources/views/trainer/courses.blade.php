@@ -5,9 +5,8 @@
 @php
     $pageTitle = 'Courses';
     $breadcrumbs = [
-        ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
-        ['label' => 'Dashboard', 'url' => route('trainer.dashboard')],
-        ['label' => 'Kursus']
+        ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
+        ['label' => 'Course']
     ];
 @endphp
 
@@ -756,9 +755,14 @@
                     @else
                         <div class="card-course">
                             @foreach($status['data'] as $course)
-                                <article class="card-item">
+                                <a class="card-item" href="{{ route('trainer.detail-course', $course->id) }}" style="text-decoration: none; color: inherit;">
                                     <div class="card-media {{ $course->card_thumbnail ? '' : 'no-image' }}">
                                         <p class="badge-online">{{ strtoupper($course->level ?? 'GENERAL') }}</p>
+                                        @if(!empty($course->is_locked))
+                                            <div class="badge-locked" style="position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #f3f0f7; border: 1px solid rgba(46, 32, 80, 0.18); border-radius: 50%; color: #2e2050; font-size: 11px; z-index: 10;" title="Locked">
+                                                <i class="bi bi-lock-fill"></i>
+                                            </div>
+                                        @endif
                                         <div class="rating">
                                             <i class="bi bi-star-fill"></i>
                                             <p>{{ number_format($course->reviews_avg_rating ?? 0, 1) }}</p>
@@ -832,13 +836,12 @@
                                                 </div>
                                             </div>
 
-                                            <a class="btn-detail-course" href="{{ route('trainer.detail-course', $course->id) }}"
-                                                aria-label="Lihat detail {{ $course->name }}">
+                                            <div class="btn-detail-course" aria-label="Lihat detail {{ $course->name }}">
                                                 <i class="bi bi-arrow-right"></i>
-                                            </a>
+                                            </div>
                                         </div>
                                     </div>
-                                </article>
+                                </a>
                             @endforeach
                         </div>
                     @endif

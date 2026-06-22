@@ -8,13 +8,14 @@
 
     :root {
         --admin-primary: #1e1b4b;
-        --admin-secondary: #3949ab;
+        --admin-secondary: #1e1b4b;
+        --admin-accent: #1e1b4b;
         --admin-card-bg: #ffffff;
         --admin-border: #e2e8f0;
         --admin-text-main: #0f172a;
         --admin-text-muted: #64748b;
-        --status-pending-bg: rgba(245, 158, 11, 0.08);
-        --status-pending-text: #d97706;
+        --status-pending-bg: #f1f5f9;
+        --status-pending-text: #475569;
     }
 
     .material-page {
@@ -28,14 +29,19 @@
     }
 
     .page-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        background-color: var(--admin-secondary);
         border-radius: 20px;
         padding: 30px 36px;
         color: #fff;
         position: relative;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 20px 40px rgba(30, 27, 75, 0.12);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
     }
 
     .page-title {
@@ -54,6 +60,15 @@
         color: #94a3b8;
         font-size: .92rem;
         font-weight: 500;
+    }
+
+    .page-header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 2;
     }
 
     .btn-header-action {
@@ -125,8 +140,8 @@
     }
 
     .stat-card.pending .stat-icon {
-        background: rgba(245, 158, 11, 0.08);
-        color: #d97706;
+        background: #f1f5f9;
+        color: #475569;
     }
     .stat-card.approved .stat-icon {
         background: rgba(16, 185, 129, 0.08);
@@ -192,13 +207,13 @@
     }
 
     .header-icon.course {
-        background: rgba(57, 73, 171, 0.06);
-        color: #3949ab;
+        background: rgba(30, 27, 75, 0.06);
+        color: var(--admin-secondary);
     }
 
     .header-icon.event {
-        background: rgba(57, 73, 171, 0.06);
-        color: #3949ab;
+        background: rgba(30, 27, 75, 0.06);
+        color: var(--admin-secondary);
     }
 
     .header-title {
@@ -271,13 +286,13 @@
     }
 
     .search-box input:focus {
-        border-color: #3949ab;
+        border-color: var(--admin-secondary);
         background: #fff;
-        box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.06);
+        box-shadow: 0 0 0 3px rgba(30, 27, 75, 0.1);
     }
 
     .search-box:focus-within i {
-        color: #3949ab;
+        color: var(--admin-secondary);
     }
 
     .filter-select {
@@ -295,9 +310,9 @@
     }
 
     .filter-select:focus {
-        border-color: #3949ab;
+        border-color: var(--admin-secondary);
         background-color: #ffffff;
-        box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.06);
+        box-shadow: 0 0 0 3px rgba(30, 27, 75, 0.1);
     }
 
     .toolbar-right {
@@ -481,16 +496,16 @@
     }
 
     .badge-pending {
-        background: rgba(245, 158, 11, 0.08);
-        color: #d97706;
-        border: 1px solid rgba(245, 158, 11, 0.15);
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
     }
 
     .badge-pending::before {
         content: '';
         width: 6px;
         height: 6px;
-        background-color: #f59e0b;
+        background-color: #475569;
         border-radius: 50%;
         flex-shrink: 0;
     }
@@ -685,6 +700,23 @@
             gap: 14px;
         }
 
+        .page-header {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 16px;
+            padding: 24px !important;
+        }
+
+        .page-header-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .page-header-actions .btn-header-action {
+            width: 100% !important;
+            justify-content: center;
+        }
+
         .toolbar {
             padding: 16px;
             gap: 10px;
@@ -696,7 +728,11 @@
             flex-direction: column !important;
             align-items: stretch !important;
         }
-        .search-box, .filter-select {
+        .search-box {
+            width: 100% !important;
+            flex: none !important;
+        }
+        .filter-select {
             width: 100% !important;
         }
         .toolbar-right {
@@ -767,10 +803,16 @@
             </p>
         </div>
 
-        <button class="btn-header-action" onclick="window.location.reload();">
-            <i class="bi bi-arrow-clockwise"></i>
-            Segarkan
-        </button>
+        <div class="page-header-actions">
+            <button class="btn-header-action" onclick="window.location.reload();">
+                <i class="bi bi-arrow-clockwise"></i>
+                Segarkan
+            </button>
+            <a href="{{ route('admin.trainer.material.approved') }}" class="btn-header-action">
+                Lihat Disetujui
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
     </div>
 
     <!-- Stats Section -->
@@ -806,24 +848,19 @@
         </div>
     </div>
 
-    <!-- Course Materials Card -->
-    <div class="content-card mb-5">
-        <div class="card-header-custom">
-            <div class="header-icon-title">
-                <div class="header-icon course"><i class="bi bi-journal-bookmark-fill"></i></div>
-                <div>
-                    <h5 class="header-title">Materi Course</h5>
-                    <p class="header-subtitle">Daftar materi course yang diajukan oleh trainer</p>
-                </div>
-            </div>
-        </div>
-
+    <!-- Unified Toolbar -->
+    <div class="content-card mb-4">
+        @php
+            $activeSearch = trim((string) request('search', ''));
+            $activeDeadlineFilter = $deadlineFilter ?? 'all';
+            $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
+        @endphp
         <div class="toolbar">
             <div class="toolbar-left">
                 <form method="GET" class="toolbar-form">
                     <div class="search-box">
                         <i class="bi bi-search"></i>
-                        <input type="text" name="search" placeholder="Cari course atau nama trainer..."
+                        <input type="text" name="search" placeholder="Cari materi course, event, atau nama trainer..."
                             value="{{ request('search') }}">
                     </div>
 
@@ -831,7 +868,7 @@
                         <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>
                             Semua Deadline
                         </option>
-                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
+                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'all' || ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
                             Lewat Tenggat
                         </option>
                         <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>
@@ -844,13 +881,29 @@
                 </form>
             </div>
 
-            <div class="toolbar-right">
-                <a href="{{ route('admin.trainer.material.approved') }}" class="btn-approved-link">
-                    Lihat Disetujui
-                    <i class="bi bi-arrow-right"></i>
-                </a>
+            @if($hasActiveFilter)
+                <div class="toolbar-right">
+                    <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-approved-link" style="color: #991b1b; border-color: #fecaca; background: #fef2f2;">
+                        <i class="bi bi-x-circle"></i> Reset Filter
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Course Materials Card -->
+    <div class="content-card mb-5">
+        <div class="card-header-custom">
+            <div class="header-icon-title">
+                <div class="header-icon course"><i class="bi bi-journal-bookmark-fill"></i></div>
+                <div>
+                    <h5 class="header-title">Materi Course</h5>
+                    <p class="header-subtitle">Daftar materi course yang diajukan oleh trainer</p>
+                </div>
             </div>
         </div>
+
+
 
         <div class="table-responsive">
             <table class="table">
@@ -985,39 +1038,7 @@
             </div>
         </div>
 
-        <div class="toolbar">
-            <div class="toolbar-left">
-                <form method="GET" class="toolbar-form">
-                    <div class="search-box">
-                        <i class="bi bi-search"></i>
-                        <input type="text" name="search" placeholder="Cari modul event yang menunggu review..."
-                            value="{{ request('search') }}">
-                    </div>
 
-                    <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
-                        <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>
-                            Semua Deadline
-                        </option>
-                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                            Lewat Tenggat
-                        </option>
-                        <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>
-                            Tepat Waktu
-                        </option>
-                        <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
-                            Tanpa Deadline
-                        </option>
-                    </select>
-                </form>
-            </div>
-
-            <div class="toolbar-right">
-                <a href="{{ route('admin.trainer.material.approved') }}" class="btn-approved-link">
-                    Lihat Disetujui
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-        </div>
 
         <div class="table-responsive">
             <table class="table">

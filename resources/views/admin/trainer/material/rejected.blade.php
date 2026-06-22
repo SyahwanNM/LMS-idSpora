@@ -7,7 +7,8 @@
     <style>
         :root {
             --admin-primary: #1e1b4b;
-            --admin-secondary: #4338ca;
+            --admin-secondary: #1e1b4b;
+            --admin-accent: #1e1b4b;
             --admin-bg: #f8fafc;
             --admin-card-bg: #ffffff;
             --admin-border: #e2e8f0;
@@ -23,17 +24,17 @@
             margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             gap: 16px;
             flex-wrap: wrap;
-            background: linear-gradient(135deg, #1a237e 0%, #283593 55%, #3949ab 100%);
+            background-color: var(--admin-secondary);
             border-radius: 20px;
             padding: 24px 26px;
             color: #fff;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            box-shadow: 0 14px 30px rgba(26, 35, 126, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(30, 27, 75, 0.12);
         }
 
         .page-header::after {
@@ -49,7 +50,16 @@
         }
 
         .page-header>div,
-        .page-header>a {
+        .page-header>.page-header-actions {
+            position: relative;
+            z-index: 2;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
             position: relative;
             z-index: 2;
         }
@@ -129,10 +139,10 @@
         }
 
         .search-box input:focus {
-            border-color: #991b1b;
+            border-color: var(--admin-secondary);
             outline: none;
             background: #fff;
-            box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
+            box-shadow: 0 0 0 3px rgba(30, 27, 75, 0.1);
         }
 
         .filter-select {
@@ -147,9 +157,9 @@
         }
 
         .filter-select:focus {
-            border-color: #991b1b;
+            border-color: var(--admin-secondary);
             outline: none;
-            box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
+            box-shadow: 0 0 0 3px rgba(30, 27, 75, 0.1);
         }
 
         .toolbar-right {
@@ -354,6 +364,7 @@
 
             .search-box {
                 width: 100%;
+                flex: none !important;
             }
 
             .filter-select {
@@ -370,6 +381,53 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 16px;
+                padding: 20px !important;
+            }
+            .page-header-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            .page-header-actions .btn-back-header,
+            .page-header-actions .btn-action {
+                width: 100% !important;
+                justify-content: center;
+            }
+            .toolbar {
+                padding: 16px;
+                gap: 12px;
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            .toolbar-left, .toolbar-form {
+                width: 100%;
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            .search-box {
+                width: 100% !important;
+                flex: none !important;
+            }
+            .filter-select {
+                width: 100% !important;
+            }
+            .toolbar-right {
+                width: 100%;
+                margin-left: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .toolbar-right .btn-action {
+                width: 100% !important;
+                justify-content: center;
             }
         }
 
@@ -458,62 +516,61 @@
             <h1 class="page-title"><i class="bi bi-exclamation-octagon-fill me-2"></i>Perlu Revisi</h1>
             <p class="page-subtitle">Materi yang dikembalikan ke trainer karena tidak sesuai standar.</p>
         </div>
-        <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-back-header">
-            <i class="bi bi-arrow-left"></i> Kembali ke Antrean
-        </a>
+        <div class="page-header-actions">
+            <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-back-header">
+                <i class="bi bi-arrow-left"></i> Kembali ke Antrean
+            </a>
+            <a href="{{ route('admin.trainer.material.approved') }}" class="btn-back-header" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.25);">
+                Lihat Disetujui <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
     </div>
 
-    <div class="content-card">
+    <!-- Unified Toolbar -->
+    <div class="content-card mb-4">
+        @php
+            $activeDeadlineFilter = $deadlineFilter ?? 'all';
+            $activeSearch = trim((string) request('search', ''));
+            $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
+            $deadlineLabelMap = [
+                'all' => 'Semua Deadline',
+                'overdue' => 'Lewat Tenggat',
+                'on_time' => 'Tepat Waktu',
+                'no_deadline' => 'Tanpa Deadline',
+            ];
+        @endphp
         <div class="toolbar">
-            @php
-                $activeDeadlineFilter = $deadlineFilter ?? 'all';
-                $activeSearch = trim((string) request('search', ''));
-                $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
-                $deadlineLabelMap = [
-                    'all' => 'Semua Deadline',
-                    'overdue' => 'Lewat Tenggat',
-                    'on_time' => 'Tepat Waktu',
-                    'no_deadline' => 'Tanpa Deadline',
-                ];
-            @endphp
             <div class="toolbar-left">
                 <form method="GET" class="toolbar-form">
                     <div class="search-box">
                         <i class="bi bi-search"></i>
-                        <input type="text" name="search" placeholder="Cari materi yang direvisi..."
+                        <input type="text" name="search" placeholder="Cari materi course atau event yang direvisi..."
                             value="{{ request('search') }}">
                     </div>
                     <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
-                        <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
-                            Deadline
-                        </option>
-                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                            Lewat Tenggat
-                        </option>
-                        <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
-                            Waktu</option>
-                        <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
-                            Tanpa Deadline</option>
+                        <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Deadline</option>
+                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Lewat Tenggat</option>
+                        <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat Waktu</option>
+                        <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>Tanpa Deadline</option>
                     </select>
                 </form>
             </div>
 
             <div class="toolbar-right">
                 @if($hasActiveFilter)
-                    <span class="btn-action" style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;">
-                        Filter:
-                        {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
+                    <span class="btn-action" style="cursor:default;color:#334155;border-color:#cbd5e1;background:#f8fafc;height:44px;display:inline-flex;align-items:center;">
+                        Filter: {{ $deadlineLabelMap[$activeDeadlineFilter] ?? 'Semua Deadline' }}{{ $activeSearch !== '' ? ' • Pencarian aktif' : '' }}
                     </span>
-                    <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-action">
+                    <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-action" style="height:44px;display:inline-flex;align-items:center;">
                         <i class="bi bi-x-circle"></i> Reset
                     </a>
                 @endif
-                <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
-                    style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
-                    Lihat Disetujui <i class="bi bi-arrow-right"></i>
-                </a>
             </div>
         </div>
+    </div>
+
+    <div class="content-card">
+
 
         <div class="table-responsive">
             <table class="table">
@@ -610,36 +667,7 @@
     </div>
 
     <div class="content-card mt-4">
-        <div class="toolbar">
-            <div class="toolbar-left">
-                <form method="GET" class="toolbar-form">
-                    <div class="search-box">
-                        <i class="bi bi-search"></i>
-                        <input type="text" name="search" placeholder="Cari modul event yang direvisi..."
-                            value="{{ request('search') }}">
-                    </div>
-                    <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
-                        <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua
-                            Deadline
-                        </option>
-                        <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>
-                            Lewat Tenggat
-                        </option>
-                        <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat
-                            Waktu</option>
-                        <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>
-                            Tanpa Deadline</option>
-                    </select>
-                </form>
-            </div>
 
-            <div class="toolbar-right">
-                <a href="{{ route('admin.trainer.material.approved') }}" class="btn-action"
-                    style="color: #166534; border-color:#bbf7d0; background:#f0fdf4;">
-                    Lihat Disetujui <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-        </div>
 
         <div class="table-responsive">
             <table class="table">

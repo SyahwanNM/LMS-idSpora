@@ -22,6 +22,7 @@ class TrainerAssignment extends Model
         'materials_uploaded_at',
         'material_path',
         'material_status',
+        'logo_stamped',
         'material_submitted_at',
         'material_approved_at',
         'material_approved_by',
@@ -42,6 +43,7 @@ class TrainerAssignment extends Model
         'material_approved_at' => 'datetime',
         'material_rejected_at' => 'datetime',
         'rejected_at' => 'datetime',
+        'logo_stamped' => 'boolean',
     ];
 
     /**

@@ -9,19 +9,19 @@
 
         :root {
             --admin-primary: #1e1b4b;
-            --admin-secondary: #3949ab;
-            --admin-accent: #5c6bc0;
-            --admin-accent-soft: #eef1ff;
-            --admin-accent-border: #dce3ff;
+            --admin-secondary: #1e1b4b;
+            --admin-accent: #1e1b4b;
+            --admin-accent-soft: #f1f5f9;
+            --admin-accent-border: #e2e8f0;
             --admin-bg: #f8fafc;
             --admin-card-bg: #ffffff;
             --admin-border: #e2e8f0;
             --admin-text-main: #0f172a;
             --admin-text-muted: #64748b;
             
-            --status-pending-bg: rgba(245, 158, 11, 0.08);
-            --status-pending-text: #d97706;
-            --status-pending-border: rgba(245, 158, 11, 0.15);
+            --status-pending-bg: #f1f5f9;
+            --status-pending-text: #475569;
+            --status-pending-border: #cbd5e1;
             
             --status-approved-bg: rgba(16, 185, 129, 0.08);
             --status-approved-text: #059669;
@@ -64,11 +64,12 @@
             margin-bottom: 24px;
             gap: 16px;
             flex-wrap: wrap;
-            padding: 16px 24px;
-            background: #ffffff;
-            border: 1px solid var(--admin-border);
-            border-radius: 20px;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+            padding: 20px 28px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(30, 27, 75, 0.15);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(30, 27, 75, 0.04);
         }
 
         .btn-back {
@@ -88,9 +89,9 @@
         }
 
         .btn-back:hover {
-            background: #f8fafc;
+            background: #eff6ff;
             color: var(--admin-secondary);
-            border-color: #cbd5e1;
+            border-color: var(--admin-accent-border);
             transform: translateX(-3px);
         }
 
@@ -141,17 +142,18 @@
         /* Card custom adjustments */
         .card-custom {
             background: var(--admin-card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--admin-border);
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.01);
+            border-radius: 24px;
+            border: 1px solid rgba(30, 27, 75, 0.08);
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.02);
             padding: 24px;
             margin-bottom: 24px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .card-custom:hover {
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-            border-color: #cbd5e1;
+            box-shadow: 0 16px 36px rgba(30, 27, 75, 0.06);
+            border-color: var(--admin-accent-border);
+            transform: translateY(-4px);
         }
 
         .card-title-bar {
@@ -181,7 +183,7 @@
             width: 34px;
             height: 34px;
             border-radius: 8px;
-            background: rgba(57, 73, 171, 0.06);
+            background: rgba(30, 27, 75, 0.08);
             color: var(--admin-secondary);
             font-size: 1.05rem;
         }
@@ -237,15 +239,15 @@
         /* Video / Player screen */
         .video-container {
             background: #0f172a;
-            border-radius: 14px;
+            border-radius: 18px;
             overflow: hidden;
             aspect-ratio: 16/9;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
-            border: 1.5px solid #1e293b;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.15);
+            border: 2px solid #1e293b;
             position: relative;
             transition: all 0.3s ease;
         }
@@ -461,21 +463,37 @@
             gap: 16px;
             background: #ffffff;
             align-items: flex-start;
-            transition: all 0.25s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             margin-bottom: 12px;
         }
 
+        .module-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--admin-secondary);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
         .module-item:hover {
-            border-color: #cbd5e1;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+            border-color: var(--admin-accent-border);
+            box-shadow: 0 8px 24px rgba(30, 27, 75, 0.06);
             transform: translateY(-2px);
         }
 
         .module-item.is-preview-active {
             border-color: var(--admin-secondary);
-            background: rgba(57, 73, 171, 0.01);
+            background: rgba(30, 27, 75, 0.02);
+        }
+
+        .module-item.is-preview-active::before {
+            opacity: 1;
         }
 
         .module-icon {
@@ -515,7 +533,7 @@
             display: inline-block;
             flex-shrink: 0;
         }
-        .status-dot-indicator.pending { background-color: #f59e0b; }
+        .status-dot-indicator.pending { background-color: #475569; }
         .status-dot-indicator.approved { background-color: #10b981; }
         .status-dot-indicator.rejected { background-color: #ef4444; }
 
@@ -651,8 +669,8 @@
         }
 
         .module-btn-approve:hover {
-            background: #283593;
-            border-color: #283593;
+            background: #1e1b4b;
+            border-color: #1e1b4b;
         }
 
         .module-btn-reject {
@@ -961,7 +979,8 @@
         }
 
         .btn-approve:hover:not(:disabled) {
-            background: #283593;
+            background: #1e1b4b;
+            box-shadow: 0 4px 12px rgba(30, 27, 75, 0.2);
         }
 
         .btn-approve:disabled {
@@ -1143,6 +1162,57 @@
                 justify-content: flex-start !important;
                 margin-top: 4px;
             }
+        }
+
+        .info-list-custom {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info-item-custom {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .info-label-custom {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--admin-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-val-custom {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--admin-text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-val-custom i {
+            color: #64748b;
+        }
+
+        .reject-preset-btn {
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+
+        .reject-preset-btn:hover {
+            background: var(--admin-accent-soft) !important;
+            border-color: var(--admin-accent) !important;
+            color: var(--admin-secondary) !important;
+            transform: translateY(-1px);
         }
     </style>
 @endpush
@@ -1421,6 +1491,13 @@
                                                     <div class="collapse module-reject-form" id="rejectModuleForm-{{ $module->id }}">
                                                         <form method="POST" action="{{ route('admin.trainer.material.module.reject', [$material, $module]) }}">
                                                             @csrf
+                                                            <div class="mb-2" style="display:flex; flex-wrap:wrap; gap:6px;">
+                                                                <button type="button" class="btn reject-preset-btn" data-preset="Materi tidak sesuai dengan topik yang ditentukan.">Tidak Sesuai Topik</button>
+                                                                <button type="button" class="btn reject-preset-btn" data-preset="Materi kurang lengkap, harap lengkapi sesuai standar kurikulum.">Kurang Lengkap</button>
+                                                                <button type="button" class="btn reject-preset-btn" data-preset="Format penulisan atau media salah, mohon sesuaikan kembali.">Format Salah</button>
+                                                                <button type="button" class="btn reject-preset-btn" data-preset="Berkas rusak atau tidak dapat dibuka. Harap unggah ulang.">File Rusak</button>
+                                                                <button type="button" class="btn reject-preset-btn" data-preset="Kualitas audio atau video buram/kurang jelas.">Audio/Video Buram</button>
+                                                            </div>
                                                             <textarea name="rejection_reason" required minlength="10" placeholder="Tuliskan detail perbaikan atau catatan revisi yang harus dikerjakan trainer..."></textarea>
                                                             <button type="submit">
                                                                 Kirim Catatan
@@ -1467,6 +1544,43 @@
                                         <i class="bi bi-envelope me-1"></i>{{ $material->trainer->email }}
                                     </div>
                                 @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Deskripsi Course Card --}}
+                    @if(!empty($material->description))
+                        <div class="card-custom side-card">
+                            <div class="side-card-title">Deskripsi Course</div>
+                            <div class="scrollable-content" style="max-height: 200px; overflow-y: auto; font-size: 0.84rem; line-height: 1.6; color: var(--admin-text-main);">
+                                {!! $material->description !!}
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Informasi Kelas Card --}}
+                    <div class="card-custom side-card">
+                        <div class="side-card-title">Informasi Kelas</div>
+                        <div class="info-list-custom">
+                            <div class="info-item-custom">
+                                <span class="info-label-custom">Level Kelas</span>
+                                <span class="info-val-custom">
+                                    <i class="bi bi-bar-chart-steps"></i>
+                                    {{ strtoupper($material->level ?? 'BEGINNER') }}
+                                </span>
+                            </div>
+                            <div class="info-item-custom">
+                                <span class="info-label-custom">Target Peserta</span>
+                                <span class="info-val-custom">
+                                    <i class="bi bi-people"></i>
+                                    @if(($material->level ?? '') === 'beginner')
+                                        Mahasiswa, Pelajar, & Pemula
+                                    @elseif(($material->level ?? '') === 'intermediate')
+                                        Dosen, Guru, & Profesional Muda
+                                    @else
+                                        Praktisi Senior, Peneliti, & Akademisi
+                                    @endif
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -1578,7 +1692,17 @@
                     @csrf
                     <div class="modal-body">
                         <div class="mb-1">
-                            <label for="rejection_reason" class="form-label" style="font-weight:750; color:var(--admin-text-main);">Catatan Revisi / Alasan Penolakan</label>
+                            <label for="rejection_reason" class="form-label" style="font-weight:750; color:var(--admin-text-main); margin-bottom:8px;">Catatan Revisi / Alasan Penolakan</label>
+                            <div class="mb-2">
+                                <select class="form-select reject-preset-select" style="font-size:0.82rem; border-radius:8px; border:1px solid #cbd5e1; padding: 6px 12px; color: var(--admin-text-main); width: 100%;">
+                                    <option value="" disabled selected>-- Pilih Preset Alasan Penolakan (Klik untuk Menambahkan) --</option>
+                                    <option value="Materi tidak sesuai dengan topik yang ditentukan.">Tidak Sesuai Topik</option>
+                                    <option value="Materi kurang lengkap, harap lengkapi sesuai standar kurikulum.">Kurang Lengkap</option>
+                                    <option value="Format penulisan atau media salah, mohon sesuaikan kembali.">Format Salah</option>
+                                    <option value="Berkas rusak atau tidak dapat dibuka. Harap unggah ulang.">File Rusak</option>
+                                    <option value="Kualitas audio atau video buram/kurang jelas.">Audio/Video Buram</option>
+                                </select>
+                            </div>
                             <textarea class="form-control" id="rejection_reason" name="rejection_reason" required minlength="10" placeholder="Tuliskan catatan perbaikan atau alasan penolakan untuk seluruh course ini secara rinci agar trainer mengerti..."></textarea>
                             <span class="text-muted" style="font-size:0.76rem; display:block; margin-top:8px;">
                                 <i class="bi bi-info-circle me-1"></i> Trainer akan menerima notifikasi beserta catatan revisi ini untuk memperbaiki materi. Minimal 10 karakter.
@@ -1745,6 +1869,45 @@
                     return;
                 }
                 showPreviewContent(renderPreview(fileUrl, fileKind), 'Tinjau File: ' + moduleTitle, fileName, 'file');
+            });
+
+            // Preset rejection reason dropdown change handler
+            document.addEventListener('change', function (e) {
+                const presetSelect = e.target.closest('.reject-preset-select');
+                if (!presetSelect) return;
+                
+                const formOrDiv = presetSelect.closest('form') || presetSelect.closest('.mb-1') || presetSelect.closest('.mb-2') || presetSelect.closest('.mb-3') || presetSelect.closest('.mb-4');
+                if (formOrDiv) {
+                    const textarea = formOrDiv.querySelector('textarea');
+                    if (textarea && presetSelect.value) {
+                        const newValue = presetSelect.value;
+                        if (textarea.value.trim() === '') {
+                            textarea.value = newValue;
+                        } else {
+                            textarea.value = textarea.value.trim() + "\n" + newValue;
+                        }
+                        presetSelect.selectedIndex = 0;
+                    }
+                }
+            });
+
+            // Preset rejection reason button click handler
+            document.addEventListener('click', function (e) {
+                const presetBtn = e.target.closest('.reject-preset-btn');
+                if (!presetBtn) return;
+                
+                const formOrDiv = presetBtn.closest('form');
+                if (formOrDiv) {
+                    const textarea = formOrDiv.querySelector('textarea');
+                    const presetText = presetBtn.getAttribute('data-preset');
+                    if (textarea && presetText) {
+                        if (textarea.value.trim() === '') {
+                            textarea.value = presetText;
+                        } else {
+                            textarea.value = textarea.value.trim() + "\n" + presetText;
+                        }
+                    }
+                }
             });
 
         })();

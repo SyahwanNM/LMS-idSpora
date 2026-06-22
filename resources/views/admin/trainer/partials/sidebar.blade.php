@@ -15,7 +15,7 @@
         <span class="mobile-only">Dasbor</span>
     </a>
 
-    <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}#daftar-trainer"
+    <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}"
        class="sidebar-link {{ request()->routeIs('admin.trainer.index') && request()->query('view') === 'list' ? 'active' : '' }}">
         <i class="bi bi-people"></i>
         <span class="desktop-only">Seluruh Trainer</span>

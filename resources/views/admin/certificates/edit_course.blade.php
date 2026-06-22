@@ -1136,9 +1136,9 @@
                     <p class="sig-name">${nameValue || 'Authorized Signature'}</p>
                 `;
             } else {
-                let imgHtml = '<div style="height: 90px;"></div>';
+                let imgHtml = '<div style="height: 50px;"></div>';
                 if (imgSrc) {
-                    imgHtml = `<img src="${imgSrc}" style="height: 90px; width: auto; display: block; margin: 0 auto; object-fit: contain;">`;
+                    imgHtml = `<img src="${imgSrc}" style="height: 50px; width: auto; display: block; margin: 0 auto; object-fit: contain;">`;
                 }
                 sigBox.innerHTML = `
                     ${imgHtml}

@@ -1,5 +1,5 @@
 {{-- Scheme Selection & E-Agreement Modal for Event Invitations --}}
-<div class="modal fade scheme-modal" id="schemeSelectionModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade scheme-modal" id="schemeSelectionModal" tabindex="-1" aria-hidden="true" style="display: none;">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0">
             <form id="schemeSelectionForm" method="POST" style="display: none;">

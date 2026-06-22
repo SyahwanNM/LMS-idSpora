@@ -6,7 +6,8 @@
 <style>
     :root {
         --admin-primary: #1e1b4b;
-        --admin-secondary: #3949ab;
+        --admin-secondary: #1e1b4b;
+        --admin-accent: #1e1b4b;
         --admin-card-bg: #ffffff;
         --admin-border: #e2e8f0;
         --admin-text-main: #0f172a;
@@ -14,14 +15,19 @@
     }
 
     .page-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        background-color: var(--admin-secondary);
         border-radius: 24px;
         padding: 36px 40px;
         color: #fff;
         position: relative;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 20px 40px rgba(30, 27, 75, 0.12);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
     }
 
     .page-header::after {
@@ -53,7 +59,16 @@
     }
 
     .page-header > div,
-    .page-header > a {
+    .page-header > .page-header-actions {
+        position: relative;
+        z-index: 2;
+    }
+
+    .page-header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
         position: relative;
         z-index: 2;
     }
@@ -136,13 +151,13 @@
     }
 
     .search-box input:focus {
-        border-color: #3949ab;
+        border-color: var(--admin-secondary);
         background: #fff;
-        box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.08);
+        box-shadow: 0 0 0 3px rgba(30, 27, 75, 0.1);
     }
 
     .search-box:focus-within i {
-        color: #3949ab;
+        color: var(--admin-secondary);
     }
 
     .filter-select {
@@ -159,9 +174,9 @@
     }
 
     .filter-select:focus {
-        border-color: #3949ab;
+        border-color: var(--admin-secondary);
         background-color: #ffffff;
-        box-shadow: 0 0 0 4px rgba(57, 73, 171, 0.08);
+        box-shadow: 0 0 0 3px rgba(30, 27, 75, 0.1);
     }
 
     .toolbar-right {
@@ -226,8 +241,8 @@
     }
 
     .badge-cat {
-        background: rgba(57, 73, 171, 0.08);
-        color: #3949ab;
+        background: rgba(30, 27, 75, 0.08);
+        color: var(--admin-secondary);
         padding: 4px 10px;
         border-radius: 6px;
         font-size: .72rem;
@@ -384,6 +399,23 @@
     }
 
     @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 16px;
+            padding: 24px !important;
+        }
+
+        .page-header-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .page-header-actions .btn-back-header {
+            width: 100% !important;
+            justify-content: center;
+        }
+
         .toolbar {
             padding: 16px;
             gap: 12px;
@@ -395,7 +427,11 @@
             flex-direction: column !important;
             align-items: stretch !important;
         }
-        .search-box, .filter-select {
+        .search-box {
+            width: 100% !important;
+            flex: none !important;
+        }
+        .filter-select {
             width: 100% !important;
         }
         .toolbar-right {
@@ -499,14 +535,25 @@
         </p>
     </div>
 
-    <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-back-header">
-        <i class="bi bi-arrow-left"></i>
-        Kembali ke Antrean
-    </a>
+    <div class="page-header-actions">
+        <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-back-header">
+            <i class="bi bi-arrow-left"></i>
+            Kembali ke Antrean
+        </a>
+        <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-back-header" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.25);">
+            Lihat Revisi
+            <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
 </div>
 
-<!-- Course Materials Content Card -->
+<!-- Unified Toolbar -->
 <div class="content-card mb-4">
+    @php
+        $activeSearch = trim((string) request('search', ''));
+        $activeDeadlineFilter = $deadlineFilter ?? 'all';
+        $hasActiveFilter = ($activeDeadlineFilter !== 'all') || ($activeSearch !== '');
+    @endphp
     <div class="toolbar">
         <div class="toolbar-left">
             <form method="GET" class="toolbar-form">
@@ -514,7 +561,7 @@
                     <i class="bi bi-search"></i>
                     <input type="text"
                            name="search"
-                           placeholder="Cari materi course yang disetujui..."
+                           placeholder="Cari materi course atau event yang disetujui..."
                            value="{{ request('search') }}">
                 </div>
 
@@ -527,13 +574,19 @@
             </form>
         </div>
 
-        <div class="toolbar-right">
-            <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-revisions-link">
-                Lihat Revisi
-                <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
+        @if($hasActiveFilter)
+            <div class="toolbar-right">
+                <a href="{{ route('admin.trainer.material.approved') }}" class="btn-revisions-link" style="color: #991b1b; border-color: #fecaca; background: #fef2f2; height: 42px;">
+                    <i class="bi bi-x-circle"></i> Reset Filter
+                </a>
+            </div>
+        @endif
     </div>
+</div>
+
+<!-- Course Materials Content Card -->
+<div class="content-card mb-4">
+
 
     <div class="table-responsive">
         <table class="table">
@@ -648,33 +701,7 @@
 
 <!-- Event Materials Content Card -->
 <div class="content-card">
-    <div class="toolbar">
-        <div class="toolbar-left">
-            <form method="GET" class="toolbar-form">
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text"
-                           name="search"
-                           placeholder="Cari materi event yang disetujui..."
-                           value="{{ request('search') }}">
-                </div>
 
-                <select class="filter-select" name="deadline_filter" onchange="this.form.submit()">
-                    <option value="all" {{ ($deadlineFilter ?? 'all') === 'all' ? 'selected' : '' }}>Semua Deadline</option>
-                    <option value="overdue" {{ ($deadlineFilter ?? 'all') === 'overdue' ? 'selected' : '' }}>Lewat Tenggat</option>
-                    <option value="on_time" {{ ($deadlineFilter ?? 'all') === 'on_time' ? 'selected' : '' }}>Tepat Waktu</option>
-                    <option value="no_deadline" {{ ($deadlineFilter ?? 'all') === 'no_deadline' ? 'selected' : '' }}>Tanpa Deadline</option>
-                </select>
-            </form>
-        </div>
-
-        <div class="toolbar-right">
-            <a href="{{ route('admin.trainer.material.rejected') }}" class="btn-revisions-link">
-                Lihat Revisi
-                <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
-    </div>
 
     <div class="table-responsive">
         <table class="table">

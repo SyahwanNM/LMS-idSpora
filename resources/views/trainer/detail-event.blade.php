@@ -5,15 +5,15 @@
 @php
   $pageTitle = 'Event Detail';
   $breadcrumbs = [
-    ['label' => 'Home', 'url' => route('trainer.dashboard')],
+    ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
     ['label' => 'Events', 'url' => route('trainer.events')],
-    ['label' => 'Detail']
+    ['label' => 'Detail Event']
   ];
 @endphp
 
 @push('styles')
 <style>
-    /* Detail Event Page Specific Styles - Using main.css variables */
+    /* Detail Event Page Specific Styles */
     main {
         padding: var(--spacing-4xl);
         background-color: var(--base-clr);
@@ -118,8 +118,8 @@
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        background: var(--yellow-clr);
-        box-shadow: 0 0 0 3px rgba(251, 197, 49, 0.2);
+        background: #a2388c;
+        box-shadow: 0 0 0 3px rgba(162, 56, 140, 0.2);
     }
 
     .event-category-badge .badge-sep {
@@ -137,7 +137,7 @@
     }
 
     .event-hero-title span {
-        color: var(--yellow-clr);
+        color: #c052aa;
         font-style: italic;
         font-weight: 600;
     }
@@ -155,8 +155,8 @@
     }
 
     .hero-media {
-        width: 130px;
-        height: 130px;
+        width: 240px;
+        height: 150px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -167,20 +167,20 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 50%;
-        border: 3px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
     }
 
     .hero-image-placeholder {
         width: 100%;
         height: 100%;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--yellow-clr) 0%, #f1b700 100%);
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--main-navy-clr) 0%, #3659aa 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 3px solid rgba(255, 255, 255, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.25);
         box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
     }
 
@@ -194,35 +194,35 @@
     .event-info-cards {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
-        width: fit-content;
-        max-width: 100%;
-        margin-top: 6px;
+        gap: 12px;
+        width: 100%;
+        margin-top: var(--spacing-xl);
     }
 
     .info-card {
         display: flex;
         align-items: center;
-        gap: var(--spacing-sm);
-        padding: 6px 0;
-        background: transparent;
-        border: none;
-        border-radius: 0;
-        backdrop-filter: none;
-        transition: none;
+        gap: 10px;
+        padding: 10px 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        transition: all 0.25s ease;
     }
 
     .info-card:hover {
-        transform: none;
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
     }
 
     .info-icon-shell {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
         background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        backdrop-filter: blur(10px);
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -231,265 +231,30 @@
 
     .info-card svg {
         flex-shrink: 0;
-        color: var(--yellow-clr);
-        width: 18px;
-        height: 18px;
+        color: var(--white-clr);
+        width: 16px;
+        height: 16px;
     }
 
     .info-card-content {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 2px;
     }
 
     .info-card-label {
-        font-size: 10px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.65);
+        font-size: 9px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.6);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
     }
 
     .info-card-value {
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 13px;
+        font-weight: 600;
         color: var(--white-clr);
         white-space: nowrap;
-    }
-
-    /* Content Wrapper */
-    .content-wrapper {
-        display: flex;
-        gap: var(--spacing-xl);
-        padding: 0;
-    }
-
-    .left-content {
-        width: 100%;
-        padding: 0;
-    }
-
-    .right-content {
-        display: none;
-    }
-
-    h1 {
-        padding: var(--spacing-xs);
-        color: var(--main-navy-clr);
-    }
-
-    .info-detail {
-        display: flex;
-        gap: var(--spacing-xl);
-        margin: 0;
-        padding: var(--spacing-xl);
-        background-color: var(--white-clr);
-        border: 2px solid var(--line-clr);
-        border-radius: var(--radius-2xl);
-        justify-content: space-around;
-    }
-
-    .detail-list {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
-        flex: 0 1 auto;
-    }
-
-    .detail-list svg {
-        fill: var(--main-navy-clr);
-        background-color: var(--base-clr);
-        padding: var(--spacing-sm);
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--line-clr);
-        flex-shrink: 0;
-    }
-
-    .list-description {
-        padding: 0;
-    }
-
-    .list-description h6 {
-        margin: 0;
-        font-size: var(--font-size-xs);
-        color: var(--main-text-clr);
-    }
-
-    .list-description p {
-        margin: 0;
-        color: var(--main-navy-clr);
-        font-weight: 600;
-        white-space: nowrap;
-        font-size: var(--font-size-base);
-    }
-
-    .event-description {
-        margin-top: var(--spacing-xl);
-        padding: var(--spacing-xl);
-        background-color: var(--white-clr);
-        border: 2px solid var(--line-clr);
-        border-radius: var(--radius-2xl);
-    }
-
-    .event-description h2 {
-        padding: var(--spacing-xs);
-        color: var(--main-navy-clr);
-    }
-
-    .event-description p {
-        margin: 0;
-        padding: var(--spacing-xs);
-        color: var(--main-text-clr);
-        text-align: justify;
-    }
-
-    .virtual-assets {
-        margin-top: var(--spacing-xl);
-        padding: var(--spacing-xl) var(--spacing-3xl);
-        background-color: var(--white-clr);
-        border: 2px solid var(--line-clr);
-        border-radius: var(--radius-2xl);
-    }
-
-    .zoom-vbg {
-        display: flex;
-        margin: var(--spacing-lg) 0;
-        gap: var(--spacing-xl);
-        flex-wrap: wrap;
-    }
-
-    .virtual-assets h2 {
-        color: var(--main-navy-clr);
-        margin: 0 0 var(--spacing-sm) 0;
-    }
-
-    .zoom-vbg p {
-        margin: 0;
-        color: var(--main-text-clr);
-        text-align: justify;
-    }
-
-    .link-zoom {
-        background-color: var(--blue-background-clr);
-        padding: var(--spacing-3xl);
-        border-radius: var(--radius-2xl);
-        border: 1px solid rgb(79 70 229 / 0.05);
-        flex: 1;
-        min-width: 250px;
-    }
-
-    .link-zoom h4 {
-        margin: var(--spacing-lg) 0 var(--spacing-xs) 0;
-        color: var(--main-navy-clr);
-        font-size: var(--font-size-lg);
-    }
-
-    .link-zoom p {
-        margin: 0 0 var(--spacing-lg) 0;
-        color: var(--main-text-clr);
-        font-size: var(--font-size-base);
-        line-height: var(--line-height-tight);
-    }
-
-    .link-zoom svg {
-        color: var(--indigo-clr);
-        background-color: rgb(224 231 255);
-        padding: var(--spacing-sm);
-        border-radius: var(--radius-lg);
-        border: 1px solid rgb(79 70 229 / 0.1);
-    }
-
-    .link-zoom button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--spacing-sm);
-        width: 100%;
-        margin-top: var(--spacing-lg);
-        background-color: var(--main-navy-clr);
-        color: var(--white-clr);
-        border: none;
-        border-radius: var(--radius-xl);
-        font-weight: 600;
-        cursor: pointer;
-        font-size: var(--font-size-base);
-    }
-
-    .link-zoom button svg {
-        background-color: transparent;
-        border: none;
-        width: 20px;
-        height: 20px;
-        fill: var(--white-clr);
-    }
-
-    .vbg {
-        background-color: var(--yellow-background-clr);
-        padding: var(--spacing-3xl);
-        border-radius: var(--radius-2xl);
-        border: 1px solid rgb(251 197 49 / 0.05);
-        flex: 1;
-        min-width: 250px;
-    }
-
-    .vbg h4 {
-        margin: var(--spacing-lg) 0 var(--spacing-xs) 0;
-        color: var(--main-navy-clr);
-        font-size: var(--font-size-lg);
-    }
-
-    .vbg p {
-        margin: 0 0 var(--spacing-lg) 0;
-        color: var(--main-text-clr);
-        font-size: var(--font-size-base);
-        line-height: var(--line-height-tight);
-    }
-
-    .vbg svg {
-        color: #e1b12c;
-        background-color: var(--yellow-background-clr);
-        padding: var(--spacing-sm);
-        border-radius: var(--radius-lg);
-        border: 1px solid rgb(251 197 49 / 0.1);
-    }
-
-    .vbg button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--spacing-sm);
-        width: 100%;
-        margin-top: var(--spacing-lg);
-        background-color: var(--main-navy-clr);
-        color: var(--white-clr);
-        border: none;
-        border-radius: var(--radius-xl);
-        font-weight: 600;
-        cursor: pointer;
-        font-size: var(--font-size-base);
-    }
-
-    .vbg button svg {
-        background-color: transparent;
-        border: none;
-        width: 20px;
-        height: 20px;
-        fill: var(--white-clr);
-    }
-
-    /* Virtual Studio Assets Section */
-    .virtual-studio-assets {
-        margin-top: var(--spacing-2xl);
-        margin-bottom: var(--spacing-2xl);
-    }
-
-    .section-title {
-        font-size: 12px;
-        font-weight: 700;
-        color: rgba(108, 108, 108, 0.6);
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin: 0 0 var(--spacing-lg) 0;
     }
 
     .detail-layout {
@@ -524,6 +289,14 @@
         border-radius: 20px;
         padding: 22px;
         box-shadow: var(--detail-shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .detail-box-context {
+        position: relative;
+        border-left: 4px solid #8b1e77 !important;
     }
 
     .vsa-section {
@@ -532,49 +305,60 @@
         flex: 1 1 auto;
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 28px;
+    }
+
+    .detail-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
     }
 
     .vsa-title {
-        margin: 0 0 16px 0;
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--detail-title);
-        letter-spacing: -0.2px;
-        text-transform: none;
-        line-height: 1.3;
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--main-navy-clr);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.3px;
+    }
+
+    .vsa-title::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 18px;
+        background: linear-gradient(180deg, #8b1e77 0%, #4a0e4e 100%);
+        border-radius: 99px;
     }
 
     .vsa-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        display: flex;
+        flex-direction: row;
         gap: 18px;
-        margin-bottom: 18px;
-    }
-
-    .vsa-grid.is-hybrid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
     }
 
     .vsa-card {
-        background: var(--detail-panel-bg);
+        flex: 1;
+        min-width: 0;
+        background: #f8fafc;
         border: 1px solid var(--detail-border);
         border-radius: 18px;
-        padding: 22px;
+        padding: 20px;
         display: flex;
         flex-direction: column;
         gap: 14px;
-        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.07);
-        transition:
-            transform 0.25s ease,
-            box-shadow 0.25s ease,
-            border-color 0.25s ease;
+        transition: all 0.25s ease;
     }
 
     .vsa-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 20px 36px rgba(15, 23, 42, 0.11);
-        border-color: rgba(29, 78, 216, 0.34);
+        background: #f1f5f9;
+        transform: translateY(-2px);
+        border-color: rgba(139, 30, 119, 0.25);
     }
 
     .vsa-icon {
@@ -587,22 +371,13 @@
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
     }
 
-    .vsa-icon-blue {
+    .vsa-icon-plum {
         background: linear-gradient(
             145deg,
-            rgba(31, 26, 90, 0.15),
-            rgba(54, 89, 170, 0.12)
+            rgba(139, 30, 119, 0.15),
+            rgba(139, 30, 119, 0.08)
         );
-        color: var(--detail-accent);
-    }
-
-    .vsa-icon-amber {
-        background: linear-gradient(
-            145deg,
-            rgba(251, 197, 49, 0.28),
-            rgba(251, 197, 49, 0.12)
-        );
-        color: #8a6200;
+        color: #8b1e77;
     }
 
     .vsa-icon svg {
@@ -633,6 +408,12 @@
         font-size: 13px;
         color: #5f6b7d;
         line-height: 1.5;
+        word-break: break-all;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .vsa-btn {
@@ -662,16 +443,10 @@
         pointer-events: none;
     }
 
-    .vsa-btn-primary {
-        background: linear-gradient(135deg, var(--main-navy-clr) 0%, #3659aa 100%);
+    .vsa-btn-plum {
+        background: linear-gradient(135deg, #8b1e77 0%, #4a0e4e 100%);
         color: var(--white-clr);
-        box-shadow: 0 10px 20px rgba(31, 26, 90, 0.25);
-    }
-
-    .vsa-btn-amber {
-        background: linear-gradient(135deg, #fbc531 0%, #f0b320 100%);
-        color: #3d2a00;
-        box-shadow: 0 10px 20px rgba(251, 197, 49, 0.32);
+        box-shadow: 0 10px 20px rgba(139, 30, 119, 0.25);
     }
 
     .vsa-btn:hover {
@@ -687,29 +462,8 @@
         background: transparent;
         border: none;
         border-radius: 0;
-        padding: 0 0 18px 0;
-        margin-bottom: 18px;
+        padding: 0;
         box-shadow: none;
-    }
-
-    .vsa-context-title {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--detail-muted);
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        margin-bottom: 12px;
-    }
-
-    .context-dot {
-        width: 11px;
-        height: 11px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
-        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.16);
     }
 
     .vsa-context-body {
@@ -737,41 +491,36 @@
         margin-bottom: 6px;
     }
 
-    .vsa-subtitle {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--detail-title);
-        letter-spacing: -0.2px;
-        text-transform: none;
-        line-height: 1.3;
-    }
-
-    .hub-card {
-        background: var(--detail-panel-bg);
+    .hub-sidebar-card {
+        background: var(--white-clr);
         border: 1px solid var(--detail-border);
         border-radius: 20px;
         padding: 22px;
+        box-shadow: var(--detail-shadow);
+        width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 18px;
-        height: fit-content;
-        box-shadow: var(--detail-shadow);
-        position: sticky;
-        top: 24px;
-        flex: 0 0 340px;
-        width: 340px;
-        margin-left: auto;
+        gap: 16px;
     }
 
-    .hub-title {
-        margin: 0 0 4px 0;
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--detail-title);
+    .hub-sidebar-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--main-navy-clr);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
         letter-spacing: -0.2px;
-        text-transform: none;
-        line-height: 1.3;
+    }
+
+    .hub-sidebar-title::before {
+        content: "";
+        display: inline-block;
+        width: 3px;
+        height: 16px;
+        background: linear-gradient(180deg, #8b1e77 0%, #4a0e4e 100%);
+        border-radius: 99px;
     }
 
     .hub-actions-column {
@@ -783,62 +532,119 @@
         margin-left: auto;
     }
 
+    .hub-actions-column .detail-group {
+        position: sticky;
+        top: 24px;
+    }
+
     .hub-actions-column .hub-section {
         display: flex;
         flex-direction: column;
         gap: 12px;
     }
 
-    .hub-section-title {
-        margin: 0 0 12px 0;
-        font-size: 12px;
-        font-weight: 700;
-        color: #7b8798;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-    }
-
-    .hub-pill-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-    }
-
-    .hub-pill {
-        background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
-        border: 1px solid rgba(148, 163, 184, 0.24);
+    .material-status-banner {
+        padding: 12px 16px;
         border-radius: 12px;
-        padding: 13px 14px;
-        min-height: 84px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .material-status-banner.status-approved {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid rgba(22, 101, 52, 0.15);
+    }
+
+    .material-status-banner.status-pending_review {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid rgba(146, 64, 14, 0.15);
+    }
+
+    .material-status-banner.status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid rgba(153, 27, 27, 0.15);
+    }
+
+    .material-status-banner.status-not_uploaded {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid rgba(100, 116, 139, 0.15);
+    }
+
+    .uploaded-modules-list {
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.25s ease;
+        gap: 8px;
+        margin-top: 8px;
     }
 
-    .hub-pill:hover {
-        background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
-        transform: translateY(-2px);
-        border-color: rgba(31, 26, 90, 0.32);
-        box-shadow: 0 8px 16px rgba(31, 26, 90, 0.12);
+    .module-item-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        font-size: 12px;
+        transition: all 0.2s ease;
     }
 
-    .hub-pill-label {
-        margin: 0 0 6px 0;
-        font-size: 10px;
+    .module-item-row:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+
+    .module-item-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow: hidden;
+        color: var(--main-navy-clr);
+    }
+
+    .module-item-left svg {
+        flex-shrink: 0;
+        color: var(--text-clr);
+    }
+
+    .module-item-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 150px;
+        font-weight: 600;
+    }
+
+    .module-status-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 20px;
         font-weight: 700;
-        color: #7b8798;
         text-transform: uppercase;
-        letter-spacing: 0.7px;
+        letter-spacing: 0.3px;
     }
 
-    .hub-pill-value {
-        margin: 0;
-        font-size: 13px;
-        font-weight: 700;
-        color: #0f172a;
-        line-height: 1.3;
+    .module-status-badge.status-approved {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .module-status-badge.status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .module-status-badge.status-pending_review,
+    .module-status-badge.status-pending {
+        background: #fef3c7;
+        color: #92400e;
     }
 
     .hub-item {
@@ -859,14 +665,13 @@
         gap: 4px;
     }
 
-    .hub-item h4,
-    .hub-pill-value {
+    .hub-item h4 {
         color: #0f172a;
     }
 
     .hub-item:hover {
         background: #ffffff;
-        border-color: rgba(31, 26, 90, 0.32);
+        border-color: rgba(139, 30, 119, 0.25);
         box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
     }
 
@@ -876,11 +681,11 @@
         border-radius: 12px;
         background: linear-gradient(
             140deg,
-            rgba(31, 26, 90, 0.16),
-            rgba(54, 89, 170, 0.14)
+            rgba(139, 30, 119, 0.15),
+            rgba(139, 30, 119, 0.08)
         );
-        color: var(--main-navy-clr);
-        border: 1px solid rgba(31, 26, 90, 0.16);
+        color: #8b1e77;
+        border: 1px solid rgba(139, 30, 119, 0.16);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -911,81 +716,60 @@
         word-break: break-word;
     }
 
-    .hub-alert {
-        background: rgba(34, 197, 94, 0.05);
-        border: 1px solid rgba(34, 197, 94, 0.2);
-        border-radius: 12px;
-        padding: 12px 14px;
-        display: flex;
-        gap: 10px;
-        align-items: flex-start;
-    }
-
-    .hub-alert svg {
-        color: rgb(34, 197, 94);
-        flex-shrink: 0;
-        width: 16px;
-        height: 16px;
-    }
-
-    .hub-alert p {
-        margin: 0;
-        font-size: 11px;
-        font-weight: 600;
-        color: rgb(34, 197, 94);
-        letter-spacing: 0.2px;
-        line-height: 1.4;
-    }
-
-    /* Rundown List */
-    .rundown-list {
-        margin-top: 0;
-        padding: var(--spacing-lg) 0 0 0;
-        background-color: transparent;
-        border: none;
-        border-radius: 0;
-    }
-
-    .rundown-list h2 {
-        color: var(--detail-title);
-        font-size: 20px;
-        font-weight: 700;
-        margin: 0 0 var(--spacing-lg) 0;
-        letter-spacing: -0.2px;
-    }
-
-    .rundown-list ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .rundown-list li {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--spacing-lg);
-        padding: 16px 18px;
-        margin-bottom: var(--spacing-sm);
-        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-        border-radius: var(--radius-xl);
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+    /* Rundown List Timeline Design */
+    .rundown-timeline {
         position: relative;
+        padding-left: 28px;
+        margin: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
 
-    .rundown-list li::before {
+    .rundown-timeline::before {
         content: "";
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
-        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.16);
-        margin-top: 7px;
-        flex-shrink: 0;
+        position: absolute;
+        top: 8px;
+        bottom: 8px;
+        left: 9px;
+        width: 2px;
+        background: rgba(139, 30, 119, 0.12);
     }
 
-    .rundown-list li:last-child {
-        margin-bottom: 0;
+    .rundown-timeline-item {
+        position: relative;
+        width: 100%;
+    }
+
+    .rundown-timeline-dot {
+        position: absolute;
+        left: -24px;
+        top: 20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b1e77 0%, #4a0e4e 100%);
+        box-shadow: 0 0 0 4px var(--base-clr), 0 0 0 6px rgba(139, 30, 119, 0.25);
+        z-index: 2;
+    }
+
+    .rundown-timeline-card {
+        background: #f8fafc;
+        border: 1px solid var(--detail-border);
+        border-radius: var(--radius-xl);
+        padding: 14px 18px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+        transition: all 0.25s ease;
+    }
+
+    .rundown-timeline-card:hover {
+        background: #f1f5f9;
+        transform: translateX(4px);
+        border-color: rgba(139, 30, 119, 0.25);
     }
 
     .time-rundown {
@@ -993,8 +777,11 @@
         font-weight: 700;
         font-size: 13px;
         white-space: nowrap;
-        min-width: 140px;
+        min-width: 110px;
         letter-spacing: 0.2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .activity-rundown {
@@ -1016,16 +803,9 @@
             margin-left: 0;
         }
 
-        .hub-card {
+        .hub-actions-column .detail-group {
             position: static;
             top: auto;
-            width: 100%;
-            flex: 1 1 auto;
-            margin-left: 0;
-        }
-
-        .hub-pill-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
@@ -1081,10 +861,6 @@
             font-size: 38px;
             margin-bottom: var(--spacing-xl);
         }
-
-        .vsa-grid.is-hybrid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
     }
 
     @media (max-width: 768px) {
@@ -1093,19 +869,12 @@
             padding: var(--spacing-lg) var(--spacing-md) 100px var(--spacing-md);
         }
 
-        .vsa-grid,
-        .vsa-grid.is-hybrid {
-            grid-template-columns: 1fr;
-        }
-
-        .hub-pill-grid {
-            grid-template-columns: 1fr;
+        .vsa-grid {
+            flex-direction: column;
         }
 
         .vsa-title,
-        .vsa-subtitle,
-        .hub-title,
-        .rundown-list h2 {
+        .hub-sidebar-title {
             font-size: 18px;
         }
 
@@ -1143,7 +912,7 @@
         }
 
         .time-rundown {
-            min-width: 120px;
+            min-width: 100px;
             font-size: var(--font-size-sm);
         }
 
@@ -1151,8 +920,12 @@
             font-size: var(--font-size-sm);
         }
 
-        .rundown-list li {
-            padding: var(--spacing-md);
+        .rundown-timeline-card {
+            padding: var(--spacing-md) var(--spacing-lg);
+        }
+
+        .vsa-card {
+            padding: var(--spacing-md) var(--spacing-lg);
         }
     }
 
@@ -1172,7 +945,7 @@
         }
 
         .time-rundown {
-            min-width: 100px;
+            min-width: 0;
             font-size: var(--font-size-sm);
         }
 
@@ -1180,10 +953,14 @@
             font-size: var(--font-size-sm);
         }
 
-        .rundown-list li {
-            flex-direction: row;
+        .rundown-timeline-card {
+            flex-direction: column;
             align-items: flex-start;
-            gap: var(--spacing-md);
+            gap: 8px;
+            padding: 12px 14px;
+        }
+
+        .vsa-card {
             padding: var(--spacing-md);
         }
     }
@@ -1345,6 +1122,34 @@
                 @endif
               </div>
             </div>
+
+            <div class="info-card">
+              <div class="info-icon-shell">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <div class="info-card-content">
+                <span class="info-card-label">TARGET PESERTA</span>
+                <span class="info-card-value">
+                  @php
+                    $titleLower = strtolower($event->title ?? '');
+                    if (str_contains($titleLower, 'dosen') || str_contains($titleLower, 'guru') || str_contains($titleLower, 'pendidik')) {
+                        $targetAudience = 'Dosen & Pendidik';
+                    } elseif (str_contains($titleLower, 'lomba') || str_contains($titleLower, 'mahasiswa') || str_contains($titleLower, 'siswa')) {
+                        $targetAudience = 'Mahasiswa & Siswa';
+                    } else {
+                        $targetAudience = 'Mahasiswa, Dosen, & Umum';
+                    }
+                  @endphp
+                  {{ $targetAudience }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1364,244 +1169,262 @@
   <div class="detail-layout">
     <div class="detail-layout-top">
       <section class="vsa-section">
-        <p class="vsa-title">Aset Acara</p>
-        <div class="vsa-grid {{ $hasHybridAssets ? 'is-hybrid' : '' }}">
-          @if($hasMapLink)
-            <article class="vsa-card">
-              <div class="vsa-icon vsa-icon-blue">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                  <path
-                    d="M8 0a5 5 0 0 0-5 5c0 1.676 1.3 4.02 3.163 6.275A24.7 24.7 0 0 0 8 15c.837-1.08 1.837-2.36 2.837-3.725C12.7 9.02 14 6.676 14 5a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
-                </svg>
-              </div>
-              <div class="vsa-meta">
-                <p class="vsa-label">PETA LOKASI</p>
-                <h3>Lokasi Event</h3>
-                <p class="vsa-link">{{ $event->location ?? 'Lokasi belum tersedia' }}</p>
-              </div>
-              <a href="{{ $mapLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($mapLink) ? 'disabled' : '' }}>
-                BUKA PETA
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path fill-rule="evenodd"
-                    d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                  <path fill-rule="evenodd"
-                    d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                </svg>
-              </a>
-            </article>
-          @endif
+        
+        <!-- Aset Acara Group -->
+        <div class="detail-group">
+          <h2 class="vsa-title">Aset Acara</h2>
+          <div class="detail-box">
+            <div class="vsa-grid">
+              @if($hasMapLink)
+                <article class="vsa-card">
+                  <div class="vsa-icon vsa-icon-plum">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                      <path
+                        d="M8 0a5 5 0 0 0-5 5c0 1.676 1.3 4.02 3.163 6.275A24.7 24.7 0 0 0 8 15c.837-1.08 1.837-2.36 2.837-3.725C12.7 9.02 14 6.676 14 5a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
+                    </svg>
+                  </div>
+                  <div class="vsa-meta">
+                    <p class="vsa-label">PETA LOKASI</p>
+                    <h3>Lokasi Event</h3>
+                    <p class="vsa-link">{{ $event->location ?? 'Lokasi belum tersedia' }}</p>
+                  </div>
+                  <a href="{{ $mapLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-plum" {{ empty($mapLink) ? 'disabled' : '' }}>
+                    BUKA PETA
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd"
+                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                      <path fill-rule="evenodd"
+                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    </svg>
+                  </a>
+                </article>
+              @endif
 
-          @if($hasZoomLink)
-            <article class="vsa-card">
-              <div class="vsa-icon vsa-icon-blue">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                  <path fill-rule="evenodd"
-                    d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
-                </svg>
-              </div>
-              <div class="vsa-meta">
-                <p class="vsa-label">SESI ONLINE</p>
-                <h3>Rapat Virtual</h3>
-                <p class="vsa-link">{{ $zoomLink ?: 'Link belum tersedia' }}</p>
-              </div>
-              <a href="{{ $zoomLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-primary" {{ empty($zoomLink) ? 'disabled' : '' }}>
-                GABUNG SESI
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path fill-rule="evenodd"
-                    d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                  <path fill-rule="evenodd"
-                    d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                </svg>
-              </a>
-            </article>
-          @endif
+              @if($hasZoomLink)
+                <article class="vsa-card">
+                  <div class="vsa-icon vsa-icon-plum">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd"
+                        d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
+                    </svg>
+                  </div>
+                  <div class="vsa-meta">
+                    <p class="vsa-label">SESI ONLINE</p>
+                    <h3>Rapat Virtual</h3>
+                    <p class="vsa-link">{{ $zoomLink ?: 'Link belum tersedia' }}</p>
+                  </div>
+                  <a href="{{ $zoomLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-plum" {{ empty($zoomLink) ? 'disabled' : '' }}>
+                    GABUNG SESI
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd"
+                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                      <path fill-rule="evenodd"
+                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                    </svg>
+                  </a>
+                </article>
+              @endif
 
-          @if(!empty($vbgUrl))
-            <article class="vsa-card">
-              <div class="vsa-icon vsa-icon-amber">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
-                  <path
-                    d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
-                </svg>
-              </div>
-              <div class="vsa-meta">
-                <p class="vsa-label">LATAR VIRTUAL</p>
-                <h3>Latar Virtual</h3>
-                <p class="vsa-desc">PNG Resolusi Tinggi   Berlogo</p>
-              </div>
-              <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-primary" download>
-                UNDUH VBG
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path
-                    d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                  <path
-                    d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-                </svg>
-              </a>
-            </article>
-          @endif
-        </div>
-
-        <p class="vsa-title">Deskripsi Event</p>
-        <div class="detail-box detail-box-context">
-          <div class="vsa-context">
-            @php
-              $eventDescription = trim((string) ($event->description ?? ''));
-              if ($eventDescription === '') {
-                $eventDescription = trim((string) ($event->short_description ?? ''));
-              }
-              if ($eventDescription === '') {
-                $eventDescription = trim((string) ($event->materi ?? ''));
-              }
-            @endphp
-            <div class="vsa-context-body">
-              {!! $eventDescription !== '' ? $eventDescription : '<p>Deskripsi event belum tersedia.</p>' !!}
+              @if(!empty($vbgUrl))
+                <article class="vsa-card">
+                  <div class="vsa-icon vsa-icon-plum">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
+                      <path
+                        d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
+                    </svg>
+                  </div>
+                  <div class="vsa-meta">
+                    <p class="vsa-label">LATAR VIRTUAL</p>
+                    <h3>Latar Virtual</h3>
+                    <p class="vsa-desc">PNG Resolusi Tinggi Berlogo</p>
+                  </div>
+                  <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-plum" download>
+                    UNDUH VBG
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path
+                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                      <path
+                        d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                    </svg>
+                  </a>
+                </article>
+              @endif
             </div>
           </div>
         </div>
 
-        <section class="rundown-list">
-          <h2>Rundown Acara</h2>
-          @php
-            $items = collect();
-
-            if (isset($event)) {
-              try {
-                $items = $event->relationLoaded('scheduleItems')
-                  ? ($event->scheduleItems ?? collect())
-                  : $event->scheduleItems()->get();
-              } catch (\Throwable $e) {
-                $items = collect();
-              }
-
-              if ($items->isEmpty()) {
-                $rawSchedule = $event->schedule_json ?? null;
-
-                $scheduleArr = null;
-                if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
-                  $decoded = json_decode($rawSchedule, true);
-                  $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
-                } elseif (is_array($rawSchedule)) {
-                  $scheduleArr = $rawSchedule;
-                } elseif (is_object($rawSchedule)) {
-                  $scheduleArr = json_decode(json_encode($rawSchedule), true);
-                }
-
-                if (is_array($scheduleArr)) {
-                  $items = collect($scheduleArr)->map(function ($row) {
-                    $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
-                    return (object) [
-                      'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
-                      'end' => $row['end'] ?? ($row['time_end'] ?? null),
-                      'title' => $row['title'] ?? ($row['activity'] ?? ''),
-                      'description' => $row['description'] ?? ($row['desc'] ?? ''),
-                    ];
-                  })->filter(function ($it) {
-                    return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
-                  })->values();
-                }
-              }
-            }
-
-            $formatTime = function ($t) {
-              if (empty($t)) {
-                return null;
-              }
-              try {
-                return \Carbon\Carbon::parse($t)->format('H:i');
-              } catch (\Throwable $e) {
-                return is_string($t) ? $t : null;
-              }
-            };
-          @endphp
-          <ul>
-            @forelse($items as $it)
+        <!-- Deskripsi Event Group -->
+        <div class="detail-group">
+          <h2 class="vsa-title">Deskripsi Event</h2>
+          <div class="detail-box detail-box-context">
+            <div class="vsa-context">
               @php
-                $start = $formatTime($it->start ?? null);
-                $end = $formatTime($it->end ?? null);
-                $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
-                $activity = trim((string) ($it->title ?? ''));
-                if ($activity === '') {
-                  $activity = trim((string) ($it->description ?? ''));
+                $eventDescription = trim((string) ($event->description ?? ''));
+                if ($eventDescription === '') {
+                  $eventDescription = trim((string) ($event->short_description ?? ''));
+                }
+                if ($eventDescription === '') {
+                  $eventDescription = trim((string) ($event->materi ?? ''));
                 }
               @endphp
-              <li>
-                <span class="time-rundown">{{ $timeStr !== '' ? $timeStr : '-' }}</span>
-                <span class="activity-rundown">{{ $activity !== '' ? $activity : '-' }}</span>
-              </li>
-            @empty
-              <li>
-                <span class="time-rundown">—</span>
-                <span class="activity-rundown">Schedule will be announced.</span>
-              </li>
-            @endforelse
-          </ul>
-        </section>
+              <div class="vsa-context-body">
+                {!! $eventDescription !== '' ? $eventDescription : '<p>Deskripsi event belum tersedia.</p>' !!}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rundown Acara Group -->
+        <div class="detail-group">
+          <h2 class="vsa-title">Rundown Acara</h2>
+          <div class="detail-box">
+            @php
+              $items = collect();
+
+              if (isset($event)) {
+                try {
+                  $items = $event->relationLoaded('scheduleItems')
+                    ? ($event->scheduleItems ?? collect())
+                    : $event->scheduleItems()->get();
+                } catch (\Throwable $e) {
+                  $items = collect();
+                }
+
+                if ($items->isEmpty()) {
+                  $rawSchedule = $event->schedule_json ?? null;
+
+                  $scheduleArr = null;
+                  if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                    $decoded = json_decode($rawSchedule, true);
+                    $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                  } elseif (is_array($rawSchedule)) {
+                    $scheduleArr = $rawSchedule;
+                  } elseif (is_object($rawSchedule)) {
+                    $scheduleArr = json_decode(json_encode($rawSchedule), true);
+                  }
+
+                  if (is_array($scheduleArr)) {
+                    $items = collect($scheduleArr)->map(function ($row) {
+                      $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
+                      return (object) [
+                        'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                        'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                        'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                        'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                      ];
+                    })->filter(function ($it) {
+                      return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                    })->values();
+                  }
+                }
+              }
+
+              $formatTime = function ($t) {
+                if (empty($t)) {
+                  return null;
+                }
+                try {
+                  return \Carbon\Carbon::parse($t)->format('H:i');
+                } catch (\Throwable $e) {
+                  return is_string($t) ? $t : null;
+                }
+              };
+            @endphp
+            <ul class="rundown-timeline">
+              @forelse($items as $it)
+                @php
+                  $start = $formatTime($it->start ?? null);
+                  $end = $formatTime($it->end ?? null);
+                  $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                  $activity = trim((string) ($it->title ?? ''));
+                  if ($activity === '') {
+                    $activity = trim((string) ($it->description ?? ''));
+                  }
+                @endphp
+                <li class="rundown-timeline-item">
+                  <div class="rundown-timeline-dot"></div>
+                  <div class="rundown-timeline-card">
+                    <span class="time-rundown">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock" viewBox="0 0 24 24" style="margin-right: 4px; color: var(--text-clr); width: 14px; height: 14px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      {{ $timeStr !== '' ? $timeStr : '-' }}
+                    </span>
+                    <span class="activity-rundown">{{ $activity !== '' ? $activity : '-' }}</span>
+                  </div>
+                </li>
+              @empty
+                <li class="rundown-timeline-item is-empty">
+                  <div class="rundown-timeline-dot" style="background: #cbd5e1; box-shadow: none;"></div>
+                  <div class="rundown-timeline-card" style="background: #f8fafc; border-style: dashed; box-shadow: none;">
+                    <span class="time-rundown">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock" viewBox="0 0 24 24" style="margin-right: 4px; color: var(--text-clr); width: 14px; height: 14px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      —
+                    </span>
+                    <span class="activity-rundown" style="color: var(--text-clr);">Schedule will be announced.</span>
+                  </div>
+                </li>
+              @endforelse
+            </ul>
+          </div>
+        </div>
       </section>
 
+      <!-- Sidebar Column -->
       <div class="hub-actions-column">
-        <p class="hub-title">Materi</p>
-        <div class="hub-section">
-          <div class="hub-item" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
-            <div class="hub-item-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
-                aria-hidden="true">
-                <path
-                  d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v9A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5z" />
-                <path d="M12 11v7" />
-                <path d="m8.8 14.2 3.2-3.2 3.2 3.2" />
-              </svg>
-            </div>
-            <div>
-              <h4>Kirim Materi</h4>
-            </div>
-          </div>
-        </div>
-
-        @php
-          $statusColor = match($myMaterialStatus ?? 'not_uploaded') {
-            'approved'     => '#166534',
-            'pending_review' => '#92400e',
-            'rejected'     => '#991b1b',
-            default        => '#64748b',
-          };
-          $statusBg = match($myMaterialStatus ?? 'not_uploaded') {
-            'approved'     => '#dcfce7',
-            'pending_review' => '#fef3c7',
-            'rejected'     => '#fee2e2',
-            default        => '#f1f5f9',
-          };
-          $statusLabel = match($myMaterialStatus ?? 'not_uploaded') {
-            'approved'     => '✓ Materi Disetujui',
-            'pending_review' => '⏳ Menunggu Review',
-            'rejected'     => '✕ Perlu Revisi',
-            default        => '— Belum Upload',
-          };
-        @endphp
-
-        <div style="margin-top:12px; padding:10px 14px; background:{{ $statusBg }}; border-radius:10px; font-size:13px; font-weight:600; color:{{ $statusColor }};">
-          {{ $statusLabel }}
-        </div>
-
-        @if(($myModules ?? collect())->isNotEmpty())
-          <div style="margin-top:10px;">
-            @foreach($myModules as $mod)
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:#f8fafc; border-radius:8px; margin-bottom:6px; border:1px solid #e2e8f0; font-size:12px;">
-                <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/><path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/></svg>
-                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">{{ $mod->original_name }}</span>
+        <div class="detail-group">
+          <h2 class="hub-sidebar-title">Materi Acara</h2>
+          <aside class="hub-sidebar-card">
+            <div class="hub-section">
+              <div class="hub-item" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
+                <div class="hub-item-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path
+                      d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v9A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5z" />
+                    <path d="M12 11v7" />
+                    <path d="m8.8 14.2 3.2-3.2 3.2 3.2" />
+                  </svg>
                 </div>
-                <span style="font-size:11px; padding:2px 7px; border-radius:20px; font-weight:700;
-                  background:{{ $mod->status === 'approved' ? '#dcfce7' : ($mod->status === 'rejected' ? '#fee2e2' : '#fef3c7') }};
-                  color:{{ $mod->status === 'approved' ? '#166534' : ($mod->status === 'rejected' ? '#991b1b' : '#92400e') }};">
-                  {{ $mod->status === 'approved' ? 'Approved' : ($mod->status === 'rejected' ? 'Ditolak' : 'Pending') }}
-                </span>
+                <div>
+                  <h4>Kirim Materi</h4>
+                </div>
               </div>
-            @endforeach
-          </div>
-        @endif
+            </div>
+
+            @php
+              $statusLabel = match($myMaterialStatus ?? 'not_uploaded') {
+                'approved'     => '✓ Materi Disetujui',
+                'pending_review' => '⏳ Menunggu Review',
+                'rejected'     => '✕ Perlu Revisi',
+                default        => '— Belum Upload',
+              };
+            @endphp
+
+            <div class="material-status-banner status-{{ $myMaterialStatus ?? 'not_uploaded' }}">
+              {{ $statusLabel }}
+            </div>
+
+            @if(($myModules ?? collect())->isNotEmpty())
+              <div class="uploaded-modules-list">
+                @foreach($myModules as $mod)
+                  <div class="module-item-row">
+                    <div class="module-item-left">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
+                        <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
+                      </svg>
+                      <span class="module-item-name" title="{{ $mod->original_name }}">{{ $mod->original_name }}</span>
+                    </div>
+                    <span class="module-status-badge status-{{ $mod->status }}">
+                      {{ $mod->status === 'approved' ? 'Approved' : ($mod->status === 'rejected' ? 'Ditolak' : 'Pending') }}
+                    </span>
+                  </div>
+                @endforeach
+              </div>
+            @endif
+          </aside>
+        </div>
       </div>
     </div>
   </div>
