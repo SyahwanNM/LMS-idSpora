@@ -317,6 +317,8 @@ class EventController extends Controller
             'price_stage2' => 'nullable|numeric|min:0',
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
+            'lomba_kategori' => 'required_if:jenis,Lomba|nullable|in:individual,team,both',
+            'max_team_members' => 'required_if:lomba_kategori,team,both|nullable|integer|min:2',
         ]);
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
@@ -444,6 +446,8 @@ class EventController extends Controller
             'price_stage2' => (float) ($request->price_stage2 ?? 0),
             'finalist_payment_start' => $request->finalist_payment_start,
             'finalist_payment_end' => $request->finalist_payment_end,
+            'lomba_kategori' => $request->lomba_kategori ?? 'individual',
+            'max_team_members' => $request->max_team_members ? (int) $request->max_team_members : 5,
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -1112,6 +1116,8 @@ class EventController extends Controller
             'price_stage2' => 'nullable|numeric|min:0',
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
+            'lomba_kategori' => 'required_if:jenis,Lomba|nullable|in:individual,team,both',
+            'max_team_members' => 'required_if:lomba_kategori,team,both|nullable|integer|min:2',
         ]);
 
         $data = $request->only([
@@ -1155,7 +1161,12 @@ class EventController extends Controller
             'price_stage2',
             'finalist_payment_start',
             'finalist_payment_end',
+            'lomba_kategori',
+            'max_team_members',
         ]);
+
+        $data['lomba_kategori'] = $data['lomba_kategori'] ?? 'individual';
+        $data['max_team_members'] = !empty($data['max_team_members']) ? (int) $data['max_team_members'] : 5;
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
         // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
@@ -1662,6 +1673,12 @@ class EventController extends Controller
                 'university_origin' => $request->input('university_origin'),
                 'study_program' => $request->input('study_program'),
                 'position' => $request->input('position'),
+                'full_name' => $fullName,
+                'whatsapp_number' => $phone,
+                'team_name' => $request->input('team_name'),
+                'institution_location' => $request->input('institution_location'),
+                'info_source' => $request->input('info_source'),
+                'educational_background' => $request->input('educational_background'),
             ]);
 
             // Track in Finance (Amount 0)
@@ -1687,6 +1704,12 @@ class EventController extends Controller
                 'university_origin' => $request->input('university_origin'),
                 'study_program' => $request->input('study_program'),
                 'position' => $request->input('position'),
+                'full_name' => $fullName,
+                'whatsapp_number' => $phone,
+                'team_name' => $request->input('team_name'),
+                'institution_location' => $request->input('institution_location'),
+                'info_source' => $request->input('info_source'),
+                'educational_background' => $request->input('educational_background'),
             ];
             // handle proof upload if present (this API used by web/mobile)
             if ($request->hasFile('payment_proof')) {

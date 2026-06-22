@@ -282,7 +282,7 @@
                                         ->whereHas('user', function ($query) {
                                             $query->where('role', '!=', 'admin');
                                         })
-                                        ->with(['user', 'paymentProofs', 'dailyAttendances'])
+                                        ->with(['user', 'paymentProofs', 'dailyAttendances', 'team.leader', 'team.registrations.user'])
                                         ->latest()
                                         ->get();
                                 } catch (\Throwable $e) {
@@ -292,14 +292,26 @@
                             <div class="row mt-4">
                                 <div class="col-12">
                                     <div class="border rounded p-4 {{ $registrations->count() ? 'bg-light' : 'bg-warning-subtle' }}">
-                                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                                <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+                                            <div class="d-flex align-items-center gap-2">
                                                 <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Registered Participants</h6>
                                                 <span id="participantsCountBadge" class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
                                             </div>
-                                            <div class="input-group input-group-sm" style="max-width: 320px;">
-                                                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                                                <input type="text" id="participantSearch" class="form-control" placeholder="Search participants (name/email)">
+                                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                @if(strtolower(trim($event->jenis ?? '')) === 'lomba' && in_array($event->lomba_kategori, ['team', 'both']))
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="small text-muted fw-semibold" style="font-size: 11.5px;">Filter:</span>
+                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Participant Type Filter">
+                                                        <button type="button" class="btn btn-outline-primary active filter-btn" data-filter="all" style="border-radius: 6px 0 0 6px;">All/Both</button>
+                                                        <button type="button" class="btn btn-outline-primary filter-btn" data-filter="team">Team Only</button>
+                                                        <button type="button" class="btn btn-outline-primary filter-btn" data-filter="individual" style="border-radius: 0 6px 6px 0;">Individual Only</button>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                                <div class="input-group input-group-sm" style="max-width: 320px;">
+                                                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                                                    <input type="text" id="participantSearch" class="form-control" placeholder="Search participants (name/email)">
+                                                </div>
                                             </div>
                                         </div>
                                         @if($registrations->count())
@@ -322,7 +334,16 @@
                                                 <tbody>
                                                     @foreach($registrations as $i => $reg)
                                                     @php
-                                                        $pendingStage2Payment = \App\Models\ManualPayment::where('event_registration_id', $reg->id)
+                                                        $subReg = $reg;
+                                                        if ($reg->team_id && !$reg->is_team_leader) {
+                                                            $leaderReg = \App\Models\EventRegistration::where('team_id', $reg->team_id)
+                                                                ->where('is_team_leader', true)
+                                                                ->first();
+                                                            if ($leaderReg) {
+                                                                $subReg = $leaderReg;
+                                                            }
+                                                        }
+                                                        $pendingStage2Payment = \App\Models\ManualPayment::where('event_registration_id', $subReg->id)
                                                             ->where('status', 'pending')
                                                             ->where(function($q) {
                                                                 $q->whereJsonContains('metadata->stage', 2)
@@ -331,9 +352,52 @@
                                                             ->first();
                                                         $stage2ProofPath = $pendingStage2Payment ? optional($pendingStage2Payment->proofs()->latest()->first())->file_path : null;
                                                     @endphp
-                                                    <tr data-reg-code="{{ $reg->registration_code ?? '' }}">
+                                                    <tr data-reg-code="{{ $reg->registration_code ?? '' }}"
+                                                         data-registration-type="{{ $reg->team_id ? 'team' : 'individual' }}"
+                                                         data-team-info="{{ $reg->team ? ($reg->team->name . ' ' . $reg->team->code . ' ' . ($reg->team->leader->name ?? '')) : ($reg->team_name ?? '') }}">
                                                         <td>{{ $i+1 }}</td>
-                                                        <td class="fw-semibold">{{ $reg->user->name ?? '-' }}</td>
+                                                        <td class="fw-semibold">
+                                                             <div>{{ $reg->user->name ?? '-' }}</div>
+                                                             @if($reg->team_id && $reg->team)
+                                                                 <div class="mt-1">
+                                                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold py-0.5 px-2" style="font-size: 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                                                                         <i class="bi bi-people-fill"></i> Team: {{ $reg->team->name }}
+                                                                         @if($reg->is_team_leader)
+                                                                             <span class="badge bg-success text-white py-0.5 px-1 ms-1" style="font-size: 9px; border-radius: 3px;">Leader</span>
+                                                                         @else
+                                                                             <span class="badge bg-secondary text-white py-0.5 px-1 ms-1" style="font-size: 9px; border-radius: 3px;">Member</span>
+                                                                         @endif
+                                                                     </span>
+                                                                     <div class="mt-1 p-2 rounded border bg-white small text-muted font-monospace" style="font-size: 10px; line-height: 1.4; max-width: 280px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                                         <div class="d-flex justify-content-between mb-0.5">
+                                                                             <span class="text-secondary">Code:</span>
+                                                                             <span class="fw-bold text-dark">{{ $reg->team->code }}</span>
+                                                                         </div>
+                                                                         <div class="d-flex justify-content-between mb-0.5">
+                                                                             <span class="text-secondary">Leader:</span>
+                                                                             <span class="text-dark">{{ $reg->team->leader->name ?? '-' }}</span>
+                                                                         </div>
+                                                                         <div class="text-start mt-1 pt-1 border-top">
+                                                                             <span class="text-secondary d-block mb-0.5">Members:</span>
+                                                                             <div class="text-dark" style="white-space: normal; word-break: break-word;">
+                                                                                 {{ $reg->team->registrations->where('is_team_leader', false)->map(fn($r) => $r->user->name ?? '')->filter()->implode(', ') ?: '-' }}
+                                                                             </div>
+                                                                         </div>
+                                                                     </div>
+                                                                 </div>
+                                                             @elseif(!$reg->team_id && strtolower(trim($event->jenis ?? '')) === 'lomba' && in_array($event->lomba_kategori, ['team', 'both']))
+                                                                 <div class="mt-1">
+                                                                     <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle fw-semibold py-0.5 px-2" style="font-size: 10px; border-radius: 4px;">
+                                                                         <i class="bi bi-person-fill me-1"></i> Individual
+                                                                     </span>
+                                                                     @if($reg->team_name)
+                                                                         <div class="mt-1 text-muted small" style="font-size: 10px;">
+                                                                             Team Name (Indiv): <strong class="text-dark">{{ $reg->team_name }}</strong>
+                                                                         </div>
+                                                                     @endif
+                                                                 </div>
+                                                             @endif
+                                                         </td>
                                                         <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
                                                          <td class="text-muted">
                                                              <div class="fw-semibold text-dark">{{ $reg->user->phone ?? '-' }}</div>
@@ -371,101 +435,101 @@
                                                             @endif
                                                         </td>
                                                         @if($event->jenis === 'Lomba')
-                                                         <td>
-                                                             @if($reg->submission_path)
-                                                                 <div class="mb-2">
-                                                                     <span class="small text-muted d-block fw-bold">Tahap 1:</span>
-                                                                     <a href="{{ Storage::disk('public')->url($reg->submission_path) }}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 my-1" style="font-size: 11px;">
-                                                                         <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> File Awal
-                                                                     </a>
-                                                                     <div class="mt-1">
-                                                                         @if($reg->submission_status === 'lolos')
-                                                                             <span class="badge bg-success" style="font-size: 10px;">Lolos</span>
-                                                                         @elseif($reg->submission_status === 'tidak_lolos')
-                                                                             <span class="badge bg-danger" style="font-size: 10px;">Tidak Lolos</span>
-                                                                         @else
-                                                                             <span class="badge bg-warning text-dark" style="font-size: 10px;">Pending</span>
-                                                                         @endif
-                                                                     </div>
+                                                          <td>
+                                                              @if($subReg->submission_path)
+                                                                  <div class="mb-2">
+                                                                      <span class="small text-muted d-block fw-bold">Tahap 1:</span>
+                                                                      <a href="{{ Storage::disk('public')->url($subReg->submission_path) }}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 my-1" style="font-size: 11px;">
+                                                                          <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> File Awal
+                                                                      </a>
+                                                                      <div class="mt-1">
+                                                                          @if($subReg->submission_status === 'lolos')
+                                                                              <span class="badge bg-success" style="font-size: 10px;">Lolos</span>
+                                                                          @elseif($subReg->submission_status === 'tidak_lolos')
+                                                                              <span class="badge bg-danger" style="font-size: 10px;">Tidak Lolos</span>
+                                                                          @else
+                                                                              <span class="badge bg-warning text-dark" style="font-size: 10px;">Pending</span>
+                                                                          @endif
+                                                                      </div>
 
-                                                                     @if($reg->submission_notes)
-                                                                         <div class="mt-1 small text-muted text-start" style="font-size: 10px; max-width: 150px; white-space: normal; word-break: break-word;">
-                                                                             <strong>Catatan:</strong> {{ Str::limit($reg->submission_notes, 50) }}
-                                                                         </div>
-                                                                     @endif
-                                                                     
-                                                                     {{-- Status Setting Buttons --}}
-                                                                     @if($st === 'active')
-                                                                     <div class="mt-2 d-flex gap-1">
-                                                                         {{-- Trigger Modal for Lolos --}}
-                                                                         <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#reviewModalLolos-{{ $reg->id }}">
-                                                                             <i class="bi bi-check2-circle me-1"></i>Lolos
-                                                                         </button>
+                                                                      @if($subReg->submission_notes)
+                                                                          <div class="mt-1 small text-muted text-start" style="font-size: 10px; max-width: 150px; white-space: normal; word-break: break-word;">
+                                                                              <strong>Catatan:</strong> {{ Str::limit($subReg->submission_notes, 50) }}
+                                                                          </div>
+                                                                      @endif
+                                                                      
+                                                                      {{-- Status Setting Buttons --}}
+                                                                      @if($st === 'active' && (!$reg->team_id || $reg->is_team_leader))
+                                                                      <div class="mt-2 d-flex gap-1">
+                                                                          {{-- Trigger Modal for Lolos --}}
+                                                                          <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size: 11px;" data-bs-toggle="modal" data-bs-target="#reviewModalLolos-{{ $subReg->id }}">
+                                                                              <i class="bi bi-check2-circle me-1"></i>Lolos
+                                                                          </button>
 
-                                                                         <!-- Modal Lolos for $reg->id -->
-                                                                         <div class="modal fade shadow-sm" id="reviewModalLolos-{{ $reg->id }}" tabindex="-1" aria-labelledby="reviewModalLolosLabel-{{ $reg->id }}" aria-hidden="true">
-                                                                             <div class="modal-dialog modal-dialog-centered">
-                                                                                 <div class="modal-content">
-                                                                                     <div class="modal-header">
-                                                                                         <h5 class="modal-title fw-bold" id="reviewModalLolosLabel-{{ $reg->id }}">
-                                                                                             <i class="bi bi-check2-circle text-success me-2"></i>Nyatakan Peserta Lolos & Beri Catatan
-                                                                                         </h5>
-                                                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                                     </div>
-                                                                                     <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $reg]) }}">
-                                                                                         @csrf
-                                                                                         <input type="hidden" name="status" value="lolos">
-                                                                                         <div class="modal-body text-start">
-                                                                                             <p class="text-muted small">Anda akan menyatakan bahwa submission dari <strong>{{ $reg->user->name }}</strong> dinyatakan <strong>Lolos</strong>. Berikan catatan atau revisi yang harus dibaca oleh peserta (opsional).</p>
-                                                                                             <div class="mb-3">
-                                                                                                 <label for="submission_notes-{{ $reg->id }}" class="form-label fw-bold">Catatan / Revisi:</label>
-                                                                                                 <textarea class="form-control text-start" id="submission_notes-{{ $reg->id }}" name="submission_notes" rows="4" placeholder="Tulis catatan revisi atau instruksi selanjutnya untuk peserta...">{{ $reg->submission_notes }}</textarea>
-                                                                                             </div>
-                                                                                         </div>
-                                                                                         <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
-                                                                                             <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Batal</button>
-                                                                                             <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="border-radius: 10px;">Simpan & Loloskan</button>
-                                                                                         </div>
-                                                                                     </form>
-                                                                                 </div>
-                                                                             </div>
-                                                                         </div>
+                                                                          <!-- Modal Lolos for $subReg->id -->
+                                                                          <div class="modal fade shadow-sm" id="reviewModalLolos-{{ $subReg->id }}" tabindex="-1" aria-labelledby="reviewModalLolosLabel-{{ $subReg->id }}" aria-hidden="true">
+                                                                              <div class="modal-dialog modal-dialog-centered">
+                                                                                  <div class="modal-content">
+                                                                                      <div class="modal-header">
+                                                                                          <h5 class="modal-title fw-bold" id="reviewModalLolosLabel-{{ $subReg->id }}">
+                                                                                              <i class="bi bi-check2-circle text-success me-2"></i>Nyatakan Peserta Lolos & Beri Catatan
+                                                                                          </h5>
+                                                                                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                                      </div>
+                                                                                      <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $subReg]) }}">
+                                                                                          @csrf
+                                                                                          <input type="hidden" name="status" value="lolos">
+                                                                                          <div class="modal-body text-start">
+                                                                                              <p class="text-muted small">Anda akan menyatakan bahwa submission dari <strong>{{ $subReg->user->name }}</strong> dinyatakan <strong>Lolos</strong>. Berikan catatan atau revisi yang harus dibaca oleh peserta (opsional).</p>
+                                                                                              <div class="mb-3">
+                                                                                                  <label for="submission_notes-{{ $subReg->id }}" class="form-label fw-bold">Catatan / Revisi:</label>
+                                                                                                  <textarea class="form-control text-start" id="submission_notes-{{ $subReg->id }}" name="submission_notes" rows="4" placeholder="Tulis catatan revisi atau instruksi selanjutnya untuk peserta...">{{ $subReg->submission_notes }}</textarea>
+                                                                                              </div>
+                                                                                          </div>
+                                                                                          <div class="modal-footer border-0 pt-0 d-flex justify-content-end gap-2">
+                                                                                              <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Batal</button>
+                                                                                              <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="border-radius: 10px;">Simpan & Loloskan</button>
+                                                                                          </div>
+                                                                                      </form>
+                                                                                  </div>
+                                                                              </div>
+                                                                          </div>
 
-                                                                         <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $reg]) }}" class="d-inline">
-                                                                             @csrf
-                                                                             <input type="hidden" name="status" value="tidak_lolos">
-                                                                             <button type="submit" class="btn btn-xs btn-danger py-0 px-2" style="font-size: 11px;" onclick="return confirm('Nyatakan peserta ini TIDAK LOLOS?')">
-                                                                                 <i class="bi bi-x-circle me-1"></i>Tidak
-                                                                             </button>
-                                                                         </form>
+                                                                          <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $subReg]) }}" class="d-inline">
+                                                                              @csrf
+                                                                              <input type="hidden" name="status" value="tidak_lolos">
+                                                                              <button type="submit" class="btn btn-xs btn-danger py-0 px-2" style="font-size: 11px;" onclick="return confirm('Nyatakan peserta ini TIDAK LOLOS?')">
+                                                                                  <i class="bi bi-x-circle me-1"></i>Tidak
+                                                                              </button>
+                                                                          </form>
 
-                                                                         @if(in_array($reg->submission_status, ['lolos', 'tidak_lolos']))
-                                                                         <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $reg]) }}" class="d-inline">
-                                                                             @csrf
-                                                                             <input type="hidden" name="status" value="pending">
-                                                                             <button type="submit" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="return confirm('Kembalikan status review ke Pending?')">
-                                                                                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-                                                                             </button>
-                                                                         </form>
-                                                                         @endif
-                                                                     </div>
-                                                                     @endif
-                                                                 </div>
-                                                             @else
-                                                                 <span class="text-muted small">Belum unggah file awal</span>
-                                                             @endif
+                                                                          @if(in_array($subReg->submission_status, ['lolos', 'tidak_lolos']))
+                                                                          <form method="POST" action="{{ route('admin.events.submissions.review', [$event, $subReg]) }}" class="d-inline">
+                                                                              @csrf
+                                                                              <input type="hidden" name="status" value="pending">
+                                                                              <button type="submit" class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="return confirm('Kembalikan status review ke Pending?')">
+                                                                                  <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                                                                              </button>
+                                                                          </form>
+                                                                          @endif
+                                                                      </div>
+                                                                      @endif
+                                                                  </div>
+                                                              @else
+                                                                  <span class="text-muted small">Belum unggah file awal</span>
+                                                              @endif
 
-                                                             @if($reg->submission_path_2)
-                                                                 <div class="mt-2 pt-2 border-top">
-                                                                     <span class="small text-muted d-block fw-bold">Tahap 2:</span>
-                                                                     <a href="{{ Storage::disk('public')->url($reg->submission_path_2) }}" target="_blank" class="btn btn-xs btn-outline-success py-0 px-2 my-1" style="font-size: 11px;">
-                                                                         <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> File Akhir
-                                                                     </a>
-                                                                     <div class="text-muted small mt-1" style="font-size: 9px; line-height: 1.2;">Diunggah: {{ $reg->submission_2_uploaded_at ? $reg->submission_2_uploaded_at->format('d M H:i') : '' }}</div>
-                                                                 </div>
-                                                             @endif
-                                                         </td>
-                                                         @endif
+                                                              @if($subReg->submission_path_2)
+                                                                  <div class="mt-2 pt-2 border-top">
+                                                                      <span class="small text-muted d-block fw-bold">Tahap 2:</span>
+                                                                      <a href="{{ Storage::disk('public')->url($subReg->submission_path_2) }}" target="_blank" class="btn btn-xs btn-outline-success py-0 px-2 my-1" style="font-size: 11px;">
+                                                                          <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> File Akhir
+                                                                      </a>
+                                                                      <div class="text-muted small mt-1" style="font-size: 9px; line-height: 1.2;">Diunggah: {{ $subReg->submission_2_uploaded_at ? $subReg->submission_2_uploaded_at->format('d M H:i') : '' }}</div>
+                                                                  </div>
+                                                              @endif
+                                                          </td>
+                                                          @endif
                                                         <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                                         <td>
                                                             @if($st === 'pending' && !empty($reg->payment_proof))
@@ -1324,18 +1388,37 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     }
 
-    input.addEventListener('input', function(){
-        var raw = (this.value || '').trim();
+    var currentFilter = 'all';
+
+    function applyFilters() {
+        var raw = (input.value || '').trim();
         var q = raw.toLowerCase();
+        
         Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row){
             var name = (row.children[1]?.textContent || '').toLowerCase();
             var email = (row.children[2]?.textContent || '').toLowerCase();
             var phone = (row.children[3]?.textContent || '').toLowerCase();
             var code = (row.dataset.regCode || '').toLowerCase();
-            var match = !q || name.includes(q) || email.includes(q) || phone.includes(q) || code.includes(q);
-            row.style.display = match ? '' : 'none';
+            var teamInfo = (row.dataset.teamInfo || '').toLowerCase();
+            
+            var searchMatch = !q 
+                || name.includes(q) 
+                || email.includes(q) 
+                || phone.includes(q) 
+                || code.includes(q)
+                || teamInfo.includes(q);
+                
+            var typeMatch = true;
+            var regType = row.getAttribute('data-registration-type');
+            if (currentFilter === 'team' && regType !== 'team') {
+                typeMatch = false;
+            } else if (currentFilter === 'individual' && regType !== 'individual') {
+                typeMatch = false;
+            }
+            
+            row.style.display = (searchMatch && typeMatch) ? '' : 'none';
         });
-        // Update empty message to include the searched query when present
+        
         var msgEl = document.getElementById('participantsEmptyMessage');
         var qEl = document.getElementById('participantsEmptyQuery');
         if(msgEl && qEl){
@@ -1348,6 +1431,18 @@ document.addEventListener('DOMContentLoaded', function(){
             }
         }
         refreshCounts();
+    }
+
+    input.addEventListener('input', applyFilters);
+
+    document.querySelectorAll('.filter-btn').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+            e.preventDefault();
+            document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+            this.classList.add('active');
+            currentFilter = this.getAttribute('data-filter') || 'all';
+            applyFilters();
+        });
     });
     // initialize counts on load
     refreshCounts();
