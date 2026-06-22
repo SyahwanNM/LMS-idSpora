@@ -368,235 +368,6 @@ class TrainerController extends Controller
 
     private function ensureTemplateStructureExists(Course $course): void
     {
-<<<<<<< HEAD
-        $existingModuleCount = (int) $course->modules()->count();
-        if ($existingModuleCount > 0) {
-            // If the course is backed by an auto-template, ensure it has a sensible minimum unit count.
-            $template = null;
-            if ((int) ($course->template_id ?? 0) > 0) {
-                $template = $course->template()->with('modules')->first();
-            }
-            if ($template) {
-                $minUnits = $this->autoTemplateMinUnitsForLevel((string) ($template->level ?? $course->level ?? ''));
-                $this->ensureAutoTemplateHasMinimumUnits($template, $minUnits);
-                $this->ensureCourseHasMinimumUnits($course, $template, $minUnits);
-            }
-            return;
-        }
-
-        $template = null;
-
-        // Prefer explicitly assigned template.
-        if ((int) ($course->template_id ?? 0) > 0) {
-            $template = $course->template()->with('modules')->first();
-        }
-
-        // Fallback for legacy courses: infer template by level + category.
-        if (!$template) {
-            $level = (string) ($course->level ?? '');
-            $categoryId = (int) ($course->category_id ?? 0);
-
-            $query = CourseTemplate::query()
-                ->where('status', 'active')
-                ->when($level !== '', fn($q) => $q->where('level', $level))
-                ->with('modules');
-
-            if ($categoryId > 0) {
-                $query->where(function ($q) use ($categoryId) {
-                    $q->where('category_id', $categoryId)->orWhereNull('category_id');
-                });
-                $query->orderByRaw('CASE WHEN category_id = ? THEN 0 WHEN category_id IS NULL THEN 1 ELSE 2 END', [$categoryId]);
-            }
-
-            $template = $query
-                ->orderByDesc('version')
-                ->orderByDesc('id')
-                ->first();
-
-            // If still no template exists, create a minimal default template for the course level.
-            if (!$template && in_array($level, ['beginner', 'intermediate', 'advanced'], true)) {
-                $baseName = 'Auto Template - ' . ucfirst($level);
-                $existingVersion = (int) CourseTemplate::query()
-                    ->where('name', $baseName)
-                    ->max('version');
-                $nextVersion = max(1, $existingVersion + 1);
-
-                $template = CourseTemplate::create([
-                    'name' => $baseName,
-                    'category_id' => null,
-                    'level' => $level,
-                    'version' => $nextVersion,
-                    'status' => 'active',
-                    'created_by' => Auth::id(),
-                    'description' => 'Auto-generated default template for level ' . $level,
-                ]);
-
-                $this->ensureAutoTemplateHasMinimumUnits($template, $this->autoTemplateMinUnitsForLevel($level));
-            }
-        }
-
-        if ($template) {
-            $this->ensureAutoTemplateHasMinimumUnits($template, $this->autoTemplateMinUnitsForLevel((string) ($template->level ?? $course->level ?? '')));
-            $template->load('modules');
-        }
-
-        if (!$template || $template->modules->isEmpty()) {
-            return;
-        }
-
-        // Persist inferred template on legacy courses so behavior is stable.
-        if ((int) ($course->template_id ?? 0) <= 0) {
-            $course->forceFill([
-                'template_id' => $template->id,
-                'template_version' => (int) ($template->version ?? null),
-            ])->save();
-        }
-
-        app(CourseTemplateCloneService::class)
-            ->cloneToCourse($course, $template, replaceExisting: false);
-
-        $this->ensureCourseHasMinimumUnits($course, $template, $this->autoTemplateMinUnitsForLevel((string) ($template->level ?? $course->level ?? '')));
-    }
-
-    private function ensureCourseHasMinimumUnits(Course $course, CourseTemplate $template, int $minUnits): void
-    {
-        $name = (string) ($template->name ?? '');
-        if (!str_starts_with($name, 'Auto Template - ')) {
-            return;
-        }
-
-        $minUnits = max(1, $minUnits);
-        $targetSlots = $minUnits * 3;
-
-        $existingSlots = (int) $course->modules()->count();
-        if ($existingSlots >= $targetSlots) {
-            return;
-        }
-
-        // Ensure template has enough slots first.
-        $this->ensureAutoTemplateHasMinimumUnits($template, $minUnits);
-
-        $maxOrderNo = (int) $course->modules()->max('order_no');
-        $nextOrderNo = max(0, $maxOrderNo) + 1;
-
-        $startUnit = (int) floor($existingSlots / 3) + 1;
-        $rows = [];
-
-        for ($unit = $startUnit; $unit <= $minUnits; $unit++) {
-            $rows[] = [
-                'course_id' => $course->id,
-                'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - PDF Material',
-                'description' => null,
-                'type' => 'pdf',
-                'content_url' => '',
-                'file_name' => null,
-                'mime_type' => null,
-                'file_size' => 0,
-                'is_free' => false,
-                'preview_pages' => 0,
-                'duration' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-            $rows[] = [
-                'course_id' => $course->id,
-                'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - Video Lesson',
-                'description' => null,
-                'type' => 'video',
-                'content_url' => '',
-                'file_name' => null,
-                'mime_type' => null,
-                'file_size' => 0,
-                'is_free' => false,
-                'preview_pages' => 0,
-                'duration' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-            $rows[] = [
-                'course_id' => $course->id,
-                'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - Quiz',
-                'description' => null,
-                'type' => 'quiz',
-                'content_url' => '',
-                'file_name' => null,
-                'mime_type' => null,
-                'file_size' => 0,
-                'is_free' => false,
-                'preview_pages' => 0,
-                'duration' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-
-        if (!empty($rows)) {
-            \App\Models\CourseModule::insert($rows);
-        }
-    }
-
-    private function ensureAutoTemplateHasMinimumUnits(CourseTemplate $template, int $minUnits): void
-    {
-        $name = (string) ($template->name ?? '');
-        if (!str_starts_with($name, 'Auto Template - ')) {
-            return;
-        }
-
-        $minUnits = max(1, $minUnits);
-        $targetSlots = $minUnits * 3;
-
-        $existingSlots = (int) $template->modules()->count();
-        if ($existingSlots >= $targetSlots) {
-            return;
-        }
-
-        $maxOrderNo = (int) $template->modules()->max('order_no');
-        $nextOrderNo = max(0, $maxOrderNo) + 1;
-
-        $startUnit = (int) floor($existingSlots / 3) + 1;
-        $rows = [];
-
-        for ($unit = $startUnit; $unit <= $minUnits; $unit++) {
-            $rows[] = [
-                'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - PDF Material',
-                'description' => null,
-                'type' => 'pdf',
-                'is_required' => true,
-                'duration' => 0,
-            ];
-            $rows[] = [
-                'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - Video Lesson',
-                'description' => null,
-                'type' => 'video',
-                'is_required' => true,
-                'duration' => 0,
-            ];
-            $rows[] = [
-                'order_no' => $nextOrderNo++,
-                'title' => 'Module ' . $unit . ' - Quiz',
-                'description' => null,
-                'type' => 'quiz',
-                'is_required' => true,
-                'duration' => 0,
-            ];
-        }
-
-        if (!empty($rows)) {
-            $template->modules()->createMany($rows);
-        }
-    }
-
-    private function autoTemplateMinUnitsForLevel(string $level): int
-    {
-        $lvl = strtolower(trim($level));
-        $units = (int) (self::AUTO_TEMPLATE_UNITS_BY_LEVEL[$lvl] ?? 3);
-        return max(1, $units);
-=======
         // Kalau sudah ada modul, tidak perlu clone
         if ((int) $course->modules()->count() > 0) {
             return;
@@ -625,7 +396,6 @@ class TrainerController extends Controller
             app(\App\Services\CourseTemplateCloneService::class)
                 ->cloneToCourse($course, $template, replaceExisting: false);
         }
->>>>>>> f8aa303376d9a6c43165708cd48b2e77f6ae6aae
     }
 
     private function ensureQuizSlotPerUnit(Course $course): void
@@ -1104,14 +874,9 @@ class TrainerController extends Controller
                 // Urutkan modul, dan load relasi kuis
                 $query->orderBy('order_no', 'asc')->with('quizQuestions');
             },
-<<<<<<< HEAD
-            'enrollments.student',
-            'reviews'
-=======
             'enrollments.user',
             'reviews',
             'units',
->>>>>>> f8aa303376d9a6c43165708cd48b2e77f6ae6aae
         ])
             ->where('id', $id)
             ->where('trainer_id', $trainerId)
@@ -2113,8 +1878,6 @@ class TrainerController extends Controller
             'files.*' => 'required|file|mimes:pdf,mp4,pptx,ppt,docx,doc,jpg,png,jpeg|max:512000'
         ]);
 
-<<<<<<< HEAD:app/Http/Controllers/TrainerController.php
-=======
         try {
             $request->validate([
                 'target_modules' => 'required|string',
@@ -2168,7 +1931,6 @@ class TrainerController extends Controller
             ], 422);
         }
 
->>>>>>> 0b47d45fa0d53b06ddd2a73a7fd936f0342676e4:app/Http/Controllers/Trainer/TrainerController.php
         $course = \App\Models\Course::findOrFail($id);
         if ($course->trainer_id !== Auth::id()) {
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
