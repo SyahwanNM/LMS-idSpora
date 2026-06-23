@@ -831,4 +831,112 @@ class FinanceController extends Controller
 
         return view('admin.finance.trainers.invoice', compact('payment'));
     }
+
+    public function exportEvent(Request $request, $id)
+    {
+        $event = Event::with(['expenses'])->findOrFail($id);
+        $format = $request->get('format', 'pdf');
+
+        $transactions = ManualPayment::with('user')
+            ->where('event_id', $id)
+            ->where('status', 'settled')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalIncome = $transactions->sum('amount');
+        $opExpenses = $event->expenses_total;
+        $commissions = Referral::where('description', 'LIKE', '%' . $event->title . '%')->where('status', 'paid')->sum('amount');
+        $netProfit = $totalIncome - $opExpenses - $commissions;
+
+        if ($format == 'excel') {
+            return $this->exportEventToExcel($event, $transactions, $totalIncome, $opExpenses, $commissions, $netProfit);
+        }
+
+        // Export to PDF
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+
+        $html = view('admin.finance.event_report_pdf', compact(
+            'event', 'transactions', 'totalIncome', 'opExpenses', 'commissions', 'netProfit'
+        ))->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Laporan_Keuangan_Event_' . str_replace(' ', '_', $event->title) . '_' . now()->format('YmdHis') . '.pdf';
+
+        return response($dompdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    private function exportEventToExcel($event, $transactions, $totalIncome, $opExpenses, $commissions, $netProfit)
+    {
+        $filename = 'Laporan_Keuangan_Event_' . str_replace(' ', '_', $event->title) . '_' . now()->format('YmdHis') . '.csv';
+        $headers = [
+            "Content-Type" => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=\"$filename\"",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $callback = function() use ($event, $transactions, $totalIncome, $opExpenses, $commissions, $netProfit) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for Excel UTF-8
+            fputs($file, (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+
+            fputcsv($file, ['IDSPORA - LAPORAN KEUANGAN EVENT']);
+            fputcsv($file, ['Nama Event:', $event->title]);
+            fputcsv($file, ['Tanggal Event:', $event->event_date ? $event->event_date->format('Y-m-d') : '-']);
+            fputcsv($file, ['Lokasi:', $event->location ?? '-']);
+            fputcsv($file, ['Trainer/Speaker:', $event->speaker ?? ($event->trainer->name ?? '-')]);
+            fputcsv($file, []);
+
+            // Summary
+            fputcsv($file, ['RINGKASAN KEUANGAN']);
+            fputcsv($file, ['Total Pendapatan Kotor (Gross Income)', $totalIncome]);
+            fputcsv($file, ['Total Biaya Operasional (Event Expenses)', $opExpenses]);
+            fputcsv($file, ['Total Komisi Reseller', $commissions]);
+            fputcsv($file, ['Estimasi Pendapatan Bersih (Net Profit)', $netProfit]);
+            fputcsv($file, []);
+
+            // Incomes Header
+            fputcsv($file, ['RINCIAN PEMASUKAN (TRANSAKSI SETTLED)']);
+            fputcsv($file, ['Tanggal', 'Nama Peserta', 'Email', 'Order ID', 'Metode', 'Jumlah']);
+
+            foreach ($transactions as $t) {
+                fputcsv($file, [
+                    $t->created_at->format('Y-m-d H:i'),
+                    $t->user->name ?? 'Guest',
+                    $t->user->email ?? '-',
+                    $t->order_id,
+                    strtoupper($t->method),
+                    $t->amount
+                ]);
+            }
+            fputcsv($file, []);
+
+            // Expenses Header
+            fputcsv($file, ['RINCIAN PENGELUARAN OPERASIONAL']);
+            fputcsv($file, ['Item Pengeluaran', 'Qty', 'Harga Satuan', 'Total']);
+
+            foreach ($event->expenses as $exp) {
+                fputcsv($file, [
+                    $exp->item,
+                    $exp->quantity,
+                    $exp->unit_price,
+                    $exp->total
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

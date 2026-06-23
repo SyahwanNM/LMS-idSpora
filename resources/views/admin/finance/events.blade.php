@@ -183,12 +183,29 @@
                                     <div class="pending-text text-muted">Rp {{ number_format($event->pending_revenue, 0, ',', '.') }}</div>
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('admin.finance.event-detail', $event->id) }}" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">Detail</a>
-                                </td>
+                                     <div class="btn-group">
+                                         <a href="{{ route('admin.finance.event-detail', $event->id) }}" class="btn btn-sm btn-outline-warning rounded-start-pill px-3 fw-bold">Detail</a>
+                                         <button type="button" class="btn btn-sm btn-outline-warning rounded-end-pill dropdown-toggle dropdown-toggle-split px-2" data-bs-toggle="dropdown" aria-expanded="false">
+                                             <span class="visually-hidden">Toggle Dropdown</span>
+                                         </button>
+                                         <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
+                                             <li>
+                                                 <a class="dropdown-item small py-2 fw-semibold" href="{{ route('admin.finance.events.export', ['id' => $event->id, 'format' => 'pdf']) }}">
+                                                     <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Unduh PDF
+                                                 </a>
+                                             </li>
+                                             <li>
+                                                 <a class="dropdown-item small py-2 fw-semibold" href="{{ route('admin.finance.events.export', ['id' => $event->id, 'format' => 'excel']) }}">
+                                                     <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i> Unduh Excel
+                                                 </a>
+                                             </li>
+                                         </ul>
+                                     </div>
+                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-5 text-muted">Belum ada data event.</td>
+                                <td colspan="6" class="text-center py-5 text-muted">Belum ada data event.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -201,4 +218,48 @@
         </div>
     </main>
 </div>
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all split dropdown toggle buttons
+    const toggles = document.querySelectorAll('.dropdown-toggle-split');
+    toggles.forEach(toggle => {
+        const menu = toggle.nextElementSibling;
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Close all other menus first
+            document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
+                if (openMenu !== menu) {
+                    openMenu.classList.remove('show');
+                    openMenu.previousElementSibling.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            const isOpen = menu.classList.contains('show');
+            if (isOpen) {
+                menu.classList.remove('show');
+                toggle.setAttribute('aria-expanded', 'false');
+            } else {
+                menu.classList.add('show');
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+            const toggle = menu.previousElementSibling;
+            if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.remove('show');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+});
+</script>
+@endsection
 @endsection
