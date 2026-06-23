@@ -411,6 +411,10 @@ class EventParticipationController extends Controller
             return redirect()->back()->with('error', 'Anda belum terdaftar aktif.');
         }
 
+        if ($registration->team_id && !$registration->is_team_leader) {
+            return redirect()->back()->with('error', 'Hanya Ketua Tim yang dapat mengunggah submission.');
+        }
+
         if ($registration->submission_status === 'tidak_lolos') {
             return redirect()->back()->with('error', 'Anda tidak dapat memperbarui submission karena dinyatakan tidak lolos.');
         }
@@ -442,6 +446,16 @@ class EventParticipationController extends Controller
             $registration->submission_status = 'pending';
             $registration->save();
 
+            if ($registration->team_id) {
+                EventRegistration::where('team_id', $registration->team_id)
+                    ->where('id', '!=', $registration->id)
+                    ->update([
+                        'submission_path' => $path,
+                        'submission_uploaded_at' => $now,
+                        'submission_status' => 'pending',
+                    ]);
+            }
+
             return redirect()->back()->with('success', 'Initial submission successfully uploaded.');
         }
 
@@ -458,6 +472,10 @@ class EventParticipationController extends Controller
         $registration = EventRegistration::where('event_id', $event->id)->where('user_id', $user->id)->first();
         if (!$registration || $registration->status !== 'active') {
             return redirect()->back()->with('error', 'Anda belum terdaftar aktif.');
+        }
+
+        if ($registration->team_id && !$registration->is_team_leader) {
+            return redirect()->back()->with('error', 'Hanya Ketua Tim yang dapat mengunggah submission.');
         }
 
         if ($registration->submission_status !== 'lolos') {
@@ -491,6 +509,15 @@ class EventParticipationController extends Controller
             $registration->submission_path_2 = $path;
             $registration->submission_2_uploaded_at = $now;
             $registration->save();
+
+            if ($registration->team_id) {
+                EventRegistration::where('team_id', $registration->team_id)
+                    ->where('id', '!=', $registration->id)
+                    ->update([
+                        'submission_path_2' => $path,
+                        'submission_2_uploaded_at' => $now,
+                    ]);
+            }
 
             return redirect()->back()->with('success', 'Second submission successfully uploaded.');
         }
@@ -572,6 +599,16 @@ class EventParticipationController extends Controller
 
         if ($registration->stage2_payment_status !== 'pending') {
             return redirect()->back()->with('info', 'Status pembayaran sudah diperbarui.');
+        }
+
+        $stage2Price = (float) ($event->price_stage2 ?? 0);
+        if ($stage2Price <= 0) {
+            $registration->stage2_payment_status = 'settled';
+            $registration->stage2_payment_at = now();
+            $registration->save();
+
+            return redirect()->route('events.registered.detail', $event)
+                ->with('success', 'Registrasi Tahap 2 berhasil diselesaikan!');
         }
 
         $request->validate([
@@ -952,5 +989,186 @@ class EventParticipationController extends Controller
             return redirect()->route('events.registered.detail', $event)
                 ->with('info', 'Status pembayaran Tahap 2 pending.');
         }
+    }
+
+    public function createTeam(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->back()->with('error', 'Login dahulu untuk mendaftar.');
+        }
+
+        if (strtolower(trim($event->jenis ?? '')) !== 'lomba') {
+            return redirect()->back()->with('error', 'Event ini bukan bertipe Lomba.');
+        }
+
+        if (!in_array($event->lomba_kategori, ['team', 'both'])) {
+            return redirect()->back()->with('error', 'Event ini tidak membuka pendaftaran kategori Tim.');
+        }
+
+        if ($event->until_submission && \Carbon\Carbon::now()->gt($event->until_submission)) {
+            return redirect()->back()->with('error', 'Pendaftaran Lomba sudah ditutup.');
+        }
+
+        if (!(bool) ($event->is_published ?? false)) {
+            return redirect()->back()->with('error', 'Event belum diterbitkan.');
+        }
+
+        // Cek apakah user sudah terdaftar di event ini
+        $registration = EventRegistration::where('event_id', $event->id)->where('user_id', $user->id)->first();
+        if ($registration) {
+            return redirect()->back()->with('info', 'Anda sudah terdaftar untuk event ini.');
+        }
+
+        $request->validate([
+            'team_name' => 'required|string|max:255',
+            'full_name' => 'required|string|max:255',
+            'university_origin' => 'required|string|max:255',
+            'institution_location' => 'required|string|max:255',
+            'whatsapp_number' => 'required|string|max:255',
+            'info_source' => 'required|string|max:255',
+            'educational_background' => 'required|string|max:255',
+        ]);
+
+        // Sync profile fields
+        $profileUpdates = [];
+        if ($request->full_name !== $user->name)
+            $profileUpdates['name'] = $request->full_name;
+        if ($request->whatsapp_number !== $user->phone)
+            $profileUpdates['phone'] = $request->whatsapp_number;
+        if ($request->university_origin !== $user->institution)
+            $profileUpdates['institution'] = $request->university_origin;
+
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
+
+        $team = null;
+        DB::transaction(function () use ($event, $user, $request, &$team) {
+            // Generate unique code
+            do {
+                $code = Str::upper(Str::random(6));
+            } while (\App\Models\Team::where('code', $code)->exists());
+
+            $team = \App\Models\Team::create([
+                'event_id' => $event->id,
+                'name' => $request->team_name,
+                'code' => $code,
+                'leader_id' => $user->id,
+                'status' => 'pending',
+            ]);
+
+            EventRegistration::create([
+                'event_id' => $event->id,
+                'user_id' => $user->id,
+                'team_id' => $team->id,
+                'is_team_leader' => true,
+                'status' => 'pending',
+                'registration_code' => 'EVT' . $event->id . '-' . Str::upper(Str::random(6)),
+                'full_name' => $request->full_name,
+                'whatsapp_number' => $request->whatsapp_number,
+                'university_origin' => $request->university_origin,
+                'institution_location' => $request->institution_location,
+                'info_source' => $request->info_source,
+                'educational_background' => $request->educational_background,
+            ]);
+        });
+
+        return redirect()->route('events.registered.detail', $event)->with('success', 'Tim berhasil dibuat! Bagikan kode tim Anda.');
+    }
+
+    public function joinTeam(Event $event, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->back()->with('error', 'Login dahulu untuk mendaftar.');
+        }
+
+        if (strtolower(trim($event->jenis ?? '')) !== 'lomba') {
+            return redirect()->back()->with('error', 'Event ini bukan bertipe Lomba.');
+        }
+
+        if (!in_array($event->lomba_kategori, ['team', 'both'])) {
+            return redirect()->back()->with('error', 'Event ini tidak membuka pendaftaran kategori Tim.');
+        }
+
+        if ($event->until_submission && \Carbon\Carbon::now()->gt($event->until_submission)) {
+            return redirect()->back()->with('error', 'Pendaftaran Lomba sudah ditutup.');
+        }
+
+        if (!(bool) ($event->is_published ?? false)) {
+            return redirect()->back()->with('error', 'Event belum diterbitkan.');
+        }
+
+        // Cek apakah user sudah terdaftar di event ini
+        $registration = EventRegistration::where('event_id', $event->id)->where('user_id', $user->id)->first();
+        if ($registration) {
+            return redirect()->back()->with('info', 'Anda sudah terdaftar untuk event ini.');
+        }
+
+        $request->validate([
+            'team_code' => 'required|string|size:6',
+            'full_name' => 'required|string|max:255',
+            'university_origin' => 'required|string|max:255',
+            'institution_location' => 'required|string|max:255',
+            'whatsapp_number' => 'required|string|max:255',
+            'info_source' => 'required|string|max:255',
+            'educational_background' => 'required|string|max:255',
+        ]);
+
+        // Sync profile fields
+        $profileUpdates = [];
+        if ($request->full_name !== $user->name)
+            $profileUpdates['name'] = $request->full_name;
+        if ($request->whatsapp_number !== $user->phone)
+            $profileUpdates['phone'] = $request->whatsapp_number;
+        if ($request->university_origin !== $user->institution)
+            $profileUpdates['institution'] = $request->university_origin;
+
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
+
+        $teamCode = Str::upper($request->team_code);
+        $team = \App\Models\Team::where('event_id', $event->id)
+            ->where('code', $teamCode)
+            ->first();
+
+        if (!$team) {
+            return redirect()->back()->with('error', 'Kode Tim tidak valid atau tidak ditemukan untuk event ini.');
+        }
+
+        if ($team->status === 'active') {
+            return redirect()->back()->with('error', 'Tim ini sudah aktif/terbayar. Tidak dapat bergabung.');
+        }
+
+        // Count current members
+        $currentMembersCount = EventRegistration::where('team_id', $team->id)->count();
+        $maxMembers = (int) ($event->max_team_members ?? 5);
+
+        if ($currentMembersCount >= $maxMembers) {
+            return redirect()->back()->with('error', 'Tim ini sudah penuh.');
+        }
+
+        DB::transaction(function () use ($event, $user, $team, $request) {
+            EventRegistration::create([
+                'event_id' => $event->id,
+                'user_id' => $user->id,
+                'team_id' => $team->id,
+                'is_team_leader' => false,
+                'status' => 'pending',
+                'registration_code' => 'EVT' . $event->id . '-' . Str::upper(Str::random(6)),
+                'full_name' => $request->full_name,
+                'whatsapp_number' => $request->whatsapp_number,
+                'university_origin' => $request->university_origin,
+                'institution_location' => $request->institution_location,
+                'info_source' => $request->info_source,
+                'educational_background' => $request->educational_background,
+            ]);
+        });
+
+        return redirect()->route('events.registered.detail', $event)->with('success', 'Berhasil bergabung dengan tim!');
     }
 }

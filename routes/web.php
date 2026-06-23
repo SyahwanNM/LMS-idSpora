@@ -521,8 +521,10 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
         Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
+        Route::get('/admin/finance/events/{id}/export', [\App\Http\Controllers\Admin\FinanceController::class, 'exportEvent'])->name('admin.finance.events.export');
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
         Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
+        Route::get('/admin/finance/courses/{id}/export', [\App\Http\Controllers\Admin\FinanceController::class, 'exportCourse'])->name('admin.finance.courses.export');
         Route::get('/admin/finance/trainers', [\App\Http\Controllers\Admin\FinanceController::class, 'trainers'])->name('admin.finance.trainers');
         Route::post('/admin/finance/trainers/{id}/disburse', [\App\Http\Controllers\Admin\FinanceController::class, 'disburseCourseBalance'])->name('admin.finance.trainers.disburse');
         Route::post('/admin/finance/events/{id}/fee-request', [\App\Http\Controllers\Admin\FinanceController::class, 'createEventFeeRequest'])->name('admin.finance.events.fee-request');

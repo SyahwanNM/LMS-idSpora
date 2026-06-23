@@ -43,8 +43,13 @@ Route::middleware('auth')->get('/payment/{event}', function (Event $event) {
     }
     $user = auth()->user();
     $registration = $user ? $user->eventRegistrations()->where('event_id', $event->id)->latest('id')->first() : null;
-    if ($registration && $registration->status === 'active') {
-        return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
+    if ($registration) {
+        if ($registration->status === 'active') {
+            return redirect()->route('events.show', $event)->with('info', 'Anda sudah terdaftar.');
+        }
+        if ($registration->team_id && !$registration->is_team_leader) {
+            return redirect()->route('events.registered.detail', $event)->with('error', 'Pembayaran harus diselesaikan oleh Ketua Tim.');
+        }
     }
     return view('user.payment', compact('event'));
 })->name('payment');
@@ -109,6 +114,8 @@ Route::middleware('auth')->group(function () {
     // Form-based (non-AJAX) free registration & feedback submission
     Route::post('/events/{event}/register/form', [\App\Http\Controllers\User\EventParticipationController::class, 'register'])->name('events.register.form');
     Route::post('/events/{event}/feedback', [\App\Http\Controllers\User\EventParticipationController::class, 'submitFeedback'])->name('events.feedback');
+    Route::post('/events/{event}/create-team', [\App\Http\Controllers\User\EventParticipationController::class, 'createTeam'])->name('events.create-team');
+    Route::post('/events/{event}/join-team', [\App\Http\Controllers\User\EventParticipationController::class, 'joinTeam'])->name('events.join-team');
     // Dedicated scan page for event QR (auth, require registration)
     Route::get('/events/{event}/scan', function (\Illuminate\Http\Request $request, \App\Models\Event $event) {
         if ($event->jenis === 'Lomba') {

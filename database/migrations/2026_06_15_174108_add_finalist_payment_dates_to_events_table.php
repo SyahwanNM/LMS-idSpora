@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('events', function (Blueprint $table) {
-            $table->dateTime('finalist_payment_start')->nullable()->after('price_stage2');
-            $table->dateTime('finalist_payment_end')->nullable()->after('finalist_payment_start');
+            if (!Schema::hasColumn('events', 'finalist_payment_start')) {
+                $table->dateTime('finalist_payment_start')->nullable()->after('price_stage2');
+            }
+            if (!Schema::hasColumn('events', 'finalist_payment_end')) {
+                $table->dateTime('finalist_payment_end')->nullable()->after('finalist_payment_start');
+            }
         });
     }
 
@@ -23,7 +27,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('events', function (Blueprint $table) {
-            $table->dropColumn(['finalist_payment_start', 'finalist_payment_end']);
+            if (Schema::hasColumn('events', 'finalist_payment_start')) {
+                $table->dropColumn('finalist_payment_start');
+            }
+            if (Schema::hasColumn('events', 'finalist_payment_end')) {
+                $table->dropColumn('finalist_payment_end');
+            }
         });
     }
 };

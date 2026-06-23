@@ -469,6 +469,40 @@ class PaymentController extends Controller
             $phone = (string) ($user->phone ?? '');
         }
 
+        // Sync profile fields
+        $profileUpdates = [];
+        $fullName = $request->query('full_name', $request->input('full_name')) ?: $user->name;
+        $university = $request->query('university_origin', $request->input('university_origin')) ?: $user->institution;
+        $position = $request->query('position', $request->input('position')) ?: $user->profession;
+
+        if ($fullName !== $user->name)
+            $profileUpdates['name'] = $fullName;
+        if ($phone !== $user->phone)
+            $profileUpdates['phone'] = $phone;
+        if ($university !== $user->institution)
+            $profileUpdates['institution'] = $university;
+        if ($position !== $user->profession)
+            $profileUpdates['profession'] = $position;
+
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
+
+        $regData = [
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+            'university_origin' => $request->query('university_origin', $request->input('university_origin')),
+            'study_program' => $request->query('study_program', $request->input('study_program')),
+            'position' => $request->query('position', $request->input('position')),
+            'full_name' => $fullName,
+            'whatsapp_number' => $phone,
+            'team_name' => $request->query('team_name', $request->input('team_name')),
+            'institution_location' => $request->query('institution_location', $request->input('institution_location')),
+            'info_source' => $request->query('info_source', $request->input('info_source')),
+            'educational_background' => $request->query('educational_background', $request->input('educational_background')),
+        ];
+
         DB::beginTransaction();
         try {
             // Ensure a pending registration exists
@@ -484,19 +518,18 @@ class PaymentController extends Controller
 
             if ($finalAmount <= 0) {
                 if (!$registration) {
-                    $registration = EventRegistration::create([
-                        'user_id' => $user->id,
-                        'event_id' => $event->id,
+                    $registration = EventRegistration::create(array_merge($regData, [
                         'status' => 'active',
                         'registration_code' => 'EVT-' . strtoupper(uniqid()),
                         'total_price' => 0.00,
                         'payment_verified_at' => now(),
-                    ]);
+                    ]));
                 } else {
-                    $registration->status = 'active';
-                    $registration->total_price = 0.00;
-                    $registration->payment_verified_at = now();
-                    $registration->save();
+                    $registration->fill(array_merge($regData, [
+                        'status' => 'active',
+                        'total_price' => 0.00,
+                        'payment_verified_at' => now(),
+                    ]))->save();
                 }
 
                 $method = $redemption ? 'voucher' : 'free';
@@ -560,17 +593,16 @@ class PaymentController extends Controller
             }
 
             if (!$registration) {
-                $registration = EventRegistration::create([
-                    'user_id' => $user->id,
-                    'event_id' => $event->id,
+                $registration = EventRegistration::create(array_merge($regData, [
                     'status' => 'pending',
                     'registration_code' => 'EVT-' . strtoupper(uniqid()),
                     'total_price' => $finalAmount,
-                ]);
+                ]));
             } else {
-                $registration->status = 'pending';
-                $registration->total_price = $finalAmount;
-                $registration->save();
+                $registration->fill(array_merge($regData, [
+                    'status' => 'pending',
+                    'total_price' => $finalAmount,
+                ]))->save();
             }
 
             // Reuse existing pending midtrans order if any

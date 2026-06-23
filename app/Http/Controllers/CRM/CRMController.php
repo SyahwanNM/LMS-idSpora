@@ -578,8 +578,24 @@ class CRMController extends Controller
 
         $message->update(['status' => $request->status]);
 
-        return back()->with('success', 'Status pesan berhasil diperbarui');
+        // Send email notification to user on resolved or ignored status
+        if (in_array($request->status, ['resolved', 'ignored']) && $message->email) {
+            try {
+                Mail::to($message->email)->send(new \App\Mail\SupportTicketStatusMail($message));
+                \Log::info('Email notifikasi tiket support terkirim ke ' . $message->email . ' (ID: ' . $message->id . ', status: ' . $request->status . ')');
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim email status tiket support ke ' . $message->email . ': ' . $e->getMessage(), [
+                    'ticket_id'  => $message->id,
+                    'status'     => $request->status,
+                    'exception'  => $e->getTraceAsString(),
+                ]);
+                return back()->with('warning', 'Status berhasil diperbarui, namun notifikasi email ke user gagal terkirim. Silakan cek log server.');
+            }
+        }
+
+        return back()->with('success', 'Status pesan berhasil diperbarui' . (in_array($request->status, ['resolved', 'ignored']) ? ' dan notifikasi email telah dikirim ke user.' : '.'));
     }
+
 
     /**
      * Display Broadcast List

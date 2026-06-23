@@ -45,6 +45,7 @@ class LombaSubmissionTest extends TestCase
             'announcement_date' => now()->addDays(5)->format('Y-m-d\TH:i'),
             'until_submission_2' => now()->addDays(8)->format('Y-m-d\TH:i'),
             'image' => UploadedFile::fake()->image('event.jpg'),
+            'lomba_kategori' => 'individual',
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -78,6 +79,7 @@ class LombaSubmissionTest extends TestCase
             'announcement_date' => now()->addDays(5)->format('Y-m-d\TH:i'),
             'until_submission_2' => now()->addDays(8)->format('Y-m-d\TH:i'),
             'image' => UploadedFile::fake()->image('event.jpg'),
+            'lomba_kategori' => 'individual',
         ]);
 
         $response->assertSessionHasErrors(['until_submission']);
@@ -411,6 +413,7 @@ class LombaSubmissionTest extends TestCase
             'announcement_date' => now()->addDays(5)->format('Y-m-d\TH:i'),
             'until_submission_2' => now()->addDays(8)->format('Y-m-d\TH:i'),
             'image' => UploadedFile::fake()->image('event.jpg'),
+            'lomba_kategori' => 'individual',
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -1260,6 +1263,51 @@ class LombaSubmissionTest extends TestCase
         $response3 = $this->actingAs($this->user)->postJson(route('events.payment.stage2.midtrans', $event));
         $response3->assertStatus(422);
         $response3->assertJson(['error' => $expectedClosedMsg]);
+    }
+
+    public function test_user_can_complete_free_stage2_registration()
+    {
+        $event = Event::create([
+            'title' => 'Lomba UI/UX Free Stage 2',
+            'image' => 'lomba.png',
+            'speaker' => 'Speaker UIUX',
+            'description' => 'Description Lomba',
+            'location' => 'Online',
+            'price' => 150000.00,
+            'price_stage2' => 0.00, // free stage 2
+            'event_time' => '09:00:00',
+            'event_date' => now()->addDays(5)->format('Y-m-d'),
+            'jenis' => 'Lomba',
+            'lomba_kategori' => 'individual',
+            'start_submission' => now()->subDays(5),
+            'until_submission' => now()->subDays(3),
+            'announcement_date' => now()->subDay(),
+            'until_submission_2' => now()->addDay(),
+            'finalist_payment_start' => now()->subDay(),
+            'finalist_payment_end' => now()->addDay(),
+            'is_published' => true,
+        ]);
+
+        $registration = EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $this->user->id,
+            'status' => 'active',
+            'submission_path' => 'submissions/proposal.pdf',
+            'submission_uploaded_at' => now()->subDays(4),
+            'submission_status' => 'lolos', // qualified
+            'stage2_payment_status' => 'pending',
+        ]);
+
+        // Submit the form
+        $response = $this->actingAs($this->user)
+            ->post(route('events.payment.stage2.manual', $event));
+
+        $response->assertRedirect(route('events.registered.detail', $event));
+        $response->assertSessionHas('success', 'Registrasi Tahap 2 berhasil diselesaikan!');
+
+        $registration->refresh();
+        $this->assertEquals('settled', $registration->stage2_payment_status);
+        $this->assertNotNull($registration->stage2_payment_at);
     }
 }
 

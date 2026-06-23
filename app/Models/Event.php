@@ -80,6 +80,8 @@ class Event extends Model
         'price_stage2',
         'finalist_payment_start',
         'finalist_payment_end',
+        'lomba_kategori',
+        'max_team_members',
     ];
 
     protected $casts = [
@@ -448,6 +450,11 @@ class Event extends Model
     public function registrations()
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    public function teams()
+    {
+        return $this->hasMany(Team::class);
     }
 
     public function scheduleItems()

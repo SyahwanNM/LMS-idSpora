@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('events', function (Blueprint $table) {
-            $table->decimal('price_stage2', 12, 2)->default(0)->after('price');
+            if (!Schema::hasColumn('events', 'price_stage2')) {
+                $table->decimal('price_stage2', 12, 2)->default(0)->after('price');
+            }
         });
     }
 
@@ -22,7 +24,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('events', function (Blueprint $table) {
-            $table->dropColumn('price_stage2');
+            if (Schema::hasColumn('events', 'price_stage2')) {
+                $table->dropColumn('price_stage2');
+            }
         });
     }
 };

@@ -364,6 +364,7 @@
     .crm-toast-success .crm-toast-icon { background: rgba(16,185,129,0.1); color: #10b981; }
     .crm-toast-error .crm-toast-icon { background: rgba(239,68,68,0.1); color: #ef4444; }
     .crm-toast-info .crm-toast-icon { background: rgba(124,58,237,0.1); color: var(--crm-primary); }
+    .crm-toast-warning .crm-toast-icon { background: rgba(245,158,11,0.1); color: #d97706; }
     
     .crm-toast-content { flex-grow: 1; }
     .crm-toast-title { font-size: 0.85rem; font-weight: 800; color: var(--crm-navy); margin-bottom: 2px; }
@@ -493,7 +494,8 @@
             const icons = {
                 success: 'bi-check-circle-fill',
                 error: 'bi-exclamation-triangle-fill',
-                info: 'bi-info-circle-fill'
+                info: 'bi-info-circle-fill',
+                warning: 'bi-exclamation-triangle-fill'
             };
             
             const toastId = 'toast-' + Math.random().toString(36).substr(2, 9);
@@ -536,6 +538,9 @@
         @endif
         @if(session('info'))
             CRM.toast('Informasi', "{{ session('info') }}", 'info');
+        @endif
+        @if(session('warning'))
+            CRM.toast('Perhatian!', "{{ session('warning') }}", 'warning');
         @endif
     });
     </script>

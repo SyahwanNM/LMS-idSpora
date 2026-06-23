@@ -191,6 +191,7 @@
 </div>
 
 {{-- Detail Modals --}}
+@push('modals')
 @foreach($messages as $msg)
 @php
     $statusCls = ['new'=>'status-new','processed'=>'status-processed','resolved'=>'status-resolved','ignored'=>'status-ignored'][$msg->status] ?? 'status-ignored';
@@ -280,4 +281,5 @@
     </div>
 </div>
 @endforeach
+@endpush
 @endsection

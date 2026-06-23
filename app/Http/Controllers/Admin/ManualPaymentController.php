@@ -66,6 +66,7 @@ class ManualPaymentController extends Controller
         // ── Transfer Rekening ──────────────────────────────────────
         $request->validate([
             'payment_proof' => 'required|file|mimes:jpg,jpeg,png,webp|max:1024',
+            'team_name' => 'nullable|string|max:255',
         ], [
             'payment_proof.required' => 'Bukti transfer wajib diupload.',
             'payment_proof.max' => 'Ukuran file maksimal 1 MB.',
@@ -115,6 +116,12 @@ class ManualPaymentController extends Controller
                     'study_program' => $request->input('study_program'),
                     'position' => $request->input('position'),
                     'referral_code' => $referralCode,
+                    'full_name' => $fullName,
+                    'whatsapp_number' => $phone,
+                    'team_name' => $request->input('team_name'),
+                    'institution_location' => $request->input('institution_location'),
+                    'info_source' => $request->input('info_source'),
+                    'educational_background' => $request->input('educational_background'),
                 ]);
             } else {
                 $registration->update([
@@ -125,6 +132,12 @@ class ManualPaymentController extends Controller
                     'study_program' => $request->input('study_program'),
                     'position' => $request->input('position'),
                     'referral_code' => $referralCode,
+                    'full_name' => $fullName,
+                    'whatsapp_number' => $phone,
+                    'team_name' => $request->input('team_name'),
+                    'institution_location' => $request->input('institution_location'),
+                    'info_source' => $request->input('info_source'),
+                    'educational_background' => $request->input('educational_background'),
                 ]);
             }
 
