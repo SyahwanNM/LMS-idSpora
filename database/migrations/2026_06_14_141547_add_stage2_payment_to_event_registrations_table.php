@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('event_registrations', function (Blueprint $table) {
-            $table->string('stage2_payment_status', 50)->default('not_required')->after('submission_notes');
-            $table->timestamp('stage2_payment_at')->nullable()->after('stage2_payment_status');
+            if (!Schema::hasColumn('event_registrations', 'stage2_payment_status')) {
+                $table->string('stage2_payment_status', 50)->default('not_required')->after('submission_notes');
+            }
+            if (!Schema::hasColumn('event_registrations', 'stage2_payment_at')) {
+                $table->timestamp('stage2_payment_at')->nullable()->after('stage2_payment_status');
+            }
         });
     }
 
@@ -23,7 +27,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('event_registrations', function (Blueprint $table) {
-            $table->dropColumn(['stage2_payment_status', 'stage2_payment_at']);
+            if (Schema::hasColumn('event_registrations', 'stage2_payment_status')) {
+                $table->dropColumn('stage2_payment_status');
+            }
+            if (Schema::hasColumn('event_registrations', 'stage2_payment_at')) {
+                $table->dropColumn('stage2_payment_at');
+            }
         });
     }
 };

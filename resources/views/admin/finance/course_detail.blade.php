@@ -130,9 +130,20 @@
     @include('partials.finance-sidebar')
 
     <main class="finance-main">
-        <a href="{{ route('admin.finance.courses') }}" class="btn-back">
-            <i class="bi bi-arrow-left"></i> Kembali ke Daftar Course
-        </a>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <a href="{{ route('admin.finance.courses') }}" class="btn-back mb-0">
+                <i class="bi bi-arrow-left"></i> Kembali ke Daftar Course
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-warning dropdown-toggle rounded-pill px-4 fw-bold shadow-sm" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download me-2"></i> Unduh Laporan
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item py-2 fw-semibold" href="{{ route('admin.finance.courses.export', ['id' => $course->id, 'format' => 'pdf']) }}"><i class="bi bi-file-earmark-pdf text-danger me-2"></i> Ekspor PDF</a></li>
+                    <li><a class="dropdown-item py-2 fw-semibold" href="{{ route('admin.finance.courses.export', ['id' => $course->id, 'format' => 'excel']) }}"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i> Ekspor Excel (CSV)</a></li>
+                </ul>
+            </div>
+        </div>
 
         <div class="row g-4 mb-4">
             <div class="col-md-12">
@@ -219,4 +230,35 @@
         </div>
     </main>
 </div>
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdownToggle = document.getElementById('exportDropdown');
+    if (dropdownToggle) {
+        const dropdownMenu = dropdownToggle.nextElementSibling;
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const isOpen = dropdownMenu.classList.contains('show');
+            if (isOpen) {
+                dropdownMenu.classList.remove('show');
+                dropdownToggle.setAttribute('aria-expanded', 'false');
+            } else {
+                dropdownMenu.classList.add('show');
+                dropdownToggle.setAttribute('aria-expanded', 'true');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.remove('show');
+                dropdownToggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+});
+</script>
+@endsection
+
 @endsection

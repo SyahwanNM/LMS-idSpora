@@ -164,10 +164,12 @@
     </div>
 
     <style>
-        body { padding-top: 64px !important; }
         @if($isSpecialPage)
+            body { padding-top: 0 !important; }
             /* Special pages might handle their own padding if needed, but for now we enforce the top offset for the fixed navbar */
             .container-fluid.p-0 { padding-top: 0 !important; } 
+        @else
+            body { padding-top: 64px !important; }
         @endif
     </style>
     

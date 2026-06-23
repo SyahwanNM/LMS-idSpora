@@ -11,18 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('event_trainer_modules', function (Blueprint $table) {
-            $table->string('survey_link', 2048)->nullable()->after('path');
-        });
+        if (!Schema::hasColumn('event_trainer_modules', 'survey_link')) {
+            Schema::table('event_trainer_modules', function (Blueprint $table) {
+                $table->string('survey_link', 2048)->nullable()->after('path');
+            });
+        }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('event_trainer_modules', function (Blueprint $table) {
-            $table->dropColumn('survey_link');
-        });
+        if (Schema::hasColumn('event_trainer_modules', 'survey_link')) {
+            Schema::table('event_trainer_modules', function (Blueprint $table) {
+                $table->dropColumn('survey_link');
+            });
+        }
     }
 };

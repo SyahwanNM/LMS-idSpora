@@ -12,27 +12,46 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('events', function (Blueprint $table) {
-            $table->boolean('accept_online_payment')->default(true);
-            $table->boolean('accept_manual_transfer')->default(true);
-            $table->string('bank_account_number')->nullable();
-            $table->string('bank_name')->nullable();
-            $table->string('bank_account_holder')->nullable();
+            if (!Schema::hasColumn('events', 'accept_online_payment')) {
+                $table->boolean('accept_online_payment')->default(true);
+            }
+            if (!Schema::hasColumn('events', 'accept_manual_transfer')) {
+                $table->boolean('accept_manual_transfer')->default(true);
+            }
+            if (!Schema::hasColumn('events', 'bank_account_number')) {
+                $table->string('bank_account_number')->nullable();
+            }
+            if (!Schema::hasColumn('events', 'bank_name')) {
+                $table->string('bank_name')->nullable();
+            }
+            if (!Schema::hasColumn('events', 'bank_account_holder')) {
+                $table->string('bank_account_holder')->nullable();
+            }
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('events', function (Blueprint $table) {
-            $table->dropColumn([
-                'accept_online_payment',
-                'accept_manual_transfer',
-                'bank_account_number',
-                'bank_name',
-                'bank_account_holder'
-            ]);
+            $columns = [];
+            if (Schema::hasColumn('events', 'accept_online_payment')) {
+                $columns[] = 'accept_online_payment';
+            }
+            if (Schema::hasColumn('events', 'accept_manual_transfer')) {
+                $columns[] = 'accept_manual_transfer';
+            }
+            if (Schema::hasColumn('events', 'bank_account_number')) {
+                $columns[] = 'bank_account_number';
+            }
+            if (Schema::hasColumn('events', 'bank_name')) {
+                $columns[] = 'bank_name';
+            }
+            if (Schema::hasColumn('events', 'bank_account_holder')) {
+                $columns[] = 'bank_account_holder';
+            }
+            if (!empty($columns)) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };
