@@ -644,12 +644,20 @@ HTML;
 
         $data = is_array($notification->data) ? $notification->data : [];
         $currentStatus = (string) data_get($data, 'invitation_status', 'pending');
-        if (in_array($currentStatus, ['accepted', 'rejected'], true)) {
-            return back()->with('success', 'Undangan ini sudah diproses sebelumnya.');
-        }
-
         $entityType = (string) data_get($data, 'entity_type', '');
         $entityId = (int) data_get($data, 'entity_id', 0);
+
+        $needsSchemeSetup = false;
+        if ($entityType === 'course' && $entityId > 0) {
+            $course = Course::query()->find($entityId);
+            if ($course && empty($course->trainer_contribution_scheme)) {
+                $needsSchemeSetup = true;
+            }
+        }
+
+        if (!$needsSchemeSetup && in_array($currentStatus, ['accepted', 'rejected'], true)) {
+            return back()->with('success', 'Undangan ini sudah diproses sebelumnya.');
+        }
 
         if ($entityType === 'course' && $entityId > 0) {
             $course = Course::query()->find($entityId);

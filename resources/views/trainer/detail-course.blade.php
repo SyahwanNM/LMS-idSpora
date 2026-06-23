@@ -78,14 +78,14 @@
     gap: var(--spacing-md);
 }
 
-/* Badge Kuning */
+/* Badge Accent */
 .hero-pill-accent {
-    background: var(--yellow-clr);
-    color: var(--main-navy-clr);
+    background: var(--main-navy-clr, #1a1d78);
+    color: var(--white-clr);
     padding: var(--spacing-sm) var(--spacing-lg);
     border-radius: 999px;
     font-size: var(--font-size-xs);
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.5px;
 }
 
@@ -178,11 +178,11 @@
     font-size: var(--font-size-base);
     flex-shrink: 0;
     -webkit-text-fill-color: transparent;
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip:nth-child(3) > i {
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip > div {
@@ -1386,14 +1386,14 @@ main.detail-course {
     gap: var(--spacing-md);
 }
 
-/* Badge Kuning */
+/* Badge Accent */
 .hero-pill-accent {
-    background: var(--yellow-clr);
-    color: var(--main-navy-clr);
+    background: var(--main-navy-clr, #1a1d78);
+    color: var(--white-clr);
     padding: var(--spacing-sm) var(--spacing-lg);
     border-radius: 999px;
     font-size: var(--font-size-xs);
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.5px;
 }
 
@@ -1486,11 +1486,11 @@ main.detail-course {
     font-size: var(--font-size-base);
     flex-shrink: 0;
     -webkit-text-fill-color: transparent;
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip:nth-child(3) > i {
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip > div {
@@ -2838,12 +2838,19 @@ main.detail-course {
                 </div>
 
                 @if($courseMaterialLocked)
-                    <div style="margin-bottom:20px; padding: 16px; border: 1px solid #f59e0b; border-radius: 12px; background: #fffbeb; color: #92400e; font-size: 13px; display: flex; align-items: start; gap: 12px;">
-                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem; color: #d97706; margin-top: 2px;"></i>
-                        <div>
-                            <strong style="display: block; margin-bottom: 4px;">Materi Course Terkunci</strong>
-                            Materi course masih terkunci sampai undangan trainer diterima. Anda masih dapat melihat detail struktur kurikulum di bawah ini, tetapi pengeditan dan pengunggahan materi di dalam Course Studio dinonaktifkan sementara.
+                    <div style="margin-bottom:20px; padding: 16px; border: 1px solid #f59e0b; border-radius: 12px; background: #fffbeb; color: #92400e; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: start; gap: 12px; flex: 1;">
+                            <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem; color: #d97706; margin-top: 2px;"></i>
+                            <div>
+                                <strong style="display: block; margin-bottom: 4px;">Materi Course Terkunci</strong>
+                                Materi course masih terkunci sampai undangan trainer diterima. Anda masih dapat melihat detail struktur kurikulum di bawah ini, tetapi pengeditan dan pengunggahan materi di dalam Course Studio dinonaktifkan sementara.
+                            </div>
                         </div>
+                        @if(isset($courseInvitation) && $courseInvitation)
+                            <button type="button" class="btn-propose" onclick="openSchemeSelectionModal({{ $courseInvitation->id }}, '{{ addslashes($course->name) }}', 'course')" style="border: 1.5px solid var(--main-navy-clr, #1a1d78); color: #ffffff; font-weight: 700; height: 34px; padding: 0 var(--spacing-md); font-size: 0.72rem; border-radius: 8px; background: var(--main-navy-clr, #1a1d78); border-color: var(--main-navy-clr, #1a1d78); flex-shrink: 0; transition: all 0.2s;" onmouseover="this.style.background='var(--main-navy-hover, #151761)'; this.style.borderColor='var(--main-navy-hover, #151761)';" onmouseout="this.style.background='var(--main-navy-clr, #1a1d78)'; this.style.borderColor='var(--main-navy-clr, #1a1d78)';">
+                                <i class="bi bi-check-circle-fill"></i> TERIMA UNDANGAN & PILIH SKEMA
+                            </button>
+                        @endif
                     </div>
                 @elseif(!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz'])
                     <div style="margin-bottom:20px; padding: 16px; border: 1px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; color: #475569; font-size: 13px; display: flex; align-items: start; gap: 12px;">
@@ -2892,13 +2899,11 @@ main.detail-course {
                                         $assetTab = $module->type === 'quiz' ? 'quiz' : ($module->type === 'video' ? 'video' : 'module');
 
                                         $isLocked = false;
-                                        if ($courseMaterialLocked) {
-                                            $isLocked = true;
-                                        } elseif ($module->type === 'quiz' && empty($schemePermissions['can_quiz'])) {
+                                        if (($module->type === 'pdf' || $module->type === 'module') && empty($schemePermissions['can_module'])) {
                                             $isLocked = true;
                                         } elseif ($module->type === 'video' && empty($schemePermissions['can_video'])) {
                                             $isLocked = true;
-                                        } elseif (($module->type === 'pdf' || $module->type === 'module') && empty($schemePermissions['can_module'])) {
+                                        } elseif ($module->type === 'quiz' && empty($schemePermissions['can_quiz'])) {
                                             $isLocked = true;
                                         }
 
@@ -2919,7 +2924,7 @@ main.detail-course {
                                             <p>{{ $label }}</p>
                                         </div>
 
-                                        @if($isLocked)
+                                        @if($isLocked || $courseMaterialLocked)
                                             <div class="asset-status" style="position: absolute; top: 14px; right: 14px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #f3f0f7; border: 1px solid rgba(46, 32, 80, 0.18); border-radius: 50%; color: #2e2050; font-size: 11px;" title="Locked">
                                                 <i class="bi bi-lock-fill"></i>
                                             </div>
@@ -3043,6 +3048,7 @@ main.detail-course {
             </section>
         </div>
     </main>
+    @include('trainer.partials.scheme-selection-modal')
 @endsection
 
 @push('scripts')

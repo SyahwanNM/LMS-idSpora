@@ -158,6 +158,9 @@ class Event extends Model
         if (array_key_exists('material_status', $this->virtualAttributes)) {
             return $this->virtualAttributes['material_status'];
         }
+        if (isset($this->attributes['material_status']) && $this->attributes['material_status'] !== null) {
+            return $this->attributes['material_status'];
+        }
         $latest = $this->trainerModules()->latest()->first();
         return $latest ? $latest->status : 'pending';
     }

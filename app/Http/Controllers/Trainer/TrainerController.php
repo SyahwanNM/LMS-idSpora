@@ -327,9 +327,8 @@ class TrainerController extends Controller
             return null;
         }
 
-        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
-            return null;
-        }
+        // Allow primary trainer to also have a TrainerAssignment record
+        // so their submissions are tracked and show up in the admin queue.
 
         $existing = $this->latestEventAssignment((int) $event->id, (int) $trainer->id);
         if ($existing) {
@@ -371,6 +370,11 @@ class TrainerController extends Controller
 
     private function isCourseMaterialLockedForTrainer(int $courseId, int $trainerId): bool
     {
+        $course = \App\Models\Course::find($courseId);
+        if ($course && empty($course->trainer_contribution_scheme)) {
+            return true;
+        }
+
         $invitation = $this->latestCourseInvitation($courseId, $trainerId);
         if (!$invitation) {
             return false;
@@ -1168,6 +1172,7 @@ class TrainerController extends Controller
             'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
         ];
 
+        $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
         $invitationSchemeType = 0;
         if (!empty($course->trainer_contribution_scheme)) {
             $invitationSchemeType = match ($course->trainer_contribution_scheme) {
@@ -1178,11 +1183,10 @@ class TrainerController extends Controller
             };
         }
 
-        if ($invitationSchemeType === 0) {
-            $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
-            $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
+        if ($invitationSchemeType === 0 && $courseInvitation) {
+            $invitationSchemeType = (int) data_get($courseInvitation->data ?? [], 'scheme_type', 0);
             if ($invitationSchemeType === 0) {
-                $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
+                $contribScheme = (string) data_get($courseInvitation->data ?? [], 'contribution_scheme', '');
                 $invitationSchemeType = match ($contribScheme) {
                     'e2e' => 1,
                     'module_video' => 2,
@@ -1217,7 +1221,8 @@ class TrainerController extends Controller
             'processingSummary',
             'schemePermissions',
             'courseMaterialLocked',
-            'courseInvitationStatus'
+            'courseInvitationStatus',
+            'courseInvitation'
         ));
     }
     public function events(Request $request)
@@ -1775,7 +1780,8 @@ class TrainerController extends Controller
             'schemePermissions',
             'activeTab',
             'courseMaterialLocked',
-            'courseInvitationStatus'
+            'courseInvitationStatus',
+            'courseInvitation'
         ));
     }
 
@@ -1840,12 +1846,19 @@ class TrainerController extends Controller
 
         $myMaterialStatus = 'not_uploaded';
         if ($myModules->isNotEmpty()) {
-            if ($myModules->contains('status', 'approved')) {
+            $totalCount = $myModules->count();
+            $approvedCount = $myModules->where('status', 'approved')->count();
+            $pendingCount = $myModules->whereIn('status', ['pending_review', 'pending'])->count();
+            $rejectedCount = $myModules->where('status', 'rejected')->count();
+
+            if ($approvedCount === $totalCount) {
                 $myMaterialStatus = 'approved';
-            } elseif ($myModules->contains('status', 'pending_review')) {
+            } elseif ($pendingCount > 0) {
                 $myMaterialStatus = 'pending_review';
-            } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
+            } elseif ($rejectedCount > 0) {
                 $myMaterialStatus = 'rejected';
+            } else {
+                $myMaterialStatus = 'pending';
             }
         }
 
@@ -1889,7 +1902,7 @@ class TrainerController extends Controller
         $lastDraft = end($draftFiles);
         $primaryMaterialPath = $lastDraft['path'];
 
-        if (!$isPrimaryTrainer && $assignment) {
+        if ($assignment) {
             $assignment->update([
                 'material_path' => $primaryMaterialPath,
                 'materials_uploaded_at' => now(),
@@ -2025,6 +2038,17 @@ class TrainerController extends Controller
 
         if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
             abort(403, 'Anda tidak memiliki akses untuk mengubah kuis event ini.');
+        }
+
+        $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0);
+        $assignment = $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
+        
+        $effectiveMaterialStatus = (string) ($isPrimaryTrainer
+            ? ($event->material_status ?? '')
+            : ($assignment->material_status ?? 'pending'));
+
+        if ($effectiveMaterialStatus === 'approved') {
+            return back()->with('error', 'Kuis event ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.');
         }
 
 
@@ -2591,7 +2615,7 @@ class TrainerController extends Controller
         }
 
         $course = \App\Models\Course::findOrFail($id);
-        if ($course->trainer_id !== Auth::id()) {
+        if ((int) $course->trainer_id !== (int) Auth::id()) {
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
         }
 
@@ -2612,6 +2636,8 @@ class TrainerController extends Controller
         if ($targetIds->isEmpty()) {
             return response()->json(['success' => false, 'error' => 'Target modul tidak valid.']);
         }
+
+        // Bulk approval check removed to support item-specific lockout.
 
         $uploadedCount = 0;
         $autoReplacedCount = 0;
@@ -2637,6 +2663,12 @@ class TrainerController extends Controller
             }
 
             if ($targetTextModule) {
+                if ($targetTextModule->review_status === 'approved') {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Modul teks telah disetujui oleh admin trainer dan tidak dapat diubah.',
+                    ], 422);
+                }
                 $targetTextModule->update([
                     'description' => $contentHtml,
                     'review_status' => 'pending_review',
@@ -2682,6 +2714,10 @@ class TrainerController extends Controller
 
                 if (!$replaceModule || !$targetIds->contains((int) $replaceModuleId)) {
                     return response()->json(['success' => false, 'error' => 'File target penggantian tidak valid.']);
+                }
+
+                if ($replaceModule->review_status === 'approved') {
+                    return response()->json(['success' => false, 'error' => 'Modul target penggantian telah disetujui dan tidak dapat diubah.'], 422);
                 }
 
                 $files = $request->file('files');
@@ -2738,6 +2774,7 @@ class TrainerController extends Controller
 
             $modulesByType = \App\Models\CourseModule::where('course_id', $id)
                 ->whereIn('id', $targetIds)
+                ->where('review_status', '!=', 'approved')
                 ->get()
                 ->groupBy('type')
                 ->map(fn($group) => $group->values());
@@ -2903,7 +2940,7 @@ class TrainerController extends Controller
         ]);
 
         $course = \App\Models\Course::findOrFail($id);
-        if ($course->trainer_id !== Auth::id()) {
+        if ((int) $course->trainer_id !== (int) Auth::id()) {
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
         }
 
@@ -2994,6 +3031,13 @@ class TrainerController extends Controller
             ? ($event->material_status ?? '')
             : ($assignment->material_status ?? 'pending'));
 
+        if ($effectiveMaterialStatus === 'approved') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi event ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.',
+            ], 403);
+        }
+
 
 
         $invitation = TrainerNotification::query()
@@ -3029,6 +3073,10 @@ class TrainerController extends Controller
 
             if (!$module) {
                 return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
+            }
+
+            if ($module->status === 'approved') {
+                return response()->json(['success' => false, 'error' => 'Materi yang sudah disetujui tidak dapat diganti.'], 403);
             }
 
             $request->validate([
@@ -3073,17 +3121,18 @@ class TrainerController extends Controller
             }
 
             // Sync to event/assignment level to trigger review again
-            if ($isPrimaryTrainer || !$assignment) {
-                $event->update([
+            if ($assignment) {
+                $assignment->update([
                     'material_status' => 'pending_review',
+                    'material_submitted_at' => now(),
                     'material_approved_at' => null,
                     'material_approved_by' => null,
                     'material_rejection_reason' => null,
                 ]);
-            } else {
-                $assignment->update([
+            }
+            if ($isPrimaryTrainer || !$assignment) {
+                $event->update([
                     'material_status' => 'pending_review',
-                    'material_submitted_at' => now(),
                     'material_approved_at' => null,
                     'material_approved_by' => null,
                     'material_rejection_reason' => null,
@@ -3107,6 +3156,10 @@ class TrainerController extends Controller
 
             if (!$module) {
                 return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
+            }
+
+            if ($module->status === 'approved') {
+                return response()->json(['success' => false, 'error' => 'Materi yang sudah disetujui tidak dapat dihapus.'], 403);
             }
 
             // Delete old file if exists
@@ -3277,7 +3330,7 @@ class TrainerController extends Controller
         ]);
 
         $course = \App\Models\Course::findOrFail($id);
-        if ($course->trainer_id !== Auth::id()) {
+        if ((int) $course->trainer_id !== (int) Auth::id()) {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.']);
         }
 
@@ -3295,6 +3348,13 @@ class TrainerController extends Controller
 
         // Kunci Quiz ke Slot Bab Ini
         $quizModule = \App\Models\CourseModule::where('id', $request->quiz_module_id)->where('course_id', $id)->firstOrFail();
+
+        if ($quizModule->review_status === 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kuis ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.',
+            ], 422);
+        }
         $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'pending_review']);
 
         // Delete old questions

@@ -343,7 +343,8 @@
         }
 
         .module-preview-article .module-code-copy:hover {
-            background: var(--admin-secondary);
+            background: var(--admin-secondary, #1e1b4b) !important;
+            color: #ffffff !important;
         }
 
         /* Quiz Preview */
@@ -637,6 +638,7 @@
             color: var(--status-rejected-text);
             background: var(--status-rejected-bg);
             border: 1px solid var(--status-rejected-border);
+            align-self: flex-start;
         }
 
         .module-decision-stack {
@@ -660,6 +662,8 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
+            width: fit-content;
+            align-self: flex-start;
         }
 
         .module-btn-approve {
@@ -1335,7 +1339,7 @@
                                         {{ $unit['uploaded'] }}/{{ $unit['total'] }} Modul
                                     </span>
                                 </div>
-                                @if($material->status === 'pending_review' && $unit['any_pending'])
+                                @if($unit['any_pending'])
                                     <form method="POST" action="{{ route('admin.trainer.material.unit.approve', $material) }}" style="margin:0;">
                                         @csrf
                                         <input type="hidden" name="unit_no" value="{{ $unit['unit_no'] }}">
@@ -1475,7 +1479,7 @@
                                                 @endif
 
                                                 {{-- Inline decision action buttons --}}
-                                                @if($material->status === 'pending_review' && $hasAnyContent && $reviewStatus !== 'approved')
+                                                @if($hasAnyContent && $reviewStatus !== 'approved')
                                                     <div class="module-decision-stack">
                                                         <form method="POST" action="{{ route('admin.trainer.material.module.approve', [$material, $module]) }}" class="module-action-form">
                                                             @csrf
@@ -1638,7 +1642,7 @@
                     </div>
 
                     {{-- Decision Card (Approve All or Reject Course) --}}
-                    @if($material->status === 'pending_review')
+                    @if($material->status === 'pending_review' || $totalPending > 0)
                         <div class="card-custom side-card">
                             <div class="side-card-title">Keputusan Akhir</div>
                             
