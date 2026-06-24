@@ -249,6 +249,30 @@ class Event extends Model
     }
 
 
+    public function getMinTeamMembersAttribute()
+    {
+        $val = $this->max_team_members;
+        if (empty($val)) {
+            return 2;
+        }
+        if (preg_match('/^(\d+)-(\d+)$/', trim($val), $matches)) {
+            return (int) $matches[1];
+        }
+        return (int) $val;
+    }
+
+    public function getMaxTeamMembersCountAttribute()
+    {
+        $val = $this->max_team_members;
+        if (empty($val)) {
+            return 5;
+        }
+        if (preg_match('/^(\d+)-(\d+)$/', trim($val), $matches)) {
+            return (int) $matches[2];
+        }
+        return (int) $val;
+    }
+
     public function getHasApprovedModulesAttribute(): bool
     {
         $assignedTrainerIds = collect();

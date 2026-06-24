@@ -1146,7 +1146,7 @@ class EventParticipationController extends Controller
 
         // Count current members
         $currentMembersCount = EventRegistration::where('team_id', $team->id)->count();
-        $maxMembers = (int) ($event->max_team_members ?? 5);
+        $maxMembers = $event->max_team_members_count;
 
         if ($currentMembersCount >= $maxMembers) {
             return redirect()->back()->with('error', 'Tim ini sudah penuh.');
