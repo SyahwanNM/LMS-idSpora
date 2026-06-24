@@ -948,7 +948,21 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $feedbackItems = Feedback::query()
+        $courseReviews = \App\Models\Review::query()
+            ->whereHas('course', function ($q) use ($user) {
+                $q->where('trainer_id', $user->id);
+            })
+            ->with(['user', 'course'])
+            ->latest('created_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($review) {
+                $review->type = 'course';
+                $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
+                return $review;
+            });
+
+        $eventFeedbacks = Feedback::query()
             ->whereHas('event', function ($query) use ($user) {
                 $query->where(function ($eventQuery) use ($user) {
                     $eventQuery->where('trainer_id', $user->id)
@@ -964,7 +978,17 @@ class TrainerController extends Controller
             ->with(['user', 'event', 'replies.trainer'])
             ->latest('created_at')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($feedback) {
+                $feedback->type = 'event';
+                $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+                return $feedback;
+            });
+
+        $feedbackItems = $courseReviews->concat($eventFeedbacks)
+            ->sortByDesc('created_at')
+            ->take(5)
+            ->values();
 
         $totalCertificates = (clone TrainerCertificate::query())
             ->where('trainer_id', $user->id)
@@ -1203,7 +1227,7 @@ class TrainerController extends Controller
         $schemePermissions = [
             1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
             2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
-            3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
+            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
         ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
 
         $courseInvitationStatus = $courseInvitation?->effectiveInvitationStatus() ?? '';
@@ -1593,36 +1617,60 @@ class TrainerController extends Controller
 
         $eventIds = $this->trainerEventQuery((int) $user->id, (string) ($user->name ?? ''))->pluck('id');
 
-        $query = \App\Models\Feedback::with(['user', 'event', 'replies.trainer'])
-            ->whereIn('event_id', $eventIds)
-            ->orderBy('created_at', 'desc');
+        // Course Reviews
+        $courseReviewsQuery = \App\Models\Review::query()
+            ->whereHas('course', function ($q) use ($user) {
+                $q->where('trainer_id', $user->id);
+            })
+            ->with(['user', 'course']);
 
+        // Event Feedback
+        $eventFeedbackQuery = \App\Models\Feedback::query()
+            ->whereIn('event_id', $eventIds)
+            ->with(['user', 'event', 'replies.trainer']);
+
+        // Search Filter
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            
+            $courseReviewsQuery->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'LIKE', "%{$search}%");
+                })->orWhere('comment', 'LIKE', "%{$search}%");
+            });
+
+            $eventFeedbackQuery->where(function ($q) use ($search) {
                 $q->whereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'LIKE', "%{$search}%");
                 })->orWhere('comment', 'LIKE', "%{$search}%");
             });
         }
 
-        $feedbacks = $query->paginate(10);
+        $courseReviews = $courseReviewsQuery->get()->map(function ($review) {
+            $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
+            $review->setRelation('replies', collect());
+            return $review;
+        });
 
-        $statQuery = \App\Models\Feedback::whereIn('event_id', $eventIds);
+        $eventFeedbacks = $eventFeedbackQuery->get()->map(function ($feedback) {
+            $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+            return $feedback;
+        });
 
-        $totalFeedbacks = $statQuery->count();
+        $allFeedbacks = $courseReviews->concat($eventFeedbacks)
+            ->sortByDesc('created_at');
+
+        $totalFeedbacks = $allFeedbacks->count();
         $averageRating = 0;
         $satisfactionRate = 0;
         $ratingStats = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
 
         if ($totalFeedbacks > 0) {
-            $averageRating = round((clone $statQuery)->avg('rating'), 1);
+            $averageRating = round($allFeedbacks->avg('rating'), 1);
 
-            $ratingsCount = (clone $statQuery)
-                ->selectRaw('rating, count(*) as count')
-                ->groupBy('rating')
-                ->pluck('count', 'rating')
-                ->toArray();
+            $ratingsCount = $allFeedbacks->groupBy(function ($item) {
+                return (int) round($item->rating);
+            })->map(fn($group) => $group->count())->toArray();
 
             foreach ($ratingsCount as $star => $count) {
                 if (isset($ratingStats[$star])) {
@@ -1632,6 +1680,18 @@ class TrainerController extends Controller
 
             $satisfactionRate = $ratingStats[5] + $ratingStats[4];
         }
+
+        // Manual Pagination
+        $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
+        $currentItems = $allFeedbacks->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $feedbacks = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentItems,
+            $allFeedbacks->count(),
+            $perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]
+        );
 
         return view('trainer.feedback', compact(
             'feedbacks',
@@ -1686,7 +1746,7 @@ class TrainerController extends Controller
         $schemePermissions = [
             1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
             2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
-            3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
+            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
         ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
 
 
@@ -2231,20 +2291,36 @@ class TrainerController extends Controller
             ->count();
 
         $eventIds = (clone $trainerEventsQuery)->pluck('id');
-        $feedbackQuery = \App\Models\Feedback::query();
-        if ($eventIds->isNotEmpty()) {
-            $feedbackQuery->whereIn('event_id', $eventIds);
-        } else {
-            $feedbackQuery->whereRaw('1 = 0');
-        }
 
-        $averageRating = round((clone $feedbackQuery)->avg('rating') ?? 0, 1);
+        $courseReviews = \App\Models\Review::query()
+            ->whereHas('course', function ($q) use ($trainer) {
+                $q->where('trainer_id', $trainer->id);
+            })
+            ->with(['user:id,name', 'course:id,name'])
+            ->get()
+            ->map(function ($review) {
+                $review->type = 'course';
+                $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
+                $review->setRelation('replies', collect());
+                return $review;
+            });
 
-        $recentFeedbacks = (clone $feedbackQuery)
-            ->with(['user:id,name', 'replies.trainer'])
-            ->latest('created_at')
-            ->take(3)
-            ->get();
+        $eventFeedbacks = \App\Models\Feedback::query()
+            ->whereIn('event_id', $eventIds)
+            ->with(['user:id,name', 'event:id,title', 'replies.trainer'])
+            ->get()
+            ->map(function ($feedback) {
+                $feedback->type = 'event';
+                $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+                return $feedback;
+            });
+
+        $allFeedbacks = $courseReviews->concat($eventFeedbacks);
+        $totalFeedbacks = $allFeedbacks->count();
+
+        $averageRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg('rating'), 1) : 0.0;
+
+        $recentFeedbacks = $allFeedbacks->sortByDesc('created_at')->take(3)->values();
 
         $recentEvents = (clone $trainerEventsQuery)
             ->withCount([
@@ -2311,7 +2387,7 @@ class TrainerController extends Controller
         // Additional stats for enhanced profile
         $totalCourses = $courses->count();
         $totalEvents = (clone $trainerEventsQuery)->count();
-        $totalFeedbacks = (clone $feedbackQuery)->count();
+        $totalFeedbacks = $allFeedbacks->count();
         $topCourses = $courses->sortByDesc('reviews_avg_rating')->take(3);
 
         // Calculate rating breakdown (1 to 5 stars)
@@ -2330,28 +2406,22 @@ class TrainerController extends Controller
             1 => 0,
         ];
 
-        if ($totalFeedbacks > 0) {
-            $rawCounts = (clone $feedbackQuery)
-                ->selectRaw('rating, count(*) as count')
-                ->groupBy('rating')
-                ->pluck('count', 'rating')
-                ->toArray();
-
-            foreach ($rawCounts as $r => $c) {
-                $star = (int) round($r);
-                if ($star >= 1 && $star <= 5) {
-                    $ratingCounts[$star] += $c;
-                }
-            }
-
-            foreach ($ratingCounts as $star => $count) {
-                $ratingPercentages[$star] = (int) round(($count / $totalFeedbacks) * 100);
+        foreach ($allFeedbacks as $fb) {
+            $star = (int) round($fb->rating);
+            if ($star >= 1 && $star <= 5) {
+                $ratingCounts[$star]++;
             }
         }
 
+        foreach ($ratingCounts as $star => $count) {
+            $ratingPercentages[$star] = $totalFeedbacks > 0 ? (int) round(($count / $totalFeedbacks) * 100) : 0;
+        }
+
         // Calculate aspect ratings based on speaker_rating and overall rating
-        $avgSpeakerRating = round((clone $feedbackQuery)->avg('speaker_rating') ?? 0, 1);
-        $avgOverallRating = round((clone $feedbackQuery)->avg('rating') ?? 0, 1);
+        $avgSpeakerRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg('rating'), 1) : 0.0;
+        $avgOverallRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg(function ($item) {
+            return $item->type === 'course' ? ($item->rating ?? 0) : ($item->rating ?? 0);
+        }), 1) : 0.0;
 
         $aspectRatings = [
             'penyampaian_materi' => $avgSpeakerRating,
@@ -2774,7 +2844,10 @@ class TrainerController extends Controller
 
             $modulesByType = \App\Models\CourseModule::where('course_id', $id)
                 ->whereIn('id', $targetIds)
-                ->where('review_status', '!=', 'approved')
+                ->where(function ($q) {
+                    $q->where('review_status', '!=', 'approved')
+                      ->orWhereNull('review_status');
+                })
                 ->get()
                 ->groupBy('type')
                 ->map(fn($group) => $group->values());
@@ -4108,35 +4181,87 @@ class TrainerController extends Controller
         $user = \Illuminate\Support\Facades\Auth::user();
 
         $validated = $request->validate([
-            'feedback_id' => 'required|exists:feedback,id',
+            'id' => 'nullable|integer',
+            'feedback_id' => 'nullable|integer',
+            'type' => 'nullable|string|in:course,event',
             'response' => 'required|string|min:3|max:5000',
         ]);
 
-        // Verify that the feedback belongs to an event the trainer manages
-        $feedback = \App\Models\Feedback::findOrFail($validated['feedback_id']);
+        $type = $request->input('type', 'event');
+        $id = $request->input('id', $request->input('feedback_id'));
 
-        $trainerHasAccess = \App\Models\Event::where('id', $feedback->event_id)
-            ->where('trainer_id', $user->id)
-            ->exists();
+        if ($type === 'course') {
+            $review = \App\Models\Review::findOrFail($id);
+            
+            // Verify access: course belongs to the trainer
+            $course = \App\Models\Course::findOrFail($review->course_id);
+            if ((int)$course->trainer_id !== (int)$user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this review'
+                ], 403);
+            }
 
-        if (!$trainerHasAccess) {
+            $review->trainer_reply = $validated['response'];
+            $review->trainer_reply_at = now();
+            $review->save();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this feedback'
-            ], 403);
+                'success' => true,
+                'message' => 'Reply saved successfully',
+                'data' => $review
+            ]);
+        } else {
+            // Verify that the feedback belongs to an event the trainer manages
+            $feedback = \App\Models\Feedback::findOrFail($id);
+
+            $trainerHasAccess = \App\Models\Event::where('id', $feedback->event_id)
+                ->where(function ($q) use ($user) {
+                    $q->where('trainer_id', $user->id)
+                        ->orWhereHas('speakers', function ($sq) use ($user) {
+                            $sq->where('trainer_id', $user->id);
+                        });
+                })
+                ->exists();
+
+            if (!$trainerHasAccess) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this feedback'
+                ], 403);
+            }
+
+            // Create the reply
+            $reply = \App\Models\FeedbackReply::create([
+                'feedback_id' => $feedback->id,
+                'trainer_id' => $user->id,
+                'response' => $validated['response'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reply saved successfully',
+                'data' => $reply
+            ]);
+        }
+    }
+
+    public function toggleLike(Request $request, $id)
+    {
+        $type = $request->input('type', 'event');
+        
+        if ($type === 'course') {
+            $item = \App\Models\Review::findOrFail($id);
+        } else {
+            $item = \App\Models\Feedback::findOrFail($id);
         }
 
-        // Create the reply
-        $reply = \App\Models\FeedbackReply::create([
-            'feedback_id' => $validated['feedback_id'],
-            'trainer_id' => $user->id,
-            'response' => $validated['response'],
-        ]);
+        $item->is_liked = !$item->is_liked;
+        $item->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Reply saved successfully',
-            'data' => $reply
+            'is_liked' => $item->is_liked
         ]);
     }
 

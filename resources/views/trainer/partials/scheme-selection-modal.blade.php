@@ -102,10 +102,10 @@
                                 <label for="scheme3" class="scheme-label-vertical">
                                     <div class="scheme-radio-circle"></div>
                                     <div class="scheme-vertical-icon-wrapper text-green">
-                                        <i class="bi bi-file-earmark-text-fill"></i>
+                                        <i class="bi bi-camera-video"></i>
                                     </div>
                                     <div class="scheme-vertical-title">Beban Kerja Ringan</div>
-                                    <div class="scheme-vertical-desc">Upload Modul<br>saja</div>
+                                    <div class="scheme-vertical-desc">Upload Video<br>saja</div>
                                     <div class="scheme-vertical-divider"></div>
                                     <div class="scheme-vertical-rev-label">Revenue Sharing</div>
                                     <div class="scheme-vertical-percent text-green">10%</div>
@@ -231,10 +231,10 @@
                             </div>
                         </div>
                         <div class="scope-item mt-2">
-                            <div class="scope-badge bg-green-light text-green"><i class="bi bi-file-earmark-text-fill"></i></div>
+                            <div class="scope-badge bg-green-light text-green"><i class="bi bi-camera-video"></i></div>
                             <div class="scope-text">
                                 <span class="scope-name">Beban Kerja Ringan</span>
-                                <span class="scope-desc">• Menyusun modul pembelajaran</span>
+                                <span class="scope-desc">• Membuat video pembelajaran</span>
                             </div>
                         </div>
                     </div>

@@ -70,7 +70,7 @@ class CourseStudioController extends Controller
         $trainerPermissions = [
             1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
             2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
-            3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
+            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
         ][$activeSchemeType];
 
         // Admin Permissions are the INVERSE of trainer permissions (so they don't clash)
@@ -165,6 +165,7 @@ class CourseStudioController extends Controller
     public function upload(Request $request, $id)
     {
         $course = Course::findOrFail($id);
+        $schemePermissions = $this->getSchemePermissions($course);
 
         $targetIds = collect(explode(',', $request->target_modules))
             ->map(fn($value) => (int) trim($value))
@@ -180,6 +181,9 @@ class CourseStudioController extends Controller
         $updatedModules = [];
 
         if ($contentHtml !== '') {
+            if (!$schemePermissions['can_module']) {
+                return response()->json(['success' => false, 'error' => 'Anda tidak memiliki akses untuk menambah/mengubah modul pada skema ini.']);
+            }
             $targetTextModule = CourseModule::where('course_id', $id)
                 ->whereIn('id', $targetIds)
                 ->orderBy('order_no', 'asc')
@@ -214,6 +218,14 @@ class CourseStudioController extends Controller
         foreach ($request->file('files') as $file) {
             $ext = strtolower($file->getClientOriginalExtension());
             $type = in_array($ext, ['mp4']) ? 'video' : 'pdf';
+
+            if ($type === 'pdf' && !$schemePermissions['can_module']) {
+                return response()->json(['success' => false, 'error' => 'Anda tidak memiliki akses untuk mengunggah modul pada skema ini.']);
+            }
+
+            if ($type === 'video' && !$schemePermissions['can_video']) {
+                return response()->json(['success' => false, 'error' => 'Anda tidak memiliki akses untuk mengunggah video pada skema ini.']);
+            }
 
             // Find an empty module for this file
             $emptyModule = CourseModule::where('course_id', $id)
@@ -265,38 +277,73 @@ class CourseStudioController extends Controller
     public function quiz(Request $request, $id)
     {
         $course = Course::findOrFail($id);
+        $schemePermissions = $this->getSchemePermissions($course);
+
+        if (!$schemePermissions['can_quiz']) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses untuk membuat kuis pada skema ini.']);
+        }
         
         $request->validate([
-            'module_id' => 'required|integer',
-            'questions' => 'required|string',
+            'quiz_module_id' => 'required|exists:course_module,id',
             'passingGrade' => 'required|integer|min:0|max:100',
+            'questions' => 'required|array',
         ]);
 
-        $module = CourseModule::where('course_id', $id)->findOrFail($request->module_id);
+        $quizModule = CourseModule::where('course_id', $id)->findOrFail($request->quiz_module_id);
         
-        $questionsData = json_decode($request->questions, true);
+        $questionsData = $request->questions;
 
         if (empty($questionsData)) {
-            return back()->with('error', 'Data soal tidak valid.');
+            return response()->json(['success' => false, 'message' => 'Data soal tidak valid.']);
         }
 
-        $module->update([
+        $quizModule->update([
+            'content_url' => 'quiz_submitted',
             'quiz_passing_grade' => $request->passingGrade,
-            'review_status' => 'approved',
+            'review_status' => 'approved', // Admin changes auto-approve
         ]);
 
-        $module->quizQuestions()->delete();
+        $quizModule->quizQuestions()->delete();
 
-        foreach ($questionsData as $q) {
-            $module->quizQuestions()->create([
-                'question_text' => $q['text'],
-                'options' => json_encode($q['options']),
-                'correct_answer_index' => $q['correctAnswer'],
-                'weight' => $q['weight'] ?? 10,
+        $savedQuestions = [];
+        foreach ($questionsData as $orderIndex => $questionData) {
+            $quizQuestion = $quizModule->quizQuestions()->create([
+                'question' => $questionData['text'],
+                'points' => $questionData['weight'] ?? 10,
+                'order_no' => $orderIndex + 1,
             ]);
+
+            // Create answers for this question
+            if (!empty($questionData['options']) && is_array($questionData['options'])) {
+                foreach ($questionData['options'] as $optionIndex => $optionText) {
+                    $quizQuestion->answers()->create([
+                        'answer_text' => $optionText,
+                        'is_correct' => ($optionIndex === (int) $questionData['correctAnswer']),
+                        'order_no' => $optionIndex + 1,
+                    ]);
+                }
+            }
+
+            $savedQuestions[] = [
+                'text' => (string) $quizQuestion->question,
+                'weight' => (int) $quizQuestion->points,
+                'options' => collect($questionData['options'] ?? [])->map(fn($opt) => (string) $opt)->values()->all(),
+                'correctAnswer' => (int) ($questionData['correctAnswer'] ?? 0),
+            ];
         }
 
-        return redirect()->back()->with('success', 'Kuis berhasil disimpan oleh Admin!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Kuis berhasil disimpan oleh Admin!',
+            'quiz_module' => [
+                'id' => (int) $quizModule->id,
+                'title' => (string) ($quizModule->title ?: ('Quiz Unit')),
+                'order_no' => (int) $quizModule->order_no,
+                'questions_count' => count($savedQuestions),
+                'updated_at' => optional($quizModule->fresh()->updated_at)->toDateTimeString(),
+                'questions' => $savedQuestions,
+            ],
+        ]);
     }
 
     public function editorImage(Request $request, $id)
@@ -321,5 +368,41 @@ class CourseStudioController extends Controller
             'content' => $material->content,
             'type' => $material->type
         ]);
+    }
+
+    private function getSchemePermissions(Course $course): array
+    {
+        $courseInvitation = \App\Models\TrainerAssignment::where('course_id', $course->id)
+            ->where('status', 'accepted')
+            ->latest()
+            ->first();
+
+        $invitationSchemeType = 0;
+        if ($courseInvitation) {
+            $invitationSchemeType = (int) data_get($courseInvitation->data ?? [], 'scheme_type', 0);
+            if ($invitationSchemeType === 0) {
+                $contribScheme = (string) data_get($courseInvitation->data ?? [], 'contribution_scheme', '');
+                $invitationSchemeType = match ($contribScheme) {
+                    'e2e' => 1,
+                    'module_video' => 2,
+                    'video_only' => 3, 
+                    default => 1,
+                };
+            }
+        }
+
+        $activeSchemeType = in_array($invitationSchemeType, [1, 2, 3], true) ? $invitationSchemeType : 1;
+
+        $trainerPermissions = [
+            1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
+            2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
+            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
+        ][$activeSchemeType];
+
+        return [
+            'can_module' => !$trainerPermissions['can_module'],
+            'can_video' => !$trainerPermissions['can_video'],
+            'can_quiz' => !$trainerPermissions['can_quiz'],
+        ];
     }
 }

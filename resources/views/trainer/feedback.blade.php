@@ -879,6 +879,9 @@
                   @if($feedback->event_id)
                     <i class="bi bi-calendar-event"></i> ACARA:
                     {{ Str::limit(strtoupper($feedback->event->title ?? 'Sesi'), 20) }}
+                  @elseif(isset($feedback->course))
+                    <i class="bi bi-book"></i> KELAS:
+                    {{ Str::limit(strtoupper($feedback->course->name ?? 'Kelas'), 20) }}
                   @else
                     <i class="bi bi-chat-quote"></i> UMPAN BALIK
                   @endif
@@ -894,9 +897,11 @@
               <div class="like" title="Mark as valid">
                 <i class="bi bi-hand-thumbs-up"></i>
               </div>
+              @if($feedback->event_id)
               <div class="reply" onclick="toggleReplyForm(this)" title="Add reply">
                 <i class="bi bi-chat-left"></i>
               </div>
+              @endif
             </div>
 
             <div class="authoring-response">

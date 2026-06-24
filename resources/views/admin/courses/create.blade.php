@@ -121,6 +121,19 @@
                             <p id="trainer_id_error" class="mt-1 text-xs text-red-600 hidden"></p>
                         </div>
 
+                        <!-- Trainer Contribution Scheme -->
+                        <div id="trainer_scheme_group" style="display: {{ old('trainer_id') ? 'block' : 'none' }};" class="mt-4">
+                            <label for="trainer_contribution_scheme" class="block text-sm font-medium text-gray-700 mb-2">Trainer Workload Scheme</label>
+                            <select name="trainer_contribution_scheme" id="trainer_contribution_scheme"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                <option value="">-- Select Scheme (If blank, trainer will choose upon accepting) --</option>
+                                <option value="e2e" {{ old('trainer_contribution_scheme') === 'e2e' ? 'selected' : '' }}>Beban Kerja Penuh (Upload Modul, Video & Kuis) - 35%</option>
+                                <option value="module_video" {{ old('trainer_contribution_scheme') === 'module_video' ? 'selected' : '' }}>Beban Kerja Menengah (Upload Modul & Video saja) - 25%</option>
+                                <option value="video_only" {{ old('trainer_contribution_scheme') === 'video_only' ? 'selected' : '' }}>Beban Kerja Ringan (Upload Video saja) - 10%</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Select the workload scheme and revenue share percentage for this trainer. Leave blank if you want the trainer to decide when they accept the invitation.</p>
+                        </div>
+
                         <!-- Price -->
                         <div>
                             <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp) <span class="text-red-600">*</span></label>
@@ -335,6 +348,19 @@
             getEl('price')?.addEventListener('input', validate);
             getEl('image')?.addEventListener('change', validate);
             getEl('card_thumbnail')?.addEventListener('change', validate);
+
+            getEl('trainer_id')?.addEventListener('change', function() {
+                const schemeGroup = getEl('trainer_scheme_group');
+                if (schemeGroup) {
+                    if (this.value) {
+                        schemeGroup.style.display = 'block';
+                    } else {
+                        schemeGroup.style.display = 'none';
+                        const schemeSelect = getEl('trainer_contribution_scheme');
+                        if (schemeSelect) schemeSelect.value = '';
+                    }
+                }
+            });
 
             // File previews (small box)
             (function(){

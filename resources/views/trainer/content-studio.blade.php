@@ -15,13 +15,23 @@
     $isVideoApproved = $videoTargetModules->isNotEmpty() && $videoTargetModules->every(fn($m) => ($m->review_status ?? '') === 'approved');
     $isQuizApproved = $existingQuizModules->isNotEmpty() && $existingQuizModules->every(fn($m) => ($m->review_status ?? '') === 'approved');
 
-    $moduleLocked = $isAdmin ? !($schemePermissions['can_module'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_module'] ?? false) || $isModuleApproved);
-    $videoLocked = $isAdmin ? !($schemePermissions['can_video'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_video'] ?? false) || $isVideoApproved);
-    $quizLocked = $isAdmin ? !($schemePermissions['can_quiz'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_quiz'] ?? false) || $isQuizApproved);
+    $hasEmptyModuleSlot = $moduleTargetModules->contains(fn($m) => empty($m->content_url));
+    $hasEmptyVideoSlot = $videoTargetModules->contains(fn($m) => empty($m->content_url));
+    $hasEmptyQuizSlot = $existingQuizModules->contains(fn($m) => ($m->quiz_questions_count ?? 0) <= 0);
 
-    $moduleTabLocked = !($schemePermissions['can_module'] ?? false);
-    $videoTabLocked = !($schemePermissions['can_video'] ?? false);
-    $quizTabLocked = !($schemePermissions['can_quiz'] ?? false);
+    $moduleLocked = $isAdmin
+        ? !($schemePermissions['can_module'] ?? false)
+        : ($courseMaterialLocked || !($schemePermissions['can_module'] ?? false) || $isModuleApproved);
+    $videoLocked = $isAdmin
+        ? !($schemePermissions['can_video'] ?? false)
+        : ($courseMaterialLocked || !($schemePermissions['can_video'] ?? false) || $isVideoApproved);
+    $quizLocked = $isAdmin
+        ? !($schemePermissions['can_quiz'] ?? false)
+        : ($courseMaterialLocked || !($schemePermissions['can_quiz'] ?? false) || $isQuizApproved);
+
+    $moduleTabLocked = $isAdmin ? false : !($schemePermissions['can_module'] ?? false);
+    $videoTabLocked = $isAdmin ? false : !($schemePermissions['can_video'] ?? false);
+    $quizTabLocked = $isAdmin ? false : !($schemePermissions['can_quiz'] ?? false);
 @endphp
 @extends($isAdmin ? 'layouts.admin-trainer' : 'layouts.trainer')
 
@@ -3148,6 +3158,7 @@ main.detail-course {
 
         .wysiwyg-toolbar {
             display: flex;
+            align-items: center;
             flex-wrap: wrap;
             gap: 8px;
             padding: 10px 14px;
@@ -3168,12 +3179,16 @@ main.detail-course {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            vertical-align: middle;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .wysiwyg-btn:hover {
-            border-color: var(--main-navy-clr);
-            color: var(--main-navy-clr);
+            border-color: var(--main-navy-clr, #2e2050);
+            background-color: rgba(46, 32, 80, 0.08); /* Fallback light plum */
+            background-color: color-mix(in srgb, var(--main-navy-clr, #2e2050) 8%, transparent);
+            color: var(--main-navy-clr, #2e2050);
         }
 
         .wysiwyg-select {
@@ -3428,6 +3443,7 @@ main.detail-course {
             border-top: 1px solid var(--line-clr);
             display: flex;
             justify-content: flex-end;
+            gap: 5px;
         }
 
         .primary-btn {
@@ -3464,7 +3480,6 @@ main.detail-course {
             letter-spacing: 0.06em;
             display: inline-flex;
             align-items: center;
-            gap: var(--spacing-sm);
         }
 
         .secondary-btn:hover {
@@ -4007,7 +4022,7 @@ main.detail-course {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                height: 55px;
+                min-height: 55px;
                 padding: 10px 16px;
                 border-bottom: 1px solid var(--line-clr);
                 background: #f8fafc;
@@ -4116,7 +4131,9 @@ main.detail-course {
                 border-bottom: 1px solid var(--line-clr);
                 background: #f8fafc;
                 padding: 10px 16px;
-                height: 55px;
+                min-height: 55px;
+                height: auto;
+                flex-wrap: wrap;
                 box-sizing: border-box;
                 display: flex;
                 align-items: center;
@@ -4318,7 +4335,7 @@ main.detail-course {
                     </button>
                 @endif
             </section>
-        @elseif(!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz'])
+        @elseif(!$isAdmin && (!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz']))
             <section
                 style="margin-bottom:16px; padding: 12px 14px; border:1px dashed #cbd5e1; border-radius: 12px; background:#f8fafc; color:#475569; font-size:13px;">
                 @if(!$schemePermissions['can_module'])
@@ -5440,6 +5457,24 @@ main.detail-course {
                 moduleEditor.addEventListener('input', syncEditorContentToInput);
                 moduleEditor.addEventListener('change', syncEditorContentToInput);
                 
+                // Sanitize pasted content to prevent dirty styles (which block text editor actions)
+                moduleEditor.addEventListener('paste', function (e) {
+                    e.preventDefault();
+                    // Get plain text from clipboard
+                    const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                    
+                    // Insert plain text at the current cursor position
+                    if (document.queryCommandSupported('insertText')) {
+                        document.execCommand('insertText', false, text);
+                    } else {
+                        const selection = window.getSelection();
+                        if (!selection.rangeCount) return;
+                        selection.deleteFromDocument();
+                        selection.getRangeAt(0).insertNode(document.createTextNode(text));
+                    }
+                    syncEditorContentToInput();
+                });
+                
                 checkEditorEmpty();
             }
 
@@ -5476,6 +5511,37 @@ main.detail-course {
             }
 
             setSplitView(isSplitActive);
+
+            // Sync heights of wysiwygToolbar and previewHeader to prevent vertical misalignment
+            const wysiwygToolbar = document.getElementById('wysiwygToolbar');
+            const previewHeader = document.querySelector('.preview-header');
+            if (wysiwygToolbar && previewHeader) {
+                const syncHeaderHeight = () => {
+                    if (splitWrapper && splitWrapper.classList.contains('split-active')) {
+                        previewHeader.style.height = `${wysiwygToolbar.offsetHeight}px`;
+                    } else {
+                        previewHeader.style.height = '';
+                    }
+                };
+
+                // Watch resize of toolbar dynamically
+                if (typeof ResizeObserver !== 'undefined') {
+                    const observer = new ResizeObserver(() => {
+                        syncHeaderHeight();
+                    });
+                    observer.observe(wysiwygToolbar);
+                }
+
+                // Call on split view toggle
+                const originalSetSplitView = setSplitView;
+                setSplitView = function(active) {
+                    originalSetSplitView(active);
+                    syncHeaderHeight();
+                };
+
+                // Initial sync
+                syncHeaderHeight();
+            }
 
             function isSelectionInEditor() {
                 if (!moduleEditor) return false;

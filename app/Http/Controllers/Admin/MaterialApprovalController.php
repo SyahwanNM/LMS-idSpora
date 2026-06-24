@@ -458,7 +458,10 @@ class MaterialApprovalController extends Controller
                         ->whereHas('quizQuestions');
                 });
             })
-            ->where('review_status', '!=', 'approved')
+            ->where(function ($q) {
+                $q->where('review_status', '!=', 'approved')
+                  ->orWhereNull('review_status');
+            })
             ->doesntExist();
 
         // Auto-approve course if all present modules are approved
@@ -552,7 +555,10 @@ class MaterialApprovalController extends Controller
                         ->whereHas('quizQuestions');
                 });
             })
-            ->where('review_status', '!=', 'approved')
+            ->where(function ($q) {
+                $q->where('review_status', '!=', 'approved')
+                  ->orWhereNull('review_status');
+            })
             ->doesntExist();
 
         // Auto-approve course if all present modules are approved
@@ -800,6 +806,106 @@ class MaterialApprovalController extends Controller
         return redirect()
             ->route('admin.trainer.material.approvals')
             ->with('success', "Materi yang sudah diupload pada \"{$material->name}\" berhasil disetujui!");
+    }
+
+    /**
+     * Revoke course material approval/rejection and set back to pending review
+     */
+    public function revoke(Request $request, Course $material)
+    {
+        $moduleId = $request->input('module_id');
+
+        // Case 1: Revoke a specific CourseModule
+        if ($moduleId) {
+            $module = CourseModule::where('course_id', $material->id)
+                ->where('id', $moduleId)
+                ->firstOrFail();
+
+            $module->update([
+                'review_status' => 'pending_review',
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+                'review_rejection_reason' => null,
+            ]);
+
+            // If the course itself was already approved or rejected, set it back to pending_review
+            if (in_array($material->status, ['approved', 'rejected', 'active'], true)) {
+                $material->update([
+                    'status' => 'pending_review',
+                    'approved_at' => null,
+                    'approved_by' => null,
+                    'rejected_at' => null,
+                    'rejection_reason' => null,
+                ]);
+            }
+
+            try {
+                if (!empty($material->trainer_id)) {
+                    TrainerNotification::create([
+                        'trainer_id' => (int) $material->trainer_id,
+                        'type' => 'course_material_revoked',
+                        'title' => 'Peninjauan Modul Ditarik',
+                        'message' => 'Persetujuan/penolakan untuk modul "' . $module->title . '" pada course "' . $material->name . '" telah ditarik kembali oleh admin trainer. Status kembali ke Peninjauan.',
+                        'data' => [
+                            'entity_type' => 'course',
+                            'entity_id' => (int) $material->id,
+                            'url' => route('trainer.courses.studio', $material->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                }
+            } catch (\Throwable $e) {}
+
+            return back()->with('success', 'Keputusan untuk modul "' . $module->title . '" berhasil dibatalkan. Status dikembalikan ke Menunggu Tinjauan.');
+        } 
+        // Case 2: Revoke the entire Course Material status
+        else {
+            // Set all active/uploaded modules back to pending_review
+            CourseModule::where('course_id', $material->id)
+                ->where(function ($q) {
+                    $q->whereNotNull('content_url')
+                        ->where('content_url', '!=', '')
+                        ->orWhereNotNull('description')
+                        ->where('description', '!=', '')
+                        ->orWhere(function ($inner) {
+                            $inner->where('type', 'quiz')
+                                ->whereHas('quizQuestions');
+                        });
+                })
+                ->update([
+                    'review_status' => 'pending_review',
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'review_rejection_reason' => null,
+                ]);
+
+            $material->update([
+                'status' => 'pending_review',
+                'approved_at' => null,
+                'approved_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ]);
+
+            try {
+                if (!empty($material->trainer_id)) {
+                    TrainerNotification::create([
+                        'trainer_id' => (int) $material->trainer_id,
+                        'type' => 'course_material_revoked',
+                        'title' => 'Peninjauan Materi Course Ditarik',
+                        'message' => 'Persetujuan/penolakan untuk materi course "' . $material->name . '" telah ditarik kembali oleh admin trainer. Status kembali ke Peninjauan.',
+                        'data' => [
+                            'entity_type' => 'course',
+                            'entity_id' => (int) $material->id,
+                            'url' => route('trainer.courses.studio', $material->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                }
+            } catch (\Throwable $e) {}
+
+            return back()->with('success', 'Keputusan untuk materi course "' . $material->name . '" berhasil dibatalkan. Status dikembalikan ke Menunggu Tinjauan.');
+        }
     }
 
     /**

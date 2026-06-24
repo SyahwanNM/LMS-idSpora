@@ -640,11 +640,11 @@ class TrainerManagementController extends Controller
         $totalRatings = $courseReviews->count() + $eventFeedback->count();
         $ratingCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
         foreach($courseReviews as $r) { 
-            $val = (int) round((float) $r->rating);
+            $val = (int) round((float) ($r->trainer_rating ?? $r->rating ?? 0));
             if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
         }
         foreach($eventFeedback as $f) { 
-            $val = (int) round((float) $f->rating);
+            $val = (int) round((float) ($f->speaker_rating ?? $f->rating ?? 0));
             if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
         }
         
