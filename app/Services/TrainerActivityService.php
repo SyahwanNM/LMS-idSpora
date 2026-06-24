@@ -200,7 +200,7 @@ class TrainerActivityService
             ->whereHas('course', function ($query) use ($trainerId) {
                 $query->where('trainer_id', $trainerId);
             })
-            ->selectRaw('COUNT(*) as total_count, COALESCE(AVG(rating), 0) as average_rating')
+            ->selectRaw('COUNT(*) as total_count, COALESCE(AVG(COALESCE(trainer_rating, rating)), 0) as average_rating')
             ->first();
 
         $eventStats = Feedback::query()

@@ -1076,7 +1076,7 @@
                     <span class="metric-label" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Courses & Events</span>
                 </div>
                 <span class="metric-num" style="display: block; font-size: 32px; font-weight: 800; color: var(--brand-navy); line-height: 1.1; margin-bottom: 4px;">{{ $coursesCount + $eventsCount }}</span>
-                <span style="font-size: 13px; color: #64748b; font-weight: 500;">Dibuat</span>
+                <span style="font-size: 13px; color: #64748b; font-weight: 500;">Kontribusi</span>
             </div>
             <div class="metric-card">
                 <div class="metric-top" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
@@ -1248,7 +1248,6 @@
                     @empty
                         <div class="cred-card">
                             <h4 class="cred-title">Belum ada sertifikat</h4>
-                            <p class="cred-meta">Sertifikat akan muncul di sini setelah diverifikasi.</p>
                         </div>
                     @endforelse
                 </div>

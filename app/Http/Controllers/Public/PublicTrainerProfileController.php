@@ -79,7 +79,7 @@ class PublicTrainerProfileController extends Controller
             ->join('courses', 'courses.id', '=', 'reviews.course_id')
             ->where('courses.trainer_id', $trainerId)
             ->whereIn('courses.status', ['published', 'approved', 'active'])
-            ->selectRaw('AVG(reviews.rating) as avg_rating, COUNT(reviews.id) as total_reviews')
+            ->selectRaw('AVG(COALESCE(reviews.trainer_rating, reviews.rating)) as avg_rating, COUNT(reviews.id) as total_reviews')
             ->first();
 
         // Event ratings statistics
@@ -301,7 +301,7 @@ class PublicTrainerProfileController extends Controller
                     $exp = (array) $exp;
                     if (!empty($exp['start_date'])) {
                         $startYear = (int) \Carbon\Carbon::parse($exp['start_date'])->format('Y');
-                        if ($startYear < $earliestYear) {
+                        if ($startYear < $earliestYear && $startYear > 1900) {
                             $earliestYear = $startYear;
                         }
                     }
@@ -310,15 +310,47 @@ class PublicTrainerProfileController extends Controller
             $experienceYears = max(1, (int) now()->format('Y') - $earliestYear);
         }
         if ($experienceYears === 0) {
-            $experienceYears = 5; // Fallback
+            $experienceYears = max(1, (int) now()->format('Y') - (int) $trainer->created_at->format('Y'));
         }
 
         // Dynamic success rate
-        $successRate = 95;
-        if ($combinedRating > 4.0) {
-            $successRate += (int) (($combinedRating - 4.0) * 10);
+        $successRate = 100;
+        if ($totalRatings > 0) {
+            $positiveCourseReviews = Review::query()
+                ->join('courses', 'courses.id', '=', 'reviews.course_id')
+                ->where('courses.trainer_id', $trainerId)
+                ->whereIn('courses.status', ['published', 'approved', 'active'])
+                ->whereRaw('COALESCE(reviews.trainer_rating, reviews.rating) >= 4')
+                ->count();
+
+            $positiveEventFeedbacks = 0;
+            if ($eventIds->isNotEmpty()) {
+                $positiveEventFeedbacks = Feedback::query()
+                    ->whereIn('event_id', $eventIds)
+                    ->where('speaker_rating', '>=', 4)
+                    ->count();
+            }
+
+            $positiveRatings = $positiveCourseReviews + $positiveEventFeedbacks;
+            $successRate = (int) round(($positiveRatings / $totalRatings) * 100);
+        } else {
+            $totalEnrollments = Enrollment::join('courses', 'courses.id', '=', 'enrollments.course_id')
+                ->where('courses.trainer_id', $trainerId)
+                ->count();
+            if ($totalEnrollments > 0) {
+                $completedEnrollments = Enrollment::join('courses', 'courses.id', '=', 'enrollments.course_id')
+                    ->where('courses.trainer_id', $trainerId)
+                    ->where('enrollments.status', 'completed')
+                    ->count();
+                $successRate = (int) round(($completedEnrollments / $totalEnrollments) * 100);
+                if ($successRate === 0) {
+                    $successRate = 100;
+                }
+            } else {
+                $successRate = 100;
+            }
         }
-        $successRate = min(100, max(85, $successRate));
+        $successRate = min(100, max(0, $successRate));
 
         $reputation = [
             'rating' => round($combinedRating, 1),
