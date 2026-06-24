@@ -1622,7 +1622,7 @@ class TrainerController extends Controller
             ->whereHas('course', function ($q) use ($user) {
                 $q->where('trainer_id', $user->id);
             })
-            ->with(['user', 'course']);
+            ->with(['user', 'course.trainer']);
 
         // Event Feedback
         $eventFeedbackQuery = \App\Models\Feedback::query()
@@ -1648,12 +1648,24 @@ class TrainerController extends Controller
 
         $courseReviews = $courseReviewsQuery->get()->map(function ($review) {
             $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
-            $review->setRelation('replies', collect());
+            $review->type = 'course';
+            
+            $replies = collect();
+            if ($review->trainer_reply !== null && $review->trainer_reply !== '') {
+                $reply = new \stdClass();
+                $reply->trainer_id = $review->course->trainer_id ?? null;
+                $reply->response = $review->trainer_reply;
+                $reply->created_at = $review->trainer_reply_at ? \Carbon\Carbon::parse($review->trainer_reply_at) : $review->updated_at;
+                $reply->trainer = $review->course->trainer ?? null;
+                $replies->push($reply);
+            }
+            $review->setRelation('replies', $replies);
             return $review;
         });
 
         $eventFeedbacks = $eventFeedbackQuery->get()->map(function ($feedback) {
             $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+            $feedback->type = 'event';
             return $feedback;
         });
 

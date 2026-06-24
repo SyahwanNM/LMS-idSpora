@@ -29,7 +29,7 @@
         min-width: 0;
         overflow-x: hidden;
         box-sizing: border-box;
-        padding: var(--spacing-2xl);
+        padding: 24px;
     }
     
     .feedback-page * {
@@ -39,8 +39,8 @@
     /* Grid Layouts */
     .content-wrapper {
         display: grid;
-        grid-template-columns: 320px 1fr;
-        gap: 32px;
+        grid-template-columns: 280px 1fr;
+        gap: 24px;
         margin: 0;
         width: 100%;
     }
@@ -48,7 +48,7 @@
     .left-content {
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 20px;
         width: 100%;
         min-width: 0;
     }
@@ -56,7 +56,7 @@
     .right-content {
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 20px;
         width: 100%;
         min-width: 0;
     }
@@ -66,11 +66,11 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: 0 0 32px 0;
-        padding: 40px;
+        margin: 0 0 24px 0;
+        padding: 32px 40px;
         background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
-        border-radius: 24px;
-        box-shadow: 0 15px 35px rgba(27, 23, 99, 0.15);
+        border-radius: 16px;
+        box-shadow: 0 15px 35px rgba(27, 23, 99, 0.1);
         color: white;
         position: relative;
         overflow: hidden;
@@ -80,11 +80,11 @@
     .top-container::before {
         content: '';
         position: absolute;
-        width: 250px;
-        height: 250px;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        top: -50px;
-        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        top: -40px;
+        right: -40px;
         border-radius: 50%;
     }
 
@@ -97,24 +97,23 @@
     .learner-badge {
         display: inline-flex;
         align-items: center;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(5px);
         color: white;
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        padding: 6px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        padding: 5px 12px;
         border-radius: 99px;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
-        letter-spacing: 1px;
-        margin-bottom: 16px;
+        letter-spacing: 0.8px;
+        margin-bottom: 12px;
         text-transform: uppercase;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
     .description h1 {
         color: white;
-        margin: 0 0 8px 0;
-        font-size: 36px;
+        margin: 0 0 6px 0;
+        font-size: 28px;
         font-weight: 800;
         line-height: 1.2;
         letter-spacing: -0.5px;
@@ -123,8 +122,8 @@
     .description p {
         margin: 0;
         color: rgba(255, 255, 255, 0.8);
-        font-size: 16px;
-        line-height: 1.5;
+        font-size: 14.5px;
+        line-height: 1.4;
         font-weight: 400;
     }
 
@@ -137,23 +136,23 @@
 
     .avg-container {
         text-align: center;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 20px;
-        padding: 24px;
-        min-width: 140px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
+        padding: 16px 20px;
+        min-width: 120px;
         backdrop-filter: blur(10px);
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, background 0.3s ease;
     }
 
     .avg-container:hover {
-        transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-3px);
+        background: rgba(255, 255, 255, 0.12);
     }
 
     .avg-container h1 {
-        margin: 0 0 8px 0;
-        font-size: 42px;
+        margin: 0 0 4px 0;
+        font-size: 32px;
         font-weight: 800;
         color: white;
         line-height: 1;
@@ -162,9 +161,9 @@
     .avg-container p {
         margin: 0;
         color: #fbbf24;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
         text-transform: uppercase;
     }
 
@@ -172,29 +171,29 @@
     .sentiment-matrix {
         display: flex;
         flex-direction: column;
-        gap: 24px;
-        padding: 32px;
+        gap: 18px;
+        padding: 24px;
         background-color: #ffffff;
-        border-radius: 24px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
         border: 1px solid #f1f5f9;
         width: 100%;
     }
 
     .sentiment-matrix > p {
         color: #0f172a;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 800;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     
     .sentiment-matrix > p::before {
         content: '';
-        width: 10px;
-        height: 10px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         background-color: #fbbf24;
     }
@@ -202,30 +201,30 @@
     .statistic-rating {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 16px;
     }
 
     .rating-row {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
     }
 
     .sentiment-matrix .rating {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
     }
 
     .sentiment-matrix .rating i {
         color: #fbbf24;
-        font-size: 16px;
+        font-size: 14px;
     }
 
     .sentiment-matrix .rating p {
-        color: #334155;
+        color: #475569;
         margin: 0;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         flex: 1;
     }
@@ -233,12 +232,12 @@
     .sentiment-matrix .rating .percentage {
         color: #0f172a;
         font-weight: 800;
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .progress-bar-container {
         width: 100%;
-        height: 8px;
+        height: 6px;
         background-color: #f1f5f9;
         border-radius: 99px;
         overflow: hidden;
@@ -263,16 +262,16 @@
         background: #f8fafc;
         color: #2e2050;
         border: 1px solid #e2e8f0;
-        padding: 16px;
-        border-radius: 12px;
-        font-size: 14px;
+        padding: 12px;
+        border-radius: 10px;
+        font-size: 13px;
         font-weight: 700;
         letter-spacing: 0.5px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
         transition: all 0.2s ease;
     }
 
@@ -280,8 +279,8 @@
         background: #2e2050;
         color: white;
         border-color: #2e2050;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(27, 23, 99, 0.2);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(27, 23, 99, 0.15);
     }
 
     /* Right Content Header */
@@ -289,57 +288,62 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
         padding: 0;
     }
 
     .title-container {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .title-container i {
         color: #2e2050;
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .title-container p {
         margin: 0;
         color: #0f172a;
         font-weight: 800;
-        font-size: 20px;
-        letter-spacing: -0.5px;
+        font-size: 18px;
+        letter-spacing: -0.3px;
     }
 
     .search-log {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         border: 1px solid #e2e8f0;
-        padding: 10px 16px;
+        padding: 8px 14px;
         border-radius: 99px;
         background-color: white;
         transition: border-color 0.2s ease;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01);
     }
     
     .search-log:focus-within {
         border-color: #2e2050;
-        box-shadow: 0 2px 10px rgba(27, 23, 99, 0.1);
+        box-shadow: 0 2px 8px rgba(27, 23, 99, 0.08);
     }
 
     .search-log i {
         color: #94a3b8;
-        font-size: 16px;
+        font-size: 14px;
+    }
+
+    .search-log span {
+        flex: 1;
+        display: flex;
     }
 
     .search-log input {
         border: none;
         outline: none;
-        font-size: 14px;
+        font-size: 13.5px;
         color: #334155;
-        width: 180px;
+        width: 160px;
         font-family: inherit;
     }
 
@@ -349,13 +353,13 @@
 
     /* Interaction Archive Cards */
     .interaction-container {
-        padding: 32px;
+        padding: 16px 20px;
         background-color: #ffffff;
-        border-radius: 20px;
-        border: none;
-        margin-bottom: 32px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
         width: 100%;
         position: relative;
     }
@@ -365,126 +369,140 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 6px;
+        width: 3px;
         height: 100%;
         background: linear-gradient(180deg, #2e2050 0%, #51376c 100%);
-        border-radius: 20px 0 0 20px;
+        border-radius: 12px 0 0 12px;
     }
 
     .interaction-container:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
     }
 
     .student {
         display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 24px;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
     }
 
     .student img {
-        width: 64px;
-        height: 64px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         object-fit: cover;
         background: #f1f5f9;
-        border: 3px solid #f8fafc;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        flex-shrink: 0;
     }
 
     .student-info {
         flex: 1;
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         min-width: 0;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 8px;
+    }
+
+    .student-details {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
     }
 
     .student-details h4 {
-        margin: 0 0 6px 0;
+        margin: 0;
         color: #0f172a;
-        font-size: 18px;
-        font-weight: 800;
-        letter-spacing: -0.3px;
+        font-size: 14.5px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
         word-break: break-word;
     }
 
     .student-rating {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
     }
 
-    .stars {
+    .student-rating .stars {
         display: flex;
-        gap: 4px;
+        gap: 3px;
         color: #fbbf24;
-        font-size: 14px;
+        font-size: 12px;
+        align-items: center;
+        width: auto !important;
+        justify-content: flex-start;
+        flex: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     .date-text {
         color: #64748b;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 6px;
     }
     
     .date-text::before {
         content: '';
-        width: 4px;
-        height: 4px;
+        width: 3px;
+        height: 3px;
         border-radius: 50%;
         background: #cbd5e1;
+        display: inline-block;
     }
 
     .course-tag {
         background: #f0f9ff;
         color: #0369a1;
-        padding: 8px 16px;
-        border-radius: 12px;
-        font-size: 13px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 11.5px;
         font-weight: 700;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         border: 1px solid #bae6fd;
         white-space: normal;
         word-break: break-word;
-        box-shadow: 0 2px 10px rgba(186, 230, 253, 0.3);
     }
 
     .course-tag i {
         color: #0284c7;
+        font-size: 12px;
     }
 
     .comment p {
         position: relative;
-        margin: 0 0 24px 0;
-        padding: 32px;
+        margin: 0 0 12px 0;
+        padding: 12px 16px;
         background: #f8fafc;
-        border-radius: 0 24px 24px 24px;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
-        border-left: 4px solid #2e2050;
-        color: #1e293b;
-        font-size: 16px;
-        line-height: 1.8;
+        border-left: 3px solid #2e2050;
+        color: #334155;
+        font-size: 13.5px;
+        line-height: 1.5;
         font-style: italic;
         font-weight: 500;
-        box-shadow: inset 0 2px 10px rgba(0,0,0,0.01);
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.01);
     }
     
     .comment p::before {
         content: '\201C';
         position: absolute;
-        top: -10px;
-        left: 20px;
-        font-size: 70px;
-        color: rgba(27, 23, 99, 0.05);
+        top: -6px;
+        left: 8px;
+        font-size: 32px;
+        color: rgba(27, 23, 99, 0.03);
         font-family: serif;
         line-height: 1;
         font-weight: 900;
@@ -492,23 +510,23 @@
 
     .reaction {
         display: flex;
-        gap: 24px;
+        gap: 12px;
         align-items: center;
-        padding-top: 20px;
+        padding-top: 12px;
     }
 
     .like,
     .reply {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         cursor: pointer;
-        border: none;
-        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        background: white;
         color: #475569;
         font-weight: 700;
-        font-size: 14px;
-        padding: 10px 20px;
+        font-size: 13px;
+        padding: 8px 16px;
         border-radius: 99px;
         transition: all 0.2s ease;
     }
@@ -516,77 +534,123 @@
     .like:hover {
         background: #e0f2fe;
         color: #0284c7;
-        transform: translateY(-2px);
+        border-color: #bae6fd;
+        transform: translateY(-1px);
+    }
+
+    .like.liked {
+        background: #f3f1f9;
+        color: #2e2050;
+        border-color: #e9d5ff;
+    }
+
+    .like.liked i {
+        color: #2e2050;
     }
     
     .reply:hover {
         background: #2e2050;
         color: white;
-        transform: translateY(-2px);
+        border-color: #2e2050;
+        transform: translateY(-1px);
     }
-    
-    /* Elegant Authoring Response Override */
-    .interaction-container > div[style*="background: #f3f1f9"] {
-        background: #f8fafc !important;
-        border-left: none !important;
-        border-top: 4px solid #2e2050 !important;
-        border-radius: 20px !important;
-        padding: 24px !important;
-        margin-top: 32px !important;
-        box-shadow: 0 10px 30px rgba(27, 23, 99, 0.05) !important;
+
+    /* Trainer Replies Design */
+    .trainer-replies-block {
+        margin-top: 16px;
+        padding: 16px;
+        background: #f8fafc;
+        border-top: 3px solid #2e2050;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(27, 23, 99, 0.02);
     }
-    
-    .interaction-container > div[style*="background: #f3f1f9"] > p {
-        color: #2e2050 !important;
-        font-size: 14px !important;
-        font-weight: 800 !important;
+
+    .trainer-replies-block .replies-title {
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #2e2050;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 20px !important;
+        letter-spacing: 0.5px;
     }
-    
-    .interaction-container > div[style*="background: #f3f1f9"] > div > div {
-        background: white !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 16px !important;
-        padding: 20px !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02) !important;
+
+    .trainer-reply-card {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #eff2f7;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.01);
         transition: transform 0.2s ease;
     }
-    
-    .interaction-container > div[style*="background: #f3f1f9"] > div > div:hover {
-        transform: translateY(-2px);
+
+    .trainer-reply-card:hover {
+        transform: translateY(-1px);
+    }
+
+    .trainer-reply-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .trainer-reply-header img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .trainer-reply-meta {
+        font-size: 12px;
+    }
+
+    .trainer-reply-meta .trainer-name {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .trainer-reply-meta .reply-time {
+        color: #94a3b8;
+        font-size: 11px;
+    }
+
+    .trainer-reply-text {
+        margin: 6px 0 0;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.5;
     }
 
     .authoring-response {
         display: none;
-        margin-top: 24px;
-        padding: 24px;
+        margin-top: 16px;
+        padding: 16px;
         background: #f8fafc;
-        border-radius: 16px;
+        border-radius: 12px;
         border: 1px solid #e2e8f0;
     }
 
     .authoring-response.active {
         display: block;
-        animation: fadeIn 0.3s ease;
+        animation: fadeIn 0.25s ease;
     }
     
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
+        from { opacity: 0; transform: translateY(-8px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
     .authoring-header {
         display: flex;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 14px;
     }
 
     .authoring-header img {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         object-fit: cover;
     }
@@ -594,21 +658,21 @@
     .authoring-header p {
         margin: 0;
         color: #0f172a;
-        font-size: 14px;
+        font-size: 13.5px;
         font-weight: 700;
     }
 
     .textarea-wrapper {
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .textarea-wrapper textarea {
         width: 100%;
-        min-height: 120px;
-        padding: 16px;
+        min-height: 100px;
+        padding: 12px;
         border: 1px solid #cbd5e1;
-        border-radius: 12px;
-        font-size: 14px;
+        border-radius: 8px;
+        font-size: 13.5px;
         color: #334155;
         font-family: inherit;
         resize: vertical;
@@ -618,23 +682,23 @@
 
     .textarea-wrapper textarea:focus {
         border-color: #2e2050;
-        box-shadow: 0 0 0 3px rgba(27, 23, 99, 0.1);
+        box-shadow: 0 0 0 3px rgba(27, 23, 99, 0.08);
     }
 
     .authoring-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 12px;
+        gap: 10px;
     }
 
     .cancel-btn {
-        padding: 10px 20px;
+        padding: 8px 16px;
         border: none;
         background: transparent;
         color: #64748b;
-        font-size: 13px;
+        font-size: 12.5px;
         font-weight: 700;
-        border-radius: 8px;
+        border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s ease;
     }
@@ -645,28 +709,28 @@
     }
 
     .sync-reply-btn {
-        padding: 10px 24px;
+        padding: 8px 20px;
         border: none;
         background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
         color: white;
-        font-size: 13px;
+        font-size: 12.5px;
         font-weight: 700;
-        border-radius: 8px;
+        border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s ease;
-        box-shadow: 0 4px 10px rgba(27, 23, 99, 0.2);
+        box-shadow: 0 4px 10px rgba(27, 23, 99, 0.15);
     }
 
     .sync-reply-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 15px rgba(27, 23, 99, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(27, 23, 99, 0.2);
     }
 
     /* Responsive Design */
     @media (max-width: 1024px) {
         .content-wrapper {
-            grid-template-columns: 280px 1fr;
-            gap: 24px;
+            grid-template-columns: 260px 1fr;
+            gap: 20px;
         }
     }
 
@@ -677,32 +741,37 @@
         
         .content-wrapper {
             grid-template-columns: 1fr;
-            gap: 24px;
+            gap: 20px;
         }
 
         .top-container {
             flex-direction: column;
-            gap: 24px;
-            padding: 32px 24px;
+            gap: 20px;
+            padding: 24px 20px;
             text-align: center;
         }
 
         .stats-container {
             width: 100%;
-            gap: 16px;
+            gap: 12px;
             justify-content: center;
             flex-wrap: wrap;
         }
         
         .avg-container {
             flex: 1;
-            min-width: 120px;
+            min-width: 110px;
+            padding: 16px;
+        }
+
+        .avg-container h1 {
+            font-size: 32px;
         }
 
         .top-part {
             flex-direction: column;
             align-items: flex-start;
-            gap: 16px;
+            gap: 12px;
         }
         
         .search-log {
@@ -714,11 +783,17 @@
         }
 
         .interaction-container {
-            padding: 24px;
+            padding: 16px;
         }
         
         .student-info {
             flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .course-tag {
+            width: auto;
         }
     }
 
@@ -728,35 +803,74 @@
         }
         
         .top-container {
-            padding: 24px 16px;
+            padding: 20px 16px;
         }
 
         .description h1 {
-            font-size: 28px;
+            font-size: 24px;
         }
         
         .avg-container h1 {
-            font-size: 32px;
+            font-size: 28px;
         }
 
         .student {
-            gap: 16px;
+            gap: 10px;
         }
 
         .student img {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 36px;
+            height: 36px;
         }
         
         .interaction-container {
-            padding: 20px;
-            border-radius: 16px;
+            padding: 12px 14px;
+            border-radius: 8px;
         }
 
         .comment p {
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+
+        .like, .reply {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .sentiment-matrix {
             padding: 16px;
-            font-size: 14px;
+        }
+
+        .trainer-replies-block {
+            padding: 10px;
+            margin-top: 12px;
+        }
+
+        .trainer-reply-card {
+            padding: 8px;
+        }
+
+        .trainer-reply-header img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .trainer-reply-meta .trainer-name {
+            font-size: 11px;
+        }
+
+        .trainer-reply-meta .reply-time {
+            font-size: 10px;
+        }
+
+        .trainer-reply-text {
+            font-size: 12px;
+        }
+
+        .authoring-response {
+            padding: 10px;
+            margin-top: 12px;
         }
     }
   </style>
@@ -823,15 +937,11 @@
               <div class="progress-bar secondary" style="width: {{ $ratingStats[3] }}%"></div>
             </div>
           </div>
-
         </div>
-
         <button class="filter-button">
           <i class="bi bi-funnel"></i>
           Saring Konten
         </button>
-
-        <p class="pedagogical-audit">Audit Pedagogis</p>
       </div>
     </div>
 
@@ -871,8 +981,8 @@
                           <i class="bi bi-star"></i>
                         @endif
                       @endfor
+                      <span class="date-text">{{ $feedback->created_at->format('n/j/Y') }}</span>
                     </div>
-                    <span class="date-text">• {{ $feedback->created_at->format('n/j/Y') }}</span>
                   </div>
                 </div>
                 <div class="course-tag">
@@ -894,14 +1004,14 @@
             </div>
 
             <div class="reaction">
-              <div class="like" title="Mark as valid">
-                <i class="bi bi-hand-thumbs-up"></i>
-              </div>
-              @if($feedback->event_id)
-              <div class="reply" onclick="toggleReplyForm(this)" title="Add reply">
+              <button type="button" class="like {{ $feedback->is_liked ? 'liked' : '' }}" onclick="toggleLike(this, {{ $feedback->id }}, '{{ $feedback->type }}')" title="Suka">
+                <i class="bi {{ $feedback->is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up' }}"></i>
+                <span>{{ $feedback->is_liked ? 'Disukai' : 'Suka' }}</span>
+              </button>
+              <button type="button" class="reply" onclick="toggleReplyForm(this)" title="Balas">
                 <i class="bi bi-chat-left"></i>
-              </div>
-              @endif
+                <span>Balas</span>
+              </button>
             </div>
 
             <div class="authoring-response">
@@ -909,7 +1019,7 @@
                 <img src="{{ Auth::user()->avatar_url ?? 'https://i.pravatar.cc/150' }}" alt="author" />
                 <p>Tulis Balasan</p>
               </div>
-              <form class="reply-form" onsubmit="submitReply(event, {{ $feedback->id }})">
+              <form class="reply-form" onsubmit="submitReply(event, {{ $feedback->id }}, '{{ $feedback->type }}')">
                 @csrf
                 <div class="textarea-wrapper">
                   <textarea name="response" placeholder="Tulis balasan yang profesional..." required></textarea>
@@ -926,22 +1036,20 @@
             </div>
 
             @if($feedback->replies && $feedback->replies->count() > 0)
-              <div
-                style="margin: 12px 0; padding: 12px; background: #f3f1f9; border-radius: 8px; border-left: 3px solid #2e2050;">
-                <p style="margin: 0 0 10px; font-size: 12px; font-weight: 700; color: #2e2050;">Balasan Instruktur
-                  ({{ $feedback->replies->count() }})</p>
+              <div class="trainer-replies-block">
+                <p class="replies-title">Balasan Instruktur ({{ $feedback->replies->count() }})</p>
                 <div style="display: grid; gap: 10px;">
                   @foreach($feedback->replies as $reply)
-                    <div style="background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #eff2f7;">
-                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    <div class="trainer-reply-card">
+                      <div class="trainer-reply-header">
                         <img src="{{ $reply->trainer->avatar_url ?? 'https://i.pravatar.cc/150?u=' . $reply->trainer_id }}"
-                          alt="trainer" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;" />
-                        <div style="font-size: 12px;">
-                          <div style="font-weight: 600; color: #0f172a;">{{ $reply->trainer->name }}</div>
-                          <div style="color: #94a3b8; font-size: 11px;">{{ $reply->created_at->format('n/j/Y H:i') }}</div>
+                          alt="trainer" />
+                        <div class="trainer-reply-meta">
+                          <div class="trainer-name">{{ $reply->trainer->name ?? 'Instruktur' }}</div>
+                          <div class="reply-time">{{ $reply->created_at ? (\Carbon\Carbon::parse($reply->created_at)->format('n/j/Y H:i')) : '' }}</div>
                         </div>
                       </div>
-                      <p style="margin: 6px 0 0; color: #475569; font-size: 13px; line-height: 1.5;">{{ $reply->response }}</p>
+                      <p class="trainer-reply-text">{{ $reply->response }}</p>
                     </div>
                   @endforeach
                 </div>
@@ -976,7 +1084,42 @@
       responseForm.classList.toggle('active');
     }
 
-    function submitReply(event, feedbackId) {
+    function toggleLike(element, id, type) {
+      const token = document.querySelector('input[name="_token"]').value;
+      const likeUrl = "{{ route('trainer.feedback.like', ['id' => ':id']) }}".replace(':id', id);
+
+      fetch(likeUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': token
+        },
+        body: JSON.stringify({
+          type: type
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const icon = element.querySelector('i');
+            const text = element.querySelector('span');
+            if (data.is_liked) {
+              element.classList.add('liked');
+              icon.className = 'bi bi-hand-thumbs-up-fill';
+              if (text) text.textContent = 'Disukai';
+            } else {
+              element.classList.remove('liked');
+              icon.className = 'bi bi-hand-thumbs-up';
+              if (text) text.textContent = 'Suka';
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    function submitReply(event, feedbackId, type) {
       event.preventDefault();
 
       const form = event.target;
@@ -984,7 +1127,7 @@
       const response = textarea.value.trim();
 
       if (!response) {
-        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Please write a response before submitting.' });
+        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Tulis balasan terlebih dahulu.' });
         return;
       }
 
@@ -1000,6 +1143,7 @@
         },
         body: JSON.stringify({
           feedback_id: feedbackId,
+          type: type,
           response: response
         })
       })
@@ -1013,12 +1157,12 @@
             // Reload page to show new reply
             location.reload();
           } else {
-            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Error: ' + (data.message || 'Failed to save reply') });
+            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Error: ' + (data.message || 'Gagal menyimpan balasan') });
           }
         })
         .catch(error => {
           console.error('Error:', error);
-          Swal.fire({ icon: 'error', title: 'Gagal', text: 'An error occurred while saving the reply.' });
+          Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan saat menyimpan balasan.' });
         });
     }
   </script>
