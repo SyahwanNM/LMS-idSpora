@@ -579,6 +579,8 @@ class ResellerController extends Controller
         // Total referrals all time (for badge level calculations)
         $totalReferrals = $allReferrals->count();
 
+        $paidReferralsCount = $allReferrals->where('status', 'paid')->count();
+
         // Earnings & Referral Bulan Ini
         $referralsThisMonth = $allReferrals->where('created_at', '>=', now()->startOfMonth())->count();
         $earningsThisMonth = $allReferrals->where('status', 'paid')
@@ -679,6 +681,7 @@ class ResellerController extends Controller
                     'promo_image' => $promoImage,
                     'promo_filename' => 'promo-course-' . $course->id . '.jpg',
                     'referral_link' => route('courses.show', $course) . '?ref=' . urlencode((string) $user->referral_code),
+                    'is_custom' => ($bronze != 10 || $silver != 12 || $gold != 15),
                 ];
             });
 
@@ -718,6 +721,7 @@ class ResellerController extends Controller
                     'promo_image' => $promoImage,
                     'promo_filename' => 'promo-event-' . $event->id . '.jpg',
                     'referral_link' => route('events.show', $event) . '?ref=' . urlencode((string) $user->referral_code),
+                    'is_custom' => ($bronze != 10 || $silver != 12 || $gold != 15),
                 ];
             });
 
@@ -756,21 +760,29 @@ class ResellerController extends Controller
             ->get();
 
         // --- 5. Top Resellers ---
-        // Ngambil 6 User dengan referral terbanyak (Global Leaderboard)
+        // Ngambil 6 User dengan total komisi terbanyak (Global Leaderboard)
         $topResellers = User::where('role', 'user')
-            ->withCount('referrals') // Hitung jumlah referral
-            ->withSum(['referrals' => function ($q) { // Hitung total komisi mereka (status paid)
+            ->whereNotNull('referral_code')
+            ->withCount(['referrals' => function ($q) {
+                $q->where('status', 'paid');
+            }])
+            ->withSum(['referrals' => function ($q) {
                 $q->where('status', 'paid');
             }], 'amount')
-            ->orderByDesc('referrals_count')
+            ->orderByDesc('referrals_sum_amount') // Urutkan berdasarkan total komisi uang
+            ->orderByDesc('referrals_count')      // Jika komisi sama, baru urutkan berdasarkan jumlah referral
             ->take(6)
             ->get();
 
         // --- 6. Ranking User Saat Ini (Sticky Rank) ---
-        // Hitung ada berapa orang yang referralnya LEBIH BANYAK dari kita
+        // Hitung ada berapa orang yang total komisi paid-nya LEBIH BANYAK dari kita
+        $currentUserEarnings = $totalEarnings; 
         $usersAhead = User::where('role', 'user')
-            ->withCount('referrals')
-            ->having('referrals_count', '>', $totalReferrals)
+            ->whereNotNull('referral_code')
+            ->withSum(['referrals' => function ($q) {
+                $q->where('status', 'paid');
+            }], 'amount')
+            ->having(\DB::raw('COALESCE(referrals_sum_amount, 0)'), '>', $currentUserEarnings)
             ->count();
 
         // Ranking kita = jumlah orang di atas kita + 1
@@ -798,6 +810,7 @@ class ResellerController extends Controller
             'history',
             'topResellers',
             'userRank',
+            'paidReferralsCount',
             'registrations',
             'commissionRate',
             'commissionProducts',
@@ -836,11 +849,18 @@ class ResellerController extends Controller
 
     public function updateReferralCode(Request $request)
     {
+        \Log::info('Headers received in updateReferralCode:', $request->headers->all());
         if ($this->isSuspended()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Akun reseller Anda ditangguhkan.'], 403);
+            }
             return back()->with('error', 'Akun reseller Anda ditangguhkan.');
         }
         $user = Auth::user();
         if (empty($user->referral_code)) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Silakan aktifkan akun reseller Anda terlebih dahulu.'], 400);
+            }
             return back()->with('error', 'Silakan aktifkan akun reseller Anda terlebih dahulu.');
         }
 
@@ -849,7 +869,11 @@ class ResellerController extends Controller
             ->whereIn('status', ['paid', 'pending'])
             ->count();
         if ($totalPurchases < 5) {
-            return back()->with('error', 'Fitur kustomisasi kode referral hanya tersedia jika kode Anda telah digunakan minimal 5 kali.');
+            $msg = 'Fitur kustomisasi kode referral hanya tersedia jika kode Anda telah digunakan minimal 5 kali.';
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $msg], 400);
+            }
+            return back()->with('error', $msg);
         }
 
         // 2. Check if user has updated their code in the last 7 days (cooldown check)
@@ -857,22 +881,26 @@ class ResellerController extends Controller
             $nextAvailableDate = $user->referral_code_updated_at->copy()->addDays(7);
             $daysLeft = (int) ceil(now()->diffInDays($nextAvailableDate, false));
             $daysText = $daysLeft > 0 ? "dalam {$daysLeft} hari lagi" : "nanti";
-            return back()->with('error', "Anda hanya dapat mengubah kode referral sekali seminggu. Silakan coba kembali {$daysText}.");
+            $msg = "Anda hanya dapat mengubah kode referral sekali seminggu. Silakan coba kembali {$daysText}.";
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $msg], 400);
+            }
+            return back()->with('error', $msg);
         }
 
-        // 3. Validate code formatting (alphanumeric, 3-20 chars)
+        // 3. Validate code formatting (alphanumeric, 3-10 chars)
         $request->validate([
             'referral_code' => [
                 'required',
                 'string',
                 'min:3',
-                'max:20',
+                'max:10',
                 'regex:/^[A-Z0-9]+$/i', // Alphanumeric only, no spaces or symbols
             ]
         ], [
             'referral_code.required' => 'Kode referral baru harus diisi.',
             'referral_code.min' => 'Kode referral minimal terdiri dari 3 karakter.',
-            'referral_code.max' => 'Kode referral maksimal terdiri dari 20 karakter.',
+            'referral_code.max' => 'Kode referral maksimal terdiri dari 10 karakter.',
             'referral_code.regex' => 'Kode referral hanya boleh berisi huruf dan angka (tanpa spasi atau simbol).',
         ]);
 
@@ -880,13 +908,21 @@ class ResellerController extends Controller
 
         // 4. Ensure it's not the same code
         if ($newCode === $user->referral_code) {
-            return back()->with('error', 'Kode baru tidak boleh sama dengan kode saat ini.');
+            $msg = 'Kode baru tidak boleh sama dengan kode saat ini.';
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $msg], 400);
+            }
+            return back()->with('error', $msg);
         }
 
         // 5. Ensure the new code is unique across all users
         $codeExists = User::where('referral_code', $newCode)->exists();
         if ($codeExists) {
-            return back()->with('error', 'Kode referral ini sudah digunakan oleh pengguna lain. Silakan pilih kode lain.');
+            $msg = 'Kode referral ini sudah digunakan oleh pengguna lain. Silakan pilih kode lain.';
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $msg], 400);
+            }
+            return back()->with('error', $msg);
         }
 
         // 6. Save changes
@@ -894,7 +930,15 @@ class ResellerController extends Controller
         $user->referral_code_updated_at = now();
         $user->save();
 
-        return back()->with('success', 'Kode referral Anda berhasil diubah menjadi: ' . $newCode);
+        $successMsg = 'Kode referral Anda berhasil diubah menjadi: ' . $newCode;
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMsg
+            ]);
+        }
+
+        return back()->with('success', $successMsg);
     }
 
     public function checkReferral(Request $request)

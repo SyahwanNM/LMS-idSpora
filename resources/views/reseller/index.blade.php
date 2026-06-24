@@ -104,6 +104,39 @@
             transform: scale(1.05);
         }
 
+        /* Custom Beautiful Pagination Styling */
+        .page-link-custom {
+            width: 36px;
+            height: 36px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            user-select: none;
+        }
+        .page-link-custom:hover {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-color: #ffc107;
+            color: #ffc107;
+        }
+        .page-link-custom.active {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            color: #212529 !important;
+            box-shadow: 0 4px 10px rgba(255, 193, 7, 0.2);
+        }
+        .pagination-custom .disabled .page-link-custom {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            background-color: #f9fafb;
+        }
+
         @media (max-width: 576px) {
             .reseller-action-btn {
                 width: 40px;
@@ -479,7 +512,7 @@
                                         <i class="bi bi-pencil-square"></i> Edit
                                     </button>
                                 @else
-                                    <button class="btn btn-outline-secondary" type="button" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Minimal 5 pembelian untuk ganti kode (Saat ini baru {{ $totalPurchases }} pembelian)">
+                                    <button class="btn btn-outline-secondary disabled" type="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Minimal 5 pembelian" style="pointer-events: auto !important; cursor: not-allowed;">
                                         <i class="bi bi-lock-fill"></i> Edit
                                     </button>
                                 @endif
@@ -589,7 +622,17 @@
                                         Rp {{ number_format($product['price'], 0, ',', '.') }}
                                     </td>
                                     <td class="py-3 text-start">
-                                        <div class="fw-bold text-success">Rp {{ number_format($product['commission_amount'], 0, ',', '.') }}</div>
+                                        <div class="fw-bold text-success">
+                                            Rp {{ number_format($product['commission_amount'], 0, ',', '.') }}
+                                        </div>
+                                        @if($product['is_custom'])
+                                            <div class="d-inline-flex align-items-center gap-1 mt-1 flex-wrap">
+                                                <span class="badge border text-warning border-warning bg-dark py-1 px-2 rounded-pill" style="font-size: 9px; padding: 1px 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px;">
+                                                    <i class="bi bi-star-fill" style="font-size: 8px;"></i> Spesial
+                                                </span>
+                                                <small class="text-muted" style="font-size: 11px;">({{ number_format($product['commission_rate'] * 100, 0) }}%)</small>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="py-3 text-start">
                                         <button type="button"
@@ -612,10 +655,53 @@
                             </tbody>
                         </table>
                     </div>
-                    @if(method_exists($commissionProducts, 'hasPages') && $commissionProducts->hasPages())
-                    <div class="mt-4 d-flex justify-content-center">
-                        {{ $commissionProducts->appends(['search' => request('search')])->links('pagination::bootstrap-5') }}
-                    </div>
+                    @if($commissionProducts->hasPages())
+                    <nav class="mt-4 d-flex justify-content-center" aria-label="Product navigation">
+                        <ul class="pagination pagination-custom d-flex align-items-center gap-1 list-unstyled p-0 m-0">
+                            {{-- Previous Page Link --}}
+                            @if($commissionProducts->onFirstPage())
+                                <li class="page-item disabled">
+                                    <span class="page-link-custom d-flex align-items-center justify-content-center" aria-hidden="true">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </span>
+                                </li>
+                            @else
+                                <li class="page-item">
+                                    <a class="page-link-custom d-flex align-items-center justify-content-center" href="{{ $commissionProducts->appends(['search' => request('search')])->previousPageUrl() }}" rel="prev">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            @endif
+
+                            {{-- Page Numbers --}}
+                            @foreach($commissionProducts->appends(['search' => request('search')])->getUrlRange(1, $commissionProducts->lastPage()) as $pageNumber => $url)
+                                @if($pageNumber == $commissionProducts->currentPage())
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link-custom active d-flex align-items-center justify-content-center">{{ $pageNumber }}</span>
+                                    </li>
+                                @else
+                                    <li class="page-item">
+                                        <a class="page-link-custom d-flex align-items-center justify-content-center" href="{{ $url }}">{{ $pageNumber }}</a>
+                                    </li>
+                                @endif
+                            @endforeach
+
+                            {{-- Next Page Link --}}
+                            @if($commissionProducts->hasMorePages())
+                                <li class="page-item">
+                                    <a class="page-link-custom d-flex align-items-center justify-content-center" href="{{ $commissionProducts->appends(['search' => request('search')])->nextPageUrl() }}" rel="next">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            @else
+                                <li class="page-item disabled">
+                                    <span class="page-link-custom d-flex align-items-center justify-content-center" aria-hidden="true">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </span>
+                                </li>
+                            @endif
+                        </ul>
+                    </nav>
                     @endif
                 </div>
             </div>
@@ -795,7 +881,11 @@
                                     {{-- Total Komisi (Badge) --}}
                                     <span
                                         class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
-                                        Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
+                                        @if(($reseller->referrals_sum_amount ?? 0) >= 1000)
+                                            Rp {{ number_format(($reseller->referrals_sum_amount) / 1000, 0) }}k
+                                        @else
+                                            Rp {{ number_format($reseller->referrals_sum_amount ?? 0, 0) }}
+                                        @endif
                                     </span>
                                 </li>
                                 @empty
@@ -837,14 +927,18 @@
 
                                 <div class="flex-grow-1 lh-sm">
                                     <div class="fw-bold text-dark small mb-0">{{ Str::limit($user->name, 15) }}</div>
-                                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $totalReferrals }}
+                                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $paidReferralsCount }}
                                         referrals</small>
                                 </div>
                                 <div class="d-flex flex-column align-items-end gap-1">
                                     <span class="badge bg-white text-warning border border-warning rounded-pill"
                                         style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
                                     <span class="badge bg-light text-dark border border-warning rounded-pill">
-                                        Rp {{ number_format($totalEarnings / 1000, 0) }}k
+                                        @if($totalEarnings >= 1000)
+                                            Rp {{ number_format($totalEarnings / 1000, 0) }}k
+                                        @else
+                                            Rp {{ number_format($totalEarnings, 0) }}
+                                        @endif
                                     </span>
                                 </div>
                             </div>
@@ -1131,34 +1225,38 @@
     <!-- Modal Edit Kode Referral -->
     <div class="modal fade" id="editReferralCodeModal" tabindex="-1" aria-labelledby="editReferralCodeModalLabel" aria-hidden="true" style="z-index: 1060;">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content overflow-hidden border-0 shadow-lg" style="border-radius: 20px; background-color: #1a182e; color: #fff;">
-                <div class="modal-header border-0 p-3" style="background: radial-gradient(circle at 10% 10%, #51376c 0%, #2e2050 100%);">
-                    <h5 class="modal-title fw-bold text-white" id="editReferralCodeModalLabel">Kustomisasi Kode Referral</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content overflow-hidden border-0 shadow" style="border-radius: 20px; background-color: #ffffff; color: #333333;">
+                <div class="modal-header border-0 p-3">
+                    <h5 class="modal-title fw-bold text-dark" id="editReferralCodeModalLabel">Kustomisasi Kode Referral</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="{{ route('reseller.update-code') }}" method="POST">
+                <form id="editReferralCodeForm" action="{{ route('reseller.update-code') }}" method="POST">
                     @csrf
                     <div class="modal-body p-4">
-                        <div class="alert alert-warning border-0 small d-flex gap-2" style="background-color: rgba(251, 189, 35, 0.15); color: #ffca2c;">
+                        <div class="alert alert-warning border-0 small d-flex gap-2 mb-3 align-items-center" style="background-color: rgba(251, 189, 35, 0.1); color: #856404; border-radius: 12px;">
                             <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
                             <div>
-                                <strong>Peringatan:</strong> Kode referral hanya dapat diganti **sekali dalam seminggu (7 hari)**. Pastikan kode baru Anda sudah profesional dan mudah diingat sebelum menyimpan.
+                                <strong>Peringatan:</strong> Kode referral hanya dapat diganti <strong>sekali seminggu</strong>.
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
-                           <label for="newReferralCodeInput" class="form-label fw-bold small text-white-50">Kode Referral Baru</label>
-                           <input type="text" class="form-control bg-dark border-secondary text-white" id="newReferralCodeInput" name="referral_code" 
+                           <label for="newReferralCodeInput" class="form-label fw-bold small text-secondary">Kode Referral Baru</label>
+                           <input type="text" class="form-control border-secondary-subtle" id="newReferralCodeInput" name="referral_code" 
                                value="{{ $user->referral_code }}" placeholder="Contoh: SPORABUDI" required 
+                               maxlength="10"
                                style="text-transform: uppercase;">
-                           <div class="form-text text-white-50" style="font-size: 11px;">
-                               Gunakan huruf besar dan angka saja (minimal 3 karakter, maksimal 20 karakter, tanpa spasi/simbol).
+                           <!-- Error Message (Plain Red Text Below Input) -->
+                           <div id="modalErrorMessage" class="text-danger small mt-1 d-none" style="font-size: 11px; font-weight: 500; display: block !important; width: 100% !important;"></div>
+
+                           <div class="form-text text-muted mt-1" style="font-size: 11px;">
+                               Gunakan huruf besar dan angka saja (minimal 3 karakter, maksimal 10 karakter, tanpa spasi/simbol).
                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer border-0 p-3" style="background-color: rgba(255, 255, 255, 0.02);">
-                        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">Batal</button>
-                        <button type="submit" class="btn btn-warning text-dark fw-bold rounded-pill px-4">Simpan Kode</button>
+                    <div class="modal-footer border-0 p-3 justify-content-end gap-2">
+                        <button type="button" class="btn btn-light border rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" id="btnSubmitReferralCode" class="btn btn-warning text-dark fw-bold rounded-pill px-4">Simpan Kode</button>
                     </div>
                 </form>
             </div>
@@ -1615,11 +1713,135 @@
         });
 
         document.addEventListener("DOMContentLoaded", function() {
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
             // Auto run tour on first visit
             if (!localStorage.getItem('idspora_reseller_tour_done')) {
                 setTimeout(() => {
                     startOnboardingTour();
                 }, 1000);
+            }
+
+            // AJAX Form Handling and Validation for Edit Referral Code Modal
+            var editForm = document.getElementById('editReferralCodeForm');
+            var inputField = document.getElementById('newReferralCodeInput');
+            var submitBtn = document.getElementById('btnSubmitReferralCode');
+            var modalErrorMessage = document.getElementById('modalErrorMessage');
+
+            if (editForm && inputField) {
+                // Force uppercase on typing
+                inputField.addEventListener('input', function() {
+                    var val = inputField.value.toUpperCase();
+                    inputField.value = val;
+                    // Remove error style and hide text message as user corrects it
+                    inputField.classList.remove('is-invalid');
+                    modalErrorMessage.classList.add('d-none');
+                });
+
+                // Reset modal errors on close
+                var editModalEl = document.getElementById('editReferralCodeModal');
+                if (editModalEl) {
+                    editModalEl.addEventListener('hidden.bs.modal', function () {
+                        inputField.classList.remove('is-invalid');
+                        modalErrorMessage.classList.add('d-none');
+                        submitBtn.disabled = false;
+                    });
+                }
+
+                // AJAX Form Submission
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // Hide previous alerts
+                    modalErrorMessage.classList.add('d-none');
+                    inputField.classList.remove('is-invalid');
+
+                    var val = inputField.value.trim().toUpperCase();
+
+                    var hasError = false;
+                    var errorMsg = '';
+
+                    // Check validation format on submit
+                    if (val.length === 0) {
+                        hasError = true;
+                        errorMsg = 'Kode referral baru harus diisi.';
+                    } else if (!/^[A-Z0-9]+$/.test(val)) {
+                        hasError = true;
+                        errorMsg = 'Kode hanya boleh berisi huruf besar dan angka (tanpa spasi/simbol).';
+                    } else if (val.length < 3) {
+                        hasError = true;
+                        errorMsg = 'Kode referral minimal terdiri dari 3 karakter.';
+                    } else if (val.length > 10) {
+                        hasError = true;
+                        errorMsg = 'Kode referral maksimal terdiri dari 10 karakter.';
+                    }
+
+                    if (hasError) {
+                        inputField.classList.add('is-invalid');
+                        modalErrorMessage.innerText = errorMsg;
+                        modalErrorMessage.classList.remove('d-none');
+                        return;
+                    }
+
+                    // Disable button to prevent double submit
+                    var originalText = submitBtn.innerText;
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = 'Menyimpan...';
+
+                    var formData = new FormData(editForm);
+
+                    fetch(editForm.getAttribute('action'), {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    })
+                    .then(function(response) {
+                        var contentType = response.headers.get('content-type');
+                        if (contentType && contentType.indexOf('application/json') !== -1) {
+                            return response.json().then(function(data) {
+                                if (!response.ok) {
+                                    throw data;
+                                }
+                                return data;
+                            });
+                        } else {
+                            throw { message: 'Terjadi kesalahan pada server. Silakan coba kembali.' };
+                        }
+                    })
+                    .then(function(data) {
+                        // Success - reload page to apply changes
+                        window.location.reload();
+                    })
+                    .catch(function(err) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = originalText;
+
+                        // Display validation errors or backend message
+                        var errMsg = 'Terjadi kesalahan sistem.';
+                        if (err.errors && err.errors.referral_code) {
+                            errMsg = err.errors.referral_code[0];
+                            inputField.classList.add('is-invalid');
+                        } else if (err.message) {
+                            errMsg = err.message;
+                            if (errMsg.includes('sudah digunakan') || errMsg.includes('sama dengan')) {
+                                inputField.classList.add('is-invalid');
+                            }
+                        } else if (err.error) {
+                            errMsg = err.error;
+                        }
+                        
+                        modalErrorMessage.innerText = errMsg;
+                        modalErrorMessage.classList.remove('d-none');
+                    });
+                });
             }
         });
     </script>
