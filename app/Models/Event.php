@@ -160,6 +160,9 @@ class Event extends Model
         if (array_key_exists('material_status', $this->virtualAttributes)) {
             return $this->virtualAttributes['material_status'];
         }
+        if (isset($this->attributes['material_status']) && $this->attributes['material_status'] !== null) {
+            return $this->attributes['material_status'];
+        }
         $latest = $this->trainerModules()->latest()->first();
         return $latest ? $latest->status : 'pending';
     }
@@ -245,6 +248,30 @@ class Event extends Model
         return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->rejection_reason;
     }
 
+
+    public function getMinTeamMembersAttribute()
+    {
+        $val = $this->max_team_members;
+        if (empty($val)) {
+            return 2;
+        }
+        if (preg_match('/^(\d+)-(\d+)$/', trim($val), $matches)) {
+            return (int) $matches[1];
+        }
+        return (int) $val;
+    }
+
+    public function getMaxTeamMembersCountAttribute()
+    {
+        $val = $this->max_team_members;
+        if (empty($val)) {
+            return 5;
+        }
+        if (preg_match('/^(\d+)-(\d+)$/', trim($val), $matches)) {
+            return (int) $matches[2];
+        }
+        return (int) $val;
+    }
 
     public function getHasApprovedModulesAttribute(): bool
     {

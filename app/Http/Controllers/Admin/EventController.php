@@ -318,7 +318,32 @@ class EventController extends Controller
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
             'lomba_kategori' => 'required_if:jenis,Lomba|nullable|in:individual,team,both',
-            'max_team_members' => 'required_if:lomba_kategori,team,both|nullable|integer|min:2',
+            'max_team_members' => [
+                'required_if:lomba_kategori,team,both',
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (is_numeric($value)) {
+                        $valInt = (int) $value;
+                        if ($valInt < 2) {
+                            $fail('Maksimal anggota tim minimal harus bernilai 2.');
+                        }
+                    } else {
+                        if (!preg_match('/^(\d+)-(\d+)$/', trim($value), $matches)) {
+                            $fail('Format maksimal anggota tim harus berupa angka (min 2) atau rentang (misal: 2-5).');
+                            return;
+                        }
+                        $min = (int) $matches[1];
+                        $max = (int) $matches[2];
+                        if ($min < 2) {
+                            $fail('Batas bawah rentang minimal harus bernilai 2.');
+                        }
+                        if ($max < $min) {
+                            $fail('Batas atas rentang tidak boleh lebih kecil dari batas bawah.');
+                        }
+                    }
+                }
+            ],
         ]);
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
@@ -447,7 +472,7 @@ class EventController extends Controller
             'finalist_payment_start' => $request->finalist_payment_start,
             'finalist_payment_end' => $request->finalist_payment_end,
             'lomba_kategori' => $request->lomba_kategori ?? 'individual',
-            'max_team_members' => $request->max_team_members ? (int) $request->max_team_members : 5,
+            'max_team_members' => $request->max_team_members ? trim($request->max_team_members) : '5',
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -1117,7 +1142,32 @@ class EventController extends Controller
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
             'lomba_kategori' => 'required_if:jenis,Lomba|nullable|in:individual,team,both',
-            'max_team_members' => 'required_if:lomba_kategori,team,both|nullable|integer|min:2',
+            'max_team_members' => [
+                'required_if:lomba_kategori,team,both',
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (is_numeric($value)) {
+                        $valInt = (int) $value;
+                        if ($valInt < 2) {
+                            $fail('Maksimal anggota tim minimal harus bernilai 2.');
+                        }
+                    } else {
+                        if (!preg_match('/^(\d+)-(\d+)$/', trim($value), $matches)) {
+                            $fail('Format maksimal anggota tim harus berupa angka (min 2) atau rentang (misal: 2-5).');
+                            return;
+                        }
+                        $min = (int) $matches[1];
+                        $max = (int) $matches[2];
+                        if ($min < 2) {
+                            $fail('Batas bawah rentang minimal harus bernilai 2.');
+                        }
+                        if ($max < $min) {
+                            $fail('Batas atas rentang tidak boleh lebih kecil dari batas bawah.');
+                        }
+                    }
+                }
+            ],
         ]);
 
         $data = $request->only([
@@ -1166,7 +1216,7 @@ class EventController extends Controller
         ]);
 
         $data['lomba_kategori'] = $data['lomba_kategori'] ?? 'individual';
-        $data['max_team_members'] = !empty($data['max_team_members']) ? (int) $data['max_team_members'] : 5;
+        $data['max_team_members'] = !empty($data['max_team_members']) ? trim($data['max_team_members']) : '5';
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
         // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.

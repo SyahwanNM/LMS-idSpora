@@ -88,6 +88,11 @@ class EventModuleController extends Controller
             abort(403, 'Event ini bukan milik Anda.');
         }
 
+        $assignment = \App\Models\TrainerAssignment::where('event_id', $event->id)
+            ->where('trainer_id', $user->id)
+            ->first();
+
+
         $request->validate([
             'module' => 'required|file|mimes:pdf,mp4,doc,docx,ppt,pptx,zip,rar,7z|max:20480',
         ]);
@@ -103,6 +108,31 @@ class EventModuleController extends Controller
             'original_name' => $originalName,
             'path' => $path,
             'status' => 'pending_review',
+        ]);
+
+        $assignment = \App\Models\TrainerAssignment::where('event_id', $event->id)
+            ->where('trainer_id', $user->id)
+            ->first();
+
+        if (!$assignment) {
+            $assignment = \App\Models\TrainerAssignment::create([
+                'trainer_id' => $user->id,
+                'event_id' => $event->id,
+                'status' => 'accepted',
+                'sla_upload_deadline' => $event->material_deadline ?: now()->addDays(3),
+            ]);
+        }
+
+        $assignment->update([
+            'material_path' => $path,
+            'materials_uploaded_at' => now(),
+            'material_status' => 'pending_review',
+            'material_submitted_at' => now(),
+            'material_approved_at' => null,
+            'material_approved_by' => null,
+            'material_rejected_at' => null,
+            'material_rejected_by' => null,
+            'material_rejection_reason' => null,
         ]);
 
         return back()->with('success', 'Module berhasil diupload dan menunggu verifikasi admin.');

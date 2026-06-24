@@ -1189,19 +1189,22 @@
                 $statusBadgeClass = $statusLabel === 'Aktif' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger';
                 $rawAvatar = trim((string) ($trainer->avatar ?? ''));
                 $profilePhotoUrl = $rawAvatar !== '' ? ($trainer->avatar_url ?? '') : '';
-                $skills = collect($trainer->trainer_skills ?? [])
+                $specializations = collect($trainer->trainer_specializations ?? [])
                     ->filter()
-                    ->take(4)
+                    ->take(6)
                     ->values();
-                if ($skills->isEmpty() && $profession !== '') {
-                    $skills = collect(explode(' ', $profession))
+                if ($specializations->isEmpty() && $profession !== '') {
+                    $specializations = collect(explode(' ', $profession))
                         ->filter()
                         ->take(4)
                         ->values();
                 }
-                if ($skills->isEmpty()) {
-                    $skills = collect(['Kecerdasan Buatan', 'Pembelajaran Mesin', 'Sains Data']);
+                if ($specializations->isEmpty()) {
+                    $specializations = collect(['Kecerdasan Buatan', 'Pembelajaran Mesin', 'Sains Data']);
                 }
+                $skills = collect($trainer->trainer_skills ?? [])
+                    ->filter()
+                    ->values();
                 $educationList = collect($trainer->trainer_educations ?? [])->filter()->values();
                 $certificationList = collect($trainer->trainer_certifications ?? [])->filter()->values();
                 $profileCompletion = method_exists($trainer, 'getProfileCompletionPercentage')
@@ -1405,12 +1408,31 @@
                                     </div>
 
                                     <div class="info-block mb-4">
+                                        <span class="info-block-label">Spesialisasi</span>
+                                        <div class="info-block-value">
+                                            <div class="profile-tag-list mt-2">
+                                                @foreach($specializations as $spec)
+                                                    <span class="profile-tag px-3 py-2" style="font-size: 12px; border-radius: 8px;">{{ $spec }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="info-block mb-4">
                                         <span class="info-block-label">Keahlian (Skill)</span>
                                         <div class="info-block-value">
                                             <div class="profile-tag-list mt-2">
-                                                @foreach($skills as $skill)
-                                                    <span class="profile-tag px-3 py-2" style="font-size: 12px; border-radius: 8px;">{{ $skill }}</span>
-                                                @endforeach
+                                                @forelse($skills as $skill)
+                                                    @php
+                                                        $skillName = is_array($skill) ? ($skill['name'] ?? '') : $skill;
+                                                        $skillPercent = is_array($skill) ? ($skill['percent'] ?? '100') : '100';
+                                                    @endphp
+                                                    <span class="profile-tag px-3 py-2" style="font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; background: #f3f4f6; color: #1f2937; border: 1px solid #e5e7eb;">
+                                                        {{ $skillName }} <strong style="color: #4f46e5;">({{ $skillPercent }}%)</strong>
+                                                    </span>
+                                                @empty
+                                                    <span style="font-size: 13px; color: #64748b;">-</span>
+                                                @endforelse
                                             </div>
                                         </div>
                                     </div>

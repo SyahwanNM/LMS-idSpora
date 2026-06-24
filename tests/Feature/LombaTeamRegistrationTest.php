@@ -703,4 +703,93 @@ class LombaTeamRegistrationTest extends TestCase
         $response->assertSee('Sangat Bagus!');
         $response->assertSee('test_initial.pdf');
     }
+
+    public function test_range_based_team_size_and_payment_readiness()
+    {
+        $leader = User::factory()->create(['role' => 'user']);
+        $member1 = User::factory()->create(['role' => 'user']);
+        $member2 = User::factory()->create(['role' => 'user']);
+        $member3 = User::factory()->create(['role' => 'user']);
+
+        $event = Event::create([
+            'title' => 'Lomba Team Range Test',
+            'image' => 'lomba.png',
+            'speaker' => 'Speaker A',
+            'description' => 'Description Lomba',
+            'location' => 'Online',
+            'price' => 150000.00,
+            'event_time' => '09:00:00',
+            'event_date' => now()->addDays(5)->format('Y-m-d'),
+            'jenis' => 'Lomba',
+            'lomba_kategori' => 'team',
+            'max_team_members' => '2-3', // Range 2-3 members
+            'is_published' => 1,
+        ]);
+
+        // 1. Verify model helper getters
+        $this->assertEquals(2, $event->min_team_members);
+        $this->assertEquals(3, $event->max_team_members_count);
+
+        // 2. Register leader (1 member total)
+        $team = Team::create([
+            'event_id' => $event->id,
+            'name' => 'Range Devs',
+            'code' => 'RNGDEV',
+            'leader_id' => $leader->id,
+            'status' => 'pending',
+        ]);
+
+        $leaderReg = EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $leader->id,
+            'team_id' => $team->id,
+            'is_team_leader' => true,
+            'status' => 'pending',
+            'registration_code' => 'EVT1-RNGLEAD',
+        ]);
+
+        // Payment is not ready with only 1 member (min is 2)
+        $this->assertFalse($team->registrations()->count() >= $event->min_team_members);
+
+        // 3. Join member 1 (2 members total)
+        EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $member1->id,
+            'team_id' => $team->id,
+            'is_team_leader' => false,
+            'status' => 'pending',
+            'registration_code' => 'EVT1-RNGMBR1',
+        ]);
+
+        // Now payment is ready (2 >= 2)
+        $this->assertTrue($team->registrations()->count() >= $event->min_team_members);
+
+        // 4. Join member 2 (3 members total)
+        EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $member2->id,
+            'team_id' => $team->id,
+            'is_team_leader' => false,
+            'status' => 'pending',
+            'registration_code' => 'EVT1-RNGMBR2',
+        ]);
+
+        // Max is 3. Now team is full (3 >= 3)
+        $this->assertTrue($team->registrations()->count() >= $event->max_team_members_count);
+
+        // 5. Try to join member 3 (will fail since it exceeds max limit)
+        $response = $this->actingAs($member3)
+            ->post(route('events.join-team', $event), [
+                'team_code' => $team->code,
+                'full_name' => 'Member 3',
+                'university_origin' => 'Harvard',
+                'institution_location' => 'USA',
+                'whatsapp_number' => '081234567890',
+                'info_source' => 'Website',
+                'educational_background' => "Bachelor",
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', 'Tim ini sudah penuh.');
+    }
 }

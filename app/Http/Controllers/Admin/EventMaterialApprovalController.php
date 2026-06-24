@@ -110,7 +110,54 @@ class EventMaterialApprovalController extends Controller
 
     private function syncLegacyEventMaterialsToAssignments(): void
     {
-        // No-op: legacy database columns have been dropped and data migrated.
+        $modules = \App\Models\EventTrainerModule::get();
+        foreach ($modules as $module) {
+            $assignment = \App\Models\TrainerAssignment::where('event_id', $module->event_id)
+                ->where('trainer_id', $module->trainer_id)
+                ->first();
+
+            if (!$assignment) {
+                $assignment = \App\Models\TrainerAssignment::create([
+                    'trainer_id' => $module->trainer_id,
+                    'event_id' => $module->event_id,
+                    'status' => 'accepted',
+                    'sla_upload_deadline' => now()->addDays(3),
+                ]);
+            }
+
+            // Sync latest module path and status to assignment
+            $trainerModules = \App\Models\EventTrainerModule::where('event_id', $module->event_id)
+                ->where('trainer_id', $module->trainer_id)
+                ->get();
+
+            $latestModule = $trainerModules->sortByDesc('created_at')->first();
+            if (!$latestModule) {
+                continue;
+            }
+
+            $totalModules = $trainerModules->count();
+            $approvedModules = $trainerModules->where('status', 'approved')->count();
+            $rejectedModules = $trainerModules->where('status', 'rejected')->count();
+            $pendingModules = $trainerModules->whereIn('status', ['pending_review', 'pending'])->count();
+
+            $newStatus = 'pending_review';
+            if ($totalModules === 0) {
+                $newStatus = 'pending';
+            } elseif ($pendingModules > 0) {
+                $newStatus = 'pending_review';
+            } elseif ($approvedModules === $totalModules) {
+                $newStatus = 'approved';
+            } elseif ($rejectedModules > 0) {
+                $newStatus = 'rejected';
+            }
+
+            $assignment->update([
+                'material_path' => $latestModule->path,
+                'material_status' => $newStatus,
+                'materials_uploaded_at' => $latestModule->created_at,
+                'material_submitted_at' => $assignment->material_submitted_at ?: $latestModule->created_at,
+            ]);
+        }
     }
 
     private function resolveTargetAssignment(Event $event, Request $request): ?TrainerAssignment
@@ -301,7 +348,7 @@ class EventMaterialApprovalController extends Controller
     public function stream(Request $request, Event $event): BinaryFileResponse
     {
         if (!auth()->check() || (auth()->user()->role ?? null) !== 'admin') {
-            abort(403, 'Hanya admin yang dapat mengakses materi event.');
+            abort(403, 'Hanya admin trainer yang dapat mengakses materi event.');
         }
 
         $moduleId = (int) $request->query('module_id', 0);
@@ -764,7 +811,7 @@ class EventMaterialApprovalController extends Controller
                     'trainer_id' => $etm->trainer_id,
                     'type'       => 'event_material_revoked',
                     'title'      => 'Peninjauan Materi Ditarik',
-                    'message'    => 'Persetujuan/penolakan untuk modul "' . $etm->original_name . '" untuk event "' . $event->title . '" telah ditarik kembali oleh admin. Status kembali ke Peninjauan.',
+                    'message'    => 'Persetujuan/penolakan untuk modul "' . $etm->original_name . '" untuk event "' . $event->title . '" telah ditarik kembali oleh admin trainer. Status kembali ke Peninjauan.',
                     'data'       => ['entity_type' => 'event', 'entity_id' => (int) $event->id, 'url' => route('trainer.events.show', $event->id)],
                     'expires_at' => now()->addDays(30),
                 ]);
@@ -814,7 +861,7 @@ class EventMaterialApprovalController extends Controller
                     'trainer_id' => $assignment->trainer_id,
                     'type'       => 'event_material_revoked',
                     'title'      => 'Peninjauan Materi Ditarik',
-                    'message'    => 'Persetujuan/penolakan materi untuk event "' . $event->title . '" telah ditarik kembali oleh admin. Status kembali ke Peninjauan.',
+                    'message'    => 'Persetujuan/penolakan materi untuk event "' . $event->title . '" telah ditarik kembali oleh admin trainer. Status kembali ke Peninjauan.',
                     'data'       => ['entity_type' => 'event', 'entity_id' => (int) $event->id, 'url' => route('trainer.events.show', $event->id)],
                     'expires_at' => now()->addDays(30),
                 ]);

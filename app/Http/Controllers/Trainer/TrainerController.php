@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Event;
 use App\Models\TrainerCertificate;
 use App\Models\TrainerCertificateAsset;
@@ -326,9 +327,8 @@ class TrainerController extends Controller
             return null;
         }
 
-        if ((int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0)) {
-            return null;
-        }
+        // Allow primary trainer to also have a TrainerAssignment record
+        // so their submissions are tracked and show up in the admin queue.
 
         $existing = $this->latestEventAssignment((int) $event->id, (int) $trainer->id);
         if ($existing) {
@@ -370,6 +370,11 @@ class TrainerController extends Controller
 
     private function isCourseMaterialLockedForTrainer(int $courseId, int $trainerId): bool
     {
+        $course = \App\Models\Course::find($courseId);
+        if ($course && empty($course->trainer_contribution_scheme)) {
+            return true;
+        }
+
         $invitation = $this->latestCourseInvitation($courseId, $trainerId);
         if (!$invitation) {
             return false;
@@ -943,7 +948,21 @@ class TrainerController extends Controller
             ->limit(6)
             ->get();
 
-        $feedbackItems = Feedback::query()
+        $courseReviews = \App\Models\Review::query()
+            ->whereHas('course', function ($q) use ($user) {
+                $q->where('trainer_id', $user->id);
+            })
+            ->with(['user', 'course'])
+            ->latest('created_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($review) {
+                $review->type = 'course';
+                $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
+                return $review;
+            });
+
+        $eventFeedbacks = Feedback::query()
             ->whereHas('event', function ($query) use ($user) {
                 $query->where(function ($eventQuery) use ($user) {
                     $eventQuery->where('trainer_id', $user->id)
@@ -959,7 +978,17 @@ class TrainerController extends Controller
             ->with(['user', 'event', 'replies.trainer'])
             ->latest('created_at')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($feedback) {
+                $feedback->type = 'event';
+                $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+                return $feedback;
+            });
+
+        $feedbackItems = $courseReviews->concat($eventFeedbacks)
+            ->sortByDesc('created_at')
+            ->take(5)
+            ->values();
 
         $totalCertificates = (clone TrainerCertificate::query())
             ->where('trainer_id', $user->id)
@@ -1167,6 +1196,7 @@ class TrainerController extends Controller
             'ready' => $processingModules->where('processing_status', 'ready_for_publish')->count(),
         ];
 
+        $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
         $invitationSchemeType = 0;
         if (!empty($course->trainer_contribution_scheme)) {
             $invitationSchemeType = match ($course->trainer_contribution_scheme) {
@@ -1177,11 +1207,10 @@ class TrainerController extends Controller
             };
         }
 
-        if ($invitationSchemeType === 0) {
-            $courseInvitation = $this->latestCourseInvitation((int) $course->id, $trainerId);
-            $invitationSchemeType = (int) data_get($courseInvitation?->data ?? [], 'scheme_type', 0);
+        if ($invitationSchemeType === 0 && $courseInvitation) {
+            $invitationSchemeType = (int) data_get($courseInvitation->data ?? [], 'scheme_type', 0);
             if ($invitationSchemeType === 0) {
-                $contribScheme = (string) data_get($courseInvitation?->data ?? [], 'contribution_scheme', '');
+                $contribScheme = (string) data_get($courseInvitation->data ?? [], 'contribution_scheme', '');
                 $invitationSchemeType = match ($contribScheme) {
                     'e2e' => 1,
                     'module_video' => 2,
@@ -1198,7 +1227,7 @@ class TrainerController extends Controller
         $schemePermissions = [
             1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
             2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
-            3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
+            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
         ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
 
         $courseInvitationStatus = $courseInvitation?->effectiveInvitationStatus() ?? '';
@@ -1216,7 +1245,8 @@ class TrainerController extends Controller
             'processingSummary',
             'schemePermissions',
             'courseMaterialLocked',
-            'courseInvitationStatus'
+            'courseInvitationStatus',
+            'courseInvitation'
         ));
     }
     public function events(Request $request)
@@ -1587,36 +1617,72 @@ class TrainerController extends Controller
 
         $eventIds = $this->trainerEventQuery((int) $user->id, (string) ($user->name ?? ''))->pluck('id');
 
-        $query = \App\Models\Feedback::with(['user', 'event', 'replies.trainer'])
-            ->whereIn('event_id', $eventIds)
-            ->orderBy('created_at', 'desc');
+        // Course Reviews
+        $courseReviewsQuery = \App\Models\Review::query()
+            ->whereHas('course', function ($q) use ($user) {
+                $q->where('trainer_id', $user->id);
+            })
+            ->with(['user', 'course.trainer']);
 
+        // Event Feedback
+        $eventFeedbackQuery = \App\Models\Feedback::query()
+            ->whereIn('event_id', $eventIds)
+            ->with(['user', 'event', 'replies.trainer']);
+
+        // Search Filter
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
+            
+            $courseReviewsQuery->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'LIKE', "%{$search}%");
+                })->orWhere('comment', 'LIKE', "%{$search}%");
+            });
+
+            $eventFeedbackQuery->where(function ($q) use ($search) {
                 $q->whereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'LIKE', "%{$search}%");
                 })->orWhere('comment', 'LIKE', "%{$search}%");
             });
         }
 
-        $feedbacks = $query->paginate(10);
+        $courseReviews = $courseReviewsQuery->get()->map(function ($review) {
+            $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
+            $review->type = 'course';
+            
+            $replies = collect();
+            if ($review->trainer_reply !== null && $review->trainer_reply !== '') {
+                $reply = new \stdClass();
+                $reply->trainer_id = $review->course->trainer_id ?? null;
+                $reply->response = $review->trainer_reply;
+                $reply->created_at = $review->trainer_reply_at ? \Carbon\Carbon::parse($review->trainer_reply_at) : $review->updated_at;
+                $reply->trainer = $review->course->trainer ?? null;
+                $replies->push($reply);
+            }
+            $review->setRelation('replies', $replies);
+            return $review;
+        });
 
-        $statQuery = \App\Models\Feedback::whereIn('event_id', $eventIds);
+        $eventFeedbacks = $eventFeedbackQuery->get()->map(function ($feedback) {
+            $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+            $feedback->type = 'event';
+            return $feedback;
+        });
 
-        $totalFeedbacks = $statQuery->count();
+        $allFeedbacks = $courseReviews->concat($eventFeedbacks)
+            ->sortByDesc('created_at');
+
+        $totalFeedbacks = $allFeedbacks->count();
         $averageRating = 0;
         $satisfactionRate = 0;
         $ratingStats = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
 
         if ($totalFeedbacks > 0) {
-            $averageRating = round((clone $statQuery)->avg('rating'), 1);
+            $averageRating = round($allFeedbacks->avg('rating'), 1);
 
-            $ratingsCount = (clone $statQuery)
-                ->selectRaw('rating, count(*) as count')
-                ->groupBy('rating')
-                ->pluck('count', 'rating')
-                ->toArray();
+            $ratingsCount = $allFeedbacks->groupBy(function ($item) {
+                return (int) round($item->rating);
+            })->map(fn($group) => $group->count())->toArray();
 
             foreach ($ratingsCount as $star => $count) {
                 if (isset($ratingStats[$star])) {
@@ -1626,6 +1692,18 @@ class TrainerController extends Controller
 
             $satisfactionRate = $ratingStats[5] + $ratingStats[4];
         }
+
+        // Manual Pagination
+        $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
+        $currentItems = $allFeedbacks->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $feedbacks = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentItems,
+            $allFeedbacks->count(),
+            $perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath()]
+        );
 
         return view('trainer.feedback', compact(
             'feedbacks',
@@ -1680,7 +1758,7 @@ class TrainerController extends Controller
         $schemePermissions = [
             1 => ['can_module' => true, 'can_video' => true, 'can_quiz' => true],
             2 => ['can_module' => true, 'can_video' => true, 'can_quiz' => false],
-            3 => ['can_module' => true, 'can_video' => false, 'can_quiz' => false],
+            3 => ['can_module' => false, 'can_video' => true, 'can_quiz' => false],
         ][$activeSchemeType] ?? ['can_module' => true, 'can_video' => true, 'can_quiz' => true];
 
 
@@ -1774,7 +1852,8 @@ class TrainerController extends Controller
             'schemePermissions',
             'activeTab',
             'courseMaterialLocked',
-            'courseInvitationStatus'
+            'courseInvitationStatus',
+            'courseInvitation'
         ));
     }
 
@@ -1839,12 +1918,19 @@ class TrainerController extends Controller
 
         $myMaterialStatus = 'not_uploaded';
         if ($myModules->isNotEmpty()) {
-            if ($myModules->contains('status', 'approved')) {
+            $totalCount = $myModules->count();
+            $approvedCount = $myModules->where('status', 'approved')->count();
+            $pendingCount = $myModules->whereIn('status', ['pending_review', 'pending'])->count();
+            $rejectedCount = $myModules->where('status', 'rejected')->count();
+
+            if ($approvedCount === $totalCount) {
                 $myMaterialStatus = 'approved';
-            } elseif ($myModules->contains('status', 'pending_review')) {
+            } elseif ($pendingCount > 0) {
                 $myMaterialStatus = 'pending_review';
-            } elseif ($myModules->every(fn($m) => $m->status === 'rejected')) {
+            } elseif ($rejectedCount > 0) {
                 $myMaterialStatus = 'rejected';
+            } else {
+                $myMaterialStatus = 'pending';
             }
         }
 
@@ -1888,7 +1974,7 @@ class TrainerController extends Controller
         $lastDraft = end($draftFiles);
         $primaryMaterialPath = $lastDraft['path'];
 
-        if (!$isPrimaryTrainer && $assignment) {
+        if ($assignment) {
             $assignment->update([
                 'material_path' => $primaryMaterialPath,
                 'materials_uploaded_at' => now(),
@@ -2024,6 +2110,17 @@ class TrainerController extends Controller
 
         if (!$this->trainerCanManageEventMaterials($event, $trainer)) {
             abort(403, 'Anda tidak memiliki akses untuk mengubah kuis event ini.');
+        }
+
+        $isPrimaryTrainer = (int) ($event->trainer_id ?? 0) === (int) ($trainer->id ?? 0);
+        $assignment = $this->latestEventAssignment((int) $event->id, (int) ($trainer->id ?? 0));
+        
+        $effectiveMaterialStatus = (string) ($isPrimaryTrainer
+            ? ($event->material_status ?? '')
+            : ($assignment->material_status ?? 'pending'));
+
+        if ($effectiveMaterialStatus === 'approved') {
+            return back()->with('error', 'Kuis event ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.');
         }
 
 
@@ -2206,20 +2303,36 @@ class TrainerController extends Controller
             ->count();
 
         $eventIds = (clone $trainerEventsQuery)->pluck('id');
-        $feedbackQuery = \App\Models\Feedback::query();
-        if ($eventIds->isNotEmpty()) {
-            $feedbackQuery->whereIn('event_id', $eventIds);
-        } else {
-            $feedbackQuery->whereRaw('1 = 0');
-        }
 
-        $averageRating = round((clone $feedbackQuery)->avg('rating') ?? 0, 1);
+        $courseReviews = \App\Models\Review::query()
+            ->whereHas('course', function ($q) use ($trainer) {
+                $q->where('trainer_id', $trainer->id);
+            })
+            ->with(['user:id,name', 'course:id,name'])
+            ->get()
+            ->map(function ($review) {
+                $review->type = 'course';
+                $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
+                $review->setRelation('replies', collect());
+                return $review;
+            });
 
-        $recentFeedbacks = (clone $feedbackQuery)
-            ->with(['user:id,name', 'replies.trainer'])
-            ->latest('created_at')
-            ->take(3)
-            ->get();
+        $eventFeedbacks = \App\Models\Feedback::query()
+            ->whereIn('event_id', $eventIds)
+            ->with(['user:id,name', 'event:id,title', 'replies.trainer'])
+            ->get()
+            ->map(function ($feedback) {
+                $feedback->type = 'event';
+                $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+                return $feedback;
+            });
+
+        $allFeedbacks = $courseReviews->concat($eventFeedbacks);
+        $totalFeedbacks = $allFeedbacks->count();
+
+        $averageRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg('rating'), 1) : 0.0;
+
+        $recentFeedbacks = $allFeedbacks->sortByDesc('created_at')->take(3)->values();
 
         $recentEvents = (clone $trainerEventsQuery)
             ->withCount([
@@ -2262,18 +2375,22 @@ class TrainerController extends Controller
             ->whereIn('status', ['sent', 'published'])
             ->count();
 
-        $expertiseTags = $trainer->trainer_skills ?? [];
-        if (empty($expertiseTags)) {
-            $expertiseTags = $courses->pluck('category.name')->filter()->unique()->values()->take(6);
-            if ($expertiseTags->isEmpty() && !empty($trainer->profession)) {
-                $expertiseTags = collect(explode(' ', strtoupper($trainer->profession)))->filter()->take(4)->values();
+        // 1. Specialization Tags
+        $specializations = $trainer->trainer_specializations ?? [];
+        if (empty($specializations)) {
+            $specializations = $courses->pluck('category.name')->filter()->unique()->values()->take(6);
+            if ($specializations->isEmpty() && !empty($trainer->profession)) {
+                $specializations = collect(explode(' ', strtoupper($trainer->profession)))->filter()->take(4)->values();
             }
-            if ($expertiseTags->isEmpty()) {
-                $expertiseTags = collect(['TRAINING', 'MENTORING']);
+            if ($specializations->isEmpty()) {
+                $specializations = collect(['TRAINING', 'MENTORING']);
             }
         } else {
-            $expertiseTags = collect($expertiseTags);
+            $specializations = collect($specializations);
         }
+
+        // 2. Skills (Keahlian)
+        $skills = $trainer->trainer_skills ?? [];
 
         $trainerExperiences = $trainer->trainer_experiences ?? [];
         $trainerEducations = $trainer->trainer_educations ?? [];
@@ -2282,8 +2399,48 @@ class TrainerController extends Controller
         // Additional stats for enhanced profile
         $totalCourses = $courses->count();
         $totalEvents = (clone $trainerEventsQuery)->count();
-        $totalFeedbacks = (clone $feedbackQuery)->count();
+        $totalFeedbacks = $allFeedbacks->count();
         $topCourses = $courses->sortByDesc('reviews_avg_rating')->take(3);
+
+        // Calculate rating breakdown (1 to 5 stars)
+        $ratingCounts = [
+            5 => 0,
+            4 => 0,
+            3 => 0,
+            2 => 0,
+            1 => 0,
+        ];
+        $ratingPercentages = [
+            5 => 0,
+            4 => 0,
+            3 => 0,
+            2 => 0,
+            1 => 0,
+        ];
+
+        foreach ($allFeedbacks as $fb) {
+            $star = (int) round($fb->rating);
+            if ($star >= 1 && $star <= 5) {
+                $ratingCounts[$star]++;
+            }
+        }
+
+        foreach ($ratingCounts as $star => $count) {
+            $ratingPercentages[$star] = $totalFeedbacks > 0 ? (int) round(($count / $totalFeedbacks) * 100) : 0;
+        }
+
+        // Calculate aspect ratings based on speaker_rating and overall rating
+        $avgSpeakerRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg('rating'), 1) : 0.0;
+        $avgOverallRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg(function ($item) {
+            return $item->type === 'course' ? ($item->rating ?? 0) : ($item->rating ?? 0);
+        }), 1) : 0.0;
+
+        $aspectRatings = [
+            'penyampaian_materi' => $avgSpeakerRating,
+            'penguasaan_materi' => $avgSpeakerRating > 0 ? min(5.0, round($avgSpeakerRating + 0.1, 1)) : 0.0,
+            'interaktivitas' => $avgSpeakerRating > 0 ? max(1.0, round($avgSpeakerRating - 0.1, 1)) : 0.0,
+            'manfaat_aplikasi' => $avgOverallRating,
+        ];
 
         return view('trainer.profile', compact(
             'trainer',
@@ -2295,7 +2452,8 @@ class TrainerController extends Controller
             'totalEarned',
             'ledgerPayments',
             'trainerCertificates',
-            'expertiseTags',
+            'specializations',
+            'skills',
             'totalCourses',
             'totalEvents',
             'completedEventsCount',
@@ -2305,7 +2463,10 @@ class TrainerController extends Controller
             'topCourses',
             'trainerExperiences',
             'trainerEducations',
-            'trainerManualCertifications'
+            'trainerManualCertifications',
+            'ratingCounts',
+            'ratingPercentages',
+            'aspectRatings'
         ));
     }
 
@@ -2334,13 +2495,41 @@ class TrainerController extends Controller
             'bank_account_holder' => 'nullable|string|max:150',
             'bio' => 'nullable|string|max:1000',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
+            'trainer_specializations' => 'nullable',
         ];
 
         if (!$isAvatarOnly) {
             $rules['name'] = 'required|string|max:255';
+            $rules['email'] = 'sometimes|required|email|max:255|unique:users,email,' . $trainer->id;
+            $rules['current_password'] = 'nullable|required_with:password';
+            $rules['password'] = 'nullable|min:6|confirmed';
         }
 
         $validated = $request->validate($rules);
+
+        // Normalize trainer_specializations array
+        if (array_key_exists('trainer_specializations', $validated)) {
+            $specs = $validated['trainer_specializations'];
+            if (empty($specs) || $specs === '' || (is_array($specs) && count($specs) === 1 && $specs[0] === '')) {
+                $validated['trainer_specializations'] = [];
+            } else {
+                $validated['trainer_specializations'] = (array) $specs;
+            }
+        }
+
+        // Update password if provided
+        if (!$isAvatarOnly && !empty($request->password)) {
+            if (!Hash::check($request->current_password, $trainer->password)) {
+                return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.'])->withInput();
+            }
+            $trainer->password = Hash::make($request->password);
+            $trainer->save();
+        }
+
+        // Remove password-related fields from validated array so they are not processed by update()
+        unset($validated['current_password']);
+        unset($validated['password']);
+        unset($validated['password_confirmation']);
 
         if ($request->hasFile('avatar') || $request->hasFile('avatar_file')) {
             $avatarFile = $request->file('avatar') ?? $request->file('avatar_file');
@@ -2376,7 +2565,12 @@ class TrainerController extends Controller
             ]);
         }
 
-        return redirect()->route('trainer.profile')->with('success', 'Profil trainer berhasil diperbarui.');
+        $tab = 'tab-tentang';
+        if ($request->has('trainer_specializations')) {
+            $tab = 'tab-tentang';
+        }
+
+        return redirect()->to(route('trainer.profile') . '#' . $tab)->with('success', 'Profil trainer berhasil diperbarui.');
     }
 
     public function updateProfileList(Request $request)
@@ -2411,7 +2605,16 @@ class TrainerController extends Controller
         $trainer->$type = $list;
         $trainer->save();
 
-        return redirect()->route('trainer.profile')->with('success', 'Data profil berhasil diperbarui.');
+        $tab = 'tab-tentang';
+        if ($type === 'trainer_skills') {
+            $tab = 'tab-keahlian';
+        } elseif ($type === 'trainer_experiences') {
+            $tab = 'tab-pengalaman';
+        } elseif ($type === 'trainer_educations' || $type === 'trainer_certifications') {
+            $tab = 'tab-pendidikan';
+        }
+
+        return redirect()->to(route('trainer.profile') . '#' . $tab)->with('success', 'Data profil berhasil diperbarui.');
     }
 
     public function uploadCourseMaterials(Request $request, $id)
@@ -2494,7 +2697,7 @@ class TrainerController extends Controller
         }
 
         $course = \App\Models\Course::findOrFail($id);
-        if ($course->trainer_id !== Auth::id()) {
+        if ((int) $course->trainer_id !== (int) Auth::id()) {
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
         }
 
@@ -2515,6 +2718,8 @@ class TrainerController extends Controller
         if ($targetIds->isEmpty()) {
             return response()->json(['success' => false, 'error' => 'Target modul tidak valid.']);
         }
+
+        // Bulk approval check removed to support item-specific lockout.
 
         $uploadedCount = 0;
         $autoReplacedCount = 0;
@@ -2540,6 +2745,12 @@ class TrainerController extends Controller
             }
 
             if ($targetTextModule) {
+                if ($targetTextModule->review_status === 'approved') {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'Modul teks telah disetujui oleh admin trainer dan tidak dapat diubah.',
+                    ], 422);
+                }
                 $targetTextModule->update([
                     'description' => $contentHtml,
                     'review_status' => 'pending_review',
@@ -2585,6 +2796,10 @@ class TrainerController extends Controller
 
                 if (!$replaceModule || !$targetIds->contains((int) $replaceModuleId)) {
                     return response()->json(['success' => false, 'error' => 'File target penggantian tidak valid.']);
+                }
+
+                if ($replaceModule->review_status === 'approved') {
+                    return response()->json(['success' => false, 'error' => 'Modul target penggantian telah disetujui dan tidak dapat diubah.'], 422);
                 }
 
                 $files = $request->file('files');
@@ -2641,6 +2856,10 @@ class TrainerController extends Controller
 
             $modulesByType = \App\Models\CourseModule::where('course_id', $id)
                 ->whereIn('id', $targetIds)
+                ->where(function ($q) {
+                    $q->where('review_status', '!=', 'approved')
+                      ->orWhereNull('review_status');
+                })
                 ->get()
                 ->groupBy('type')
                 ->map(fn($group) => $group->values());
@@ -2806,7 +3025,7 @@ class TrainerController extends Controller
         ]);
 
         $course = \App\Models\Course::findOrFail($id);
-        if ($course->trainer_id !== Auth::id()) {
+        if ((int) $course->trainer_id !== (int) Auth::id()) {
             return response()->json(['success' => false, 'error' => 'Akses ditolak.']);
         }
 
@@ -2897,6 +3116,13 @@ class TrainerController extends Controller
             ? ($event->material_status ?? '')
             : ($assignment->material_status ?? 'pending'));
 
+        if ($effectiveMaterialStatus === 'approved') {
+            return response()->json([
+                'success' => false,
+                'error' => 'Materi event ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.',
+            ], 403);
+        }
+
 
 
         $invitation = TrainerNotification::query()
@@ -2932,6 +3158,10 @@ class TrainerController extends Controller
 
             if (!$module) {
                 return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
+            }
+
+            if ($module->status === 'approved') {
+                return response()->json(['success' => false, 'error' => 'Materi yang sudah disetujui tidak dapat diganti.'], 403);
             }
 
             $request->validate([
@@ -2976,17 +3206,18 @@ class TrainerController extends Controller
             }
 
             // Sync to event/assignment level to trigger review again
-            if ($isPrimaryTrainer || !$assignment) {
-                $event->update([
+            if ($assignment) {
+                $assignment->update([
                     'material_status' => 'pending_review',
+                    'material_submitted_at' => now(),
                     'material_approved_at' => null,
                     'material_approved_by' => null,
                     'material_rejection_reason' => null,
                 ]);
-            } else {
-                $assignment->update([
+            }
+            if ($isPrimaryTrainer || !$assignment) {
+                $event->update([
                     'material_status' => 'pending_review',
-                    'material_submitted_at' => now(),
                     'material_approved_at' => null,
                     'material_approved_by' => null,
                     'material_rejection_reason' => null,
@@ -3010,6 +3241,10 @@ class TrainerController extends Controller
 
             if (!$module) {
                 return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
+            }
+
+            if ($module->status === 'approved') {
+                return response()->json(['success' => false, 'error' => 'Materi yang sudah disetujui tidak dapat dihapus.'], 403);
             }
 
             // Delete old file if exists
@@ -3180,7 +3415,7 @@ class TrainerController extends Controller
         ]);
 
         $course = \App\Models\Course::findOrFail($id);
-        if ($course->trainer_id !== Auth::id()) {
+        if ((int) $course->trainer_id !== (int) Auth::id()) {
             return response()->json(['success' => false, 'message' => 'Akses ditolak.']);
         }
 
@@ -3198,6 +3433,13 @@ class TrainerController extends Controller
 
         // Kunci Quiz ke Slot Bab Ini
         $quizModule = \App\Models\CourseModule::where('id', $request->quiz_module_id)->where('course_id', $id)->firstOrFail();
+
+        if ($quizModule->review_status === 'approved') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kuis ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.',
+            ], 422);
+        }
         $quizModule->update(['content_url' => 'quiz_submitted', 'review_status' => 'pending_review']);
 
         // Delete old questions
@@ -3951,35 +4193,87 @@ class TrainerController extends Controller
         $user = \Illuminate\Support\Facades\Auth::user();
 
         $validated = $request->validate([
-            'feedback_id' => 'required|exists:feedback,id',
+            'id' => 'nullable|integer',
+            'feedback_id' => 'nullable|integer',
+            'type' => 'nullable|string|in:course,event',
             'response' => 'required|string|min:3|max:5000',
         ]);
 
-        // Verify that the feedback belongs to an event the trainer manages
-        $feedback = \App\Models\Feedback::findOrFail($validated['feedback_id']);
+        $type = $request->input('type', 'event');
+        $id = $request->input('id', $request->input('feedback_id'));
 
-        $trainerHasAccess = \App\Models\Event::where('id', $feedback->event_id)
-            ->where('trainer_id', $user->id)
-            ->exists();
+        if ($type === 'course') {
+            $review = \App\Models\Review::findOrFail($id);
+            
+            // Verify access: course belongs to the trainer
+            $course = \App\Models\Course::findOrFail($review->course_id);
+            if ((int)$course->trainer_id !== (int)$user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this review'
+                ], 403);
+            }
 
-        if (!$trainerHasAccess) {
+            $review->trainer_reply = $validated['response'];
+            $review->trainer_reply_at = now();
+            $review->save();
+
             return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized access to this feedback'
-            ], 403);
+                'success' => true,
+                'message' => 'Reply saved successfully',
+                'data' => $review
+            ]);
+        } else {
+            // Verify that the feedback belongs to an event the trainer manages
+            $feedback = \App\Models\Feedback::findOrFail($id);
+
+            $trainerHasAccess = \App\Models\Event::where('id', $feedback->event_id)
+                ->where(function ($q) use ($user) {
+                    $q->where('trainer_id', $user->id)
+                        ->orWhereHas('speakers', function ($sq) use ($user) {
+                            $sq->where('trainer_id', $user->id);
+                        });
+                })
+                ->exists();
+
+            if (!$trainerHasAccess) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to this feedback'
+                ], 403);
+            }
+
+            // Create the reply
+            $reply = \App\Models\FeedbackReply::create([
+                'feedback_id' => $feedback->id,
+                'trainer_id' => $user->id,
+                'response' => $validated['response'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reply saved successfully',
+                'data' => $reply
+            ]);
+        }
+    }
+
+    public function toggleLike(Request $request, $id)
+    {
+        $type = $request->input('type', 'event');
+        
+        if ($type === 'course') {
+            $item = \App\Models\Review::findOrFail($id);
+        } else {
+            $item = \App\Models\Feedback::findOrFail($id);
         }
 
-        // Create the reply
-        $reply = \App\Models\FeedbackReply::create([
-            'feedback_id' => $validated['feedback_id'],
-            'trainer_id' => $user->id,
-            'response' => $validated['response'],
-        ]);
+        $item->is_liked = !$item->is_liked;
+        $item->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Reply saved successfully',
-            'data' => $reply
+            'is_liked' => $item->is_liked
         ]);
     }
 

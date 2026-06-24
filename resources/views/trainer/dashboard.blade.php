@@ -38,21 +38,21 @@
   // 1. Calculate total reviews/feedbacks for the rating card
   $courseReviews = \App\Models\Review::whereHas('course', function ($q) use ($trainer) {
     $q->where('trainer_id', $trainer->id);
-  })->get(['rating']);
+  })->get(['rating', 'trainer_rating']);
   
   $eventFeedbacks = \App\Models\Feedback::whereHas('event', function ($q) use ($trainer) {
     $q->where('trainer_id', $trainer->id);
-  })->get(['rating']);
+  })->get(['rating', 'speaker_rating']);
   
   $totalRatings = $courseReviews->count() + $eventFeedbacks->count();
   
   $ratingCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
   foreach($courseReviews as $r) { 
-      $val = (int) round($r->rating);
+      $val = (int) round($r->trainer_rating ?? $r->rating ?? 0);
       if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
   }
   foreach($eventFeedbacks as $f) { 
-      $val = (int) round($f->rating);
+      $val = (int) round($f->speaker_rating ?? $f->rating ?? 0);
       if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
   }
   
@@ -1121,7 +1121,7 @@ body {
                 $fbRating = (float)($fb->rating ?? 5);
                 $fbName = $fb->user->name ?? ($fb->participant_name ?? 'Peserta');
                 $fbComment = $fb->comment ?? ($fb->feedback ?? '-');
-                $fbEvent = $fb->event->title ?? ($fb->event_title ?? 'Materi');
+                $fbEvent = $fb->event->title ?? $fb->course->name ?? $fb->event_title ?? 'Materi';
                 $fbDate = $fb->created_at ? $fb->created_at->format('d M Y') : '-';
             @endphp
             <div class="review-box mt-2" style="margin-bottom:12px;">

@@ -19,7 +19,54 @@ class MaterialApprovalController extends Controller
 {
     private function syncLegacyEventMaterialsToAssignments(): void
     {
-        // No-op: legacy database columns have been dropped and data migrated.
+        $modules = \App\Models\EventTrainerModule::get();
+        foreach ($modules as $module) {
+            $assignment = \App\Models\TrainerAssignment::where('event_id', $module->event_id)
+                ->where('trainer_id', $module->trainer_id)
+                ->first();
+
+            if (!$assignment) {
+                $assignment = \App\Models\TrainerAssignment::create([
+                    'trainer_id' => $module->trainer_id,
+                    'event_id' => $module->event_id,
+                    'status' => 'accepted',
+                    'sla_upload_deadline' => now()->addDays(3),
+                ]);
+            }
+
+            // Sync latest module path and status to assignment
+            $trainerModules = \App\Models\EventTrainerModule::where('event_id', $module->event_id)
+                ->where('trainer_id', $module->trainer_id)
+                ->get();
+
+            $latestModule = $trainerModules->sortByDesc('created_at')->first();
+            if (!$latestModule) {
+                continue;
+            }
+
+            $totalModules = $trainerModules->count();
+            $approvedModules = $trainerModules->where('status', 'approved')->count();
+            $rejectedModules = $trainerModules->where('status', 'rejected')->count();
+            $pendingModules = $trainerModules->whereIn('status', ['pending_review', 'pending'])->count();
+
+            $newStatus = 'pending_review';
+            if ($totalModules === 0) {
+                $newStatus = 'pending';
+            } elseif ($pendingModules > 0) {
+                $newStatus = 'pending_review';
+            } elseif ($approvedModules === $totalModules) {
+                $newStatus = 'approved';
+            } elseif ($rejectedModules > 0) {
+                $newStatus = 'rejected';
+            }
+
+            $assignment->update([
+                'material_path' => $latestModule->path,
+                'material_status' => $newStatus,
+                'materials_uploaded_at' => $latestModule->created_at,
+                'material_submitted_at' => $assignment->material_submitted_at ?: $latestModule->created_at,
+            ]);
+        }
     }
 
     private function assessStructureCompleteness(Course $course): array
@@ -400,13 +447,21 @@ class MaterialApprovalController extends Controller
         // Cek apakah semua modul course sudah approved → otomatis approve course
         $allModulesApproved = CourseModule::where('course_id', $material->id)
             ->where(function ($q) {
-                $q->whereNotIn('type', ['quiz'])
-                    ->where(function ($inner) {
-                        $inner->whereNotNull('content_url')
-                            ->orWhereNotNull('description');
-                    });
+                $q->where(function ($inner) {
+                    $inner->whereNotNull('content_url')
+                        ->where('content_url', '!=', '');
+                })->orWhere(function ($inner) {
+                    $inner->whereNotNull('description')
+                        ->where('description', '!=', '');
+                })->orWhere(function ($inner) {
+                    $inner->where('type', 'quiz')
+                        ->whereHas('quizQuestions');
+                });
             })
-            ->where('review_status', '!=', 'approved')
+            ->where(function ($q) {
+                $q->where('review_status', '!=', 'approved')
+                  ->orWhereNull('review_status');
+            })
             ->doesntExist();
 
         // Auto-approve course if all present modules are approved
@@ -428,7 +483,7 @@ class MaterialApprovalController extends Controller
                     'trainer_id' => (int) $material->trainer_id,
                     'type' => 'course_material_approved',
                     'title' => 'Semua Materi Course Diterima',
-                    'message' => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin.',
+                    'message' => 'Semua materi course "' . $material->name . '" telah disetujui oleh admin trainer.',
                     'data' => [
                         'entity_type' => 'course',
                         'entity_id' => (int) $material->id,
@@ -500,7 +555,10 @@ class MaterialApprovalController extends Controller
                         ->whereHas('quizQuestions');
                 });
             })
-            ->where('review_status', '!=', 'approved')
+            ->where(function ($q) {
+                $q->where('review_status', '!=', 'approved')
+                  ->orWhereNull('review_status');
+            })
             ->doesntExist();
 
         // Auto-approve course if all present modules are approved
@@ -735,7 +793,7 @@ class MaterialApprovalController extends Controller
                 'trainer_id' => (int) $material->trainer_id,
                 'type' => 'course_material_approved',
                 'title' => 'Materi Course Diterima',
-                'message' => 'Materi course "' . $material->name . '" telah disetujui oleh admin.',
+                'message' => 'Materi course "' . $material->name . '" telah disetujui oleh admin trainer.',
                 'data' => [
                     'entity_type' => 'course',
                     'entity_id' => (int) $material->id,
@@ -748,6 +806,106 @@ class MaterialApprovalController extends Controller
         return redirect()
             ->route('admin.trainer.material.approvals')
             ->with('success', "Materi yang sudah diupload pada \"{$material->name}\" berhasil disetujui!");
+    }
+
+    /**
+     * Revoke course material approval/rejection and set back to pending review
+     */
+    public function revoke(Request $request, Course $material)
+    {
+        $moduleId = $request->input('module_id');
+
+        // Case 1: Revoke a specific CourseModule
+        if ($moduleId) {
+            $module = CourseModule::where('course_id', $material->id)
+                ->where('id', $moduleId)
+                ->firstOrFail();
+
+            $module->update([
+                'review_status' => 'pending_review',
+                'reviewed_by' => null,
+                'reviewed_at' => null,
+                'review_rejection_reason' => null,
+            ]);
+
+            // If the course itself was already approved or rejected, set it back to pending_review
+            if (in_array($material->status, ['approved', 'rejected', 'active'], true)) {
+                $material->update([
+                    'status' => 'pending_review',
+                    'approved_at' => null,
+                    'approved_by' => null,
+                    'rejected_at' => null,
+                    'rejection_reason' => null,
+                ]);
+            }
+
+            try {
+                if (!empty($material->trainer_id)) {
+                    TrainerNotification::create([
+                        'trainer_id' => (int) $material->trainer_id,
+                        'type' => 'course_material_revoked',
+                        'title' => 'Peninjauan Modul Ditarik',
+                        'message' => 'Persetujuan/penolakan untuk modul "' . $module->title . '" pada course "' . $material->name . '" telah ditarik kembali oleh admin trainer. Status kembali ke Peninjauan.',
+                        'data' => [
+                            'entity_type' => 'course',
+                            'entity_id' => (int) $material->id,
+                            'url' => route('trainer.courses.studio', $material->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                }
+            } catch (\Throwable $e) {}
+
+            return back()->with('success', 'Keputusan untuk modul "' . $module->title . '" berhasil dibatalkan. Status dikembalikan ke Menunggu Tinjauan.');
+        } 
+        // Case 2: Revoke the entire Course Material status
+        else {
+            // Set all active/uploaded modules back to pending_review
+            CourseModule::where('course_id', $material->id)
+                ->where(function ($q) {
+                    $q->whereNotNull('content_url')
+                        ->where('content_url', '!=', '')
+                        ->orWhereNotNull('description')
+                        ->where('description', '!=', '')
+                        ->orWhere(function ($inner) {
+                            $inner->where('type', 'quiz')
+                                ->whereHas('quizQuestions');
+                        });
+                })
+                ->update([
+                    'review_status' => 'pending_review',
+                    'reviewed_by' => null,
+                    'reviewed_at' => null,
+                    'review_rejection_reason' => null,
+                ]);
+
+            $material->update([
+                'status' => 'pending_review',
+                'approved_at' => null,
+                'approved_by' => null,
+                'rejected_at' => null,
+                'rejection_reason' => null,
+            ]);
+
+            try {
+                if (!empty($material->trainer_id)) {
+                    TrainerNotification::create([
+                        'trainer_id' => (int) $material->trainer_id,
+                        'type' => 'course_material_revoked',
+                        'title' => 'Peninjauan Materi Course Ditarik',
+                        'message' => 'Persetujuan/penolakan untuk materi course "' . $material->name . '" telah ditarik kembali oleh admin trainer. Status kembali ke Peninjauan.',
+                        'data' => [
+                            'entity_type' => 'course',
+                            'entity_id' => (int) $material->id,
+                            'url' => route('trainer.courses.studio', $material->id),
+                        ],
+                        'expires_at' => now()->addDays(30),
+                    ]);
+                }
+            } catch (\Throwable $e) {}
+
+            return back()->with('success', 'Keputusan untuk materi course "' . $material->name . '" berhasil dibatalkan. Status dikembalikan ke Menunggu Tinjauan.');
+        }
     }
 
     /**
@@ -778,7 +936,7 @@ class MaterialApprovalController extends Controller
                 'trainer_id' => (int) $material->trainer_id,
                 'type' => 'course_material_rejected',
                 'title' => 'Materi Course Perlu Revisi',
-                'message' => 'Materi course "' . $material->name . '" perlu revisi. Catatan admin: ' . $rejectionReason,
+                'message' => 'Materi course "' . $material->name . '" perlu revisi. Catatan admin trainer: ' . $rejectionReason,
                 'data' => [
                     'entity_type' => 'course',
                     'entity_id' => (int) $material->id,
@@ -855,8 +1013,11 @@ class MaterialApprovalController extends Controller
         $approvedMaterials = $query->orderByRaw('CASE WHEN approved_at IS NULL THEN created_at ELSE approved_at END DESC')->paginate(15);
 
         $approvedEventModules = $approvedEventsQuery
-            ->orderByRaw('CASE WHEN material_approved_at IS NULL THEN created_at ELSE material_approved_at END DESC')
-            ->get();
+            ->get()
+            ->sortByDesc(function ($event) {
+                return $event->material_approved_at ?: $event->created_at;
+            })
+            ->values();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($approvedMaterials->getCollection());
 

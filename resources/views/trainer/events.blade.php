@@ -646,8 +646,8 @@ main {
   </div>
   @php
     $statusData = [
-      ['id' => 'events-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingEvents ?? collect()],
       ['id' => 'events-upcoming', 'label' => 'Mendatang', 'data' => $upcomingEvents ?? collect()],
+      ['id' => 'events-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingEvents ?? collect()],
       ['id' => 'events-finished', 'label' => 'Selesai', 'data' => $finishedEvents ?? collect()],
     ];
   @endphp

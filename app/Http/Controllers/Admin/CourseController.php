@@ -942,6 +942,7 @@ class CourseController extends Controller
                     $query->whereRaw('LOWER(role) = ?', ['trainer']);
                 }),
             ],
+            'trainer_contribution_scheme' => 'nullable|string|in:e2e,module_video,video_only',
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
@@ -1036,6 +1037,17 @@ class CourseController extends Controller
             $cardThumbPath = $request->file('card_thumbnail')->store('courses/card_thumbnails', 'public');
         }
 
+        $contribScheme = $request->input('trainer_contribution_scheme') ?: null;
+        $revenuePercent = null;
+        if ($contribScheme) {
+            $revenuePercent = match ($contribScheme) {
+                'e2e' => 35,
+                'module_video' => 25,
+                'video_only' => 10,
+                default => null,
+            };
+        }
+
         // Create course
         $course = Course::create([
             'name' => $request->name,
@@ -1043,6 +1055,9 @@ class CourseController extends Controller
             'template_id' => $template?->id,
             'template_version' => $template?->version,
             'trainer_id' => $request->input('trainer_id') ?: null,
+            'trainer_contribution_scheme' => $contribScheme,
+            'trainer_revenue_percent' => $revenuePercent,
+            'trainer_scheme_accepted_at' => $contribScheme ? now() : null,
             'description' => $this->sanitizeDescription($request->description),
             'level' => $request->level,
             'status' => $request->status,
@@ -1236,6 +1251,7 @@ class CourseController extends Controller
                     $query->whereRaw('LOWER(role) = ?', ['trainer']);
                 }),
             ],
+            'trainer_contribution_scheme' => 'nullable|string|in:e2e,module_video,video_only',
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
@@ -1333,10 +1349,24 @@ class CourseController extends Controller
             }
         }
 
+        $contribScheme = $request->input('trainer_contribution_scheme') ?: null;
+        $revenuePercent = null;
+        if ($contribScheme) {
+            $revenuePercent = match ($contribScheme) {
+                'e2e' => 35,
+                'module_video' => 25,
+                'video_only' => 10,
+                default => null,
+            };
+        }
+
         $data = [
             'name' => $request->name,
             'category_id' => $request->category_id,
             'trainer_id' => $request->input('trainer_id') ?: null,
+            'trainer_contribution_scheme' => $contribScheme,
+            'trainer_revenue_percent' => $revenuePercent,
+            'trainer_scheme_accepted_at' => $contribScheme ? ($course->trainer_scheme_accepted_at ?? now()) : null,
             'description' => $this->sanitizeDescription($request->description),
             'level' => $request->level,
             'status' => $request->status,

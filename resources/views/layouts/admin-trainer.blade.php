@@ -17,6 +17,10 @@
                 --admin-text-muted: #64748b;
             }
 
+            html body {
+                padding-top: 72px !important;
+            }
+
             body {
                 background-color: var(--admin-bg);
                 font-family: 'Plus Jakarta Sans', sans-serif !important;
@@ -374,7 +378,7 @@
                 }
 
                 .admin-trainer-wrapper {
-                    min-height: 100vh;
+                    min-height: calc(100vh - 72px);
                 }
             }
         </style>

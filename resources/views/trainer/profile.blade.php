@@ -1366,12 +1366,11 @@
             gap: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            z-index: 2;
+            z-index: 10;
         }
 
         .hero-card .edit-btn:hover {
             background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-3px) scale(1.02);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
             border-color: rgba(255, 255, 255, 0.4);
             color: #ffffff;
@@ -1524,7 +1523,11 @@
             color: #a78bfa;
             font-size: 18px;
             background: rgba(255, 255, 255, 0.1);
-            padding: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1846,6 +1849,10 @@
             border-bottom-color: var(--primary);
         }
 
+        .tab-item:hover {
+            color: var(--primary);
+        }
+
         .tab-item i {
             font-size: 16px;
         }
@@ -1903,19 +1910,26 @@
             margin: 8px 0 24px;
         }
 
-        .btn-outline-primary {
-            background: #ffffff;
-            border: 1px solid var(--border-light);
-            color: var(--primary);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
+        .btn-outline-purple {
+            background: #ffffff !important;
+            border: 1px solid var(--primary-light) !important;
+            color: var(--primary-light) !important;
+            padding: 8px 16px !important;
+            border-radius: 8px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            text-decoration: none !important;
+            transition: all 0.2s !important;
+        }
+
+        .btn-outline-purple:hover {
+            background: var(--primary-soft) !important;
+            color: var(--primary) !important;
+            border-color: var(--primary) !important;
         }
 
         .btn-icon-edit {
@@ -1946,6 +1960,11 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .view-all-link:hover {
+            color: var(--primary-light);
         }
 
         /* ---------------- TENTANG SAYA TAB ---------------- */
@@ -2040,6 +2059,7 @@
         }
 
         .expertise-card {
+            position: relative;
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
             padding: 20px;
@@ -2398,13 +2418,28 @@
         }
 
         .filter-select {
-            padding: 8px 12px;
+            padding: 8px 36px 8px 12px;
             border: 1px solid var(--border-light);
             border-radius: 8px;
             font-size: 13px;
             color: var(--text-dark);
-            background: #ffffff;
+            background: #ffffff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") no-repeat right 12px center/10px 10px;
             outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary-light);
+        }
+
+        .filter-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-soft);
         }
 
         .review-list {
@@ -2980,6 +3015,22 @@
             background: var(--bg-gray);
         }
 
+        .btn-danger {
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
         /* RESPONSIVE DESIGN */
         @media (max-width: 1024px) {
             .top-grid, .main-grid {
@@ -3253,7 +3304,7 @@
         <div class="main-grid">
 
             <!-- LEFT COLUMN: TAB PANELS -->
-            <div class="left-content content-section" style="padding: 0; overflow: hidden;">
+            <div class="left-content content-section" style="display: block !important; padding: 0; overflow: hidden;">
                 <!-- TABS NAV -->
                 <div class="profile-tabs">
                     <a href="#" class="tab-item active" onclick="switchTab(event, 'tab-tentang')">
@@ -3273,7 +3324,7 @@
                     </a>
                 </div>
 
-                <div style="padding: 0 32px 32px 32px;">
+                <div style="padding: 15px 32px 32px 32px;">
                     <!-- TAB: TENTANG SAYA -->
                     <div id="tab-tentang" class="tab-panel active">
                         <div class="section-header-flex" style="margin-bottom: 8px;">
@@ -3291,14 +3342,14 @@
                                     class="bi bi-pencil"></i></button>
                         </div>
                         <div class="pill-list" id="ui-spesialisasi-list" style="margin-top: 12px; margin-bottom: 24px;">
-                            @if(empty($expertiseTags))
+                            @if(empty($specializations))
                                 <span class="pill active">Leadership</span>
                                 <span class="pill active">Team Building</span>
                                 <span class="pill active">Communication</span>
                                 <span class="pill active">Public Speaking</span>
                                 <span class="pill active">Time Management</span>
                             @else
-                                @foreach($expertiseTags as $tag)
+                                @foreach($specializations as $tag)
                                     <span class="pill active">{{ $tag }}</span>
                                 @endforeach
                             @endif
@@ -3366,35 +3417,29 @@
                         </div>
 
                         <div class="d-flex justify-content-end mb-3">
-                            <button class="btn btn-outline-primary" onclick="openAddKeahlian()">
+                            <button class="btn btn-outline-purple" onclick="openAddKeahlian()">
                                 <i class="bi bi-plus"></i> Tambah Keahlian
                             </button>
                         </div>
 
                         <div class="expertise-grid" id="ui-keahlian-list">
-                            @foreach($expertiseTags as $index => $skill)
+                            @foreach($skills as $index => $skill)
                                 @php
                                     $skillName = is_array($skill) ? ($skill['name'] ?? '') : $skill;
                                     $skillPercent = is_array($skill) ? ($skill['percent'] ?? '100') : '100';
                                 @endphp
-                                <div class="expertise-card">
+                                <div class="expertise-card" style="position:relative; padding-bottom: 20px;">
                                     <div style="position:absolute; top:12px; right:12px; display:flex; gap:4px;">
                                         <button class="btn-icon-edit" style="width:20px; height:20px; font-size:12px;"
                                             onclick="openEditKeahlian({{ $index }}, '{{ addslashes($skillName) }}', '{{ $skillPercent }}')"><i
                                                 class="bi bi-pencil"></i></button>
                                     </div>
-                                    <div class="exp-header">
+                                    <div class="exp-header" style="margin-bottom: 0;">
                                         <div class="exp-icon primary"><i class="bi bi-check2-circle"></i></div>
                                         <div class="exp-title-box">
-                                            <h4 class="skill-name">{{ $skillName }}</h4>
-                                            <p>Kompeten</p>
+                                            <h4 class="skill-name" style="margin-bottom: 2px;">{{ $skillName }}</h4>
+                                            <p style="margin: 0; font-size: 11px; color: var(--text-muted);">Keahlian Terverifikasi</p>
                                         </div>
-                                    </div>
-                                    <div class="exp-progress-wrap">
-                                        <div class="exp-progress-bar">
-                                            <div class="exp-progress-fill" style="width: {{ $skillPercent }}%;"></div>
-                                        </div>
-                                        <span class="exp-percentage skill-percent">{{ $skillPercent }}%</span>
                                     </div>
                                 </div>
                             @endforeach
@@ -3414,7 +3459,7 @@
                         </div>
 
                         <div class="d-flex justify-content-end mb-3">
-                            <button class="btn btn-outline-primary" onclick="openAddPengalaman()">
+                            <button class="btn btn-outline-purple" onclick="openAddPengalaman()">
                                 <i class="bi bi-plus"></i> Tambah Pengalaman
                             </button>
                         </div>
@@ -3461,7 +3506,7 @@
                                 </div>
 
                                 <div class="d-flex justify-content-end mb-3">
-                                    <button class="btn btn-outline-primary" onclick="openAddPendidikan()">
+                                    <button class="btn btn-outline-purple" onclick="openAddPendidikan()">
                                         <i class="bi bi-plus"></i> Tambah Pendidikan
                                     </button>
                                 </div>
@@ -3506,7 +3551,7 @@
                                 </div>
 
                                 <div class="d-flex justify-content-end mb-3">
-                                    <button class="btn btn-outline-primary" onclick="openAddSertifikasi()">
+                                    <button class="btn btn-outline-purple" onclick="openAddSertifikasi()">
                                         <i class="bi bi-plus"></i> Tambah Sertifikasi
                                     </button>
                                 </div>
@@ -3583,32 +3628,34 @@
                     <!-- TAB: ULASAN -->
                     <div id="tab-ulasan" class="tab-panel">
                         <div class="review-header-flex"
-                            style="display: flex; align-items: center; justify-content: space-between;">
+                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-top: 12px;">
 
                             <!-- Bagian Kiri: Judul dan Bintang -->
-                            <h3 class="review-title" style="margin: 0; display: flex; align-items: center; gap: 8px;">
-                                Ulasan Peserta
-                                <span
-                                    style="font-size:18px; color:var(--text-dark); display: flex; align-items: center; gap: 4px;">
-                                    {{ number_format($averageRating ?? 0, 1) }}
-                                    <i class="bi bi-star-fill" style="color:#facc15; font-size:14px;"></i>
-                                </span>
-                                <span style="font-size:13px; color:var(--text-muted); font-weight:normal;">
-                                    ({{ $totalFeedbacks ?? 0 }} ulasan)
-                                </span>
-                            </h3>
-
-                            <!-- Bagian Kanan: Filter Dropdown -->
-                            <div class="review-filters" style="display: flex; gap: 10px;">
-                                <select class="filter-select">
-                                    <option>Semua Rating</option>
-                                    <option>5 Bintang</option>
-                                </select>
-                                <select class="filter-select">
-                                    <option>Terbaru</option>
-                                    <option>Terlama</option>
-                                </select>
+                            <div>
+                                <h3 class="section-title mb-0"
+                                    style="font-size:18px; text-align:left; text-transform:none; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    Ulasan Peserta
+                                    <span class="rating-summary-badge"
+                                        style="display: inline-flex; align-items: center; gap: 4px; background: #fffbeb; border: 1px solid #fde047; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; color: #854d0e;">
+                                        <span>{{ number_format($averageRating ?? 0, 1) }}</span>
+                                        <i class="bi bi-star-fill" style="color:#eab308; font-size:11px;"></i>
+                                        <span style="color: #a16207; font-weight: normal; font-size: 11px;">({{ $totalFeedbacks ?? 0 }} ulasan)</span>
+                                    </span>
+                                </h3>
+                                <p class="section-subtitle" style="margin-bottom: 0;">Ulasan dan feedback dari peserta yang telah mengikuti kelas atau event Anda.</p>
                             </div>
+
+                             <!-- Bagian Kanan: Filter Dropdown -->
+                             <div class="review-filters" style="display: flex; gap: 10px;">
+                                 <select class="filter-select">
+                                     <option>Semua Rating</option>
+                                     <option>5 Bintang</option>
+                                 </select>
+                                 <select class="filter-select">
+                                     <option>Terbaru</option>
+                                     <option>Terlama</option>
+                                 </select>
+                             </div>
                         </div>
 
                         <div class="review-list">
@@ -3648,8 +3695,10 @@
                                     </div>
                                 </div>
                             @empty
-                                <div style="padding: 24px; text-align: center; color: var(--text-muted);">
-                                    Belum ada ulasan.
+                                <div style="padding: 48px 24px; text-align: center; color: var(--text-muted); background: var(--bg-gray); border-radius: var(--radius-md); border: 1px dashed var(--border-light); margin-top: 16px;">
+                                    <i class="bi bi-chat-left-text" style="font-size: 32px; color: var(--primary-light); opacity: 0.5; display: block; margin-bottom: 12px;"></i>
+                                    <p style="margin: 0; font-size: 14px; font-weight: 500; color: var(--text-dark);">Belum Ada Ulasan</p>
+                                    <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Ulasan dari peserta event atau course Anda akan muncul di sini.</p>
                                 </div>
                             @endforelse
                         </div>
@@ -3736,65 +3785,35 @@
                     </div>
 
                     <div class="rating-bars">
-                        <div class="rating-bar-row">
-                            <span>5 <i class="bi bi-star-fill" style="color:#facc15"></i></span>
-                            <div class="rating-bar-wrap">
-                                <div class="rating-bar-fill" style="width: 75%;"></div>
+                        @for ($star = 5; $star >= 1; $star--)
+                            <div class="rating-bar-row">
+                                <span>{{ $star }} <i class="bi bi-star-fill" style="color:#facc15"></i></span>
+                                <div class="rating-bar-wrap">
+                                    <div class="rating-bar-fill" style="width: {{ $ratingPercentages[$star] ?? 0 }}%;"></div>
+                                </div>
+                                <span class="rating-count">{{ $ratingCounts[$star] ?? 0 }}</span>
+                                <span class="rating-pct">({{ $ratingPercentages[$star] ?? 0 }}%)</span>
                             </div>
-                            <span class="rating-count">36</span>
-                            <span class="rating-pct">(75%)</span>
-                        </div>
-                        <div class="rating-bar-row">
-                            <span>4 <i class="bi bi-star-fill" style="color:#facc15"></i></span>
-                            <div class="rating-bar-wrap">
-                                <div class="rating-bar-fill" style="width: 21%;"></div>
-                            </div>
-                            <span class="rating-count">10</span>
-                            <span class="rating-pct">(21%)</span>
-                        </div>
-                        <div class="rating-bar-row">
-                            <span>3 <i class="bi bi-star-fill" style="color:#facc15"></i></span>
-                            <div class="rating-bar-wrap">
-                                <div class="rating-bar-fill" style="width: 4%;"></div>
-                            </div>
-                            <span class="rating-count">2</span>
-                            <span class="rating-pct">(4%)</span>
-                        </div>
-                        <div class="rating-bar-row">
-                            <span>2 <i class="bi bi-star-fill" style="color:#facc15"></i></span>
-                            <div class="rating-bar-wrap">
-                                <div class="rating-bar-fill" style="width: 0%;"></div>
-                            </div>
-                            <span class="rating-count">0</span>
-                            <span class="rating-pct">(0%)</span>
-                        </div>
-                        <div class="rating-bar-row">
-                            <span>1 <i class="bi bi-star-fill" style="color:#facc15"></i></span>
-                            <div class="rating-bar-wrap">
-                                <div class="rating-bar-fill" style="width: 0%;"></div>
-                            </div>
-                            <span class="rating-count">0</span>
-                            <span class="rating-pct">(0%)</span>
-                        </div>
+                        @endfor
                     </div>
 
                     <div class="rating-aspects">
                         <h4 class="aspect-title">Aspek Penilaian</h4>
                         <div class="aspect-row">
                             <span><i class="bi bi-journal-text"></i> Penyampaian Materi</span>
-                            <span>4.9</span>
+                            <span>{{ number_format($aspectRatings['penyampaian_materi'] ?? 0.0, 1) }}</span>
                         </div>
                         <div class="aspect-row">
                             <span><i class="bi bi-book"></i> Penguasaan Materi</span>
-                            <span>4.8</span>
+                            <span>{{ number_format($aspectRatings['penguasaan_materi'] ?? 0.0, 1) }}</span>
                         </div>
                         <div class="aspect-row">
                             <span><i class="bi bi-people"></i> Interaktivitas</span>
-                            <span>4.8</span>
+                            <span>{{ number_format($aspectRatings['interaktivitas'] ?? 0.0, 1) }}</span>
                         </div>
                         <div class="aspect-row">
                             <span><i class="bi bi-lightbulb"></i> Manfaat & Aplikasi</span>
-                            <span>4.7</span>
+                            <span>{{ number_format($aspectRatings['manfaat_aplikasi'] ?? 0.0, 1) }}</span>
                         </div>
                     </div>
 
@@ -3937,9 +3956,10 @@
                     <div style="display:flex; flex-wrap:wrap; gap:16px;">
                         <div class="form-group" style="flex:1; min-width:200px;">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" value="{{ $trainer->email }}" readonly
-                                style="background-color: #f3f4f6; cursor: not-allowed;"
-                                title="Email tidak dapat diubah di sini">
+                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $trainer->email) }}" required>
+                            @error('email')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
                         </div>
                         <div class="form-group" style="flex:1; min-width:200px;">
                             <label class="form-label">Nomor Telepon</label>
@@ -3972,6 +3992,33 @@
                             <label class="form-label">Nama Pemilik Rekening</label>
                             <input type="text" name="bank_account_holder" class="form-control @error('bank_account_holder') is-invalid @enderror" value="{{ old('bank_account_holder', $trainer->bank_account_holder) }}">
                             @error('bank_account_holder')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                    <h4 style="font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-shield-lock" style="color: #624388;"></i> Ubah Password <span style="font-weight: 400; color: #64748b; font-size: 11px;">(Kosongkan jika tidak ingin mengubah)</span>
+                    </h4>
+                    <div class="form-group">
+                        <label class="form-label">Password Saat Ini</label>
+                        <input type="password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" autocomplete="current-password">
+                        @error('current_password')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:16px;">
+                        <div class="form-group" style="flex:1; min-width:200px;">
+                            <label class="form-label">Password Baru</label>
+                            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" autocomplete="new-password">
+                            @error('password')
+                                <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:200px;">
+                            <label class="form-label">Konfirmasi Password Baru</label>
+                            <input type="password" name="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror" autocomplete="new-password">
+                            @error('password_confirmation')
                                 <span class="text-danger small" style="font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span>
                             @enderror
                         </div>
@@ -4023,25 +4070,32 @@
     <!-- Modal Spesialisasi -->
     <div id="modal-edit-spesialisasi" class="modal-overlay" onclick="closeModalOutside(event, 'modal-edit-spesialisasi')">
         <div class="modal-box">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Spesialisasi</h3>
-                <button class="btn-close-modal" onclick="closeModal('modal-edit-spesialisasi')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Spesialisasi</label>
-                    <div class="tag-input-container" onclick="document.getElementById('input-tag-spesialisasi').focus()">
-                        <div id="tag-list-spesialisasi" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-                        <input type="text" id="input-tag-spesialisasi" placeholder="Ketik spesialisasi lalu tekan Enter..."
-                            style="border:none; outline:none; flex:1; min-width:120px;"
-                            onkeydown="handleTagInput(event, 'spesialisasi')">
-                    </div>
+            <form id="form-edit-spesialisasi" action="{{ route('trainer.profile.update') }}" method="POST">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="name" value="{{ $trainer->name }}">
+                
+                <div class="modal-header">
+                    <h3 class="modal-title">Edit Spesialisasi</h3>
+                    <button type="button" class="btn-close-modal" onclick="closeModal('modal-edit-spesialisasi')">&times;</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeModal('modal-edit-spesialisasi')">Batal</button>
-                <button class="btn-primary" onclick="saveSpesialisasi()">Simpan Perubahan</button>
-            </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Spesialisasi</label>
+                        <div class="tag-input-container" onclick="document.getElementById('input-tag-spesialisasi').focus()">
+                            <div id="tag-list-spesialisasi" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                            <input type="text" id="input-tag-spesialisasi" placeholder="Ketik spesialisasi lalu tekan Enter..."
+                                style="border:none; outline:none; flex:1; min-width:120px;"
+                                onkeydown="handleTagInput(event, 'spesialisasi')">
+                        </div>
+                    </div>
+                    <div id="hidden-tags-container"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeModal('modal-edit-spesialisasi')">Batal</button>
+                    <button type="button" class="btn-primary" onclick="saveSpesialisasi()">Simpan Perubahan</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -4091,16 +4145,12 @@
                         <input type="text" name="name" id="input-keahlian-nama" class="form-control"
                             placeholder="Contoh: Problem Solving" required>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Tingkat Penguasaan (%)</label>
-                        <input type="number" name="percent" id="input-keahlian-persen" class="form-control" placeholder="85"
-                            min="1" max="100" required>
-                    </div>
+                    <input type="hidden" name="percent" id="input-keahlian-persen" value="100">
                 </div>
                 <div class="modal-footer"
                     style="display: flex; flex-direction: row; justify-content: flex-end; gap: 12px; flex-wrap: nowrap;">
                     <button type="button" id="btn-delete-keahlian" class="btn-danger"
-                        style="display:none; white-space: nowrap;" onclick="deleteKeahlian()">Hapus</button>
+                        style="flex: 1; display:none; white-space: nowrap;" onclick="deleteKeahlian()">Hapus</button>
                     <button type="button" class="btn-secondary" onclick="closeModal('modal-edit-keahlian')"
                         style="flex: 1; white-space: nowrap;">Batal</button>
                     <button type="submit" class="btn-primary" style="flex: 1; white-space: nowrap;">Simpan
@@ -4164,7 +4214,7 @@
                 <div class="modal-footer"
                     style="display: flex; flex-direction: row; justify-content: flex-end; gap: 12px; flex-wrap: nowrap;">
                     <button type="button" id="btn-delete-pengalaman" class="btn-danger"
-                        style="display:none; white-space: nowrap;" onclick="deletePengalaman()">Hapus</button>
+                        style="flex: 1; display:none; white-space: nowrap;" onclick="deletePengalaman()">Hapus</button>
                     <button type="button" class="btn-secondary" onclick="closeModal('modal-edit-pengalaman')"
                         style="flex: 1; white-space: nowrap;">Batal</button>
                     <button type="submit" class="btn-primary" style="flex: 1; white-space: nowrap;">Simpan
@@ -4223,7 +4273,7 @@
                 <div class="modal-footer"
                     style="display: flex; flex-direction: row; justify-content: flex-end; gap: 12px; flex-wrap: nowrap;">
                     <button type="button" id="btn-delete-pendidikan" class="btn-danger"
-                        style="display:none; white-space: nowrap;" onclick="deletePendidikan()">Hapus</button>
+                        style="flex: 1; display:none; white-space: nowrap;" onclick="deletePendidikan()">Hapus</button>
                     <button type="button" class="btn-secondary" onclick="closeModal('modal-edit-pendidikan')"
                         style="flex: 1; white-space: nowrap;">Batal</button>
                     <button type="submit" class="btn-primary" style="flex: 1; white-space: nowrap;">Simpan
@@ -4283,7 +4333,7 @@
                 <div class="modal-footer"
                     style="display: flex; flex-direction: row; justify-content: flex-end; gap: 12px; flex-wrap: nowrap;">
                     <button type="button" id="btn-delete-sertifikasi" class="btn-danger"
-                        style="display:none; white-space: nowrap;" onclick="deleteSertifikasi()">Hapus</button>
+                        style="flex: 1; display:none; white-space: nowrap;" onclick="deleteSertifikasi()">Hapus</button>
                     <button type="button" class="btn-secondary" onclick="closeModal('modal-edit-sertifikasi')"
                         style="flex: 1; white-space: nowrap;">Batal</button>
                     <button type="submit" class="btn-primary" style="flex: 1; white-space: nowrap;">Simpan
@@ -4423,14 +4473,27 @@
         }
 
         function saveSpesialisasi() {
-            const container = document.getElementById('ui-spesialisasi-list');
-            if (container) {
-                container.innerHTML = '';
-                activeTags.spesialisasi.forEach(tag => {
-                    container.innerHTML += `<span class="pill active">${tag}</span>`;
-                });
+            const form = document.getElementById('form-edit-spesialisasi');
+            const hiddenContainer = document.getElementById('hidden-tags-container');
+            if (form && hiddenContainer) {
+                hiddenContainer.innerHTML = '';
+                if (activeTags.spesialisasi.length === 0) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'trainer_specializations';
+                    input.value = '';
+                    hiddenContainer.appendChild(input);
+                } else {
+                    activeTags.spesialisasi.forEach(tag => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'trainer_specializations[]';
+                        input.value = tag;
+                        hiddenContainer.appendChild(input);
+                    });
+                }
+                form.submit();
             }
-            closeModal('modal-edit-spesialisasi');
         }
 
         function openModalBahasa() {
@@ -4470,11 +4533,9 @@
             openModal('modal-edit-keahlian');
         }
         function deleteKeahlian() {
-            if (confirm('Apakah Anda yakin ingin menghapus keahlian ini?')) {
-                const index = document.getElementById('input-keahlian-index').value;
-                document.getElementById('input-keahlian-delete-index').value = index;
-                document.getElementById('form-delete-keahlian').submit();
-            }
+            const index = document.getElementById('input-keahlian-index').value;
+            document.getElementById('input-keahlian-delete-index').value = index;
+            document.getElementById('form-delete-keahlian').submit();
         }
 
         // Utility Functions for Dates
@@ -4518,11 +4579,9 @@
             openModal('modal-edit-pengalaman');
         }
         function deletePengalaman() {
-            if (confirm('Apakah Anda yakin ingin menghapus pengalaman ini?')) {
-                const index = document.getElementById('input-pengalaman-index').value;
-                document.getElementById('input-pengalaman-delete-index').value = index;
-                document.getElementById('form-delete-pengalaman').submit();
-            }
+            const index = document.getElementById('input-pengalaman-index').value;
+            document.getElementById('input-pengalaman-delete-index').value = index;
+            document.getElementById('form-delete-pengalaman').submit();
         }
 
         // Pendidikan
@@ -4547,11 +4606,9 @@
             openModal('modal-edit-pendidikan');
         }
         function deletePendidikan() {
-            if (confirm('Apakah Anda yakin ingin menghapus pendidikan ini?')) {
-                const index = document.getElementById('input-pendidikan-index').value;
-                document.getElementById('input-pendidikan-delete-index').value = index;
-                document.getElementById('form-delete-pendidikan').submit();
-            }
+            const index = document.getElementById('input-pendidikan-index').value;
+            document.getElementById('input-pendidikan-delete-index').value = index;
+            document.getElementById('form-delete-pendidikan').submit();
         }
 
         // Sertifikasi
@@ -4576,11 +4633,9 @@
             openModal('modal-edit-sertifikasi');
         }
         function deleteSertifikasi() {
-            if (confirm('Apakah Anda yakin ingin menghapus sertifikasi ini?')) {
-                const index = document.getElementById('input-sertifikasi-index').value;
-                document.getElementById('input-sertifikasi-delete-index').value = index;
-                document.getElementById('form-delete-sertifikasi').submit();
-            }
+            const index = document.getElementById('input-sertifikasi-index').value;
+            document.getElementById('input-sertifikasi-delete-index').value = index;
+            document.getElementById('form-delete-sertifikasi').submit();
         }
 
         function switchTab(event, tabId) {
@@ -4614,6 +4669,22 @@
                 sidebarPenilaian.style.display = 'none';
             }
         }
+
+        // On page load, check URL hash to open the correct tab
+        window.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash;
+            if (hash) {
+                const targetTabLink = document.querySelector(`.tab-item[onclick*="${hash.substring(1)}"]`);
+                if (targetTabLink) {
+                    // Simulate event to switchTab
+                    const eventMock = {
+                        preventDefault: () => {},
+                        currentTarget: targetTabLink
+                    };
+                    switchTab(eventMock, hash.substring(1));
+                }
+            }
+        });
     </script>
 @endsection
 

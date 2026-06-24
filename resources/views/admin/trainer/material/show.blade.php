@@ -343,7 +343,8 @@
         }
 
         .module-preview-article .module-code-copy:hover {
-            background: var(--admin-secondary);
+            background: var(--admin-secondary, #1e1b4b) !important;
+            color: #ffffff !important;
         }
 
         /* Quiz Preview */
@@ -637,6 +638,7 @@
             color: var(--status-rejected-text);
             background: var(--status-rejected-bg);
             border: 1px solid var(--status-rejected-border);
+            align-self: flex-start;
         }
 
         .module-decision-stack {
@@ -660,6 +662,8 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
+            width: fit-content;
+            align-self: flex-start;
         }
 
         .module-btn-approve {
@@ -683,6 +687,30 @@
             background: var(--status-rejected-text);
             color: #fff;
             border-color: var(--status-rejected-text);
+        }
+
+        .module-btn-revoke {
+            border: 1.5px solid #bae6fd;
+            border-radius: 8px;
+            height: 34px;
+            padding: 0 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: fit-content;
+            align-self: flex-start;
+            color: #0284c7;
+            background: #f0f9ff;
+        }
+
+        .module-btn-revoke:hover {
+            background: #0284c7;
+            color: #fff;
+            border-color: #0284c7;
         }
 
         .module-reject-form {
@@ -1012,6 +1040,28 @@
             border-color: var(--status-rejected-text);
         }
 
+        .btn-revoke {
+            width: 100%;
+            background: #fff;
+            color: #0284c7;
+            border: 1.5px solid #bae6fd;
+            height: 48px;
+            padding: 0 16px;
+            border-radius: 12px;
+            font-weight: 750;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+
+        .btn-revoke:hover {
+            background: #f0f9ff;
+            border-color: #0284c7;
+        }
+
         /* Alert notifications */
         .review-alert {
             border: 1px solid transparent;
@@ -1335,7 +1385,7 @@
                                         {{ $unit['uploaded'] }}/{{ $unit['total'] }} Modul
                                     </span>
                                 </div>
-                                @if($material->status === 'pending_review' && $unit['any_pending'])
+                                @if($unit['any_pending'])
                                     <form method="POST" action="{{ route('admin.trainer.material.unit.approve', $material) }}" style="margin:0;">
                                         @csrf
                                         <input type="hidden" name="unit_no" value="{{ $unit['unit_no'] }}">
@@ -1475,35 +1525,47 @@
                                                 @endif
 
                                                 {{-- Inline decision action buttons --}}
-                                                @if($material->status === 'pending_review' && $hasAnyContent && $reviewStatus !== 'approved')
-                                                    <div class="module-decision-stack">
-                                                        <form method="POST" action="{{ route('admin.trainer.material.module.approve', [$material, $module]) }}" class="module-action-form">
-                                                            @csrf
-                                                            <button type="submit" class="module-btn-approve">
-                                                                Setujui Modul
+                                                @if($hasAnyContent)
+                                                    @if($reviewStatus === 'approved' || $reviewStatus === 'rejected')
+                                                        <div class="module-decision-stack">
+                                                            <form method="POST" action="{{ route('admin.trainer.material.revoke', $material->id) }}">
+                                                                @csrf
+                                                                <input type="hidden" name="module_id" value="{{ $module->id }}">
+                                                                <button type="submit" class="module-btn-revoke">
+                                                                    Batalkan Keputusan
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    @else
+                                                        <div class="module-decision-stack">
+                                                            <form method="POST" action="{{ route('admin.trainer.material.module.approve', [$material, $module]) }}" class="module-action-form">
+                                                                @csrf
+                                                                <button type="submit" class="module-btn-approve">
+                                                                    Setujui Modul
+                                                                </button>
+                                                            </form>
+                                                            <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}">
+                                                                Revisi
                                                             </button>
-                                                        </form>
-                                                        <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}">
-                                                            Revisi
-                                                        </button>
-                                                    </div>
+                                                        </div>
 
-                                                    <div class="collapse module-reject-form" id="rejectModuleForm-{{ $module->id }}">
-                                                        <form method="POST" action="{{ route('admin.trainer.material.module.reject', [$material, $module]) }}">
-                                                            @csrf
-                                                            <div class="mb-2" style="display:flex; flex-wrap:wrap; gap:6px;">
-                                                                <button type="button" class="btn reject-preset-btn" data-preset="Materi tidak sesuai dengan topik yang ditentukan.">Tidak Sesuai Topik</button>
-                                                                <button type="button" class="btn reject-preset-btn" data-preset="Materi kurang lengkap, harap lengkapi sesuai standar kurikulum.">Kurang Lengkap</button>
-                                                                <button type="button" class="btn reject-preset-btn" data-preset="Format penulisan atau media salah, mohon sesuaikan kembali.">Format Salah</button>
-                                                                <button type="button" class="btn reject-preset-btn" data-preset="Berkas rusak atau tidak dapat dibuka. Harap unggah ulang.">File Rusak</button>
-                                                                <button type="button" class="btn reject-preset-btn" data-preset="Kualitas audio atau video buram/kurang jelas.">Audio/Video Buram</button>
-                                                            </div>
-                                                            <textarea name="rejection_reason" required minlength="10" placeholder="Tuliskan detail perbaikan atau catatan revisi yang harus dikerjakan trainer..."></textarea>
-                                                            <button type="submit">
-                                                                Kirim Catatan
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                                                        <div class="collapse module-reject-form" id="rejectModuleForm-{{ $module->id }}">
+                                                            <form method="POST" action="{{ route('admin.trainer.material.module.reject', [$material, $module]) }}">
+                                                                @csrf
+                                                                <div class="mb-2" style="display:flex; flex-wrap:wrap; gap:6px;">
+                                                                    <button type="button" class="btn reject-preset-btn" data-preset="Materi tidak sesuai dengan topik yang ditentukan.">Tidak Sesuai Topik</button>
+                                                                    <button type="button" class="btn reject-preset-btn" data-preset="Materi kurang lengkap, harap lengkapi sesuai standar kurikulum.">Kurang Lengkap</button>
+                                                                    <button type="button" class="btn reject-preset-btn" data-preset="Format penulisan atau media salah, mohon sesuaikan kembali.">Format Salah</button>
+                                                                    <button type="button" class="btn reject-preset-btn" data-preset="Berkas rusak atau tidak dapat dibuka. Harap unggah ulang.">File Rusak</button>
+                                                                    <button type="button" class="btn reject-preset-btn" data-preset="Kualitas audio atau video buram/kurang jelas.">Audio/Video Buram</button>
+                                                                </div>
+                                                                <textarea name="rejection_reason" required minlength="10" placeholder="Tuliskan detail perbaikan atau catatan revisi yang harus dikerjakan trainer..."></textarea>
+                                                                <button type="submit">
+                                                                    Kirim Catatan
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    @endif
                                                 @endif
                                             </div>
 
@@ -1638,7 +1700,7 @@
                     </div>
 
                     {{-- Decision Card (Approve All or Reject Course) --}}
-                    @if($material->status === 'pending_review')
+                    @if($material->status === 'pending_review' || $totalPending > 0)
                         <div class="card-custom side-card">
                             <div class="side-card-title">Keputusan Akhir</div>
                             
@@ -1669,6 +1731,31 @@
                             <button type="button" class="btn-reject" data-bs-toggle="modal" data-bs-target="#rejectCourseModal">
                                 Tolak Seluruh Course
                             </button>
+                        </div>
+                    @else
+                        <div class="card-custom side-card">
+                            <div class="side-card-title">Keputusan Akhir</div>
+                            <div class="review-locked-notice mb-3" style="text-align: left; padding: 0; color: var(--admin-text-main); font-weight: 700; display: flex; flex-direction: column; gap: 8px;">
+                                 <div style="display: flex; align-items: center; gap: 8px;">
+                                     <i class="bi bi-info-circle-fill text-primary"></i> 
+                                     <span>Status: 
+                                         @if($material->status === 'approved')
+                                             <span class="text-success">Disetujui</span>
+                                         @elseif($material->status === 'rejected')
+                                             <span class="text-danger">Ditolak / Revisi</span>
+                                         @else
+                                             <span class="text-muted">{{ ucfirst($material->status) }}</span>
+                                         @endif
+                                     </span>
+                                 </div>
+                             </div>
+                            
+                            <form method="POST" action="{{ route('admin.trainer.material.revoke', $material->id) }}">
+                                @csrf
+                                <button type="submit" class="btn-revoke">
+                                    Batalkan Keputusan
+                                </button>
+                            </form>
                         </div>
                     @endif
 
