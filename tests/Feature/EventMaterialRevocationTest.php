@@ -191,7 +191,7 @@ class EventMaterialRevocationTest extends TestCase
     }
 
     /** @test */
-    public function trainer_can_delete_submitted_module_if_status_allows_and_it_syncs()
+    public function trainer_cannot_delete_submitted_module_if_approved()
     {
         $module = EventTrainerModule::create([
             'event_id' => $this->event->id,
@@ -216,20 +216,12 @@ class EventMaterialRevocationTest extends TestCase
             'module_id' => $module->id,
         ]);
 
-        $response->assertOk();
-        $response->assertJson(['success' => true]);
+        $response->assertStatus(403);
+        $response->assertJson(['success' => false]);
 
-        $this->assertDatabaseMissing('event_trainer_modules', [
+        $this->assertDatabaseHas('event_trainer_modules', [
             'id' => $module->id,
         ]);
-
-        $this->assignment->refresh();
-        $this->event->refresh();
-
-        $this->assertEquals('pending', $this->assignment->material_status);
-        $this->assertNull($this->assignment->material_path);
-        $this->assertEquals('pending', $this->event->material_status);
-        $this->assertNull($this->event->module_path);
     }
 
     /** @test */
@@ -272,5 +264,92 @@ class EventMaterialRevocationTest extends TestCase
         $this->assertNull($this->assignment->material_path);
         $this->assertEquals('pending', $this->event->material_status);
         $this->assertNull($this->event->module_path);
+    }
+
+    /** @test */
+    public function admin_can_view_approved_materials_page_without_error()
+    {
+        $category = \App\Models\Category::create([
+            'name' => 'Software Development',
+            'description' => 'Courses about software development',
+        ]);
+
+        $course = \App\Models\Course::create([
+            'trainer_id' => $this->trainer->id,
+            'category_id' => $category->id,
+            'status' => 'approved',
+            'name' => 'Laravel Advanced Course',
+            'level' => 'Advanced',
+            'price' => 100000,
+            'duration' => 60,
+            'media' => 'placeholder.jpg',
+            'media_type' => 'image',
+        ]);
+
+        EventTrainerModule::create([
+            'event_id' => $this->event->id,
+            'trainer_id' => $this->trainer->id,
+            'original_name' => 'Module 1.pdf',
+            'path' => 'uploads/materials/m1.pdf',
+            'status' => 'approved',
+            'reviewed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('admin.trainer.material.approved'));
+        $response->assertOk();
+    }
+
+    /** @test */
+    public function trainer_can_replace_rejected_module_when_another_module_is_approved()
+    {
+        $approvedModule = new EventTrainerModule([
+            'event_id' => $this->event->id,
+            'trainer_id' => $this->trainer->id,
+            'original_name' => 'Approved Module.pdf',
+            'path' => 'uploads/materials/approved.pdf',
+            'status' => 'approved',
+        ]);
+        $approvedModule->created_at = now()->subMinutes(5);
+        $approvedModule->save();
+
+        $rejectedModule = new EventTrainerModule([
+            'event_id' => $this->event->id,
+            'trainer_id' => $this->trainer->id,
+            'original_name' => 'Rejected Module.pdf',
+            'path' => 'uploads/materials/rejected.pdf',
+            'status' => 'rejected',
+        ]);
+        $rejectedModule->created_at = now();
+        $rejectedModule->save();
+
+        $this->assignment->update([
+            'material_status' => 'rejected',
+        ]);
+
+        $this->event->update([
+            'material_status' => 'rejected',
+        ]);
+
+        // 1. Trying to replace Approved Module should fail (403)
+        $response1 = $this->actingAs($this->trainer)->post(route('trainer.events.studio.upload', $this->event->id), [
+            'action' => 'replace_module',
+            'module_id' => $approvedModule->id,
+            'material_link' => 'https://newlink.com',
+        ]);
+        $response1->assertStatus(403);
+        $response1->assertJson(['success' => false]);
+
+        // 2. Trying to replace Rejected Module should succeed (200)
+        $response2 = $this->actingAs($this->trainer)->post(route('trainer.events.studio.upload', $this->event->id), [
+            'action' => 'replace_module',
+            'module_id' => $rejectedModule->id,
+            'material_link' => 'https://newlink.com',
+        ]);
+        $response2->assertOk();
+        $response2->assertJson(['success' => true]);
+
+        $rejectedModule->refresh();
+        $this->assertEquals('pending_review', $rejectedModule->status);
+        $this->assertEquals('https://newlink.com', $rejectedModule->path);
     }
 }

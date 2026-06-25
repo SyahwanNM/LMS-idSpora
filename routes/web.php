@@ -699,6 +699,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/events/{id}', [TrainerController::class, 'eventDetail'])->name('events.show');
     Route::get('/feedback', [TrainerController::class, 'feedback'])->name('feedback');
     Route::post('/feedback/reply/store', [TrainerController::class, 'storeFeedbackReply'])->name('feedback.reply.store');
+    Route::post('/feedback/{id}/like', [TrainerController::class, 'toggleLike'])->name('feedback.like');
     Route::get('/notifications', [TrainerNotificationsController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [TrainerNotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
     Route::get('/notifications/{notification}/open', [TrainerNotificationsController::class, 'open'])->name('notifications.open');
@@ -771,6 +772,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.trainer.material.show');
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.trainer.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.trainer.material.reject');
+    Route::post('/admin/material/{material}/revoke', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'revoke'])->name('admin.trainer.material.revoke');
 
     // Event Material Approval Routes
     Route::get('/admin/event-materials', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'index'])->name('admin.event-materials.index');

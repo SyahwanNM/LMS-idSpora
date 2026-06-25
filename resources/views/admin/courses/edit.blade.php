@@ -141,6 +141,19 @@
                             <p class="mt-1 text-xs text-gray-500">Courses only appear on the trainer dashboard if the trainer is selected.</p>
                         </div>
 
+                        <!-- Trainer Contribution Scheme -->
+                        <div id="trainer_scheme_group" style="display: {{ old('trainer_id', $course->trainer_id) ? 'block' : 'none' }};" class="mt-4">
+                            <label for="trainer_contribution_scheme" class="block text-sm font-medium text-gray-700 mb-2">Trainer Workload Scheme</label>
+                            <select name="trainer_contribution_scheme" id="trainer_contribution_scheme"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 bg-white">
+                                <option value="">-- Select Scheme (If blank, trainer will choose upon accepting) --</option>
+                                <option value="e2e" {{ old('trainer_contribution_scheme', $course->trainer_contribution_scheme) === 'e2e' ? 'selected' : '' }}>Beban Kerja Penuh (Upload Modul, Video & Kuis) - 35%</option>
+                                <option value="module_video" {{ old('trainer_contribution_scheme', $course->trainer_contribution_scheme) === 'module_video' ? 'selected' : '' }}>Beban Kerja Menengah (Upload Modul & Video saja) - 25%</option>
+                                <option value="video_only" {{ old('trainer_contribution_scheme', $course->trainer_contribution_scheme) === 'video_only' ? 'selected' : '' }}>Beban Kerja Ringan (Upload Video saja) - 10%</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Select the workload scheme and revenue share percentage for this trainer. Leave blank if you want the trainer to decide when they accept the invitation.</p>
+                        </div>
+
                         <!-- Price -->
                         <div>
                             <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price (Rp)</label>
@@ -422,6 +435,24 @@
                 renderModuleTitles(this.value);
             });
             if (levelSelect.value) renderModuleTitles(levelSelect.value);
+        }
+    })();
+
+    // Toggle Trainer Workload Scheme visibility based on trainer selection
+    (function () {
+        const trainerSelect = document.getElementById('trainer_id');
+        const schemeGroup   = document.getElementById('trainer_scheme_group');
+        const schemeSelect  = document.getElementById('trainer_contribution_scheme');
+
+        if (trainerSelect && schemeGroup) {
+            trainerSelect.addEventListener('change', function () {
+                if (this.value) {
+                    schemeGroup.style.display = 'block';
+                } else {
+                    schemeGroup.style.display = 'none';
+                    if (schemeSelect) schemeSelect.value = '';
+                }
+            });
         }
     })();
     </script>

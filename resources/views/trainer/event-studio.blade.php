@@ -6,7 +6,7 @@
     $pageTitle = 'Event Studio';
     $breadcrumbs = [
         ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
-        ['label' => 'Course', 'url' => route('trainer.events')],
+        ['label' => 'Events', 'url' => route('trainer.events')],
         ['label' => 'Studio Event'],
     ];
 
@@ -73,7 +73,7 @@
 
         return $name;
     };
-    $canUploadMaterials = true;
+    $canUploadMaterials = ($displayMaterialStatus !== 'approved');
 
     $step1State = 'active'; // active, completed
     $step2State = 'inactive'; // inactive, active, completed
@@ -1462,7 +1462,7 @@
                                 <div>
                                     @if($displayMaterialStatus === 'approved')
                                         <h3>Materi telah disetujui</h3>
-                                        <p>Materi Anda telah disetujui oleh admin. Anda masih dapat mengunggah berkas baru atau mengubah materi jika diperlukan.</p>
+                                        <p>Materi Anda telah disetujui oleh admin trainer. Semua proses unggahan baru, pengubahan, atau penghapusan materi dinonaktifkan.</p>
                                     @else
                                         <h3>Materi sedang direview</h3>
                                         <p>Seluruh materi Anda telah dikirim dan sedang diperiksa oleh admin. Anda masih dapat mengunggah berkas baru atau mengubah materi jika diperlukan.</p>
@@ -1650,6 +1650,7 @@
                                                 </div>
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                                @if($canUploadMaterials && $module->status !== 'approved')
                                                 <button type="button" class="btn-delete-submitted" data-id="{{ $module->id }}"
                                                     style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px; transition: all 0.2s;"
                                                     onmouseover="this.style.backgroundColor='#fee2e2'"
@@ -1657,6 +1658,7 @@
                                                     title="Hapus Materi">
                                                     <i class="bi bi-trash3-fill"></i>
                                                 </button>
+                                                @endif
                                                 @if($module->status === 'rejected')
                                                     <button type="button" class="btn-replace-rejected primary-btn" data-id="{{ $module->id }}" data-is-link="{{ $historyIsLink ? '1' : '0' }}"
                                                         style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; color: #fff; border: none; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">

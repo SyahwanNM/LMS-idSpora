@@ -502,6 +502,8 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
+            width: fit-content;
+            align-self: flex-start;
         }
 
         .module-btn-approve {

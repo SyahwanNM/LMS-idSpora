@@ -729,8 +729,8 @@
 
         @php
             $statusData = [
-                ['id' => 'courses-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingCourses ?? collect()],
                 ['id' => 'courses-upcoming', 'label' => 'Mendatang', 'data' => $upcomingCourses ?? collect()],
+                ['id' => 'courses-ongoing', 'label' => 'Sedang Berlangsung', 'data' => $ongoingCourses ?? collect()],
                 ['id' => 'courses-finished', 'label' => 'Selesai', 'data' => $finishedCourses ?? collect()],
             ];
         @endphp

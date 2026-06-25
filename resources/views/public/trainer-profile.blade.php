@@ -1075,8 +1075,8 @@
                     <div class="metric-icon" style="width: 40px; height: 40px; border-radius: 12px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;"><i class="bi bi-calendar3"></i></div>
                     <span class="metric-label" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Courses & Events</span>
                 </div>
-                <span class="metric-num" style="display: block; font-size: 32px; font-weight: 800; color: var(--brand-navy); line-height: 1.1; margin-bottom: 4px;">{{ $activeCourses->count() + $activeEvents->count() }}</span>
-                <span style="font-size: 13px; color: #64748b; font-weight: 500;">Dibuat</span>
+                <span class="metric-num" style="display: block; font-size: 32px; font-weight: 800; color: var(--brand-navy); line-height: 1.1; margin-bottom: 4px;">{{ $coursesCount + $eventsCount }}</span>
+                <span style="font-size: 13px; color: #64748b; font-weight: 500;">Kontribusi</span>
             </div>
             <div class="metric-card">
                 <div class="metric-top" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
@@ -1161,14 +1161,14 @@
                     <div class="track-stat-item" style="display: flex; align-items: center; gap: 16px;">
                         <div class="track-stat-icon" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(139, 92, 246, 0.1); color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="bi bi-book-half"></i></div>
                         <div>
-                            <span class="track-stat-num" style="display: block; font-size: 24px; font-weight: 800; color: var(--brand-navy); line-height: 1.1;">{{ $activeCourses->count() }}</span>
+                            <span class="track-stat-num" style="display: block; font-size: 24px; font-weight: 800; color: var(--brand-navy); line-height: 1.1;">{{ $coursesCount }}</span>
                             <span class="track-stat-label" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px;">Courses Created</span>
                         </div>
                     </div>
                     <div class="track-stat-item" style="display: flex; align-items: center; gap: 16px;">
                         <div class="track-stat-icon" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245, 158, 11, 0.1); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="bi bi-calendar3"></i></div>
                         <div>
-                            <span class="track-stat-num" style="display: block; font-size: 24px; font-weight: 800; color: var(--brand-navy); line-height: 1.1;">{{ $activeEvents->count() }}</span>
+                            <span class="track-stat-num" style="display: block; font-size: 24px; font-weight: 800; color: var(--brand-navy); line-height: 1.1;">{{ $eventsCount }}</span>
                             <span class="track-stat-label" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px;">Events Hosted</span>
                         </div>
                     </div>
@@ -1182,7 +1182,7 @@
                     <div class="track-stat-item" style="display: flex; align-items: center; gap: 16px;">
                         <div class="track-stat-icon" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(138, 98, 171, 0.1); color: #8a62ab; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="bi bi-patch-check-fill"></i></div>
                         <div>
-                            <span class="track-stat-num" style="display: block; font-size: 24px; font-weight: 800; color: var(--brand-navy); line-height: 1.1;">{{ $certificates->count() }}</span>
+                            <span class="track-stat-num" style="display: block; font-size: 24px; font-weight: 800; color: var(--brand-navy); line-height: 1.1;">{{ $certificatesCount }}</span>
                             <span class="track-stat-label" style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px;">Certificates Issued</span>
                         </div>
                     </div>
@@ -1192,14 +1192,14 @@
                     @forelse($activeCourses as $course)
                         <div class="course-card">
                             <div class="course-img-box">
-                                <img src="{{ $course->thumbnail_url ?: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800' }}"
+                                <img src="{{ $course->card_thumbnail_url ?: $course->thumbnail_url ?: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800' }}"
                                     class="course-img">
                                 <span class="course-lvl-badge">{{ $course->level ?? 'Intermediate' }}</span>
                             </div>
                             <div class="course-body">
                                 <div class="course-meta-row">
                                     <span><i class="bi bi-clock"></i> {{ $course->modules_count ?? '-' }} Modules</span>
-                                    <span><i class="bi bi-star-fill"></i> {{ $course->rating ?? '-' }}</span>
+                                    <span><i class="bi bi-star-fill"></i> {{ $course->rating ? number_format($course->rating, 1) : '-' }}</span>
                                 </div>
                                 <h3 class="course-main-title">{{ $course->name }}</h3>
                                 <a href="{{ route('course.detail', $course->id) }}" class="course-btn-details">Course
@@ -1248,7 +1248,6 @@
                     @empty
                         <div class="cred-card">
                             <h4 class="cred-title">Belum ada sertifikat</h4>
-                            <p class="cred-meta">Sertifikat akan muncul di sini setelah diverifikasi.</p>
                         </div>
                     @endforelse
                 </div>
