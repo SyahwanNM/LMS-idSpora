@@ -33,7 +33,7 @@ class CRMController extends Controller
         }
 
         // Get statistics
-        $totalCustomers = User::where('role', 'customer')->count();
+        $totalCustomers = User::where('role', 'user')->count();
         $totalResellers = User::where('role', 'reseller')->count();
         $totalTrainers = User::where('role', 'trainer')->count();
         
@@ -57,9 +57,10 @@ class CRMController extends Controller
         $totalCourseCerts = Enrollment::whereNotNull('certificate_number')->count();
         $totalCerts = $totalEventCerts + $totalCourseCerts;
         
-        // Recent registrations (only show registrations with valid events)
+        // Recent registrations (only show registrations with valid events and users)
         $recentRegistrations = EventRegistration::with(['user', 'event'])
             ->whereHas('event')
+            ->whereHas('user')
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->limit(8)

@@ -226,7 +226,7 @@
                 </table>
             </div>
             <div style="padding:1rem 1.25rem;border-top:1px solid var(--crm-border-soft);">
-                {{ (($type ?? 'event') == 'event' ? $events : $courses)->links() }}
+                {{ (($type ?? 'event') == 'event' ? $events : $courses)->links('pagination::bootstrap-5') }}
             </div>
         </div>
         @endif

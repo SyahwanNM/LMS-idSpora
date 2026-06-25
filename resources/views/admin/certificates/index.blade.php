@@ -160,7 +160,18 @@
                                     @endif
                                 </td>
                                 <td style="padding-right:1.5rem;text-align:right;">
-                                    <a href="{{ route('admin.crm.certificates.edit', $event) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary-bg);color:var(--crm-primary);border-radius:8px;">Kelola Aset</a>
+                                    <div class="d-inline-flex gap-2 align-items-center justify-content-end" style="min-width: 250px;">
+                                        @if($event->registrations_count > 0)
+                                            <a href="{{ route('admin.crm.certificates.generate-massal', $event) }}" class="btn btn-sm px-3 fw-700" style="background:rgba(16,185,129,0.1);color:#059669;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.2)'" onmouseout="this.style.background='rgba(16,185,129,0.1)'">
+                                                <i class="bi bi-download me-1"></i> Unduh Massal
+                                            </a>
+                                        @else
+                                            <button class="btn btn-sm px-3 fw-700" disabled style="background:var(--crm-border-soft);color:var(--crm-text-subtle);border-radius:8px;cursor:not-allowed;border:none;">
+                                                <i class="bi bi-download me-1"></i> Unduh Massal
+                                            </button>
+                                        @endif
+                                        <a href="{{ route('admin.crm.certificates.edit', $event) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary-bg);color:var(--crm-primary);border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(124,58,237,0.12)'" onmouseout="this.style.background='var(--crm-primary-bg)'">Kelola Aset</a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -206,7 +217,18 @@
                                     @endif
                                 </td>
                                 <td style="padding-right:1.5rem;text-align:right;">
-                                    <a href="{{ route('admin.crm.certificates.edit-course', $course) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary-bg);color:var(--crm-primary);border-radius:8px;">Kelola Aset</a>
+                                    <div class="d-inline-flex gap-2 align-items-center justify-content-end" style="min-width: 250px;">
+                                        @if($course->completed_enrollments_count > 0)
+                                            <a href="{{ route('admin.crm.certificates.generate-massal-course', $course) }}" class="btn btn-sm px-3 fw-700" style="background:rgba(16,185,129,0.1);color:#059669;border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.2)'" onmouseout="this.style.background='rgba(16,185,129,0.1)'">
+                                                <i class="bi bi-download me-1"></i> Unduh Massal
+                                            </a>
+                                        @else
+                                            <button class="btn btn-sm px-3 fw-700" disabled style="background:var(--crm-border-soft);color:var(--crm-text-subtle);border-radius:8px;cursor:not-allowed;border:none;">
+                                                <i class="bi bi-download me-1"></i> Unduh Massal
+                                            </button>
+                                        @endif
+                                        <a href="{{ route('admin.crm.certificates.edit-course', $course) }}" class="btn btn-sm px-3 fw-700" style="background:var(--crm-primary-bg);color:var(--crm-primary);border-radius:8px;transition:all 0.2s;" onmouseover="this.style.background='rgba(124,58,237,0.12)'" onmouseout="this.style.background='var(--crm-primary-bg)'">Kelola Aset</a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
