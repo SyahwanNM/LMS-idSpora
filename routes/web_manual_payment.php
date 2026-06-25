@@ -29,6 +29,9 @@ Route::middleware(['auth'])->get('/payment/{event}/check-referral', function (\I
     if (!$referrer) {
         return response()->json(['valid' => false, 'message' => 'Kode referral tidak valid.']);
     }
+    if ($referrer->reseller_status === 'suspended') {
+        return response()->json(['valid' => false, 'message' => 'Kode referral ini ditangguhkan dan tidak dapat digunakan.']);
+    }
 
     $discountRate = 0.10; // 10%
     return response()->json([
@@ -60,6 +63,9 @@ Route::middleware(['auth'])->get('/courses/{course}/check-referral', function (\
     $referrer = \App\Models\User::where('referral_code', $code)->first();
     if (!$referrer) {
         return response()->json(['valid' => false, 'message' => 'Kode referral tidak valid.']);
+    }
+    if ($referrer->reseller_status === 'suspended') {
+        return response()->json(['valid' => false, 'message' => 'Kode referral ini ditangguhkan dan tidak dapat digunakan.']);
     }
 
     $discountRate = 0.10; // 10%
@@ -98,6 +104,9 @@ Route::middleware(['auth'])->get('/payment/{event}/check-code', function (\Illum
     // 1. Cek apakah ini kode referral
     $referrer = \App\Models\User::where('referral_code', $code)->first();
     if ($referrer) {
+        if ($referrer->reseller_status === 'suspended') {
+            return response()->json(['valid' => false, 'message' => 'Kode referral ini ditangguhkan dan tidak dapat digunakan.']);
+        }
         if ($user && $user->referral_code && strcasecmp($code, (string) $user->referral_code) === 0) {
             return response()->json(['valid' => false, 'message' => 'Tidak dapat menggunakan kode referral milik sendiri.']);
         }
@@ -156,6 +165,9 @@ Route::middleware(['auth'])->get('/courses/{course}/check-code', function (\Illu
     // 1. Cek apakah ini kode referral
     $referrer = \App\Models\User::where('referral_code', $code)->first();
     if ($referrer) {
+        if ($referrer->reseller_status === 'suspended') {
+            return response()->json(['valid' => false, 'message' => 'Kode referral ini ditangguhkan dan tidak dapat digunakan.']);
+        }
         if ($user && $user->referral_code && strcasecmp($code, (string) $user->referral_code) === 0) {
             return response()->json(['valid' => false, 'message' => 'Tidak dapat menggunakan kode referral milik sendiri.']);
         }
