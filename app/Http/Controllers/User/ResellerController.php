@@ -841,6 +841,21 @@ class ResellerController extends Controller
 
             $user->referral_code = $code;
             $user->save();
+
+            try {
+                $admins = User::where('role', 'admin')->get();
+                foreach ($admins as $admin) {
+                    \App\Models\UserNotification::create([
+                        'user_id' => $admin->id,
+                        'type' => 'reseller',
+                        'title' => 'Reseller baru bergabung!',
+                        'message' => "{$user->name} (" . ($user->email) . ") mendaftar sebagai reseller.",
+                        'data' => ['url' => route('admin.reseller.data')],
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                \Log::error('Reseller registration notification for admin failed: ' . $e->getMessage());
+            }
         }
 
         // Ngebalikin ke halaman dashboard dengan pesan sukses
@@ -1011,6 +1026,22 @@ class ResellerController extends Controller
                 'status' => 'pending' // Status awalnya pending, nanti admin yang update ke 'paid' atau 'rejected'
             ]);
         });
+
+        try {
+            $admins = User::where('role', 'admin')->get();
+            $amountFormatted = 'Rp ' . number_format($request->amount, 0, ',', '.');
+            foreach ($admins as $admin) {
+                \App\Models\UserNotification::create([
+                    'user_id' => $admin->id,
+                    'type' => 'reseller',
+                    'title' => 'Pengajuan penarikan baru',
+                    'message' => "Reseller {$user->name} mengajukan penarikan sebesar {$amountFormatted}.",
+                    'data' => ['url' => route('admin.finance.expenses')],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Reseller withdrawal request notification for admin failed: ' . $e->getMessage());
+        }
 
         // 4. Kirim respon sukses ke JavaScript
         return response()->json([

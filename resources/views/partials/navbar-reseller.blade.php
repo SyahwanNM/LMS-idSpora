@@ -177,28 +177,19 @@
     <div class="d-flex align-items-center gap-3">
         <!-- Notification Bell Dropdown -->
         <div class="dropdown">
-            <button class="btn btn-light rounded-circle position-relative p-0 d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown" style="width: 40px; height: 40px;">
+            <button class="btn btn-light rounded-circle position-relative p-0 d-flex align-items-center justify-content-center" type="button" id="adminNotifBell" data-bs-toggle="dropdown" style="width: 40px; height: 40px;">
                 <i class="bi bi-bell fs-5 text-secondary"></i>
-                <span class="position-absolute translate-middle badge rounded-circle bg-danger border border-white" style="padding: 5px; left: 75% !important; top: 25% !important;">
+                <span id="adminNotifBadge" class="position-absolute translate-middle badge rounded-circle bg-danger border border-white" style="padding: 5px; left: 75% !important; top: 25% !important; display: none;">
                     <span class="visually-hidden">unread notifications</span>
                 </span>
             </button>
             <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 p-3" style="width: 320px;">
                 <h6 class="fw-bold mb-3 d-flex justify-content-between align-items-center">
                     <span>Notifikasi</span>
-                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">3 Baru</span>
+                    <button type="button" class="btn btn-link p-0 text-decoration-none text-muted small fw-semibold" id="adminMarkAllRead" style="font-size: 11px;">Tandai semua dibaca</button>
                 </h6>
-                <div class="list-group list-group-flush small" style="max-height: 250px; overflow-y: auto;">
-                    <a href="{{ route('admin.reseller.data') }}" class="list-group-item list-group-item-action border-0 p-2 rounded-3 mb-1 bg-light">
-                        <div class="fw-bold text-dark">Reseller baru bergabung!</div>
-                        <div class="text-muted text-truncate">Cinta (BCA) mendaftar sebagai reseller.</div>
-                        <small class="text-secondary opacity-75">5 menit yang lalu</small>
-                    </a>
-                    <a href="{{ route('admin.reseller.katalog') }}" class="list-group-item list-group-item-action border-0 p-2 rounded-3 mb-1">
-                        <div class="fw-bold text-dark">Produk reseller baru</div>
-                        <div class="text-muted text-truncate">Course "Copywriting Pro" ditambahkan.</div>
-                        <small class="text-secondary opacity-75">1 jam yang lalu</small>
-                    </a>
+                <div class="list-group list-group-flush small" id="adminNotifList" style="max-height: 280px; overflow-y: auto;">
+                    <!-- Diisi dinamis -->
                 </div>
             </div>
         </div>
@@ -221,17 +212,17 @@
         <div class="d-flex align-items-center gap-2 ms-auto">
             <!-- Mobile Notif Icon -->
             <div class="dropdown">
-                <button class="btn btn-light rounded-circle position-relative p-0 d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown" style="width: 36px; height: 36px;">
+                <button class="btn btn-light rounded-circle position-relative p-0 d-flex align-items-center justify-content-center" type="button" id="adminNotifBellMobile" data-bs-toggle="dropdown" style="width: 36px; height: 36px;">
                     <i class="bi bi-bell text-secondary"></i>
-                    <span class="position-absolute translate-middle badge rounded-circle bg-danger border border-white" style="padding: 4px; left: 75% !important; top: 25% !important;"></span>
+                    <span id="adminNotifBadgeMobile" class="position-absolute translate-middle badge rounded-circle bg-danger border border-white" style="padding: 4px; left: 75% !important; top: 25% !important; display: none;"></span>
                 </button>
                 <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 p-3" style="width: 280px; z-index: 1090;">
-                    <h6 class="fw-bold mb-2">Notifikasi</h6>
-                    <div class="list-group list-group-flush small">
-                        <div class="list-group-item border-0 p-2 rounded-3 bg-light mb-1">
-                            <div class="fw-bold text-dark">Reseller baru bergabung!</div>
-                            <small class="text-secondary opacity-75">5 menit yang lalu</small>
-                        </div>
+                    <h6 class="fw-bold mb-2 d-flex justify-content-between align-items-center">
+                        <span>Notifikasi</span>
+                        <button type="button" class="btn btn-link p-0 text-decoration-none text-muted small fw-semibold" id="adminMarkAllReadMobile" style="font-size: 10px;">Tandai dibaca</button>
+                    </h6>
+                    <div class="list-group list-group-flush small" id="adminNotifListMobile" style="max-height: 250px; overflow-y: auto;">
+                        <!-- Diisi dinamis -->
                     </div>
                 </div>
             </div>
@@ -390,3 +381,84 @@
     }, 4000);
 </script>
 @endif
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const notifList = document.getElementById('adminNotifList');
+        const notifListMobile = document.getElementById('adminNotifListMobile');
+        const badge = document.getElementById('adminNotifBadge');
+        const badgeMobile = document.getElementById('adminNotifBadgeMobile');
+        const markReadBtn = document.getElementById('adminMarkAllRead');
+        const markReadBtnMobile = document.getElementById('adminMarkAllReadMobile');
+
+        function fetchAdminNotifications() {
+            fetch('{{ route("notifications.index") }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Update badges
+                    if (data.unread > 0) {
+                        if (badge) {
+                            badge.style.display = 'block';
+                        }
+                        if (badgeMobile) {
+                            badgeMobile.style.display = 'block';
+                        }
+                    } else {
+                        if (badge) badge.style.display = 'none';
+                        if (badgeMobile) badgeMobile.style.display = 'none';
+                    }
+
+                    // Populate dropdowns
+                    let listHtml = '';
+                    if (data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            const isUnread = !item.read_at;
+                            const itemBg = isUnread ? 'bg-light font-weight-bold' : '';
+                            const targetUrl = item.url ? item.url : '#';
+                            listHtml += `
+                                <a href="${targetUrl}" class="list-group-item list-group-item-action border-0 p-2 rounded-3 mb-1 ${itemBg}">
+                                    <div class="fw-bold text-dark">${item.title}</div>
+                                    <div class="text-muted text-truncate">${item.message}</div>
+                                    <small class="text-secondary opacity-75">${item.time_ago}</small>
+                                </a>
+                            `;
+                        });
+                    } else {
+                        listHtml = `
+                            <div class="text-center text-muted py-3 small">
+                                Tidak ada notifikasi.
+                            </div>
+                        `;
+                    }
+
+                    if (notifList) notifList.innerHTML = listHtml;
+                    if (notifListMobile) notifListMobile.innerHTML = listHtml;
+                })
+                .catch(error => console.error('Error fetching admin notifications:', error));
+        }
+
+        function markAllAsRead() {
+            fetch('{{ route("notifications.markAllRead") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    fetchAdminNotifications();
+                }
+            })
+            .catch(error => console.error('Error marking notifications as read:', error));
+        }
+
+        if (markReadBtn) markReadBtn.addEventListener('click', markAllAsRead);
+        if (markReadBtnMobile) markReadBtnMobile.addEventListener('click', markAllAsRead);
+
+        // Initial fetch and poll every 30 seconds
+        fetchAdminNotifications();
+        setInterval(fetchAdminNotifications, 30000);
+    });
+</script>
