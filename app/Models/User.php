@@ -491,12 +491,5 @@ class User extends Authenticatable
     {
         parent::boot();
 
-        static::creating(function ($user) {
-            // Bikin kode random 6 karakter (angka & huruf), lalu uppercase
-            // Contoh output: 616JA0
-            if (empty($user->referral_code)) {
-                $user->referral_code = strtoupper(Str::random(6) . rand(10, 99));
-            }
-        });
     }
 }

@@ -29,12 +29,11 @@ class AuthController extends Controller
         ]);
 
         $user = User::create([
-            'name'          => trim($request->name),
-            'email'         => strtolower(trim($request->email)),
-            'password'      => Hash::make($request->password),
-            'phone'         => $request->phone ?? null,
-            'role'          => 'user',
-            'referral_code' => strtoupper(Str::random(8)),
+            'name'     => trim($request->name),
+            'email'    => strtolower(trim($request->email)),
+            'password' => Hash::make($request->password),
+            'phone'    => $request->phone ?? null,
+            'role'     => 'user',
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
