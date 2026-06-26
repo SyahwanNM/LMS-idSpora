@@ -102,6 +102,7 @@ class CoursePaymentController extends Controller
                 $coursePayment->save();
 
                 $this->processReferralCommission($course, $coursePayment);
+                $this->processCourseTrainerRevenue($course, $coursePayment);
             }
 
             $enrollment = $coursePayment->enrollment;
@@ -302,6 +303,27 @@ class CoursePaymentController extends Controller
             }
         } catch (\Throwable $e) {
             \Log::error('Course admin referral commission notification failed: ' . $e->getMessage());
+        }
+    }
+
+    private function processCourseTrainerRevenue(Course $course, ManualPayment $payment): void
+    {
+        if ($course->trainer_id && $course->trainer_revenue_percent > 0) {
+            $trainer = User::find($course->trainer_id);
+            if ($trainer) {
+                $trainerShare = ($payment->amount * $course->trainer_revenue_percent) / 100;
+                if ($trainerShare > 0) {
+                    $trainer->increment('wallet_balance', $trainerShare);
+
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $trainer->id,
+                        'type' => 'revenue_share',
+                        'title' => 'Pendapatan Course Baru',
+                        'message' => 'Anda menerima bagi hasil sebesar Rp ' . number_format($trainerShare, 0, ',', '.') . ' dari penjualan course: ' . $course->name,
+                        'data' => ['amount' => $trainerShare, 'course_id' => $course->id]
+                    ]);
+                }
+            }
         }
     }
 }
