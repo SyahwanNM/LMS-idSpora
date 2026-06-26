@@ -977,6 +977,7 @@
             border: 1px solid var(--border-light) !important;
             overflow-x: auto !important;
             flex-wrap: nowrap !important;
+            margin-bottom: 12px !important;
         }
         .profile-tabs::-webkit-scrollbar {
             display: none !important;
@@ -1324,13 +1325,18 @@
                         <i class="bi bi-award"></i> Sertifikat
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="keuangan-tab" data-bs-toggle="tab" data-bs-target="#tab-keuangan"
+                        type="button" role="tab">
+                        <i class="bi bi-wallet2"></i> Keuangan & Saldo
+                    </button>
+                </li>
             </ul>
 
             <!-- Tabs Content -->
             <div class="tab-content" id="trainerTabsContent"
-                style="display: block !important; visibility: visible !important; min-height: 500px;">
-                <div class="tab-pane show active" id="tab-profil" role="tabpanel" aria-labelledby="profil-tab"
-                    style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                style="display: block !important; visibility: visible !important; min-height: auto;">
+                <div class="tab-pane show active" id="tab-profil" role="tabpanel" aria-labelledby="profil-tab">
                     <div class="row g-4">
                         <div class="col-lg-8">
                             <div class="profile-card mb-4">
@@ -2438,6 +2444,117 @@
                                                 style="font-size: 13px;">Template</span></a></div>
                                 </div>
                             </div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tab-keuangan" role="tabpanel" aria-labelledby="keuangan-tab">
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <div class="content-card mb-4">
+                                <div class="profile-card-header mb-3">
+                                    <h5 class="content-card-title mb-0">Informasi Keuangan & Saldo</h5>
+                                </div>
+                                <div class="profile-card-body">
+                                    <div class="stat-grid-3 mb-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                                        <div class="stat-box">
+                                            <div class="stat-icon purple">
+                                                <i class="bi bi-wallet2"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <h3 class="stat-value">Rp {{ number_format($walletBalance, 0, ',', '.') }}</h3>
+                                                <p class="stat-label">Saldo Course Tersedia</p>
+                                            </div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-icon green">
+                                                <i class="bi bi-cash-stack"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <h3 class="stat-value">Rp {{ number_format($totalPaidOut, 0, ',', '.') }}</h3>
+                                                <p class="stat-label">Total Cair (Gaji & Fee)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info border-0 rounded-3 p-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-info-circle-fill text-info"></i>
+                                            <span class="fw-semibold text-info" style="font-size: 13px;">
+                                                Pencairan Saldo Course dikelola secara terpusat melalui halaman <a href="{{ route('admin.finance.trainers') }}" class="text-decoration-underline fw-bold text-info">Admin Finance: Kelola Trainer & Saldo</a>.
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="content-card">
+                                <div class="profile-card-header mb-4">
+                                    <h5 class="content-card-title mb-0">Riwayat Pencairan Saldo & Payout</h5>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Tanggal</th>
+                                                <th>Deskripsi</th>
+                                                <th>Jenis</th>
+                                                <th>Status</th>
+                                                <th class="text-end">Jumlah</th>
+                                                <th class="text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($trainerPayouts as $payout)
+                                                <tr>
+                                                    <td style="font-size: 13px; font-weight: 600;">
+                                                        {{ $payout->payment_date ? $payout->payment_date->format('d M Y') : $payout->created_at->format('d M Y') }}
+                                                    </td>
+                                                    <td>
+                                                        <div class="fw-bold" style="font-size: 13px;">{{ $payout->title }}</div>
+                                                        @if($payout->notes)
+                                                            <div class="text-muted small"><i class="bi bi-chat-left-text me-1"></i> {{ $payout->notes }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($payout->type == 'course_payout')
+                                                            <span class="badge bg-primary bg-opacity-10 text-primary">Saldo Course</span>
+                                                        @else
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning">Fee Event</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($payout->status == 'approved')
+                                                            <span class="badge bg-success bg-opacity-10 text-success">Lunas</span>
+                                                        @elseif($payout->status == 'pending')
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning">Proses</span>
+                                                        @else
+                                                            <span class="badge bg-danger bg-opacity-10 text-danger">Ditolak</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end fw-bold" style="font-size: 14px;">
+                                                        Rp {{ number_format($payout->amount, 0, ',', '.') }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if($payout->status == 'approved')
+                                                            <a href="{{ route('admin.finance.payouts.invoice', $payout->id) }}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 11px; font-weight: 700;">
+                                                                <i class="bi bi-receipt me-1"></i> Invoice
+                                                            </a>
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="6" class="text-center py-4 text-muted italic" style="font-size: 13px;">
+                                                        Belum ada riwayat pencairan dana untuk trainer ini.
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -819,6 +819,10 @@ body {
                 </div>
                 @endforeach
             </div>
+            <div style="position: relative; z-index: 2; margin-top: auto; padding: 0 24px 12px 24px; font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
+                <span>Saldo Course Tersedia:</span>
+                <span style="font-weight: 800;">Rp {{ number_format($walletBalance, 0, ',', '.') }}</span>
+            </div>
             
             <div class="revenue-btn-wrapper">
                 <a href="{{ route('trainer.finance') }}" class="revenue-btn">Kelola Pendapatan</a>

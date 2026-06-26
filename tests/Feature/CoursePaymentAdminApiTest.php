@@ -67,4 +67,56 @@ class CoursePaymentAdminApiTest extends TestCase
                 ],
             ]);
     }
+
+    public function test_admin_can_approve_course_payment_and_distribute_trainer_revenue(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $trainer = User::factory()->create(['role' => 'trainer', 'wallet_balance' => 0]);
+        $student = User::factory()->create(['role' => 'user']);
+
+        $category = \App\Models\Category::create([
+            'name' => 'UI/UX Design',
+            'description' => 'UI/UX Design Category',
+        ]);
+
+        $course = \App\Models\Course::create([
+            'name' => 'UI/UX Design Course',
+            'category_id' => $category->id,
+            'price' => 500000,
+            'trainer_id' => $trainer->id,
+            'trainer_revenue_percent' => 30,
+            'status' => 'approved',
+        ]);
+
+        $payment = \App\Models\ManualPayment::create([
+            'course_id' => $course->id,
+            'user_id' => $student->id,
+            'order_id' => 'INV-CRS-12345',
+            'amount' => 500000,
+            'status' => 'pending',
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson("/api/admin/course-payments/{$payment->id}/approve");
+
+        $response->assertOk();
+        $response->assertJson([
+            'status' => 'success',
+            'message' => 'Pembayaran course berhasil di-approve dan invoice dikirim ke email user',
+        ]);
+
+        $payment->refresh();
+        $this->assertEquals('settled', $payment->status);
+
+        // Verify trainer balance is updated: 30% of 500,000 is 150,000
+        $trainer->refresh();
+        $this->assertEquals(150000, (float)$trainer->wallet_balance);
+
+        // Verify trainer notification was created
+        $this->assertDatabaseHas('trainer_notifications', [
+            'trainer_id' => $trainer->id,
+            'type' => 'revenue_share',
+        ]);
+    }
 }
