@@ -122,13 +122,13 @@
 
             <!-- Search and Filters Bar -->
             <div class="row g-3 mb-4 align-items-center bg-white p-3 rounded-4 shadow-sm mx-0">
-                <div class="col-md-5">
+                <div class="col-12 col-md-5">
                     <div class="position-relative">
                         <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
                         <input type="text" id="resellerSearchInput" class="form-control ps-5 rounded-pill" placeholder="Cari nama, email, atau kode referral..." style="height: 44px;" value="{{ request('search') }}">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-5 col-md-3">
                     <select id="resellerTierSelect" class="form-select rounded-pill" style="height: 44px;">
                         <option value="">Semua Tier</option>
                         <option value="Bronze">Tier Bronze</option>
@@ -136,14 +136,14 @@
                         <option value="Gold">Tier Gold</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-5 col-md-3">
                     <select id="resellerStatusSelect" class="form-select rounded-pill" style="height: 44px;">
                         <option value="">Semua Status</option>
                         <option value="Aktif">Status Aktif</option>
                         <option value="Suspended">Status Suspended</option>
                     </select>
                 </div>
-                <div class="col-md-1 d-flex justify-content-center justify-content-md-start">
+                <div class="col-2 col-md-1 d-flex justify-content-center justify-content-md-start">
                     <button type="button" class="btn btn-outline-secondary rounded-circle p-0 d-flex align-items-center justify-content-center" style="height: 44px; width: 44px; flex-shrink: 0;" onclick="resetFilters()" title="Reset Filter">
                         <i class="bi bi-arrow-counterclockwise fs-5"></i>
                     </button>
@@ -159,9 +159,15 @@
                                 <tr class="text-secondary small">
                                     <th class="ps-4 py-3">RESELLER</th>
                                     <th class="py-3">KODE REFERRAL</th>
-                                    <th class="py-3">TIER</th>
-                                    <th class="py-3">PENJUALAN</th>
-                                    <th class="py-3">TANGGAL DIBUAT</th>
+                                    <th class="py-3" id="headerTier" style="cursor: pointer; user-select: none;" title="Urutkan berdasarkan Tier">
+                                        TIER <i class="bi bi-arrow-down-up ms-1 text-muted" id="sortTierIcon"></i>
+                                    </th>
+                                    <th class="py-3" id="headerSales" style="cursor: pointer; user-select: none;" title="Urutkan berdasarkan Penjualan">
+                                        PENJUALAN <i class="bi bi-arrow-down-up ms-1 text-muted" id="sortSalesIcon"></i>
+                                    </th>
+                                    <th class="py-3" id="headerDate" style="cursor: pointer; user-select: none;" title="Urutkan berdasarkan Tanggal Dibuat">
+                                        TANGGAL DIBUAT <i class="bi bi-arrow-down-up ms-1 text-muted" id="sortDateIcon"></i>
+                                    </th>
                                     <th class="py-3">STATUS</th>
                                     <th class="pe-4 py-3 text-end">AKSI</th>
                                 </tr>
@@ -195,13 +201,15 @@
                                         data-email="{{ strtolower($reseller->email) }}" 
                                         data-code="{{ strtolower($reseller->referral_code) }}"
                                         data-tier="{{ $tier }}"
+                                        data-sales="{{ $reseller->total_earned ?? 0 }}"
+                                        data-date="{{ $reseller->created_at ? $reseller->created_at->timestamp : 0 }}"
                                         data-status="{{ $status }}">
                                         <td class="ps-4 py-3">
                                             <div class="d-flex align-items-center gap-3">
                                                 <img src="{{ $reseller->avatar_url }}" alt="{{ $reseller->name }}" class="rounded-circle shadow-sm" style="width: 42px; height: 42px; object-fit: cover; border: 2px solid #fff;">
                                                 <div>
                                                     <div class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">{{ $reseller->name }}</div>
-                                                    <div class="small text-muted" style="font-size: 0.8rem;">{{ $reseller->email }}</div>
+                                                    <div class="small text-muted text-truncate" style="font-size: 0.8rem; max-width: 160px;" title="{{ $reseller->email }}">{{ $reseller->email }}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -659,6 +667,76 @@
             if (searchInput.value) {
                 filterTable();
             }
+
+            // Client-side sorting logic
+            const resellerTableBody = document.getElementById('resellerTableBody');
+            let sortDirections = {
+                tier: 'none',
+                sales: 'none',
+                date: 'none'
+            };
+
+            function resetSortIcons() {
+                document.getElementById('sortTierIcon').className = 'bi bi-arrow-down-up ms-1 text-muted';
+                document.getElementById('sortSalesIcon').className = 'bi bi-arrow-down-up ms-1 text-muted';
+                document.getElementById('sortDateIcon').className = 'bi bi-arrow-down-up ms-1 text-muted';
+            }
+
+            function sortTable(column) {
+                const currentDir = sortDirections[column];
+                let nextDir = 'asc';
+                if (currentDir === 'asc') {
+                    nextDir = 'desc';
+                }
+                
+                sortDirections = {
+                    tier: 'none',
+                    sales: 'none',
+                    date: 'none'
+                };
+                sortDirections[column] = nextDir;
+                
+                resetSortIcons();
+                
+                const iconId = column === 'tier' ? 'sortTierIcon' : (column === 'sales' ? 'sortSalesIcon' : 'sortDateIcon');
+                const iconEl = document.getElementById(iconId);
+                if (nextDir === 'asc') {
+                    iconEl.className = 'bi bi-sort-up ms-1 text-primary';
+                } else {
+                    iconEl.className = 'bi bi-sort-down ms-1 text-primary';
+                }
+
+                const rows = Array.from(document.querySelectorAll('.reseller-row'));
+                const tierOrder = { 'Bronze': 1, 'Silver': 2, 'Gold': 3 };
+
+                rows.sort((a, b) => {
+                    let valA, valB;
+                    if (column === 'tier') {
+                        valA = tierOrder[a.getAttribute('data-tier')] || 0;
+                        valB = tierOrder[b.getAttribute('data-tier')] || 0;
+                    } else if (column === 'sales') {
+                        valA = parseFloat(a.getAttribute('data-sales')) || 0;
+                        valB = parseFloat(b.getAttribute('data-sales')) || 0;
+                    } else if (column === 'date') {
+                        valA = parseInt(a.getAttribute('data-date')) || 0;
+                        valB = parseInt(b.getAttribute('data-date')) || 0;
+                    }
+
+                    if (valA === valB) return 0;
+                    if (nextDir === 'asc') {
+                        return valA > valB ? 1 : -1;
+                    } else {
+                        return valA < valB ? 1 : -1;
+                    }
+                });
+
+                const emptyRow = document.getElementById('emptyRow');
+                rows.forEach(row => resellerTableBody.insertBefore(row, emptyRow));
+            }
+
+            document.getElementById('headerTier').addEventListener('click', () => sortTable('tier'));
+            document.getElementById('headerSales').addEventListener('click', () => sortTable('sales'));
+            document.getElementById('headerDate').addEventListener('click', () => sortTable('date'));
         });
 
         function resetFilters() {
