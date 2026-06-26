@@ -1373,6 +1373,7 @@ class PaymentController extends Controller
                     $course = $payment->course_id ? Course::find($payment->course_id) : null;
                     if ($course) {
                         $this->processCourseReferralCommission($course, $payment);
+                        $this->processCourseTrainerRevenue($course, $payment);
                         $this->sendPaymentInvoice($payment, 'course', (string) ($course->name ?? 'Course'));
                     }
                 }
