@@ -68,6 +68,20 @@ class Event extends Model
         'is_reseller_event',
         'is_published',
         'published_at',
+        'accept_online_payment',
+        'accept_manual_transfer',
+        'bank_account_number',
+        'bank_name',
+        'bank_account_holder',
+        'start_submission',
+        'until_submission',
+        'announcement_date',
+        'until_submission_2',
+        'price_stage2',
+        'finalist_payment_start',
+        'finalist_payment_end',
+        'lomba_kategori',
+        'max_team_members',
     ];
 
     protected $casts = [
@@ -77,11 +91,7 @@ class Event extends Model
         'material_revision_deadline' => 'datetime',
         'event_time' => 'datetime:H:i',
         'event_time_end' => 'datetime:H:i',
-        'module_submitted_at' => 'datetime',
-        'module_verified_at' => 'datetime',
-        'module_rejected_at' => 'datetime',
         'discount_until' => 'date',
-        'material_approved_at' => 'datetime',
         'price' => 'decimal:2',
         'discount_percentage' => 'integer',
         'latitude' => 'decimal:7',
@@ -90,10 +100,202 @@ class Event extends Model
         'expenses_json' => 'array',
         'benefit' => 'array',
         'is_reseller_event' => 'boolean',
+        'accept_online_payment' => 'boolean',
+        'accept_manual_transfer' => 'boolean',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
-        'module_path' => 'array', // Added to support multiple trainer modules
+        'start_submission' => 'datetime',
+        'until_submission' => 'datetime',
+        'announcement_date' => 'datetime',
+        'until_submission_2' => 'datetime',
+        'price_stage2' => 'decimal:2',
+        'finalist_payment_start' => 'datetime',
+        'finalist_payment_end' => 'datetime',
     ];
+
+    protected $virtualAttributes = [];
+
+    public function setRawAttributes(array $attributes, $sync = false)
+    {
+        $this->virtualAttributes = [];
+        return parent::setRawAttributes($attributes, $sync);
+    }
+
+    public function setVirtualAttribute($key, $value)
+    {
+        $this->virtualAttributes[$key] = $value;
+    }
+
+    public function getVirtualAttribute($key, $fallback = null)
+    {
+        return $this->virtualAttributes[$key] ?? $fallback;
+    }
+
+    // Setters
+    public function setModulePathAttribute($value) { $this->setVirtualAttribute('module_path', $value); }
+    public function setMaterialStatusAttribute($value) { $this->setVirtualAttribute('material_status', $value); }
+    public function setModuleSubmissionPathAttribute($value) { $this->setVirtualAttribute('module_submission_path', $value); }
+    public function setModuleSubmittedAtAttribute($value) { $this->setVirtualAttribute('module_submitted_at', $value); }
+    public function setModuleVerifiedAtAttribute($value) { $this->setVirtualAttribute('module_verified_at', $value); }
+    public function setModuleVerifiedByAttribute($value) { $this->setVirtualAttribute('module_verified_by', $value); }
+    public function setMaterialApprovedAtAttribute($value) { $this->setVirtualAttribute('material_approved_at', $value); }
+    public function setMaterialApprovedByAttribute($value) { $this->setVirtualAttribute('material_approved_by', $value); }
+    public function setMaterialRejectionReasonAttribute($value) { $this->setVirtualAttribute('material_rejection_reason', $value); }
+    public function setModuleRejectedAtAttribute($value) { $this->setVirtualAttribute('module_rejected_at', $value); }
+    public function setModuleRejectedByAttribute($value) { $this->setVirtualAttribute('module_rejected_by', $value); }
+    public function setModuleRejectionReasonAttribute($value) { $this->setVirtualAttribute('module_rejection_reason', $value); }
+
+    // Getters
+    public function getModulePathAttribute()
+    {
+        if (array_key_exists('module_path', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_path'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->path : null;
+    }
+
+    public function getMaterialStatusAttribute()
+    {
+        if (array_key_exists('material_status', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_status'];
+        }
+        if (isset($this->attributes['material_status']) && $this->attributes['material_status'] !== null) {
+            return $this->attributes['material_status'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->status : 'pending';
+    }
+
+    public function getModuleSubmissionPathAttribute()
+    {
+        if (array_key_exists('module_submission_path', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_submission_path'];
+        }
+        $latest = $this->trainerModules()->latest()->first();
+        return $latest ? $latest->path : null;
+    }
+
+    public function getModuleSubmittedAtAttribute()
+    {
+        $val = array_key_exists('module_submitted_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_submitted_at']
+            : $this->trainerModules()->latest()->first()?->created_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleVerifiedAtAttribute()
+    {
+        $val = array_key_exists('module_verified_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_verified_at']
+            : $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleVerifiedByAttribute()
+    {
+        if (array_key_exists('module_verified_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_verified_by'];
+        }
+        return $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_by;
+    }
+
+    public function getMaterialApprovedAtAttribute()
+    {
+        $val = array_key_exists('material_approved_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['material_approved_at']
+            : $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getMaterialApprovedByAttribute()
+    {
+        if (array_key_exists('material_approved_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_approved_by'];
+        }
+        return $this->trainerModules()->where('status', 'approved')->latest()->first()?->reviewed_by;
+    }
+
+    public function getMaterialRejectionReasonAttribute()
+    {
+        if (array_key_exists('material_rejection_reason', $this->virtualAttributes)) {
+            return $this->virtualAttributes['material_rejection_reason'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->rejection_reason;
+    }
+
+    public function getModuleRejectedAtAttribute()
+    {
+        $val = array_key_exists('module_rejected_at', $this->virtualAttributes)
+            ? $this->virtualAttributes['module_rejected_at']
+            : $this->trainerModules()->where('status', 'rejected')->latest()->first()?->reviewed_at;
+        return $val ? \Carbon\Carbon::parse($val) : null;
+    }
+
+    public function getModuleRejectedByAttribute()
+    {
+        if (array_key_exists('module_rejected_by', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_rejected_by'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->reviewed_by;
+    }
+
+    public function getModuleRejectionReasonAttribute()
+    {
+        if (array_key_exists('module_rejection_reason', $this->virtualAttributes)) {
+            return $this->virtualAttributes['module_rejection_reason'];
+        }
+        return $this->trainerModules()->where('status', 'rejected')->latest()->first()?->rejection_reason;
+    }
+
+
+    public function getMinTeamMembersAttribute()
+    {
+        $val = $this->max_team_members;
+        if (empty($val)) {
+            return 2;
+        }
+        if (preg_match('/^(\d+)-(\d+)$/', trim($val), $matches)) {
+            return (int) $matches[1];
+        }
+        return (int) $val;
+    }
+
+    public function getMaxTeamMembersCountAttribute()
+    {
+        $val = $this->max_team_members;
+        if (empty($val)) {
+            return 5;
+        }
+        if (preg_match('/^(\d+)-(\d+)$/', trim($val), $matches)) {
+            return (int) $matches[2];
+        }
+        return (int) $val;
+    }
+
+    public function getHasApprovedModulesAttribute(): bool
+    {
+        $assignedTrainerIds = collect();
+        if ($this->trainer_id) {
+            $assignedTrainerIds->push((int) $this->trainer_id);
+        }
+        $speakerTrainerIds = $this->speakers()->whereNotNull('trainer_id')->pluck('trainer_id')->map(fn($id) => (int) $id);
+        $assignedTrainerIds = $assignedTrainerIds->merge($speakerTrainerIds)->unique()->values();
+
+        if ($assignedTrainerIds->isNotEmpty()) {
+            $approvedTrainerIds = $this->approvedTrainerModules()->distinct('trainer_id')->pluck('trainer_id')->map(fn($id) => (int) $id)->toArray();
+            
+            foreach ($assignedTrainerIds as $tId) {
+                if (!in_array($tId, $approvedTrainerIds, true)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Tidak ada trainer yang di-assign → secara otomatis benar (karena tidak ada modul yang perlu di-upload)
+        return true;
+    }
 
     /**
      * Count how many operational documents have been uploaded.
@@ -101,21 +303,25 @@ class Event extends Model
     public function getDocumentsCompletedCountAttribute(): int
     {
         $hasVbg = !empty($this->vbg_path);
+        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
 
-        // Module complete only when ALL registered speakers have an approved module.
-        // Fallback to legacy check when no speakers are registered in event_speakers table.
-        $speakerCount  = $this->speakers()->count();
-        $approvedCount = $this->approvedTrainerModules()->distinct('trainer_id')->count('trainer_id');
-
-        if ($speakerCount > 0) {
-            $hasModule = $approvedCount >= $speakerCount;
-        } else {
-            $hasModule = !empty($this->module_path) || $approvedCount > 0;
+        if ($this->jenis === 'Lomba') {
+            $count = 0;
+            if (!$isOfflineOnly && $hasVbg) {
+                $count++;
+            }
+            return $count;
         }
 
-        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token);
+        $hasModule = $this->has_approved_modules;
 
-        $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
+        $isMultiDay = !empty($this->event_until_date)
+            && \Carbon\Carbon::parse($this->event_until_date)->gt(\Carbon\Carbon::parse($this->event_date));
+        $hasDailyAbs = false;
+        if ($isMultiDay && $this->id) {
+            $hasDailyAbs = \App\Models\EventDailyQr::where('event_id', $this->id)->exists();
+        }
+        $hasAttendance = !empty($this->attendance_path) || !empty($this->attendance_qr_image) || !empty($this->attendance_qr_token) || $hasDailyAbs;
 
         $count = 0;
         if (!$isOfflineOnly && $hasVbg) {
@@ -137,11 +343,15 @@ class Event extends Model
     {
         // Determine denominator according to offline/online rule
         $isOfflineOnly = (!empty($this->maps_url) && empty($this->zoom_link));
-        $total = $isOfflineOnly ? 2 : 3;
+        if ($this->jenis === 'Lomba') {
+            $total = $isOfflineOnly ? 0 : 1;
+        } else {
+            $total = $isOfflineOnly ? 2 : 3;
+        }
         $done = (int) $this->documents_completed_count;
         $done = max(0, min($total, $done));
         if ($total === 0)
-            return 0;
+            return 100;
         if ($done === $total)
             return 100;
         return (int) floor(($done / $total) * 100);
@@ -264,6 +474,11 @@ class Event extends Model
     public function registrations()
     {
         return $this->hasMany(EventRegistration::class);
+    }
+
+    public function teams()
+    {
+        return $this->hasMany(Team::class);
     }
 
     public function scheduleItems()

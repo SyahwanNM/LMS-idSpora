@@ -3,6 +3,8 @@
 @section('title', 'Edit Profile Trainer')
 
 @push('styles')
+<!-- Cropper.js CSS CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 <style>
 .profile-wrap {
     display: grid;
@@ -1189,6 +1191,155 @@
     white-space: nowrap;
 }
 
+/* Cropper Modal CSS */
+.crop-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.25s ease-in-out;
+}
+.crop-modal-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+.crop-modal-container {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 480px;
+    padding: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    transform: translateY(30px);
+    transition: transform 0.25s ease-in-out;
+}
+.crop-modal-overlay.show .crop-modal-container {
+    transform: translateY(0);
+}
+.crop-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 12px;
+}
+.crop-modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e1b4b; /* Navy */
+}
+.crop-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #64748b;
+    transition: color 0.15s ease;
+}
+.crop-modal-close:hover {
+    color: #1e293b;
+}
+.crop-workspace {
+    width: 100%;
+    height: 300px;
+    background-color: #f8fafc;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px dashed #e2e8f0;
+}
+.crop-workspace img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+}
+.crop-footer {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.crop-zoom-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+}
+.crop-zoom-wrapper i {
+    color: #64748b;
+    font-size: 14px;
+}
+.crop-zoom-slider {
+    flex: 1;
+    height: 5px;
+    background: #cbd5e1;
+    border-radius: 10px;
+    outline: none;
+    -webkit-appearance: none;
+}
+.crop-zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #2e2050;
+    cursor: pointer;
+}
+.crop-button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.btn-crop-cancel {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #334155;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-crop-cancel:hover {
+    background: #f8fafc;
+}
+.btn-crop-submit {
+    border: none;
+    background: #2e2050;
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-crop-submit:hover {
+    background: #19102c;
+}
+
+/* Rounded square cropper box style (to match the profile avatar preview radius) */
+.cropper-view-box {
+    border-radius: 16px;
+    outline: 2px solid #2e2050;
+    outline-color: rgba(46, 32, 80, 0.75);
+}
+.cropper-face {
+    border-radius: 16px;
+    background-color: transparent;
+}
+.cropper-line, .cropper-point {
+    display: none !important;
+}
+
 </style>
 @endpush
 
@@ -1214,20 +1365,46 @@
             @csrf
             @method('PUT')
 
-            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-                <img src="{{ $trainer->avatar_url }}" alt="{{ $trainer->name }}"
-                    style="width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid #e2e8f0;" />
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                <div style="position:relative; width:80px; height:80px; border-radius:14px; overflow:hidden; border:2px solid #e2e8f0; background:#f8fafc; flex-shrink:0;">
+                    <img id="avatar-preview" src="{{ $trainer->avatar_url }}" alt="{{ $trainer->name }}"
+                        style="width:100%;height:100%;object-fit:cover;" />
+                </div>
                 <div style="display:grid;gap:6px;">
-                    <label for="avatar" style="font-size:12px;color:#334155;font-weight:600;">Avatar</label>
-                    <input type="file" id="avatar" name="avatar" accept="image/*" style="font-size:12px;color:#334155;" />
+                    <label style="font-size:12px;color:#334155;font-weight:700;">Foto Profil</label>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <!-- Styled buttons -->
+                        <button type="button" id="btn-select-file" style="border:1px solid #cbd5e1; background:#ffffff; border-radius:10px; padding:8px 14px; font-size:12px; font-weight:700; color:#334155; cursor:pointer; transition:all 0.15s ease;">
+                            Pilih Foto Baru
+                        </button>
+                        <input type="file" id="avatar" name="avatar" accept="image/*" style="display:none;" />
+                    </div>
+                    <span style="font-size:11px; color:#64748b;">
+                        Foto baru akan langsung diatur (digeser & di-zoom) setelah Anda memilih berkas.
+                    </span>
+                    @error('avatar')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
                 <div style="display:grid;gap:6px;">
                     <label for="name" style="font-size:12px;font-weight:600;color:#334155;">Nama</label>
                     <input id="name" name="name" type="text" value="{{ old('name', $trainer->name) }}" required
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('name')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div style="display:grid;gap:6px;">
+                    <label for="email" style="font-size:12px;font-weight:600;color:#334155;">Email</label>
+                    <input id="email" name="email" type="email" value="{{ old('email', $trainer->email) }}" required
+                        style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('email')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1235,6 +1412,9 @@
                     <input id="academic_title" name="academic_title" type="text"
                         value="{{ old('academic_title', $trainer->academic_title) }}" placeholder="Contoh: S.Kom., M.Kom."
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('academic_title')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1242,6 +1422,9 @@
                     <input id="phone" name="phone" type="text" value="{{ old('phone', $trainer->phone) }}"
                         placeholder="Contoh: +6281234567890"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('phone')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1249,6 +1432,9 @@
                     <input id="profession" name="profession" type="text"
                         value="{{ old('profession', $trainer->profession) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('profession')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1256,6 +1442,9 @@
                     <input id="institution" name="institution" type="text"
                         value="{{ old('institution', $trainer->institution) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('institution')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -1264,6 +1453,9 @@
                 <input id="website" name="website" type="text" value="{{ old('website', $trainer->website) }}"
                     placeholder="contoh: https://example.com"
                     style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                @error('website')
+                    <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div style="display:grid;gap:6px;">
@@ -1271,6 +1463,9 @@
                 <input id="linkedin_url" name="linkedin_url" type="url"
                     value="{{ old('linkedin_url', $trainer->linkedin_url) }}" placeholder="https://www.linkedin.com/in/..."
                     style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                @error('linkedin_url')
+                    <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;">
@@ -1279,6 +1474,9 @@
                     <input id="bank_name" name="bank_name" type="text" value="{{ old('bank_name', $trainer->bank_name) }}"
                         placeholder="BCA / Mandiri / BNI / dll"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('bank_name')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1287,6 +1485,9 @@
                     <input id="bank_account_number" name="bank_account_number" type="text"
                         value="{{ old('bank_account_number', $trainer->bank_account_number) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('bank_account_number')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 <div style="display:grid;gap:6px;">
@@ -1295,6 +1496,9 @@
                     <input id="bank_account_holder" name="bank_account_holder" type="text"
                         value="{{ old('bank_account_holder', $trainer->bank_account_holder) }}"
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('bank_account_holder')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -1302,6 +1506,42 @@
                 <label for="bio" style="font-size:12px;font-weight:600;color:#334155;">Bio</label>
                 <textarea id="bio" name="bio" rows="5"
                     style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;resize:vertical;">{{ old('bio', $trainer->bio) }}</textarea>
+                @error('bio')
+                    <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 16px; display: grid; gap: 12px;">
+                <h3 style="font-size: 14px; font-weight: 700; color: #2e2050; margin: 0;">Ubah Password <span style="font-weight: 400; color: #64748b; font-size: 12px;">(Kosongkan jika tidak ingin mengubah)</span></h3>
+                
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">
+                    <div style="display:grid;gap:6px;">
+                        <label for="current_password" style="font-size:12px;font-weight:600;color:#334155;">Password Saat Ini</label>
+                        <input id="current_password" name="current_password" type="password" autocomplete="current-password"
+                            style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                        @error('current_password')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div style="display:grid;gap:6px;">
+                        <label for="password" style="font-size:12px;font-weight:600;color:#334155;">Password Baru</label>
+                        <input id="password" name="password" type="password" autocomplete="new-password"
+                            style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                        @error('password')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div style="display:grid;gap:6px;">
+                        <label for="password_confirmation" style="font-size:12px;font-weight:600;color:#334155;">Konfirmasi Password Baru</label>
+                        <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password"
+                            style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                        @error('password_confirmation')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
             </div>
 
             <div style="display:flex;justify-content:flex-end;gap:8px;">
@@ -1313,5 +1553,188 @@
             </div>
         </form>
     </div>
+
+    <!-- Cropper Modal -->
+    <div id="cropModal" class="crop-modal-overlay">
+        <div class="crop-modal-container">
+            <div class="crop-modal-header">
+                <span class="crop-modal-title">Atur Posisi & Ukuran Foto</span>
+                <button type="button" class="crop-modal-close" onclick="closeCropModal()">&times;</button>
+            </div>
+            <div class="crop-workspace">
+                <img id="crop-image" src="" alt="Crop Area" />
+            </div>
+            <div class="crop-footer">
+                <div class="crop-zoom-wrapper">
+                    <i class="bi bi-zoom-out"></i>
+                    <input type="range" id="crop-zoom-slider" class="crop-zoom-slider" min="0" max="100" value="0" />
+                    <i class="bi bi-zoom-in"></i>
+                </div>
+                <div class="crop-button-group">
+                    <button type="button" class="btn-crop-cancel" onclick="closeCropModal()">Batal</button>
+                    <button type="button" id="btn-crop-save" class="btn-crop-submit">Selesai</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
+
+@push('scripts')
+<!-- Cropper.js JS CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script>
+    let cropper = null;
+    let originalFile = null;
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatar-preview');
+    const cropModal = document.getElementById('cropModal');
+    const cropImage = document.getElementById('crop-image');
+    const zoomSlider = document.getElementById('crop-zoom-slider');
+    const btnCropSave = document.getElementById('btn-crop-save');
+    const btnSelectFile = document.getElementById('btn-select-file');
+    let isCropConfirmed = false;
+
+    // Reset crop modal
+    function closeCropModal() {
+        cropModal.classList.remove('show');
+        setTimeout(() => {
+            cropModal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            // If crop was not confirmed and they selected a new file, reset input
+            if (!isCropConfirmed && originalFile) {
+                avatarInput.value = '';
+            }
+        }, 250);
+    }
+
+    // Trigger file selection
+    if (btnSelectFile) {
+        btnSelectFile.addEventListener('click', function() {
+            avatarInput.click();
+        });
+    }
+
+    avatarInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            isCropConfirmed = false;
+            const file = files[0];
+            originalFile = file;
+            
+            // Set image in modal
+            const fileReader = new FileReader();
+            fileReader.onload = function(event) {
+                cropImage.src = event.target.result;
+                openCropper();
+            };
+            fileReader.readAsDataURL(file);
+        }
+    });
+
+    function openCropper() {
+        // Show modal
+        cropModal.style.display = 'flex';
+        cropModal.offsetHeight; // Force reflow
+        cropModal.classList.add('show');
+        
+        // Initialize Cropper
+        if (cropper) {
+            cropper.destroy();
+        }
+        
+        cropper = new Cropper(cropImage, {
+            aspectRatio: 1,
+            viewMode: 1,
+            dragMode: 'move',
+            cropBoxMovable: false,
+            cropBoxResizable: false,
+            toggleDragModeOnDblclick: false,
+            background: false,
+            autoCropArea: 1,
+            checkCrossOrigin: false, // Prevent adding crossorigin attribute
+            ready: function() {
+                zoomSlider.value = 0;
+            }
+        });
+
+        // Listen to mousewheel or zoom events to update slider
+        cropImage.addEventListener('zoom', function(e) {
+            const imageData = cropper.getImageData();
+            const minZoom = imageData.width / imageData.naturalWidth;
+            const maxZoom = 3.0;
+            const ratio = e.detail.ratio;
+            const percent = Math.min(100, Math.max(0, ((ratio - minZoom) / (maxZoom - minZoom)) * 100));
+            zoomSlider.value = percent;
+        });
+    }
+
+    // Zoom slider control
+    zoomSlider.addEventListener('input', function() {
+        if (!cropper) return;
+        const zoomPercent = parseFloat(this.value);
+        const imageData = cropper.getImageData();
+        const minZoom = imageData.width / imageData.naturalWidth;
+        const maxZoom = 3.0;
+        const targetZoom = minZoom + (maxZoom - minZoom) * (zoomPercent / 100);
+        cropper.zoomTo(targetZoom);
+    });
+
+    // Handle crop save
+    btnCropSave.addEventListener('click', function() {
+        if (!cropper) return;
+        
+        try {
+            // Get high quality cropped canvas
+            const canvas = cropper.getCroppedCanvas({
+                width: 400,
+                height: 400,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+            
+            if (!canvas) {
+                alert("Gagal memotong gambar. Kanvas tidak valid.");
+                return;
+            }
+            
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    alert("Gagal memproses potongan gambar.");
+                    return;
+                }
+                
+                isCropConfirmed = true;
+                
+                // Update preview on page
+                const previewUrl = URL.createObjectURL(blob);
+                avatarPreview.src = previewUrl;
+                
+                // Create cropped file object
+                let fileName = 'cropped_avatar.png';
+                let fileType = 'image/png';
+                if (originalFile) {
+                    fileName = originalFile.name;
+                    fileType = originalFile.type;
+                }
+                
+                const croppedFile = new File([blob], fileName, { type: fileType });
+                
+                // Put cropped file into hidden file input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(croppedFile);
+                avatarInput.files = dataTransfer.files;
+                
+                // Close modal
+                closeCropModal();
+            }, originalFile ? originalFile.type : 'image/png');
+        } catch (error) {
+            console.error("Error cropping image:", error);
+            alert("Terjadi kesalahan saat memproses gambar.");
+        }
+    });
+</script>
+@endpush
 

@@ -5,19 +5,30 @@
 @php
     $pageTitle = 'Event Studio';
     $breadcrumbs = [
-        ['label' => 'Beranda', 'url' => route('trainer.dashboard')],
-        ['label' => 'Acara', 'url' => route('trainer.events')],
-        ['label' => 'Studio'],
+        ['label' => 'Dasbor', 'url' => route('trainer.dashboard')],
+        ['label' => 'Events', 'url' => route('trainer.events')],
+        ['label' => 'Studio Event'],
     ];
 
     $materialStatus = (string) ($event->material_status ?? 'draft');
-    $hasUploadedModule = !empty($event->module_path)
-        || (isset($myModules) && $myModules->isNotEmpty());
-    // Prefer myMaterialStatus (from EventTrainerModule) as the authoritative source
-    $resolvedStatus = isset($myMaterialStatus) && $myMaterialStatus !== 'not_uploaded'
-        ? $myMaterialStatus
-        : $materialStatus;
-    $displayMaterialStatus = $hasUploadedModule ? $resolvedStatus : 'draft';
+    $submittedModules = ($myModules ?? collect());
+    if ($submittedModules->isEmpty() && !empty($event->module_path)) {
+        $submittedModules = collect([(object) [
+            'original_name' => basename((string) $event->module_path),
+            'path' => $event->module_path,
+            'status' => $materialStatus,
+            'created_at' => $event->module_submitted_at ?? $event->updated_at,
+            'survey_link' => null,
+            'rejection_reason' => null,
+            'is_legacy' => true,
+        ]]);
+    }
+    $hasUploadedModule = $submittedModules->isNotEmpty();
+    if ($hasUploadedModule && ($myMaterialStatus ?? 'not_uploaded') !== 'not_uploaded') {
+        $displayMaterialStatus = (string) $myMaterialStatus;
+    } else {
+        $displayMaterialStatus = $hasUploadedModule ? $materialStatus : 'draft';
+    }
     $isRevisionWindow = $displayMaterialStatus === 'rejected';
     $deadline = $isRevisionWindow
         ? (!empty($event->material_revision_deadline)
@@ -25,34 +36,327 @@
             : ($event->start_at ? $event->start_at->copy()->subDays(3) : null))
         : (!empty($event->material_deadline)
             ? \Carbon\Carbon::parse($event->material_deadline)
-            : ($event->start_at ? $event->start_at->copy()->subDays(7) : null));
+            : ($event->start_at ? $event->start_at->copy()->subDays(3) : null));
     $deadlinePassed = $deadline ? now()->gt($deadline) : false;
-    $deadlineLabel = $isRevisionWindow ? 'Deadline Revisi (H-3)' : 'Deadline Pengumpulan (H-7)';
+    $deadlineLabel = $isRevisionWindow ? 'Deadline Revisi (H-3)' : 'Deadline Pengumpulan (H-3)';
     $deadlineHint = $deadlinePassed
         ? ($isRevisionWindow ? 'Batas revisi sudah lewat' : 'Batas pengumpulan sudah lewat')
         : ($isRevisionWindow ? 'Masa revisi masih terbuka' : 'Materi masih bisa diunggah');
     $materialStatusLabel = strtoupper(str_replace('_', ' ', $displayMaterialStatus));
+    $isRejected = $displayMaterialStatus === 'rejected';
+    $uploadModeLabel = $isRejected ? 'Upload Revisi Materi' : 'Upload Materi Event';
+    $submitDraftLabel = $isRejected ? 'GANTI FILE REVISI' : 'TAMBAHKAN KE DRAF';
     $eventRejectionReason = trim((string) ($event->material_rejection_reason ?? ''));
     if ($eventRejectionReason === '') {
         $eventRejectionReason = trim((string) ($event->module_rejection_reason ?? ''));
     }
     $showEventRejectionReason = $displayMaterialStatus === 'rejected' && $eventRejectionReason !== '';
-    $moduleFileUrl = $event->module_file_url
-        ?? (isset($myModules) && $myModules->isNotEmpty()
-            ? \Illuminate\Support\Facades\Storage::disk('public')->url($myModules->first()->path)
-            : null);
-    $uploadedModuleName = $hasUploadedModule
-        ? (isset($myModules) && $myModules->isNotEmpty()
-            ? $myModules->first()->original_name
-            : basename((string) $event->module_path))
-        : null;
-    $canUploadMaterials = $displayMaterialStatus !== 'approved';
+    $resolveModuleViewUrl = function ($module) use ($event) {
+        $path = (string) ($module->path ?? '');
+        if ($path === '') {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+        if (!empty($module->is_legacy)) {
+            return $event->module_file_url;
+        }
+
+        return $module->download_url ?? \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+    };
+    $resolveModuleLabel = function ($module) {
+        $name = (string) ($module->original_name ?? 'Materi');
+        if (str_starts_with($name, 'Link: ')) {
+            return str_replace('Link: ', '', $name);
+        }
+
+        return $name;
+    };
+    $canUploadMaterials = ($displayMaterialStatus !== 'approved');
+
+    $step1State = 'active'; // active, completed
+    $step2State = 'inactive'; // inactive, active, completed
+    $step3State = 'inactive'; // inactive, active, completed, rejected
+
+    if ($displayMaterialStatus === 'pending_review' || $displayMaterialStatus === 'approved') {
+        $step1State = 'completed';
+        $step2State = 'completed';
+        if ($displayMaterialStatus === 'approved') {
+            $step3State = 'completed';
+        } else {
+            $step3State = 'active';
+        }
+    } elseif ($displayMaterialStatus === 'rejected') {
+        $step1State = 'active';
+        $step2State = !empty($draftModules) ? 'active' : 'inactive';
+        $step3State = 'rejected';
+    } else {
+        $step1State = 'active';
+        $step2State = !empty($draftModules) ? 'active' : 'inactive';
+        $step3State = 'inactive';
+    }
 @endphp
 
 @push('styles')
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.2/font/bootstrap-icons.min.css" />
     <style>
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        /* Premium SweetAlert Custom Styling */
+        .premium-swal-popup {
+            border-radius: 28px !important;
+            padding: 36px 30px !important;
+            font-family: 'Outfit', 'Inter', sans-serif !important;
+            box-shadow: 0 25px 50px -12px rgba(81, 55, 108, 0.25) !important;
+            border: 1px solid rgba(81, 55, 108, 0.1) !important;
+            background: #ffffff !important;
+        }
+
+        .premium-swal-title {
+            font-size: 24px !important;
+            font-weight: 800 !important;
+            color: #1e1b4b !important;
+            letter-spacing: -0.03em !important;
+            margin-top: 15px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .premium-swal-confirm-btn {
+            padding: 14px 32px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            border-radius: 14px !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            background: linear-gradient(135deg, #51376c 0%, #3f2a54 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            cursor: pointer !important;
+            margin: 8px !important;
+        }
+
+        .premium-swal-confirm-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 20px rgba(81, 55, 108, 0.3) !important;
+        }
+
+        .premium-swal-confirm-btn.danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        }
+
+        .premium-swal-confirm-btn.danger:hover {
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3) !important;
+        }
+
+        .premium-swal-cancel-btn {
+            padding: 14px 28px !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            border-radius: 14px !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+            border: 1px solid #e2e8f0 !important;
+            cursor: pointer !important;
+            margin: 8px !important;
+        }
+
+        .premium-swal-cancel-btn:hover {
+            background: #e2e8f0 !important;
+            color: #334155 !important;
+            transform: translateY(-2px) !important;
+        }
+
+        /* Sw-custom layouts styles */
+        .swal-custom-container {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .swal-icon-glow {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .swal-icon-glow.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .swal-icon-glow.success::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px dashed rgba(16, 185, 129, 0.3);
+            animation: rotateDashed 20s linear infinite;
+        }
+
+        .swal-icon-glow.warning {
+            background: rgba(81, 55, 108, 0.1);
+            color: #51376c;
+        }
+
+        .swal-icon-glow.warning::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px dashed rgba(81, 55, 108, 0.3);
+            animation: rotateDashed 20s linear infinite;
+        }
+
+        @keyframes rotateDashed {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .swal-icon-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background: #ffffff;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+        }
+
+        .swal-icon-glow.success .swal-icon-circle {
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .swal-icon-glow.warning .swal-icon-circle {
+            box-shadow: 0 8px 20px rgba(81, 55, 108, 0.15);
+        }
+
+        .swal-custom-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1e1b4b;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.02em;
+        }
+
+        .swal-custom-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0 0 24px 0;
+            line-height: 1.4;
+        }
+
+        .swal-warning-box {
+            background: linear-gradient(135deg, #fdfcff 0%, #f9f6fc 100%);
+            border: 1px dashed #b497d6;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: left;
+            box-shadow: inset 0 2px 4px rgba(81, 55, 108, 0.02);
+        }
+
+        .warning-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f3effa;
+            color: #51376c;
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            border: 1px solid rgba(81, 55, 108, 0.15);
+        }
+
+        .warning-text {
+            font-size: 13.5px;
+            color: #3b284e;
+            line-height: 1.55;
+            margin: 0 0 10px 0;
+        }
+
+        .warning-action-info {
+            font-size: 12.5px;
+            color: #51376c;
+            line-height: 1.5;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(180, 151, 214, 0.2);
+        }
+
+        .badge-submit-action {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #51376c;
+            color: #fff;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        .swal-steps-box {
+            background: #fdfcff;
+            border: 1px solid #e9e3f4;
+            border-radius: 20px;
+            padding: 22px 18px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .swal-step-item {
+            display: grid;
+            grid-template-columns: 36px 1fr;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .swal-step-item .step-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            background: #f3effa;
+            color: #51376c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(81, 55, 108, 0.06);
+        }
+
+        .swal-step-item .step-content strong {
+            display: block;
+            font-size: 13.5px;
+            color: #1e1b4b;
+            margin-bottom: 3px;
+        }
+
+        .swal-step-item .step-content p {
+            margin: 0;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.45;
+        }
+
         main.content-studio-main {
             width: 100%;
             margin: 0;
@@ -96,7 +400,7 @@
             left: -10%;
             width: 60%;
             height: 200%;
-            background: radial-gradient(circle, rgba(99,102,241,0.25) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(255, 255, 255, 0) 70%);
             transform: rotate(30deg);
             filter: blur(40px);
         }
@@ -106,7 +410,7 @@
             right: -10%;
             width: 50%;
             height: 150%;
-            background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, rgba(255,255,255,0) 70%);
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
             filter: blur(40px);
         }
 
@@ -222,8 +526,8 @@
             width: 48px;
             height: 48px;
             border-radius: 16px;
-            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-            color: #4338ca;
+            background: linear-gradient(135deg, #f3effa 0%, #e9e3f4 100%);
+            color: #51376c;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -283,8 +587,8 @@
         }
 
         .status-badge.pending {
-            background: #fef3c7;
-            color: #92400e;
+            background: #f3effa;
+            color: #51376c;
         }
 
         .status-badge.not-submitted {
@@ -433,6 +737,72 @@
 
         .module-preview .preview-link i {
             color: var(--yellow-clr);
+        }
+
+        .module-preview-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .module-preview-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #e8edf5;
+            background: #fff;
+        }
+
+        .module-preview-item .file-meta {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .module-preview-item .file-name {
+            margin: 0 0 4px 0;
+            color: var(--main-navy-clr);
+            font-size: 14px;
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .module-preview-item .file-sub {
+            margin: 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .module-preview-item .file-status {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid;
+            white-space: nowrap;
+            margin-top: 6px;
+            display: inline-block;
+        }
+
+        .module-preview-item .file-status.approved {
+            background: #dcfce7;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .module-preview-item .file-status.rejected {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        .module-preview-item .file-status.pending {
+            background: #f3effa;
+            border-color: #e9e3f4;
+            color: #51376c;
         }
 
         .upload-lock-note {
@@ -644,14 +1014,14 @@
         }
 
         .dropzone:hover {
-            border-color: #6366f1;
-            background: #eef2ff;
+            border-color: #51376c;
+            background: #fbf9fe;
             transform: scale(1.01);
         }
 
         .dropzone i {
             font-size: 48px;
-            color: #818cf8;
+            color: #b497d6;
             transition: transform 0.3s;
         }
 
@@ -691,7 +1061,7 @@
 
         .primary-btn {
             border: none;
-            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            background: linear-gradient(135deg, #51376c 0%, #3f2a54 100%);
             color: var(--white-clr);
             padding: 14px 28px;
             border-radius: 16px;
@@ -704,14 +1074,14 @@
             /* box-shadow removed */
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .primary-btn:hover {
-            /* box-shadow removed */
+            background: linear-gradient(135deg, #634585 0%, #4c3366 100%) !important;
             transform: translateY(-2px);
         }
 
         .primary-btn i {
-            color: #a5b4fc;
+            color: #e9d5ff;
         }
 
         .validation-card {
@@ -913,6 +1283,60 @@
                 padding: 18px;
             }
         }
+
+        /* Premium SweetAlert2 overrides */
+        .swal2-popup {
+            border-radius: 24px !important;
+            padding: 36px 30px !important;
+            font-family: inherit !important;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15) !important;
+        }
+
+        .swal2-title {
+            color: #1e293b !important;
+            font-size: 22px !important;
+            font-weight: 800 !important;
+            margin-top: 15px !important;
+        }
+
+        .swal2-html-container {
+            color: #475569 !important;
+            font-size: 14.5px !important;
+            line-height: 1.6 !important;
+        }
+
+        .swal2-icon {
+            border-width: 2px !important;
+            margin: 0 auto 10px auto !important;
+        }
+
+        .swal2-styled.swal2-confirm {
+            border-radius: 12px !important;
+            padding: 12px 28px !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            letter-spacing: 0.02em !important;
+            box-shadow: none !important;
+            transition: all 0.2s !important;
+        }
+
+        .swal2-styled.swal2-confirm:hover {
+            transform: translateY(-1px) !important;
+        }
+
+        .swal2-styled.swal2-cancel {
+            border-radius: 12px !important;
+            padding: 12px 28px !important;
+            font-weight: 700 !important;
+            font-size: 14px !important;
+            letter-spacing: 0.02em !important;
+            box-shadow: none !important;
+            transition: all 0.2s !important;
+        }
+
+        .swal2-styled.swal2-cancel:hover {
+            transform: translateY(-1px) !important;
+        }
     </style>
 @endpush
 
@@ -947,41 +1371,339 @@
                 </section>
             @endif
 
+            @if(!empty($draftModules))
+                <div class="draft-warning-banner" style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #f59e0b; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.08);">
+                    <div style="display: flex; align-items: center; gap: 12px; text-align: left;">
+                        <span style="font-size: 24px; animation: bounce 1.5s infinite; display: inline-block;">⚠️</span>
+                        <div>
+                            <h4 style="margin: 0 0 4px 0; color: #78350f; font-size: 15px; font-weight: 700;">Materi Belum Terkirim ke Admin!</h4>
+                            <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.4;">
+                                Anda memiliki <strong>{{ count($draftModules) }} berkas di draf</strong>. Klik tombol <strong>Kirim ke Admin</strong> di sebelah kanan draf agar materi dapat ditinjau oleh Admin.
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="primary-btn btn-trigger-submit-final" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 12px; font-weight: 700; white-space: nowrap; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.2);">
+                        Kirim Sekarang <i class="bi bi-send-fill" style="color:#fff;"></i>
+                    </button>
+                </div>
+            @endif
+
             <section class="studio-layout">
                 <!-- Left Column: Studio Panel -->
                 <div class="studio-panel">
                     <div class="panel-hero">
                         <div>
-                            <h2>Upload Materi Event</h2>
-                            <p>Gunakan area ini untuk mengirim file materi final yang akan direview admin sebelum event
-                                berjalan.</p>
+                            <h2>{{ $uploadModeLabel }}</h2>
+                            <p>
+                                @if($isRejected)
+                                    Materi sebelumnya ditolak admin. Silangan unggah file pengganti untuk revisi agar bisa
+                                    direview ulang.
+                                @else
+                                    Gunakan area ini untuk mengirim file materi final yang akan direview admin sebelum event
+                                    berjalan.
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- UX STEPPER GUIDE -->
+                    <div class="ux-stepper" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; background: #faf8fc; border-bottom: 1px solid #e9e3f4; gap: 12px; flex-wrap: wrap; text-align: left;">
+                        <!-- Step 1 -->
+                        <div class="step-item" style="display: flex; align-items: center; gap: 8px;">
+                            @if($step1State === 'completed')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #10b981; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-check"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #10b981;">Unggah Materi</span>
+                            @else
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #51376c; color: #fff; font-size: 12px; font-weight: 700;">1</span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #51376c;">Unggah Materi</span>
+                            @endif
+                        </div>
+                        <div style="height: 2px; background: {{ $step2State === 'completed' || $step2State === 'active' ? '#51376c' : '#e2e8f0' }}; flex: 1; min-width: 20px;" class="step-line"></div>
+                        
+                        <!-- Step 2 -->
+                        <div class="step-item" style="display: flex; align-items: center; gap: 8px;">
+                            @if($step2State === 'completed')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #10b981; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-check"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #10b981;">Simpan di Draf</span>
+                            @elseif($step2State === 'active')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #51376c; color: #fff; font-size: 12px; font-weight: 700;">2</span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #51376c;">Simpan di Draf</span>
+                            @else
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #cbd5e1; color: #fff; font-size: 12px; font-weight: 700;">2</span>
+                                <span style="font-size: 13.5px; font-weight: 600; color: #64748b;">Simpan di Draf</span>
+                            @endif
+                        </div>
+                        <div style="height: 2px; background: {{ $step3State === 'completed' || $step3State === 'active' ? '#10b981' : '#e2e8f0' }}; flex: 1; min-width: 20px;" class="step-line"></div>
+                        
+                        <!-- Step 3 -->
+                        <div class="step-item" style="display: flex; align-items: center; gap: 8px;">
+                            @if($step3State === 'completed')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #10b981; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-check-all"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #10b981;">Materi Disetujui</span>
+                            @elseif($step3State === 'active')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #f59e0b; color: #fff; font-size: 12px; font-weight: 700; animation: pulse 1.5s infinite;"><i class="bi bi-hourglass-split"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #d97706;">Menunggu Review</span>
+                            @elseif($step3State === 'rejected')
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #ef4444; color: #fff; font-size: 14px; font-weight: 700;"><i class="bi bi-x"></i></span>
+                                <span style="font-size: 13.5px; font-weight: 700; color: #ef4444;">Perlu Revisi</span>
+                            @else
+                                <span style="display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: #cbd5e1; color: #fff; font-size: 12px; font-weight: 700;">3</span>
+                                <span style="font-size: 13.5px; font-weight: 600; color: #64748b;">Kirim ke Admin</span>
+                            @endif
                         </div>
                     </div>
 
                     <div class="upload-panel">
-                        <div class="module-preview">
-                            <div>
-                                <p class="meta-label">Materi saat ini</p>
-                                @if($hasUploadedModule)
-                                    <h3>{{ $uploadedModuleName }}</h3>
-                                    <p>
-                                        {{ $displayMaterialStatus === 'approved' ? 'Materi ini sudah dikunci setelah disetujui admin.' : 'Materi ini masih tersimpan untuk status ' . strtolower(str_replace('_', ' ', $displayMaterialStatus)) . '.' }}
-                                    </p>
-                                @else
-                                    <h3>Belum ada materi yang diunggah</h3>
-                                    <p>File yang Anda kirim akan tampil di sini sebagai referensi status terakhir.</p>
-                                @endif
+                        @if($displayMaterialStatus === 'pending_review' || $displayMaterialStatus === 'approved')
+                            <div class="upload-lock-note" style="margin-bottom: 24px;">
+                                <div class="icon" style="display: flex; align-items: center; justify-content: center; background: rgba(81, 55, 108, 0.1); color: #51376c;">
+                                    <i class="bi {{ $displayMaterialStatus === 'approved' ? 'bi-shield-check' : 'bi-shield-lock' }}"></i>
+                                </div>
+                                <div>
+                                    @if($displayMaterialStatus === 'approved')
+                                        <h3>Materi telah disetujui</h3>
+                                        <p>Materi Anda telah disetujui oleh admin trainer. Semua proses unggahan baru, pengubahan, atau penghapusan materi dinonaktifkan.</p>
+                                    @else
+                                        <h3>Materi sedang direview</h3>
+                                        <p>Seluruh materi Anda telah dikirim dan sedang diperiksa oleh admin. Anda masih dapat mengunggah berkas baru atau mengubah materi jika diperlukan.</p>
+                                    @endif
+                                </div>
                             </div>
+                        @endif
 
-                            @if($hasUploadedModule && $moduleFileUrl)
-                                <a href="{{ $moduleFileUrl }}" class="preview-link" target="_blank" rel="noopener noreferrer">
-                                    <i class="bi bi-box-arrow-up-right"></i>
-                                    Lihat File
-                                </a>
-                            @endif
-                        </div>
+{{-- UNIFIED DRAFT CARD (DRAFT ONLY) --}}
+                        @if(!empty($draftModules))
+                            <div class="unified-draft-card"
+                                style="padding: 24px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); position: relative; overflow: hidden;">
+                                <!-- Top accent border line -->
+                                <div
+                                    style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #51376c, #3f2a54); font-size: 0;">
+                                </div>
+
+                                <!-- Count / Header -->
+                                <div
+                                    style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                    <span
+                                        style="font-size: 16px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                                        <i class="bi bi-file-earmark-arrow-up" style="color: #51376c; font-size: 20px;"></i>
+                                        {{ count($draftModules) }} File Tersimpan
+                                    </span>
+                                </div>
+
+                                <!-- Checklist of files -->
+                                <div class="draft-checklist"
+                                    style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                                    @foreach($draftModules as $index => $draft)
+                                        <div class="draft-checklist-item-wrapper"
+                                            style="padding: 14px; background: #faf8fc; border: 1px solid #e9e3f4; border-radius: 16px; display: flex; flex-direction: column; gap: 10px;">
+                                            <div class="draft-checklist-item"
+                                                style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                                                <div
+                                                    style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; text-align: left;">
+                                                    <i class="bi bi-check-lg"
+                                                        style="color: #10b981; font-size: 18px; font-weight: 900; flex-shrink: 0;"></i>
+                                                    @if(str_starts_with($draft['original_name'], 'Link: '))
+                                                        @php
+                                                            $linkUrl = str_replace('Link: ', '', $draft['original_name']);
+                                                        @endphp
+                                                        <span
+                                                            style="font-size: 14px; font-weight: 600; color: #2e2050; word-break: break-all;">
+                                                            Materi Link: <a href="{{ $linkUrl }}" target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style="color: #51376c; text-decoration: underline;">{{ $linkUrl }}</a>
+                                                        </span>
+                                                    @else
+                                                        <span
+                                                            style="font-size: 14px; font-weight: 600; color: #2e2050; word-break: break-all;">{{ $draft['original_name'] }}</span>
+                                                    @endif
+                                                    @if(!empty($draft['size']) && $draft['size'] > 0)
+                                                        <span
+                                                            style="font-size: 12px; color: #7c6a9f; white-space: nowrap;">({{ round($draft['size'] / 1024, 2) }}
+                                                            KB)</span>
+                                                    @endif
+                                                </div>
+                                                @if($canUploadMaterials)
+                                                    <button type="button" class="btn-delete-draft" data-index="{{ $index }}"
+                                                        style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px; transition: all 0.2s;"
+                                                        onmouseover="this.style.backgroundColor='#fee2e2'"
+                                                        onmouseout="this.style.backgroundColor='transparent'"
+                                                        title="Hapus Draf">
+                                                        <i class="bi bi-trash3-fill"></i>
+                                                    </button>
+                                                @endif
+                                            </div>
+
+                                            <!-- Survey Link Input for this draft (Optional) -->
+                                            <div style="display: flex; flex-direction: column; gap: 4px; text-align: left;">
+                                                <label
+                                                    style="font-size: 11px; font-weight: 700; color: #7c6a9f; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px;">
+                                                    <i class="bi bi-link-45deg" style="font-size: 14px;"></i> Link Survei Kepuasan
+                                                    <span
+                                                        style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
+                                                </label>
+                                                <input type="text" class="survey-link-input" data-index="{{ $index }}"
+                                                    value="{{ $draft['survey_link'] ?? '' }}"
+                                                    placeholder="Masukkan URL kuisioner/survei kepuasan (misal: Google Form)"
+                                                    style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 12px; color: #1e293b; background: #fff; transition: all 0.2s;"
+                                                    onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';"
+                                                    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'; updateDraftSurveyLink({{ $index }}, this.value);" />
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <!-- Status & Info -->
+                                <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; margin-bottom: 20px;">
+                                    <div
+                                        style="font-size: 14px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                                        Status : <span
+                                            style="background: #f3effa; color: #51376c; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; border: 1px solid #e9e3f4; letter-spacing: 0.05em;">{{ $isRejected ? 'REVISI' : 'DRAFT' }}</span>
+                                    </div>
+                                    <p
+                                        style="margin: 0; font-size: 13px; color: #64748b; font-style: italic; display: flex; align-items: center; gap: 6px; text-align: left;">
+                                        <i class="bi bi-info-circle-fill" style="color: #64748b; font-size: 14px;"></i>
+                                        {{ $isRejected ? 'Materi yang ditolak bisa diganti dengan file revisi sebelum dikirim ulang.' : 'Materi dapat ditambah atau dihapus sebelum dikirim.' }}
+                                    </p>
+                                </div>
+
+                                <!-- Submit Action Button -->
+                                <button type="button" id="btnSubmitFinal" class="primary-btn"
+                                    style="width: 100%; justify-content: center; background: linear-gradient(135deg, #51376c 0%, #3f2a54 100%); color: #fff; border: none; cursor: pointer; padding: 14px; border-radius: 14px; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; transition: all 0.2s; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2);"
+                                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(81, 55, 108, 0.3)';"
+                                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(81, 55, 108, 0.2)';">
+                                    {{ $isRejected ? 'Kirim File Revisi ke Admin' : 'Submit ke Admin untuk Review' }} <i
+                                        class="bi bi-send-fill" style="color: #fff; margin-left: 8px; font-size: 13px;"></i>
+                                </button>
+                            </div>
+                        @endif
+
+                        {{-- SUBMITTED FILES HISTORY (HISTORY ONLY) --}}
+                        @if($myModules->isNotEmpty())
+                            <div class="submitted-files-history"
+                                style="margin-bottom: 24px; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px;">
+                                <h3
+                                    style="font-size: 15px; font-weight: 700; color: #334155; margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="bi bi-clock-history" style="color: #64748b; font-size: 18px;"></i>
+                                    Riwayat Pengiriman
+                                </h3>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    @foreach($myModules as $module)
+                                        @php
+                                            $historyViewUrl = $resolveModuleViewUrl($module);
+                                            $historyLabel = $resolveModuleLabel($module);
+                                            $historyIsLink = str_starts_with((string) ($module->original_name ?? ''), 'Link: ')
+                                                || preg_match('#^https?://#i', (string) ($module->path ?? ''));
+                                            $badgeStyle = match ($module->status) {
+                                                'approved' => 'background: #dcfce7; border-color: #bbf7d0; color: #166534;',
+                                                'rejected' => 'background: #fee2e2; border-color: #fecaca; color: #991b1b;',
+                                                default => 'background: #f3effa; border-color: #e9e3f4; color: #51376c;',
+                                            };
+                                            $statusLabel = match ($module->status) {
+                                                'approved' => 'Disetujui',
+                                                'rejected' => 'Perlu Revisi',
+                                                default => 'Menunggu Review',
+                                            };
+                                            $icon = match ($module->status) {
+                                                'approved' => 'bi-file-earmark-check-fill',
+                                                'rejected' => 'bi-file-earmark-x-fill',
+                                                default => 'bi-file-earmark-arrow-up-fill',
+                                            };
+                                            $iconColor = match ($module->status) {
+                                                'approved' => '#16a34a',
+                                                'rejected' => '#dc2626',
+                                                default => '#51376c',
+                                            };
+                                        @endphp
+                                        <div class="file-item-row"
+                                            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; gap: 12px;">
+                                            <div
+                                                style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; text-align: left;">
+                                                <i class="bi {{ $icon }}"
+                                                    style="font-size: 22px; color: {{ $iconColor }}; flex-shrink: 0;"></i>
+                                                <div style="min-width: 0;">
+                                                    @if($historyViewUrl)
+                                                        <a href="{{ $historyViewUrl }}" target="_blank" rel="noopener noreferrer"
+                                                            style="margin: 0; font-size: 14px; font-weight: 600; color: #51376c; word-break: break-all; text-decoration: underline; display: inline-block;">{{ $historyLabel }}</a>
+                                                    @else
+                                                        <p
+                                                            style="margin: 0; font-size: 14px; font-weight: 600; color: var(--main-navy-clr); word-break: break-all;">
+                                                            {{ $historyLabel }}</p>
+                                                    @endif
+                                                    <p style="margin: 0; font-size: 12px; color: #64748b;">
+                                                        Terkirim pada {{ $module->created_at->format('d M Y H:i') }}
+                                                    </p>
+                                                    @if(!empty($module->survey_link))
+                                                        <p
+                                                            style="margin: 4px 0 0 0; font-size: 12px; color: #51376c; font-weight: 600;">
+                                                            <i class="bi bi-link-45deg"></i> Link Survei:
+                                                            <a href="{{ $module->survey_link }}" target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                style="color: #51376c; text-decoration: underline;">{{ $module->survey_link }}</a>
+                                                        </p>
+                                                    @endif
+                                                    @if($module->status === 'rejected' && !empty($module->rejection_reason))
+                                                        <p
+                                                            style="margin: 4px 0 0 0; font-size: 12px; color: #dc2626; font-style: italic; background: #fff5f5; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #ef4444;">
+                                                            Catatan Admin: {{ $module->rejection_reason }}
+                                                        </p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                                @if($canUploadMaterials && $module->status !== 'approved')
+                                                <button type="button" class="btn-delete-submitted" data-id="{{ $module->id }}"
+                                                    style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px; transition: all 0.2s;"
+                                                    onmouseover="this.style.backgroundColor='#fee2e2'"
+                                                    onmouseout="this.style.backgroundColor='transparent'"
+                                                    title="Hapus Materi">
+                                                    <i class="bi bi-trash3-fill"></i>
+                                                </button>
+                                                @endif
+                                                @if($module->status === 'rejected')
+                                                    <button type="button" class="btn-replace-rejected primary-btn" data-id="{{ $module->id }}" data-is-link="{{ $historyIsLink ? '1' : '0' }}"
+                                                        style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; color: #fff; border: none; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                                        <i class="bi bi-arrow-left-right"></i> Ganti
+                                                    </button>
+                                                @endif
+                                                @if($historyViewUrl)
+                                                    <a href="{{ $historyViewUrl }}" target="_blank" rel="noopener noreferrer"
+                                                        style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: #3f2a54; color: #fff; text-decoration: none; white-space: nowrap;">
+                                                        <i class="bi bi-{{ $historyIsLink ? 'link-45deg' : 'eye' }}"></i>
+                                                        {{ $historyIsLink ? 'Buka' : 'Lihat' }}
+                                                    </a>
+                                                @endif
+                                                <span
+                                                    style="font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 8px; border: 1px solid; white-space: nowrap; {{ $badgeStyle }}">
+                                                    {{ $statusLabel }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
 
                         @if($canUploadMaterials)
+                            <!-- Download idSpora Logo Banner -->
+                            <div class="logo-download-banner" style="margin-bottom: 24px; padding: 22px 28px; border-radius: 20px; background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border: 1px solid #e9d5ff; display: flex; align-items: center; justify-content: space-between; gap: 20px; box-shadow: 0 10px 25px rgba(81, 55, 108, 0.04); flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 16px; min-width: 280px; flex: 1;">
+                                    <div style="width: 48px; height: 48px; border-radius: 14px; background: #51376c; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2);">
+                                        <i class="bi bi-file-earmark-image"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: #1e1b4b; font-family: 'Outfit', 'Inter', sans-serif;">Logo Resmi idSpora untuk Slide Presentasi</h4>
+                                        <p style="margin: 0; font-size: 12.5px; color: #51376c; line-height: 1.5; font-family: 'Inter', sans-serif;">
+                                            Silakan unduh logo resmi di bawah ini. Harap <span style="font-weight: 700;">menambahkan logo idSpora di setiap slide</span> presentasi Anda demi standarisasi materi.
+                                        </p>
+                                    </div>
+                                </div>
+                                <a href="{{ asset('aset/logo.png') }}" download="logo-idSpora.png" class="primary-btn" style="padding: 12px 24px; font-size: 13px; font-weight: 700; border-radius: 12px; background: #51376c; color: white; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(81, 55, 108, 0.2); border: none; cursor: pointer; transition: all 0.2s;"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(81, 55, 108, 0.3)';"
+                                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 12px rgba(81, 55, 108, 0.2)';">
+                                    <i class="bi bi-download"></i> Unduh Logo (.PNG)
+                                </a>
+                            </div>
+
                             <div class="upload-hints">
                                 <div class="hint-card">
                                     <div class="icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
@@ -1007,21 +1729,49 @@
                                 </div>
                             </div>
 
+                            <input type="file" id="replaceFileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" style="display: none;" />
+
                             <form id="moduleForm" class="module-form"
                                 action="{{ route('trainer.events.studio.upload', $event->id) }}" method="POST"
                                 enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" name="eventId" value="{{ $event->id }}">
+                                <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
+                                    style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;" />
 
                                 <div class="dropzone" id="dropzone">
-                                    <input type="file" id="fileInput" accept=".pdf,.mp4,.pptx,.ppt,.docx,.doc" name="files[]"
-                                        style="display: none" />
                                     <i class="bi bi-cloud-arrow-up"></i>
                                     <h2>Tarik Aset Acara ke Sini</h2>
                                     <p>DUKUNGAN: PDF, MP4, PPTX, DOCX</p>
                                     <p style="font-size: 12px; color: #999; margin-top: 8px">
                                         atau klik untuk memilih 1 file materi
                                     </p>
+                                </div>
+
+                                <div style="margin-top: 20px; text-align: left;">
+                                    <label for="materialLink"
+                                        style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Link Materi Lainnya <span
+                                            style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
+                                    </label>
+                                    <input type="text" id="materialLink" name="material_link"
+                                        placeholder="Contoh: https://drive.google.com/... atau https://youtube.com/..."
+                                        style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; color: #1e293b; background: #fff; transition: all 0.2s;"
+                                        onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';"
+                                        onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';" />
+                                </div>
+
+                                <div style="margin-top: 12px; text-align: left;">
+                                    <label for="materialSurveyLink"
+                                        style="font-size: 13px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
+                                        Link Survei Kepuasan <span
+                                            style="font-weight: 500; color: #94a3b8; text-transform: none; font-style: italic;">(Opsional)</span>
+                                    </label>
+                                    <input type="text" id="materialSurveyLink" name="material_survey_link"
+                                        placeholder="Contoh: https://forms.gle/... (Untuk berkas / link materi di atas)"
+                                        style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; color: #1e293b; background: #fff; transition: all 0.2s;"
+                                        onfocus="this.style.borderColor='#51376c'; this.style.boxShadow='0 0 0 3px rgba(81, 55, 108, 0.1)';"
+                                        onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';" />
                                 </div>
 
                                 <div id="fileList" class="file-list" style="display: none">
@@ -1031,23 +1781,15 @@
 
                                 <div class="panel-footer">
                                     <button type="submit" class="primary-btn" id="submitBtn">
-                                        SUBMIT FOR AUDIT <i class="bi bi-send"></i>
+                                        {{ $submitDraftLabel }} <i class="bi bi-plus-circle"
+                                            style="color: #e9d5ff; margin-left: 8px;"></i>
                                     </button>
                                 </div>
                             </form>
-                        @else
-                            <div class="upload-lock-note">
-                                <div class="icon"><i class="bi bi-shield-lock"></i></div>
-                                <div>
-                                    <h3>Area upload dikunci</h3>
-                                    <p>Materi sudah berstatus approved, jadi file baru tidak bisa dikirim lagi. Jika perlu
-                                        revisi, hubungi admin untuk alur berikutnya.</p>
-                                </div>
-                            </div>
                         @endif
                     </div>
                 </div>
-                
+
                 <!-- Right Column: Status Grid -->
                 <aside class="status-grid" aria-label="Ringkasan studio event">
                     <article class="status-card">
@@ -1060,7 +1802,9 @@
                     </article>
 
                     <article class="status-card">
-                        <div class="icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #b45309;"><i class="bi bi-file-earmark-check"></i></div>
+                        <div class="icon"
+                            style="background: linear-gradient(135deg, #f3effa 0%, #e9e3f4 100%); color: #51376c;"><i
+                                class="bi bi-file-earmark-check"></i></div>
                         <div>
                             <p class="label">Status</p>
                             @if($displayMaterialStatus !== 'draft')
@@ -1070,21 +1814,21 @@
                                         'rejected' => 'rejected',
                                         'pending_review' => 'pending',
                                         'not_uploaded' => 'not-submitted',
-                                        default        => 'pending',
+                                        default => 'pending',
                                     };
                                     $statusIcon = match ($displayMaterialStatus) {
                                         'approved' => '✓',
                                         'rejected' => '✕',
                                         'pending_review' => '⏳',
                                         'not_uploaded' => '—',
-                                        default        => '📋',
+                                        default => '📋',
                                     };
                                     $badgeLabel = match ($displayMaterialStatus) {
                                         'approved' => 'Materi Disetujui',
                                         'rejected' => 'Perlu Revisi',
                                         'pending_review' => 'Sedang Direview',
                                         'not_uploaded' => 'Belum Dikirim',
-                                        default        => 'Terkirim',
+                                        default => 'Terkirim',
                                     };
                                 @endphp
                                 <span class="status-badge {{ $badgeClass }}">
@@ -1095,7 +1839,8 @@
                                 <p class="value">{{ $materialStatusLabel }}</p>
                             @endif
                             @if($displayMaterialStatus === 'draft')
-                                <p class="hint">Belum upload materi. Status review akan muncul setelah file berhasil dikirim.</p>
+                                <p class="hint">Belum upload materi. Status review akan muncul setelah file berhasil dikirim.
+                                </p>
                             @elseif($displayMaterialStatus === 'approved')
                                 <p class="hint">Materi Anda telah disetujui dan siap ditampilkan di event.</p>
                             @elseif($displayMaterialStatus === 'rejected')
@@ -1107,11 +1852,35 @@
                     </article>
 
                     <article class="status-card">
-                        <div class="icon" style="background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #0369a1;"><i class="bi bi-info-circle"></i></div>
+                        <div class="icon"
+                            style="background: linear-gradient(135deg, #f3effa 0%, #e9e3f4 100%); color: #51376c;"><i
+                                class="bi bi-info-circle"></i></div>
                         <div>
                             <p class="label">Format</p>
                             <p class="value">PDF, MP4, PPTX, DOCX</p>
                             <p class="hint">Gunakan format ini agar proses audit lebih cepat.</p>
+                        </div>
+                    </article>
+                    <article class="status-card">
+                        <div class="icon"
+                            style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1e40af;"><i
+                                class="bi bi-people"></i></div>
+                        <div>
+                            <p class="label">Target Peserta</p>
+                            <p class="value">
+                                @php
+                                    $titleLower = strtolower($event->title ?? '');
+                                    if (str_contains($titleLower, 'dosen') || str_contains($titleLower, 'guru') || str_contains($titleLower, 'pendidik')) {
+                                        $targetAudience = 'Dosen & Pendidik';
+                                    } elseif (str_contains($titleLower, 'lomba') || str_contains($titleLower, 'mahasiswa') || str_contains($titleLower, 'siswa')) {
+                                        $targetAudience = 'Mahasiswa & Siswa';
+                                    } else {
+                                        $targetAudience = 'Mahasiswa, Dosen, & Umum';
+                                    }
+                                @endphp
+                                {{ $targetAudience }}
+                            </p>
+                            <p class="hint">Profil target peserta sesi ini.</p>
                         </div>
                     </article>
                 </aside>
@@ -1243,17 +2012,17 @@
                     if (uploadedFiles.length > 0) {
                         fileList.style.display = "block";
                         uploadedFilesList.innerHTML = uploadedFiles.map((file, index) => `
-                                                    <li>
-                                                        <div class="file-meta">
-                                                            <i class="bi bi-file-earmark"></i>
-                                                            <div>
-                                                                <p class="file-name">${file.name}</p>
-                                                                <p class="file-size">${(file.size / 1024).toFixed(2)} KB</p>
-                                                            </div>
-                                                        </div>
-                                                        <button type="button" class="delete-file" data-index="${index}">HAPUS</button>
-                                                    </li>
-                                                `).join("");
+                                                            <li>
+                                                                <div class="file-meta">
+                                                                    <i class="bi bi-file-earmark"></i>
+                                                                    <div>
+                                                                        <p class="file-name">${file.name}</p>
+                                                                        <p class="file-size">${(file.size / 1024).toFixed(2)} KB</p>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="delete-file" data-index="${index}">HAPUS</button>
+                                                            </li>
+                                                        `).join("");
 
                         uploadedFilesList.querySelectorAll(".delete-file").forEach(btn => {
                             btn.addEventListener("click", (e) => {
@@ -1271,21 +2040,49 @@
                 moduleForm.addEventListener("submit", (e) => {
                     e.preventDefault();
 
-                    if (uploadedFiles.length === 0) {
-                        Swal.fire({ icon: 'warning', title: 'Perhatian', text: 'Silakan pilih file terlebih dahulu sebelum submit.' });
+                    const linkInput = document.getElementById("materialLink");
+                    const hasLink = linkInput && linkInput.value.trim() !== "";
+
+                    if (uploadedFiles.length === 0 && !hasLink) {
+                        Swal.fire({
+                            icon: 'warning',
+                            iconColor: '#51376c',
+                            title: 'Perhatian',
+                            text: 'Silakan pilih file atau masukkan link materi terlebih dahulu.',
+                            customClass: {
+                                popup: 'premium-swal-popup',
+                                title: 'premium-swal-title',
+                                confirmButton: 'premium-swal-confirm-btn'
+                            },
+                            buttonsStyling: false
+                        });
                         return;
                     }
 
-                    const allowedExt = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
-                    const invalidFiles = uploadedFiles.filter((file) => {
-                        const ext = (file.name.split('.').pop() || '').toLowerCase();
-                        return !allowedExt.includes(ext);
-                    });
+                    // Only validate extensions if a file is uploaded
+                    if (uploadedFiles.length > 0) {
+                        const allowedExt = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
+                        const invalidFiles = uploadedFiles.filter((file) => {
+                            const ext = (file.name.split('.').pop() || '').toLowerCase();
+                            return !allowedExt.includes(ext);
+                        });
 
-                    if (invalidFiles.length > 0) {
-                        const names = invalidFiles.map((f) => f.name).join(', ');
-                        Swal.fire({ icon: 'error', title: 'Gagal', text: 'File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.' });
-                        return;
+                        if (invalidFiles.length > 0) {
+                            const names = invalidFiles.map((f) => f.name).join(', ');
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Berkas Tidak Valid',
+                                text: 'File tidak valid: ' + names + '. Hanya PDF, MP4, PPTX, DOCX yang diizinkan.',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            });
+                            return;
+                        }
                     }
 
                     const formData = new FormData(moduleForm);
@@ -1305,7 +2102,7 @@
                         .then(async (response) => {
                             const text = await response.text();
                             let data = {};
-                            try { data = JSON.parse(text); } catch(e) {
+                            try { data = JSON.parse(text); } catch (e) {
                                 throw new Error('Server error: ' + text.substring(0, 200));
                             }
                             if (!response.ok || !data.success) {
@@ -1316,19 +2113,642 @@
                             uploadedFiles = [];
                             updateFileList();
                             fileInput.value = '';
-                            showNotificationModal('Berhasil', data.message || 'Materi event berhasil diunggah dan dikirim ke admin.', 'success');
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1200);
+                            if (linkInput) linkInput.value = '';
+                            const surveyLinkInput = document.getElementById("materialSurveyLink");
+                            if (surveyLinkInput) surveyLinkInput.value = '';
+
+                            Swal.fire({
+                                html: `
+                                            <div class="swal-custom-container">
+                                                <div class="swal-icon-glow success">
+                                                    <div class="swal-icon-circle">
+                                                        <i class="bi bi-cloud-arrow-up-fill" style="color: #10b981;"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="swal-custom-body">
+                                                    <h4 class="swal-custom-title">Materi Tersimpan!</h4>
+                                                    <p class="swal-custom-subtitle">Materi Anda berhasil ditambahkan ke draf sementara.</p>
+                                                    <div class="swal-warning-box">
+                                                        <p class="warning-text" style="margin-bottom: 8px;">
+                                                            Apakah Anda ingin <strong>langsung mengirimkan</strong> materi ini ke Admin untuk diperiksa?
+                                                        </p>
+                                                        <p class="warning-text" style="font-size: 12.5px; color: #64748b; margin: 0;">
+                                                            Jika Anda masih ingin mengunggah file/link tambahan lainnya, pilih opsi <strong>Simpan sebagai Draf</strong>.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `,
+                                showCancelButton: true,
+                                confirmButtonText: '🚀 Ya, Kirim ke Admin Sekarang',
+                                cancelButtonText: '📁 Simpan sebagai Draf (Tambah lagi)',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    confirmButton: 'premium-swal-confirm-btn',
+                                    cancelButton: 'premium-swal-cancel-btn'
+                                },
+                                buttonsStyling: false
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    submitFinalDirectly();
+                                } else {
+                                    window.location.reload();
+                                }
+                            });
                         })
                         .catch(error => {
-                            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.') });
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Gagal',
+                                text: 'Gagal: ' + (error.message || 'Terjadi kesalahan saat mengunggah materi event.'),
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            });
                         })
                         .finally(() => {
                             submitBtn.disabled = false;
                             submitBtn.innerHTML = originalBtnText;
                         });
                 });
+
+                // delete draft handler
+                document.querySelectorAll('.btn-delete-draft').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const index = e.currentTarget.dataset.index;
+
+                        Swal.fire({
+                            title: 'Hapus Draf?',
+                            text: 'Apakah Anda yakin ingin menghapus file draf ini?',
+                            icon: 'warning',
+                            iconColor: '#ef4444',
+                            showCancelButton: true,
+                            confirmButtonColor: '#ef4444',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Ya, Hapus',
+                            cancelButtonText: 'Batal',
+                            customClass: {
+                                popup: 'premium-swal-popup',
+                                title: 'premium-swal-title',
+                                confirmButton: 'premium-swal-confirm-btn danger',
+                                cancelButton: 'premium-swal-cancel-btn'
+                            },
+                            buttonsStyling: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire({
+                                    title: 'Menghapus...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => { Swal.showLoading(); },
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title'
+                                    }
+                                });
+
+                                const formData = new FormData();
+                                formData.append('_token', '{{ csrf_token() }}');
+                                formData.append('action', 'delete_draft');
+                                formData.append('index', index);
+
+                                fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                iconColor: '#10b981',
+                                                title: 'Berhasil',
+                                                text: data.message,
+                                                showConfirmButton: false,
+                                                timer: 1200,
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title'
+                                                }
+                                            });
+                                            setTimeout(() => { window.location.reload(); }, 1200);
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                iconColor: '#ef4444',
+                                                title: 'Gagal',
+                                                text: data.error || 'Gagal menghapus draf.',
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title',
+                                                    confirmButton: 'premium-swal-confirm-btn'
+                                                },
+                                                buttonsStyling: false
+                                            });
+                                        }
+                                    })
+                                    .catch(err => {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            iconColor: '#ef4444',
+                                            title: 'Gagal',
+                                            text: 'Terjadi kesalahan sistem.',
+                                            customClass: {
+                                                popup: 'premium-swal-popup',
+                                                title: 'premium-swal-title',
+                                                confirmButton: 'premium-swal-confirm-btn'
+                                            },
+                                            buttonsStyling: false
+                                        });
+                                    });
+                            }
+                        });
+                    });
+                });
+
+                // delete submitted handler
+                document.querySelectorAll('.btn-delete-submitted').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const moduleId = e.currentTarget.dataset.id;
+
+                        Swal.fire({
+                            title: 'Hapus Materi?',
+                            text: 'Apakah Anda yakin ingin menghapus materi yang sudah diupload ini? Tindakan ini akan memperbarui status review materi Anda.',
+                            icon: 'warning',
+                            iconColor: '#ef4444',
+                            showCancelButton: true,
+                            confirmButtonColor: '#ef4444',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: 'Ya, Hapus',
+                            cancelButtonText: 'Batal',
+                            customClass: {
+                                popup: 'premium-swal-popup',
+                                title: 'premium-swal-title',
+                                confirmButton: 'premium-swal-confirm-btn danger',
+                                cancelButton: 'premium-swal-cancel-btn'
+                            },
+                            buttonsStyling: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire({
+                                    title: 'Menghapus...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => { Swal.showLoading(); },
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title'
+                                    }
+                                });
+
+                                const formData = new FormData();
+                                formData.append('_token', '{{ csrf_token() }}');
+                                formData.append('action', 'delete_module');
+                                formData.append('module_id', moduleId);
+
+                                fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                iconColor: '#10b981',
+                                                title: 'Berhasil',
+                                                text: data.message,
+                                                showConfirmButton: false,
+                                                timer: 1200,
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title'
+                                                }
+                                            });
+                                            setTimeout(() => { window.location.reload(); }, 1200);
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                iconColor: '#ef4444',
+                                                title: 'Gagal',
+                                                text: data.error || 'Gagal menghapus materi.',
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title',
+                                                    confirmButton: 'premium-swal-confirm-btn'
+                                                },
+                                                buttonsStyling: false
+                                            });
+                                        }
+                                    })
+                                    .catch(err => {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            iconColor: '#ef4444',
+                                            title: 'Gagal',
+                                            text: 'Terjadi kesalahan sistem.',
+                                            customClass: {
+                                                popup: 'premium-swal-popup',
+                                                title: 'premium-swal-title',
+                                                confirmButton: 'premium-swal-confirm-btn'
+                                            },
+                                            buttonsStyling: false
+                                        });
+                                    });
+                            }
+                        });
+                    });
+                });
+
+                // submit final handler
+                const btnSubmitFinal = document.getElementById('btnSubmitFinal');
+                if (btnSubmitFinal) {
+                    btnSubmitFinal.addEventListener('click', () => {
+                        Swal.fire({
+                            html: `
+                                        <div class="swal-custom-container">
+                                            <div class="swal-icon-glow warning">
+                                                <div class="swal-icon-circle">
+                                                    <i class="bi bi-send-check-fill"></i>
+                                                </div>
+                                            </div>
+                                            <div class="swal-custom-body">
+                                                <h4 class="swal-custom-title">Kirim Materi Final?</h4>
+                                                <p class="swal-custom-subtitle">Pastikan semua berkas telah lengkap sebelum mengirim ke Admin.</p>
+                                                <div class="swal-steps-box">
+                                                    <div class="swal-step-item">
+                                                        <div class="step-num"><i class="bi bi-file-earmark-lock2"></i></div>
+                                                        <div class="step-content">
+                                                            <strong>Kunci Akses Unggah</strong>
+                                                            <p>Form unggah akan dikunci sementara selama proses review.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="swal-step-item">
+                                                        <div class="step-num"><i class="bi bi-shield-shaded"></i></div>
+                                                        <div class="step-content">
+                                                            <strong>Verifikasi Admin</strong>
+                                                            <p>Admin Trainer akan meninjau kelayakan dan kelengkapan materi Anda.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="swal-step-item">
+                                                        <div class="step-num"><i class="bi bi-bell"></i></div>
+                                                        <div class="step-content">
+                                                            <strong>Notifikasi Status</strong>
+                                                            <p>Anda akan mendapat pemberitahuan apakah materi disetujui atau perlu revisi.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `,
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, Kirim Sekarang',
+                            cancelButtonText: 'Batal',
+                            customClass: {
+                                popup: 'premium-swal-popup',
+                                confirmButton: 'premium-swal-confirm-btn',
+                                cancelButton: 'premium-swal-cancel-btn'
+                            },
+                            buttonsStyling: false
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                Swal.fire({
+                                    title: 'Mengirim...',
+                                    allowOutsideClick: false,
+                                    didOpen: () => { Swal.showLoading(); },
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title'
+                                    }
+                                });
+
+                                const formData = new FormData();
+                                formData.append('_token', '{{ csrf_token() }}');
+                                formData.append('action', 'submit_final');
+
+                                fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                iconColor: '#10b981',
+                                                title: 'Berhasil',
+                                                text: data.message,
+                                                showConfirmButton: false,
+                                                timer: 1200,
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title'
+                                                }
+                                            });
+                                            setTimeout(() => { window.location.reload(); }, 1200);
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'error',
+                                                iconColor: '#ef4444',
+                                                title: 'Gagal',
+                                                text: data.error || 'Gagal mengirim materi.',
+                                                customClass: {
+                                                    popup: 'premium-swal-popup',
+                                                    title: 'premium-swal-title',
+                                                    confirmButton: 'premium-swal-confirm-btn'
+                                                },
+                                                buttonsStyling: false
+                                            });
+                                        }
+                                    })
+                                    .catch(err => {
+                                        Swal.fire({
+                                            icon: 'error',
+                                            iconColor: '#ef4444',
+                                            title: 'Gagal',
+                                            text: 'Terjadi kesalahan sistem.',
+                                            customClass: {
+                                                popup: 'premium-swal-popup',
+                                                title: 'premium-swal-title',
+                                                confirmButton: 'premium-swal-confirm-btn'
+                                            },
+                                            buttonsStyling: false
+                                        });
+                                    });
+                            }
+                        });
+                    });
+                }
+
+                // banner trigger submit final handler
+                const btnTriggerBanners = document.querySelectorAll('.btn-trigger-submit-final');
+                btnTriggerBanners.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (btnSubmitFinal) {
+                            btnSubmitFinal.click();
+                        } else {
+                            submitFinalDirectly();
+                        }
+                    });
+                });
+
+                function submitFinalDirectly() {
+                    Swal.fire({
+                        title: 'Mengirim...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); },
+                        customClass: {
+                            popup: 'premium-swal-popup',
+                            title: 'premium-swal-title'
+                        }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('action', 'submit_final');
+
+                    fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    iconColor: '#10b981',
+                                    title: 'Berhasil',
+                                    text: data.message,
+                                    showConfirmButton: false,
+                                    timer: 1200,
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title'
+                                    }
+                                });
+                                setTimeout(() => { window.location.reload(); }, 1200);
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    iconColor: '#ef4444',
+                                    title: 'Gagal',
+                                    text: data.error || 'Gagal mengirim materi.',
+                                    customClass: {
+                                        popup: 'premium-swal-popup',
+                                        title: 'premium-swal-title',
+                                        confirmButton: 'premium-swal-confirm-btn'
+                                    },
+                                    buttonsStyling: false
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Gagal',
+                                text: 'Terjadi kesalahan sistem.',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        });
+                }
+
+                let currentReplacingModuleId = null;
+                const replaceFileInput = document.getElementById('replaceFileInput');
+
+                document.querySelectorAll('.btn-replace-rejected').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const moduleId = e.currentTarget.dataset.id;
+                        const isLink = e.currentTarget.dataset.isLink === '1';
+
+                        if (isLink) {
+                            Swal.fire({
+                                title: 'Ganti Link Revisi',
+                                text: 'Masukkan URL materi yang baru:',
+                                input: 'url',
+                                inputPlaceholder: 'https://...',
+                                showCancelButton: true,
+                                confirmButtonText: 'Kirim Revisi',
+                                cancelButtonText: 'Batal',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    confirmButton: 'premium-swal-confirm-btn',
+                                    cancelButton: 'premium-swal-cancel-btn'
+                                },
+                                buttonsStyling: false,
+                                inputValidator: (value) => {
+                                    if (!value) {
+                                        return 'URL tidak boleh kosong!';
+                                    }
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    uploadRevisionDirectly(moduleId, null, result.value);
+                                }
+                            });
+                        } else {
+                            currentReplacingModuleId = moduleId;
+                            if (replaceFileInput) replaceFileInput.click();
+                        }
+                    });
+                });
+
+                if (replaceFileInput) {
+                    replaceFileInput.addEventListener('change', (e) => {
+                        if (e.target.files.length === 0 || !currentReplacingModuleId) return;
+                        const file = e.target.files[0];
+                        
+                        const allowedExt = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
+                        const ext = (file.name.split('.').pop() || '').toLowerCase();
+                        if (!allowedExt.includes(ext)) {
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Format Tidak Diizinkan',
+                                text: 'Hanya berkas PDF, MP4, PPTX, DOCX yang diizinkan.',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            });
+                            return;
+                        }
+
+                        uploadRevisionDirectly(currentReplacingModuleId, file, null);
+                        e.target.value = '';
+                    });
+                }
+
+                function uploadRevisionDirectly(moduleId, file, link) {
+                    Swal.fire({
+                        title: 'Mengunggah Revisi...',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); },
+                        customClass: {
+                            popup: 'premium-swal-popup',
+                            title: 'premium-swal-title'
+                        }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('action', 'replace_module');
+                    formData.append('module_id', moduleId);
+                    if (file) {
+                        formData.append('file', file);
+                    }
+                    if (link) {
+                        formData.append('material_link', link);
+                    }
+
+                    fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                iconColor: '#10b981',
+                                title: 'Revisi Berhasil Dikirim',
+                                text: data.message,
+                                showConfirmButton: false,
+                                timer: 1500,
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title'
+                                }
+                            });
+                            setTimeout(() => { window.location.reload(); }, 1500);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                iconColor: '#ef4444',
+                                title: 'Gagal',
+                                text: data.error || 'Gagal mengirim revisi.',
+                                customClass: {
+                                    popup: 'premium-swal-popup',
+                                    title: 'premium-swal-title',
+                                    confirmButton: 'premium-swal-confirm-btn'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            icon: 'error',
+                            iconColor: '#ef4444',
+                            title: 'Gagal',
+                            text: 'Terjadi kesalahan sistem.',
+                            customClass: {
+                                popup: 'premium-swal-popup',
+                                title: 'premium-swal-title',
+                                confirmButton: 'premium-swal-confirm-btn'
+                            },
+                            buttonsStyling: false
+                        });
+                    });
+                }
+
+                window.updateDraftSurveyLink = function (index, value) {
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('action', 'save_draft_survey');
+                    formData.append('index', index);
+                    formData.append('survey_link', value);
+
+                    const input = document.querySelector(`.survey-link-input[data-index="${index}"]`);
+                    if (!input) return;
+                    input.style.borderColor = '#d8b4fe';
+                    input.style.boxShadow = '0 0 0 3px rgba(216, 180, 254, 0.2)';
+
+                    fetch('{{ route('trainer.events.studio.upload', $event->id) }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                input.style.borderColor = '#10b981';
+                                input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.2)';
+                                if (data.survey_link !== undefined) {
+                                    input.value = data.survey_link || '';
+                                }
+                                setTimeout(() => {
+                                    input.style.borderColor = '#cbd5e1';
+                                    input.style.boxShadow = 'none';
+                                }, 1000);
+                            } else {
+                                input.style.borderColor = '#ef4444';
+                                input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+                            }
+                        })
+                        .catch(err => {
+                            input.style.borderColor = '#ef4444';
+                            input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.2)';
+                        });
+                };
             });
         </script>
     @endif

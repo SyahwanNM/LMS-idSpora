@@ -136,14 +136,24 @@ class TrainerManagementController extends Controller
             })
             ->count();
 
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
         $trainerCollection = User::whereIn('role', ['trainer', 'Trainer'])
-            ->withCount(['coursesAsTrainer', 'eventsAsTrainer'])
+            ->withCount([
+                'coursesAsTrainer' => function ($query) use ($startOfMonth, $endOfMonth) {
+                    $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
+                },
+                'eventsAsTrainer' => function ($query) use ($startOfMonth, $endOfMonth) {
+                    $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
+                }
+            ])
             ->get();
         $topTrainers = $trainerCollection
             ->map(function (User $trainer) {
                 $courseCount = (int) ($trainer->courses_as_trainer_count ?? 0);
                 $eventCount = (int) ($trainer->events_as_trainer_count ?? 0);
-                $trainer->score = ($courseCount * 4) + ($eventCount * 3);
+                $trainer->score = $courseCount + $eventCount;
                 return $trainer;
             })
             ->sortByDesc('score')
@@ -192,6 +202,7 @@ class TrainerManagementController extends Controller
                 'type' => 'course',
                 'title' => $course->name ?? 'Course',
                 'trainer' => $course->trainer?->name ?? 'Trainer',
+                'trainer_id' => $course->trainer_id,
                 'due_at' => $dueAt,
             ]);
         }
@@ -211,6 +222,7 @@ class TrainerManagementController extends Controller
                 'type' => 'event',
                 'title' => $event->title ?? 'Event',
                 'trainer' => $event->trainer?->name ?? 'Trainer',
+                'trainer_id' => $event->trainer_id ?? $event->trainer?->id,
                 'due_at' => Carbon::parse($event->material_deadline),
             ]);
         }
@@ -225,7 +237,7 @@ class TrainerManagementController extends Controller
                 $isLate = $dueAt->lt($now);
                 $daysLeft = $isLate ? 0 : $now->diffInDays($dueAt);
                 $badgeClass = $isLate ? 'red' : ($daysLeft <= 2 ? 'yellow' : 'blue');
-                $badgeText = $isLate ? 'Overdue' : ($daysLeft . ' Hari Lagi');
+                $badgeText = $isLate ? 'Lewat Tenggat' : ($daysLeft . ' Hari Lagi');
 
                 return array_merge($item, [
                     'badge_class' => $badgeClass,
@@ -249,11 +261,12 @@ class TrainerManagementController extends Controller
                 $rating = max(0, min(5, $rating));
 
                 return [
-                    'title' => 'Course: ' . ($review->course?->name ?? 'Course'),
+                    'title' => 'Kursus: ' . ($review->course?->name ?? 'Kursus'),
                     'name' => $review->user?->name ?? 'User',
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $review->created_at?->diffForHumans() ?? '-',
                     'created_at' => $review->created_at ?? now(),
+                    'comment' => $review->comment,
                 ];
             })
             ->merge($eventFeedback->map(function (Feedback $feedback) {
@@ -261,11 +274,12 @@ class TrainerManagementController extends Controller
                 $rating = max(0, min(5, $rating));
 
                 return [
-                    'title' => 'Event: ' . ($feedback->event?->title ?? 'Event'),
+                    'title' => 'Acara: ' . ($feedback->event?->title ?? 'Acara'),
                     'name' => $feedback->user?->name ?? 'User',
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $feedback->created_at?->diffForHumans() ?? '-',
                     'created_at' => $feedback->created_at ?? now(),
+                    'comment' => $feedback->comment,
                 ];
             }))
             ->sortByDesc('created_at')
@@ -361,7 +375,7 @@ class TrainerManagementController extends Controller
                 $q->where('role', 'trainer')
                     ->orWhere('role', 'Trainer');
             })
-            ->withCount(['coursesAsTrainer', 'eventsAsTrainer']);
+            ->withCount(['coursesAsTrainer', 'eventsAsTrainer', 'trainerEnrollments']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -406,7 +420,7 @@ class TrainerManagementController extends Controller
                 return [
                     'type' => 'course',
                     'title' => $module->title,
-                    'source' => $module->course?->name ?? 'Course',
+                    'source' => $module->course?->name ?? 'Kursus',
                     'trainer' => $module->course?->trainer?->name ?? 'Trainer',
                     'date' => $module->updated_at,
                     'url' => route('admin.trainer.material.show', $module->course_id),
@@ -420,8 +434,8 @@ class TrainerManagementController extends Controller
             ->map(function ($module) {
                 return [
                     'type' => 'event',
-                    'title' => $module->original_name ?? 'Materi Event',
-                    'source' => $module->event?->title ?? 'Event',
+                    'title' => $module->original_name ?? 'Materi Acara',
+                    'source' => $module->event?->title ?? 'Acara',
                     'trainer' => $module->trainer?->name ?? 'Trainer',
                     'date' => $module->created_at,
                     'url' => route('admin.event-material.show', $module->event_id),
@@ -505,7 +519,9 @@ class TrainerManagementController extends Controller
             'categoryStats',
             'categoryGradient',
             'pendingMaterialsQueue',
-            'pendingCertificatesQueue'
+            'pendingCertificatesQueue',
+            'courseLast30',
+            'eventLast30'
         ));
     }
 
@@ -560,13 +576,25 @@ class TrainerManagementController extends Controller
             ->get(['id', 'name', 'status', 'approved_at', 'created_at']);
 
         $trainerEvents = Event::query()
-            ->where('trainer_id', $trainer->id)
+            ->where(function($query) use ($trainer) {
+                $query->where('trainer_id', $trainer->id)
+                    ->orWhereHas('speakers', function ($q) use ($trainer) {
+                        $q->where('trainer_id', $trainer->id);
+                    })
+                    ->orWhereHas('trainerAssignments', function ($q) use ($trainer) {
+                        $q->where('trainer_id', $trainer->id)
+                            ->where('status', 'accepted');
+                    });
+                if ($trainer->name) {
+                    $query->orWhere('speaker', 'like', '%' . $trainer->name . '%');
+                }
+            })
             ->withCount(['registrations' => function($q) {
                 $q->where('status', 'active');
             }])
             ->orderByDesc('event_date')
             ->orderByDesc('created_at')
-            ->get(['id', 'title', 'jenis', 'event_date', 'created_at', 'certificate_template']);
+            ->get(['id', 'title', 'jenis', 'event_date', 'created_at', 'certificate_template', 'material_deadline', 'trainer_id', 'speaker']);
 
         $trainerCertificates = TrainerCertificate::query()
             ->with(['issuer:id,name', 'certifiable'])
@@ -585,7 +613,19 @@ class TrainerManagementController extends Controller
 
         $eventFeedback = \App\Models\Feedback::query()
             ->whereHas('event', function($q) use ($trainer) {
-                $q->where('trainer_id', $trainer->id);
+                $q->where(function($query) use ($trainer) {
+                    $query->where('trainer_id', $trainer->id)
+                        ->orWhereHas('speakers', function ($sq) use ($trainer) {
+                            $sq->where('trainer_id', $trainer->id);
+                        })
+                        ->orWhereHas('trainerAssignments', function ($aq) use ($trainer) {
+                            $aq->where('trainer_id', $trainer->id)
+                                ->where('status', 'accepted');
+                        });
+                    if ($trainer->name) {
+                        $query->orWhere('speaker', 'like', '%' . $trainer->name . '%');
+                    }
+                });
             })
             ->with(['user:id,name', 'event:id,title'])
             ->latest()
@@ -600,11 +640,11 @@ class TrainerManagementController extends Controller
         $totalRatings = $courseReviews->count() + $eventFeedback->count();
         $ratingCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
         foreach($courseReviews as $r) { 
-            $val = (int) round((float) $r->rating);
+            $val = (int) round((float) ($r->trainer_rating ?? $r->rating ?? 0));
             if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
         }
         foreach($eventFeedback as $f) { 
-            $val = (int) round((float) $f->rating);
+            $val = (int) round((float) ($f->speaker_rating ?? $f->rating ?? 0));
             if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
         }
         
@@ -1032,10 +1072,7 @@ class TrainerManagementController extends Controller
     {
         if ($trainer->role !== 'trainer')
             abort(404);
-        return redirect()->route('admin.trainer.show', [
-            'trainer' => $trainer->id,
-            'edit' => 'personal',
-        ]);
+        return view('admin.trainer.edit', compact('trainer'));
     }
 
     // [UPDATED] UPDATE TRAINER (YANG ANDA CARI)
@@ -1058,6 +1095,7 @@ class TrainerManagementController extends Controller
                 'linkedin_url' => ['nullable', 'url', 'max:255'],
                 'user_status' => ['nullable', 'in:active,inactive,suspended'],
                 'trainer_skills' => ['nullable', 'string'],
+                'trainer_specializations' => ['nullable', 'string'],
                 'trainer_experiences' => ['nullable', 'string'],
                 'trainer_educations' => ['nullable', 'string'],
                 'trainer_certifications' => ['nullable', 'string'],
@@ -1084,6 +1122,7 @@ class TrainerManagementController extends Controller
                 'bio' => ['nullable', 'string'],
                 'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
                 'trainer_skills' => ['nullable', 'string'],
+                'trainer_specializations' => ['nullable', 'string'],
                 'trainer_experiences' => ['nullable', 'string'],
                 'trainer_educations' => ['nullable', 'string'],
                 'trainer_certifications' => ['nullable', 'string'],
@@ -1105,7 +1144,7 @@ class TrainerManagementController extends Controller
         }
 
         // Process array fields
-        $arrayFields = ['trainer_skills', 'trainer_experiences', 'trainer_educations', 'trainer_certifications'];
+        $arrayFields = ['trainer_skills', 'trainer_specializations', 'trainer_experiences', 'trainer_educations', 'trainer_certifications'];
         foreach ($arrayFields as $field) {
             if (isset($data[$field])) {
                 $data[$field] = array_values(array_filter(array_map('trim', explode(',', $data[$field]))));
@@ -1148,26 +1187,81 @@ class TrainerManagementController extends Controller
         ]);
 
         $deadline = \Carbon\Carbon::parse($request->material_deadline);
-        
+
         $course->material_deadline = $deadline;
         $course->save();
 
-        // Update pending notification if exists
-        $notifications = \App\Models\TrainerNotification::where('user_id', $trainer->id)
-            ->where('type', 'course_invitation')
-            ->where('status', 'pending')
-            ->get();
-            
-        foreach ($notifications as $notif) {
-            $data = $notif->data ?? [];
-            if (isset($data['course_id']) && $data['course_id'] == $course->id) {
-                $notif->due_at = $deadline->toIso8601String();
-                $data['material_deadline'] = $deadline->toIso8601String();
-                $notif->data = $data;
-                $notif->save();
+        // Notify trainer about the deadline
+        \App\Models\TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type'       => 'material_deadline_set',
+            'title'      => 'Deadline Materi Kelas Ditetapkan',
+            'message'    => 'Batas waktu upload materi untuk kelas "' . $course->name . '" telah ditetapkan: ' . $deadline->translatedFormat('d F Y, H:i') . '.',
+            'data'       => [
+                'entity_type'       => 'course',
+                'entity_id'         => $course->id,
+                'material_deadline' => $deadline->toIso8601String(),
+                'due_at'            => $deadline->toIso8601String(),
+                'url'               => route('trainer.detail-course', $course->id),
+            ],
+            'expires_at' => $deadline->copy()->addDays(3),
+        ]);
+
+        return back()->with('success', 'Deadline materi kelas "' . $course->name . '" berhasil diperbarui.');
+    }
+
+    /**
+     * Update material deadline for a specific event assigned to trainer.
+     */
+    public function updateEventDeadline(Request $request, User $trainer, \App\Models\Event $event)
+    {
+        if ($trainer->role !== 'trainer') {
+            abort(404);
+        }
+
+        $rules = ['material_deadline' => 'required|date|after_or_equal:today'];
+        if ($event->event_date) {
+            $rules['material_deadline'] .= '|before_or_equal:' . Carbon::parse($event->event_date)->format('Y-m-d');
+        }
+
+        $request->validate($rules, [
+            'material_deadline.before_or_equal' => 'Deadline materi harus sebelum atau sama dengan tanggal event (' . ($event->event_date ? Carbon::parse($event->event_date)->format('d/m/Y') : '-') . ').',
+        ]);
+
+        $deadline = Carbon::parse($request->material_deadline);
+
+        // Determine urgency based on days until event
+        $urgencyLabel = '';
+        if ($event->event_date) {
+            $daysUntilEvent = (int) now()->diffInDays(Carbon::parse($event->event_date), false);
+            if ($daysUntilEvent <= 1) {
+                $urgencyLabel = ' 🚨 [DARURAT]';
+            } elseif ($daysUntilEvent <= 3) {
+                $urgencyLabel = ' ⚠️ [URGENT]';
+            } elseif ($daysUntilEvent <= 7) {
+                $urgencyLabel = ' [SEGERA]';
             }
         }
 
-        return back()->with('success', 'Batas waktu pengumpulan materi untuk kelas ' . $course->name . ' berhasil diperbarui.');
+        $event->material_deadline = $deadline;
+        $event->save();
+
+        // Notify trainer
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type'       => 'material_deadline_set',
+            'title'      => 'Deadline Materi Event Ditetapkan' . $urgencyLabel,
+            'message'    => 'Batas waktu upload materi untuk event "' . $event->title . '" telah ditetapkan: ' . $deadline->translatedFormat('d F Y, H:i') . '.' . ($urgencyLabel ? ' Harap segera upload materi.' : ''),
+            'data'       => [
+                'entity_type'       => 'event',
+                'entity_id'         => $event->id,
+                'material_deadline' => $deadline->toIso8601String(),
+                'due_at'            => $deadline->toIso8601String(),
+                'url'               => route('trainer.events.show', $event->id),
+            ],
+            'expires_at' => $deadline->copy()->addDays(3),
+        ]);
+
+        return back()->with('success', 'Deadline materi event "' . $event->title . '" berhasil diperbarui.' . ($urgencyLabel ? ' ' . trim($urgencyLabel) : ''));
     }
 }

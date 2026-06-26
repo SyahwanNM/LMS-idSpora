@@ -52,7 +52,8 @@ class AdminController extends Controller
                     ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
             })
             ->count();
-        $totalCertificates = Certificate::count();
+        $totalCertificates = \App\Models\EventRegistration::whereNotNull('certificate_number')->count()
+            + \App\Models\Enrollment::whereNotNull('certificate_number')->count();
         $totalRevenue = Course::sum('price') ?? 0; // Adjust if you have real transaction table
 
         // Snapshot logic (daily)

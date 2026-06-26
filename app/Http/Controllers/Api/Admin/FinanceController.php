@@ -583,9 +583,9 @@ class FinanceController extends Controller
         }
 
         // Ended events that don't have fee payouts yet
-        $endedEvents = Event::whereNotNull('trainer_id')
-            ->whereNotNull('ended_at')
-            ->where('ended_at', '<', now())
+        $endedEvents = Event::withTrashed()
+            ->finished()
+            ->whereNotNull('trainer_id')
             ->with('trainer')
             ->get()
             ->filter(function ($event) {
@@ -701,7 +701,7 @@ class FinanceController extends Controller
      */
     public function createEventFeeRequest(Request $request, $eventId)
     {
-        $event = Event::with('trainer')->find($eventId);
+        $event = Event::withTrashed()->with('trainer')->find($eventId);
         if (!$event) {
             return response()->json([
                 'status' => 'error',

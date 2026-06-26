@@ -46,6 +46,37 @@ class SendTrainerInvitationOverdueAlerts extends Command
         foreach ($pendingInvitations as $invitation) {
             $data = is_array($invitation->data) ? $invitation->data : [];
             $status = (string) data_get($data, 'invitation_status', 'pending');
+
+            if ($status === 'accepted') {
+                $uploadDueAtRaw = data_get($data, 'upload_due_at');
+                if (empty($uploadDueAtRaw)) {
+                    continue;
+                }
+                try {
+                    $uploadDueAt = Carbon::parse((string) $uploadDueAtRaw);
+                } catch (\Throwable $e) {
+                    continue;
+                }
+                if ($uploadDueAt->lt($now)) {
+                    if (!data_get($data, 'late_upload_processed', false)) {
+                        $trainer = $invitation->trainer;
+                        if ($trainer) {
+                            $entityType = (string) data_get($data, 'entity_type', 'materi');
+                            $entityId = (int) data_get($data, 'entity_id', 0);
+                            app(\App\Services\TrainerActivityService::class)->incrementLateUploads($trainer, [
+                                'entity_type' => $entityType,
+                                'entity_id' => $entityId,
+                                'entity_title' => $invitation->title,
+                            ]);
+                        }
+                        $data['late_upload_processed'] = true;
+                        $invitation->data = $data;
+                        $invitation->save();
+                    }
+                }
+                continue;
+            }
+
             if ($status !== 'pending') {
                 continue;
             }
@@ -63,6 +94,19 @@ class SendTrainerInvitationOverdueAlerts extends Command
 
             if (!$dueAt->lt($now)) {
                 continue;
+            }
+
+            // Mark invitation as expired
+            $invitation->invitation_status = 'expired';
+            $data['invitation_status'] = 'expired';
+            $data['expired_at'] = $now->toIso8601String();
+            $invitation->data = $data;
+            $invitation->save();
+
+            // Increment expired invitations count on trainer
+            $trainer = $invitation->trainer;
+            if ($trainer) {
+                app(\App\Services\TrainerActivityService::class)->recordExpiredInvitation($trainer);
             }
 
             $overdueInvitations->push([

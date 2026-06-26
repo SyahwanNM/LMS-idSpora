@@ -69,4 +69,6 @@ use App\Http\Controllers\User\ResellerController;
             Route::get('/broadcast', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastIndex'])->name('broadcast.index');
             Route::get('/broadcast/create', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastCreate'])->name('broadcast.create');
             Route::post('/broadcast/send', [\App\Http\Controllers\CRM\CRMController::class, 'broadcastSend'])->name('broadcast.send');
+            Route::get('/broadcast/estimate-count', [\App\Http\Controllers\CRM\CRMController::class, 'estimateCount'])->name('broadcast.estimate-count');
         });
+

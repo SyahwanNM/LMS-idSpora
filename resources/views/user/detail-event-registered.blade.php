@@ -12,6 +12,33 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        .detail-box-right {
+            height: auto !important;
+            max-height: none !important;
+        }
+        .event-benefit-list {
+            max-height: 180px;
+            overflow-y: auto;
+            padding-left: 20px;
+            padding-right: 8px;
+            margin-bottom: 0;
+        }
+        /* Custom thin scrollbar for benefit list */
+        .event-benefit-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .event-benefit-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .event-benefit-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .event-benefit-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
         html,
 
         .container-ungu {
@@ -656,8 +683,234 @@
             }
            
         }
-    
         
+        /* Premium buttons for Lomba / Team Category */
+        .btn-lomba-action {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        }
+        .btn-lomba-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -4px rgba(0, 0, 0, 0.1);
+        }
+        .btn-lomba-action:active {
+            transform: translateY(0);
+        }
+        
+        .btn-lomba-individual {
+            background: #f59e0b; /* Amber */
+            color: #0f172a !important; /* Slate dark text */
+        }
+        .btn-lomba-individual:hover {
+            background: #d97706; /* Darker amber */
+        }
+
+        .btn-lomba-create {
+            background: #0f172a; /* Slate 900 */
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .btn-lomba-create:hover {
+            background: #1e293b; /* Slate 800 */
+        }
+
+        .btn-lomba-join {
+            background: #4f46e5; /* Indigo 600 */
+            color: #ffffff !important;
+        }
+        .btn-lomba-join:hover {
+            background: #4338ca; /* Indigo 700 */
+        }
+
+        /* Modern Team Card Styling */
+        .team-card {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+            font-family: 'Poppins', 'Outfit', 'Inter', sans-serif;
+            color: #0f172a !important;
+        }
+
+        .team-card h4 {
+            color: #0f172a !important;
+        }
+
+        .team-card .border-bottom {
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+
+        .team-card .text-white {
+            color: #0f172a !important;
+        }
+
+        .team-card .text-muted {
+            color: #475569 !important;
+        }
+
+        .team-badge-kategori {
+            background: transparent !important;
+            color: #2563eb !important;
+            border: 1.5px solid #2563eb !important;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            box-shadow: none;
+            padding: 5px 12px !important;
+        }
+
+        .team-status-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 7px 16px !important;
+            border-radius: 50px !important;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: none;
+        }
+
+        .team-status-paid {
+            background: transparent !important;
+            color: #059669 !important;
+            border: 1.5px solid #059669 !important;
+        }
+
+        .team-status-pending {
+            background: transparent !important;
+            color: #d97706 !important;
+            border: 1.5px solid #d97706 !important;
+        }
+
+        .team-panel-inner {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .team-code-box {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+
+        .team-code-val {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 1.35rem;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            color: #b45309 !important;
+            text-shadow: none;
+        }
+
+        .team-copy-btn {
+            background: #f1f5f9 !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #334155 !important;
+            border-radius: 6px;
+            padding: 5px 10px;
+            transition: all 0.2s ease;
+        }
+
+        .team-copy-btn:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+            border-color: #94a3b8 !important;
+            transform: translateY(-1px);
+        }
+
+        .team-copy-btn svg {
+            color: #334155 !important;
+            fill: #334155 !important;
+        }
+
+        .team-member-item {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 12px;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+        }
+
+        .team-member-item:hover {
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            transform: translateX(4px);
+        }
+
+        .team-avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+        }
+
+        .team-role-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 5px 10px !important;
+            border-radius: 6px !important;
+            text-transform: uppercase;
+        }
+
+        .team-role-leader {
+            background-color: rgba(217, 119, 6, 0.08) !important;
+            color: #b45309 !important;
+            border: 1px solid rgba(217, 119, 6, 0.15) !important;
+        }
+
+        .team-role-member {
+            background-color: rgba(71, 85, 105, 0.08) !important;
+            color: #475569 !important;
+            border: 1px solid rgba(71, 85, 105, 0.15) !important;
+        }
+
+        .team-member-empty {
+            background: transparent;
+            border: 1.5px dashed #cbd5e1 !important;
+            border-radius: 12px;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+        }
+
+        .team-member-empty:hover {
+            border-color: #94a3b8 !important;
+            background: #f8fafc !important;
+        }
+
+        .team-avatar-empty {
+            width: 38px;
+            height: 38px;
+            border: 1.5px dashed #cbd5e1 !important;
+            color: #94a3b8 !important;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 400;
+            font-size: 1.1rem;
+        }
     </style>
 
 </head>
@@ -679,25 +932,30 @@
             </div>
             <div class="box-event-creator">
                 <div class="event-creator">
-                    <p><span class="highlite-yellow">Event</span> by
-                        @php
-                            $allSpeakers = $event->speakers()->with('trainer')->get();
-                            if ($allSpeakers->isEmpty()) {
-                                $allSpeakers = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)['name' => trim($name), 'trainer' => null])->values();
-                            }
-                        @endphp
-                        @if($allSpeakers->isNotEmpty())
-                            @foreach($allSpeakers as $idx => $sp)
-                                @if($idx > 0), @endif
-                                @if($sp->trainer)
-                                    <a href="{{ route('public.trainer-profile.show', $sp->trainer->id) }}"
-                                        style="color: var(--secondary); text-decoration: none; font-weight: 600;">{{ $sp->name }}</a>
-                                @else
-                                    <span style="font-weight:600;">{{ $sp->name }}</span>
-                                @endif
-                            @endforeach
+                    <p>
+                        @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                            <span class="highlite-yellow">Lomba</span>
                         @else
-                            idSpora Team
+                            <span class="highlite-yellow">Event</span> by
+                            @php
+                                $allSpeakers = $event->speakers()->with('trainer')->get();
+                                if ($allSpeakers->isEmpty()) {
+                                    $allSpeakers = collect(preg_split('/\s*[,;]\s*/', (string) ($event->speaker ?? '')))->filter()->map(fn($name) => (object)['name' => trim($name), 'trainer' => null])->values();
+                                }
+                            @endphp
+                            @if($allSpeakers->isNotEmpty())
+                                @foreach($allSpeakers as $idx => $sp)
+                                    @if($idx > 0), @endif
+                                    @if($sp->trainer)
+                                        <a href="{{ route('public.trainer-profile.show', $sp->trainer->id) }}"
+                                            style="color: var(--secondary); text-decoration: none; font-weight: 600;">{{ $sp->name }}</a>
+                                    @else
+                                        <span style="font-weight:600;">{{ $sp->name }}</span>
+                                    @endif
+                                @endforeach
+                            @else
+                                idSpora Team
+                            @endif
                         @endif
                     </p>
                 </div>
@@ -710,6 +968,7 @@
                         $eventPageUrl = url()->current();
                         $detailsCal = trim($descRaw . "\n\nMore info: " . $eventPageUrl);
                         // Compute local start/end times safely (similar to logic used below)
+                        $isLombaTop = isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba';
                         $eventDateTop = isset($event) && !empty($event->event_date) ? (\Carbon\Carbon::parse($event->event_date)) : null;
                         $parseEvtTimeTop = function ($date, $raw) {
                             if (empty($raw))
@@ -738,13 +997,20 @@
                                 return null;
                             }
                         };
-                        $startTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time ?? null) : null;
-                        $endTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time_end ?? null) : null;
-                        if (!$startTop && $eventDateTop) {
-                            $startTop = $eventDateTop->copy()->startOfDay();
-                        }
-                        if (!$endTop && $eventDateTop) {
-                            $endTop = $eventDateTop->copy()->endOfDay();
+                        if ($isLombaTop) {
+                            $startTop = $event->start_submission ? \Carbon\Carbon::parse($event->start_submission) : null;
+                            $endTop = $event->until_submission_2 ? \Carbon\Carbon::parse($event->until_submission_2) : (
+                                $event->until_submission ? \Carbon\Carbon::parse($event->until_submission) : null
+                            );
+                        } else {
+                            $startTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time ?? null) : null;
+                            $endTop = isset($event) ? $parseEvtTimeTop($eventDateTop, $event->event_time_end ?? null) : null;
+                            if (!$startTop && $eventDateTop) {
+                                $startTop = $eventDateTop->copy()->startOfDay();
+                            }
+                            if (!$endTop && $eventDateTop) {
+                                $endTop = $eventDateTop->copy()->endOfDay();
+                            }
                         }
                         // Prepare UTC date range for Google Calendar
                         $startUtcStr = $startTop ? $startTop->copy()->utc()->format('Ymd\THis\Z') : null;
@@ -886,7 +1152,11 @@
                         $eventStarted = $startTime ? $nowTs->gte($startTime) : $nowTs->isSameDay($eventDate);
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                     }
-                    $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    if (isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba') {
+                        $eventEndDate = $event->until_submission_2 ?: $event->until_submission;
+                    } else {
+                        $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    }
                     $isFeedbackDay = false;
                     if ($eventEndDate) {
                         $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
@@ -921,12 +1191,15 @@
                     $totalDays    = $dailyQrs->count();
                     $attendedDays = count($dailyAttendedDates);
                     $allDaysAttended = $totalDays > 0 && $attendedDays >= $totalDays;
+                    $isAttendanceOk = (strtolower(trim($event->jenis ?? '')) === 'lomba' || $attendanceSubmitted);
                     $stepStates = [
                         'Registered' => $isRegistered,
-                        'Attendance' => $attendanceSubmitted,
-                        'Feedback' => $hasFeedback,
-                        'Certificate' => $hasCertificate,
                     ];
+                    if (strtolower(trim($event->jenis ?? '')) !== 'lomba') {
+                        $stepStates['Attendance'] = $attendanceSubmitted;
+                    }
+                    $stepStates['Feedback'] = $hasFeedback;
+                    $stepStates['Certificate'] = $hasCertificate;
                 @endphp
                 <section class="progress-box">
                     <h5>Your Progress</h5>
@@ -967,7 +1240,11 @@
                         $eventFinished = $nowTs->gt($endTime ? $endTime : $eventDate->copy()->endOfDay());
                         $eventStarted = $nowTs->gte($startTime ? $startTime : $eventDate->copy()->startOfDay());
                     }
-                    $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    if (isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba') {
+                        $eventEndDate = $event->until_submission_2 ?: $event->until_submission;
+                    } else {
+                        $eventEndDate = isset($event) ? ($event->event_until_date ?: $event->event_date) : null;
+                    }
                     $isFeedbackDay = false;
                     if ($eventEndDate) {
                         $isFeedbackDay = $nowTs->copy()->startOfDay()->gte(\Carbon\Carbon::parse($eventEndDate)->startOfDay());
@@ -1099,7 +1376,7 @@
                         @endif
                     @endif
                 </div>
-                <hr class="line-info">
+                @if(strtolower(trim($event->jenis ?? '')) !== 'lomba')
                 <div class="event-info-item d-flex align-items-center justify-content-between">
 
                     <div class="event-info-left d-flex align-items-center gap-2">
@@ -1158,6 +1435,7 @@
                 </div>
 
                 <hr class="line-info">
+                @endif
                 <div class="info-boxluar">
                     <div class="event-info-item">
                         <div class="event-info-left">
@@ -1255,6 +1533,22 @@
                         <span
                             class="event-info-value">{{ isset($event) ? $event->registrations()->where('status', 'active')->count() : 0 }}</span>
                     </div>
+                    @if(strtolower(trim($event->jenis ?? '')) === 'lomba' && !empty($event->until_submission))
+                    <div class="event-info-item">
+                        <div class="event-info-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-calendar-check" viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                            </svg>
+                            <span class="event-info-label">Last Register</span>
+                        </div>
+                        @php
+                            $lastRegisterDate = \Carbon\Carbon::parse($event->until_submission);
+                            $formattedLastRegister = $lastRegisterDate->translatedFormat('d F Y, H.i') . ' WIB';
+                        @endphp
+                        <span class="event-info-value">{{ $formattedLastRegister }}</span>
+                    </div>
+                    @endif
                 </div>
                 <hr>
                 @php
@@ -1312,14 +1606,22 @@
                         // "Ditinjau" hanya untuk pembayaran manual yang sudah upload bukti bayar
                         $paymentUnderReview = $registration && $registrationStatus === 'pending' && !$isMidtransFlow && !empty($registration->payment_proof);
 
-                        $canRegister = (!$isRegistered) && (
-                            $eventDate
-                            ? (
-                                    // For FREE events: block booking once started or finished
-                                ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
-                            )
-                            : true
-                        );
+                        if (strtolower(trim($event->jenis ?? '')) === 'lomba') {
+                            $canRegister = (!$isRegistered) && (
+                                $event->until_submission
+                                ? \Carbon\Carbon::now(config('app.timezone'))->lt(\Carbon\Carbon::parse($event->until_submission, config('app.timezone')))
+                                : true
+                            );
+                        } else {
+                            $canRegister = (!$isRegistered) && (
+                                $eventDate
+                                ? (
+                                        // For FREE events: block booking once started or finished
+                                    ($isFree ? ((!$eventStarted) && (!$eventFinished)) : ($hasStartTime ? (!$eventStarted) : (!$eventFinished)))
+                                )
+                                : true
+                            );
+                        }
 
                         // Cek kuota — jika penuh dan user belum register, tidak bisa book
                         $evQuotaDetail   = !empty($event->max_participants) ? (int) $event->max_participants : null;
@@ -1340,27 +1642,56 @@
                             }
                         }
                     @endphp
-                    @if($midtransPending)
+                    @if($registration && $registration->team_id && in_array($registration->status, ['pending', 'active']))
+                        @if($registration->status === 'active')
+                            <button class="bookseat" disabled style="background:#10b981; color:#fff;">Team Registered</button>
+                        @else
+                            @if((bool) $registration->is_team_leader)
+                                @if($registration->team->registrations()->count() >= $event->min_team_members)
+                                    <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
+                                        style="text-decoration:none;">Proceed to Payment</a>
+                                @else
+                                    <button class="bookseat" disabled style="background:#64748b; color:#fff;">Waiting for Members</button>
+                                @endif
+                            @else
+                                <button class="bookseat" disabled style="background:#f59e0b; color: #0f172a; font-weight:600;">Waiting Leader Payment</button>
+                            @endif
+                        @endif
+                    @elseif($midtransPending)
                         <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
-                            style="text-decoration:none;">Lanjutkan pembayaran Midtrans</a>
+                            style="text-decoration:none;">Continue Your Payment</a>
                     @elseif($midtransExpired)
                         <a class="bookseat text-white text-center"
                             href="{{ route('payment', ['event' => $event->id, 'force_new' => 1]) }}"
                             style="text-decoration:none;">Payment Again</a>
                     @elseif($paymentUnderReview)
-                        <button class="bookseat" disabled>Pembayaran sedang ditinjau</button>
+                        <button class="bookseat" disabled>Payments are under review</button>
                     @elseif($canRegister)
                         @if(!auth()->check())
                             <a class="bookseat text-white text-center"
                                 href="{{ route('login', ['redirect' => request()->fullUrl()]) }}"
-                                style="text-decoration:none;">Book Seat</a>
+                                style="text-decoration:none;">Register</a>
                         @else
-                            @if($isFree)
-                                <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
-                                    style="text-decoration:none;">Book Seat</a>
+                            @if(strtolower(trim($event->jenis ?? '')) === 'lomba' && in_array($event->lomba_kategori, ['team', 'both', 'individual']))
+                                @if($event->lomba_kategori === 'individual')
+                                    <a class="btn-lomba-action btn-lomba-individual text-center" href="{{ route('payment', $event) }}"
+                                        style="text-decoration:none;"><i class="bi bi-person-fill"></i> Register Individual</a>
+                                @elseif($event->lomba_kategori === 'team')
+                                    <div class="d-flex flex-column gap-2 w-100">
+                                        <button type="button" class="btn-lomba-action btn-lomba-create" data-bs-toggle="modal" data-bs-target="#createTeamModal"><i class="bi bi-people-fill"></i> Create Team</button>
+                                        <button type="button" class="btn-lomba-action btn-lomba-join" data-bs-toggle="modal" data-bs-target="#joinTeamModal"><i class="bi bi-person-plus-fill"></i> Join Team</button>
+                                    </div>
+                                @elseif($event->lomba_kategori === 'both')
+                                    <div class="d-flex flex-column gap-2 w-100">
+                                        <a class="btn-lomba-action btn-lomba-individual text-center" href="{{ route('payment', $event) }}"
+                                            style="text-decoration:none;"><i class="bi bi-person-fill"></i> Register Individual</a>
+                                        <button type="button" class="btn-lomba-action btn-lomba-create" data-bs-toggle="modal" data-bs-target="#createTeamModal"><i class="bi bi-people-fill"></i> Create Team</button>
+                                        <button type="button" class="btn-lomba-action btn-lomba-join" data-bs-toggle="modal" data-bs-target="#joinTeamModal"><i class="bi bi-person-plus-fill"></i> Join Team</button>
+                                    </div>
+                                @endif
                             @else
                                 <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
-                                    style="text-decoration:none;">Book Seat</a>
+                                    style="text-decoration:none;">Register</a>
                             @endif
                         @endif
                     @else
@@ -1369,7 +1700,11 @@
                         @elseif($evIsFullDetail && !$isRegistered)
                             <button class="bookseat" disabled style="background:#6b7280;">Full Booked</button>
                         @elseif(!$isRegistered && $eventStarted)
-                            <button class="bookseat" disabled>Event Has Started</button>
+                            @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                                <button class="bookseat" disabled>Registration Closed</button>
+                            @else
+                                <button class="bookseat" disabled>Event Has Started</button>
+                            @endif
                         @elseif($isRegistered)
                             <button class="bookseat" disabled>Seat Booked</button>
                         @else
@@ -1630,7 +1965,7 @@
                     $eventStarted = isset($event) && $event->start_at && $event->start_at->lte(\Carbon\Carbon::now());
                     $moduleUnlocked = $isRegistered && $eventStarted;
                 @endphp
-                @if($isRegistered || $approvedModules->isNotEmpty())
+                @if(strtolower(trim($event->jenis ?? '')) !== 'lomba' && ($isRegistered || $approvedModules->isNotEmpty()))
                 <div class="resource-card {{ $moduleUnlocked ? '' : 'locked' }}">
                     <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -1643,7 +1978,7 @@
                         </svg>
                     </div>
                     <div class="resource-value">
-                        <h6>Modules</h6>
+                        <h6>Modules Access</h6>
                         @if(!$isRegistered)
                             <p>Available upon registration</p>
                         @elseif(!$eventStarted)
@@ -1671,7 +2006,7 @@
                 @endif
 
                 {{-- Modal unduh modul --}}
-                @if($moduleUnlocked)
+                @if($moduleUnlocked && strtolower(trim($event->jenis ?? '')) !== 'lomba')
                 <div class="modal fade" id="modulesDownloadModal" tabindex="-1" aria-labelledby="modulesDownloadModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content" style="border-radius:16px;">
@@ -1682,33 +2017,117 @@
                                         <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
                                         <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
                                     </svg>
-                                    Download Modules 
+                                    Modules Access
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body pt-2">
-                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to download:</p>
-                                <div class="d-flex flex-column gap-2">
-                                    @foreach($approvedModules as $mod)
-                                        <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
-                                           class="d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none"
-                                           style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
-                                           onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                                            <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
-                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
-                                                    <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
-                                                </svg>
-                                            </div>
-                                            <div style="overflow:hidden;">
-                                                <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $mod->original_name }}</div>
-                                                @if($mod->trainer)
-                                                    <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
-                                                @endif
-                                            </div>
-                                        </a>
-                                    @endforeach
-                                </div>
+                                <p class="text-muted mb-3" style="font-size:13px;">Select the material you want to access:</p>
+                                @php
+                                    $fileModules = [];
+                                    $linkModules = [];
+                                    foreach($approvedModules as $mod) {
+                                        if (preg_match('#^https?://#i', $mod->path)) {
+                                            $linkModules[] = $mod;
+                                        } else {
+                                            $fileModules[] = $mod;
+                                        }
+                                    }
+                                @endphp
+
+                                @if(!empty($fileModules))
+                                    <div class="mb-4">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+                                                <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zm-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">File Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($fileModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" viewBox="0 0 16 16">
+                                                                <path d="M.5 9.9a.5.5 0 0 1 .5-.5v2.5A1.5 1.5 0 0 0 2.5 14h11a1.5 1.5 0 0 0 1.5-1.5V10.4a.5.5 0 0 1 1 0v2.1A2.5 2.5 0 0 1 13.5 15h-11A2.5 2.5 0 0 1 0 12.5V10.4a.5.5 0 0 1 .5-.5z"/>
+                                                                <path d="M7.646 10.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 9.293V1.5a.5.5 0 0 0-1 0v7.793L5.354 7.146a.5.5 0 1 0-.708.708z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($linkModules))
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="#64748b" class="bi bi-link" viewBox="0 0 16 16">
+                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                            </svg>
+                                            <h6 class="fw-bold mb-0" style="font-size:12px; color:#475569; text-transform: uppercase; letter-spacing: 0.5px;">Link Modules</h6>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            @foreach($linkModules as $mod)
+                                                <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                                     style="background:#f8fafc; border:1px solid #e2e8f0; color:#1e293b; transition:background .15s;"
+                                                     onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                                                    <a href="{{ route('events.modules.download', [$event, 'module_id' => $mod->id]) }}"
+                                                       target="_blank" rel="noopener noreferrer"
+                                                       class="d-flex align-items-center gap-3 text-decoration-none"
+                                                       style="color:#1e293b; overflow:hidden; flex-grow:1;">
+                                                        <div style="width:36px;height:36px;background:#dbeafe;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2563eb" class="bi bi-link" viewBox="0 0 16 16">
+                                                                <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9q-.13 0-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/>
+                                                                <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4 4 0 0 1-.82 1H12a3 3 0 1 0 0-6z"/>
+                                                            </svg>
+                                                        </div>
+                                                        <div style="overflow:hidden;">
+                                                            <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $mod->original_name }}">{{ $mod->original_name }}</div>
+                                                            @if($mod->trainer)
+                                                                <div style="font-size:11px;color:#64748b;">by {{ $mod->trainer->name }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </a>
+                                                    @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank" rel="noopener noreferrer"
+                                                           class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
+                                                           style="background:#fef3c7; border:1px solid #fcd34d; color:#d97706; font-size:11px; font-weight:600; transition:background 0.15s; white-space:nowrap; height:fit-content;"
+                                                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right:2px;">
+                                                                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                                                            </svg>
+                                                            Feedback
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
                             </div>
                             <div class="modal-footer border-0 pt-0">
                             </div>
@@ -1717,6 +2136,7 @@
                 </div>
                 @endif
 
+                @if(strtolower(trim($event->jenis ?? '')) !== 'lomba')
                 <div class="resource-card {{ (isset($isRegistered) && $isRegistered && ((isset($attendanceSubmitted) && $attendanceSubmitted) || (!$eventFinished && (isset($eventStarted) && $eventStarted)))) ? '' : 'locked' }}" style="position:relative;">                    <div class="img-resource">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                             class="bi bi-qr-code-scan" viewBox="0 0 16 16">
@@ -1818,6 +2238,7 @@
                             title="Scan tersedia saat acara dimulai"></span>
                     @endif
                 </div>
+                @endif
 
                 <div
                     class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
@@ -1926,54 +2347,54 @@
                     @endif
                 </div>
                 @endif
-                 <div class="resource-card {{ ($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay)) ? '' : 'locked' }}"
-                    style="position:relative;">
-                    <div class="img-resource">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                            class="bi bi-star-fill" viewBox="0 0 16 16">
-                            <path
-                                d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
-                        </svg>
-                    </div>
-                    <div class="resource-value">
-                        <h6>Feedback and Ratings</h6>
-                        @if(isset($hasFeedback) && $hasFeedback)
-                            <p class="text-success" style="font-weight:600;">Done Successfully</p>
-                        @elseif($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
-                            <p style="width: 70%;" class="text-primary">Please submit your feedback</p>
-                        @else
-                            <p style="width: 70%;">Available after the event ends</p>
-                        @endif
-                    </div>
+                <div class="resource-card {{ ($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay)) ? '' : 'locked' }}"
+                     style="position:relative;">
+                     <div class="img-resource">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                             class="bi bi-star-fill" viewBox="0 0 16 16">
+                             <path
+                                 d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
+                         </svg>
+                     </div>
+                     <div class="resource-value">
+                         <h6>Feedback and Ratings</h6>
+                         @if(isset($hasFeedback) && $hasFeedback)
+                             <p class="text-success" style="font-weight:600;">Done Successfully</p>
+                         @elseif($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
+                             <p style="width: 70%;" class="text-primary">Please submit your feedback</p>
+                         @else
+                             <p style="width: 70%;">Available after the event ends</p>
+                         @endif
+                     </div>
 
-                    @if($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
-                        <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
-                            style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
-                            @if(isset($hasFeedback) && $hasFeedback)
-                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                                    stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    aria-label="Feedback berhasil">
-                                    <circle cx="12" cy="12" r="9"></circle>
-                                    <polyline points="8 12 11 15 16 10"></polyline>
-                                </svg>
-                            @else
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
-                                    class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd"
-                                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                                    <path fill-rule="evenodd"
-                                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                                </svg>
-                            @endif
-                        </button>
-                    @else
-                        <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
-                    @endif
-                </div>
-            </div>
-        </section>
+                     @if($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
+                         <button type="button" class="link-share" onclick="toggleFeedbackSection()" title="Open"
+                             style="border: none; background: transparent; padding: 0; margin: 0; cursor: pointer; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
+                             @if(isset($hasFeedback) && $hasFeedback)
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                                     stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                     aria-label="Feedback berhasil">
+                                     <circle cx="12" cy="12" r="9"></circle>
+                                     <polyline points="8 12 11 15 16 10"></polyline>
+                                 </svg>
+                             @else
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                     class="share-bi bi-box-arrow-up-right" viewBox="0 0 16 16">
+                                     <path fill-rule="evenodd"
+                                         d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
+                                     <path fill-rule="evenodd"
+                                         d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
+                                 </svg>
+                             @endif
+                         </button>
+                     @else
+                         <span class="link-share d-flex align-items-center" style="opacity:.6; cursor:not-allowed;"></span>
+                     @endif
+                 </div>
+             </div>
+         </section>
 
-        @if($isRegistered && $attendanceSubmitted && ($eventFinished || $isFeedbackDay))
+         @if($isRegistered && $isAttendanceOk && ($eventFinished || $isFeedbackDay))
                 <div id="feedbackSection"
                     style="display: none; background-color: white; box-shadow: 0px 0px 10px 10px rgba(0, 0, 0, 0.08); padding: 20px; margin-top: 50px; margin-left: 70px; border-radius: 20px; width: 90%; overflow: hidden;">
                     <div class="d-flex justify-content-between align-items-center"
@@ -2045,6 +2466,139 @@
         @endif
 
         <div class="desc-box">
+        @if($registration && $registration->team_id && in_array($registration->status, ['pending', 'active']))
+            @php
+                $team = $registration->team;
+                $teamMembers = $team->registrations()->with('user')->get();
+                $minMembers = $event->min_team_members;
+                $maxMembers = $event->max_team_members_count;
+                $isLeader = (bool) $registration->is_team_leader;
+                $isTeamReadyToPay = $teamMembers->count() >= $minMembers;
+                $isTeamComplete = $teamMembers->count() >= $maxMembers;
+            @endphp
+            <div class="card team-card mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 pb-3 border-bottom border-secondary border-opacity-25 gap-3">
+                        <div>
+                            <span class="badge team-badge-kategori rounded-pill px-3 py-1.5 mb-2 d-inline-flex align-items-center gap-1.5"><i class="bi bi-trophy-fill"></i> Team Category</span>
+                            <h4 class="fw-bold mb-0 text-white" style="font-size: 1.5rem; letter-spacing: -0.5px;">{{ $team->name }}</h4>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small" style="color: #94a3b8 !important;">Team Status:</span>
+                            @if($team->status === 'active')
+                                <span class="badge team-status-badge team-status-paid"><i class="bi bi-patch-check-fill me-1"></i>Paid / Active</span>
+                            @else
+                                <span class="badge team-status-badge team-status-pending"><i class="bi bi-hourglass-split me-1"></i>Unpaid / Pending</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Left Info Panel -->
+                        <div class="col-md-5">
+                            <div class="team-panel-inner">
+                                <small class="text-muted d-block mb-1 text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.8px;">Team Registration Code</small>
+                                <div class="d-flex align-items-center justify-content-between team-code-box">
+                                    <code class="team-code-val" id="teamCodeVal">{{ $team->code }}</code>
+                                    <button type="button" class="team-copy-btn d-flex align-items-center gap-1.5" onclick="copyTeamCode()" title="Copy Team Code">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                        </svg>
+                                        <span id="copyBtnText" style="font-size: 0.75rem;">Copy</span>
+                                    </button>
+                                </div>
+                                <div class="form-text mt-2.5" style="font-size: 0.75rem; color: #94a3b8 !important; line-height: 1.4;">
+                                    Share this code with your team members. Members must log in and click "Join Team" using this code.
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                @if($team->status !== 'active')
+                                    @if($isLeader)
+                                        @if($isTeamReadyToPay)
+                                            <div class="alert alert-info border-0 rounded-3 p-3 bg-opacity-10 text-info bg-info mb-2.5" style="font-size: 0.85rem; border-left: 4px solid #0dcaf0 !important;">
+                                                <i class="bi bi-info-circle-fill me-2"></i>Your team has met the minimum size ({{ $teamMembers->count() }}/{{ $maxMembers }} members). The Team Leader can proceed to payment.
+                                            </div>
+                                            <a href="{{ route('payment', $event) }}" class="btn btn-warning w-100 fw-bold py-2.5 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="background-color: #f59e0b; border-color: #f59e0b; color: #0f172a; font-size: 0.95rem;">
+                                                <i class="bi bi-credit-card-fill"></i> Proceed to Payment
+                                            </a>
+                                        @else
+                                            <div class="alert alert-warning border-0 rounded-3 p-3 bg-opacity-10 text-warning bg-warning mb-2.5" style="font-size: 0.85rem; border-left: 4px solid #ffc107 !important;">
+                                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Payment is locked. Wait until the minimum member slots are filled ({{ $teamMembers->count() }}/{{ $minMembers }} members).
+                                            </div>
+                                            <button class="btn btn-secondary w-100 fw-bold py-2.5 rounded-3 cursor-not-allowed opacity-50 d-flex align-items-center justify-content-center gap-2" disabled style="font-size: 0.95rem;">
+                                                <i class="bi bi-lock-fill"></i> Proceed to Payment (Locked)
+                                            </button>
+                                        @endif
+                                    @else
+                                        <div class="alert alert-warning border-0 rounded-3 p-3 bg-opacity-10 text-warning bg-warning" style="font-size: 0.85rem; border-left: 4px solid #ffc107 !important;">
+                                            <i class="bi bi-hourglass-split me-2"></i>Waiting for the Team Leader to complete the payment.
+                                        </div>
+                                    @endif
+                                @else
+                                    <div class="alert alert-success border-0 rounded-3 p-3 bg-opacity-10 text-success bg-success" style="font-size: 0.85rem; border-left: 4px solid #198754 !important;">
+                                        <i class="bi bi-patch-check-fill me-2"></i>Your team is active and fully registered! Please access the competition submission below.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Right Members List -->
+                        <div class="col-md-7">
+                            <h6 class="fw-semibold text-uppercase mb-2.5" style="font-size: 0.75rem; letter-spacing: 0.8px; color: #94a3b8 !important;">Team Members ({{ $teamMembers->count() }}/{{ $maxMembers }})</h6>
+                            <div class="d-flex flex-column gap-2">
+                                @foreach($teamMembers as $idx => $member)
+                                    <div class="d-flex align-items-center justify-content-between team-member-item">
+                                        <div class="d-flex align-items-center gap-2.5">
+                                            <div class="team-avatar">
+                                                {{ strtoupper(substr($member->user->name, 0, 1)) }}
+                                            </div>
+                                            <div>
+                                                <span class="fw-semibold text-white d-block" style="font-size: 0.9rem; line-height: 1.2;">{{ $member->user->name }}</span>
+                                                <small style="font-size: 0.75rem; color: #94a3b8 !important;">{{ $member->user->email }}</small>
+                                            </div>
+                                        </div>
+                                        @if((bool) $member->is_team_leader)
+                                            <span class="badge team-role-badge team-role-leader"><i class="bi bi-star-fill me-1"></i>Team Leader</span>
+                                        @else
+                                            <span class="badge team-role-badge team-role-member"><i class="bi bi-person-fill me-1"></i>Member</span>
+                                        @endif
+                                    </div>
+                                @endforeach
+
+                                @for($i = $teamMembers->count(); $i < $maxMembers; $i++)
+                                    <div class="d-flex align-items-center team-member-empty">
+                                        <div class="d-flex align-items-center gap-2.5 text-muted">
+                                            <div class="team-avatar-empty">
+                                                +
+                                            </div>
+                                            <span style="font-size: 0.85rem; font-style: italic; color: #64748b !important;">Waiting for member to join...</span>
+                                        </div>
+                                    </div>
+                                @endfor
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                function copyTeamCode() {
+                    const codeText = document.getElementById('teamCodeVal').innerText;
+                    navigator.clipboard.writeText(codeText).then(() => {
+                        const copyBtnText = document.getElementById('copyBtnText');
+                        if (copyBtnText) {
+                            copyBtnText.innerText = 'Copied!';
+                            setTimeout(() => {
+                                copyBtnText.innerText = 'Copy';
+                            }, 2000);
+                        }
+                    }).catch(err => {
+                        console.error('Gagal menyalin kode: ', err);
+                    });
+                }
+            </script>
+        @endif
         <nav>
             <div class="nav nav-tabs" id="nav-tab" role="tablist">
                 <button class="nav-event nav-link active" id="nav-home-tab" data-bs-toggle="tab"
@@ -2056,6 +2610,11 @@
                 <button class="nav-event nav-link" id="nav-contact-tab" data-bs-toggle="tab"
                     data-bs-target="#nav-contact" type="button" role="tab" aria-controls="nav-contact"
                     aria-selected="false">Terms & Condition</button>
+                @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                <button class="nav-event nav-link" id="nav-submission-tab" data-bs-toggle="tab"
+                    data-bs-target="#nav-submission" type="button" role="tab" aria-controls="nav-submission"
+                    aria-selected="false">🏆 Submission</button>
+                @endif
                 <span class="ms-auto d-flex align-items-center" style="gap:8px; font-size:12px;">
                     @if($hasCertificate && $event->certificate_path)
                         <a class="link-share" href="{{ Storage::url($event->certificate_path) }}" target="_blank">
@@ -2450,7 +3009,7 @@
                                         })->values();
                                     }
                                 }
-                                $formatTime = function ($t) {
+                                                          $formatTime = function ($t) {
                                     if (empty($t))
                                         return null;
                                     try {
@@ -2459,21 +3018,39 @@
                                         return is_string($t) ? $t : null;
                                     }
                                 };
+                                $formatDate = function ($d) {
+                                    if (empty($d))
+                                        return null;
+                                    try {
+                                        return \Carbon\Carbon::parse($d)->translatedFormat('d F Y');
+                                    } catch (\Throwable $e) {
+                                        return is_string($d) ? $d : null;
+                                    }
+                                };
+                                $isLomba = isset($event) && strtolower(trim($event->jenis ?? '')) === 'lomba';
                             @endphp
                             @forelse($items as $idx => $it)
                                 @php
-                                    $start = $formatTime($it->start ?? null);
-                                    $end = $formatTime($it->end ?? null);
-                                    $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
-                                    if ($timeStr)
-                                        $timeStr .= ' WIB';
+                                    if ($isLomba) {
+                                        $start = $formatDate($it->start ?? null);
+                                        $end = $formatDate($it->end ?? null);
+                                        $timeStr = trim(($start ?: '') . ($end ? ' – ' . $end : ''));
+                                    } else {
+                                        $start = $formatTime($it->start ?? null);
+                                        $end = $formatTime($it->end ?? null);
+                                        $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                                        if ($timeStr)
+                                            $timeStr .= ' WIB';
+                                    }
                                 @endphp
                                 <div class="schedule-item-box">
                                     <div class="schedule-line"></div>
                                     <div class="schedule-item">
                                         <p class="time">{{ $timeStr ?: '-' }}</p>
                                         <p class="activity">{{ $it->title ?? '' }}</p>
-                                        <p class="desc">{{ $it->description ?? '' }}</p>
+                                        @if(!$isLomba)
+                                            <p class="desc">{{ $it->description ?? '' }}</p>
+                                        @endif
                                     </div>
                                 </div>
                                 <br>
@@ -2499,6 +3076,288 @@
                         @endif
                     </div>
                 </div>
+                @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
+                <div class="tab-pane fade" id="nav-submission" role="tabpanel" aria-labelledby="nav-submission-tab" tabindex="0">
+                    <div style="margin-left: 40px; margin-right: 40px; padding: 20px 0;">
+                        <h4 class="fw-bold mb-4 text-dark d-flex align-items-center gap-2">
+                            <span>🏆 Competition / Contest Submission</span>
+                        </h4>
+
+                        @php
+                            $now = \Carbon\Carbon::now();
+                            $reg = $registration;
+                            if ($reg && $reg->team_id && !$reg->is_team_leader) {
+                                $leaderReg = \App\Models\EventRegistration::where('team_id', $reg->team_id)
+                                    ->where('is_team_leader', true)
+                                    ->first();
+                                if ($leaderReg) {
+                                    $reg = $leaderReg;
+                                }
+                            }
+                        @endphp
+
+                        @if(!$reg || $reg->status !== 'active')
+                            <div class="alert alert-warning border-0 shadow-sm rounded-3">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i> You are not registered in this competition or your registration is not active.
+                            </div>
+                        @else
+                            {{-- TIMELINE PROGRESS BAR --}}
+                            <div class="row mb-5 justify-content-center text-center g-3">
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Submission Start</div>
+                                        <div class="fw-bold text-primary">{{ $event->start_submission ? $event->start_submission->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Initial Submission Deadline</div>
+                                        <div class="fw-bold text-danger">{{ $event->until_submission ? $event->until_submission->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Qualification Announcement</div>
+                                        <div class="fw-bold text-success">{{ $event->announcement_date ? $event->announcement_date->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded-3 bg-white shadow-sm h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                                        <div class="small text-muted mb-1">Final Submission Deadline</div>
+                                        <div class="fw-bold text-danger">{{ $event->until_submission_2 ? $event->until_submission_2->translatedFormat('d M Y, H:i') : '-' }} WIB</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                {{-- STAGE 1 CARD --}}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                                        <div class="card-header bg-light border-0 py-3 rounded-top-4">
+                                            <h5 class="fw-bold mb-0 text-dark">Stage 1: Initial Upload</h5>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            @if($reg->submission_path)
+                                                <div class="mb-4">
+                                                    <span class="small text-muted d-block">Qualification Status:</span>
+                                                    @if($reg->submission_status === 'lolos')
+                                                        <span class="badge bg-success px-3 py-2 rounded-pill mt-1"><i class="bi bi-patch-check-fill me-1"></i> Qualified to Next Stage</span>
+                                                    @elseif($reg->submission_status === 'tidak_lolos')
+                                                        <span class="badge bg-danger px-3 py-2 rounded-pill mt-1"><i class="bi bi-patch-exclamation-fill me-1"></i> Not Qualified</span>
+                                                    @else
+                                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill mt-1"><i class="bi bi-hourglass-split me-1"></i> Awaiting Assessment</span>
+                                                    @endif
+
+                                                    @if($reg->submission_notes)
+                                                        <div class="alert alert-info mt-3 mb-0 py-2 px-3 small border-0 shadow-sm rounded-3">
+                                                            <div class="fw-bold mb-1"><i class="bi bi-chat-left-text-fill text-info me-1"></i> Judge Notes/Revisions:</div>
+                                                            <p class="mb-0 text-dark" style="white-space: pre-line;">{{ $reg->submission_notes }}</p>
+                                                        </div>
+                                                    @endif
+                                                </div>
+
+                                                <div class="p-3 bg-light rounded-3 mb-3 border">
+                                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                                        <span class="fw-semibold text-dark"><i class="bi bi-file-earmark-check-fill text-primary me-2"></i> Submitted File:</span>
+                                                        <span class="small text-muted">{{ $reg->submission_uploaded_at ? $reg->submission_uploaded_at->translatedFormat('d M Y, H:i') : '' }}</span>
+                                                    </div>
+                                                    
+                                                    @php
+                                                        $filePath1 = Storage::disk('public')->url($reg->submission_path);
+                                                        $fileExt1 = strtolower(pathinfo($reg->submission_path, PATHINFO_EXTENSION));
+                                                    @endphp
+
+                                                    <div class="d-flex gap-2 mb-3">
+                                                        <a href="{{ $filePath1 }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
+                                                            <i class="bi bi-eye"></i> Preview / View File
+                                                        </a>
+                                                        <a href="{{ $filePath1 }}" download class="btn btn-sm btn-primary rounded-pill">
+                                                            <i class="bi bi-download"></i> Download File
+                                                        </a>
+                                                    </div>
+
+                                                    @if($fileExt1 === 'pdf')
+                                                        <div class="ratio ratio-16x9 border rounded overflow-hidden shadow-sm" style="max-height: 250px;">
+                                                            <iframe src="{{ $filePath1 }}" frameborder="0"></iframe>
+                                                        </div>
+                                                    @else
+                                                        <div class="text-muted small"><i class="bi bi-info-circle me-1"></i> File format is {{ strtoupper($fileExt1) }}. Use the download button to view submission.</div>
+                                                    @endif
+                                                </div>
+                                            @endif
+
+                                            {{-- UPLOAD / RE-UPLOAD FORM --}}
+                                            @if($reg->submission_status === 'tidak_lolos')
+                                                <div class="alert alert-danger text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-x-circle-fill me-1"></i> You have been declared not qualified to the next stage. Submission upload is disabled.
+                                                </div>
+                                            @elseif($reg->submission_status === 'lolos')
+                                                <div class="alert alert-success text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-patch-check-fill me-1"></i> You have been declared <strong>Qualified</strong>. Submission can no longer be updated.
+                                                </div>
+                                            @elseif($now->between($event->start_submission, $event->until_submission))
+                                                @if($reg->team_id && !$reg->is_team_leader)
+                                                     <div class="alert alert-info text-center py-3 rounded-3 mt-3">
+                                                         <i class="bi bi-info-circle-fill me-1"></i> Hanya Ketua Tim yang dapat mengunggah submission.
+                                                     </div>
+                                                 @else
+                                                     <form action="{{ route('events.submit.initial', $event) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                                                         @csrf
+                                                         <div class="mb-3">
+                                                             <label for="submission_file" class="form-label fw-semibold text-dark">
+                                                                 {{ $reg->submission_path ? 'Update Submission File:' : 'Upload Submission File:' }}
+                                                             </label>
+                                                             <input class="form-control" type="file" id="submission_file" name="submission_file" accept=".pdf" required>
+                                                             <div class="form-text small">File format: PDF. Max file size: 10 MB.</div>
+                                                             <div class="form-text small mt-1.5" style="color: #64748b;"><i class="bi bi-info-circle me-1"></i> Summarise your topic in up to 200 words including the background, main idea, and insight.</div>
+                                                         </div>
+                                                         <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-3">
+                                                             <i class="bi bi-cloud-upload-fill me-2"></i> {{ $reg->submission_path ? 'Update Submission' : 'Submit Submission' }}
+                                                         </button>
+                                                     </form>
+                                                 @endif
+                                            @elseif($now->lt($event->start_submission))
+                                                <div class="alert alert-secondary text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-clock-history me-1"></i> Submission upload has not opened yet.
+                                                </div>
+                                            @else
+                                                <div class="alert alert-danger text-center py-3 rounded-3 mt-3">
+                                                    <i class="bi bi-exclamation-octagon-fill me-1"></i> The deadline for initial submission has ended.
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- STAGE 2 CARD --}}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                                        <div class="card-header bg-light border-0 py-3 rounded-top-4">
+                                            <h5 class="fw-bold mb-0 text-dark">Stage 2: Final Upload</h5>
+                                        </div>
+                                        <div class="card-body p-4">
+                                            @if($reg->submission_status !== 'lolos')
+                                                <div class="text-center py-5 text-muted">
+                                                    <div class="fs-1 mb-3">🔒</div>
+                                                    <h6 class="fw-bold text-dark">Stage 2 Upload Locked</h6>
+                                                    <p class="small mb-0">Only for participants declared qualified in Stage 1 after the announcement date.</p>
+                                                </div>
+                                            @else
+                                                {{-- Check if payment is required before allowing Stage 2 upload --}}
+                                                @if($reg->stage2_payment_status === 'pending')
+                                                    {{-- Payment required --}}
+                                                    @php
+                                                        $now = \Carbon\Carbon::now(config('app.timezone'));
+                                                        $paymentNotStarted = $event->finalist_payment_start && $now->lt($event->finalist_payment_start);
+                                                        $paymentEnded = $event->finalist_payment_end && $now->gt($event->finalist_payment_end);
+                                                        $paymentOpen = !$paymentNotStarted && !$paymentEnded;
+                                                    @endphp
+                                                    <div class="text-center py-4">
+                                                        <div class="fs-1 mb-2">💰</div>
+                                                        <h6 class="fw-bold text-dark mb-1">Stage 2 Payment Required</h6>
+                                                        <p class="small text-muted mb-3">Complete the payment of <strong>Rp {{ number_format($event->price_stage2 ?? 0, 0, ',', '.') }}</strong> to access the stage 2 submission upload form.</p>
+
+                                                        @if($event->finalist_payment_start || $event->finalist_payment_end)
+                                                            <div class="alert alert-info py-2 px-3 small rounded-3 mb-3 d-inline-block text-start" style="max-width: 100%;">
+                                                                <i class="bi bi-calendar-event me-1"></i> <strong>Payment Period:</strong><br>
+                                                                @if($event->finalist_payment_start)
+                                                                    From: {{ $event->finalist_payment_start->translatedFormat('d M Y, H:i') }} WIB<br>
+                                                                @endif
+                                                                @if($event->finalist_payment_end)
+                                                                    Until: {{ $event->finalist_payment_end->translatedFormat('d M Y, H:i') }} WIB
+                                                                @endif
+                                                            </div>
+                                                            <br>
+                                                        @endif
+
+                                                        @if($paymentNotStarted)
+                                                            <div class="alert alert-warning py-2 px-3 small rounded-3 mb-0 d-inline-block">
+                                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Stage 2 payment is not open yet.
+                                                            </div>
+                                                        @elseif($paymentEnded)
+                                                            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-0 d-inline-block">
+                                                                <i class="bi bi-x-circle-fill me-1"></i> Stage 2 payment is closed.
+                                                            </div>
+                                                        @else
+                                                            <a href="{{ route('events.payment.stage2', $event) }}" class="btn btn-warning fw-bold px-4 rounded-3">
+                                                                <i class="bi bi-credit-card-fill me-2"></i> Pay Now
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    {{-- Payment settled or not required — show normal upload flow --}}
+                                                    @if($reg->submission_path_2)
+                                                        <div class="p-3 bg-light rounded-3 mb-3 border">
+                                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                                <span class="fw-semibold text-dark"><i class="bi bi-file-earmark-check-fill text-success me-2"></i> Submitted File (Stage 2):</span>
+                                                                <span class="small text-muted">{{ $reg->submission_2_uploaded_at ? $reg->submission_2_uploaded_at->translatedFormat('d M Y, H:i') : '' }}</span>
+                                                            </div>
+
+                                                            @php
+                                                                $filePath2 = Storage::disk('public')->url($reg->submission_path_2);
+                                                                $fileExt2 = strtolower(pathinfo($reg->submission_path_2, PATHINFO_EXTENSION));
+                                                            @endphp
+
+                                                            <div class="d-flex gap-2 mb-3">
+                                                                <a href="{{ $filePath2 }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill">
+                                                                    <i class="bi bi-eye"></i> Preview / View File
+                                                                </a>
+                                                                <a href="{{ $filePath2 }}" download class="btn btn-sm btn-success rounded-pill">
+                                                                    <i class="bi bi-download"></i> Download File
+                                                                </a>
+                                                            </div>
+
+                                                            @if($fileExt2 === 'pdf')
+                                                                <div class="ratio ratio-16x9 border rounded overflow-hidden shadow-sm" style="max-height: 250px;">
+                                                                    <iframe src="{{ $filePath2 }}" frameborder="0"></iframe>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-muted small"><i class="bi bi-info-circle me-1"></i> File format is {{ strtoupper($fileExt2) }}. Use the download button to view submission.</div>
+                                                            @endif
+                                                        </div>
+                                                    @endif
+
+                                                    {{-- UPLOAD / RE-UPLOAD FORM TAHAP 2 --}}
+                                                    @if($now->lt($event->announcement_date))
+                                                        <div class="alert alert-secondary text-center py-3 rounded-3">
+                                                            <i class="bi bi-clock-history me-1"></i> Second stage submission upload will open after the qualification announcement date.
+                                                        </div>
+                                                    @elseif($event->until_submission_2 && $now->gt($event->until_submission_2))
+                                                        <div class="alert alert-danger text-center py-3 rounded-3">
+                                                            <i class="bi bi-exclamation-octagon-fill me-1"></i> The deadline for the second submission has ended.
+                                                        </div>
+                                                    @else
+                                                        @if($reg->team_id && !$reg->is_team_leader)
+                                                            <div class="alert alert-info text-center py-3 rounded-3 mt-3">
+                                                                <i class="bi bi-info-circle-fill me-1"></i> Hanya Ketua Tim yang dapat mengunggah submission.
+                                                            </div>
+                                                        @else
+                                                            <form action="{{ route('events.submit.second', $event) }}" method="POST" enctype="multipart/form-data" class="mt-3">
+                                                                @csrf
+                                                                <div class="mb-3">
+                                                                    <label for="submission_file_2" class="form-label fw-semibold text-dark">
+                                                                        {{ $reg->submission_path_2 ? 'Update Stage 2 Submission File:' : 'Upload Stage 2 Submission File:' }}
+                                                                    </label>
+                                                                    <input class="form-control" type="file" id="submission_file_2" name="submission_file_2" accept=".pdf" required>
+                                                                    <div class="form-text small">File format: PDF. Max file size: 10 MB.</div>
+                                                                    <div class="form-text small mt-1.5" style="color: #64748b;"><i class="bi bi-info-circle me-1"></i> Summarise your topic in up to 200 words including the background, main idea, and insight.</div>
+                                                                </div>
+                                                                <button type="submit" class="btn btn-success w-100 fw-bold py-2 rounded-3">
+                                                                    <i class="bi bi-cloud-upload-fill me-2"></i> {{ $reg->submission_path_2 ? 'Update Submission' : 'Submit Submission' }}
+                                                                </button>
+                                                            </form>
+                                                        @endif
+                                                    @endif
+                                                @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
             </div>
             
 </main>
@@ -3121,8 +3980,175 @@
                 });
             }
         })();
+
+        function initModalOtherFieldToggle(selectId, otherInputId) {
+            const selectEl = document.getElementById(selectId);
+            const otherInputEl = document.getElementById(otherInputId);
+            if (!selectEl || !otherInputEl) return;
+
+            const originalName = selectEl.getAttribute('name') || selectEl.getAttribute('data-original-name');
+            if (originalName && !selectEl.getAttribute('data-original-name')) {
+                selectEl.setAttribute('data-original-name', originalName);
+            }
+
+            function toggle() {
+                const isOther = selectEl.value === 'Other' || selectEl.value === 'other';
+                if (isOther) {
+                    otherInputEl.style.display = 'block';
+                    otherInputEl.setAttribute('name', selectEl.getAttribute('data-original-name') || 'info_source');
+                    selectEl.removeAttribute('name');
+                    otherInputEl.required = true;
+                } else {
+                    otherInputEl.style.display = 'none';
+                    otherInputEl.removeAttribute('name');
+                    selectEl.setAttribute('name', selectEl.getAttribute('data-original-name') || 'info_source');
+                    otherInputEl.required = false;
+                }
+            }
+
+            selectEl.addEventListener('change', toggle);
+            toggle();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initModalOtherFieldToggle('create_info_source', 'create_info_source_other');
+            initModalOtherFieldToggle('create_educational_background', 'create_educational_background_other');
+            initModalOtherFieldToggle('join_info_source', 'join_info_source_other');
+            initModalOtherFieldToggle('join_educational_background', 'join_educational_background_other');
+        });
         </script>
         
+    <!-- Create Team Modal -->
+    <div class="modal fade" id="createTeamModal" tabindex="-1" aria-labelledby="createTeamModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+            <div class="modal-content rounded-4 border-0 shadow-lg" style="font-family: 'Outfit', 'Inter', sans-serif; background-color: #ffffff;">
+                <div class="modal-header border-bottom-0 pb-0" style="background-color: #ffffff; color: #0f172a; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                    <h5 class="modal-title fw-bold" id="createTeamModalLabel" style="color: #0f172a;">🏆 Create New Team</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('events.create-team', $event) }}" method="POST">
+                    @csrf
+                    <div class="modal-body py-4" style="background-color: #ffffff; color: #0f172a;">
+                        <p class="small mb-4" style="color: #64748b !important;">
+                            Create a new team for this competition. As the team creator, you will automatically become the Team Leader who is responsible for completing the payment once the team is complete.
+                        </p>
+                        <div class="mb-3">
+                            <label for="create_team_name" class="form-label fw-semibold" style="color: #334155;">Team Name <span class="text-danger">*</span></label>
+                            <input type="text" name="team_name" id="create_team_name" class="form-control rounded-3 py-2" placeholder="Enter your team name..." required autocomplete="off" style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="create_full_name" class="form-label fw-semibold" style="color: #334155;">Full Name for Certificate <span class="text-danger">*</span></label>
+                            <input type="text" name="full_name" id="create_full_name" class="form-control rounded-3 py-2" value="{{ auth()->user()->name ?? '' }}" placeholder="Enter your full name for certificate..." required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="create_university_origin" class="form-label fw-semibold" style="color: #334155;">Institution/Organization <span class="text-danger">*</span></label>
+                            <input type="text" name="university_origin" id="create_university_origin" class="form-control rounded-3 py-2" value="{{ auth()->user()->institution ?? '' }}" placeholder="Enter your institution or organization..." required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="create_whatsapp_number" class="form-label fw-semibold" style="color: #334155;">WhatsApp Number <span class="text-danger">*</span></label>
+                            <input type="text" name="whatsapp_number" id="create_whatsapp_number" class="form-control rounded-3 py-2" value="{{ auth()->user()->phone ?? '' }}" placeholder="Example: 6281234567890" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="create_institution_location" class="form-label fw-semibold" style="color: #334155;">Institution/Organization Location <span class="text-danger">*</span></label>
+                            <input type="text" name="institution_location" id="create_institution_location" class="form-control rounded-3 py-2" placeholder="Example: Bandung, Indonesia" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="create_info_source" class="form-label fw-semibold" style="color: #334155;">Where did you get the information about the competition? <span class="text-danger">*</span></label>
+                            <select name="info_source" id="create_info_source" class="form-select rounded-3 py-2" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                                <option value="" disabled selected>Select an option</option>
+                                <option value="Social media">Social media</option>
+                                <option value="Website">Website</option>
+                                <option value="lecturer">Lecturer</option>
+                                <option value="Friends">Friends</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <input type="text" id="create_info_source_other" class="form-control rounded-3 py-2 mt-2" placeholder="Specify other source..." style="display:none; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="create_educational_background" class="form-label fw-semibold" style="color: #334155;">What is your educational background? <span class="text-danger">*</span></label>
+                            <select name="educational_background" id="create_educational_background" class="form-select rounded-3 py-2" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                                <option value="" disabled selected>Select educational background</option>
+                                <option value="Bachelor's Degree">Bachelor's Degree</option>
+                                <option value="Diploma">Diploma</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="text" id="create_educational_background_other" class="form-control rounded-3 py-2 mt-2" placeholder="Specify other educational background..." style="display:none; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0" style="background-color: #ffffff; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                        <button type="button" class="btn btn-outline-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning rounded-3 px-4 fw-bold" style="background-color: #f59e0b; border-color: #f59e0b; color: #0f172a;">Create Team</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Team Modal -->
+    <div class="modal fade" id="joinTeamModal" tabindex="-1" aria-labelledby="joinTeamModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+            <div class="modal-content rounded-4 border-0 shadow-lg" style="font-family: 'Outfit', 'Inter', sans-serif; background-color: #ffffff;">
+                <div class="modal-header border-bottom-0 pb-0" style="background-color: #ffffff; color: #0f172a; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                    <h5 class="modal-title fw-bold" id="joinTeamModalLabel" style="color: #0f172a;">🤝 Join Existing Team</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('events.join-team', $event) }}" method="POST">
+                    @csrf
+                    <div class="modal-body py-4" style="background-color: #ffffff; color: #0f172a;">
+                        <p class="small mb-4" style="color: #64748b !important;">
+                            Enter the 6-character team code provided by your Team Leader to join their team.
+                        </p>
+                        <div class="mb-3">
+                            <label for="join_team_code" class="form-label fw-semibold" style="color: #334155;">Team Code <span class="text-danger">*</span></label>
+                            <input type="text" name="team_code" id="join_team_code" class="form-control rounded-3 py-2 text-uppercase text-center fw-bold" placeholder="Example: A7B2C9" required maxlength="6" minlength="6" autocomplete="off" style="letter-spacing: 2px; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="join_full_name" class="form-label fw-semibold" style="color: #334155;">Full Name for Certificate <span class="text-danger">*</span></label>
+                            <input type="text" name="full_name" id="join_full_name" class="form-control rounded-3 py-2" value="{{ auth()->user()->name ?? '' }}" placeholder="Enter your full name for certificate..." required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="join_university_origin" class="form-label fw-semibold" style="color: #334155;">Institution/Organization <span class="text-danger">*</span></label>
+                            <input type="text" name="university_origin" id="join_university_origin" class="form-control rounded-3 py-2" value="{{ auth()->user()->institution ?? '' }}" placeholder="Enter your institution or organization..." required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="join_whatsapp_number" class="form-label fw-semibold" style="color: #334155;">WhatsApp Number <span class="text-danger">*</span></label>
+                            <input type="text" name="whatsapp_number" id="join_whatsapp_number" class="form-control rounded-3 py-2" value="{{ auth()->user()->phone ?? '' }}" placeholder="Example: 6281234567890" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="join_institution_location" class="form-label fw-semibold" style="color: #334155;">Institution/Organization Location <span class="text-danger">*</span></label>
+                            <input type="text" name="institution_location" id="join_institution_location" class="form-control rounded-3 py-2" placeholder="Example: Bandung, Indonesia" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="join_info_source" class="form-label fw-semibold" style="color: #334155;">Where did you get the information about the competition? <span class="text-danger">*</span></label>
+                            <select name="info_source" id="join_info_source" class="form-select rounded-3 py-2" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                                <option value="" disabled selected>Select an option</option>
+                                <option value="Social media">Social media</option>
+                                <option value="Website">Website</option>
+                                <option value="lecturer">Lecturer</option>
+                                <option value="Friends">Friends</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <input type="text" id="join_info_source_other" class="form-control rounded-3 py-2 mt-2" placeholder="Specify other source..." style="display:none; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="join_educational_background" class="form-label fw-semibold" style="color: #334155;">What is your educational background? <span class="text-danger">*</span></label>
+                            <select name="educational_background" id="join_educational_background" class="form-select rounded-3 py-2" required style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                                <option value="" disabled selected>Select educational background</option>
+                                <option value="Bachelor's Degree">Bachelor's Degree</option>
+                                <option value="Diploma">Diploma</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="text" id="join_educational_background_other" class="form-control rounded-3 py-2 mt-2" placeholder="Specify other educational background..." style="display:none; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0" style="background-color: #ffffff; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                        <button type="button" class="btn btn-outline-secondary rounded-3 px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning rounded-3 px-4 fw-bold" style="background-color: #f59e0b; border-color: #f59e0b; color: #0f172a;">Join Team</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     </body>
 
 </html>

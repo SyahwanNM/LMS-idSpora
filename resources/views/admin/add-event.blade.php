@@ -23,7 +23,9 @@
             <h4 class="mb-0"><i class="bi bi-calendar3 me-2"></i>Manage Event</h4>
             <div class="btn-group">
                 <a href="{{ route('admin.dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Add Event</button>
+                @if(auth()->user()->role !== 'event_admin')
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal"><i class="bi bi-plus-lg"></i> Add Event</button>
+                @endif
             </div>
         </div>
 
@@ -99,6 +101,7 @@
                                 <th>Date</th>
                                 <th>Location</th>
                                 <th>Link</th>
+                                <th>Reseller</th>
                                 <th>Documents Completion</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -107,15 +110,28 @@
                             @foreach($events as $event)
                             @php $rowPct = $event->documents_completion_percent; @endphp
                             @php
-                                // Hitung rowPct konsisten dengan logika blade
+                                // Hitung rowPct konsisten dengan logika blade & jenis event
                                 $rowHasMaps = !empty($event->maps_url);
                                 $rowHasZoom = !empty($event->zoom_link);
-                                $rowRequiresVbg = !($rowHasMaps && !$rowHasZoom); // VBG wajib kecuali offline-only
-                                $rowTotal = $rowRequiresVbg ? 3 : 2;
-                                $rowDone  = ($rowRequiresVbg ? (!empty($event->vbg_path) ? 1 : 0) : 0)
-                                          + (!empty($event->module_path) ? 1 : 0)
-                                          + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token)) ? 1 : 0);
-                                $rowPct = $rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 0;
+                                $rowIsOfflineOnly = $rowHasMaps && !$rowHasZoom;
+                                $rowIsLomba = ($event->jenis === 'Lomba');
+
+                                if ($rowIsLomba) {
+                                    $rowRequiresVbg = !$rowIsOfflineOnly;
+                                    $rowTotal = $rowRequiresVbg ? 1 : 0;
+                                    $rowDone = ($rowRequiresVbg && !empty($event->vbg_path)) ? 1 : 0;
+                                    $rowPct = $rowIsOfflineOnly ? 100 : ($rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 100);
+                                } else {
+                                    $rowRequiresVbg = !$rowIsOfflineOnly; // VBG wajib kecuali offline-only
+                                    $rowTotal = $rowRequiresVbg ? 3 : 2;
+                                    $rowIsMultiDay = !empty($event->event_until_date)
+                                        && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                    $rowHasDailyAbs = $rowIsMultiDay && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
+                                    $rowDone  = ($rowRequiresVbg ? (!empty($event->vbg_path) ? 1 : 0) : 0)
+                                              + (!empty($event->module_path) ? 1 : 0)
+                                              + ((!empty($event->attendance_path) || !empty($event->attendance_qr_image) || !empty($event->attendance_qr_token) || $rowHasDailyAbs) ? 1 : 0);
+                                    $rowPct = $rowTotal > 0 ? ($rowDone >= $rowTotal ? 100 : (int) floor(($rowDone / $rowTotal) * 100)) : 0;
+                                }
                             @endphp
                             @php
                                 // Tentukan status event: upcoming, ongoing, finished berdasarkan tanggal mulai/selesai
@@ -173,39 +189,53 @@
                                         �
                                     @endif
                                 </td>
-                               
+                                <td>
+                                    @if((bool) ($event->is_reseller_event ?? false))
+                                        <span class="badge bg-success">Ya</span>
+                                    @else
+                                        <span class="badge bg-secondary">Tidak</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @php 
-                                        $hasMapsLink = !empty($event->maps_url);
-                                        $hasZoomLink = !empty($event->zoom_link);
-                                        $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-                                        $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
-                                        $hasVbg = !empty($event->vbg_path);
-                                        $eventTrainerModulesApproved = $event->approvedTrainerModules ?? collect();
-                                        $speakerCount  = isset($event->speakers) ? $event->speakers->count() : $event->speakers()->count();
-                                        $approvedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
-                                        if ($speakerCount > 0) {
-                                            $hasModule = $approvedCount >= $speakerCount;
-                                        } else {
-                                            $hasModule = $approvedCount > 0 || !empty($event->module_path);
-                                        }
-                                        $hasAbsFile = !empty($event->attendance_path);
-                                        $hasAbsQrImg = !empty($event->attendance_qr_image);
-                                        $hasAbsQrToken = !empty($event->attendance_qr_token);
-                                        $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                        $totalDisplay = $requiresVbg ? 3 : 2;
-                                        $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                        $pct = $totalDisplay > 0
-                                            ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
-                                            : 0;
-                                        $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
-                                        $tooltip = $requiresVbg
-                                            ? 'Virtual Background: '.($hasVbg ? '?' : '?').', Module (Trainer): '.($hasModule ? '?' : '?').', Absensi (QR/File): '.($hasAbs ? '?' : '?')
-                                            : 'Module (Trainer): '.($hasModule ? '?' : '?').', Absensi (QR/File): '.($hasAbs ? '?' : '?');
-                                        $missing = [];
-                                        if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
-                                        if (!$hasModule) $missing[] = 'Module (Trainer)';
-                                        if (!$hasAbs) $missing[] = 'Absensi';
+                                         $hasMapsLink = !empty($event->maps_url);
+                                         $hasZoomLink = !empty($event->zoom_link);
+                                         $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                                         $isLomba = ($event->jenis === 'Lomba');
+
+                                         $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
+                                         $hasVbg = !empty($event->vbg_path);
+                                         $hasModule = $event->has_approved_modules;
+                                         $hasAbsFile = !empty($event->attendance_path);
+                                         $hasAbsQrImg = !empty($event->attendance_qr_image);
+                                         $hasAbsQrToken = !empty($event->attendance_qr_token);
+                                         $isMultiDayEvent = !empty($event->event_until_date)
+                                             && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                         $hasDailyAbs = $isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
+                                         $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken || $hasDailyAbs;
+
+                                         if ($isLomba) {
+                                             $totalDisplay = $isOfflineOnly ? 0 : 1;
+                                             $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0));
+                                             $pct = $isOfflineOnly ? 100 : ($hasVbg ? 100 : 0);
+                                             $tooltip = $isOfflineOnly ? 'Lomba Offline: No document required' : 'Virtual Background: ' . ($hasVbg ? '✓' : '✗');
+                                             $missing = [];
+                                             if (!$isOfflineOnly && !$hasVbg) $missing[] = 'Virtual Background';
+                                         } else {
+                                             $totalDisplay = $requiresVbg ? 3 : 2;
+                                             $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                             $pct = $totalDisplay > 0
+                                                 ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                                 : 0;
+                                             $tooltip = $requiresVbg
+                                                 ? 'Virtual Background: '.($hasVbg ? '✓' : '✗').', Module (Trainer): '.($hasModule ? '✓' : '✗').', Absensi (QR/File): '.($hasAbs ? '✓' : '✗')
+                                                 : 'Module (Trainer): '.($hasModule ? '✓' : '✗').', Absensi (QR/File): '.($hasAbs ? '✓' : '✗');
+                                             $missing = [];
+                                             if ($requiresVbg && !$hasVbg) $missing[] = 'Virtual Background';
+                                             if (!$hasModule) $missing[] = 'Module (Trainer)';
+                                             if (!$hasAbs) $missing[] = 'Absensi';
+                                         }
+                                         $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                     @endphp
                                     <div class="d-flex align-items-center flex-wrap gap-2">
                                         <span class="{{ $pctClass }}" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ $tooltip }}">{{ $pct }}%</span>
@@ -237,23 +267,25 @@
                                         <a href="{{ route('admin.events.show',$event) }}" class="btn btn-outline-info btn-action-icon" data-bs-toggle="tooltip" data-bs-placement="bottom" title="View Event">
                                             <i class="bi bi-eye"></i><span class="visually-hidden">Lihat</span>
                                         </a>
-                                        <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit">
-                                            <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-secondary btn-action-icon duplicate-event-btn"
-                                            data-id="{{ $event->id }}"
-                                            data-title="{{ $event->title }}"
-                                            data-bs-toggle="tooltip" data-bs-placement="bottom" title="Duplicate">
-                                            <i class="bi bi-copy"></i><span class="visually-hidden">Duplicate</span>
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger btn-action-icon"
-                                            data-bs-toggle="modal" data-bs-target="#deleteEventModal"
-                                            title="Delete"
-                                            data-url="{{ route('admin.events.destroy',$event) }}"
-                                            data-title="{{ $event->title }}"
-                                            data-image="{{ $event->image_url ?? '' }}">
-                                            <i class="bi bi-trash"></i><span class="visually-hidden">Delete</span>
-                                        </button>
+                                        @if(auth()->user()->role !== 'event_admin')
+                                            <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-outline-warning btn-action-icon edit-event-btn" data-edit-url="{{ route('admin.events.edit',$event) }}" data-id="{{ $event->id }}" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Edit">
+                                                <i class="bi bi-pencil-square"></i><span class="visually-hidden">Edit</span>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-secondary btn-action-icon duplicate-event-btn"
+                                                data-id="{{ $event->id }}"
+                                                data-title="{{ $event->title }}"
+                                                data-bs-toggle="tooltip" data-bs-placement="bottom" title="Duplicate">
+                                                <i class="bi bi-copy"></i><span class="visually-hidden">Duplicate</span>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-action-icon"
+                                                data-bs-toggle="modal" data-bs-target="#deleteEventModal"
+                                                title="Delete"
+                                                data-url="{{ route('admin.events.destroy',$event) }}"
+                                                data-title="{{ $event->title }}"
+                                                data-image="{{ $event->image_url ?? '' }}">
+                                                <i class="bi bi-trash"></i><span class="visually-hidden">Delete</span>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -562,26 +594,34 @@
                                     $hasMapsLink = !empty($event->maps_url);
                                     $hasZoomLink = !empty($event->zoom_link);
                                     $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
-                                    $requiresVbg   = !$isOfflineOnly; // VBG wajib untuk online & hybrid
+                                    $requiresVbg   = !$isOfflineOnly;
                                     $hasVbg = !empty($event->vbg_path);
-                                    $eventTrainerModulesApproved = $event->approvedTrainerModules()->with('trainer')->get();
-                                    // Module complete only when ALL registered speakers have an approved module
-                                    $modalSpeakerCount  = $event->speakers()->count();
-                                    $modalApprovedCount = $eventTrainerModulesApproved->pluck('trainer_id')->unique()->count();
-                                    if ($modalSpeakerCount > 0) {
-                                        $hasModule = $modalApprovedCount >= $modalSpeakerCount;
-                                    } else {
-                                        $hasModule = $modalApprovedCount > 0 || !empty($event->module_path);
-                                    }
+                                    // Query langsung dengan event_id eksplisit — tidak pakai relasi cached
+                                    $eventTrainerModulesApproved = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                                        ->where('status', 'approved')
+                                        ->with('trainer:id,name')
+                                        ->get();
+                                    $hasModule = $eventTrainerModulesApproved->isNotEmpty();
                                     $hasAbsFile = !empty($event->attendance_path);
                                     $hasAbsQrImg = !empty($event->attendance_qr_image);
                                     $hasAbsQrToken = !empty($event->attendance_qr_token);
-                                    $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken;
-                                    $totalDisplay = $requiresVbg ? 3 : 2;
-                                    $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
-                                    $pct = $totalDisplay > 0
-                                        ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
-                                        : 0;
+                                    $isMultiDayEvent = !empty($event->event_until_date)
+                                        && \Carbon\Carbon::parse($event->event_until_date)->gt(\Carbon\Carbon::parse($event->event_date));
+                                    $hasDailyAbs = $isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists();
+                                    $hasAbs = $hasAbsFile || $hasAbsQrImg || $hasAbsQrToken || $hasDailyAbs;
+
+                                    $isLomba = ($event->jenis === 'Lomba');
+                                    if ($isLomba) {
+                                        $totalDisplay = $isOfflineOnly ? 0 : 1;
+                                        $completedDisplay = ($isOfflineOnly ? 0 : ($hasVbg ? 1 : 0));
+                                        $pct = $isOfflineOnly ? 100 : ($hasVbg ? 100 : 0);
+                                    } else {
+                                        $totalDisplay = $requiresVbg ? 3 : 2;
+                                        $completedDisplay = ($requiresVbg ? ($hasVbg ? 1 : 0) : 0) + ($hasModule ? 1 : 0) + ($hasAbs ? 1 : 0);
+                                        $pct = $totalDisplay > 0
+                                            ? ($completedDisplay >= $totalDisplay ? 100 : (int) floor(($completedDisplay / $totalDisplay) * 100))
+                                            : 0;
+                                    }
                                     $pctClass = $pct === 100 ? 'doc-pct chip-success' : 'doc-pct chip-incomplete';
                                 @endphp
                                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -608,51 +648,88 @@
                                             </span>
                                         </li>
                                     @endif
-                                    <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
-                                        <span style="flex-shrink:0; color:{{ $hasModule ? '#198754' : '#dc3545' }}; font-weight:500;">Module (Trainer)</span>
-                                        <span style="margin-left:auto; flex-shrink:0;" class="d-flex flex-column align-items-end gap-1">
-                                            @if($eventTrainerModulesApproved->isNotEmpty())
-                                                @foreach($eventTrainerModulesApproved as $etm)
-                                                    <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($etm->path) }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
-                                                        <i class="bi bi-file-earmark-arrow-down me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
-                                                        @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
-                                                    </a>
-                                                @endforeach
-                                            @elseif($hasModule)
-                                                <a href="{{ $event->module_file_url }}" target="_blank" class="link-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Unduh</a>
-                                            @else
-                                                <span class="text-muted">Not available</span>
-                                            @endif
-                                        </span>
-                                    </li>
-                                    <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
-                                        <span style="flex-shrink:0; color:{{ $hasAbs ? '#198754' : '#dc3545' }}; font-weight:500;">Absensi</span>
-                                        <span style="margin-left:auto; flex-shrink:0;">
-                                            @if($hasAbs)
-                                                @if($hasAbsFile)
-                                                    @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
-                                                    @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
-                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank"><img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;"></a>
-                                                    @elseif($aExt === 'pdf')
-                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
-                                                    @else
-                                                        <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
-                                                    @endif
-                                                @elseif($hasAbsQrImg)
-                                                    <a href="{{ $event->attendance_qr_image_url }}" target="_blank"><img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;"></a>
+                                    @if(!$isLomba)
+                                        <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
+                                            <span style="flex-shrink:0; color:{{ $hasModule ? '#198754' : '#dc3545' }}; font-weight:500;">Module (Trainer)</span>
+                                            <span style="margin-left:auto; flex-shrink:0;" class="d-flex flex-column align-items-end gap-1">
+                                                @if($eventTrainerModulesApproved->isNotEmpty())
+                                                    @foreach($eventTrainerModulesApproved as $etm)
+                                                        @php
+                                                            $isLink = preg_match('#^https?://#i', $etm->path);
+                                                        @endphp
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <a href="{{ $etm->download_url }}" target="_blank" class="link-primary" style="font-size:0.82rem;">
+                                                                <i class="bi {{ $isLink ? 'bi-link-45deg' : 'bi-file-earmark-arrow-down' }} me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
+                                                                @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
+                                                            </a>
+                                                            @if(!empty($etm->survey_link ?: $etm->feedback_link))
+                                                                <a href="{{ $etm->survey_link ?: $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
+                                                                    <i class="bi bi-chat-left-text me-1"></i>Feedback
+                                                                </a>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
                                                 @else
-                                                    <span class="badge bg-success">Attendance QR Active</span>
+                                                    <span class="text-muted">Not available</span>
                                                 @endif
-                                            @else
-                                                <span class="text-muted">Not available</span>
-                                            @endif
-                                        </span>
-                                    </li>
+                                            </span>
+                                        </li>
+                                        <li class="list-group-item px-0" style="display:flex; align-items:center; gap:8px;">
+                                            <span style="flex-shrink:0; color:{{ $hasAbs ? '#198754' : '#dc3545' }}; font-weight:500;">Absensi</span>
+                                            <span style="margin-left:auto; flex-shrink:0;">
+                                                @if($hasAbs)
+                                                    @if($isMultiDayEvent && \App\Models\EventDailyQr::where('event_id', $event->id)->exists())
+                                                        @php
+                                                            $dailyQrs = \App\Models\EventDailyQr::where('event_id', $event->id)->orderBy('day_number')->get();
+                                                        @endphp
+                                                        <div class="d-flex gap-1 flex-wrap align-items-center justify-content-end" style="max-width:300px;">
+                                                            @foreach($dailyQrs as $dqr)
+                                                                @if($dqr->qr_image_url)
+                                                                    <a href="{{ $dqr->qr_image_url }}" target="_blank" class="position-relative d-inline-block text-decoration-none" title="Hari {{ $dqr->day_number }} ({{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }})">
+                                                                        <img src="{{ $dqr->qr_image_url }}" alt="QR Hari {{ $dqr->day_number }}" class="rounded border" style="width:36px;height:36px;object-fit:cover;">
+                                                                        <span class="position-absolute bottom-0 end-0 bg-dark text-white px-1" style="font-size:8px; border-radius:3px 0 3px 0; opacity:0.85;">H{{ $dqr->day_number }}</span>
+                                                                    </a>
+                                                                @else
+                                                                    <span class="badge bg-secondary" title="{{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }}">H{{ $dqr->day_number }}</span>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @elseif($hasAbsFile)
+                                                        @php $aExt = strtolower(pathinfo($event->attendance_path, PATHINFO_EXTENSION)); @endphp
+                                                        @if(in_array($aExt, ['jpg','jpeg','png','gif','webp','bmp','svg']))
+                                                            <a href="{{ Storage::url($event->attendance_path) }}" target="_blank"><img src="{{ Storage::url($event->attendance_path) }}" alt="Absensi" class="rounded border" style="width:56px;height:36px;object-fit:cover;"></a>
+                                                        @elseif($aExt === 'pdf')
+                                                            <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary"><i class="bi bi-filetype-pdf me-1"></i>PDF</a>
+                                                        @else
+                                                            <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
+                                                        @endif
+                                                    @elseif($hasAbsQrImg)
+                                                        <a href="{{ $event->attendance_qr_image_url }}" target="_blank"><img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;"></a>
+                                                    @else
+                                                        <span class="badge bg-success">Attendance QR Active</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">Not available</span>
+                                                @endif
+                                            </span>
+                                        </li>
+                                    @endif
+                                    @if($isLomba && $isOfflineOnly)
+                                        <li class="list-group-item px-0 text-muted">
+                                            <i class="bi bi-info-circle me-1"></i> Lomba Offline: No document required.
+                                        </li>
+                                    @endif
                                 </ul>
 
                                 <form action="{{ route('admin.events.documents.upload', $event) }}" method="post" enctype="multipart/form-data" id="docForm-{{ $event->id }}">
                                     @csrf
-                                    @php $adminDocsComplete = $isOfflineOnly ? ($hasAbs) : ($hasVbg && $hasAbs); @endphp
+                                    @php
+                                        if ($isLomba) {
+                                            $adminDocsComplete = $isOfflineOnly ? true : $hasVbg;
+                                        } else {
+                                            $adminDocsComplete = $isOfflineOnly ? ($hasAbs) : ($hasVbg && $hasAbs);
+                                        }
+                                    @endphp
                                     @if($adminDocsComplete)
                                       
                                         <div class="doc-edit-wrapper d-none" id="docEditWrapper-{{ $event->id }}">
@@ -754,7 +831,7 @@
                                     </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addSpeakerRow"><i class="bi bi-plus-circle me-1"></i>Tambah Nama Pembicara</button>
                                     <input type="hidden" name="speaker" id="speakerCombined" value="{{ old('speaker') }}">
-                                    <div class="form-text">Minimum 1 trainer. Additional speakers are optional.</div>
+                                    <div class="form-text" id="speakerHelpText">Minimum 1 trainer. Additional speakers are optional.</div>
                                 </div>
                                 </div>
                                 <div class="mb-3">
@@ -818,7 +895,7 @@
                                     <label for="jenis" class="form-label fw-semibold">Event type <span class="text-danger">*</span></label>
                                     <div class="position-relative">
                                         @php
-                                            $jenisDefaults = ['Webinar','Seminar','Workshop'];
+                                            $jenisDefaults = ['Webinar','Seminar','Workshop','Lomba'];
                                             $jenisFromDb = isset($jenisOptions) ? collect($jenisOptions)->map(fn($v) => trim((string)$v))->filter()->all() : [];
                                             $jenisMerged = collect(array_merge($jenisDefaults, $jenisFromDb))->map(fn($v) => trim((string)$v))->filter()->unique(fn($v) => mb_strtolower($v))->values()->all();
 
@@ -833,6 +910,64 @@
                                         </select>
                                     </div>
                                     <div class="form-text">Choose the event type.</div>
+                                </div>
+
+                                {{-- Competition settings block — shown only when event type is Lomba --}}
+                                <div id="lombaSettingsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('jenis') === 'Lomba' ? '' : 'display: none;' }}">
+                                    <h6 class="fw-bold mb-3 text-primary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏆 Pengaturan Kompetisi / Lomba</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-6 mb-2">
+                                            <label for="start_submission" class="form-label small fw-semibold mb-1">Mulai Pengiriman Submission <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="start_submission" id="start_submission" class="form-control form-control-sm" value="{{ old('start_submission') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="until_submission" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Awal <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="until_submission" id="until_submission" class="form-control form-control-sm" value="{{ old('until_submission') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="announcement_date" class="form-label small fw-semibold mb-1">Tanggal Pengumuman Kelolosan <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="announcement_date" id="announcement_date" class="form-control form-control-sm" value="{{ old('announcement_date') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="until_submission_2" class="form-label small fw-semibold mb-1">Batas Akhir Pengiriman Kedua/Lanjutan <span class="text-danger">*</span></label>
+                                            <input type="datetime-local" name="until_submission_2" id="until_submission_2" class="form-control form-control-sm" value="{{ old('until_submission_2') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="finalist_payment_start" class="form-label small fw-semibold mb-1">Mulai Registrasi Finalis</label>
+                                            <input type="datetime-local" name="finalist_payment_start" id="finalist_payment_start" class="form-control form-control-sm" value="{{ old('finalist_payment_start') }}">
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <label for="finalist_payment_end" class="form-label small fw-semibold mb-1">Batas Registrasi Finalis</label>
+                                            <input type="datetime-local" name="finalist_payment_end" id="finalist_payment_end" class="form-control form-control-sm" value="{{ old('finalist_payment_end') }}">
+                                        </div>
+                                         <div class="col-md-6 mb-2">
+                                             <label for="lomba_kategori" class="form-label small fw-semibold mb-1">Kategori Lomba <span class="text-danger">*</span></label>
+                                             <select name="lomba_kategori" id="lomba_kategori" class="form-select form-select-sm" required>
+                                                 <option value="individual" {{ old('lomba_kategori') === 'individual' ? 'selected' : '' }}>Individual</option>
+                                                 <option value="team" {{ old('lomba_kategori') === 'team' ? 'selected' : '' }}>Team</option>
+                                                 <option value="both" {{ old('lomba_kategori') === 'both' ? 'selected' : '' }}>Both (Individual & Team)</option>
+                                             </select>
+                                         </div>
+                                         <div class="col-md-6 mb-2" id="max_team_members_wrapper" style="{{ in_array(old('lomba_kategori'), ['team', 'both']) ? '' : 'display: none;' }}">
+                                             <label for="max_team_members" class="form-label small fw-semibold mb-1">Maksimal Anggota Tim <span class="text-danger">*</span></label>
+                                             <input type="text" name="max_team_members" id="max_team_members" class="form-control form-control-sm" placeholder="Contoh: 2-5, 2-3 atau 5" value="{{ old('max_team_members', 5) }}">
+                                         </div>
+                                        <div class="col-12 mb-2">
+                                            <hr class="my-1">
+                                            <label for="price_stage2_display" class="form-label small fw-semibold mb-1">
+                                                💰 Biaya Pembayaran Tahap 2 (Rp)
+                                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;">Opsional</span>
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">Rp</span>
+                                                <input type="text" id="price_stage2_display" class="form-control" placeholder="0"
+                                                    value="{{ number_format((int)old('price_stage2', 0), 0, ',', '.') }}">
+                                                <input type="hidden" name="price_stage2" id="price_stage2" value="{{ (int)old('price_stage2', 0) }}">
+                                            </div>
+                                            <div class="form-text text-muted">Isi 0 atau kosongkan jika gratis. Peserta yang lolos Tahap 1 wajib membayar ini sebelum bisa upload Submission Tahap 2.</div>
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-muted mt-1 small">Wajib diatur jika jenis event adalah Lomba. Peserta yang lolos pengumuman awal dapat mengunggah submission kedua.</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="short_desc" class="form-label fw-semibold">Short Description <span class="text-danger">*</span></label>
@@ -918,6 +1053,40 @@
                                     <small class="text-muted mt-1 d-block" id="price-single-hint">Use only numbers. Automatically formatted.</small>
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label fw-semibold">Metode Pembayaran</label>
+                                    <div class="d-flex gap-3 align-items-center mb-2">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="accept_online_payment" id="accept_online_payment" value="1" {{ old('accept_online_payment', 1) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-medium text-dark" for="accept_online_payment">💳 Online Payment</label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="accept_manual_transfer" id="accept_manual_transfer" value="1" {{ old('accept_manual_transfer', 1) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-medium text-dark" for="accept_manual_transfer">🏦 Transfer Manual</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-muted">Pilih metode pembayaran yang diperbolehkan untuk event ini.</div>
+                                </div>
+
+                                {{-- Bank details container — shown only when accept_manual_transfer is checked --}}
+                                <div id="bankDetailsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('accept_manual_transfer', 1) ? '' : 'display: none;' }}">
+                                    <h6 class="fw-bold mb-3 text-secondary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏦 Informasi Rekening Transfer</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <label for="bank_name" class="form-label small fw-semibold mb-1">Nama Bank <span class="text-danger">*</span></label>
+                                            <input type="text" name="bank_name" id="bank_name" class="form-control form-control-sm" value="{{ old('bank_name') }}" placeholder="Contoh: Bank BCA">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="bank_account_number" class="form-label small fw-semibold mb-1">Nomor Rekening <span class="text-danger">*</span></label>
+                                            <input type="text" name="bank_account_number" id="bank_account_number" class="form-control form-control-sm" value="{{ old('bank_account_number') }}" placeholder="Contoh: 12345678">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="bank_account_holder" class="form-label small fw-semibold mb-1">Nama Pemilik Rekening <span class="text-danger">*</span></label>
+                                            <input type="text" name="bank_account_holder" id="bank_account_holder" class="form-control form-control-sm" value="{{ old('bank_account_holder') }}" placeholder="Contoh: Faishal">
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-muted mt-1 small">Wajib diisi jika Transfer Manual diaktifkan. Informasi ini akan ditampilkan di halaman pembayaran peserta.</div>
+                                </div>
+                                <div class="mb-3">
                                     <label for="diskon" class="form-label fw-semibold">Discount (%)</label>
                                     <input type="number" name="discount_percentage" id="diskon" class="form-control" min="0" max="100" step="1" value="{{ old('discount_percentage',0) }}" placeholder="0">
                                     <div class="form-text">Fill in 0 if there is no discount.</div>
@@ -977,17 +1146,46 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Schedule <span class="text-muted small">(Opsional)</span></label>
+                                    @php
+                                        $jenisVal = old('jenis', '');
+                                        $isLomba = strtolower(trim($jenisVal)) === 'lomba';
+                                        $inputType = $isLomba ? 'date' : 'time';
+                                        $placeholder = $isLomba ? 'YYYY-MM-DD' : '00:00';
+                                        $titlePlaceholder = $isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                                        $descStyle = $isLomba ? 'style="display: none;"' : '';
+                                        $existingSchedule = old('schedule', []);
+                                    @endphp
                                     <table class="table table-sm align-middle" id="scheduleTable">
                                         <thead class="table-light">
                                             <tr>
-                                                <th style="width:180px">Start Time</th>
-                                                <th style="width:180px">End Time</th>
-                                                <th>Activity</th>
-                                                <th>Description</th>
+                                                <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Dari' : 'Start Time' }}</th>
+                                                <th style="width:{{ $isLomba ? '200px' : '180px' }}">{{ $isLomba ? 'Tanggal Sampai' : 'End Time' }}</th>
+                                                <th>{{ $isLomba ? 'Nama Timeline' : 'Activity' }}</th>
+                                                <th {!! $descStyle !!}>Description</th>
                                                 <th style="width:80px" class="text-center">Action</th>
                                             </tr>
                                         </thead>
-                                        <tbody></tbody>
+                                        <tbody>
+                                            @if(is_array($existingSchedule) && count($existingSchedule))
+                                                @foreach($existingSchedule as $i => $row)
+                                                    <tr>
+                                                        <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][start]" placeholder="{{ $placeholder }}" value="{{ $row['start'] ?? '' }}"></td>
+                                                        <td><input type="{{ $inputType }}" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][end]" placeholder="{{ $placeholder }}" value="{{ $row['end'] ?? '' }}"></td>
+                                                        <td><input type="text" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][title]" placeholder="{{ $titlePlaceholder }}"
+                                                                value="{{ $row['title'] ?? '' }}"></td>
+                                                        <td {!! $descStyle !!}><input type="text" class="form-control form-control-sm"
+                                                                name="schedule[{{ $i }}][description]" placeholder="Deskripsi singkat"
+                                                                value="{{ $row['description'] ?? '' }}"></td>
+                                                        <td class="text-center"><button type="button"
+                                                                class="btn btn-outline-danger btn-sm" data-action="remove"
+                                                                title="Delete"><i class="bi bi-x"></i></button></td>
+                                                    </tr>
+                                                @endforeach
+                                            @endif
+                                        </tbody>
                                     </table>
                                     <button type="button" class="btn btn-outline-secondary btn-sm" id="addScheduleRow"><i class="bi bi-plus-circle me-1"></i>Add Row</button>
                                     <div class="form-text">Optional. Add a schedule/ agenda per session if needed.</div>
@@ -1064,7 +1262,100 @@
         </div>
 
         <script>
+        window.unformatNumber = window.unformatNumber || function(str){ return parseInt(String(str).replace(/\D/g,'')||'0',10); };
+        window.formatThousands = window.formatThousands || function(val){ return String(val).replace(/\B(?=(\d{3})+(?!\d))/g, "."); };
+        const unformatNumber = window.unformatNumber;
+        const formatThousands = window.formatThousands;
         document.addEventListener('DOMContentLoaded', function() {
+            // Payment method toggle logic
+            const acceptManualCheckbox = document.getElementById('accept_manual_transfer');
+            const bankDetailsContainer = document.getElementById('bankDetailsContainer');
+            const bankNameInput = document.getElementById('bank_name');
+            const bankAccNoInput = document.getElementById('bank_account_number');
+            const bankAccHolderInput = document.getElementById('bank_account_holder');
+
+            if (acceptManualCheckbox && bankDetailsContainer) {
+                const toggleBankDetails = () => {
+                    const checked = acceptManualCheckbox.checked;
+                    bankDetailsContainer.style.display = checked ? '' : 'none';
+                    if (bankNameInput) bankNameInput.required = checked;
+                    if (bankAccNoInput) bankAccNoInput.required = checked;
+                    if (bankAccHolderInput) bankAccHolderInput.required = checked;
+                };
+                acceptManualCheckbox.addEventListener('change', toggleBankDetails);
+                toggleBankDetails(); // run initially
+            }
+
+            // Lomba/Competition dynamic form logic
+            const jenisSelect = document.getElementById('jenis');
+            const boxTrainerEvent = document.querySelector('.box-trainer-event');
+            const lombaSettingsContainer = document.getElementById('lombaSettingsContainer');
+
+            const startSubmissionInput = document.getElementById('start_submission');
+            const untilSubmissionInput = document.getElementById('until_submission');
+            const announcementDateInput = document.getElementById('announcement_date');
+            const untilSubmission2Input = document.getElementById('until_submission_2');
+
+            if (jenisSelect) {
+                const toggleLombaFields = () => {
+                    const isLomba = jenisSelect.value === 'Lomba';
+                    
+                    if (lombaSettingsContainer) lombaSettingsContainer.style.display = isLomba ? '' : 'none';
+
+                    if (boxTrainerEvent) {
+                        boxTrainerEvent.style.display = isLomba ? 'none' : '';
+                        
+                        // Disable inputs so they are not validated/submitted when hidden
+                        const inputs = boxTrainerEvent.querySelectorAll('select, input');
+                        inputs.forEach(input => {
+                            input.disabled = isLomba;
+                        });
+
+                        const star = boxTrainerEvent.querySelector('label span.text-danger');
+                        if (star) star.style.display = isLomba ? 'none' : '';
+                        
+                        const helpText = boxTrainerEvent.querySelector('#speakerHelpText');
+                        if (helpText) {
+                            helpText.textContent = isLomba 
+                                ? 'Trainer/Speaker is optional. Add speaker is optional.' 
+                                : 'Minimum 1 trainer. Additional speakers are optional.';
+                        }
+                    }
+
+                    if (typeof updateSpeakerRowsState === 'function') updateSpeakerRowsState();
+                    if (typeof updateSubmitState === 'function') updateSubmitState();
+                    if (typeof syncScheduleTable === 'function') syncScheduleTable();
+
+                    if (startSubmissionInput) startSubmissionInput.required = isLomba;
+                    if (untilSubmissionInput) untilSubmissionInput.required = isLomba;
+                    if (announcementDateInput) announcementDateInput.required = isLomba;
+                    if (untilSubmission2Input) untilSubmission2Input.required = isLomba;
+                };
+
+                jenisSelect.addEventListener('change', toggleLombaFields);
+                toggleLombaFields(); // run initially
+            }
+
+            // Toggle max_team_members based on lomba_kategori
+            const lombaKategoriSelect = document.getElementById('lomba_kategori');
+            const maxTeamMembersWrapper = document.getElementById('max_team_members_wrapper');
+            const maxTeamMembersInput = document.getElementById('max_team_members');
+
+            if (lombaKategoriSelect) {
+                const toggleMaxTeamMembers = () => {
+                    const isTeam = ['team', 'both'].includes(lombaKategoriSelect.value);
+                    if (maxTeamMembersWrapper) {
+                        maxTeamMembersWrapper.style.display = isTeam ? '' : 'none';
+                    }
+                    if (maxTeamMembersInput) {
+                        maxTeamMembersInput.required = isTeam;
+                        maxTeamMembersInput.disabled = !isTeam;
+                    }
+                };
+                lombaKategoriSelect.addEventListener('change', toggleMaxTeamMembers);
+                toggleMaxTeamMembers(); // run initially
+            }
+
             var publishModalEl = document.getElementById('publishConfirmModal');
             var publishModal = (publishModalEl && window.bootstrap && typeof bootstrap.Modal === 'function') ? new bootstrap.Modal(publishModalEl) : null;
             var pendingPublishForm = null;
@@ -1689,6 +1980,9 @@
                     const data = await resp.json();
                     if(resp.ok && data.lat && data.lng){
                         showMap(parseFloat(data.lat), parseFloat(data.lng));
+                        if(data.place_name && placeNameInput){
+                            placeNameInput.value = data.place_name;
+                        }
                     }else{
                         alert(data.message || 'Coordinates not found from link.');
                     }
@@ -1792,9 +2086,9 @@
         // Reseller Event: radios submit as `is_reseller_event` directly; no JS sync required.
 
         // Speakers (dynamic) - sourced from Trainer API; first required, others optional
-        const speakersContainer = document.getElementById('speakersContainer');
-        const addSpeakerBtn = document.getElementById('addSpeakerRow');
-        const speakerCombined = document.getElementById('speakerCombined');
+        const speakersContainer = document.querySelector('#addEventModal #speakersContainer');
+        const addSpeakerBtn = document.querySelector('#addEventModal #addSpeakerRow');
+        const speakerCombined = document.querySelector('#addEventModal #speakerCombined');
         const trainersUrl = @json(route('admin.api.trainers'));
         let trainersCache = null;
 
@@ -1814,10 +2108,12 @@
         function updateSpeakerRowsState(){
             if(!speakersContainer) return;
             const rows = speakersContainer.querySelectorAll('.speaker-row');
+            const jenisSelect = document.querySelector('#addEventModal #jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
             rows.forEach((row, idx) => {
                 const sel = row.querySelector('select[name="speakers[]"]');
                 const rm  = row.querySelector('.remove-speaker');
-                if(sel){ sel.required = (idx === 0); }
+                if(sel){ sel.required = (idx === 0 && !isLomba); }
                 if(rm){ rm.disabled = (rows.length <= 1); }
             });
         }
@@ -2038,6 +2334,25 @@
                 sync();            });
         })();
 
+        // price_stage2 currency formatting (add form)
+        (function initStage2PriceInput() {
+            const disp = document.getElementById('price_stage2_display');
+            const hidn = document.getElementById('price_stage2');
+            if (!disp || !hidn) return;
+            const sync = function() {
+                const raw = unformatNumber(disp.value);
+                disp.value = formatThousands(raw);
+                hidn.value = raw;
+            };
+            disp.addEventListener('keydown', function(e) {
+                const allowed = ['Backspace','Tab','ArrowLeft','ArrowRight','Delete','Home','End'];
+                if (allowed.includes(e.key)) return;
+                if (!/\d/.test(e.key)) e.preventDefault();
+            });
+            disp.addEventListener('input', sync);
+            sync();
+        })();
+
         // Enable/disable discount_until based on diskon value
         const diskonInput = document.getElementById('diskon');
         const discountUntilInput = document.getElementById('discount_until');
@@ -2119,14 +2434,70 @@
         // Dynamic Schedule rows
         const scheduleTableBody = document.querySelector('#scheduleTable tbody');
         const addScheduleBtn = document.getElementById('addScheduleRow');
-        let scheduleIndex = 0;
+        let scheduleIndex = scheduleTableBody ? scheduleTableBody.querySelectorAll('tr').length : 0;
+
+        function syncScheduleTable() {
+            const jenisSelect = document.getElementById('jenis');
+            if (!jenisSelect) return;
+            const isLomba = jenisSelect.value === 'Lomba';
+            const table = document.getElementById('scheduleTable');
+            if (!table) return;
+
+            const ths = table.querySelectorAll('thead th');
+            if (ths.length >= 4) {
+                ths[0].textContent = isLomba ? 'Tanggal Dari' : 'Start Time';
+                ths[0].style.width = isLomba ? '200px' : '180px';
+                ths[1].textContent = isLomba ? 'Tanggal Sampai' : 'End Time';
+                ths[1].style.width = isLomba ? '200px' : '180px';
+                ths[2].textContent = isLomba ? 'Nama Timeline' : 'Activity';
+                ths[3].style.display = isLomba ? 'none' : '';
+            }
+
+            const trs = table.querySelectorAll('tbody tr');
+            trs.forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                if (tds.length >= 4) {
+                    const startInput = tds[0].querySelector('input');
+                    const endInput = tds[1].querySelector('input');
+                    const titleInput = tds[2].querySelector('input');
+                    const descTd = tds[3];
+
+                    if (startInput) {
+                        const currentType = isLomba ? 'date' : 'time';
+                        if (startInput.type !== currentType) {
+                            startInput.type = currentType;
+                            startInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                        }
+                    }
+                    if (endInput) {
+                        const currentType = isLomba ? 'date' : 'time';
+                        if (endInput.type !== currentType) {
+                            endInput.type = currentType;
+                            endInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                        }
+                    }
+                    if (titleInput) {
+                        titleInput.placeholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                    }
+                    descTd.style.display = isLomba ? 'none' : '';
+                }
+            });
+        }
+
         function createScheduleRow(idx) {
+            const jenisSelect = document.getElementById('jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+            const inputType = isLomba ? 'date' : 'time';
+            const placeholderStartEnd = isLomba ? 'YYYY-MM-DD' : '00:00';
+            const titlePlaceholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+            const descStyle = isLomba ? 'style="display: none;"' : '';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="00:00" /></td>
-                <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="00:00" /></td>
-                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan" /></td>
-                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
+                <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="${placeholderStartEnd}" /></td>
+                <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="${placeholderStartEnd}" /></td>
+                <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="${titlePlaceholder}" /></td>
+                <td ${descStyle}><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat" /></td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Delete">
                         <i class="bi bi-x"></i>
@@ -2137,13 +2508,17 @@
         function addScheduleRow() {
             const row = createScheduleRow(scheduleIndex++);
             scheduleTableBody.appendChild(row);
-            // Initialize timepicker for new row
-            if (typeof initTimePicker === 'function') {
+            const jenisSelect = document.getElementById('jenis');
+            const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+            if (!isLomba && typeof initTimePicker === 'function') {
                 initTimePicker(row.querySelectorAll('.js-timepicker'));
             }
         }
         if (addScheduleBtn && scheduleTableBody) {
-            addScheduleBtn.addEventListener('click', addScheduleRow);
+            addScheduleBtn.addEventListener('click', () => {
+                addScheduleRow();
+                syncScheduleTable();
+            });
             scheduleTableBody.addEventListener('click', (e) => {
                 const btn = e.target.closest('button[data-action="remove"]');
                 if (btn) {
@@ -2151,8 +2526,19 @@
                     tr.remove();
                 }
             });
-            // Initial one row
-            addScheduleRow();
+
+            // Sync schedule table initially and listen for event type changes
+            const jenisSelect = document.getElementById('jenis');
+            if (jenisSelect) {
+                jenisSelect.addEventListener('change', syncScheduleTable);
+            }
+            window.syncScheduleTable = syncScheduleTable;
+
+            // Initial one row if empty
+            if (scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0) {
+                addScheduleRow();
+            }
+            syncScheduleTable();
         }
 
         // Expenses (Expenses) dynamic rows and totals
@@ -2260,7 +2646,7 @@
             function getFieldBlock(el){
                 if(!el) return null;
                 if((el.name || '') === 'speakers[]'){
-                    const container = document.getElementById('speakersContainer');
+                    const container = document.querySelector('#addEventModal #speakersContainer');
                     return container?.closest('.mb-3') || el.closest('.mb-3') || el.parentElement;
                 }
                 return el.closest('.mb-3') || el.closest('.input-group') || el.parentElement;
@@ -2321,11 +2707,18 @@
                     benefitHidden.value = items.join(' | ');
                 }
                 // Ensure hidden price numeric sync before submit
-                if(hargaDisplay && hargaHidden){
-                    hargaHidden.value = unformatNumber(hargaDisplay.value);
+                const hargaDisplayEl = document.getElementById('hargaDisplay');
+                const hargaHiddenEl = document.getElementById('harga');
+                if(hargaDisplayEl && hargaHiddenEl){
+                    hargaHiddenEl.value = unformatNumber(hargaDisplayEl.value);
+                }
+                const pStage2Disp = document.getElementById('price_stage2_display');
+                const pStage2Hidn = document.getElementById('price_stage2');
+                if(pStage2Disp && pStage2Hidn){
+                    pStage2Hidn.value = unformatNumber(pStage2Disp.value);
                 }
                 let ok = true;
-                form.querySelectorAll('[required]').forEach(f => {
+                getRequiredFields().forEach(f => {
                     if (!String(f.value || '').trim()) {
                         f.classList.add('border-danger');
                         ok = false;
@@ -2368,6 +2761,8 @@
             const isElementVisible = (el) => {
                 if (!el) return false;
                 if (el.closest('.d-none')) return false;
+                // Treat description and terms as visible conceptually even if ClassicEditor hides them
+                if (el.id === 'deskripsi' || el.id === 'terms') return true;
                 // More reliable than offsetParent (offsetParent can be null for some positioned elements)
                 return !!(el.getClientRects && el.getClientRects().length);
             };
@@ -2437,7 +2832,7 @@
                 if(submitHint){
                     if(!filled){
                         const missingNames = missingRequired().map(fieldFriendlyName);
-                        submitHint.textContent = 'Lengkapi: ' + missingnames.join('|') + '.';
+                        submitHint.textContent = 'Lengkapi: ' + missingNames.join('|') + '.';
                         submitHint.style.display = 'block';
                     } else if(overLimit){
                         submitHint.textContent = 'Penjelasan singkat maksimal 40 kata (saat ini ' + sdWords + ' kata).';
@@ -2669,6 +3064,8 @@
             }, true);
 
             document.addEventListener('DOMContentLoaded', function() {
+                window.unformatNumber = function(str){ return parseInt(String(str).replace(/\D/g,'')||'0',10); };
+                window.formatThousands = function(val){ return String(val).replace(/\B(?=(\d{3})+(?!\d))/g, "."); };
                 const ta = document.querySelector('textarea#short_desc, textarea[name="short_description"]');
                 if (ta) updateCounter(ta);
             });
@@ -3118,13 +3515,68 @@ function initEditEventDynamicTables(modalEl){
     const addScheduleBtn = modalEl.querySelector('#addScheduleRow');
     let scheduleIndex = scheduleTableBody ? scheduleTableBody.querySelectorAll('tr').length : 0;
 
+    function syncScheduleTable() {
+        const jenisSelect = modalEl.querySelector('#jenis') || modalEl.querySelector('[name="jenis"]');
+        if (!jenisSelect) return;
+        const isLomba = jenisSelect.value === 'Lomba';
+        const table = modalEl.querySelector('#scheduleTable');
+        if (!table) return;
+
+        const ths = table.querySelectorAll('thead th');
+        if (ths.length >= 4) {
+            ths[0].textContent = isLomba ? 'Tanggal Dari' : 'Start Time';
+            ths[0].style.width = isLomba ? '200px' : '180px';
+            ths[1].textContent = isLomba ? 'Tanggal Sampai' : 'End Time';
+            ths[1].style.width = isLomba ? '200px' : '180px';
+            ths[2].textContent = isLomba ? 'Nama Timeline' : 'Activity';
+            ths[3].style.display = isLomba ? 'none' : '';
+        }
+
+        const trs = table.querySelectorAll('tbody tr');
+        trs.forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            if (tds.length >= 4) {
+                const startInput = tds[0].querySelector('input');
+                const endInput = tds[1].querySelector('input');
+                const titleInput = tds[2].querySelector('input');
+                const descTd = tds[3];
+
+                if (startInput) {
+                    const currentType = isLomba ? 'date' : 'time';
+                    if (startInput.type !== currentType) {
+                        startInput.type = currentType;
+                        startInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                    }
+                }
+                if (endInput) {
+                    const currentType = isLomba ? 'date' : 'time';
+                    if (endInput.type !== currentType) {
+                        endInput.type = currentType;
+                        endInput.placeholder = isLomba ? 'YYYY-MM-DD' : '00:00';
+                    }
+                }
+                if (titleInput) {
+                    titleInput.placeholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+                }
+                descTd.style.display = isLomba ? 'none' : '';
+            }
+        });
+    }
+
     function createScheduleRow(idx){
+        const jenisSelect = modalEl.querySelector('#jenis') || modalEl.querySelector('[name="jenis"]');
+        const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
+        const inputType = isLomba ? 'date' : 'time';
+        const placeholderStartEnd = isLomba ? 'YYYY-MM-DD' : '00:00';
+        const titlePlaceholder = isLomba ? 'Nama timeline' : 'Nama kegiatan';
+        const descStyle = isLomba ? 'style="display: none;"' : '';
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][start]"></td>
-            <td><input type="time" class="form-control form-control-sm" name="schedule[${idx}][end]"></td>
-            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="Nama kegiatan"></td>
-            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td>
+            <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][start]" placeholder="${placeholderStartEnd}"></td>
+            <td><input type="${inputType}" class="form-control form-control-sm" name="schedule[${idx}][end]" placeholder="${placeholderStartEnd}"></td>
+            <td><input type="text" class="form-control form-control-sm" name="schedule[${idx}][title]" placeholder="${titlePlaceholder}"></td>
+            <td ${descStyle}><input type="text" class="form-control form-control-sm" name="schedule[${idx}][description]" placeholder="Deskripsi singkat"></td>
             <td class="text-center">
                 <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove" title="Delete">
                     <i class="bi bi-x"></i>
@@ -3141,6 +3593,7 @@ function initEditEventDynamicTables(modalEl){
     addScheduleBtn?.addEventListener('click', function(e){
         e.preventDefault();
         addScheduleRow();
+        syncScheduleTable();
     });
 
     scheduleTableBody?.addEventListener('click', function(e){
@@ -3150,8 +3603,17 @@ function initEditEventDynamicTables(modalEl){
         }
     });
 
+    const jenisSelect = modalEl.querySelector('#jenis') || modalEl.querySelector('[name="jenis"]');
+    if (jenisSelect) {
+        jenisSelect.addEventListener('change', syncScheduleTable);
+    }
+
+    // Run sync initially
+    syncScheduleTable();
+
     if(scheduleTableBody && scheduleTableBody.querySelectorAll('tr').length === 0){
         addScheduleRow();
+        syncScheduleTable();
     }
 
     const expensesTableBody = modalEl.querySelector('#expensesTable tbody');
@@ -3287,10 +3749,12 @@ function initEditEventSpeakers(modalEl){
     function updateSpeakerRowsState() {
         if (!speakersContainer) return;
         const rows = speakersContainer.querySelectorAll('.speaker-row');
+        const jenisSelect = modalEl.querySelector('#jenis');
+        const isLomba = jenisSelect ? jenisSelect.value === 'Lomba' : false;
         rows.forEach((row, idx) => {
             const sel = row.querySelector('select[name="speakers[]"]');
             const rm = row.querySelector('.remove-speaker');
-            if (sel) sel.required = (idx === 0);
+            if (sel) sel.required = (idx === 0 && !isLomba);
             if (rm) rm.disabled = (rows.length <= 1);
         });
     }

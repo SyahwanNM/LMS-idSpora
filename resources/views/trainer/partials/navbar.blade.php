@@ -1,4 +1,4 @@
-﻿<style>
+<style>
 /* Trainer Navbar */
 .trainer-navbar {
     position: fixed;
@@ -127,120 +127,198 @@
 
 .trainer-notification-dropdown {
     position: absolute;
-    top: calc(100% + 10px);
+    top: calc(100% + 15px);
     right: 0;
-    width: 320px;
+    width: 380px;
     background: #ffffff;
-    border: 1px solid var(--line-clr);
-    border-radius: 10px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     overflow: hidden;
-    display: none;
     z-index: 1100;
+    
+    /* Smooth CSS slide-down animation */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: block !important;
 }
 
 .trainer-notification-dropdown.show {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.trainer-notification-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 14px;
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-left: 1px solid #f1f5f9;
+    border-top: 1px solid #f1f5f9;
+    transform: rotate(45deg);
+    border-radius: 2px;
+    z-index: -1;
 }
 
 .trainer-notification-header {
-    padding: 10px 12px;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--line-clr);
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--main-navy-clr);
+    border-bottom: 1px solid #f1f5f9;
+    background: #fdfcff;
+}
+
+.trainer-notification-header span {
+    font-size: 14px;
+    font-weight: 800;
+    color: #2e2050;
+    letter-spacing: -0.2px;
 }
 
 .mark-read-btn {
     border: none;
     background: transparent;
-    color: var(--main-navy-clr);
-    font-size: 11px;
-    font-weight: 600;
+    color: #6366f1;
+    font-size: 12px;
+    font-weight: 700;
     cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 0;
+}
+
+.mark-read-btn:hover {
+    color: #4f46e5;
+    text-decoration: underline;
 }
 
 .trainer-notification-list {
-    max-height: 320px;
+    max-height: 380px;
     overflow-y: auto;
 }
 
+/* Custom scrollbar for premium feel */
+.trainer-notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+.trainer-notification-list::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+.trainer-notification-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+.trainer-notification-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
 .trainer-notification-item {
-    padding: 10px 12px;
+    padding: 18px 20px;
     border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s ease;
+    position: relative;
+}
+
+.trainer-notification-item:hover {
+    background-color: #f8fafc;
 }
 
 .trainer-notification-item.is-unread {
-    background: #eef2ff;
+    background: #fcfbfe;
+}
+
+.trainer-notification-item.is-unread::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background-color: #6366f1;
 }
 
 .trainer-notification-item:last-child {
     border-bottom: none;
 }
 
-.trainer-notification-title {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 700;
-    color: #0f172a;
-}
-
 .trainer-notification-top {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 8px;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.trainer-notification-title {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.4;
+    letter-spacing: -0.1px;
 }
 
 .trainer-notification-pill {
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 9px;
+    font-weight: 800;
     text-transform: uppercase;
-    border-radius: 999px;
-    padding: 2px 8px;
+    border-radius: 20px;
+    padding: 3px 8px;
     flex-shrink: 0;
+    letter-spacing: 0.5px;
 }
 
 .trainer-notification-pill.accepted {
     background: #d1fae5;
-    color: #065f46;
+    color: #047857;
+    border: 1px solid #a7f3d0;
 }
 
 .trainer-notification-pill.rejected {
     background: #fee2e2;
-    color: #991b1b;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
 }
 
 .trainer-notification-message {
-    margin: 4px 0 0;
-    font-size: 12px;
+    margin: 0 0 8px 0;
+    font-size: 12.5px;
     color: #475569;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 .trainer-notification-deadline {
-    margin: 6px 0 0;
-    font-size: 11px;
-    font-weight: 600;
-    color: #475569;
+    margin: 8px 0 0 0;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .trainer-notification-deadline.is-overdue {
     color: #b91c1c;
+    background: #fee2e2;
 }
 
 .trainer-notification-time {
-    display: inline-block;
-    margin-top: 6px;
     font-size: 11px;
     color: #94a3b8;
+    font-weight: 500;
 }
 
 .trainer-notification-bottom {
-    margin-top: 6px;
+    margin-top: 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -248,20 +326,22 @@
 }
 
 .trainer-notification-link {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
-    color: var(--main-navy-clr);
+    color: #6366f1;
     text-decoration: none;
+    transition: color 0.2s ease;
 }
 
 .trainer-notification-link:hover {
-    color: #4338ca;
+    color: #4f46e5;
+    text-decoration: underline;
 }
 
 .trainer-notification-actions {
-    margin-top: 8px;
+    margin-top: 12px;
     display: flex;
-    gap: 6px;
+    gap: 8px;
 }
 
 .trainer-notification-actions form {
@@ -273,10 +353,15 @@
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     background: #fff;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 700;
-    padding: 6px 8px;
+    padding: 6px 10px;
     cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .trainer-notification-action:disabled {
@@ -286,29 +371,32 @@
 
 .trainer-notification-action.accept {
     border-color: #a7f3d0;
-    color: #065f46;
+    color: #047857;
     background: #ecfdf5;
 }
 
 .trainer-notification-action.accept:hover {
     background: #d1fae5;
+    transform: translateY(-1px);
 }
 
 .trainer-notification-action.reject {
     border-color: #fecaca;
-    color: #991b1b;
+    color: #b91c1c;
     background: #fef2f2;
 }
 
 .trainer-notification-action.reject:hover {
     background: #fee2e2;
+    transform: translateY(-1px);
 }
 
 .trainer-notification-empty {
-    padding: 16px 12px;
+    padding: 32px 20px;
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
     color: #94a3b8;
+    font-weight: 500;
 }
 
 /* Profile Dropdown */
@@ -718,8 +806,50 @@
         }
 
         const confirmationMessage = form.dataset.confirm;
-        if (confirmationMessage && !window.confirm(confirmationMessage)) {
+        if (confirmationMessage) {
             event.preventDefault();
+
+            if (typeof Swal !== 'undefined') {
+                const isRejection = /menolak|tolak/i.test(confirmationMessage);
+                Swal.fire({
+                    title: 'Konfirmasi',
+                    text: confirmationMessage,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: isRejection ? '#ef4444' : '#624388',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: isRejection ? 'Ya, Tolak' : 'Ya, Lanjutkan',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const submitButton = form.querySelector('button[type="submit"]');
+                        if (submitButton) {
+                            submitButton.disabled = true;
+                            const loadingText = submitButton.getAttribute('data-loading-text');
+                            if (loadingText) {
+                                submitButton.dataset.originalText = submitButton.textContent || '';
+                                submitButton.textContent = loadingText;
+                            }
+                        }
+                        HTMLFormElement.prototype.submit.call(form);
+                    }
+                });
+            } else {
+                // Fallback to native confirm if Swal is not loaded
+                if (window.confirm(confirmationMessage)) {
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        const loadingText = submitButton.getAttribute('data-loading-text');
+                        if (loadingText) {
+                            submitButton.dataset.originalText = submitButton.textContent || '';
+                            submitButton.textContent = loadingText;
+                        }
+                    }
+                    HTMLFormElement.prototype.submit.call(form);
+                }
+            }
             return;
         }
 

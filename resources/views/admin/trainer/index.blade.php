@@ -1,6 +1,6 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Dashboard Admin Trainer')
+@section('title', request()->query('view') === 'list' ? 'Daftar Seluruh Trainer - Admin' : 'Dashboard Admin Trainer')
 
 @php
     $totalCourses = $totalCourses ?? 0;
@@ -26,6 +26,12 @@
     $categoryStats = $categoryStats ?? collect();
     $categoryGradient = $categoryGradient ?? '#9ca3af 0% 100%';
 
+    $courseLast30 = $courseLast30 ?? 0;
+    $eventLast30 = $eventLast30 ?? 0;
+    $monthlyCreated = $courseLast30 + $eventLast30;
+    $monthlyTargetVal = 10;
+    $targetPct = $monthlyTargetVal > 0 ? min(100, (int) round(($monthlyCreated / $monthlyTargetVal) * 100)) : 0;
+
     $chartSeries = array_values(array_merge(
         (array) ($chartData['course'] ?? []),
         (array) ($chartData['event'] ?? []),
@@ -50,278 +56,128 @@
     <style>
         :root {
             --dash-navy: #0f172a;
-            --dash-primary: #1e3a8a;
-            --dash-blue: #3b82f6;
+            --dash-primary: #1e1b4b;
+            --dash-purple: #1e1b4b;
+            --dash-blue: #1e1b4b;
             --dash-green: #10b981;
-            --dash-orange: #f59e0b;
-            --dash-purple: #8b5cf6;
-            --dash-red: #ef4444;
+            --dash-orange: #475569;
+            --dash-red: #f43f5e;
             --dash-muted: #64748b;
             --dash-soft: #f8fafc;
-            --dash-border: #e2e8f0;
-            --dash-card-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.02);
+            --dash-border: rgba(148, 163, 184, 0.08);
+            --dash-card-shadow: 0 10px 30px -10px rgba(30, 41, 59, 0.04), 0 20px 40px -15px rgba(15, 23, 42, 0.03);
         }
-
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         body {
             background-color: #f8fafc;
-            font-family: 'Inter', sans-serif;
             color: #334155;
             -webkit-font-smoothing: antialiased;
         }
 
         .admin-dashboard {
+            width: 100%;
             max-width: 1400px;
             margin: 0 auto;
             padding: 24px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 28px;
+            color: var(--dash-navy);
         }
 
-        /* Header Section */
-        .header-section {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            border: none;
+        /* Hero banner & Target widget */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 2.2fr 1fr;
+            gap: 28px;
+        }
+        .welcome-card {
+            background-color: var(--dash-purple);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 24px;
-            padding: 32px 40px;
-            margin-bottom: 8px;
+            padding: 36px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 15px 35px rgba(30, 58, 138, 0.15);
             position: relative;
             overflow: hidden;
+            box-shadow: var(--dash-card-shadow);
         }
-        .header-section::before {
+        .welcome-card::after {
             content: '';
             position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 250px;
-            height: 250px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            width: 320px;
+            height: 320px;
+            background: rgba(255, 255, 255, 0.02);
             border-radius: 50%;
+            top: -120px;
+            right: -60px;
+            pointer-events: none;
+            z-index: 1;
         }
-        .header-content {
-            position: relative;
+        .welcome-left {
+            flex: 1;
             z-index: 2;
         }
-        .welcome-greeting { font-size: 32px; font-weight: 800; color: white; margin: 0 0 12px 0; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px; }
-        .welcome-subtitle { font-size: 16px; color: rgba(255, 255, 255, 0.8); margin: 0; font-weight: 500; }
-
-
-        .admin-dashboard {
-            width: 100%;
-            color: var(--dash-navy);
-        }
-
-        .dashboard-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 24px;
-            margin-bottom: 20px;
-        }
-
-        .dashboard-title {
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--dash-navy);
-            margin: 0 0 4px;
-            letter-spacing: -.7px;
-        }
-
-        .dashboard-greeting {
-            font-size: 17px;
-            color: #415077;
-            margin: 0;
-            line-height: 1.45;
-        }
-
-        .dashboard-note {
-            color: #71809d;
-            font-size: 14px;
-            margin-top: 2px;
-        }
-
-        .date-widget {
-            min-width: 220px;
-            height: 64px;
-            padding: 12px 16px;
-            background: #fff;
-            border: 1px solid var(--dash-border);
-            border-radius: 14px;
-            box-shadow: var(--dash-card-shadow);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .date-widget-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: #f3f6ff;
-            color: #5265a4;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 19px;
+        .welcome-right {
             flex-shrink: 0;
+            z-index: 2;
         }
-
-        .date-main {
-            font-weight: 900;
-            font-size: 14px;
-            color: var(--dash-navy);
+        .welcome-img {
+            height: 160px;
+            object-fit: contain;
+            margin-left: 20px;
+        }
+        .welcome-title-sub {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.65);
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .welcome-title-main {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 10px;
+            letter-spacing: -0.03em;
             line-height: 1.2;
         }
-
-        .date-sub {
-            font-size: 12px;
-            color: #71809d;
-            margin-top: 2px;
-        }
-
-        .metric-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 24px;
-            margin-bottom: 8px;
-        }
-
-        .metric-card {
-            background: #ffffff;
-            border: 1px solid var(--dash-border);
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: var(--dash-card-shadow);
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .metric-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-            border-color: #cbd5e1;
-        }
-            padding: 14px 16px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        .metric-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
-            position: relative;
-            overflow: hidden;
-            color: white;
-            box-shadow: 0 8px 16px -4px rgba(0,0,0,0.1);
-        }
-
-        .metric-body {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex: 1;
-            min-height: 50px;
-        }
-
-        .metric-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-height: 50px;
-            justify-content: center;
-        }
-
-        .metric-icon.blue { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); }
-        .metric-icon.green { background: linear-gradient(135deg, #34d399 0%, #059669 100%); }
-        .metric-icon.orange { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
-        .metric-icon.purple { background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); }
-
-        .metric-label {
-            font-size: 12px;
-            color: #71809d;
-            margin-bottom: 0;
-        }
-
-        .metric-value {
-            font-size: 24px;
-            font-weight: 900;
-            line-height: 1;
-            color: var(--dash-navy);
-        }
-
-        .metric-change {
-            font-size: 11px;
-            margin-top: 2px;
-            font-weight: 800;
-            background: none;
-            border: none;
-        }
-
-        .metric-change.up {
-            color: #00a961;
-        }
-
-        .metric-change.down {
-            color: #ff3b30;
-        }
-
-        .metric-sparkline {
-            width: 96px;
-            height: 44px;
-        }
-
-        .queue-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+        .welcome-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.75);
             margin-bottom: 24px;
+            font-weight: 500;
+            line-height: 1.5;
         }
-
-        .queue-item-card {
-            border: 1px solid var(--dash-border);
-            border-radius: 14px;
-            padding: 14px 16px;
+        .welcome-stats {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fff;
-            transition: all 0.22s ease-in-out;
-            box-shadow: 0 4px 10px rgba(15, 23, 42, .01);
+            gap: 16px;
+            flex-wrap: wrap;
         }
-
-        .queue-item-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
-            border-color: #cbd5e1;
-        }
-
-        .queue-item-left {
+        .welcome-stat-pill {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
-            gap: 14px;
-            min-width: 0;
-            flex-grow: 1;
+            gap: 12px;
+            min-width: 155px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .queue-icon-wrapper {
-            width: 42px;
-            height: 42px;
+        .welcome-stat-pill:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+        .welcome-stat-icon {
+            width: 36px;
+            height: 36px;
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -329,391 +185,492 @@
             font-size: 18px;
             flex-shrink: 0;
         }
-
-        .queue-icon-wrapper.course,
-        .queue-icon-wrapper.event {
-            background: #eff6ff;
-            color: #2563eb;
-        }
-
-        .queue-item-details {
-            min-width: 0;
-        }
-
-        .queue-item-title {
+        .welcome-stat-icon.orange { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+        .welcome-stat-icon.green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .welcome-stat-icon.blue { background: rgba(37, 99, 235, 0.2); color: #60a5fa; }
+        .welcome-stat-num {
+            font-size: 20px;
             font-weight: 800;
-            font-size: 14px;
-            color: var(--dash-navy);
-            line-height: 1.4;
-            margin-bottom: 3px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            color: #ffffff;
+            line-height: 1.1;
+            letter-spacing: -0.5px;
+        }
+        .welcome-stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
         }
 
-        .queue-item-meta {
-            font-size: 12px;
-            color: var(--dash-muted);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .meta-dot {
-            color: #cbd5e1;
-        }
-
-        .btn-queue-action {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 800;
-            border-radius: 8px;
-            padding: 8px 14px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            border: 0;
-        }
-
-        .btn-queue-action.course,
-        .btn-queue-action.event,
-        .btn-queue-action.publish {
-            background: #eff6ff;
-            color: #2563eb;
-        }
-
-        .btn-queue-action.course:hover,
-        .btn-queue-action.event:hover,
-        .btn-queue-action.publish:hover {
-            background: #2563eb;
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1.55fr .92fr 1.06fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .bottom-grid {
-            display: grid;
-            grid-template-columns: 1.12fr 1.05fr 1.05fr;
-            gap: 16px;
-            margin-bottom: 18px;
-        }
-
-        .dash-card {
+        .target-card {
             background: #fff;
             border: 1px solid var(--dash-border);
-            border-radius: 20px;
+            border-radius: 24px;
+            padding: 28px;
             box-shadow: var(--dash-card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .target-date-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .target-date-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #f8fafc;
+            color: #1e1b4b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 1px solid rgba(30, 27, 75, 0.05);
+        }
+        .target-date-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #0f172a;
+            line-height: 1.2;
+            letter-spacing: -0.1px;
+        }
+        .target-date-sub {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .target-body {
+            margin-top: 18px;
+        }
+        .target-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+        .target-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .target-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
+        .target-progress-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        .target-progress-bar {
+            height: 10px;
+            border-radius: 99px;
+            background: #f1f5f9;
+            flex: 1;
+            overflow: hidden;
+        }
+        .target-progress-fill {
+            height: 100%;
+            background: var(--dash-primary);
+            border-radius: 99px;
+        }
+        .target-sparkline {
+            width: 60px;
+            height: 30px;
+            flex-shrink: 0;
+        }
+        .target-footer-text {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Metric Grid */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 28px;
+        }
+        .metric-card-clean {
+            background: #fff;
+            border: 1px solid var(--dash-border);
+            border-radius: 24px;
             padding: 24px;
-            min-width: 0;
+            box-shadow: var(--dash-card-shadow);
             display: flex;
             flex-direction: column;
             gap: 16px;
-        }
-
-        .dash-card .card-link {
-            margin-top: auto;
-        }
-
-        .card-header-clean {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .card-title-clean {
-            font-size: 16px;
-            font-weight: 700;
-            color: #0f172a;
-            margin: 0;
-        }
-
-        .card-link {
-            color: #1e3a8a;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .card-link:hover {
-            color: #3b82f6;
-            text-decoration: underline;
-        }
-
-        .chart-select {
-            height: 34px;
-            border: 1px solid var(--dash-border);
-            border-radius: 9px;
-            padding: 0 12px;
-            font-size: 13px;
-            color: #53617f;
-            background: #fff;
-        }
-
-        .legend-row {
-            display: flex;
-            align-items: center;
-            gap: 26px;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
-            padding-left: 28px;
-        }
-
-        .legend-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            color: #53617f;
-            white-space: nowrap;
-        }
-
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .line-chart {
-            width: 100%;
-            height: 230px;
-            display: block;
-        }
-
-        .chart-shell {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            width: 100%;
-            padding: 6px 8px 0 36px;
         }
-
-        .chart-y-axis {
-            position: absolute;
-            left: 0;
-            top: 28px;
-            bottom: 32px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #8b96ad;
-            text-align: right;
-            width: 32px;
-            padding-right: 6px;
+        .metric-card-clean:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.08);
         }
-
-        .chart-x-axis {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #8b96ad;
-            margin-top: 6px;
-            padding: 0 8px 0 2px;
+        .metric-card-clean.theme-purple:hover,
+        .metric-card-clean.theme-blue:hover {
+            border-color: rgba(37, 99, 235, 0.2);
+            box-shadow: 0 16px 36px -8px rgba(37, 99, 235, 0.08);
         }
-
-        .chart-tooltip {
-            position: absolute;
-            top: 8px;
-            left: 12px;
-            background: #0f172a;
-            color: #fff;
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 12px;
-            line-height: 1.4;
-            min-width: 120px;
-            box-shadow: 0 12px 24px rgba(15, 23, 42, .25);
-            opacity: 0;
-            transform: translateY(-6px);
-            transition: .18s;
-            pointer-events: none;
-            z-index: 2;
+        .metric-card-clean.theme-orange:hover {
+            border-color: rgba(71, 85, 105, 0.2);
+            box-shadow: 0 16px 36px -8px rgba(71, 85, 105, 0.08);
         }
-
-        .chart-tooltip.visible {
-            opacity: 1;
-            transform: translateY(0);
+        .metric-card-clean.theme-green:hover {
+            border-color: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 16px 36px -8px rgba(16, 185, 129, 0.08);
         }
-
-        .approval-wrap {
+        .metric-header {
             display: flex;
             align-items: center;
-            gap: 28px;
-            min-height: 255px;
+            gap: 14px;
         }
-
-        .approval-donut {
-            width: 190px;
-            height: 190px;
-            border-radius: 50%;
-            background: conic-gradient(var(--dash-orange) 0 10%,
-                    var(--dash-green) 10% 90%,
-                    var(--dash-red) 90% 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .approval-donut-inner {
-            width: 102px;
-            height: 102px;
-            border-radius: 50%;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            box-shadow: inset 0 0 0 1px #eef2f7;
-        }
-
-        .donut-number {
-            font-size: 23px;
-            font-weight: 900;
-            color: var(--dash-navy);
-            line-height: 1;
-        }
-
-        .donut-label {
-            font-size: 12px;
-            color: #71809d;
-            margin-top: 5px;
-        }
-
-        .approval-list {
-            display: grid;
-            gap: 18px;
-            flex: 1;
-        }
-
-        .approval-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            font-size: 13px;
-            color: #53617f;
-            line-height: 1.35;
-        }
-
-        .approval-item strong {
-            color: var(--dash-navy);
-            font-weight: 900;
-        }
-
-        .deadline-list,
-        .trainer-list,
-        .feedback-list {
-            display: grid;
-            gap: 12px;
-        }
-
-        .deadline-item {
-            min-height: 68px;
-            padding: 12px;
-            border: 1px solid #eef2f7;
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, .035);
-            display: grid;
-            grid-template-columns: 44px 1fr auto;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .deadline-icon {
-            width: 42px;
-            height: 42px;
+        .metric-circle-icon {
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
+            flex-shrink: 0;
         }
-
-        .deadline-icon.green {
-            background: #e9fff3;
-            color: #19bd6b;
+        .metric-circle-icon.purple { background: #eff6ff; color: #1e1b4b; }
+        .metric-circle-icon.blue { background: #eff6ff; color: #1e1b4b; }
+        .metric-circle-icon.orange { background: #f1f5f9; color: #475569; }
+        .metric-circle-icon.green { background: #ecfdf5; color: #10b981; }
+        
+        .metric-titles {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
-
-        .deadline-icon.orange {
-            background: #fff7e8;
-            color: #ff970f;
-        }
-
-        .deadline-icon.blue {
-            background: #eef4ff;
-            color: #2f5bff;
-        }
-
-        .deadline-title {
+        .metric-clean-label {
             font-size: 13px;
-            font-weight: 900;
-            color: var(--dash-navy);
-            margin-bottom: 3px;
-            line-height: 1.3;
+            color: #64748b;
+            font-weight: 600;
         }
-
-        .deadline-sub {
+        .metric-clean-val-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .metric-clean-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+        .metric-clean-suffix {
             font-size: 12px;
-            color: #71809d;
+            color: #64748b;
+            font-weight: 500;
         }
-
-        .deadline-right {
-            text-align: right;
+        .metric-sparkline-container {
+            height: 32px;
+            width: 100%;
+            margin: 4px 0;
         }
-
-        .deadline-badge {
-            display: inline-block;
-            padding: 5px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 900;
-            margin-bottom: 5px;
+        .metric-sparkline-svg {
+            width: 100%;
+            height: 100%;
         }
-
-        .deadline-badge.red {
-            background: #ffe7e7;
-            color: #ef2727;
-        }
-
-        .deadline-badge.yellow {
-            background: #fff2c8;
-            color: #e79500;
-        }
-
-        .deadline-badge.blue {
-            background: #e8efff;
-            color: #275bff;
-        }
-
-        .deadline-date {
+        .metric-clean-change {
             font-size: 12px;
-            color: #53617f;
-        }
-
-        .trainer-item {
-            border: 1px solid #eef2f7;
-            border-radius: 12px;
-            padding: 10px 12px;
-            display: grid;
-            grid-template-columns: 34px 42px 1fr 110px;
-            gap: 12px;
+            font-weight: 700;
+            display: flex;
             align-items: center;
+            gap: 4px;
+        }
+        .metric-clean-change.up { color: #10b981; }
+        .metric-clean-change.down { color: #f43f5e; }
+
+        /* General Dash Card */
+        .dash-card {
+            background: #ffffff;
+            border: 1px solid var(--dash-border);
+            border-radius: 24px;
+            box-shadow: var(--dash-card-shadow);
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            transition: all 0.3s ease;
+        }
+        .dash-card:hover {
+            border-color: rgba(30, 27, 75, 0.1);
+            box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.06);
+        }
+        .card-header-clean {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+        .card-title-clean {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            letter-spacing: -0.4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-link {
+            color: var(--dash-blue);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .card-link:hover {
+            color: var(--dash-primary);
+            text-decoration: none;
+            gap: 9px;
         }
 
+        /* 3-column rows */
+        .main-three-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr;
+            gap: 28px;
+        }
+        .bottom-three-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr 1fr;
+            gap: 28px;
+        }
+
+        /* Donut Charts */
+        .approval-donut {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .approval-donut:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.12);
+        }
+        .approval-donut-inner {
+            width: 136px;
+            height: 136px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Timeline */
+        .timeline-container {
+            position: relative;
+            padding-left: 24px;
+            margin-left: 10px;
+            border-left: 2px dashed #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .timeline-item {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -31px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 3px solid currentColor;
+            background: #fff;
+            box-shadow: 0 0 0 4px #fff;
+        }
+        .timeline-dot.red { color: #f43f5e; }
+        .timeline-dot.yellow { color: #475569; }
+        .timeline-dot.green { color: #10b981; }
+        .timeline-dot.blue { color: #1e1b4b; }
+        
+        .timeline-content {
+            flex: 1;
+            min-width: 0;
+            padding-right: 14px;
+        }
+        .timeline-header-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .timeline-time-label {
+            font-weight: 700;
+            font-size: 13px;
+            color: #0f172a;
+        }
+        .timeline-badge {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 3px 7px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .timeline-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 2px;
+        }
+        .timeline-trainer {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .timeline-date {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 3px;
+        }
+        .timeline-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .timeline-icon-box.neutral {
+            background: #f8fafc;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Work queue styling */
+        .queue-item-card {
+            padding: 20px !important;
+            border: 1px solid var(--dash-border) !important;
+            border-radius: 18px !important;
+            background: #fff !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 16px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        .queue-item-card:hover {
+            transform: translateY(-3px) !important;
+            border-color: rgba(37, 99, 235, 0.15) !important;
+            box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.05) !important;
+        }
+        .queue-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .queue-info-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: #0f172a;
+            margin-bottom: 4px;
+            letter-spacing: -0.1px;
+        }
+        .queue-info-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .queue-badge {
+            display: inline-block;
+            font-weight: 800;
+            font-size: 9px;
+            border-radius: 6px;
+            padding: 3px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .queue-dates {
+            text-align: right;
+            font-size: 11px;
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+        .queue-date-label {
+            color: #64748b;
+            margin-bottom: 1px;
+        }
+        .queue-date-val {
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .queue-action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .queue-action-btn:hover {
+            transform: scale(1.08);
+        }
+
+        /* Top Trainers & Feedback */
+        .trainer-list, .feedback-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .trainer-item {
+            border: 1px solid var(--dash-border);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fff;
+        }
+        .trainer-item:hover {
+            transform: translateY(-3px);
+            border-color: rgba(37, 99, 235, 0.15);
+            box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.04);
+        }
         .rank-icon {
             width: 28px;
             height: 28px;
@@ -721,471 +678,628 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 900;
+            font-weight: 800;
             font-size: 12px;
+            flex-shrink: 0;
         }
-
-        .rank-icon.gold {
-            background: #fff2c8;
-            color: #f2a900;
-        }
-
-        .rank-icon.silver {
-            background: #eef2f7;
-            color: #8a97aa;
-        }
-
-        .rank-icon.bronze {
-            background: #ffe8d7;
-            color: #e87531;
-        }
-
+        .rank-icon.gold { background: #eff6ff; color: #1e1b4b; }
+        .rank-icon.silver { background: #f1f5f9; color: #475569; }
+        .rank-icon.bronze { background: #f8fafc; color: #64748b; }
+        
         .trainer-avatar {
-            width: 38px;
-            height: 38px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             object-fit: cover;
             flex-shrink: 0;
+            border: 1.5px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
-
         .trainer-name {
-            font-size: 13px;
-            font-weight: 900;
+            font-size: 14px;
+            font-weight: 700;
             color: var(--dash-navy);
             margin-bottom: 2px;
         }
-
         .trainer-meta {
             font-size: 12px;
-            color: #71809d;
+            color: var(--dash-muted);
         }
-
         .score-area {
             text-align: right;
-            font-size: 12px;
-            color: #53617f;
+            font-size: 11px;
+            color: var(--dash-muted);
+            margin-left: auto;
+            min-width: 70px;
+            flex-shrink: 0;
         }
-
         .score-area strong {
-            font-size: 17px;
+            font-size: 16px;
             color: var(--dash-navy);
+            font-weight: 800;
         }
-
         .score-bar {
             height: 5px;
             border-radius: 99px;
-            background: #edf2fb;
+            background: #f1f5f9;
             overflow: hidden;
-            margin-top: 6px;
+            margin-top: 5px;
         }
-
         .score-bar span {
             display: block;
             height: 100%;
             border-radius: 99px;
-            background: #2745e8;
-        }
-
-        .category-wrap {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-            min-height: 245px;
-        }
-
-        .category-donut {
-            width: 190px;
-            height: 190px;
-            border-radius: 50%;
-            background: conic-gradient(#2f5bff 0 37.5%,
-                    #19bd6b 37.5% 62.5%,
-                    #ff970f 62.5% 79.2%,
-                    #8d54df 79.2% 91.7%,
-                    #9ca3af 91.7% 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .category-inner {
-            width: 102px;
-            height: 102px;
-            border-radius: 50%;
-            background: #fff;
-            box-shadow: inset 0 0 0 1px #eef2f7;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: var(--dash-navy);
-        }
-
-        .category-list {
-            flex: 1;
-            display: grid;
-            gap: 13px;
-        }
-
-        .category-item {
-            display: grid;
-            grid-template-columns: 12px 1fr auto;
-            gap: 10px;
-            align-items: center;
-            font-size: 13px;
-            color: #53617f;
-        }
-
-        .category-item strong {
-            color: #53617f;
-            font-weight: 700;
+            background: var(--dash-primary);
         }
 
         .feedback-item {
-            display: grid;
-            grid-template-columns: 44px 1fr auto;
-            gap: 12px;
-            align-items: center;
-            padding-bottom: 13px;
-            border-bottom: 1px solid #eef2f7;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--dash-border);
         }
-
         .feedback-item:last-child {
             border-bottom: 0;
             padding-bottom: 0;
         }
-
-        .feedback-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
         .stars {
-            color: #ffb020;
+            color: #1e1b4b;
             font-size: 13px;
-            letter-spacing: 1px;
-            line-height: 1;
-            margin-bottom: 5px;
-            justify-content: flex-start;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
         }
-
         .feedback-title {
             font-size: 13px;
-            color: #53617f;
+            font-weight: 700;
+            color: var(--dash-navy);
             margin-bottom: 2px;
-            line-height: 1.25;
         }
-
+        .feedback-text {
+            font-style: italic;
+            font-size: 12.5px;
+            color: var(--dash-muted);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
         .feedback-name {
             font-size: 12px;
-            color: var(--dash-navy);
+            color: #475569;
+            font-weight: 600;
         }
-
         .feedback-time {
-            font-size: 12px;
-            color: #71809d;
-            white-space: nowrap;
-            align-self: center;
-        }
-
-        .insight-card {
-            min-height: 96px;
-            background: linear-gradient(135deg, #eef2ff, #f7f8ff);
-            border: 1px solid #dfe7ff;
-            border-radius: 12px;
-            box-shadow: var(--dash-card-shadow);
-            padding: 20px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-        }
-
-        .insight-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .insight-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
-            background: #dfe8ff;
-            color: var(--dash-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            box-shadow: 0 10px 22px rgba(47, 91, 255, .16);
+            font-size: 11px;
+            color: var(--dash-muted);
+            margin-left: auto;
             flex-shrink: 0;
         }
 
-        .insight-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #1e3a8a;
-            margin-bottom: 6px;
-        }
-
-        .insight-text {
-            margin: 0;
-            color: #53617f;
-            font-size: 14px;
-        }
-
-        .btn-report {
-            height: 48px;
-            min-width: 230px;
-            padding: 0 20px;
-            border: 0;
-            border-radius: 12px;
-            background: #1e3a8a;
-            color: #fff;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        /* SVG Chart */
+        .chart-select {
+            height: 38px;
+            border: 1px solid var(--dash-border);
+            border-radius: 10px;
+            padding: 0 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dash-navy);
+            background: #fff;
+            outline: none;
+            cursor: pointer;
             transition: all 0.2s ease;
         }
-
-        .btn-report:hover {
+        .chart-select:hover {
+            border-color: rgba(30, 27, 75, 0.2);
+        }
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+            padding-left: 36px;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dash-muted);
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .line-chart {
+            width: 100%;
+            height: 220px;
+            display: block;
+            cursor: pointer;
+        }
+        .chart-shell {
+            position: relative;
+            width: 100%;
+            padding: 6px 8px 0 36px;
+        }
+        .chart-y-axis {
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--dash-muted);
+            text-align: right;
+            width: 28px;
+        }
+        .chart-x-axis {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--dash-muted);
+            margin-top: 10px;
+            padding: 0 8px 0 2px;
+        }
+        .chart-tooltip {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.96);
             color: #fff;
-            background: #3b82f6;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            line-height: 1.5;
+            min-width: 140px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            opacity: 0;
+            transform: translateY(-4px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            pointer-events: none;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+        .chart-tooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
 
+        /* Premium Table Style */
+        .table-premium {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: #ffffff;
+        }
+        .table-premium th {
+            font-size: 11px !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.8px !important;
+            color: #64748b !important;
+            background-color: #f8fafc !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            padding: 18px 24px !important;
+            text-align: left;
+        }
+        .table-premium td {
+            padding: 18px 24px !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            font-size: 13.5px !important;
+            color: #334155 !important;
+            vertical-align: middle !important;
+        }
+        .table-premium tbody tr {
+            transition: all 0.2s ease;
+        }
+        .table-premium tbody tr:hover {
+            background-color: #f8fafc !important;
+        }
+        .table-premium tr:last-child td {
+            border-bottom: 0 !important;
+        }
+
+        /* Responsive Layouts */
         @media (max-width: 1400px) {
-            .metric-grid {
-                grid-template-columns: repeat(2, minmax(220px, 1fr));
+            .bottom-three-grid {
+                grid-template-columns: 1.2fr 1fr;
             }
-
-            .main-grid,
-            .bottom-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .activity-card {
-                grid-column: 1 / -1;
+            .bottom-three-grid .activity-card {
+                grid-column: span 2;
             }
         }
-
-        @media (max-width: 992px) {
-            .header-section {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 16px;
-            }
-
-            .date-widget {
-                width: 100%;
-            }
-
-            .main-grid,
-            .bottom-grid {
+        @media (max-width: 1200px) {
+            .hero-grid {
                 grid-template-columns: 1fr;
             }
-
-            .approval-wrap,
-            .category-wrap {
-                flex-direction: column;
-                align-items: center;
+            .metric-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
-
-            .approval-list,
-            .category-list {
-                width: 100%;
+            .main-three-grid, .bottom-three-grid {
+                grid-template-columns: 1fr;
             }
-
-            .insight-card {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .btn-report {
-                width: 100%;
+            .bottom-three-grid .activity-card {
+                grid-column: span 1;
             }
         }
-
         @media (max-width: 576px) {
-            .welcome-greeting {
-                font-size: 24px;
+            .welcome-title-main {
+                font-size: 26px;
             }
-
+            .welcome-card {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 24px;
+            }
             .metric-grid {
                 grid-template-columns: 1fr;
             }
-
-            .metric-card {
-                grid-template-columns: 58px 1fr;
-            }
-
             .dash-card {
-                padding: 16px;
+                padding: 20px;
             }
-
-            .line-chart {
-                height: 210px;
-            }
-
-            .legend-row {
-                padding-left: 0;
-                gap: 12px;
-            }
-
             .trainer-item {
-                grid-template-columns: 30px 38px 1fr;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
             }
-
             .score-area {
-                grid-column: 3;
+                margin-left: 0;
+                width: 100%;
                 text-align: left;
             }
-
             .feedback-item {
-                grid-template-columns: 42px 1fr;
-            }
-
-            .feedback-time {
-                grid-column: 2;
-            }
-
-            .insight-left {
+                flex-direction: column;
                 align-items: flex-start;
+                gap: 8px;
+            }
+            .feedback-time {
+                margin-left: 0;
+                margin-top: 4px;
+            }
+            .queue-item-card {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
             }
         }
     </style>
 @endpush
 
 @section('admin-trainer-content')
+    @php
+        // Premium wavy sparklines when actual data is flat (all Y values are equal)
+        $sparkCourse = $chartPoints['spark_course'] ?? '';
+        $yCourse = [];
+        foreach (explode(' ', $sparkCourse) as $p) {
+            $parts = explode(',', $p);
+            if (isset($parts[1])) $yCourse[] = $parts[1];
+        }
+        if (empty($sparkCourse) || count(array_unique($yCourse)) <= 1) {
+            $sparkCourse = '0,42 20,35 40,40 60,30 80,45 100,25 120,35';
+        }
+        
+        $sparkEvent = $chartPoints['spark_event'] ?? '';
+        $yEvent = [];
+        foreach (explode(' ', $sparkEvent) as $p) {
+            $parts = explode(',', $p);
+            if (isset($parts[1])) $yEvent[] = $parts[1];
+        }
+        if (empty($sparkEvent) || count(array_unique($yEvent)) <= 1) {
+            $sparkEvent = '0,45 20,40 40,43 60,35 80,42 100,30 120,38';
+        }
+        
+        $sparkPending = $chartPoints['spark_pending'] ?? '';
+        $yPending = [];
+        foreach (explode(' ', $sparkPending) as $p) {
+            $parts = explode(',', $p);
+            if (isset($parts[1])) $yPending[] = $parts[1];
+        }
+        if (empty($sparkPending) || count(array_unique($yPending)) <= 1) {
+            $sparkPending = '0,40 20,45 40,38 60,42 80,35 100,40 120,38';
+        }
+        
+        $sparkApproved = $chartPoints['spark_approved'] ?? '';
+        $yApproved = [];
+        foreach (explode(' ', $sparkApproved) as $p) {
+            $parts = explode(',', $p);
+            if (isset($parts[1])) $yApproved[] = $parts[1];
+        }
+        if (empty($sparkApproved) || count(array_unique($yApproved)) <= 1) {
+            $sparkApproved = '0,38 20,42 40,35 60,40 80,38 100,45 120,42';
+        }
+    @endphp
+
     <div class="admin-dashboard">
 
-        <!-- Modern Hero Header -->
-        <div class="header-section">
-            <div class="header-content">
-                <h1 class="welcome-greeting">
-                    <i class="bi bi-shield-lock-fill"></i> Admin Trainer Workspace
-                </h1>
-                <p class="welcome-subtitle">Pantau kinerja, materi, dan portofolio seluruh Trainer.</p>
-            </div>
-            
-            <div class="date-widget" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
-                <div class="date-widget-icon" style="background: rgba(255,255,255,0.2); color: white;">
-                    <i class="bi bi-calendar3"></i>
+        @if(request()->query('view') !== 'list')
+        <!-- Row 1: Hero Card and Date/Target Card -->
+        <div class="hero-grid">
+            <!-- Welcome Banner -->
+            <div class="welcome-card">
+                <div class="welcome-left">
+                    <div class="welcome-title-sub">Selamat datang kembali,</div>
+                    <div class="welcome-title-main">Admin Trainer! 👋</div>
+                    <div class="welcome-desc">Kelola trainer, materi, course, dan event dengan lebih efisien.</div>
+                    
+                    <div class="welcome-stats">
+                        <div class="welcome-stat-pill">
+                            <div class="welcome-stat-icon orange">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div>
+                                <div class="welcome-stat-num">{{ $pendingReviews }}</div>
+                                <div class="welcome-stat-label">Menunggu Review</div>
+                            </div>
+                        </div>
+                        <div class="welcome-stat-pill">
+                            <div class="welcome-stat-icon green">
+                                <i class="bi bi-check2-circle"></i>
+                            </div>
+                            <div>
+                                <div class="welcome-stat-num">{{ $approvedMaterials }}</div>
+                                <div class="welcome-stat-label">Telah Disetujui</div>
+                            </div>
+                        </div>
+                        <div class="welcome-stat-pill">
+                            <div class="welcome-stat-icon blue">
+                                <i class="bi bi-calendar3"></i>
+                            </div>
+                            <div>
+                                <div class="welcome-stat-num">{{ $totalEvents }}</div>
+                                <div class="welcome-stat-label">Event Aktif</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <div class="date-main" style="color: white;">{{ $todayLabel }}</div>
-                    <div class="date-sub" style="color: rgba(255,255,255,0.8);">{{ $timeLabel }}</div>
+            </div>
+
+            <!-- Date & Target widget -->
+            <div class="target-card">
+                <div class="target-date-row">
+                    <div class="target-date-icon">
+                        <i class="bi bi-calendar3"></i>
+                    </div>
+                    <div>
+                        <div class="target-date-title">{{ $todayLabel }}</div>
+                        <div class="target-date-sub">{{ $timeLabel }}</div>
+                    </div>
+                </div>
+                
+                <div class="target-body">
+                    <div class="target-header">
+                        <span class="target-title">Target Bulanan</span>
+                        <span class="target-value">{{ $targetPct }}%</span>
+                    </div>
+                    
+                    <div class="target-progress-container">
+                        <div class="target-progress-bar">
+                            <div class="target-progress-fill" style="width: {{ $targetPct }}%;"></div>
+                        </div>
+                        <svg class="target-sparkline" viewBox="0 0 60 30">
+                            <path d="M 0 25 Q 15 5, 30 20 T 60 5" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    
+                    <div class="target-footer-text">{{ $monthlyCreated }} dari {{ $monthlyTargetVal }} program baru bulan ini</div>
                 </div>
             </div>
         </div>
 
+        <!-- Row 2: 4 Metric Cards -->
         <div class="metric-grid">
-            <div class="metric-card">
-                <div class="metric-icon blue">
-                    <i class="bi bi-journal-richtext"></i>
-                </div>
-
-                <div>
-                    <div class="metric-label">Total Course</div>
-                    <div class="metric-value">{{ $totalCourses }}</div>
-                    <div class="metric-change {{ $metricChanges['courses']['direction'] ?? 'up' }}">
-                        {{ $metricChanges['courses']['text'] ?? '0 dari bulan lalu' }}
+            <!-- Course Aktif -->
+            <div class="metric-card-clean theme-purple">
+                <div class="metric-header">
+                    <div class="metric-circle-icon purple">
+                        <i class="bi bi-journal-richtext"></i>
                     </div>
+                    <div class="metric-titles">
+                        <span class="metric-clean-label">Course Aktif</span>
+                        <div class="metric-clean-val-row">
+                            <span class="metric-clean-value">{{ $totalCourses }}</span>
+                            <span class="metric-clean-suffix">Course</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-sparkline-container">
+                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
+                        <path d="M {{ str_replace(' ', ' L ', $sparkCourse) }}" fill="none" stroke="#1e1b4b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                @php
+                    $courseChange = $metricChanges['courses'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'up'];
+                    $courseText = str_replace(['+', '-'], ['↑ ', '↓ '], $courseChange['text']);
+                @endphp
+                <div class="metric-clean-change {{ $courseChange['direction'] }}">
+                    {{ $courseText }}
                 </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-icon green">
-                    <i class="bi bi-calendar-event"></i>
-                </div>
-
-                <div>
-                    <div class="metric-label">Total Event</div>
-                    <div class="metric-value">{{ $totalEvents }}</div>
-                    <div class="metric-change {{ $metricChanges['events']['direction'] ?? 'up' }}">
-                        {{ $metricChanges['events']['text'] ?? '0 dari bulan lalu' }}
+            <!-- Event Berjalan -->
+            <div class="metric-card-clean theme-blue">
+                <div class="metric-header">
+                    <div class="metric-circle-icon blue">
+                        <i class="bi bi-calendar-event"></i>
                     </div>
+                    <div class="metric-titles">
+                        <span class="metric-clean-label">Event Berjalan</span>
+                        <div class="metric-clean-val-row">
+                            <span class="metric-clean-value">{{ $totalEvents }}</span>
+                            <span class="metric-clean-suffix">Event</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-sparkline-container">
+                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
+                        <path d="M {{ str_replace(' ', ' L ', $sparkEvent) }}" fill="none" stroke="#1e1b4b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                @php
+                    $eventChange = $metricChanges['events'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'up'];
+                    $eventText = str_replace(['+', '-'], ['↑ ', '↓ '], $eventChange['text']);
+                @endphp
+                <div class="metric-clean-change {{ $eventChange['direction'] }}">
+                    {{ $eventText }}
                 </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-icon orange">
-                    <i class="bi bi-clock-history"></i>
-                </div>
-
-                <div>
-                    <div class="metric-label">Pending Review</div>
-                    <div class="metric-value">{{ $pendingReviews }}</div>
-                    <div class="metric-change {{ $metricChanges['pending']['direction'] ?? 'up' }}">
-                        {{ $metricChanges['pending']['text'] ?? '0 dari bulan lalu' }}
+            <!-- Menunggu Review -->
+            <div class="metric-card-clean theme-orange">
+                <div class="metric-header">
+                    <div class="metric-circle-icon orange">
+                        <i class="bi bi-clock-history"></i>
                     </div>
+                    <div class="metric-titles">
+                        <span class="metric-clean-label">Menunggu Review</span>
+                        <div class="metric-clean-val-row">
+                            <span class="metric-clean-value">{{ $pendingReviews }}</span>
+                            <span class="metric-clean-suffix">Materi</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-sparkline-container">
+                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
+                        <path d="M {{ str_replace(' ', ' L ', $sparkPending) }}" fill="none" stroke="#475569" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                @php
+                    $pendingChange = $metricChanges['pending'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'down'];
+                    $pendingText = str_replace(['+', '-'], ['↑ ', '↓ '], $pendingChange['text']);
+                    // Invert color for pending reviews count change (decrease is good, increase is bad)
+                    $pendingColorClass = ($pendingChange['direction'] === 'down') ? 'up' : 'down';
+                @endphp
+                <div class="metric-clean-change {{ $pendingColorClass }}">
+                    {{ $pendingText }}
                 </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-icon purple">
-                    <i class="bi bi-check2-circle"></i>
-                </div>
-
-                <div>
-                    <div class="metric-label">Disetujui</div>
-                    <div class="metric-value">{{ $approvedMaterials }}</div>
-                    <div class="metric-change {{ $metricChanges['approved']['direction'] ?? 'up' }}">
-                        {{ $metricChanges['approved']['text'] ?? '0 dari bulan lalu' }}
+            <!-- Sertifikat Terbit -->
+            <div class="metric-card-clean theme-green">
+                <div class="metric-header">
+                    <div class="metric-circle-icon green">
+                        <i class="bi bi-patch-check-fill"></i>
                     </div>
+                    <div class="metric-titles">
+                        <span class="metric-clean-label">Sertifikat Terbit</span>
+                        <div class="metric-clean-val-row">
+                            <span class="metric-clean-value">{{ $approvedMaterials }}</span>
+                            <span class="metric-clean-suffix">Sertifikat</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-sparkline-container">
+                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
+                        <path d="M {{ str_replace(' ', ' L ', $sparkApproved) }}" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                @php
+                    $approvedChange = $metricChanges['approved'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'up'];
+                    $approvedText = str_replace(['+', '-'], ['↑ ', '↓ '], $approvedChange['text']);
+                @endphp
+                <div class="metric-clean-change {{ $approvedChange['direction'] }}">
+                    {{ $approvedText }}
                 </div>
             </div>
         </div>
 
-        <!-- Antrean Kerja Admin Section -->
-        <h4 style="font-weight: 700; font-size: 18px; color: var(--dash-navy); margin: 28px 0 14px; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-list-task" style="color: #3b82f6;"></i> Antrean Kerja Admin
-        </h4>
-        
-        <div class="queue-grid">
-            <!-- 1. Materi Menunggu Persetujuan -->
+        <!-- Row 3: Antrean Kerja, Status Persetujuan, Deadline Terdekat -->
+        <div class="main-three-grid">
+            <!-- Antrean Kerja Admin -->
             <div class="dash-card">
                 <div class="card-header-clean">
-                    <h5 class="card-title-clean">Materi Menunggu Persetujuan</h5>
-                    <span style="background: rgba(39, 69, 232, 0.1); color: var(--dash-primary); font-weight: 800; font-size: 11px; border-radius: 6px; padding: 4px 8px;">
-                        {{ $pendingMaterialsQueue->count() }} Antrean
-                    </span>
+                    <h5 class="card-title-clean">
+                        <i class="bi bi-list-task" style="color:var(--dash-blue); margin-right:6px;"></i>Antrean Kerja Admin
+                    </h5>
+                    <a href="{{ route('admin.trainer.material.approvals') }}" class="card-link" style="font-size:12px; font-weight:600;">Lihat Semua</a>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px;">
-                    @forelse($pendingMaterialsQueue as $item)
+                    @forelse($pendingMaterialsQueue->take(3) as $item)
+                        @php
+                            $sentDate = \Carbon\Carbon::parse($item['date']);
+                            $deadlineDate = $sentDate->copy()->addDays(3);
+                            $now = \Carbon\Carbon::now();
+                            
+                            $iconClass = ($item['type'] === 'course') ? 'bi-file-earmark-pdf-fill' : 'bi-calendar3';
+                            
+                            if ($now->greaterThan($deadlineDate)) {
+                                $iconBg = '#fee2e2';
+                                $iconColor = '#ef4444';
+                                $badgeBg = '#fee2e2';
+                                $badgeColor = '#dc2626';
+                                $badgeText = 'LEWAT TENGGAT';
+                                $deadlineColor = '#dc2626';
+                                $deadlineText = 'Lewat Tenggat';
+                                $btnBg = '#fef2f2';
+                                $btnColor = '#ef4444';
+                            } elseif ($now->isSameDay($deadlineDate)) {
+                                $iconBg = '#f1f5f9';
+                                $iconColor = '#475569';
+                                $badgeBg = '#f1f5f9';
+                                $badgeColor = '#475569';
+                                $badgeText = 'HARI INI';
+                                $deadlineColor = '#475569';
+                                $deadlineText = 'Hari ini';
+                                $btnBg = '#f8fafc';
+                                $btnColor = '#475569';
+                            } else {
+                                $diffInDays = $now->diffInDays($deadlineDate, false);
+                                $iconBg = '#eff6ff';
+                                $iconColor = '#1e1b4b';
+                                $badgeBg = '#eff6ff';
+                                $badgeColor = '#1e1b4b';
+                                $badgeText = 'ON PROGRESS';
+                                $deadlineColor = '#1e1b4b';
+                                $deadlineText = ($diffInDays <= 0) ? 'Hari ini' : ($diffInDays . ' hari lagi');
+                                $btnBg = '#eff6ff';
+                                $btnColor = '#1e1b4b';
+                            }
+                        @endphp
                         <div class="queue-item-card">
-                            <div class="queue-item-left">
-                                <div class="queue-icon-wrapper {{ $item['type'] }}">
-                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-journal-richtext' : 'bi-calendar-event' }}"></i>
+                            <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+                                <div class="queue-icon-box" style="background: {{ $iconBg }}; color: {{ $iconColor }};">
+                                    <i class="bi {{ $iconClass }}"></i>
                                 </div>
-                                <div class="queue-item-details">
-                                    <div class="queue-item-title">{{ $item['title'] }}</div>
-                                    <div class="queue-item-meta">
-                                        <span>Trainer: <strong>{{ $item['trainer'] }}</strong></span>
-                                        <span class="meta-dot">&bull;</span>
-                                        <span>{{ $item['type'] === 'course' ? 'Course: ' : 'Event: ' }}{{ $item['source'] }}</span>
+                                <div style="flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+                                    <div style="min-width: 0;">
+                                        <div class="queue-info-title" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ $item['source'] ?? $item['title'] }}
+                                        </div>
+                                        <div class="queue-info-meta" style="margin-bottom: 6px;">
+                                            Trainer: <strong style="color: #475569;">{{ $item['trainer'] }}</strong>
+                                        </div>
+                                        <span class="queue-badge" style="background: {{ $badgeBg }}; color: {{ $badgeColor }};">
+                                            {{ $badgeText }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="queue-dates">
+                                        <div class="queue-date-label">Dikirim</div>
+                                        <div class="queue-date-val">
+                                            {{ \Carbon\Carbon::parse($item['date'])->translatedFormat('d M Y') }}
+                                        </div>
+                                        <div class="queue-date-label">Deadline</div>
+                                        <div class="queue-date-val" style="color: {{ $deadlineColor }};">
+                                            {{ $deadlineText }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="queue-item-right">
-                                <a href="{{ $item['url'] }}" class="btn-queue-action {{ $item['type'] }}">
-                                    <span>Review</span>
-                                    <i class="bi bi-chevron-right"></i>
+                            
+                            <div style="flex-shrink: 0;">
+                                <a href="{{ $item['url'] }}" class="queue-action-btn" style="background: {{ $btnBg }}; color: {{ $btnColor }};">
+                                    <i class="bi bi-chevron-right" style="font-size: 14px; font-weight: 700;"></i>
                                 </a>
                             </div>
                         </div>
                     @empty
                         <div class="text-muted text-center py-4" style="font-size: 13px;">
-                            <i class="bi bi-check2-circle" style="font-size: 24px; color: #19bd6b; display: block; margin-bottom: 6px;"></i>
+                            <i class="bi bi-check2-circle" style="font-size: 24px; color: #10b981; display: block; margin-bottom: 6px;"></i>
                             Semua materi sudah diperiksa!
                         </div>
                     @endforelse
@@ -1197,57 +1311,147 @@
                 </a>
             </div>
 
-            <!-- 2. Sertifikat Belum Diterbitkan -->
-            <div class="dash-card">
+            <!-- Status Persetujuan -->
+            <div class="dash-card" style="position: relative;">
+                <div class="chart-tooltip" id="donut-chart-tooltip" style="position: absolute; opacity: 0; pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; transform: translateY(-4px); z-index: 20;"></div>
+                
                 <div class="card-header-clean">
-                    <h5 class="card-title-clean">Sertifikat Perlu Diterbitkan</h5>
-                    <span style="background: rgba(255, 151, 15, 0.1); color: var(--dash-orange); font-weight: 800; font-size: 11px; border-radius: 6px; padding: 4px 8px;">
-                        {{ $pendingCertificatesQueue->count() }} Antrean
-                    </span>
+                    <h5 class="card-title-clean">Status Persetujuan</h5>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px;">
-                    @forelse($pendingCertificatesQueue as $item)
-                        <div class="queue-item-card">
-                            <div class="queue-item-left">
-                                <div class="queue-icon-wrapper {{ $item['type'] }}">
-                                    <i class="bi {{ $item['type'] === 'course' ? 'bi-patch-check-fill' : 'bi-award-fill' }}"></i>
-                                </div>
-                                <div class="queue-item-details">
-                                    <div class="queue-item-title">{{ $item['title'] }}</div>
-                                    <div class="queue-item-meta">
-                                        <span>Trainer: <strong>{{ $item['trainer'] }}</strong></span>
-                                        <span class="meta-dot">&bull;</span>
-                                        <span>Selesai: {{ \Carbon\Carbon::parse($item['date'])->translatedFormat('d M Y') }}</span>
-                                    </div>
-                                </div>
+                @php
+                    $pendingPct = (float) ($approvalStats['pending_pct'] ?? 0);
+                    $approvedPct = (float) ($approvalStats['approved_pct'] ?? 0);
+                    $splitPct = min(100, $pendingPct + $approvedPct);
+                @endphp
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; width: 100%; flex: 1; padding: 10px 0;">
+                    <div class="approval-donut" id="approval-donut-chart"
+                        data-approved="{{ $approvalStats['approved'] }}"
+                        data-approved-pct="{{ $approvalStats['approved_pct'] }}"
+                        data-pending="{{ $approvalStats['pending'] }}"
+                        data-pending-pct="{{ $approvalStats['pending_pct'] }}"
+                        data-rejected="{{ $approvalStats['rejected'] }}"
+                        data-rejected-pct="{{ $approvalStats['rejected_pct'] }}"
+                        style="background: conic-gradient(#10b981 0 {{ $approvedPct }}%, #475569 {{ $approvedPct }}% {{ $splitPct }}%, #ef4444 {{ $splitPct }}% 100%); margin: 0 auto;">
+                        <div class="approval-donut-inner">
+                            <div style="font-size: 28px; font-weight: 800; color: var(--dash-navy); line-height: 1; letter-spacing: -0.03em;">{{ round($approvalStats['approved_pct']) }}%</div>
+                            <div style="font-size: 10px; font-weight: 700; color: var(--dash-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Approval Rate</div>
+                            <div style="font-size: 11px; font-weight: 700; color: #10b981; margin-top: 6px; display: flex; align-items: center; gap: 2px;">
+                                <i class="bi bi-arrow-up-short"></i> 12%
                             </div>
-                            <div class="queue-item-right">
-                                <a href="{{ $item['url'] }}" class="btn-queue-action publish">
-                                    <span>Terbitkan</span>
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
+                            <div style="font-size: 9px; color: var(--dash-muted); margin-top: 1px;">dari bulan lalu</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-top: 8px;">
+                        <div style="text-align: center; background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.08); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
+                            <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #059669; font-weight: 700; margin-bottom: 4px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
+                                Disetujui
+                            </div>
+                            <div style="font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">
+                                {{ $approvalStats['approved'] }} <span style="font-weight:600; font-size:11px; color:#64748b">({{ $approvalStats['approved_pct'] }}%)</span>
+                            </div>
+                        </div>
+                        <div style="text-align: center; background: rgba(71, 85, 105, 0.04); border: 1px solid rgba(71, 85, 105, 0.08); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
+                            <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 4px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #475569;"></span>
+                                Menunggu
+                            </div>
+                            <div style="font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">
+                                {{ $approvalStats['pending'] }} <span style="font-weight:600; font-size:11px; color:#64748b">({{ $approvalStats['pending_pct'] }}%)</span>
+                            </div>
+                        </div>
+                        <div style="text-align: center; background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.08); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
+                            <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #dc2626; font-weight: 700; margin-bottom: 4px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span>
+                                Ditolak
+                            </div>
+                            <div style="font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">
+                                {{ $approvalStats['rejected'] }} <span style="font-weight:600; font-size:11px; color:#64748b">({{ $approvalStats['rejected_pct'] }}%)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ route('admin.trainer.material.approvals') }}" class="card-link mt-2">
+                    Lihat semua persetujuan
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- Deadline Terdekat -->
+            <div class="dash-card">
+                <div class="card-header-clean">
+                    <h5 class="card-title-clean">Deadline Terdekat</h5>
+                </div>
+
+                <div class="timeline-container" style="flex: 1;">
+                    @forelse($deadlineItems->take(3) as $item)
+                        @php
+                            $dotColor = $item['badge_class'] ?? 'green';
+                            if ($dotColor === 'blue') {
+                                $dotColor = 'green';
+                            }
+                            
+                            if ($item['badge_class'] === 'red') {
+                                $timeLabelText = 'Hari Ini';
+                                $badgeText = 'LEWAT TENGGAT';
+                                $badgeBg = '#fef2f2';
+                                $badgeColor = '#ef4444';
+                            } elseif ($item['badge_class'] === 'yellow') {
+                                $timeLabelText = 'Besok';
+                                $badgeText = 'HARI INI';
+                                $badgeBg = '#f1f5f9';
+                                $badgeColor = '#475569';
+                            } else {
+                                $timeLabelText = $item['badge_text'] ?? '3 Hari Lagi';
+                                $badgeText = 'ON PROGRESS';
+                                $badgeBg = '#eff6ff';
+                                $badgeColor = '#1e1b4b';
+                            }
+                        @endphp
+                        <div class="timeline-item">
+                            <div class="timeline-dot {{ $dotColor }}"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-header-row">
+                                    <span class="timeline-time-label">{{ $timeLabelText }}</span>
+                                    <span class="timeline-badge" style="background: {{ $badgeBg }}; color: {{ $badgeColor }};">
+                                        {{ $badgeText }}
+                                    </span>
+                                </div>
+                                <div class="timeline-title">
+                                    {{ $item['type'] === 'event' ? 'Acara:' : 'Materi:' }} {{ $item['title'] }}
+                                </div>
+                                <div class="timeline-trainer">Trainer: {{ $item['trainer'] }}</div>
+                                @if($item['badge_class'] !== 'red')
+                                    <div class="timeline-date">{{ $item['date_text'] }}</div>
+                                @endif
+                            </div>
+                            <div class="timeline-icon-box neutral">
+                                <i class="bi bi-calendar3"></i>
                             </div>
                         </div>
                     @empty
-                        <div class="text-muted text-center py-4" style="font-size: 13px;">
-                            <i class="bi bi-check2-circle" style="font-size: 24px; color: #19bd6b; display: block; margin-bottom: 6px;"></i>
-                            Semua sertifikat selesai diterbitkan!
+                        <div class="text-muted" style="font-size:13px;">
+                            Belum ada deadline terdekat.
                         </div>
                     @endforelse
                 </div>
 
-                <a href="{{ route('admin.trainer.certificates.index') }}" class="card-link mt-auto">
-                    Buka Halaman Sertifikat
+                <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="card-link mt-3">
+                    Kelola dari profil trainer
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
         </div>
 
-        <div class="main-grid">
+        <!-- Row 4: Ringkasan Aktivitas, Top Trainer, Feedback Terbaru -->
+        <div class="bottom-three-grid">
+            <!-- Ringkasan Aktivitas -->
             <div class="dash-card activity-card">
                 <div class="card-header-clean">
-                    <h5 class="card-title-clean">Aktivitas Overview</h5>
+                    <h5 class="card-title-clean">Ringkasan Aktivitas</h5>
 
                     <select class="chart-select">
                         <option>7 Hari Terakhir</option>
@@ -1257,18 +1461,18 @@
 
                 <div class="legend-row">
                     <span class="legend-item">
-                        <span class="legend-dot" style="background:#2f5bff;"></span>
+                        <span class="legend-dot" style="background:#1e1b4b;"></span>
                         Course Dibuat
                     </span>
 
                     <span class="legend-item">
-                        <span class="legend-dot" style="background:#19bd6b;"></span>
-                        Event Dibuat
+                        <span class="legend-dot" style="background:#10b981;"></span>
+                        Event Berjalan
                     </span>
 
                     <span class="legend-item">
-                        <span class="legend-dot" style="background:#ff970f;"></span>
-                        Material Disubmit
+                        <span class="legend-dot" style="background:#475569;"></span>
+                        Materi Dikirim
                     </span>
                 </div>
 
@@ -1286,11 +1490,11 @@
                         <line x1="0" y1="170" x2="680" y2="170" stroke="#e7edf6" />
                         <line x1="0" y1="215" x2="680" y2="215" stroke="#e7edf6" />
 
-                        <polyline points="{{ $chartPoints['course'] ?? '' }}" fill="none" stroke="#2f5bff" stroke-width="4"
+                        <polyline points="{{ $chartPoints['course'] ?? '' }}" fill="none" stroke="#1e1b4b" stroke-width="4"
                             stroke-linecap="round" />
-                        <polyline points="{{ $chartPoints['event'] ?? '' }}" fill="none" stroke="#19bd6b" stroke-width="4"
+                        <polyline points="{{ $chartPoints['event'] ?? '' }}" fill="none" stroke="#10b981" stroke-width="4"
                             stroke-linecap="round" />
-                        <polyline points="{{ $chartPoints['material'] ?? '' }}" fill="none" stroke="#ff970f"
+                        <polyline points="{{ $chartPoints['material'] ?? '' }}" fill="none" stroke="#475569"
                             stroke-width="4" stroke-linecap="round" />
                     </svg>
                     <div class="chart-x-axis">
@@ -1301,101 +1505,11 @@
                 </div>
             </div>
 
+            <!-- Top Trainer -->
             <div class="dash-card">
                 <div class="card-header-clean">
-                    <h5 class="card-title-clean">Status Approval</h5>
-                </div>
-
-                <div class="approval-wrap">
-                    @php
-                        $pendingPct = (float) ($approvalStats['pending_pct'] ?? 0);
-                        $approvedPct = (float) ($approvalStats['approved_pct'] ?? 0);
-                        $splitPct = min(100, $pendingPct + $approvedPct);
-                    @endphp
-                    <div class="approval-donut"
-                        style="background: conic-gradient(var(--dash-orange) 0 {{ $pendingPct }}%, var(--dash-green) {{ $pendingPct }}% {{ $splitPct }}%, var(--dash-red) {{ $splitPct }}% 100%);">
-                        <div class="approval-donut-inner">
-                            <div class="donut-number">{{ $approvalStats['total'] }}</div>
-                            <div class="donut-label">Total</div>
-                        </div>
-                    </div>
-
-                    <div class="approval-list">
-                        <div class="approval-item">
-                            <span class="legend-dot" style="background:#ff970f;margin-top:3px;"></span>
-                            <div>Menunggu Review<br><strong>{{ $approvalStats['pending'] }}</strong>
-                                ({{ $approvalStats['pending_pct'] }}%)</div>
-                        </div>
-
-                        <div class="approval-item">
-                            <span class="legend-dot" style="background:#19bd6b;margin-top:3px;"></span>
-                            <div>Disetujui<br><strong>{{ $approvalStats['approved'] }}</strong>
-                                ({{ $approvalStats['approved_pct'] }}%)</div>
-                        </div>
-
-                        <div class="approval-item">
-                            <span class="legend-dot" style="background:#ff4d4f;margin-top:3px;"></span>
-                            <div>Ditolak<br><strong>{{ $approvalStats['rejected'] }}</strong>
-                                ({{ $approvalStats['rejected_pct'] }}%)</div>
-                        </div>
-                    </div>
-                </div>
-
-                <a href="{{ route('admin.trainer.material.approvals') }}" class="card-link mt-2">
-                    Lihat semua approval
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-
-            <div class="dash-card">
-                <div class="card-header-clean">
-                    <h5 class="card-title-clean">Deadline Terdekat</h5>
-                </div>
-
-                <div class="deadline-list">
-                    @forelse($deadlineItems as $item)
-                        <div class="deadline-item">
-                            <div class="deadline-icon {{ $item['type'] === 'event' ? 'orange' : 'green' }}">
-                                <i class="bi {{ $item['type'] === 'event' ? 'bi-calendar-event' : 'bi-calendar-check' }}"></i>
-                            </div>
-
-                            <div>
-                                <div class="deadline-title">
-                                    {{ $item['type'] === 'event' ? 'Event:' : 'Materi:' }} {{ $item['title'] }}
-                                </div>
-                                <div class="deadline-sub">Trainer: {{ $item['trainer'] }}</div>
-                            </div>
-
-                            <div class="deadline-right">
-                                <span class="deadline-badge {{ $item['badge_class'] }}">{{ $item['badge_text'] }}</span>
-                                <div class="deadline-date">{{ $item['date_text'] }}</div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-muted" style="font-size:13px;">
-                            Belum ada deadline terdekat.
-                        </div>
-                    @endforelse
-                </div>
-
-                <a href="{{ route('admin.trainer.material.approvals') }}" class="card-link mt-3">
-                    Lihat semua deadline
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-
-        <div class="bottom-grid">
-            <div class="dash-card">
-                <div class="card-header-clean">
-                    <h5 class="card-title-clean">
-                        Top Trainer
-                        <span style="font-size:12px;font-weight:500;color:#71809d;">
-                            (Berdasarkan Aktivitas)
-                        </span>
-                    </h5>
-
-                    <span style="font-size:12px;color:#71809d;">Skor Aktivitas</span>
+                    <h5 class="card-title-clean">Top Trainer <span style="font-size:11px; font-weight:500; color:var(--dash-muted);">(Berdasarkan Event/Course Bulan Ini)</span></h5>
+                    <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="card-link" style="font-size: 11px; font-weight: 600;">Lihat semua</a>
                 </div>
 
                 <div class="trainer-list">
@@ -1404,6 +1518,9 @@
                             $rankClass = ['gold', 'silver', 'bronze'][$index] ?? 'silver';
                             $score = (int) ($trainer->score ?? 0);
                             $scorePct = (int) ($trainer->score_pct ?? 0);
+                            $badgeText = ['Top Creator', 'Fast Responder', 'Rising Trainer'][$index] ?? 'Trainer';
+                            $badgeBg = ['#eff6ff', '#eff6ff', '#f0fdf4'][$index] ?? '#f1f5f9';
+                            $badgeColor = ['#1e1b4b', '#1e1b4b', '#10b981'][$index] ?? '#475569';
                         @endphp
 
                         <div class="trainer-item">
@@ -1411,14 +1528,15 @@
                                 {{ $index + 1 }}
                             </div>
 
-                            <img src="{{ $trainer->avatar_url ?? ('https://ui-avatars.com/api/?name=' . urlencode($trainer->name ?? 'Trainer') . '&background=2745e8&color=fff&bold=true') }}"
+                            <img src="{{ $trainer->avatar_url ?? ('https://ui-avatars.com/api/?name=' . urlencode($trainer->name ?? 'Trainer') . '&background=1e3a8a&color=fff&bold=true') }}"
                                 class="trainer-avatar" alt="{{ $trainer->name ?? 'Trainer' }}">
 
-                            <div>
-                                <div class="trainer-name">
-                                    <a href="{{ route('admin.trainer.show', $trainer->id ?? 0) }}" class="text-decoration-none text-dark hover-primary">
-                                        {{ $trainer->name ?? 'Trainer' }} <i class="bi bi-box-arrow-up-right ms-1 small text-muted"></i>
+                            <div style="min-width: 0;">
+                                <div class="trainer-name" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <a href="{{ route('admin.trainer.show', $trainer->id ?? 0) }}" class="text-decoration-none text-dark hover-primary" style="font-weight:700;">
+                                        {{ $trainer->name ?? 'Trainer' }}
                                     </a>
+                                    <span class="badge" style="background: {{ $badgeBg }}; color: {{ $badgeColor }}; font-size: 9px; padding: 2px 6px; font-weight: 800; border-radius: 4px;">{{ $badgeText }}</span>
                                 </div>
                                 <div class="trainer-meta">
                                     {{ $trainer->courses_as_trainer_count ?? 0 }} Course •
@@ -1427,183 +1545,247 @@
                             </div>
 
                             <div class="score-area">
-                                <strong>{{ $score }}</strong>/100
-                                <div class="score-bar">
+                                <strong style="font-size: 16px; font-weight: 800; color: var(--dash-navy);">{{ $score }}</strong>
+                                <span style="font-size: 10px; color: var(--dash-muted);">Event/Course</span>
+                                <div class="score-bar" style="width: 100%;">
                                     <span style="width: {{ $scorePct }}%;"></span>
                                 </div>
                             </div>
                         </div>
                     @empty
-                        <div class="text-muted" style="font-size:13px;">
+                        <div class="text-muted text-center py-3" style="font-size:13px;">
                             Belum ada data trainer.
                         </div>
                     @endforelse
                 </div>
 
-                <a href="{{ route('admin.trainer.index') }}" class="card-link mt-3">
+                <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="card-link mt-auto">
                     Lihat semua trainer
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
 
-            <div class="dash-card">
-                <div class="card-header-clean">
-                    <h5 class="card-title-clean">Distribusi Course per Kategori</h5>
-                </div>
-
-                <div class="category-wrap">
-                    <div class="category-donut" style="background: conic-gradient({{ $categoryGradient }});">
-                        <div class="category-inner">
-                            <div class="donut-number">{{ $totalCourses }}</div>
-                            <div class="donut-label">Total</div>
-                        </div>
-                    </div>
-
-                    <div class="category-list">
-                        @forelse($categoryStats as $stat)
-                            <div class="category-item">
-                                <span class="legend-dot" style="background:{{ $stat['color'] }};"></span>
-                                <span>{{ $stat['name'] }}</span>
-                                <strong>{{ $stat['total'] }} ({{ $stat['pct'] }}%)</strong>
-                            </div>
-                        @empty
-                            <div class="text-muted" style="font-size:13px;">
-                                Belum ada data kategori.
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-
-                <a href="{{ route('admin.trainer.index') }}" class="card-link mt-3">
-                    Lihat semua kategori
-                    <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-
+            <!-- Feedback Terbaru -->
             <div class="dash-card">
                 <div class="card-header-clean">
                     <h5 class="card-title-clean">Feedback Terbaru</h5>
+                    <a href="{{ route('admin.trainer.material.approved') }}" class="card-link" style="font-size: 11px; font-weight: 600;">Lihat semua &rarr;</a>
                 </div>
 
                 <div class="feedback-list">
                     @forelse($feedbackItems as $item)
+                        @php
+                            $bgColors = ['#1e1b4b', '#1e1b4b', '#475569'];
+                            $bgColor = $bgColors[$loop->index % 3];
+                            $initials = collect(explode(' ', $item['name']))->map(fn($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
+                        @endphp
                         <div class="feedback-item">
-                            <img src="https://ui-avatars.com/api/?name={{ urlencode($item['name'] ?? 'User') }}&background=2745e8&color=fff&bold=true"
-                                class="feedback-avatar" alt="{{ $item['name'] ?? 'User' }}">
-
-                            <div>
-                                <div class="stars">{{ $item['stars'] ?? '☆☆☆☆☆' }}</div>
-                                <div class="feedback-title">{{ $item['title'] ?? '' }}</div>
-                                <div class="feedback-name">{{ $item['name'] ?? 'User' }}</div>
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: {{ $bgColor }}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;">
+                                {{ $initials }}
                             </div>
 
-                            <div class="feedback-time">{{ $item['time'] ?? '-' }}</div>
+                            <div style="min-width: 0;">
+                                <div class="stars">{{ $item['stars'] ?? '★★★★★' }}</div>
+                                <div class="feedback-title" style="font-size: 12px; font-weight: 700; color: var(--dash-navy); margin-bottom: 2px;">{{ $item['title'] ?? '' }}</div>
+                                <div class="feedback-text" style="font-style: italic; font-size: 12px; color: var(--dash-muted); margin-bottom: 4px; line-height: 1.3;">
+                                    "{{ $item['comment'] ?? 'Tidak ada komentar.' }}"
+                                </div>
+                                <div class="feedback-name" style="font-weight: 600; color: #475569; font-size: 11px;">{{ $item['name'] ?? 'User' }}</div>
+                            </div>
+
+                            <div class="feedback-time" style="font-size: 11px; color: var(--dash-muted);">{{ $item['time'] ?? '-' }}</div>
                         </div>
                     @empty
-                        <div class="text-muted" style="font-size:13px;">
+                        <div class="text-muted text-center py-3" style="font-size:13px;">
                             Belum ada feedback terbaru.
                         </div>
                     @endforelse
                 </div>
 
-                <a href="{{ route('admin.trainer.material.approved') }}" class="card-link mt-3">
+                <a href="{{ route('admin.trainer.material.approved') }}" class="card-link mt-auto">
                     Lihat semua feedback
                     <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
         </div>
+        @endif
+        @if(request()->query('view') === 'list')
+        <!-- Row 5: Daftar Seluruh Trainer -->
+        <div id="daftar-trainer" class="dash-card mb-4" style="padding: 0; overflow: hidden; margin-top: 0;">
+            <div class="card-header-clean" style="padding: 24px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <h5 class="card-title-clean">
+                    <i class="bi bi-people-fill" style="color: #1e1b4b; font-size: 20px;"></i>
+                    Daftar Seluruh Trainer
+                </h5>
+                
+                <!-- Search & Filter Form -->
+                <form action="{{ route('admin.trainer.index') }}" method="GET" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0;">
+                    <input type="hidden" name="view" value="list">
+                    
+                    <!-- Search Input -->
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <i class="bi bi-search" style="position: absolute; left: 14px; color: var(--dash-muted); font-size: 14px;"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, email, telepon..." 
+                            style="height: 40px; padding: 0 16px 0 38px; border: 1px solid rgba(30, 27, 75, 0.15); border-radius: 12px; font-size: 13px; font-weight: 600; outline: none; width: 260px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"
+                            onfocus="this.style.borderColor='var(--dash-blue)'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                            onblur="this.style.borderColor='rgba(30, 27, 75, 0.15)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.02)'">
+                    </div>
 
-        <!-- Daftar Seluruh Trainer -->
-        <h4 style="font-weight: 800; font-size: 18px; color: var(--dash-navy); margin: 36px 0 16px; letter-spacing: -.4px; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-people-fill text-primary"></i> Daftar Seluruh Trainer
-        </h4>
-        <div class="dash-card mb-4">
+                    <!-- Sort Select -->
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <select name="sort" onchange="this.form.submit()" 
+                            style="height: 40px; padding: 0 36px 0 16px; border: 1px solid rgba(30, 27, 75, 0.15); border-radius: 12px; font-size: 13px; font-weight: 600; color: #0f172a; outline: none; background: #fff; cursor: pointer; transition: all 0.2s; -webkit-appearance: none; appearance: none; box-shadow: 0 2px 4px rgba(0,0,0,0.02);"
+                            onfocus="this.style.borderColor='var(--dash-blue)'; this.style.boxShadow='0 0 0 3px rgba(37,99,235,0.1)'"
+                            onblur="this.style.borderColor='rgba(30, 27, 75, 0.15)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.02)'">
+                            <option value="newest" {{ request('sort') === 'newest' ? 'selected' : '' }}>Terbaru</option>
+                            <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Terlama</option>
+                            <option value="name_asc" {{ request('sort') === 'name_asc' ? 'selected' : '' }}>Nama (A - Z)</option>
+                            <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Nama (Z - A)</option>
+                        </select>
+                        <i class="bi bi-chevron-down" style="position: absolute; right: 14px; color: var(--dash-muted); font-size: 12px; pointer-events: none;"></i>
+                    </div>
+
+                    <!-- Reset Button if filtered -->
+                    @if(request()->filled('search') || request()->filled('sort'))
+                        <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="btn btn-light d-flex align-items-center justify-content-center" 
+                            style="height: 40px; border: 1px solid rgba(30, 27, 75, 0.1); border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--dash-muted); padding: 0 16px; background: #f8fafc; transition: all 0.2s; text-decoration: none;">
+                            Reset
+                        </a>
+                    @endif
+                </form>
+            </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                <table class="table-premium align-middle mb-0">
+                    <thead>
                         <tr>
-                            <th>Trainer</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Bergabung</th>
-                            <th class="text-end">Aksi</th>
+                            <th>TRAINER</th>
+                            <th>SKILL UTAMA</th>
+                            <th>COURSE</th>
+                            <th>EVENT</th>
+                            <th>PESERTA</th>
+                            <th>RATING</th>
+                            <th>STATUS</th>
+                            <th>BERGABUNG</th>
+                            <th class="text-end">AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($trainers as $trainerItem)
+                            @php
+                                $score = (int) ($trainerItem->points ?? 0);
+                                $maxPoints = max(1, (int) $trainers->max('points'));
+                                $scorePct = min(100, (int) round(($score / $maxPoints) * 100));
+                                
+                                // Fetch real specializations from User model 'trainer_specializations' cast
+                                $skillsHtml = '';
+                                $specs = $trainerItem->trainer_specializations;
+                                if (!is_array($specs)) {
+                                    $specs = [];
+                                }
+                                if (empty($specs)) {
+                                    $skillsHtml = '<span style="display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;">-</span>';
+                                } else {
+                                    $takeSpecs = array_slice($specs, 0, 3);
+                                    $restCount = count($specs) - count($takeSpecs);
+                                    
+                                    $colors = [
+                                        ['#eff6ff', '#1e1b4b', '#dbeafe'], // Dark Blue
+                                        ['#f0fdf4', '#10b981', '#bbf7d0'], // Green
+                                        ['#f1f5f9', '#475569', '#cbd5e1'], // Slate
+                                    ];
+                                    
+                                    foreach ($takeSpecs as $idx => $s) {
+                                        $colorSet = $colors[$idx % count($colors)];
+                                        $skillsHtml .= '<span style="display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; background: ' . $colorSet[0] . '; color: ' . $colorSet[1] . '; border: ' . $colorSet[2] . '; margin-right: 4px;">' . e($s) . '</span>';
+                                    }
+                                    if ($restCount > 0) {
+                                        $skillsHtml .= '<span style="display: inline-block; padding: 4px 6px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;">+' . $restCount . '</span>';
+                                    }
+                                }
+                                
+                                // Calculate real participants count
+                                $courseParticipants = $trainerItem->trainer_enrollments_count ?? 0;
+                                $eventParticipants = \App\Models\EventRegistration::whereHas('event', function ($q) use ($trainerItem) {
+                                    $q->where('trainer_id', $trainerItem->id);
+                                })->where('status', 'active')->count();
+                                $pesertaCount = $courseParticipants + $eventParticipants;
+                                
+                                $ratingVal = number_format((float) ($trainerItem->average_rating ?: 5.0), 1);
+                                $filledStars = (int) round((float) $ratingVal);
+                                
+                                $statusLabel = match($trainerItem->user_status ?? 'active') {
+                                    'active' => 'Aktif',
+                                    'inactive' => 'Tidak Tersedia',
+                                    'suspended' => 'Ditangguhkan',
+                                    default => 'Aktif',
+                                };
+                                $statusColorStyle = match($trainerItem->user_status ?? 'active') {
+                                    'active' => 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;',
+                                    'inactive' => 'background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;',
+                                    'suspended' => 'background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5;',
+                                    default => 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;',
+                                };
+                            @endphp
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-3">
-                                        <img src="{{ $trainerItem->avatar_url ?? ('https://ui-avatars.com/api/?name=' . urlencode($trainerItem->name) . '&background=2745e8&color=fff&bold=true') }}" 
+                                        <img src="{{ $trainerItem->avatar_url ?? ('https://ui-avatars.com/api/?name=' . urlencode($trainerItem->name) . '&background=1e3a8a&color=fff&bold=true') }}" 
                                              alt="{{ $trainerItem->name }}" 
                                              class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
                                         <div>
-                                            <div class="fw-bold text-dark">{{ $trainerItem->name }}</div>
-                                            <div class="small text-muted">{{ $trainerItem->phone ?? '-' }}</div>
+                                            <div class="fw-bold text-dark" style="font-size: 13px;">{{ $trainerItem->name }}</div>
+                                            <div class="small text-muted" style="font-size: 11px;">{{ $trainerItem->phone ?? '-' }}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ $trainerItem->email }}</td>
                                 <td>
-                                    @php
-                                        $statusLabel = match($trainerItem->user_status ?? 'active') {
-                                            'active' => 'Aktif',
-                                            'inactive' => 'Tidak Tersedia',
-                                            'suspended' => 'Ditangguhkan',
-                                            default => 'Aktif',
-                                        };
-                                        $statusColor = match($trainerItem->user_status ?? 'active') {
-                                            'active' => 'success',
-                                            'inactive' => 'warning text-dark',
-                                            'suspended' => 'danger',
-                                            default => 'success',
-                                        };
-                                    @endphp
-                                    <span class="badge bg-{{ $statusColor }}">{{ $statusLabel }}</span>
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        {!! $skillsHtml !!}
+                                    </div>
                                 </td>
-                                <td class="small text-muted">{{ $trainerItem->created_at->format('d M Y') }}</td>
+                                <td class="fw-semibold text-dark" style="font-size: 13px;">{{ $trainerItem->courses_as_trainer_count }}</td>
+                                <td class="fw-semibold text-dark" style="font-size: 13px;">{{ $trainerItem->events_as_trainer_count }}</td>
+                                <td class="fw-semibold text-dark" style="font-size: 13px;">{{ $pesertaCount }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <span class="fw-bold text-dark" style="font-size: 13px;">{{ $ratingVal }}</span>
+                                        <div style="color: #1e1b4b; font-size: 10px; display: flex; gap: 1px;">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <i class="bi bi-star{{ $i <= $filledStars ? '-fill' : '' }}"></i>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="display: inline-block; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; {!! $statusColorStyle !!}">
+                                        {{ $statusLabel }}
+                                    </span>
+                                </td>
+                                <td class="small text-muted" style="font-size: 12px;">{{ $trainerItem->created_at->translatedFormat('d M Y') }}</td>
                                 <td class="text-end">
-                                    <a href="{{ route('admin.trainer.show', $trainerItem->id) }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
-                                        <i class="bi bi-person-lines-fill me-1"></i> Profil
-                                    </a>
+                                    <div class="d-flex align-items-center justify-content-end gap-2">
+                                        <a href="{{ route('admin.trainer.show', $trainerItem->id) }}" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" style="background: #1e1b4b; border-color: #1e1b4b; font-size: 12px;">
+                                            Profil
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4">Belum ada trainer terdaftar.</td>
+                                <td colspan="10" class="text-center text-muted py-4">Belum ada trainer terdaftar.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
             @if($trainers->hasPages())
-                <div class="d-flex justify-content-end mt-4">
+                <div class="d-flex justify-content-end mt-4 p-3">
                     {{ $trainers->links('pagination::bootstrap-5') }}
                 </div>
             @endif
         </div>
+        @endif
 
-        <div class="insight-card">
-            <div class="insight-left">
-                <div class="insight-icon">
-                    <i class="bi bi-lightbulb-fill"></i>
-                </div>
-
-                <div>
-                    <div class="insight-title">Platform Insights</div>
-                    <p class="insight-text">
-                        Terus tingkatkan kualitas konten dan dukung para trainer untuk menciptakan pengalaman belajar
-                        terbaik!
-                    </p>
-                </div>
-            </div>
-
-            <a href="{{ route('admin.trainer.material.approvals') }}" class="btn-report">
-                <i class="bi bi-graph-up-arrow"></i>
-                Lihat Laporan Lengkap
-                <i class="bi bi-chevron-down"></i>
-            </a>
-        </div>
     </div>
 @endsection
 
@@ -1621,9 +1803,9 @@
             var data = window.dashboardChartData;
             var labels = data.labels || [];
             var series = [
-                { name: 'Course', color: '#2f5bff', values: data.course || [] },
-                { name: 'Event', color: '#19bd6b', values: data.event || [] },
-                { name: 'Materi', color: '#ff970f', values: data.material || [] }
+                { name: 'Course Dibuat', color: '#1e1b4b', values: data.course || [] },
+                { name: 'Event Berjalan', color: '#10b981', values: data.event || [] },
+                { name: 'Materi Dikirim', color: '#475569', values: data.material || [] }
             ];
 
             if (!labels.length) {
@@ -1684,7 +1866,7 @@
                 tooltip.innerHTML = html;
             }
 
-            function setHover(index, clientX) {
+            function setHover(index, clientX, clientY) {
                 var x = xStart + (xSpan * index / Math.max(1, labels.length - 1));
                 hoverLine.setAttribute('x1', x);
                 hoverLine.setAttribute('x2', x);
@@ -1702,7 +1884,11 @@
                 formatTooltip(index);
 
                 var rect = svg.getBoundingClientRect();
-                tooltip.style.left = Math.max(8, clientX - rect.left + 12) + 'px';
+                var tooltipX = clientX - rect.left + 48;
+                var tooltipY = clientY - rect.top - 30;
+
+                tooltip.style.left = tooltipX + 'px';
+                tooltip.style.top = tooltipY + 'px';
                 tooltip.classList.add('visible');
             }
 
@@ -1717,10 +1903,50 @@
                 var x = ((event.clientX - rect.left) / rect.width) * viewBox.width;
                 var rawIndex = Math.round((x - xStart) / xSpan * (labels.length - 1));
                 var index = Math.min(labels.length - 1, Math.max(0, rawIndex));
-                setHover(index, event.clientX);
+                setHover(index, event.clientX, event.clientY);
             });
 
             svg.addEventListener('mouseleave', hideHover);
         })();
+
+        (function () {
+            var donut = document.getElementById('approval-donut-chart');
+            var tooltip = document.getElementById('donut-chart-tooltip');
+            if (!donut || !tooltip) {
+                return;
+            }
+
+            donut.addEventListener('mousemove', function (event) {
+                var rect = donut.parentElement.getBoundingClientRect();
+                var x = event.clientX - rect.left + 15;
+                var y = event.clientY - rect.top - 85;
+
+                var approved = donut.getAttribute('data-approved');
+                var approvedPct = donut.getAttribute('data-approved-pct');
+                var pending = donut.getAttribute('data-pending');
+                var pendingPct = donut.getAttribute('data-pending-pct');
+                var rejected = donut.getAttribute('data-rejected');
+                var rejectedPct = donut.getAttribute('data-rejected-pct');
+
+                tooltip.innerHTML = '<div style="font-weight:700;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Detail Persetujuan</div>' +
+                    '<div style="color:#10b981;display:flex;justify-content:space-between;gap:16px;margin-bottom:2px;"><span>Disetujui:</span><strong>' + approved + ' (' + approvedPct + '%)</strong></div>' +
+                    '<div style="color:#cbd5e1;display:flex;justify-content:space-between;gap:16px;margin-bottom:2px;"><span>Menunggu:</span><strong>' + pending + ' (' + pendingPct + '%)</strong></div>' +
+                    '<div style="color:#f43f5e;display:flex;justify-content:space-between;gap:16px;"><span>Ditolak:</span><strong>' + rejected + ' (' + rejectedPct + '%)</strong></div>';
+
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+                tooltip.style.opacity = '1';
+                tooltip.style.transform = 'translateY(0)';
+                tooltip.classList.add('visible');
+            });
+
+            donut.addEventListener('mouseleave', function () {
+                tooltip.style.opacity = '0';
+                tooltip.style.transform = 'translateY(-4px)';
+                tooltip.classList.remove('visible');
+            });
+        })();
     </script>
+
+
 @endpush

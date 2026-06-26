@@ -4,8 +4,7 @@
 @php
   $pageTitle = 'Dashboard';
   $breadcrumbs = [
-    ['label' => 'Home', 'url' => route('trainer.dashboard')],
-    ['label' => 'Dashboard']
+    ['label' => 'Dasbor', 'url' => route('trainer.dashboard')]
   ];
 
   $trainer = Auth::user();
@@ -39,21 +38,21 @@
   // 1. Calculate total reviews/feedbacks for the rating card
   $courseReviews = \App\Models\Review::whereHas('course', function ($q) use ($trainer) {
     $q->where('trainer_id', $trainer->id);
-  })->get(['rating']);
+  })->get(['rating', 'trainer_rating']);
   
   $eventFeedbacks = \App\Models\Feedback::whereHas('event', function ($q) use ($trainer) {
     $q->where('trainer_id', $trainer->id);
-  })->get(['rating']);
+  })->get(['rating', 'speaker_rating']);
   
   $totalRatings = $courseReviews->count() + $eventFeedbacks->count();
   
   $ratingCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
   foreach($courseReviews as $r) { 
-      $val = (int) round($r->rating);
+      $val = (int) round($r->trainer_rating ?? $r->rating ?? 0);
       if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
   }
   foreach($eventFeedbacks as $f) { 
-      $val = (int) round($f->rating);
+      $val = (int) round($f->speaker_rating ?? $f->rating ?? 0);
       if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
   }
   
@@ -122,6 +121,10 @@
       $pathD .= "C {$cpX} {$svgPoints[$i-1]['y']}, {$cpX} {$svgPoints[$i]['y']}, {$svgPoints[$i]['x']} {$svgPoints[$i]['y']} ";
   }
   $areaD = $pathD . " L {$svgPoints[4]['x']} 150 L {$svgPoints[0]['x']} 150 Z";
+
+  $totalRevenue = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+      ->where('status', 'approved')
+      ->sum('amount');
 
   $thisMonthRevenue = $revenueData[4] ?? 0;
   $lastMonthRevenue = $revenueData[3] ?? 0;
@@ -349,23 +352,97 @@
   }
 
   // Pre-fetch all event detail links for the Javascript Calendar
-  $allTrainerEvents = \App\Models\Event::where('trainer_id', $trainer->id)->whereNotNull('event_date')->get();
+  $allTrainerEvents = \App\Models\Event::query()
+    ->whereNotNull('event_date')
+    ->where(function ($query) use ($trainer) {
+        $query->where('trainer_id', $trainer->id)
+            ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                $speakerQuery->where('trainer_id', $trainer->id);
+            })
+            ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
+                $assignmentQuery->where('trainer_id', $trainer->id)
+                    ->where('status', 'accepted');
+            });
+        
+        $trainerName = trim((string) ($trainer->name ?? ''));
+        if ($trainerName !== '') {
+            $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+        }
+    })
+    ->get();
+
   $eventDetailLinks = [];
   foreach($allTrainerEvents as $ev) {
       $dateStr = \Carbon\Carbon::parse($ev->event_date)->format('Y-m-d');
-      $eventDetailLinks[$dateStr] = route('trainer.events.show', $ev->id);
+      $eventDetailLinks[$dateStr] = [
+          'url' => route('trainer.events.show', $ev->id),
+          'title' => $ev->title
+      ];
+  }
+
+  // Course approved dates
+  $courseDetailLinks = [];
+  $allTrainerCourses = $trainer->coursesAsTrainer()->whereNotNull('approved_at')->get();
+  foreach($allTrainerCourses as $c) {
+      $dateStr = \Carbon\Carbon::parse($c->approved_at)->format('Y-m-d');
+      $courseDetailLinks[$dateStr] = [
+          'url' => route('trainer.courses.studio', $c->id),
+          'title' => $c->name
+      ];
+  }
+
+  // Deadline dates from tugasItems
+  $deadlineDetailLinks = [];
+  foreach($tugasItems as $task) {
+      if (!empty($task['deadline'])) {
+          $dateStr = \Carbon\Carbon::parse($task['deadline'])->format('Y-m-d');
+          $deadlineDetailLinks[$dateStr] = [
+              'url' => $task['url'],
+              'title' => $task['title']
+          ];
+      }
   }
 
   // 8. Agenda Items (today's events + fallback to upcoming)
-  $agendaEvents = \App\Models\Event::where('trainer_id', $trainer->id)
+  $agendaEvents = \App\Models\Event::query()
     ->whereNotNull('event_date')
+    ->where(function ($query) use ($trainer) {
+        $query->where('trainer_id', $trainer->id)
+            ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                $speakerQuery->where('trainer_id', $trainer->id);
+            })
+            ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
+                $assignmentQuery->where('trainer_id', $trainer->id)
+                    ->where('status', 'accepted');
+            });
+        
+        $trainerName = trim((string) ($trainer->name ?? ''));
+        if ($trainerName !== '') {
+            $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+        }
+    })
     ->whereDate('event_date', $today->toDateString())
     ->orderBy('event_time', 'asc')
     ->get();
 
   if ($agendaEvents->isEmpty()) {
-    $agendaEvents = \App\Models\Event::where('trainer_id', $trainer->id)
+    $agendaEvents = \App\Models\Event::query()
       ->whereNotNull('event_date')
+      ->where(function ($query) use ($trainer) {
+          $query->where('trainer_id', $trainer->id)
+              ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                  $speakerQuery->where('trainer_id', $trainer->id);
+              })
+              ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
+                  $assignmentQuery->where('trainer_id', $trainer->id)
+                      ->where('status', 'accepted');
+              });
+          
+          $trainerName = trim((string) ($trainer->name ?? ''));
+          if ($trainerName !== '') {
+              $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+          }
+      })
       ->whereDate('event_date', '>=', $today->toDateString())
       ->orderBy('event_date', 'asc')
       ->orderBy('event_time', 'asc')
@@ -387,9 +464,7 @@ body {
 }
 
 .dashboard-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 32px 24px;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -498,7 +573,36 @@ body {
 
 /* Undangan Diterima */
 .card-green-top {
-    border: none; position: relative; overflow: hidden; background: linear-gradient(145deg, #ffffff, #f8fafc); border: 1px solid #e2e8f0;
+    border: none; 
+    position: relative; 
+    overflow: hidden; 
+    background: #ffffff;
+    max-height: 450px;
+    display: flex;
+    flex-direction: column;
+}
+.invitations-scroll-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    max-height: 310px;
+    overflow-y: auto;
+    padding-right: 8px;
+    margin-right: -4px;
+}
+.invitations-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+.invitations-scroll-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+.invitations-scroll-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+.invitations-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 .card-green-top::before { content: ''; position: absolute; top: 0; right: 0; width: 160px; height: 160px; background: radial-gradient(circle, rgba(98,67,136,0.06) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; transform: translate(30%, -30%); z-index: 1; pointer-events: none; }
 .card-green-top > * { position: relative; z-index: 2; }
@@ -562,7 +666,7 @@ body {
 
 /* Kelas & Event Berjalan Grid */
 .ongoing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.ongoing-card { position: relative; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; background: linear-gradient(145deg, #ffffff, #f8fafc); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease; cursor: pointer; min-height: 190px; }
+.ongoing-card { position: relative; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; background: #ffffff; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease; cursor: pointer; min-height: 190px; }
 .ongoing-card:hover { transform: translateY(-6px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02); border-color: #cbd5e1; }
 .ongoing-card::before { content: ''; position: absolute; top: 0; right: 0; width: 160px; height: 160px; background: radial-gradient(circle, rgba(98,67,136,0.06) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; transform: translate(30%, -30%); z-index: 1; pointer-events: none; }
 .ongoing-card .tag-badge { margin-bottom: 0; position: relative; z-index: 2; }
@@ -587,6 +691,7 @@ body {
 .cal-date.selected-orange { border: 2px solid #f97316; color: #f97316; }
 .cal-date.selected-blue { border: 2px solid #3b82f6; color: #3b82f6; }
 .cal-date.selected-green { border: 2px solid #10b981; color: #10b981; }
+.cal-date.selected-purple { border: 2px solid #624388; color: #624388; }
 .cal-date.today-fill { background: #624388; color: white; }
 .cal-legend { display: flex; justify-content: center; gap: 24px; font-size: 12px; font-weight: 600; color: #475569; }
 .legend-item { display: flex; align-items: center; gap: 8px; }
@@ -663,10 +768,10 @@ body {
             
             <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
                 <div class="revenue-title"><i class="bi bi-wallet2" style="margin-right: 8px; font-size: 16px;"></i> Pendapatan Total</div>
-                <div style="background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px); letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.1);">BULAN INI</div>
+                <div style="background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; backdrop-filter: blur(4px); letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.1);">TOTAL</div>
             </div>
             
-            <div class="revenue-amount" style="position: relative; z-index: 2;">Rp {{ number_format($thisMonthRevenue, 0, ',', '.') }}</div>
+            <div class="revenue-amount" style="position: relative; z-index: 2;">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
             
             <div class="revenue-growth" style="position: relative; z-index: 2;">
                 @if($revenueGrowth >= 0)
@@ -727,33 +832,152 @@ body {
             </div>
             <div class="activity-grid">
                 <div class="activity-item">
-                    <div class="activity-icon icon-purple"><i class="bi bi-calendar-event"></i></div>
-                    <div class="activity-val">{{ $activeCourseCount + $activeEventCount }}</div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div class="activity-icon icon-purple" style="margin-bottom: 0;">
+                          <i class="bi bi-calendar-event"></i>
+                        </div>
+                        <div class="activity-val" style="margin-bottom: 0;">{{ $activeCourseCount + $activeEventCount }}</div>
+                    </div>
                     <div class="activity-lbl">Kelas Berjalan</div>
                 </div>
                 <div class="activity-item">
-                    <div class="activity-icon icon-green"><i class="bi bi-people"></i></div>
-                    <div class="activity-val">{{ number_format($totalStudents) }}</div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div class="activity-icon icon-green" style="margin-bottom: 0;"><i class="bi bi-people"></i></div>
+                        <div class="activity-val" style="margin-bottom: 0;">{{ number_format($totalStudents) }}</div>
+                    </div>
                     <div class="activity-lbl">Peserta Aktif</div>
                 </div>
                 <div class="activity-item">
-                    <div class="activity-icon icon-orange"><i class="bi bi-file-earmark-text"></i></div>
-                    <div class="activity-val">{{ $tugasMenungguCount }}</div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div class="activity-icon icon-orange" style="margin-bottom: 0;"><i class="bi bi-file-earmark-text"></i></div>
+                        <div class="activity-val" style="margin-bottom: 0;">{{ $tugasMenungguCount }}</div>
+                    </div>
                     <div class="activity-lbl">Tugas Menunggu</div>
                     <div class="activity-sub">Perlu diselesaikan</div>
                 </div>
                 <div class="activity-item">
-                    <div class="activity-icon icon-blue"><i class="bi bi-star"></i></div>
-                    <div class="activity-val">{{ number_format($averageRating, 1) }}</div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <div class="activity-icon icon-blue" style="margin-bottom: 0;"><i class="bi bi-star"></i></div>
+                        <div class="activity-val" style="margin-bottom: 0;">{{ number_format($averageRating, 1) }}</div>
+                    </div>
                     <div class="activity-lbl">Rating Trainer</div>
                     <div class="activity-sub">Dari {{ number_format($totalRatings) }} ulasan</div>
                 </div>
             </div>
-            <div style="text-align: center;">
-                <a href="{{ route('trainer.courses') }}" class="dash-card-link" style="justify-content: center;">Lihat Semua <i class="bi bi-arrow-right"></i></a>
-            </div>
         </div>
 
+        {{-- Undangan Diterima --}}
+        <div class="dash-card card-green-top">
+            <div class="dash-card-header">
+                <h3 class="dash-card-title">Undangan Diterima</h3>
+                @if($pendingInvitationItems->count() > 0)
+                <span class="badge-header-green">{{ $pendingInvitationItems->count() }} Baru</span>
+                @endif
+            </div>
+            
+            <div class="invitations-scroll-container">
+                @forelse($pendingInvitationItems->take(2) as $invite)
+                @php
+                    $inviteEntityType = method_exists($invite, 'effectiveEntityType') ? $invite->effectiveEntityType() : data_get($invite->data, 'entity_type', 'course');
+                    $inviteTypeLabel = $inviteEntityType === 'event' ? 'Event' : 'Course';
+                    $entityId = (int) data_get($invite->data, 'entity_id', 0);
+                    $entityDate = '-';
+                    $entityTime = '-';
+                    $entityLocation = '-';
+                    
+                    if ($inviteEntityType === 'event') {
+                        $eventObj = \App\Models\Event::find($entityId);
+                        if ($eventObj) {
+                            $entityDate = $eventObj->event_date ? $eventObj->event_date->format('d M Y') : 'Jadwal Menyusul';
+                            $entityTime = $eventObj->event_time ? \Carbon\Carbon::parse($eventObj->event_time)->format('H:i') : '-';
+                            $entityLocation = $eventObj->location ?: ($eventObj->is_online ? 'Online (Virtual)' : '-');
+                        }
+                    } else {
+                        $courseObj = \App\Models\Course::find($entityId);
+                        if ($courseObj) {
+                             $entityDate = $courseObj->created_at ? $courseObj->created_at->format('d M Y') : '-';
+                             $entityLocation = '-';
+                        }
+                    }
+                @endphp
+                <div class="invite-item" 
+                     @if($inviteEntityType === 'course')
+                     onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')" 
+                     style="cursor:pointer;"
+                     @elseif($inviteEntityType === 'event' && $entityId > 0)
+                     onclick="window.location.href='{{ route('trainer.events.show', $entityId) }}'"
+                     style="cursor:pointer;"
+                     @endif
+                     >
+                    <div class="invite-icon-box {{ $inviteEntityType === 'event' ? 'box-purple' : 'box-green' }}">
+                        <i class="bi {{ $inviteEntityType === 'event' ? 'bi-person-video3' : 'bi-file-text' }}"></i>
+                    </div>
+                    <div class="invite-content">
+                        <span class="tag-badge {{ $inviteEntityType === 'event' ? 'tag-event' : 'tag-course' }}">{{ $inviteTypeLabel }}</span>
+                        <h4 class="invite-title">{{ Str::limit($invite->title, 35) }}</h4>
+                        <div class="invite-meta-row">
+                            <span>Penyelenggara: idSpora</span>
+                            <span>{{ $entityDate }}</span>
+                        </div>
+                        <div class="invite-meta-icons">
+                            @if($entityTime !== '-')
+                            <span><i class="bi bi-clock"></i> {{ $entityTime }}</span>
+                            @endif
+                            @if($entityLocation !== '-')
+                            <span><i class="bi bi-geo-alt"></i> {{ Str::limit($entityLocation, 20) }}</span>
+                            @endif
+                        </div>
+                        <div class="invite-desc">
+                            {{ $inviteEntityType === 'event' ? 'Anda diundang sebagai pembicara untuk sesi ' . Str::limit($invite->title, 20) . '.' : 'Anda diundang sebagai pengajar untuk menyampaikan materi dalam kelas ini.' }}
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                            @if($inviteEntityType === 'event' && $entityId > 0)
+                                <a href="{{ route('trainer.events.show', $entityId) }}"
+                                   class="btn btn-sm"
+                                   style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #cbd5e1; color:#475569; background:#fff; padding:8px; text-decoration:none; text-align:center;"
+                                   onclick="event.stopPropagation();">
+                                    Lihat Detail
+                                </a>
+                            @elseif($inviteEntityType === 'course' && $entityId > 0)
+                                <a href="{{ route('trainer.detail-course', $entityId) }}"
+                                   class="btn btn-sm"
+                                   style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #cbd5e1; color:#475569; background:#fff; padding:8px; text-decoration:none; text-align:center;"
+                                   onclick="event.stopPropagation();">
+                                    Lihat Detail
+                                </a>
+                            @endif
+                            <div style="display: flex; gap: 8px;">
+                                @if($inviteEntityType === 'course')
+                                    <button type="button" class="btn btn-sm" style="flex:1; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
+                                @else
+                                    <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                        @csrf
+                                        <input type="hidden" name="decision" value="accept">
+                                        <button type="submit" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation();">Terima</button>
+                                    </form>
+                                @endif
+                                <form method="POST" class="js-invitation-response-form" data-confirm="Apakah Anda yakin ingin menolak undangan ini?" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                    @csrf
+                                    <input type="hidden" name="decision" value="reject">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation();" data-loading-text="Memproses...">Tolak</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">Tidak ada undangan baru.</div>
+                @endforelse
+            </div>
+            
+            <div style="text-align: center; margin-top: auto; padding-top: 16px;">
+                <a href="{{ route('trainer.notifications.index') }}" class="dash-card-link" style="justify-content: center; color: #624388;">Lihat Semua Undangan <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+
+    {{-- ROW 2: 3 Columns --}}
+    <div class="grid-3-col">
         {{-- E-Sertifikat Saya --}}
         <div class="dash-card" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="window.location.href='{{ route('trainer.certificates.index') }}'" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 20px -5px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
             <div style="width: 100%;">
@@ -816,89 +1040,6 @@ body {
             </div>
             <div style="text-align: center; margin-top: auto;">
                 <a href="{{ route('trainer.certificates.index') }}" class="dash-card-link" style="justify-content: center;">Lihat Semua Sertifikat <i class="bi bi-arrow-right"></i></a>
-            </div>
-        </div>
-    </div>
-
-    {{-- ROW 2: 3 Columns --}}
-    <div class="grid-3-col">
-        {{-- Undangan Diterima --}}
-        <div class="dash-card card-green-top">
-            <div class="dash-card-header">
-                <h3 class="dash-card-title">Undangan Diterima</h3>
-                @if($pendingInvitationItems->count() > 0)
-                <span class="badge-header-green">{{ $pendingInvitationItems->count() }} Baru</span>
-                @endif
-            </div>
-            
-            <div style="display: flex; flex-direction: column; flex: 1;">
-                @forelse($pendingInvitationItems->take(2) as $invite)
-                @php
-                    $inviteEntityType = method_exists($invite, 'effectiveEntityType') ? $invite->effectiveEntityType() : data_get($invite->data, 'entity_type', 'course');
-                    $inviteTypeLabel = $inviteEntityType === 'event' ? 'Event' : 'Course';
-                    $entityId = (int) data_get($invite->data, 'entity_id', 0);
-                    $entityDate = '-';
-                    $entityTime = '-';
-                    $entityLocation = '-';
-                    
-                    if ($inviteEntityType === 'event') {
-                        $eventObj = \App\Models\Event::find($entityId);
-                        if ($eventObj) {
-                            $entityDate = $eventObj->event_date ? $eventObj->event_date->format('d M Y') : 'Jadwal Menyusul';
-                            $entityTime = $eventObj->event_time ? \Carbon\Carbon::parse($eventObj->event_time)->format('H:i') : '-';
-                            $entityLocation = $eventObj->location ?: ($eventObj->is_online ? 'Online (Virtual)' : '-');
-                        }
-                    } else {
-                        $courseObj = \App\Models\Course::find($entityId);
-                        if ($courseObj) {
-                             $entityDate = $courseObj->created_at ? $courseObj->created_at->format('d M Y') : '-';
-                             $entityLocation = 'Platform LMS';
-                        }
-                    }
-                @endphp
-                <div class="invite-item" onclick="openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')" style="cursor:pointer;">
-                    <div class="invite-icon-box {{ $inviteEntityType === 'event' ? 'box-purple' : 'box-green' }}">
-                        <i class="bi {{ $inviteEntityType === 'event' ? 'bi-person-video3' : 'bi-file-text' }}"></i>
-                    </div>
-                    <div class="invite-content">
-                        <span class="tag-badge {{ $inviteEntityType === 'event' ? 'tag-event' : 'tag-course' }}">{{ $inviteTypeLabel }}</span>
-                        <h4 class="invite-title">{{ Str::limit($invite->title, 35) }}</h4>
-                        <div class="invite-meta-row">
-                            <span>Penyelenggara: idSpora</span>
-                            <span>{{ $entityDate }}</span>
-                        </div>
-                        <div class="invite-meta-icons">
-                            @if($entityTime !== '-')
-                            <span><i class="bi bi-clock"></i> {{ $entityTime }}</span>
-                            @endif
-                            @if($entityLocation !== '-')
-                            <span><i class="bi bi-geo-alt"></i> {{ Str::limit($entityLocation, 20) }}</span>
-                            @endif
-                        </div>
-                        <div class="invite-desc">
-                            {{ $inviteEntityType === 'event' ? 'Anda diundang sebagai pembicara untuk sesi ' . Str::limit($invite->title, 20) . '.' : 'Anda diundang sebagai pengajar untuk menyampaikan materi dalam kelas ini.' }}
-                        </div>
-                        <div style="display: flex; gap: 8px; margin-top: 12px;">
-                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1;">
-                                @csrf
-                                <input type="hidden" name="action" value="accept">
-                                <button type="button" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation(); openSchemeSelectionModal({{ $invite->id }}, '{{ addslashes($invite->title) }}', '{{ $inviteEntityType }}')">Terima</button>
-                            </form>
-                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1;">
-                                @csrf
-                                <input type="hidden" name="action" value="reject">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation(); return confirm('Apakah Anda yakin ingin menolak undangan ini?');">Tolak</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                @empty
-                <div style="text-align: center; padding: 20px; color: #64748b; font-size: 13px;">Tidak ada undangan baru.</div>
-                @endforelse
-            </div>
-            
-            <div style="text-align: center; margin-top: auto; padding-top: 16px;">
-                <a href="{{ route('trainer.notifications.index') }}" class="dash-card-link" style="justify-content: center; color: #624388;">Lihat Semua Undangan <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
 
@@ -968,11 +1109,11 @@ body {
             <div class="rating-count">Dari {{ number_format($totalRatings) }} ulasan</div>
             
             <div class="rating-bars">
-                <div class="rating-bar-row"><span>5 ★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[5] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[5] ?? 0 }}% ({{ $ratingCounts[5] ?? 0 }})</span></div>
-                <div class="rating-bar-row"><span>4 ★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[4] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[4] ?? 0 }}% ({{ $ratingCounts[4] ?? 0 }})</span></div>
-                <div class="rating-bar-row"><span>3 ★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[3] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[3] ?? 0 }}% ({{ $ratingCounts[3] ?? 0 }})</span></div>
-                <div class="rating-bar-row"><span>2 ★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[2] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[2] ?? 0 }}% ({{ $ratingCounts[2] ?? 0 }})</span></div>
-                <div class="rating-bar-row"><span>1 ★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[1] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[1] ?? 0 }}% ({{ $ratingCounts[1] ?? 0 }})</span></div>
+                <div class="rating-bar-row"><span>5★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[5] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[5] ?? 0 }}% ({{ $ratingCounts[5] ?? 0 }})</span></div>
+                <div class="rating-bar-row"><span>4★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[4] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[4] ?? 0 }}% ({{ $ratingCounts[4] ?? 0 }})</span></div>
+                <div class="rating-bar-row"><span>3★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[3] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[3] ?? 0 }}% ({{ $ratingCounts[3] ?? 0 }})</span></div>
+                <div class="rating-bar-row"><span>2★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[2] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[2] ?? 0 }}% ({{ $ratingCounts[2] ?? 0 }})</span></div>
+                <div class="rating-bar-row"><span>1★</span><div class="bar-track"><div class="bar-fill" style="width: {{ $ratingPercentages[1] ?? 0 }}%;"></div></div><span>{{ $ratingPercentages[1] ?? 0 }}% ({{ $ratingCounts[1] ?? 0 }})</span></div>
             </div>
 
             @forelse($feedbackItems->take(2) as $fb)
@@ -980,7 +1121,7 @@ body {
                 $fbRating = (float)($fb->rating ?? 5);
                 $fbName = $fb->user->name ?? ($fb->participant_name ?? 'Peserta');
                 $fbComment = $fb->comment ?? ($fb->feedback ?? '-');
-                $fbEvent = $fb->event->title ?? ($fb->event_title ?? 'Materi');
+                $fbEvent = $fb->event->title ?? $fb->course->name ?? $fb->event_title ?? 'Materi';
                 $fbDate = $fb->created_at ? $fb->created_at->format('d M Y') : '-';
             @endphp
             <div class="review-box mt-2" style="margin-bottom:12px;">
@@ -1018,7 +1159,6 @@ body {
         <div>
             <div class="dash-card-header" style="margin-bottom: 16px;">
                 <h3 class="dash-card-title">Kelas & Event Berjalan</h3>
-                <a href="{{ route('trainer.courses') }}" class="dash-card-link">Lihat Semua</a>
             </div>
             
             <div class="ongoing-grid">
@@ -1231,6 +1371,8 @@ function handleStatusToggle(checkbox) {
       
       let currentCalDate = new Date();
       const globalEventLinks = @json($eventDetailLinks);
+      const globalCourseLinks = @json($courseDetailLinks);
+      const globalDeadlineLinks = @json($deadlineDetailLinks);
       
       function renderLocalCalendar(dateObj) {
           const year = dateObj.getFullYear();
@@ -1263,16 +1405,34 @@ function handleStatusToggle(checkbox) {
                   let formattedDate = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(dayCount).padStart(2, '0');
                   
                   if (globalEventLinks[formattedDate]) {
-                      classes += ' selected-blue';
+                      classes += ' selected-purple';
+                  } else if (globalCourseLinks[formattedDate]) {
+                      classes += ' selected-green';
+                  } else if (globalDeadlineLinks[formattedDate]) {
+                      classes += ' selected-orange';
                   }
                   
                   if (year === today.getFullYear() && month === today.getMonth() && dayCount === today.getDate()) {
                       classes += ' today-fill';
                   }
                   
-                  let targetUrl = globalEventLinks[formattedDate] ? globalEventLinks[formattedDate] : `{{ route('trainer.events') }}?date=${formattedDate}`;
+                  let targetUrl = '#';
+                  let tooltip = '';
+                  if (globalEventLinks[formattedDate]) {
+                      targetUrl = globalEventLinks[formattedDate].url;
+                      tooltip = `Event: ${globalEventLinks[formattedDate].title}`;
+                  } else if (globalCourseLinks[formattedDate]) {
+                      targetUrl = globalCourseLinks[formattedDate].url;
+                      tooltip = `Kelas: ${globalCourseLinks[formattedDate].title}`;
+                  } else if (globalDeadlineLinks[formattedDate]) {
+                      targetUrl = globalDeadlineLinks[formattedDate].url;
+                      tooltip = `Deadline: ${globalDeadlineLinks[formattedDate].title}`;
+                  } else {
+                      targetUrl = `{{ route('trainer.events') }}?date=${formattedDate}`;
+                  }
                   
-                  html += `<a href="${targetUrl}" class="${classes}">${dayCount}</a>`;
+                  let titleAttr = tooltip ? `title="${tooltip.replace(/"/g, '&quot;')}"` : '';
+                  html += `<a href="${targetUrl}" class="${classes}" ${titleAttr}>${dayCount}</a>`;
                   dayCount++;
               } else {
                   html += `<a href="#" class="cal-date muted" onclick="event.preventDefault()">${nextMonthDay++}</a>`;

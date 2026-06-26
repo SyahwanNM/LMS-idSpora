@@ -13,26 +13,6 @@ use Illuminate\Support\Facades\DB;
 
 class CourseSubmissionController extends Controller
 {
-    /**
-     * POST /api/trainer/course-submissions
-     *
-     * Dua mode penggunaan:
-     *
-     * MODE A — Banyak course, masing-masing 1 judul (setiap judul = 1 course + 1 unit):
-     * {
-     *   "courses": [
-     *     { "name": "Ubah",    "level": "beginner" },
-     *     { "name": "Basicly", "level": "beginner" }
-     *   ]
-     * }
-     *
-     * MODE B — 1 course, judul-judul menjadi unit titles (2 judul = 2 unit = 6 modul):
-     * {
-     *   "course_name": "Data Science Google Colab",
-     *   "unit_titles": ["Ubah", "Basicly"],
-     *   "level": "beginner"
-     * }
-     */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
@@ -60,9 +40,6 @@ class CourseSubmissionController extends Controller
         return $this->storeMultipleCourses($request);
     }
 
-    /**
-     * Mode A: Setiap judul → 1 course terpisah dengan 1 unit (3 modul slot).
-     */
     private function storeMultipleCourses(Request $request): JsonResponse
     {
         $trainer     = $request->user();
@@ -135,11 +112,6 @@ class CourseSubmissionController extends Controller
         ], 201);
     }
 
-    /**
-     * Mode B: 1 course, judul-judul menjadi unit titles.
-     * Contoh: course_name="Data Science", unit_titles=["Ubah","Basicly"]
-     * → 1 course dengan 2 unit, masing-masing 3 modul slot = 6 modul total.
-     */
     private function storeSingleCourseWithUnits(Request $request): JsonResponse
     {
         $trainer    = $request->user();
@@ -222,13 +194,6 @@ class CourseSubmissionController extends Controller
         ], 201);
     }
 
-    /**
-     * Clone tepat 1 unit (3 slot: PDF + Video + Quiz) dari template ke course,
-     * dan simpan judul unit ke tabel course_units.
-     *
-     * Slot diambil dari template berdasarkan posisi unit: (unitNo - 1) * 3.
-     * Jika template tidak punya cukup slot, buat slot generik.
-     */
     private function cloneOneUnit(
         Course $course,
         ?CourseTemplate $template,

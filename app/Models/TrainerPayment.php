@@ -26,7 +26,7 @@ class TrainerPayment extends Model
     /** Related event (for event_fee type) */
     public function event()
     {
-        return $this->belongsTo(Event::class, 'event_id');
+        return $this->belongsTo(Event::class, 'event_id')->withTrashed();
     }
 
     /** Related course (for course_payout type) */

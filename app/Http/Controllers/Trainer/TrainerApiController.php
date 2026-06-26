@@ -13,7 +13,6 @@ class TrainerApiController extends Controller
     {
         $trainers = User::query()
             ->where('role', 'trainer')
-            // Return trainer profile (data diri) only; exclude sensitive/irrelevant fields.
             ->select([
                 'id',
                 'name',

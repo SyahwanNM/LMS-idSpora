@@ -243,8 +243,18 @@ class EventController extends Controller
             'expenses_json' => $expenseRows,
             'is_published' => $isPublished,
             'published_at' => $publishedAt,
-            'is_reseller_event' => (bool) ($validated['is_reseller_event'] ?? false),
         ]);
+
+        // Guard: pastikan tidak ada module/registrasi/assignment/dll yang ter-create secara tidak sengaja untuk event baru (orphan dari deleted events)
+        \App\Models\EventRegistration::where('event_id', $event->id)->delete();
+        \App\Models\EventTrainerModule::where('event_id', $event->id)->delete();
+        \App\Models\TrainerAssignment::where('event_id', $event->id)->forceDelete();
+        \App\Models\EventDailyQr::where('event_id', $event->id)->delete();
+        \App\Models\EventSpeaker::where('event_id', $event->id)->delete();
+        \App\Models\EventScheduleItem::where('event_id', $event->id)->delete();
+        \App\Models\EventExpense::where('event_id', $event->id)->delete();
+        \App\Models\Feedback::where('event_id', $event->id)->delete();
+        \Illuminate\Support\Facades\DB::table('user_saved_events')->where('event_id', $event->id)->delete();
 
         foreach ($scheduleRows as $row) {
             $event->scheduleItems()->create($row);
@@ -306,16 +316,23 @@ class EventController extends Controller
             if ($isPublished) {
                 $incomplete = [];
 
-                if (empty($event->vbg_path)) {
+                $hasMapsLink = !empty($event->maps_url);
+                $hasZoomLink = !empty($event->zoom_link);
+                $isOfflineOnly = $hasMapsLink && !$hasZoomLink;
+                $requiresVbg = !$isOfflineOnly;
+
+                if ($requiresVbg && empty($event->vbg_path)) {
                     $incomplete[] = 'Virtual background (vbg) belum diupload';
                 }
 
-                $hasApprovedModule = \App\Models\EventTrainerModule::where('event_id', $event->id)
-                    ->where('status', 'approved')
-                    ->exists();
+                if ($event->jenis !== 'Lomba') {
+                    $hasApprovedModule = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                        ->where('status', 'approved')
+                        ->exists();
 
-                if (!$hasApprovedModule) {
-                    $incomplete[] = 'Belum ada modul trainer yang disetujui';
+                    if (!$hasApprovedModule) {
+                        $incomplete[] = 'Belum ada modul trainer yang disetujui';
+                    }
                 }
 
                 if (!empty($incomplete)) {
@@ -821,19 +838,7 @@ class EventController extends Controller
             'published_at',
             // Reset: dokumen operasional
             'vbg_path',
-            'module_path',
-            'module_submission_path',
             'certificate_path',
-            'material_status',
-            'material_approved_at',
-            'material_approved_by',
-            'material_rejection_reason',
-            'module_submitted_at',
-            'module_verified_at',
-            'module_verified_by',
-            'module_rejected_at',
-            'module_rejected_by',
-            'module_rejection_reason',
             // Reset: QR attendance (akan di-generate ulang)
             'attendance_qr_token',
             'attendance_qr_image',
@@ -846,24 +851,28 @@ class EventController extends Controller
 
         // Reset semua dokumen operasional
         $copy->vbg_path                   = null;
-        $copy->module_path                = null;
-        $copy->module_submission_path     = null;
         $copy->certificate_path           = null;
-        $copy->material_status            = 'pending'; // NOT NULL, reset to default
-        $copy->material_approved_at       = null;
-        $copy->material_approved_by       = null;
-        $copy->material_rejection_reason  = null;
-        $copy->module_submitted_at        = null;
-        $copy->module_verified_at         = null;
-        $copy->module_verified_by         = null;
-        $copy->module_rejected_at         = null;
-        $copy->module_rejected_by         = null;
-        $copy->module_rejection_reason    = null;
         $copy->attendance_qr_token        = null;
         $copy->attendance_qr_image        = null;
         $copy->attendance_qr_generated_at = null;
 
+        // Pastikan relasi trainerModules tidak ikut di-carry oleh replicate()
+        $copy->unsetRelation('trainerModules');
+        $copy->unsetRelation('approvedTrainerModules');
+        $copy->unsetRelation('registrations');
+
         $copy->save();
+
+        // Hapus EventTrainerModule dan EventRegistration yang mungkin ter-copy otomatis (dan orphan dari deleted events)
+        \App\Models\EventTrainerModule::where('event_id', $copy->id)->delete();
+        \App\Models\EventRegistration::where('event_id', $copy->id)->delete();
+        \App\Models\TrainerAssignment::where('event_id', $copy->id)->forceDelete();
+        \App\Models\EventDailyQr::where('event_id', $copy->id)->delete();
+        \App\Models\EventSpeaker::where('event_id', $copy->id)->delete();
+        \App\Models\EventScheduleItem::where('event_id', $copy->id)->delete();
+        \App\Models\EventExpense::where('event_id', $copy->id)->delete();
+        \App\Models\Feedback::where('event_id', $copy->id)->delete();
+        \Illuminate\Support\Facades\DB::table('user_saved_events')->where('event_id', $copy->id)->delete();
 
         // Salin schedule items
         foreach ($event->scheduleItems as $item) {
@@ -876,6 +885,14 @@ class EventController extends Controller
         foreach ($event->expenses as $expense) {
             $copy->expenses()->create($expense->only([
                 'item', 'quantity', 'unit_price', 'total', 'note',
+            ]));
+        }
+
+        // Salin EventSpeaker records agar assignment trainer tetap terjaga
+        // (tanpa ini, has_approved_modules tidak bisa menemukan trainer_id yang di-assign)
+        foreach ($event->speakers as $speaker) {
+            $copy->speakers()->create($speaker->only([
+                'trainer_id', 'name', 'salary', 'notes', 'order',
             ]));
         }
 

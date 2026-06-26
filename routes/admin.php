@@ -87,8 +87,10 @@ Route::middleware(['admin'])->group(function () {
     Route::get('/admin/finance', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('admin.finance.index');
     Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
     Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
+    Route::get('/admin/finance/events/{id}/export', [\App\Http\Controllers\Admin\FinanceController::class, 'exportEvent'])->name('admin.finance.events.export');
     Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
     Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
+    Route::get('/admin/finance/courses/{id}/export', [\App\Http\Controllers\Admin\FinanceController::class, 'exportCourse'])->name('admin.finance.courses.export');
     Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
     Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
@@ -196,6 +198,7 @@ Route::middleware(['admin'])->group(function () {
     Route::get('/admin/events/{event}/attendance/stats', [EventController::class, 'getAttendanceStats'])->name('admin.events.attendance.stats');
     Route::post('/admin/events/{event}/registrations/{registration}/check-in', [EventController::class, 'manualCheckIn'])->name('admin.events.registrations.manual-check-in');
     Route::post('/admin/events/{event}/registrations/{registration}/cancel-day', [EventController::class, 'cancelDailyAttendance'])->name('admin.events.registrations.cancel-day');
+    Route::post('/admin/events/{event}/registrations/{registration}/review-submission', [EventController::class, 'reviewSubmission'])->name('admin.events.submissions.review');
 
     // Quiz management routes
     Route::get('/admin/courses/{course}/modules/{module}/quiz', [QuizController::class, 'index'])->name('admin.courses.modules.quiz.index');
@@ -208,6 +211,7 @@ Route::middleware(['admin'])->group(function () {
 });
 Route::middleware(['auth', 'admin'])->group(function () {
     // Remove the default create route; use /admin/add-event (named admin.add-event) instead
+
     Route::resource('admin/events', \App\Http\Controllers\Admin\EventController::class, [
         'except' => ['create'],
         'names' => [

@@ -1,16 +1,16 @@
 @extends('layouts.admin-trainer')
 
-@section('title', 'Course Studio')
+@section('title', 'Studio Kelas')
 
 @push('admin-trainer-styles')
     <style>
         .studio-hero {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            background: #1e1b4b;
             border-radius: 20px;
             padding: 36px 40px;
             color: #fff;
             margin-bottom: 32px;
-            box-shadow: 0 15px 35px rgba(30, 58, 138, 0.15);
+            box-shadow: 0 15px 35px rgba(30, 27, 75, 0.15);
             position: relative;
             overflow: hidden;
         }
@@ -42,7 +42,7 @@
 
 @section('admin-trainer-content')
         <div class="studio-hero">
-            <h1 class="fw-bold mb-2 position-relative" style="z-index: 2;">Course Studio</h1>
+            <h1 class="fw-bold mb-2 position-relative" style="z-index: 2; color: #fff;">Studio Kelas</h1>
             <p class="mb-0 text-white-50 position-relative" style="z-index: 2; font-size: 1.1rem;">
                 Manajemen Materi (Modul, Video, Quiz) untuk Semua Kelas Trainer
             </p>
@@ -87,8 +87,8 @@
                                 <td class="text-center">
                                     <a href="{{ route('admin.courses.studio', $course->id) }}" 
                                        class="btn btn-sm shadow-sm fw-semibold d-inline-flex align-items-center gap-1"
-                                       style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; border-radius: 8px; padding: 6px 14px; transition: all 0.2s ease; border: none; position: relative; z-index: 10; cursor: pointer; pointer-events: auto;"
-                                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 15px rgba(59, 130, 246, 0.4)';"
+                                       style="background: #1e1b4b; color: white; border-radius: 8px; padding: 6px 14px; transition: all 0.2s ease; border: none; position: relative; z-index: 10; cursor: pointer; pointer-events: auto;"
+                                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 15px rgba(30, 27, 75, 0.4)';"
                                        onmouseout="this.style.transform='none'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)';"
                                        title="Buka Studio Materi">
                                         <i class="bi bi-collection-play-fill"></i> Studio

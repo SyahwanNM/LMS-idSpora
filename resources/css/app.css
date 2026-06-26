@@ -2337,7 +2337,7 @@ section.event .header-card h3 {
     border-bottom: 1px solid #fff;
 }
 
-label {
+.filter-container label {
     color: white;
 }
 
@@ -9396,4 +9396,24 @@ textarea::placeholder {
         flex-wrap: wrap !important;
         gap: 8px !important;
     }
+}
+
+/* Prevent global full-width .btn-secondary overrides inside modals */
+.modal-footer .btn-secondary,
+.modal-footer button.btn-secondary {
+    width: auto !important;
+    background: #6c757d !important;
+    border: none !important;
+    padding: .5rem 1.25rem !important;
+    font-size: .875rem !important;
+    font-weight: 500 !important;
+    color: #fff !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.modal-footer .btn-secondary:hover,
+.modal-footer button.btn-secondary:hover {
+    background: #5a6268 !important;
+    transform: none !important;
 }

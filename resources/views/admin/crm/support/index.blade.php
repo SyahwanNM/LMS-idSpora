@@ -185,12 +185,13 @@
     </div>
     @if($messages->hasPages())
     <div style="padding:1rem 1.25rem;border-top:1px solid var(--crm-border-soft);">
-        {{ $messages->links() }}
+        {{ $messages->links('pagination::bootstrap-5') }}
     </div>
     @endif
 </div>
 
 {{-- Detail Modals --}}
+@push('modals')
 @foreach($messages as $msg)
 @php
     $statusCls = ['new'=>'status-new','processed'=>'status-processed','resolved'=>'status-resolved','ignored'=>'status-ignored'][$msg->status] ?? 'status-ignored';
@@ -280,4 +281,5 @@
     </div>
 </div>
 @endforeach
+@endpush
 @endsection

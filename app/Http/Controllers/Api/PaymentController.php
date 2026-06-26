@@ -43,8 +43,8 @@ class PaymentController extends Controller
             UserNotification::create([
                 'user_id' => $payment->user_id,
                 'type' => 'event_registration_midtrans_success',
-                'title' => 'Pendaftaran Dikonfirmasi',
-                'message' => 'Anda berhasil terdaftar di event "' . ($event->title ?? 'Event') . '".',
+                'title' => 'Registration Confirmed',
+                'message' => 'You have successfully registered for the event "' . ($event->title ?? 'Event') . '".',
                 'data' => [
                     'event_id' => $event->id,
                     'order_id' => $payment->order_id,
@@ -68,7 +68,7 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
+
         $payments = ManualPayment::with(['event', 'registration'])
             ->where('user_id', $user->id)
             ->latest()
@@ -130,15 +130,15 @@ class PaymentController extends Controller
         }
 
         if ($manualPayment->status == 'paid' || $manualPayment->status == 'verified') {
-             return response()->json(['status' => 'error', 'message' => 'Pembayaran yang sudah diverifikasi tidak dapat dibatalkan.'], 400);
+            return response()->json(['status' => 'error', 'message' => 'Pembayaran yang sudah diverifikasi tidak dapat dibatalkan.'], 400);
         }
 
         DB::beginTransaction();
         try {
             $manualPayment->update(['status' => 'cancelled']); // or 'canceled' check enum consistency
-            
+
             $registration = EventRegistration::find($manualPayment->event_registration_id);
-            if($registration){
+            if ($registration) {
                 $registration->update(['status' => 'canceled']);
             }
 
@@ -150,7 +150,7 @@ class PaymentController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-             return response()->json(['status' => 'error', 'message' => 'Gagal membatalkan: ' . $e->getMessage()], 500);
+            return response()->json(['status' => 'error', 'message' => 'Gagal membatalkan: ' . $e->getMessage()], 500);
         }
     }
 
@@ -485,21 +485,21 @@ class PaymentController extends Controller
 
         // Resolve base amount — for hybrid events use attendance_type to pick the right price
         $attendanceType = strtolower(trim((string) $request->query('attendance_type', $request->input('attendance_type', 'offline'))));
-        $isHybridEvent  = !empty($event->maps_url) && !empty($event->zoom_link)
-                          && ($event->price_offline > 0 || $event->price_online > 0);
+        $isHybridEvent = !empty($event->maps_url) && !empty($event->zoom_link)
+            && ($event->price_offline > 0 || $event->price_online > 0);
 
         if ($isHybridEvent) {
             $rawHybridPrice = $attendanceType === 'online'
-                              ? (float) ($event->price_online ?? 0)
-                              : (float) ($event->price_offline ?? 0);
-            $discountPct    = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
-                              ? (float) ($event->discount_percentage ?? 0) : 0.0;
-            $baseAmount     = $discountPct > 0
-                              ? round($rawHybridPrice * (1 - $discountPct / 100), 2)
-                              : $rawHybridPrice;
+                ? (float) ($event->price_online ?? 0)
+                : (float) ($event->price_offline ?? 0);
+            $discountPct = (method_exists($event, 'hasDiscount') && $event->hasDiscount())
+                ? (float) ($event->discount_percentage ?? 0) : 0.0;
+            $baseAmount = $discountPct > 0
+                ? round($rawHybridPrice * (1 - $discountPct / 100), 2)
+                : $rawHybridPrice;
         } else {
             $hasDiscount = method_exists($event, 'hasDiscount') ? (bool) $event->hasDiscount() : false;
-            $baseAmount  = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
+            $baseAmount = (float) ($hasDiscount ? ($event->discounted_price ?? $event->price) : ($event->price ?? 0));
         }
 
         if ($baseAmount <= 0) {
@@ -548,6 +548,40 @@ class PaymentController extends Controller
             $phone = (string) ($user->phone ?? '');
         }
 
+        // Sync profile fields
+        $profileUpdates = [];
+        $fullName = $request->query('full_name', $request->input('full_name')) ?: $user->name;
+        $university = $request->query('university_origin', $request->input('university_origin')) ?: $user->institution;
+        $position = $request->query('position', $request->input('position')) ?: $user->profession;
+
+        if ($fullName !== $user->name)
+            $profileUpdates['name'] = $fullName;
+        if ($phone !== $user->phone)
+            $profileUpdates['phone'] = $phone;
+        if ($university !== $user->institution)
+            $profileUpdates['institution'] = $university;
+        if ($position !== $user->profession)
+            $profileUpdates['profession'] = $position;
+
+        if (!empty($profileUpdates)) {
+            $user->update($profileUpdates);
+            $user->refresh();
+        }
+
+        $regData = [
+            'user_id' => $user->id,
+            'event_id' => $event->id,
+            'university_origin' => $request->query('university_origin', $request->input('university_origin')),
+            'study_program' => $request->query('study_program', $request->input('study_program')),
+            'position' => $request->query('position', $request->input('position')),
+            'full_name' => $fullName,
+            'whatsapp_number' => $phone,
+            'team_name' => $request->query('team_name', $request->input('team_name')),
+            'institution_location' => $request->query('institution_location', $request->input('institution_location')),
+            'info_source' => $request->query('info_source', $request->input('info_source')),
+            'educational_background' => $request->query('educational_background', $request->input('educational_background')),
+        ];
+
         DB::beginTransaction();
         try {
             // Ensure a pending registration exists
@@ -563,19 +597,18 @@ class PaymentController extends Controller
 
             if ($finalAmount <= 0) {
                 if (!$registration) {
-                    $registration = EventRegistration::create([
-                        'user_id' => $user->id,
-                        'event_id' => $event->id,
+                    $registration = EventRegistration::create(array_merge($regData, [
                         'status' => 'active',
                         'registration_code' => 'EVT-' . strtoupper(uniqid()),
                         'total_price' => 0.00,
                         'payment_verified_at' => now(),
-                    ]);
+                    ]));
                 } else {
-                    $registration->status = 'active';
-                    $registration->total_price = 0.00;
-                    $registration->payment_verified_at = now();
-                    $registration->save();
+                    $registration->fill(array_merge($regData, [
+                        'status' => 'active',
+                        'total_price' => 0.00,
+                        'payment_verified_at' => now(),
+                    ]))->save();
                 }
 
                 $method = $redemption ? 'voucher' : 'free';
@@ -621,12 +654,13 @@ class PaymentController extends Controller
                     UserNotification::create([
                         'user_id' => $user->id,
                         'type' => 'event_registration',
-                        'title' => 'Pendaftaran Dikonfirmasi',
-                        'message' => 'Pendaftaran untuk "' . $event->title . '" telah dikonfirmasi.',
+                        'title' => 'Registration Confirmed',
+                        'message' => 'Registration for "' . $event->title . '" has been confirmed.',
                         'data' => ['url' => route('events.show', $event)],
                         'expires_at' => now()->addDays(14),
                     ]);
-                } catch (\Throwable $e) { /* ignore */ }
+                } catch (\Throwable $e) { /* ignore */
+                }
 
                 DB::commit();
 
@@ -638,17 +672,16 @@ class PaymentController extends Controller
             }
 
             if (!$registration) {
-                $registration = EventRegistration::create([
-                    'user_id' => $user->id,
-                    'event_id' => $event->id,
+                $registration = EventRegistration::create(array_merge($regData, [
                     'status' => 'pending',
                     'registration_code' => 'EVT-' . strtoupper(uniqid()),
                     'total_price' => $finalAmount,
-                ]);
+                ]));
             } else {
-                $registration->status = 'pending';
-                $registration->total_price = $finalAmount;
-                $registration->save();
+                $registration->fill(array_merge($regData, [
+                    'status' => 'pending',
+                    'total_price' => $finalAmount,
+                ]))->save();
             }
 
             // Reuse existing pending midtrans order if any
@@ -727,12 +760,14 @@ class PaymentController extends Controller
             $snapParams = $this->buildMidtransSnapParams(
                 (string) $payment->order_id,
                 $grossAmount,
-                [[
-                    'id' => 'event-' . $event->id,
-                    'price' => $grossAmount,
-                    'quantity' => 1,
-                    'name' => (string) ($event->title ?? 'Event'),
-                ]],
+                [
+                    [
+                        'id' => 'event-' . $event->id,
+                        'price' => $grossAmount,
+                        'quantity' => 1,
+                        'name' => (string) ($event->title ?? 'Event'),
+                    ]
+                ],
                 [
                     'first_name' => (string) ($user->name ?? 'User'),
                     'email' => (string) ($user->email ?? ''),
@@ -743,7 +778,7 @@ class PaymentController extends Controller
             Log::info('Midtrans snapParams(event)', ['params' => $snapParams]);
 
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
-            
+
             Log::info('Midtrans snapToken(event) created', [
                 'order_id' => $payment->order_id,
                 'snap_token' => $snapToken
@@ -826,12 +861,14 @@ class PaymentController extends Controller
                     $snapParams = $this->buildMidtransSnapParams(
                         (string) $newPayment->order_id,
                         $grossAmount,
-                        [[
-                            'id' => 'event-' . $event->id,
-                            'price' => $grossAmount,
-                            'quantity' => 1,
-                            'name' => (string) ($event->title ?? 'Event'),
-                        ]],
+                        [
+                            [
+                                'id' => 'event-' . $event->id,
+                                'price' => $grossAmount,
+                                'quantity' => 1,
+                                'name' => (string) ($event->title ?? 'Event'),
+                            ]
+                        ],
                         [
                             'first_name' => (string) ($user->name ?? 'User'),
                             'email' => (string) ($user->email ?? ''),
@@ -1069,12 +1106,14 @@ class PaymentController extends Controller
             $snapParams = $this->buildMidtransSnapParams(
                 (string) $payment->order_id,
                 $grossAmount,
-                [[
-                    'id' => 'course-' . $course->id,
-                    'price' => $grossAmount,
-                    'quantity' => 1,
-                    'name' => (string) ($course->name ?? 'Course'),
-                ]],
+                [
+                    [
+                        'id' => 'course-' . $course->id,
+                        'price' => $grossAmount,
+                        'quantity' => 1,
+                        'name' => (string) ($course->name ?? 'Course'),
+                    ]
+                ],
                 [
                     'first_name' => (string) ($user->name ?? 'User'),
                     'email' => (string) ($user->email ?? ''),
@@ -1083,14 +1122,14 @@ class PaymentController extends Controller
             );
 
             Log::info('Midtrans snapParams(course)', ['params' => $snapParams]);
-            
+
             $snapToken = \Midtrans\Snap::getSnapToken($snapParams);
 
             Log::info('Midtrans courseSnapToken created', [
                 'order_id' => $payment->order_id,
                 'snap_token' => $snapToken
             ]);
-            
+
             $this->storeSnapTokenToPayment($payment, $snapToken);
             DB::commit();
 
@@ -1160,12 +1199,14 @@ class PaymentController extends Controller
                     $snapParams = $this->buildMidtransSnapParams(
                         (string) $newPayment->order_id,
                         $grossAmount,
-                        [[
-                            'id' => 'course-' . $course->id,
-                            'price' => $grossAmount,
-                            'quantity' => 1,
-                            'name' => (string) ($course->name ?? 'Course'),
-                        ]],
+                        [
+                            [
+                                'id' => 'course-' . $course->id,
+                                'price' => $grossAmount,
+                                'quantity' => 1,
+                                'name' => (string) ($course->name ?? 'Course'),
+                            ]
+                        ],
                         [
                             'first_name' => (string) ($user->name ?? 'User'),
                             'email' => (string) ($user->email ?? ''),
@@ -1250,16 +1291,28 @@ class PaymentController extends Controller
                 // Activate related entities
                 if ($payment->event_registration_id) {
                     $registration = EventRegistration::find($payment->event_registration_id);
-                    if ($registration && $registration->status !== 'active') {
-                        $registration->status = 'active';
-                        $registration->payment_verified_at = now();
-                        $registration->payment_verified_by = null;
-                        $registration->save();
+                    if ($registration) {
+                        $isStage2 = (data_get($payment->metadata, 'stage') == 2 || str_starts_with($payment->order_id, 'STG2-'));
+                        if ($isStage2) {
+                            $registration->stage2_payment_status = 'settled';
+                            $registration->stage2_payment_at = now();
+                            $registration->save();
+                        } else {
+                            if ($registration->status !== 'active') {
+                                $registration->status = 'active';
+                                $registration->payment_verified_at = now();
+                                $registration->payment_verified_by = null;
+                                $registration->save();
+                            }
+                        }
                     }
 
                     $event = $payment->event_id ? Event::find($payment->event_id) : null;
                     if ($event) {
-                        $this->processEventReferralCommission($event, $payment);
+                        $isStage2 = (data_get($payment->metadata, 'stage') == 2 || str_starts_with($payment->order_id, 'STG2-'));
+                        if (!$isStage2) {
+                            $this->processEventReferralCommission($event, $payment);
+                        }
                         $this->notifyEventMidtransRegistrationSuccess($event, $payment);
                         $this->sendPaymentInvoice($payment, 'event', (string) ($event->title ?? 'Event'));
                     }
@@ -1489,11 +1542,33 @@ class PaymentController extends Controller
 
         try {
             $this->configureMidtrans();
-            $status = (array) \Midtrans\Transaction::status($orderId);
-            $internalStatus = $this->mapMidtransToInternalStatus(
-                $status['transaction_status'] ?? null,
-                $status['fraud_status'] ?? null
-            );
+            try {
+                $status = (array) \Midtrans\Transaction::status($orderId);
+                $internalStatus = $this->mapMidtransToInternalStatus(
+                    $status['transaction_status'] ?? null,
+                    $status['fraud_status'] ?? null
+                );
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
+
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $status = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $status = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
             $wasSettled = $payment->status === 'settled';
@@ -1583,14 +1658,14 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
-                // Only expire if snap token is older than 24 hours (Midtrans token TTL).
+                // Only expire if snap token is older than expiry duration.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
-                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours  = $tokenCreatedAt
-                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                         : 0;
 
-                    if ($tokenAgeHours >= 24) {
+                    if ($tokenAgeMinutes >= 5) {
                         // Token truly expired — mark as expired
                         $payment->status = 'expired';
                         $payment->save();
@@ -1683,13 +1758,13 @@ class PaymentController extends Controller
             } catch (\Throwable $e) {
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
                     // 404 = order not yet charged (user hasn't opened Snap popup yet) — keep as pending.
-                    // Only expire if snap token is older than 24 hours.
-                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours  = $tokenCreatedAt
-                        ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
+                    // Only expire if snap token is older than expiry duration.
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
                         : 0;
 
-                    if ($tokenAgeHours >= 24) {
+                    if ($tokenAgeMinutes >= 5) {
                         $payment->status = 'expired';
                         $payment->save();
                         if ($payment->enrollment_id) {
@@ -1749,11 +1824,33 @@ class PaymentController extends Controller
 
         try {
             $this->configureMidtrans();
-            $status = (array) \Midtrans\Transaction::status($orderId);
-            $internalStatus = $this->mapMidtransToInternalStatus(
-                $status['transaction_status'] ?? null,
-                $status['fraud_status'] ?? null
-            );
+            try {
+                $status = (array) \Midtrans\Transaction::status($orderId);
+                $internalStatus = $this->mapMidtransToInternalStatus(
+                    $status['transaction_status'] ?? null,
+                    $status['fraud_status'] ?? null
+                );
+            } catch (\Throwable $statusException) {
+                $is404 = str_contains($statusException->getMessage(), '404')
+                    || str_contains(strtolower($statusException->getMessage()), 'not found');
+
+                if ($is404) {
+                    $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at') ?: $payment->created_at;
+                    $tokenAgeMinutes = $tokenCreatedAt
+                        ? abs(now()->diffInMinutes(\Carbon\Carbon::parse($tokenCreatedAt)))
+                        : 0;
+
+                    if ($tokenAgeMinutes >= 5) {
+                        $internalStatus = 'expired';
+                        $status = ['transaction_status' => 'expire', 'fraud_status' => null];
+                    } else {
+                        $internalStatus = 'pending';
+                        $status = ['transaction_status' => 'pending', 'fraud_status' => null];
+                    }
+                } else {
+                    throw $statusException;
+                }
+            }
 
             DB::beginTransaction();
             $wasSettled = $payment->status === 'settled';
@@ -1833,26 +1930,26 @@ class PaymentController extends Controller
                 return;
             }
 
-            $prefix        = $itemType === 'event' ? 'INV-EVT-' : 'INV-CRS-';
+            $prefix = $itemType === 'event' ? 'INV-EVT-' : 'INV-CRS-';
             $invoiceNumber = $prefix . strtoupper(substr(md5($payment->id . $payment->order_id), 0, 8));
 
             Mail::to($invoiceUser->email)->send(new PaymentInvoiceMail(
                 invoiceNumber: $invoiceNumber,
-                userName:      (string) ($invoiceUser->name ?? 'User'),
-                userEmail:     (string) ($invoiceUser->email),
-                itemType:      $itemType,
-                itemTitle:     $itemTitle,
-                amount:        (float) ($payment->amount ?? 0),
+                userName: (string) ($invoiceUser->name ?? 'User'),
+                userEmail: (string) ($invoiceUser->email),
+                itemType: $itemType,
+                itemTitle: $itemTitle,
+                amount: (float) ($payment->amount ?? 0),
                 paymentMethod: (string) ($payment->method ?? 'midtrans'),
-                paidAt:        now()->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
-                orderId:       (string) ($payment->order_id ?? '-'),
+                paidAt: now()->setTimezone('Asia/Jakarta')->format('d M Y, H:i') . ' WIB',
+                orderId: (string) ($payment->order_id ?? '-'),
             ));
 
             // Mark invoice as sent so we don't resend on duplicate webhook calls
             $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
-                'invoice_sent'    => true,
+                'invoice_sent' => true,
                 'invoice_sent_at' => now()->toIso8601String(),
-                'invoice_number'  => $invoiceNumber,
+                'invoice_number' => $invoiceNumber,
             ]);
             $payment->save();
 
@@ -1860,7 +1957,7 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             Log::warning('PaymentInvoice send failed', [
                 'order_id' => $payment->order_id,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -1873,7 +1970,7 @@ class PaymentController extends Controller
                 $trainerShare = ($payment->amount * $course->trainer_revenue_percent) / 100;
                 if ($trainerShare > 0) {
                     $trainer->increment('wallet_balance', $trainerShare);
-                    
+
                     \App\Models\TrainerNotification::create([
                         'trainer_id' => $trainer->id,
                         'type' => 'revenue_share',
@@ -1933,16 +2030,16 @@ class PaymentController extends Controller
         // Prepare data
         $data = [
             'invoiceNumber' => $invoiceNumber,
-            'userName'      => $invoiceUser ? $invoiceUser->name : 'User',
-            'userEmail'     => $invoiceUser ? $invoiceUser->email : '',
-            'itemType'      => $itemType,
-            'itemTitle'     => $itemTitle,
-            'amount'        => (float) $payment->amount,
+            'userName' => $invoiceUser ? $invoiceUser->name : 'User',
+            'userEmail' => $invoiceUser ? $invoiceUser->email : '',
+            'itemType' => $itemType,
+            'itemTitle' => $itemTitle,
+            'amount' => (float) $payment->amount,
             'paymentMethod' => $payment->method ?? 'midtrans',
-            'paidAt'        => $paidAt,
-            'orderId'       => $payment->order_id,
-            'logoSrc'       => $logoSrc,
-            'isPdf'         => true,
+            'paidAt' => $paidAt,
+            'orderId' => $payment->order_id,
+            'logoSrc' => $logoSrc,
+            'isPdf' => true,
         ];
 
         // Generate PDF using Dompdf
@@ -1951,7 +2048,7 @@ class PaymentController extends Controller
         $options = new \Dompdf\Options();
         $options->set('isRemoteEnabled', true);
         $options->set('defaultFont', 'Helvetica');
-        
+
         $dompdf = new \Dompdf\Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');

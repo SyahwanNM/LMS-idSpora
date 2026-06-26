@@ -23,17 +23,10 @@ class SyncMidtransPaymentStatus extends Command
         if (trim($serverKey) === '') {
             throw new \RuntimeException('Midtrans server key belum dikonfigurasi.');
         }
-        \Midtrans\Config::$serverKey    = $serverKey;
+        \Midtrans\Config::$serverKey = $serverKey;
         \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
-        \Midtrans\Config::$isSanitized  = (bool) config('midtrans.sanitize', true);
-        \Midtrans\Config::$is3ds        = (bool) config('midtrans.3ds', true);
-
-        if (!\Midtrans\Config::$isProduction) {
-            \Midtrans\Config::$curlOptions = [
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_HTTPHEADER => [],
-            ];
-        }
+        \Midtrans\Config::$isSanitized = (bool) config('midtrans.sanitize', true);
+        \Midtrans\Config::$is3ds = (bool) config('midtrans.3ds', true);
     }
 
     private function mapStatus(?string $transactionStatus, ?string $fraudStatus = null): string
@@ -41,10 +34,14 @@ class SyncMidtransPaymentStatus extends Command
         $ts = strtolower((string) $transactionStatus);
         $fs = strtolower((string) $fraudStatus);
 
-        if ($ts === 'capture')    return $fs === 'challenge' ? 'pending' : 'settled';
-        if ($ts === 'settlement') return 'settled';
-        if ($ts === 'pending')    return 'pending';
-        if ($ts === 'expire')     return 'expired';
+        if ($ts === 'capture')
+            return $fs === 'challenge' ? 'pending' : 'settled';
+        if ($ts === 'settlement')
+            return 'settled';
+        if ($ts === 'pending')
+            return 'pending';
+        if ($ts === 'expire')
+            return 'expired';
 
         return 'rejected'; // deny/cancel/failure
     }
@@ -58,8 +55,8 @@ class SyncMidtransPaymentStatus extends Command
             return self::FAILURE;
         }
 
-        $limit      = (int) $this->option('limit');
-        $olderThan  = (int) $this->option('older-than');
+        $limit = (int) $this->option('limit');
+        $olderThan = (int) $this->option('older-than');
 
         // Only check payments that have been pending for at least N minutes
         $payments = ManualPayment::query()
@@ -81,8 +78,8 @@ class SyncMidtransPaymentStatus extends Command
         $updated = 0;
         foreach ($payments as $payment) {
             try {
-                $status      = (array) \Midtrans\Transaction::status($payment->order_id);
-                $newStatus   = $this->mapStatus(
+                $status = (array) \Midtrans\Transaction::status($payment->order_id);
+                $newStatus = $this->mapStatus(
                     $status['transaction_status'] ?? null,
                     $status['fraud_status'] ?? null
                 );
@@ -93,12 +90,12 @@ class SyncMidtransPaymentStatus extends Command
 
                 DB::beginTransaction();
 
-                $wasSettled      = $payment->status === 'settled';
+                $wasSettled = $payment->status === 'settled';
                 $payment->status = $newStatus;
                 $payment->metadata = array_merge((array) ($payment->metadata ?? []), [
-                    'synced_at'          => now()->toIso8601String(),
-                    'synced_status'      => $newStatus,
-                    'midtrans_status'    => $status,
+                    'synced_at' => now()->toIso8601String(),
+                    'synced_status' => $newStatus,
+                    'midtrans_status' => $status,
                 ]);
                 $payment->save();
 
@@ -150,7 +147,7 @@ class SyncMidtransPaymentStatus extends Command
                 // Hanya set expired jika token sudah > 24 jam atau tidak ada token sama sekali.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
                     $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours  = $tokenCreatedAt
+                    $tokenAgeHours = $tokenCreatedAt
                         ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
                         : 25; // tidak ada token → anggap sudah expired
 
@@ -182,7 +179,7 @@ class SyncMidtransPaymentStatus extends Command
                 } else {
                     Log::warning('SyncMidtransPaymentStatus: failed to check order', [
                         'order_id' => $payment->order_id,
-                        'error'    => $e->getMessage(),
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }

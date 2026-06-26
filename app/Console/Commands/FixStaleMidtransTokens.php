@@ -18,27 +18,24 @@ class FixStaleMidtransTokens extends Command
         if (trim($serverKey) === '') {
             throw new \RuntimeException('Midtrans server key belum dikonfigurasi.');
         }
-        \Midtrans\Config::$serverKey    = $serverKey;
+        \Midtrans\Config::$serverKey = $serverKey;
         \Midtrans\Config::$isProduction = (bool) config('midtrans.is_production', false);
-        \Midtrans\Config::$isSanitized  = (bool) config('midtrans.sanitize', true);
-        \Midtrans\Config::$is3ds        = (bool) config('midtrans.3ds', true);
-
-        if (!\Midtrans\Config::$isProduction) {
-            \Midtrans\Config::$curlOptions = [
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_HTTPHEADER => [],
-            ];
-        }
+        \Midtrans\Config::$isSanitized = (bool) config('midtrans.sanitize', true);
+        \Midtrans\Config::$is3ds = (bool) config('midtrans.3ds', true);
     }
 
     private function mapStatus(?string $ts, ?string $fs = null): string
     {
         $ts = strtolower((string) $ts);
         $fs = strtolower((string) $fs);
-        if ($ts === 'capture')    return $fs === 'challenge' ? 'pending' : 'settled';
-        if ($ts === 'settlement') return 'settled';
-        if ($ts === 'pending')    return 'pending';
-        if ($ts === 'expire')     return 'expired';
+        if ($ts === 'capture')
+            return $fs === 'challenge' ? 'pending' : 'settled';
+        if ($ts === 'settlement')
+            return 'settled';
+        if ($ts === 'pending')
+            return 'pending';
+        if ($ts === 'expire')
+            return 'expired';
         return 'rejected';
     }
 
@@ -72,7 +69,7 @@ class FixStaleMidtransTokens extends Command
 
             // 2. Check actual status from Midtrans
             try {
-                $status    = (array) \Midtrans\Transaction::status($payment->order_id);
+                $status = (array) \Midtrans\Transaction::status($payment->order_id);
                 $newStatus = $this->mapStatus(
                     $status['transaction_status'] ?? null,
                     $status['fraud_status'] ?? null
@@ -112,7 +109,7 @@ class FixStaleMidtransTokens extends Command
                 // Hanya set expired jika token sudah > 24 jam atau tidak ada token sama sekali.
                 if (str_contains($e->getMessage(), '404') || str_contains(strtolower($e->getMessage()), 'not found')) {
                     $tokenCreatedAt = data_get($payment->metadata, 'snap_token_created_at');
-                    $tokenAgeHours  = $tokenCreatedAt
+                    $tokenAgeHours = $tokenCreatedAt
                         ? now()->diffInHours(\Carbon\Carbon::parse($tokenCreatedAt))
                         : 25; // tidak ada token → anggap sudah expired
 
