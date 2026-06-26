@@ -33,6 +33,7 @@
         
         .badge-success { background: #D4EDDA; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
         .badge-warning { background: #FFF3CD; color: #856404; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge-danger { background: #F8D7DA; color: #721C24; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
         
         .footer { margin-top: 50px; text-align: center; color: #999; font-size: 10px; border-top: 1px solid #EEE; padding-top: 20px; }
 
@@ -87,7 +88,7 @@
             <thead>
                 <tr>
                     <th>Tanggal</th>
-                    <th>Pengguna Baru</th>
+                    <th>Pengguna</th>
                     <th>Detail Transaksi</th>
                     <th style="text-align: center;">Status</th>
                     <th style="text-align: right;">Komisi</th>
@@ -95,22 +96,36 @@
             </thead>
             <tbody>
                 @forelse($history as $item)
+                @php
+                    $isRejected = strtolower($item->status) === 'rejected';
+                    $strikeStyle = $isRejected ? 'text-decoration: line-through; opacity: 0.5;' : '';
+                @endphp
                 <tr>
-                    <td style="color: #666; font-size: 11px;">{{ $item->created_at->format('d/m/Y') }}</td>
-                    <td style="font-weight: bold;">{{ $item->referredUser->name ?? 'User Anonim' }}</td>
-                    <td style="color: #666;">{{ $item->description ?? 'Pembelian Event/Course' }}</td>
+                    <td style="color: #666; font-size: 11px; {{ $strikeStyle }}">
+                        <div>{{ $item->created_at->format('d M Y') }}</div>
+                        <div style="font-size: 10px; color: #999;">{{ $item->created_at->format('H:i') }} WIB</div>
+                    </td>
+                    <td style="font-weight: bold; {{ $strikeStyle }}">
+                        <div>{{ $item->referredUser->name ?? 'Pengguna Baru' }}</div>
+                        <div style="font-weight: normal; font-size: 11px; color: #666;">{{ $item->referredUser->email ?? '-' }}</div>
+                    </td>
+                    <td style="color: #333; {{ $strikeStyle }}">{{ $item->description ?? 'Pembelian Event/Course' }}</td>
                     <td style="text-align: center;">
-                        @if($item->status == 'paid')
+                        @if(strtolower($item->status) === 'paid')
                             <span class="badge-success">PAID</span>
+                        @elseif($isRejected)
+                            <span class="badge-danger">REJECTED</span>
                         @else
                             <span class="badge-warning">PENDING</span>
                         @endif
                     </td>
-                    <td style="text-align: right; font-weight: bold;">Rp {{ number_format($item->amount, 0, ',', '.') }}</td>
+                    <td style="text-align: right; font-weight: bold; {{ $isRejected ? 'text-decoration: line-through; opacity: 0.5; color: #dc3545;' : 'color: #198754;' }}">
+                        {{ $isRejected ? '-' : '+' }}Rp {{ number_format($item->amount, 0, ',', '.') }}
+                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; color: #999;">Belum ada riwayat transaksi referral.</td>
+                    <td colspan="5" style="text-align: center; color: #999; padding: 30px;">Belum ada riwayat transaksi referral.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -120,6 +135,10 @@
             <div class="summary-row">
                 <div class="summary-label">Komisi Pending</div>
                 <div class="summary-value" style="color: #b4b4b4;">Rp {{ number_format($pendingKomisi, 0, ',', '.') }}</div>
+            </div>
+            <div class="summary-row">
+                <div class="summary-label">Komisi Ditolak</div>
+                <div class="summary-value" style="color: #ef4444;">Rp {{ number_format($rejectedKomisi, 0, ',', '.') }}</div>
             </div>
             <div class="summary-row summary-total">
                 <div class="summary-label">TOTAL TERBAYAR</div>

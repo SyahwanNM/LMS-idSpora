@@ -1,4 +1,3 @@
-@include('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -16,6 +15,7 @@
 </head>
 
 <body>
+    @include('partials.navbar-after-login')
     <div>
         <div class="row justify-content-center">
 

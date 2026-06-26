@@ -287,5 +287,21 @@ class CoursePaymentController extends Controller
         ]);
 
         $referrer->increment('wallet_balance', $commissionAmount);
+
+        try {
+            $msg = "Komisi Baru Masuk! Anda mendapatkan komisi sebesar Rp " . number_format($commissionAmount, 0, ',', '.') . " dari pembelian kursus '" . ($course->name ?? 'Course') . "'.";
+            \App\Models\UserNotification::create([
+                'user_id' => $referrer->id,
+                'type' => 'reseller',
+                'title' => 'Komisi Baru Masuk!',
+                'message' => $msg,
+                'data' => ['url' => route('reseller.index')],
+            ]);
+            if ($referrer->phone) {
+                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Course admin referral commission notification failed: ' . $e->getMessage());
+        }
     }
 }

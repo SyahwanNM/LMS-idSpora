@@ -89,6 +89,24 @@ class WithdrawalController extends Controller
             $message = "Halo {$user->name}, pengajuan penarikan dana Anda sebesar {$amountFormatted} telah DITOLAK dengan alasan: {$withdrawal->rejected_reason}. Silakan hubungi admin untuk informasi lebih lanjut.";
         }
 
+        // DB Notification
+        try {
+            $dbTitle = $status === 'approved' ? 'Penarikan Dana Disetujui' : 'Penarikan Dana Ditolak';
+            $dbMessage = $status === 'approved' 
+                ? "Pengajuan penarikan dana Anda sebesar {$amountFormatted} telah disetujui." 
+                : "Pengajuan penarikan dana Anda sebesar {$amountFormatted} telah ditolak. Alasan: {$withdrawal->rejected_reason}";
+
+            \App\Models\UserNotification::create([
+                'user_id' => $user->id,
+                'type' => 'reseller',
+                'title' => $dbTitle,
+                'message' => $dbMessage,
+                'data' => ['url' => route('reseller.index')],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Withdrawal DB notification failed: ' . $e->getMessage());
+        }
+
         // WhatsApp Notification (Fonnte)
         $token = env('FONNTE_TOKEN');
         if ($token && $user->phone) {

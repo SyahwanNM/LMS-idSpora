@@ -146,6 +146,17 @@ Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
         // Course submissions: trainer kirim daftar judul → otomatis buat course + clone template modul
         Route::post('course-submissions', [TrainerCourseSubmissionController::class, 'store']);
     });
+
+    // Reseller User APIs
+    Route::prefix('reseller')->as('api.reseller.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\User\ResellerController::class, 'index'])->name('index');
+        Route::post('activate', [\App\Http\Controllers\User\ResellerController::class, 'activate'])->name('activate');
+        Route::post('update-code', [\App\Http\Controllers\User\ResellerController::class, 'updateReferralCode'])->name('update-code');
+        Route::post('withdraw', [\App\Http\Controllers\User\ResellerController::class, 'storeWithdraw'])->name('withdraw');
+        Route::get('history', [\App\Http\Controllers\User\ResellerController::class, 'history'])->name('history');
+        Route::get('withdraw/history', [\App\Http\Controllers\User\ResellerController::class, 'withdrawHistory'])->name('withdraw.history');
+        Route::post('check', [\App\Http\Controllers\User\ResellerController::class, 'checkReferral'])->name('check');
+    });
 });
 
 // Admin Manage APIs (CRUD)
@@ -244,4 +255,11 @@ Route::middleware(['auth:sanctum', 'admin', 'throttle:60,1'])->prefix('admin')->
         Route::get('broadcasts', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'getBroadcasts']);
         Route::post('broadcasts', [\App\Http\Controllers\Api\Admin\CrmApiController::class, 'sendBroadcast']);
     });
+});
+
+// Reseller Admin APIs (using Web session and auth to allow browser AJAX requests)
+Route::middleware(['web', 'auth', 'admin'])->prefix('admin/reseller')->as('api.admin.reseller.')->group(function () {
+    Route::post('toggle-status', [\App\Http\Controllers\User\ResellerController::class, 'toggleResellerStatus'])->name('toggle-status');
+    Route::post('toggle-user-status', [\App\Http\Controllers\User\ResellerController::class, 'toggleResellerUserStatus'])->name('toggle-user-status');
+    Route::post('save-commission', [\App\Http\Controllers\User\ResellerController::class, 'saveCommission'])->name('save-commission');
 });

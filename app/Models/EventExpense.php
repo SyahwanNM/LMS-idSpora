@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class EventExpense extends Model
 {
     protected $fillable = [
-        'event_id','item','quantity','unit_price','total'
+        'event_id', 'item', 'quantity', 'unit_price', 'total', 'status', 'proof_of_payment', 'rejected_reason'
     ];
 
     public function event()

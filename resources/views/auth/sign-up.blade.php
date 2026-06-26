@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -331,7 +331,7 @@
 
       <form action="{{ route('register.post') }}" method="POST" enctype="multipart/form-data" novalidate id="signupForm">
         @csrf
-        <input type="hidden" name="referrer_code" value="{{ request()->query('ref') }}">
+        <input type="hidden" name="referrer_code" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
         @if ($errors->any())
           <div class="alert alert-danger" style="background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.2); border-radius: 12px; color: #ff8e97; padding: 15px; margin-bottom: 25px; font-size: 0.9rem;">
             <ul class="mb-0" style="list-style: none; padding-left: 0;">
