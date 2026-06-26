@@ -444,22 +444,56 @@
                     </div>
                 </div>
 
-                <!-- Manual payment via QRIS: show QR image modal when clicking Bayar -->
                 @php
                     $isFreeCourse = (int) ($course->price ?? 0) <= 0;
                 @endphp
-                <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
+                <form id="manualPaymentForm" method="POST" enctype="multipart/form-data" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : route('courses.manual-payment.upload', $course) }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}" data-manual-action="{{ route('courses.manual-payment.upload', $course) }}" data-free-action="{{ route('courses.free-enroll', $course) }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
+                    <input type="hidden" name="payment_method" id="formPaymentMethodInput" value="{{ $isFreeCourse ? 'free' : 'midtrans' }}">
                     <input type="hidden" name="name" id="hiddenNameInput" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
                     <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
+                    <input type="hidden" name="voucher_code" id="formVoucherCodeInput" value="">
+
+                    @if(!$isFreeCourse)
+                        <div class="input_biodata" style="margin-bottom:20px;">
+                            <p>Payment Method</p>
+                            <div class="radio_input_box">
+                                <label class="radio_input" id="method-midtrans-label" style="border:2px solid #4f46e5; background:#eef2ff; color:#4338ca; padding:12px 14px; border-radius:12px;">
+                                    <input type="radio" name="payment_method_select" value="midtrans" id="method-midtrans" checked>
+                                    <span>Online Payment</span>
+                                </label>
+                                <label class="radio_input" id="method-transfer-label" style="border:2px solid #e0e0e0; background:#fff; color:#374151; padding:12px 14px; border-radius:12px;">
+                                    <input type="radio" name="payment_method_select" value="transfer" id="method-transfer">
+                                    <span>Transfer Rekening</span>
+                                </label>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div id="transferProofSection" style="display:none; margin-top:10px;">
+                        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:14px;">
+                            <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:6px;">Tujuan Transfer</div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                <div>
+                                    <div style="font-size:15px;font-weight:700;color:#15803d;">1111-999-236</div>
+                                    <div style="font-size:12px;color:#374151;">Bank BNI · a.n. APTIKOM JABAR</div>
+                                </div>
+                                <button type="button" onclick="navigator.clipboard.writeText('1111-999-236'); this.textContent='✓ Copied'; setTimeout(()=>this.textContent='Copy',1500);" style="font-size:11px;padding:8px 12px;border-radius:8px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:700;">Copy</button>
+                            </div>
+                        </div>
+                        <label class="form-label-custom" for="paymentProofInput" style="font-weight:600;display:block;margin-bottom:8px;">Upload Bukti Transfer <span style="color:#ef4444;">*</span></label>
+                        <input type="file" name="payment_proof" id="paymentProofInput" class="kolom_input_biodata" accept="image/jpeg,image/png,image/jpg,image/webp" style="padding:12px;">
+                        <div id="proofSizeError" style="display:none;margin-top:10px;color:#dc2626;font-size:13px;">Ukuran file maksimal 1 MB.</div>
+                    </div>
 
                     @if($isFreeCourse)
                         <button type="submit" id="freeEnrollBtn" class="btn_bayar_payment" disabled>Study Now!</button>
                     @else
                         <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" disabled>Pay Now</button>
+                        <button type="button" id="transferPayBtn" class="btn_bayar_payment" style="background:#059669;display:none;" disabled>Upload Bukti Transfer</button>
                     @endif
                 </form>
             </div>
@@ -491,12 +525,19 @@
             var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
             var freeEnrollBtn = document.getElementById('freeEnrollBtn');
             var midtransPayBtn = document.getElementById('midtransPayBtnCourse');
+            var transferPayBtn = document.getElementById('transferPayBtn');
+            var paymentMethodInput = document.getElementById('formPaymentMethodInput');
             var manualPaymentForm = document.getElementById('manualPaymentForm');
             var promoInput = document.getElementById('promoCodeInput');
             var promoMessageEl = document.getElementById('promoMessage');
             var referralInput = document.getElementById('referralCodeInput'); // hidden
             var voucherInput = document.getElementById('voucherCodeInput'); // hidden
             var formReferralCodeInput = document.getElementById('formReferralCodeInput');
+            var formVoucherCodeInput = document.getElementById('formVoucherCodeInput');
+            var methodMidtrans = document.getElementById('method-midtrans');
+            var methodTransfer = document.getElementById('method-transfer');
+            var transferProofSection = document.getElementById('transferProofSection');
+            var proofInput = document.getElementById('paymentProofInput');
             
             var checkCodeUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-code', $course) : '');
             var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
@@ -625,6 +666,12 @@
                 }
             }
 
+            function getSelectedCoursePaymentMethod() {
+                if (!methodTransfer) return 'midtrans';
+                if (methodTransfer.checked) return 'transfer';
+                return 'midtrans';
+            }
+
             function updatePayButtonState() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 var fullName = (fullNameInput ? fullNameInput.value : '').trim();
@@ -636,7 +683,18 @@
                     }
                 }
                 if (freeEnrollBtn) freeEnrollBtn.disabled = disable;
-                if (midtransPayBtn) midtransPayBtn.disabled = disable;
+
+                var method = getSelectedCoursePaymentMethod();
+                var hasProof = proofInput && proofInput.files && proofInput.files.length > 0 && proofInput.files[0].size <= 1 * 1024 * 1024;
+
+                if (midtransPayBtn) {
+                    midtransPayBtn.disabled = disable || method !== 'midtrans';
+                    midtransPayBtn.style.opacity = midtransPayBtn.disabled ? '0.5' : '1';
+                }
+                if (transferPayBtn) {
+                    transferPayBtn.disabled = disable || method !== 'transfer' || !hasProof;
+                    transferPayBtn.style.opacity = transferPayBtn.disabled ? '0.5' : '1';
+                }
             }
 
             function handlePromoCodeUI(data, code) {
@@ -779,6 +837,85 @@
             } else {
                 referralFinalAmount = getBaseAmount();
                 updateTotalDisplay();
+            }
+
+            function syncCoursePaymentMethod() {
+                var method = getSelectedCoursePaymentMethod();
+                var isMidtrans = method === 'midtrans';
+                if (transferProofSection) {
+                    transferProofSection.style.display = isMidtrans ? 'none' : '';
+                }
+                if (transferPayBtn) {
+                    transferPayBtn.style.display = isMidtrans ? 'none' : '';
+                }
+                if (midtransPayBtn) {
+                    midtransPayBtn.style.display = isMidtrans ? '' : 'none';
+                }
+                if (paymentMethodInput) {
+                    paymentMethodInput.value = method;
+                }
+                if (methodMidtrans && methodTransfer) {
+                    var midtransLabel = methodMidtrans.closest('label');
+                    var transferLabel = methodTransfer.closest('label');
+                    if (midtransLabel) midtransLabel.classList.toggle('bg-slate-50', isMidtrans);
+                    if (transferLabel) transferLabel.classList.toggle('bg-slate-50', !isMidtrans);
+                }
+                updatePayButtonState();
+            }
+
+            function validateManualPaymentForm() {
+                if (!proofInput) return true;
+                var files = proofInput.files;
+                if (!files || files.length === 0) {
+                    return false;
+                }
+                return files[0].size <= 1 * 1024 * 1024;
+            }
+
+            if (methodMidtrans) {
+                methodMidtrans.addEventListener('change', syncCoursePaymentMethod);
+            }
+            if (methodTransfer) {
+                methodTransfer.addEventListener('change', syncCoursePaymentMethod);
+            }
+            if (proofInput) {
+                proofInput.addEventListener('change', function() {
+                    var error = document.getElementById('proofSizeError');
+                    if (this.files && this.files.length > 0 && this.files[0].size > 1 * 1024 * 1024) {
+                        if (error) error.style.display = 'block';
+                        this.value = '';
+                    } else if (error) {
+                        error.style.display = 'none';
+                    }
+                    updatePayButtonState();
+                });
+            }
+            syncCoursePaymentMethod();
+
+            if (transferPayBtn) {
+                transferPayBtn.addEventListener('click', function(e) {
+                    if (transferPayBtn.disabled) {
+                        e.preventDefault();
+                        showPaymentValidationAlert();
+                        return;
+                    }
+                    var method = getSelectedCoursePaymentMethod();
+                    if (method !== 'transfer') return;
+                    if (!validateManualPaymentForm()) {
+                        e.preventDefault();
+                        var error = document.getElementById('proofSizeError');
+                        if (error) {
+                            error.style.display = 'block';
+                        }
+                        alert('Silakan unggah bukti transfer manual maksimal 1 MB.');
+                        return;
+                    }
+                    if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
+                    syncReferralInput();
+                    if (formVoucherCodeInput) formVoucherCodeInput.value = getVoucherCode();
+                    if (paymentMethodInput) paymentMethodInput.value = 'transfer';
+                    manualPaymentForm.submit();
+                });
             }
 
             // Handle free registration submit
