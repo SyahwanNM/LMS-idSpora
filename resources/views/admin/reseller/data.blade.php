@@ -143,8 +143,8 @@
                         <option value="Suspended">Status Suspended</option>
                     </select>
                 </div>
-                <div class="col-md-1">
-                    <button type="button" class="btn btn-outline-secondary rounded-circle p-0 d-flex align-items-center justify-content-center w-100" style="height: 44px; width: 44px;" onclick="resetFilters()" title="Reset Filter">
+                <div class="col-md-1 d-flex justify-content-center justify-content-md-start">
+                    <button type="button" class="btn btn-outline-secondary rounded-circle p-0 d-flex align-items-center justify-content-center" style="height: 44px; width: 44px; flex-shrink: 0;" onclick="resetFilters()" title="Reset Filter">
                         <i class="bi bi-arrow-counterclockwise fs-5"></i>
                     </button>
                 </div>
