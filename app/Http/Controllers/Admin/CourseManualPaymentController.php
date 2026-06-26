@@ -254,9 +254,15 @@ class CourseManualPaymentController extends Controller
             $manualPayment->rejection_reason = trim((string) $validated['reason']);
             $manualPayment->save();
 
-            if ($manualPayment->enrollment) {
-                $manualPayment->enrollment->status = 'canceled';
-                $manualPayment->enrollment->save();
+            $enrollment = $manualPayment->enrollment;
+            if (!$enrollment) {
+                $enrollment = Enrollment::where('user_id', $manualPayment->user_id)
+                    ->where('course_id', $course->id)
+                    ->first();
+            }
+            if ($enrollment) {
+                $enrollment->status = 'canceled';
+                $enrollment->save();
             }
 
             DB::commit();
@@ -278,9 +284,15 @@ class CourseManualPaymentController extends Controller
             $manualPayment->rejection_reason = null;
             $manualPayment->save();
 
-            if ($manualPayment->enrollment) {
-                $manualPayment->enrollment->status = 'pending';
-                $manualPayment->enrollment->save();
+            $enrollment = $manualPayment->enrollment;
+            if (!$enrollment) {
+                $enrollment = Enrollment::where('user_id', $manualPayment->user_id)
+                    ->where('course_id', $course->id)
+                    ->first();
+            }
+            if ($enrollment) {
+                $enrollment->status = 'pending';
+                $enrollment->save();
             }
 
             DB::commit();

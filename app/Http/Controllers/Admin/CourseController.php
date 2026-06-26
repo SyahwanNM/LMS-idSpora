@@ -783,6 +783,13 @@ class CourseController extends Controller
             $enrolledAt = $enr->enrolled_at ?? $enr->created_at;
 
             $latestPayment = $enr->manualPayments->first();
+            if (!$latestPayment) {
+                $latestPayment = \App\Models\ManualPayment::where('course_id', $enr->course_id)
+                    ->where('user_id', $enr->user_id)
+                    ->with('proofs')
+                    ->latest()
+                    ->first();
+            }
             $paymentStatus = $latestPayment ? $latestPayment->status : null;
             $paymentId = $latestPayment ? $latestPayment->id : null;
             $paymentProofUrl = null;
