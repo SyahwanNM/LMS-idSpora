@@ -757,7 +757,13 @@ class CourseController extends Controller
         $totalModules = $course->modules ? $course->modules->count() : $course->modules()->count();
 
         $enrollments = $course->enrollments()
-            ->with(['user:id,name,email', 'progress:enrollment_id,course_module_id,completed'])
+            ->with([
+                'user:id,name,email',
+                'progress:enrollment_id,course_module_id,completed',
+                'manualPayments' => function ($q) {
+                    $q->with('proofs')->orderByDesc('created_at');
+                }
+            ])
             ->orderByDesc('enrolled_at')
             ->orderByDesc('created_at')
             ->get();
@@ -776,13 +782,25 @@ class CourseController extends Controller
 
             $enrolledAt = $enr->enrolled_at ?? $enr->created_at;
 
+            $latestPayment = $enr->manualPayments->first();
+            $paymentStatus = $latestPayment ? $latestPayment->status : null;
+            $paymentId = $latestPayment ? $latestPayment->id : null;
+            $paymentProofUrl = null;
+            if ($latestPayment && $latestPayment->proofs->isNotEmpty()) {
+                $paymentProofUrl = asset('storage/' . $latestPayment->proofs->first()->file_path);
+            }
+
             return [
+                'id' => $enr->id,
                 'name' => $enr->user->name ?? 'User',
                 'email' => $enr->user->email ?? '-',
                 'progress_percent' => $percent,
                 'status' => (string) ($enr->status ?? ''),
                 'status_label' => ((string) ($enr->status ?? '')) === 'active' ? 'Aktif' : ucfirst((string) ($enr->status ?? '-')),
                 'enrolled_at' => $enrolledAt ? $enrolledAt->format('d-m-Y') : '-',
+                'payment_status' => $paymentStatus,
+                'payment_id' => $paymentId,
+                'payment_proof_url' => $paymentProofUrl,
             ];
         })->values();
 
