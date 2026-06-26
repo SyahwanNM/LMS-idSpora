@@ -322,23 +322,42 @@
                         </div>
 
                     @if(!$isFree)
+                        @php
+                            $showOnline = isset($event) && (bool)$event->accept_online_payment;
+                            $showManual = isset($event) && (bool)$event->accept_manual_transfer;
+
+                            if (!$showOnline && !$showManual) {
+                                $showOnline = true;
+                                $showManual = true;
+                            }
+
+                            // If only manual is available, check manual by default
+                            // If online is available (alone or both), check online by default
+                            $onlineChecked = $showOnline ? 'checked' : '';
+                            $manualChecked = ($showManual && !$showOnline) ? 'checked' : '';
+                        @endphp
                                 <div class="mt-3">
                                     <div class="form-label-custom" style="margin-bottom:8px; font-weight:600;">Payment Method</div>
                                     <div style="display:flex; flex-direction:column; gap:10px;">
-                                        <label id="method-midtrans-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:#f5f5f5;cursor:not-allowed;font-size:14px;font-weight:600;color:#9ca3af;opacity:0.6;pointer-events:none;">
-                                            <input type="radio" name="payment_method" value="midtrans" id="method-midtrans" disabled style="accent-color:#4f46e5;">
+                                        @if($showOnline)
+                                        <label id="method-midtrans-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #e0e0e0;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:#374151;transition:all .2s;">
+                                            <input type="radio" name="payment_method" value="midtrans" id="method-midtrans" {{ $onlineChecked }} style="accent-color:#4f46e5;">
                                             <span>💳 Pembayaran Online</span>
-                                            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#9ca3af;">Not available at this time</span>
+                                            <span style="margin-left:auto;font-size:11px;font-weight:400;color:#6b7280;">Otomatis • Instant</span>
                                         </label>
+                                        @endif
+                                        @if($showManual)
                                         <label id="method-transfer-label" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;border:2px solid #059669;background:#ecfdf5;cursor:pointer;font-size:14px;font-weight:600;color:#047857;transition:all .2s;">
-                                            <input type="radio" name="payment_method" value="transfer" id="method-transfer" checked style="accent-color:#059669;">
+                                            <input type="radio" name="payment_method" value="transfer" id="method-transfer" {{ $manualChecked }} style="accent-color:#059669;">
                                             <span>🏦 Transfer Rekening</span>
                                             <span style="margin-left:auto;font-size:11px;font-weight:400;color:#6b7280;">Upload bukti • pending verifikasi</span>
                                         </label>
+                                        @endif
                                     </div>
                                 </div>
 
                                 {{-- Transfer proof upload — shown only when Transfer Rekening selected --}}
+                                @if($showManual)
                                 <div id="transferProofSection" class="mt-3" style="display:none;">
                                     {{-- Bank account info --}}
                                     <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:12px;">
@@ -350,10 +369,14 @@
                                         </div>
                                         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
                                             <div>
-                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">1111-999-236</div>
-                                                <div style="font-size:12px;color:#374151;margin-top:2px;"><strong>Bank BNI</strong> &nbsp;·&nbsp; a.n. APTIKOM JABAR</div>
+                                                <div style="font-size:15px;font-weight:700;color:#15803d;letter-spacing:.5px;">
+                                                    {{ isset($event) && $event->bank_account_number ? $event->bank_account_number : '1111-999-236' }}
+                                                </div>
+                                                <div style="font-size:12px;color:#374151;margin-top:2px;">
+                                                    <strong>{{ isset($event) && $event->bank_name ? $event->bank_name : 'Bank BNI' }}</strong> &nbsp;·&nbsp; a.n. {{ isset($event) && $event->bank_account_holder ? $event->bank_account_holder : 'APTIKOM JABAR' }}
+                                                </div>
                                             </div>
-                                            <button type="button" onclick="navigator.clipboard.writeText('023401267');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500);"
+                                            <button type="button" onclick="navigator.clipboard.writeText('{{ isset($event) && $event->bank_account_number ? $event->bank_account_number : '1111-999-236' }}');this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy',1500);"
                                                 style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:600;">
                                                 Copy
                                             </button>
@@ -368,6 +391,7 @@
                                     <div class="form-text small text-muted mt-1">Format: JPG, PNG, WebP. Maks <strong>1 MB</strong>.</div>
                                     <div id="proofSizeError" class="form-text small text-danger mt-1" style="display:none;">Ukuran file melebihi 1 MB. Pilih file yang lebih kecil.</div>
                                 </div>
+                                @endif
                             @endif
 
                     </div>
@@ -379,11 +403,16 @@
                     @endif
 
                     @if(!$isFree)
+                        @if($showOnline)
+                        {{-- Online/Midtrans action button: visible by default when online is available --}}
                         <div id="midtransSection">
                             <button type="button" id="midtransPayBtn" class="btn-pay" style="margin-top:0;">Pay with Midtrans</button>
                             <div class="small text-muted mt-2">Payment will be verified automatically after success.</div>
                         </div>
-                        <div id="transferSection" style="display:none; margin-top:0;">
+                        @endif
+                        @if($showManual)
+                        {{-- Transfer action button: hidden initially if online is also active (JS will show when user selects transfer), otherwise visible --}}
+                        <div id="transferSection" style="{{ $showOnline ? 'display:none;' : '' }} margin-top:0;">
                             <button type="button" id="transferPayBtn" class="btn-pay"
                                 style="background:#059669;"
                                 data-bs-toggle="modal" data-bs-target="#transferConfirmModal">
@@ -391,6 +420,7 @@
                             </button>
                             <div class="small text-muted mt-2">Pembayaran akan diverifikasi oleh admin dalam 1×24 jam.</div>
                         </div>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -842,6 +872,11 @@
         const proofSizeError  = document.getElementById('proofSizeError');
 
         function getSelectedMethod(){
+            // If only transfer is available (no midtrans radio), always return 'transfer'
+            if (!methodMidtrans && methodTransfer) return 'transfer';
+            // If only midtrans is available (no transfer radio), always return 'midtrans'
+            if (methodMidtrans && !methodTransfer) return 'midtrans';
+            // Both available — check which is selected
             if (methodTransfer && methodTransfer.checked) return 'transfer';
             return 'midtrans';
         }
@@ -862,7 +897,7 @@
                 transferLbl.style.color = !isMidtrans ? '#047857' : '#374151';
             }
 
-            // Show/hide sections
+            // Show/hide action button sections based on selected method
             const midSec = document.getElementById('midtransSection');
             if (midSec) midSec.style.display = isMidtrans ? '' : 'none';
             if (transferSection) transferSection.style.display = isMidtrans ? 'none' : '';
@@ -874,7 +909,7 @@
         if (methodMidtrans) methodMidtrans.addEventListener('change', syncMethodUI);
         if (methodTransfer)  methodTransfer.addEventListener('change', syncMethodUI);
 
-        // Init payment method UI — transfer is default (midtrans disabled)
+        // Init payment method UI — respects which methods are actually available
         syncMethodUI();
 
         // Validate proof file size (max 1MB)
