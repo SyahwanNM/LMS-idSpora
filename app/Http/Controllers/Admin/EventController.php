@@ -2246,6 +2246,7 @@ class EventController extends Controller
 
         if ($pendingPayment) {
             $pendingPayment->update(['status' => 'settled']);
+            $this->processEventReferralCommission($event, $pendingPayment);
         }
 
         // Notify user
@@ -2429,6 +2430,82 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
+        }
+    }
+
+    private function processEventReferralCommission(\App\Models\Event $event, \App\Models\ManualPayment $payment): void
+    {
+        if (!(bool) ($event->is_reseller_event ?? false)) {
+            return;
+        }
+        if (empty($payment->referral_code)) {
+            return;
+        }
+
+        $referrer = \App\Models\User::query()->where('referral_code', $payment->referral_code)->first();
+        if (!$referrer || (int) $referrer->id === (int) $payment->user_id) {
+            return;
+        }
+
+        $totalReferrals = \App\Models\Referral::where('user_id', $referrer->id)->count();
+        if ($totalReferrals >= 151) {
+            $level = 'Gold';
+        } elseif ($totalReferrals >= 51) {
+            $level = 'Silver';
+        } else {
+            $level = 'Bronze';
+        }
+
+        $bronze = $event->reseller_commission_bronze ?? 10;
+        $silver = $event->reseller_commission_silver ?? 12;
+        $gold = $event->reseller_commission_gold ?? 15;
+
+        $pct = match ($level) {
+            'Gold' => $gold,
+            'Silver' => $silver,
+            default => $bronze,
+        };
+        $rate = ((float) $pct) / 100;
+
+        $commissionAmount = ((float) $payment->amount) * $rate;
+        if ($commissionAmount <= 0) {
+            return;
+        }
+
+        $existingReferral = \App\Models\Referral::query()
+            ->where('user_id', $referrer->id)
+            ->where('referred_user_id', $payment->user_id)
+            ->where('description', 'Komisi Event: ' . $event->title)
+            ->first();
+
+        if ($existingReferral) {
+            return;
+        }
+
+        \App\Models\Referral::create([
+            'user_id' => $referrer->id,
+            'referred_user_id' => $payment->user_id,
+            'amount' => $commissionAmount,
+            'status' => 'paid',
+            'description' => 'Komisi Event: ' . $event->title,
+        ]);
+
+        $referrer->increment('wallet_balance', $commissionAmount);
+
+        try {
+            $msg = "Komisi Baru Masuk! Anda mendapatkan komisi sebesar Rp " . number_format($commissionAmount, 0, ',', '.') . " dari pembelian event '" . $event->title . "'.";
+            \App\Models\UserNotification::create([
+                'user_id' => $referrer->id,
+                'type' => 'reseller',
+                'title' => 'Komisi Baru Masuk!',
+                'message' => $msg,
+                'data' => ['url' => route('reseller.index')],
+            ]);
+            if ($referrer->phone) {
+                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Event referral commission notification failed: ' . $e->getMessage());
         }
     }
 }
