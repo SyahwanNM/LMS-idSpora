@@ -22,15 +22,7 @@ use App\Http\Controllers\Admin\CourseReportController;
 use App\Http\Controllers\Admin\CourseRevenueDetailController;
 use App\Models\Event;
 use App\Models\EventRegistration;
-use App\Http\Controllers\User\ResellerController;
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
-    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
-
-    // Route Baru untuk Generate Kode
-    Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
-});
 Route::middleware('auth')->get('/detail-event-registered/{event}', function (Event $event) {
     // Load feedbacks for display on the event detail page
     $feedbacks = \App\Models\Feedback::with('user')->where('event_id', $event->id)->orderBy('created_at', 'desc')->get();
