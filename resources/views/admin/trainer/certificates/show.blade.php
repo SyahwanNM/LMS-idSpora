@@ -600,10 +600,10 @@
                                                                                     <i class="bi bi-gear-fill"></i>
                                                                                 </a>
                                                                                 <form method="POST" action="{{ route('admin.trainer.certificates.publish', [
-                                            'trainer' => $trainer->id,
-                                            'context' => $context,
-                                            'id' => $item['id'],
-                                        ]) }}" class="d-inline">
+                                             'trainer' => $trainer->id,
+                                             'context' => $context,
+                                             'id' => $item['id'],
+                                         ]) }}" class="d-inline publish-cert-form" data-has-signature="{{ !empty($item['has_signature']) ? 'true' : 'false' }}">
                                                                                     @csrf
                                                                                     <button type="submit" class="btn-publish">
                                                                                         Terbitkan
@@ -847,6 +847,25 @@
                 if (searchInput) searchInput.value = '';
                 if (statusFilter) statusFilter.value = 'all';
                 runFilter();
+            });
+
+            // Client-side validation for publishing certificates
+            document.querySelectorAll('.publish-cert-form').forEach(form => {
+                form.addEventListener('submit', function (event) {
+                    if (this.dataset.hasSignature === 'false') {
+                        event.preventDefault();
+                        const msg = 'Tidak dapat menerbitkan sertifikat karena tanda tangan belum dikonfigurasi. Harap kelola template/aset terlebih dahulu.';
+                        if (window.adminNotify) {
+                            window.adminNotify('error', msg, 6000);
+                        } else {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'position:fixed; top:20px; right:20px; background:#ef4444; color:#fff; padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 4px 12px rgba(0,0,0,0.15); font-family:sans-serif; font-size:14px;';
+                            div.innerHTML = '<strong>Terdapat kesalahan:</strong><br>' + msg;
+                            document.body.appendChild(div);
+                            setTimeout(() => div.remove(), 6000);
+                        }
+                    }
+                });
             });
         });
     </script>

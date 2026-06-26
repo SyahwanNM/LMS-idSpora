@@ -1259,7 +1259,7 @@
                                     <span class="asset-status">Tersedia</span>
                             </div>
                         </div>
-                    </div>
+</div>
                 </aside>
 
                 <aside class="side-card">
@@ -1269,7 +1269,7 @@
                                 'trainer' => $trainer->id,
                                 'context' => strtolower($programType) === 'course' ? 'course' : 'event',
                                 'id' => $model->id,
-                            ]) }}" class="mb-3">
+                            ]) }}" class="mb-3 publish-cert-form" data-has-signature="{{ $signatures->count() > 0 ? 'true' : 'false' }}">
                                 @csrf
                                 <button type="submit" class="btn-template">
                                     <i class="bi {{ $publishBtnIcon }}"></i>
@@ -1324,6 +1324,25 @@
     document.addEventListener('DOMContentLoaded', () => {
         scalePreview();
         window.addEventListener('resize', scalePreview);
+
+        // Client-side validation for publishing certificates
+        document.querySelectorAll('.publish-cert-form').forEach(form => {
+            form.addEventListener('submit', function (event) {
+                if (this.dataset.hasSignature === 'false') {
+                    event.preventDefault();
+                    const msg = 'Tidak dapat menerbitkan sertifikat karena tanda tangan belum dikonfigurasi. Harap kelola template/aset terlebih dahulu.';
+                    if (window.adminNotify) {
+                        window.adminNotify('error', msg, 6000);
+                    } else {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'position:fixed; top:20px; right:20px; background:#ef4444; color:#fff; padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 4px 12px rgba(0,0,0,0.15); font-family:sans-serif; font-size:14px;';
+                        div.innerHTML = '<strong>Terdapat kesalahan:</strong><br>' + msg;
+                        document.body.appendChild(div);
+                        setTimeout(() => div.remove(), 6000);
+                    }
+                }
+            });
+        });
     });
 </script>
 @endpush
