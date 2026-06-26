@@ -321,6 +321,14 @@ class TrainerCertificateController extends Controller
 
         $publishedKeys = $this->publishedKeys($trainer);
 
+        $signatureCounts = TrainerCertificateAsset::query()
+            ->where('type', TrainerCertificateAsset::TYPE_SIGNATURE)
+            ->get()
+            ->groupBy(function ($asset) {
+                return $asset->certifiable_type . ':' . $asset->certifiable_id;
+            })
+            ->map->count();
+
         $events = Event::query()
             ->where(function ($query) use ($trainer) {
                 $query->where('trainer_id', $trainer->id)
@@ -336,7 +344,8 @@ class TrainerCertificateController extends Controller
             ->orderByDesc('event_date')
             ->get()
             ->filter(fn($event) => !$publishedKeys->has(Event::class . ':' . $event->id))
-            ->map(function ($event) {
+            ->map(function ($event) use ($signatureCounts) {
+                $hasSignature = ($signatureCounts->get(Event::class . ':' . $event->id) ?? 0) > 0;
                 return [
                     'context' => 'event',
                     'id' => $event->id,
@@ -344,6 +353,7 @@ class TrainerCertificateController extends Controller
                     'date' => $event->event_date,
                     'type' => $event->jenis ?? 'Event',
                     'participants_count' => $event->registrations_count ?? 0,
+                    'has_signature' => $hasSignature,
                 ];
             });
 
@@ -354,7 +364,8 @@ class TrainerCertificateController extends Controller
             ->orderByDesc('updated_at')
             ->get()
             ->filter(fn($course) => !$publishedKeys->has(Course::class . ':' . $course->id))
-            ->map(function ($course) {
+            ->map(function ($course) use ($signatureCounts) {
+                $hasSignature = ($signatureCounts->get(Course::class . ':' . $course->id) ?? 0) > 0;
                 return [
                     'context' => 'course',
                     'id' => $course->id,
@@ -362,6 +373,7 @@ class TrainerCertificateController extends Controller
                     'date' => $course->updated_at,
                     'type' => 'Course',
                     'participants_count' => $course->enrollments_count ?? 0,
+                    'has_signature' => $hasSignature,
                 ];
             });
 
@@ -444,6 +456,63 @@ class TrainerCertificateController extends Controller
                     ]);
             }
         }
+
+        // Validate signatures presence and completeness
+        $removeIds = array_filter((array) $request->input('remove_assets', []));
+        $signatures = TrainerCertificateAsset::query()
+            ->where('certifiable_type', get_class($model))
+            ->where('certifiable_id', $model->id)
+            ->where('type', TrainerCertificateAsset::TYPE_SIGNATURE)
+            ->orderBy('order_no')
+            ->get();
+
+        $activeSigsCount = 0;
+        $signaturePositions = (array) $request->input('signature_position', []);
+
+        for ($i = 0; $i < 3; $i++) {
+            $existingAsset = $signatures->get($i);
+            $hasExisting = $existingAsset && !in_array($existingAsset->id, $removeIds);
+            
+            $hasNew = false;
+            if ($request->hasFile("certificate_signature_file.$i")) {
+                $file = $request->file("certificate_signature_file.$i");
+                if ($file && $file->isValid()) {
+                    $hasNew = true;
+                }
+            }
+
+            $hasSignatureFile = ($hasExisting || $hasNew);
+            $nameVal = trim((string) ($signatureNames[$i] ?? ''));
+            $posVal = trim((string) ($signaturePositions[$i] ?? ''));
+
+            if ($hasSignatureFile) {
+                $activeSigsCount++;
+                if ($nameVal === '' || $posVal === '') {
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'upload' => 'Konfigurasi tidak lengkap! Harap isi nama lengkap dan jabatan untuk semua tanda tangan yang diunggah.',
+                        ]);
+                }
+            } else {
+                if ($nameVal !== '' || $posVal !== '') {
+                    return back()
+                        ->withInput()
+                        ->withErrors([
+                            'upload' => 'Konfigurasi tidak lengkap! Harap unggah berkas tanda tangan untuk nama/jabatan yang diisi.',
+                        ]);
+                }
+            }
+        }
+
+        if ($activeSigsCount === 0) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'upload' => 'Konfigurasi tidak lengkap! Harap unggah minimal satu tanda tangan.',
+                ]);
+        }
+
 
         DB::beginTransaction();
 
@@ -583,7 +652,24 @@ class TrainerCertificateController extends Controller
 
         $model = $this->getCertifiableModel($context, $id);
 
+        $sigCount = TrainerCertificateAsset::query()
+            ->where('certifiable_type', get_class($model))
+            ->where('certifiable_id', $model->id)
+            ->where('type', TrainerCertificateAsset::TYPE_SIGNATURE)
+            ->count();
+
+        if ($sigCount === 0) {
+            return redirect()
+                ->route('admin.trainer.certificates.edit', [
+                    'trainer' => $trainer->id,
+                    'context' => $context,
+                    'id' => $model->id,
+                ])
+                ->with('error', 'Tidak dapat menerbitkan sertifikat karena tanda tangan belum dikonfigurasi. Harap unggah minimal satu tanda tangan.');
+        }
+
         $certificate = $this->ensureCertificate($trainer, $model, $context);
+
 
         if (!empty($certificate->file_path)) {
             $absolute = storage_path('app/' . $certificate->file_path);

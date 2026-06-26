@@ -1072,7 +1072,7 @@
         <strong class="text-primary">Kelola Template</strong>
     </div>
 
-    <form method="POST"
+    <form id="certificate-config-form" method="POST"
           action="{{ route('admin.trainer.certificates.update', [
               'trainer' => $trainer->id,
               'context' => $context,
@@ -1834,6 +1834,67 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     window.addEventListener('resize', scalePreview);
+
+    // Form submit validation
+    const form = document.getElementById('certificate-config-form');
+    if (form) {
+        form.addEventListener('submit', function (event) {
+            const sigCards = document.querySelectorAll('.signature-card');
+            let hasSignature = false;
+            let incompleteSignature = false;
+            let nameOrPositionWithoutImage = false;
+
+            sigCards.forEach(card => {
+                const uploadArea = card.querySelector('.signature-upload-area');
+                const hasPreview = uploadArea && uploadArea.classList.contains('has-preview');
+                const nameInput = card.querySelector('input[name^="signature_name"]');
+                const posInput = card.querySelector('input[name^="signature_position"]');
+                const nameVal = nameInput ? nameInput.value.trim() : '';
+                const posVal = posInput ? posInput.value.trim() : '';
+
+                if (hasPreview) {
+                    hasSignature = true;
+                    if (!nameVal || !posVal) {
+                        incompleteSignature = true;
+                    }
+                } else {
+                    if (nameVal || posVal) {
+                        nameOrPositionWithoutImage = true;
+                    }
+                }
+            });
+
+            const showError = (msg) => {
+                if (window.adminNotify) {
+                    window.adminNotify('error', msg, 6000);
+                } else {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position:fixed; top:20px; right:20px; background:#ef4444; color:#fff; padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 4px 12px rgba(0,0,0,0.15); font-family:sans-serif; font-size:14px;';
+                    div.innerHTML = '<strong>Terdapat kesalahan:</strong><br>' + msg;
+                    document.body.appendChild(div);
+                    setTimeout(() => div.remove(), 6000);
+                }
+            };
+
+            if (!hasSignature) {
+                event.preventDefault();
+                showError('Konfigurasi tidak lengkap! Anda harus mengunggah minimal satu tanda tangan.');
+                return false;
+            }
+
+            if (incompleteSignature) {
+                event.preventDefault();
+                showError('Konfigurasi tidak lengkap! Harap isi nama lengkap dan jabatan untuk semua tanda tangan yang diunggah.');
+                return false;
+            }
+
+            if (nameOrPositionWithoutImage) {
+                event.preventDefault();
+                showError('Konfigurasi tidak lengkap! Harap unggah berkas tanda tangan untuk nama/jabatan yang diisi.');
+                return false;
+            }
+        });
+    }
 
     // Initial render
     renderPreview();
