@@ -956,10 +956,10 @@ body {
                                         <button type="submit" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation();">Terima</button>
                                     </form>
                                 @endif
-                                <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                <form method="POST" class="js-invitation-response-form" data-confirm="Apakah Anda yakin ingin menolak undangan ini?" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
                                     @csrf
                                     <input type="hidden" name="decision" value="reject">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation(); return confirm('Apakah Anda yakin ingin menolak undangan ini?');">Tolak</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation();" data-loading-text="Memproses...">Tolak</button>
                                 </form>
                             </div>
                         </div>
