@@ -479,12 +479,22 @@ class FinanceController extends Controller
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
-            'category' => 'nullable|string'
+            'category' => 'nullable|string',
+            'proof_of_payment' => 'required|image|max:5120'
         ]);
 
-        Expense::create($request->all());
+        $data = $request->except('proof_of_payment');
 
-        return back()->with('success', 'Pengeluaran berhasil dicatat.');
+        if ($request->hasFile('proof_of_payment')) {
+            $path = $request->file('proof_of_payment')->store('finance/proofs/manual', 'public');
+            $data['proof_of_payment'] = $path;
+        }
+
+        $data['status'] = 'approved';
+
+        Expense::create($data);
+
+        return back()->with('success', 'Pengeluaran manual berhasil dicatat dengan bukti pembayaran.');
     }
 
     /* ═══════════════════════════════════════════

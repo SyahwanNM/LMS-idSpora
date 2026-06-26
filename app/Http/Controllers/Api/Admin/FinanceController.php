@@ -334,10 +334,11 @@ class FinanceController extends Controller
     public function storeExpense(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'description'  => 'required|string|max:255',
-            'amount'       => 'required|numeric|min:0',
-            'expense_date' => 'required|date',
-            'category'     => 'nullable|string'
+            'description'      => 'required|string|max:255',
+            'amount'           => 'required|numeric|min:0',
+            'expense_date'     => 'required|date',
+            'category'         => 'nullable|string',
+            'proof_of_payment' => 'required|image|max:5120'
         ]);
 
         if ($validator->fails()) {
@@ -347,11 +348,18 @@ class FinanceController extends Controller
             ], 422);
         }
 
-        $expense = Expense::create($request->all());
+        $data = $request->except('proof_of_payment');
+        if ($request->hasFile('proof_of_payment')) {
+            $path = $request->file('proof_of_payment')->store('finance/proofs/manual', 'public');
+            $data['proof_of_payment'] = $path;
+        }
+        $data['status'] = 'approved';
+
+        $expense = Expense::create($data);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Pengeluaran berhasil dicatat.',
+            'message' => 'Pengeluaran manual berhasil dicatat dengan bukti pembayaran.',
             'data' => $expense
         ], 201);
     }
