@@ -537,10 +537,10 @@ class TrainerNotificationsController extends Controller
                                 </form>
                             @endif
 
-                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="margin:0; display:inline-block;">
+                            <form method="POST" class="js-invitation-response-form" data-confirm="Apakah Anda yakin ingin menolak undangan ini?" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="margin:0; display:inline-block;">
                                 @csrf
                                 <input type="hidden" name="decision" value="reject">
-                                <button type="submit" class="btn-action-danger-outline" onclick="return confirm('Apakah Anda yakin ingin menolak undangan ini?');">
+                                <button type="submit" class="btn-action-danger-outline" data-loading-text="Memproses...">
                                     <i class="bi bi-x-circle"></i> Tolak
                                 </button>
                             </form>

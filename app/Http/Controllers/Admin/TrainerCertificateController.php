@@ -80,11 +80,11 @@ class TrainerCertificateController extends Controller
             $pendingEvents = Event::query()
                 ->where(function ($query) use ($trainer) {
                     $query->where('trainer_id', $trainer->id)
-                          ->orWhereIn('id', function ($sub) use ($trainer) {
-                              $sub->select('event_id')
-                                  ->from('event_speakers')
-                                  ->where('trainer_id', $trainer->id);
-                          });
+                        ->orWhereIn('id', function ($sub) use ($trainer) {
+                            $sub->select('event_id')
+                                ->from('event_speakers')
+                                ->where('trainer_id', $trainer->id);
+                        });
                 })
                 ->whereNotNull('event_date')
                 ->whereDate('event_date', '<=', now()->toDateString())
@@ -324,11 +324,11 @@ class TrainerCertificateController extends Controller
         $events = Event::query()
             ->where(function ($query) use ($trainer) {
                 $query->where('trainer_id', $trainer->id)
-                      ->orWhereIn('id', function ($sub) use ($trainer) {
-                          $sub->select('event_id')
-                              ->from('event_speakers')
-                              ->where('trainer_id', $trainer->id);
-                      });
+                    ->orWhereIn('id', function ($sub) use ($trainer) {
+                        $sub->select('event_id')
+                            ->from('event_speakers')
+                            ->where('trainer_id', $trainer->id);
+                    });
             })
             ->whereNotNull('event_date')
             ->whereDate('event_date', '<=', now()->toDateString())
@@ -880,14 +880,7 @@ class TrainerCertificateController extends Controller
             return $this->normalizeCrmPath((string) $logo);
         }, $crmLogos)));
 
-        DB::transaction(function () use (
-            $certifiableType,
-            $certifiableId,
-            $crmLogos,
-            $crmSignatures,
-            $hasLogoAssets,
-            $hasSignatureAssets
-        ) {
+        DB::transaction(function () use ($certifiableType, $certifiableId, $crmLogos, $crmSignatures, $hasLogoAssets, $hasSignatureAssets) {
             if (!$hasLogoAssets) {
                 $orderNo = (int) TrainerCertificateAsset::query()
                     ->where('certifiable_type', $certifiableType)

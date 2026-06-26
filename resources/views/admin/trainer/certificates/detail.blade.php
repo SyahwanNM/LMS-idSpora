@@ -1256,7 +1256,7 @@
                                     <div class="asset-label">Tanda Tangan</div>
                                     <div class="asset-value">{{ $signatures->count() }} TTD</div>
                                 </div>
-                                <span class="asset-status">Tersedia</span>
+                                    <span class="asset-status">Tersedia</span>
                             </div>
                         </div>
                     </div>

@@ -178,9 +178,17 @@ class CourseStudioController extends Controller
         }
 
         $contentHtml = trim((string) $request->input('module_content_html', ''));
+        
+        // Check if content is empty markup (e.g. only contains empty tags, whitespaces, or &nbsp;)
+        $plainText = trim(html_entity_decode(strip_tags($contentHtml), ENT_QUOTES, 'UTF-8'));
+        $plainText = preg_replace('/\s+/u', '', $plainText);
+        $plainText = str_replace(["\xc2\xa0", "\xa0"], '', $plainText);
+        $hasMedia = (bool) preg_match('/<(img|iframe|video|audio|svg|embed|object|picture)\b/i', $contentHtml);
+        $isHtmlContentEmpty = ($plainText === '' && !$hasMedia);
+
         $updatedModules = [];
 
-        if ($contentHtml !== '') {
+        if ($contentHtml !== '' && !$isHtmlContentEmpty) {
             if (!$schemePermissions['can_module']) {
                 return response()->json(['success' => false, 'error' => 'Anda tidak memiliki akses untuk menambah/mengubah modul pada skema ini.']);
             }
@@ -204,7 +212,7 @@ class CourseStudioController extends Controller
         }
 
         if (!$request->hasFile('files')) {
-            if ($contentHtml !== '') {
+            if ($contentHtml !== '' && !$isHtmlContentEmpty) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Materi teks berhasil disubmit oleh Admin.',
@@ -212,7 +220,7 @@ class CourseStudioController extends Controller
                     'rejected_files' => [],
                 ]);
             }
-            return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
+            return response()->json(['success' => false, 'error' => 'Silakan isi materi di editor terlebih dahulu.']);
         }
 
         foreach ($request->file('files') as $file) {
