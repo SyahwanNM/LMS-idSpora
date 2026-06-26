@@ -1059,11 +1059,37 @@ class ResellerController extends Controller
             return response()->view('reseller.suspended', compact('user'));
         }
 
-        // Ambil semua data history referral (termasuk yang rejected)
-        $history = $user->referrals()
+        $query = $user->referrals()
             ->with(['referredUser'])
-            ->latest()
-            ->get();
+            ->latest();
+
+        if ($search = request('search')) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->whereHas('referredUser', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%');
+                })->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($status = request('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($date_range = request('date_range')) {
+            $dates = explode(' - ', $date_range);
+            if (count($dates) === 2) {
+                try {
+                    $start = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[0]))->startOfDay();
+                    $end = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[1]))->endOfDay();
+                    $query->whereBetween('created_at', [$start, $end]);
+                } catch (\Exception $e) {
+                    // Ignore invalid format
+                }
+            }
+        }
+
+        $history = $query->get();
 
         // Hitung total komisi LUNAS (paid) 
         $totalKomisi = $history->filter(function ($item) {
