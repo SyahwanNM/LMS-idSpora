@@ -219,7 +219,7 @@
     </div>
     @if($customers->hasPages())
     <div style="padding:1rem 1.25rem;border-top:1px solid var(--crm-border-soft);">
-        {{ $customers->appends(request()->query())->links() }}
+        {{ $customers->appends(request()->query())->links('pagination::bootstrap-5') }}
     </div>
     @endif
 </div>
