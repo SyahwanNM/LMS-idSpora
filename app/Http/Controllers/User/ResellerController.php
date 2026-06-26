@@ -266,6 +266,11 @@ class ResellerController extends Controller
             }
         }
 
+        $averageCommission = Referral::where('status', 'paid')->avg('amount') ?? 0;
+        $totalPurchases = Referral::whereIn('status', ['paid', 'pending'])->count();
+        $totalClicks = \DB::table('referral_clicks')->count();
+        $conversionRate = $totalClicks > 0 ? ($totalPurchases / $totalClicks) * 100 : 0;
+
         $totalKomisi6BulanVal = $totalKomisiVal;
         $highestKomisiVal = $totalKomisiVal;
 
@@ -291,7 +296,9 @@ class ResellerController extends Controller
             'chartValues',
             'range',
             'labelTotalKomisi',
-            'labelBestPeriod'
+            'labelBestPeriod',
+            'averageCommission',
+            'conversionRate'
         ));
     }
 

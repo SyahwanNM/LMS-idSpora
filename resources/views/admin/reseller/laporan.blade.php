@@ -93,12 +93,12 @@
                                 </div>
                                 <div class="lh-sm">
                                     <h6 class="text-muted small fw-medium mb-0">Rata-rata Komisi</h6>
-                                    <h5 class="fw-semibold mb-0 text-dark">Rp 128.500</h5>
+                                    <h5 class="fw-semibold mb-0 text-dark">Rp {{ number_format($averageCommission, 0, ',', '.') }}</h5>
                                 </div>
                             </div>
                             <div class="mt-auto">
                                 <div class="progress" style="height: 6px; background-color: #f1f5f9;">
-                                    <div class="progress-bar bg-success" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100, ($averageCommission / 200000) * 100) }}%;" aria-valuenow="{{ min(100, ($averageCommission / 200000) * 100) }}" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                         </div>
@@ -137,12 +137,12 @@
                                 </div>
                                 <div class="lh-sm">
                                     <h6 class="text-muted small fw-medium mb-0">Tingkat Konversi</h6>
-                                    <h5 class="fw-semibold mb-0 text-dark">8.4%</h5>
+                                    <h5 class="fw-semibold mb-0 text-dark">{{ number_format($conversionRate, 1) }}%</h5>
                                 </div>
                             </div>
                             <div class="mt-auto">
                                 <div class="progress" style="height: 6px; background-color: #f1f5f9;">
-                                    <div class="progress-bar bg-danger" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ min(100, $conversionRate) }}%;" aria-valuenow="{{ min(100, $conversionRate) }}" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                         </div>
