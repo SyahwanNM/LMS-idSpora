@@ -6226,11 +6226,13 @@ main.detail-course {
 
                 syncEditorContentToInput();
                 const editorContent = moduleContentInput ? moduleContentInput.value.trim() : '';
-                const isDefaultContent = editorContent === '<p>Tulis pengantar materi di sini...</p>' || 
-                                         editorContent === '<p><br></p>' || 
-                                         editorContent === '<br>' || 
-                                         editorContent === '';
-                const hasEditorContent = !isDefaultContent;
+                
+                // Detailed check for empty markup
+                const editorText = moduleEditor ? moduleEditor.textContent.replace(/\s+/g, '').replace(/\xa0/g, '').trim() : '';
+                const hasMedia = moduleEditor ? (moduleEditor.querySelector('img, iframe, video, audio, svg, embed, object') !== null) : false;
+                
+                const isDefaultContent = editorContent === '<p>Tulis pengantar materi di sini...</p>';
+                const hasEditorContent = (editorText !== '' || hasMedia) && !isDefaultContent;
 
                 const pdfFiles = document.getElementById('pdfFileInput')?.files;
                 const hasPdfFile = pdfFiles && pdfFiles.length > 0;

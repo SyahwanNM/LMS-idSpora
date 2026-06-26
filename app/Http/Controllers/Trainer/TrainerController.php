@@ -2727,10 +2727,18 @@ class TrainerController extends Controller
         $rejectedFiles = [];
         $updatedModules = [];
         $contentHtml = trim((string) $request->input('module_content_html', ''));
+        
+        // Check if content is empty markup (e.g. only contains empty tags, whitespaces, or &nbsp;)
+        $plainText = trim(html_entity_decode(strip_tags($contentHtml), ENT_QUOTES, 'UTF-8'));
+        $plainText = preg_replace('/\s+/u', '', $plainText);
+        $plainText = str_replace(["\xc2\xa0", "\xa0"], '', $plainText);
+        $hasMedia = (bool) preg_match('/<(img|iframe|video|audio|svg|embed|object|picture)\b/i', $contentHtml);
+        $isHtmlContentEmpty = ($plainText === '' && !$hasMedia);
+
         $targetTextModule = null;
 
         // Save rich text draft HTML into module description (text-based material style).
-        if ($contentHtml !== '') {
+        if ($contentHtml !== '' && !$isHtmlContentEmpty) {
             $targetTextModule = \App\Models\CourseModule::where('course_id', $id)
                 ->whereIn('id', $targetIds)
                 ->where('type', 'pdf')
@@ -2765,7 +2773,7 @@ class TrainerController extends Controller
 
         // Support text-only submission flow for module authoring (without file attachment).
         if (!$request->hasFile('files')) {
-            if ($contentHtml !== '') {
+            if ($contentHtml !== '' && !$isHtmlContentEmpty) {
                 $course->update([
                     'status' => 'pending_review',
                     'approved_at' => null,
@@ -2783,7 +2791,7 @@ class TrainerController extends Controller
                 ]);
             }
 
-            return response()->json(['success' => false, 'error' => 'Tidak ada file.']);
+            return response()->json(['success' => false, 'error' => 'Silakan isi materi di editor terlebih dahulu.']);
         }
 
         if ($request->hasFile('files')) {
@@ -3165,7 +3173,28 @@ class TrainerController extends Controller
             }
 
             $request->validate([
-                'file' => 'nullable|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000',
+                'file' => [
+                    'nullable',
+                    'file',
+                    function ($attribute, $value, $fail) {
+                        if (!$value || !($value instanceof \Illuminate\Http\UploadedFile)) {
+                            return;
+                        }
+                        if ($value->getError() !== UPLOAD_ERR_OK) {
+                            $fail('Upload gagal.');
+                            return;
+                        }
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        $allowed = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
+                        if (!in_array($ext, $allowed)) {
+                            $fail("Format .$ext tidak diizinkan. Format yang diizinkan: " . implode(', ', $allowed));
+                            return;
+                        }
+                        if ($value->getSize() > 500 * 1024 * 1024) {
+                            $fail('Ukuran file maksimal 500MB.');
+                        }
+                    }
+                ],
                 'material_link' => 'nullable|string|max:2048',
             ]);
 
@@ -3329,7 +3358,28 @@ class TrainerController extends Controller
         // Default: upload new draft file
         $request->validate([
             'files' => 'required_without:material_link|array|max:5',
-            'files.*' => 'nullable|file|mimes:pdf,mp4,pptx,ppt,docx,doc|max:512000',
+            'files.*' => [
+                'nullable',
+                'file',
+                function ($attribute, $value, $fail) {
+                    if (!$value || !($value instanceof \Illuminate\Http\UploadedFile)) {
+                        return;
+                    }
+                    if ($value->getError() !== UPLOAD_ERR_OK) {
+                        $fail('Upload gagal.');
+                        return;
+                    }
+                    $ext = strtolower($value->getClientOriginalExtension());
+                    $allowed = ['pdf', 'mp4', 'pptx', 'ppt', 'docx', 'doc'];
+                    if (!in_array($ext, $allowed)) {
+                        $fail("Format .$ext tidak diizinkan. Format yang diizinkan: " . implode(', ', $allowed));
+                        return;
+                    }
+                    if ($value->getSize() > 500 * 1024 * 1024) {
+                        $fail('Ukuran file maksimal 500MB.');
+                    }
+                }
+            ],
             'material_link' => 'nullable|string|max:2048',
             'material_survey_link' => 'nullable|string|max:2048'
         ]);

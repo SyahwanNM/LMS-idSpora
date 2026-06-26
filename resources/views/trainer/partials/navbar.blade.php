@@ -806,8 +806,50 @@
         }
 
         const confirmationMessage = form.dataset.confirm;
-        if (confirmationMessage && !window.confirm(confirmationMessage)) {
+        if (confirmationMessage) {
             event.preventDefault();
+
+            if (typeof Swal !== 'undefined') {
+                const isRejection = /menolak|tolak/i.test(confirmationMessage);
+                Swal.fire({
+                    title: 'Konfirmasi',
+                    text: confirmationMessage,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: isRejection ? '#ef4444' : '#624388',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: isRejection ? 'Ya, Tolak' : 'Ya, Lanjutkan',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const submitButton = form.querySelector('button[type="submit"]');
+                        if (submitButton) {
+                            submitButton.disabled = true;
+                            const loadingText = submitButton.getAttribute('data-loading-text');
+                            if (loadingText) {
+                                submitButton.dataset.originalText = submitButton.textContent || '';
+                                submitButton.textContent = loadingText;
+                            }
+                        }
+                        HTMLFormElement.prototype.submit.call(form);
+                    }
+                });
+            } else {
+                // Fallback to native confirm if Swal is not loaded
+                if (window.confirm(confirmationMessage)) {
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        const loadingText = submitButton.getAttribute('data-loading-text');
+                        if (loadingText) {
+                            submitButton.dataset.originalText = submitButton.textContent || '';
+                            submitButton.textContent = loadingText;
+                        }
+                    }
+                    HTMLFormElement.prototype.submit.call(form);
+                }
+            }
             return;
         }
 
