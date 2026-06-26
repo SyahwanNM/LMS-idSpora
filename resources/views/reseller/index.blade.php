@@ -786,8 +786,6 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 10%</span>
                                         </div>
                                     </div>
-                                    {{-- Logic Icon: Kalau level Bronze (active) atau lebih tinggi (sudah lewat),
-                                    tampilkan checklist --}}
                                     @if($totalReferrals >= 0)
                                     <i
                                         class="bi bi-check-circle-fill {{ $level == 'Bronze' ? 'text-warning' : 'text-success' }}"></i>
@@ -805,7 +803,6 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 12%</span>
                                         </div>
                                     </div>
-                                    {{-- Logic Icon: Checklist jika Silver/Gold, Gembok jika Bronze --}}
                                     @if($totalReferrals >= 51)
                                     <i
                                         class="bi bi-check-circle-fill {{ $level == 'Silver' ? 'text-warning' : 'text-success' }}"></i>
@@ -824,7 +821,6 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 15%</span>
                                         </div>
                                     </div>
-                                    {{-- Logic Icon: Checklist jika Gold, Gembok jika belum --}}
                                     @if($totalReferrals >= 151)
                                     <i class="bi bi-check-circle-fill text-warning"></i>
                                     @else
@@ -889,7 +885,6 @@
                                     </span>
                                 </li>
                                 @empty
-                                {{-- Empty State (Tetap sama seperti sebelumnya) --}}
                                 <li class="list-group-item border-0 text-center py-5">
                                     <div class="mb-3">
                                         <i class="bi bi-trophy text-secondary opacity-25" style="font-size: 3rem;"></i>

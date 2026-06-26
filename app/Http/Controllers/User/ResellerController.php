@@ -752,9 +752,9 @@ class ResellerController extends Controller
         );
 
         // --- 4. Data Tabel Riwayat ---
-        // Ngambil 5 data terakhir beserta nama user yang diajak (referredUser)
+        // Mengambil data riwayat referral beserta relasi referredUser
         $history = $user->referrals()
-            ->with('referredUser') // Eager load biar kenceng
+            ->with('referredUser')
             ->latest()
             ->take(5)
             ->get();
@@ -829,12 +829,10 @@ class ResellerController extends Controller
         }
         $user = Auth::user();
 
-        // Double check biar gak generate ulang kalo udah ada
+        // Validasi dan generate kode referral unik jika belum memilikinya
         if (empty($user->referral_code)) {
-            // Bikin kode unik: 3 Huruf Random + 3 Angka Random (Contoh: AXY829)
             $code = strtoupper(Str::random(3) . rand(100, 999));
 
-            // Cek biar gak duplikat di database (opsional tapi bagus)
             while (User::where('referral_code', $code)->exists()) {
                 $code = strtoupper(Str::random(3) . rand(100, 999));
             }
@@ -858,7 +856,6 @@ class ResellerController extends Controller
             }
         }
 
-        // Ngebalikin ke halaman dashboard dengan pesan sukses
         return redirect()->route('reseller.index')->with('success', 'Selamat! Akun Reseller Anda telah aktif.');
     }
 
@@ -1002,7 +999,7 @@ class ResellerController extends Controller
         $user = Auth::user();
         $accountNumber = str_replace(' ', '', $request->account_number);
 
-        // 2. Cek apakah saldo user cukup?
+        // 2. Cek kecukupan saldo user
         if ($user->wallet_balance < $request->amount) {
             return response()->json([
                 'message' => 'Saldo Anda tidak mencukupi untuk penarikan ini.'
@@ -1023,7 +1020,7 @@ class ResellerController extends Controller
                 'bank_name' => $request->bank_name,
                 'account_number' => $accountNumber,
                 'account_holder' => $request->account_holder,
-                'status' => 'pending' // Status awalnya pending, nanti admin yang update ke 'paid' atau 'rejected'
+                'status' => 'pending'
             ]);
         });
 
