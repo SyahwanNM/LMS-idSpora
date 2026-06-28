@@ -246,16 +246,20 @@
                 @endif
             </div>
             @forelse($items as $feedback)
+            @php
+                $userName = $feedback->user?->name ?? 'Pengguna (Dihapus)';
+                $userAvatar = $feedback->user?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&background=7c3aed&color=fff&bold=true';
+            @endphp
             <div class="feedback-item">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="d-flex align-items-center gap-2 mb-2">
-                        <img src="{{ $feedback->user->avatar_url }}"
+                        <img src="{{ $userAvatar }}"
                              style="width:36px;height:36px;border-radius:9px;object-fit:cover;border:1.5px solid var(--crm-border);"
-                             onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($feedback->user->name) }}&background=7c3aed&color=fff&bold=true'">
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($userName) }}&background=7c3aed&color=fff&bold=true'">
                         <div>
-                            <div style="font-weight:700;font-size:0.82rem;color:var(--crm-navy);">{{ $feedback->user->name }}</div>
+                            <div style="font-weight:700;font-size:0.82rem;color:var(--crm-navy);">{{ $userName }}</div>
                             <div style="font-size:0.7rem;color:var(--crm-text-subtle);">{{ $feedback->created_at->diffForHumans() }}
-                                @if(!$analysis) &bull; {{ ($type ?? 'event') == 'event' ? ($feedback->event->title ?? 'N/A') : ($feedback->course->name ?? 'N/A') }}
+                                @if(!$analysis) &bull; {{ ($type ?? 'event') == 'event' ? ($feedback->event?->title ?? 'N/A') : ($feedback->course?->name ?? 'N/A') }}
                                 @endif
                             </div>
                         </div>

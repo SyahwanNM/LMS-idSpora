@@ -499,14 +499,9 @@
                                         <span class="fw-800 text-success" style="font-size: 1rem;">Rp {{ number_format($fee->amount, 0, ',', '.') }}</span>
                                     </td>
                                     <td class="text-end">
-                                        <div class="d-inline-flex gap-2">
-                                            <button class="btn btn-premium-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#payFeeModal{{ $fee->id }}">
-                                                <i class="bi bi-wallet2 me-1"></i> Bayar Sekarang
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-sm rounded-4 px-3 fw-bold" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#rejectFeeModal{{ $fee->id }}">
-                                                Tolak
-                                            </button>
-                                        </div>
+                                        <button class="btn btn-premium-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#payFeeModal{{ $fee->id }}">
+                                            <i class="bi bi-wallet2 me-1"></i> Bayar Sekarang
+                                        </button>
                                     </td>
                                 </tr>
                                 @empty
@@ -700,31 +695,6 @@
                 </div>
             </div>
 
-            <!-- Reject Fee Modal -->
-            <div class="modal fade" id="rejectFeeModal{{ $fee->id }}" tabindex="-1" aria-labelledby="rejectFeeModalLabel{{ $fee->id }}" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content text-start">
-                        <form action="{{ route('admin.finance.event-fee.reject', $fee->id) }}" method="POST">
-                            @csrf
-                            <div class="modal-header border-0 pb-0">
-                                <div>
-                                    <h5 class="modal-title fw-800 text-danger" id="rejectFeeModalLabel{{ $fee->id }}">Tolak Permintaan Fee</h5>
-                                    <p class="text-muted small mb-0">Mohon berikan alasan penolakan agar trainer dapat mengetahuinya.</p>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body p-4">
-                                <label class="form-label modal-form-label">Alasan Penolakan</label>
-                                <textarea name="rejected_reason" class="form-control form-control-premium" rows="3" required placeholder="Jelaskan alasan penolakan secara logis..."></textarea>
-                            </div>
-                            <div class="modal-footer border-0 pt-0">
-                                <button type="button" class="btn btn-premium-secondary px-4 py-2" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-danger rounded-4 px-4 py-2 fw-bold" style="font-size: 0.9rem;">Ya, Tolak Permintaan</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
         @endforeach
 
     </main>
