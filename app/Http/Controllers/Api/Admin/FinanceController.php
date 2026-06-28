@@ -906,7 +906,7 @@ class FinanceController extends Controller
             })
             ->get();
 
-        $eventExpenses = EventExpense::with('event')
+        $eventExpenses = EventExpense::whereHas('event')->with('event')
             ->whereBetween('created_at', [$start, $end])
             ->where('status', 'approved')
             ->get();
