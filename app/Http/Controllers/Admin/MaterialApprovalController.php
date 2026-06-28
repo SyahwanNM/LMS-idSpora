@@ -308,11 +308,11 @@ class MaterialApprovalController extends Controller
             $q->where('status', 'pending_review')
                 ->orWhereHas('modules', fn($mq) => $mq->where('review_status', 'pending_review')->whereNotNull('content_url')->where('content_url', '!=', ''));
         })->count()
-            + \App\Models\EventTrainerModule::where('status', 'pending_review')->count();
+            + \App\Models\EventTrainerModule::whereHas('event')->where('status', 'pending_review')->count();
         $totalApproved = Course::whereIn('status', ['approved', 'active'])->count()
-            + \App\Models\EventTrainerModule::where('status', 'approved')->count();
+            + \App\Models\EventTrainerModule::whereHas('event')->where('status', 'approved')->count();
         $totalRejected = Course::where('status', 'rejected')->count()
-            + \App\Models\EventTrainerModule::where('status', 'rejected')->count();
+            + \App\Models\EventTrainerModule::whereHas('event')->where('status', 'rejected')->count();
 
         $deadlineMonitoring = $this->buildDeadlineMonitoring($pendingMaterials->getCollection());
 
