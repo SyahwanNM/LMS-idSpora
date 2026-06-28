@@ -15,7 +15,7 @@ class Event extends Model
     protected static function booted()
     {
         static::deleting(function ($event) {
-            EventExpense::where('event_id', $event->id)->delete();
+            EventExpense::where('event_id', $event->id)->forceDelete();
         });
     }
 
