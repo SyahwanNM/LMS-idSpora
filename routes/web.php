@@ -89,19 +89,20 @@ Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
 
 
 Route::middleware(['auth'])->group(function () {
+    // --- Fitur Reseller ---
     Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
-    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
-
-    // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
-    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
+    Route::post('/reseller/update-code', [ResellerController::class, 'updateReferralCode'])->name('reseller.update-code');
+    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
+
+    // Penarikan Dana (Withdrawal)
+    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
     Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
 
+    // Riwayat & Laporan (Cetak/Unduh)
+    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
     Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
     Route::get('/reseller/withdraw/download', [ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
-
-    // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
-    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
 });
 
 
@@ -500,6 +501,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::get('/admin/reseller/dashboard', [\App\Http\Controllers\User\ResellerController::class, 'adminDashboard'])->name('admin.reseller.dashboard');
         Route::get('/admin/reseller/data', [\App\Http\Controllers\User\ResellerController::class, 'adminData'])->name('admin.reseller.data');
+        Route::get('/admin/reseller/katalog', [\App\Http\Controllers\User\ResellerController::class, 'adminKatalog'])->name('admin.reseller.katalog');
+        Route::get('/admin/reseller/laporan', [\App\Http\Controllers\User\ResellerController::class, 'adminLaporan'])->name('admin.reseller.laporan');
+        Route::get('/admin/reseller/export/excel', [\App\Http\Controllers\User\ResellerController::class, 'adminExportExcel'])->name('admin.reseller.export.excel');
+        Route::get('/admin/reseller/export/pdf', [\App\Http\Controllers\User\ResellerController::class, 'adminExportPdf'])->name('admin.reseller.export.pdf');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');

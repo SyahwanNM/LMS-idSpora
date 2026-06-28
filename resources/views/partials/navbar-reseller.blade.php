@@ -12,7 +12,7 @@
         top: 0;
         left: 0;
         overflow-y: auto;
-        border-right: 1px solid #e9ecef;
+        border-right: 1px solid #e2e8f0;
         background: #ffffff;
         z-index: 1040;
         display: flex;
@@ -20,32 +20,39 @@
     }
 
     .main-content {
-        margin-left: 260px;
         transition: margin-left 0.3s ease;
+    }
+
+    @media (min-width: 992px) {
+        .main-content {
+            margin-left: 260px;
+            padding-top: 70px; /* Offset for fixed top header on desktop */
+        }
     }
 
     .sidebar-link {
         color: #64748B;
         transition: all 0.2s ease;
         text-decoration: none;
-        padding: 10px 16px;
+        padding: 12px 16px;
         border-radius: 10px;
         display: flex;
         align-items: center;
         gap: 12px;
         font-weight: 500;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
     }
 
     .sidebar-link:hover {
-        background-color: #FFFBEB;
-        color: #B45309;
+        background-color: #f3e8ff; /* primary subtle background */
+        color: var(--primary-dark);
     }
 
     .sidebar-link.active {
-        background-color: #FEF3C7;
-        color: #B45309;
-        font-weight: 700;
+        background-color: var(--primary-dark);
+        color: #ffffff !important;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(76, 29, 149, 0.15);
     }
 
     .sidebar-link-back {
@@ -53,8 +60,29 @@
         color: #15803d;
         border: 1px solid #bbf7d0;
     }
+    
+    .sidebar-link-back:hover {
+        background-color: #dcfce7;
+        color: #166534;
+    }
 
-    /* --- MOBILE NAVBAR (DROP DOWN STYLE) --- */
+    /* --- DESKTOP HEADER --- */
+    .admin-header-desktop {
+        height: 70px;
+        background-color: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: 260px;
+        z-index: 1020;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.5rem;
+    }
+
+    /* --- MOBILE NAVBAR --- */
     @media (max-width: 991.98px) {
         .sidebar-desktop { display: none; }
         .main-content { margin-left: 0; padding-top: 75px; }
@@ -62,14 +90,16 @@
         .navbar-mobile {
             background: #ffffff;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #e2e8f0;
+            height: 70px;
         }
 
         .navbar-collapse {
             background: #ffffff;
             padding: 15px;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #e2e8f0;
             border-radius: 0 0 15px 15px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         }
 
         .navbar-nav .sidebar-link {
@@ -78,46 +108,142 @@
         }
     }
 
-    /* --- COMPONENT STYLES --- */
-    .avatar-circle { width:36px; height:36px; border-radius:50%; border:2px solid #EBBC01; background:#6b7280; display:inline-flex; align-items:center; justify-content:center; overflow:hidden;}
-    .avatar-circle img { width:100%; height:100%; object-fit:cover; }
+    /* --- COMMON UI COMPONENTS --- */
+    .avatar-circle { 
+        width: 38px; 
+        height: 38px; 
+        border-radius: 50%; 
+        border: 2px solid #ffc107; 
+        background: #f1f5f9; 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden;
+    }
+    .avatar-circle img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+    }
     
-    .global-notification { position: fixed; top: 14px; right: 14px; display:flex; flex-direction:column; gap:10px; z-index:11050; pointer-events:none; }
-    .notification { pointer-events:auto; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; color:#fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transform: translateY(-10px); opacity:0; transition: all 0.3s ease; }
-    .notification.show { transform: translateY(0); opacity:1; }
-    .notification.success { background: linear-gradient(90deg,#16a34a,#34d399); }
-    .notification.error { background: linear-gradient(90deg,#dc2626,#f43f5e); }
+    .global-notification { 
+        position: fixed; 
+        top: 14px; 
+        right: 14px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 10px; 
+        z-index: 11050; 
+        pointer-events: none; 
+    }
+    .notification { 
+        pointer-events: auto; 
+        display: flex; 
+        align-items: center; 
+        gap: 12px; 
+        padding: 12px 16px; 
+        border-radius: 12px; 
+        color: #fff; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        transform: translateY(-10px); 
+        opacity: 0; 
+        transition: all 0.3s ease; 
+    }
+    .notification.show { 
+        transform: translateY(0); 
+        opacity: 1; 
+    }
+    .notification.success { 
+        background: linear-gradient(90deg, #10b981, #34d399); 
+    }
+    .notification.error { 
+        background: linear-gradient(90deg, #ef4444, #f43f5e); 
+    }
 </style>
 
 @php $user = auth()->user(); @endphp
 
+<!-- DESKTOP FIXED HEADER -->
+<header class="admin-header-desktop d-none d-lg-flex">
+    <!-- Global Search Bar -->
+    <div class="search-bar flex-grow-1" style="max-width: 400px;">
+        <form action="{{ route('admin.reseller.data') }}" method="GET" class="position-relative">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input type="text" name="search" class="form-control ps-5 rounded-pill border-0 bg-light" placeholder="Cari reseller, referral, atau event..." value="{{ request('search') }}" style="height: 40px; font-size: 0.9rem;">
+        </form>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="d-flex align-items-center gap-3">
+        <!-- Notification Bell Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-light rounded-circle position-relative p-0 d-flex align-items-center justify-content-center" type="button" id="adminNotifBell" data-bs-toggle="dropdown" style="width: 40px; height: 40px;">
+                <i class="bi bi-bell fs-5 text-secondary"></i>
+                <span id="adminNotifBadge" class="position-absolute translate-middle badge rounded-circle bg-danger border border-white" style="padding: 5px; left: 75% !important; top: 25% !important; display: none;">
+                    <span class="visually-hidden">unread notifications</span>
+                </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 p-3" style="width: 320px;">
+                <h6 class="fw-bold mb-3 d-flex justify-content-between align-items-center">
+                    <span>Notifikasi</span>
+                    <button type="button" class="btn btn-link p-0 text-decoration-none text-muted small fw-semibold" id="adminMarkAllRead" style="font-size: 11px;">Tandai semua dibaca</button>
+                </h6>
+                <div class="list-group list-group-flush small" id="adminNotifList" style="max-height: 280px; overflow-y: auto;">
+                    <!-- Diisi dinamis -->
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- MOBILE NAVIGATION NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-mobile fixed-top d-lg-none">
     <div class="container-fluid px-3 py-1">
         <div class="d-flex align-items-center gap-1">
             <button class="navbar-toggler text-dark border-0 p-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu">
                 <i class="bi bi-list fs-2"></i>
             </button>
-            <a class="navbar-brand d-flex align-items-center text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
-                <img src="{{ asset('logo-idspora.png') }}" alt="IdSpora" style="height:12px; margin-right:6px; width:auto;">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
+                <img src="{{ asset('logo-idspora_hitam.png') }}" alt="IdSpora" style="height: 24px; width: auto; object-fit: contain;">
                 <span class="fw-bold small">Admin Reseller</span>
             </a>
         </div>
         
-        <div class="dropdown ms-auto">
-            <a href="#" class="d-block text-decoration-none" data-bs-toggle="dropdown">
-                <div class="avatar-circle shadow-sm">
-                    <img src="{{ $user?->avatar_url ?? 'https://ui-avatars.com/api/?name=Admin&background=ffc107' }}" alt="admin">
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <!-- Mobile Notif Icon -->
+            <div class="dropdown">
+                <button class="btn btn-light rounded-circle position-relative p-0 d-flex align-items-center justify-content-center" type="button" id="adminNotifBellMobile" data-bs-toggle="dropdown" style="width: 36px; height: 36px;">
+                    <i class="bi bi-bell text-secondary"></i>
+                    <span id="adminNotifBadgeMobile" class="position-absolute translate-middle badge rounded-circle bg-danger border border-white" style="padding: 4px; left: 75% !important; top: 25% !important; display: none;"></span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 mt-2 p-3" style="width: 280px; z-index: 1090;">
+                    <h6 class="fw-bold mb-2 d-flex justify-content-between align-items-center">
+                        <span>Notifikasi</span>
+                        <button type="button" class="btn btn-link p-0 text-decoration-none text-muted small fw-semibold" id="adminMarkAllReadMobile" style="font-size: 10px;">Tandai dibaca</button>
+                    </h6>
+                    <div class="list-group list-group-flush small" id="adminNotifListMobile" style="max-height: 250px; overflow-y: auto;">
+                        <!-- Diisi dinamis -->
+                    </div>
                 </div>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 position-absolute">
-                <li><h6 class="dropdown-header">Halo, {{ Str::limit($user?->name ?? 'Admin', 10) }}</h6></li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <button class="dropdown-item text-danger d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#confirmLogoutModal">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </button>
-                </li>
-            </ul>
+            </div>
+            
+            <!-- Mobile Profile Icon -->
+            <div class="dropdown">
+                <a href="#" class="d-block text-decoration-none" data-bs-toggle="dropdown">
+                    <div class="avatar-circle shadow-sm" style="width: 36px; height: 36px;">
+                        <img src="{{ $user?->avatar_url ?? 'https://ui-avatars.com/api/?name=Admin&background=ffc107' }}" alt="admin">
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2 position-absolute">
+                    <li><h6 class="dropdown-header">Halo, {{ Str::limit($user?->name ?? 'Admin', 10) }}</h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <button class="dropdown-item text-danger d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#confirmLogoutModal">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
 
         <div class="collapse navbar-collapse w-100 mt-2" id="navbarMenu">
@@ -132,12 +258,23 @@
                 </li>
                 <li class="nav-item">
                     <a href="{{ route('admin.reseller.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.dashboard') ? 'active' : '' }}">
-                        <i class="bi bi-grid-fill"></i> Ringkasan
+                        <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{{ route('admin.reseller.data') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.data') ? 'active' : '' }}">
-                        <i class="bi bi-people-fill"></i> Data Reseller
+                        <i class="bi bi-people"></i> Data Reseller
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a href="{{ route('admin.reseller.katalog') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.katalog') ? 'active' : '' }}">
+                        <i class="bi bi-journal-bookmark"></i> Katalog Reseller
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('admin.reseller.laporan') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.laporan') ? 'active' : '' }}">
+                        <i class="bi bi-bar-chart"></i> Laporan
                     </a>
                 </li>
             </ul>
@@ -145,11 +282,12 @@
     </div>
 </nav>
 
+<!-- DESKTOP FIXED SIDEBAR -->
 <div class="sidebar-desktop d-none d-lg-flex">
-    <div class="p-4 d-flex align-items-center gap-3 mb-2">
-        <a class="navbar-brand d-flex align-items-center text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
-            <img src="{{ asset('logo-idspora.png') }}" alt="IdSpora" style="height:16px; margin-right:10px; width:auto;">
-            <h5 class="fw-bold">Admin Reseller</h5>
+    <div class="p-4 mb-2">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-dark" href="{{ route('admin.reseller.dashboard') }}" aria-label="Dashboard Reseller">
+            <img src="{{ asset('logo-idspora_hitam.png') }}" alt="IdSpora" style="height: 28px; width: auto; object-fit: contain;">
+            <h5 class="fw-bold mb-0" style="font-size: 1.1rem; letter-spacing: -0.5px;">Admin Reseller</h5>
         </a>
     </div>
 
@@ -161,11 +299,19 @@
         <small class="text-uppercase text-secondary fw-bold px-2 mb-2 d-block" style="font-size: 0.75rem;">Menu Reseller</small>
         
         <a href="{{ route('admin.reseller.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.dashboard') ? 'active' : '' }}">
-            <i class="bi bi-grid-fill"></i> Ringkasan
+            <i class="bi bi-speedometer2"></i> Dashboard
         </a>
         
         <a href="{{ route('admin.reseller.data') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.data') ? 'active' : '' }}">
-            <i class="bi bi-people-fill"></i> Data Reseller
+            <i class="bi bi-people"></i> Data Reseller
+        </a>
+
+        <a href="{{ route('admin.reseller.katalog') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.katalog') ? 'active' : '' }}">
+            <i class="bi bi-journal-bookmark"></i> Katalog
+        </a>
+
+        <a href="{{ route('admin.reseller.laporan') }}" class="sidebar-link {{ request()->routeIs('admin.reseller.laporan') ? 'active' : '' }}">
+            <i class="bi bi-bar-chart"></i> Laporan
         </a>
     </div>
 
@@ -187,6 +333,7 @@
     </div>
 </div>
 
+<!-- LOGOUT CONFIRM MODAL -->
 <div class="modal fade" id="confirmLogoutModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -209,21 +356,109 @@
     </div>
 </div>
 
+<!-- GLOBAL NOTIFICATIONS TOAST -->
 @if(session('success') || session('error'))
 <div id="globalNotifications" class="global-notification">
     @if(session('success'))
-        <div class="notification success" data-timeout="3000">
+        <div class="notification success show" data-timeout="3000">
             <i class="bi bi-check-circle-fill fs-5"></i>
             <span class="notif-message">{{ session('success') }}</span>
             <button type="button" class="notif-close border-0 bg-transparent text-white" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
         </div>
     @endif
     @if(session('error'))
-        <div class="notification error" data-timeout="4000">
+        <div class="notification error show" data-timeout="4000">
             <i class="bi bi-exclamation-triangle-fill fs-5"></i>
             <span class="notif-message">{{ session('error') }}</span>
             <button type="button" class="notif-close border-0 bg-transparent text-white" onclick="this.parentElement.remove()"><i class="bi bi-x-lg"></i></button>
         </div>
     @endif
 </div>
+<script>
+    setTimeout(function() {
+        const notifs = document.querySelectorAll('.notification');
+        notifs.forEach(n => n.remove());
+    }, 4000);
+</script>
 @endif
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const notifList = document.getElementById('adminNotifList');
+        const notifListMobile = document.getElementById('adminNotifListMobile');
+        const badge = document.getElementById('adminNotifBadge');
+        const badgeMobile = document.getElementById('adminNotifBadgeMobile');
+        const markReadBtn = document.getElementById('adminMarkAllRead');
+        const markReadBtnMobile = document.getElementById('adminMarkAllReadMobile');
+
+        function fetchAdminNotifications() {
+            fetch('{{ route("notifications.index") }}')
+                .then(response => response.json())
+                .then(data => {
+                    // Update badges
+                    if (data.unread > 0) {
+                        if (badge) {
+                            badge.style.display = 'block';
+                        }
+                        if (badgeMobile) {
+                            badgeMobile.style.display = 'block';
+                        }
+                    } else {
+                        if (badge) badge.style.display = 'none';
+                        if (badgeMobile) badgeMobile.style.display = 'none';
+                    }
+
+                    // Populate dropdowns
+                    let listHtml = '';
+                    if (data.items && data.items.length > 0) {
+                        data.items.forEach(item => {
+                            const isUnread = !item.read_at;
+                            const itemBg = isUnread ? 'bg-light font-weight-bold' : '';
+                            const targetUrl = item.url ? item.url : '#';
+                            listHtml += `
+                                <a href="${targetUrl}" class="list-group-item list-group-item-action border-0 p-2 rounded-3 mb-1 ${itemBg}">
+                                    <div class="fw-bold text-dark">${item.title}</div>
+                                    <div class="text-muted text-truncate">${item.message}</div>
+                                    <small class="text-secondary opacity-75">${item.time_ago}</small>
+                                </a>
+                            `;
+                        });
+                    } else {
+                        listHtml = `
+                            <div class="text-center text-muted py-3 small">
+                                Tidak ada notifikasi.
+                            </div>
+                        `;
+                    }
+
+                    if (notifList) notifList.innerHTML = listHtml;
+                    if (notifListMobile) notifListMobile.innerHTML = listHtml;
+                })
+                .catch(error => console.error('Error fetching admin notifications:', error));
+        }
+
+        function markAllAsRead() {
+            fetch('{{ route("notifications.markAllRead") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok) {
+                    fetchAdminNotifications();
+                }
+            })
+            .catch(error => console.error('Error marking notifications as read:', error));
+        }
+
+        if (markReadBtn) markReadBtn.addEventListener('click', markAllAsRead);
+        if (markReadBtnMobile) markReadBtnMobile.addEventListener('click', markAllAsRead);
+
+        // Initial fetch and poll every 30 seconds
+        fetchAdminNotifications();
+        setInterval(fetchAdminNotifications, 30000);
+    });
+</script>

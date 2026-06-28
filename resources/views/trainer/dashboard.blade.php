@@ -81,7 +81,7 @@
     $greeting = 'Selamat malam';
   }
 
-  // 3b. Fetch 5-Month Revenue Data
+  // 3b. Fetch 5-Month Revenue Data (Course Sales Share + Event Fees)
   $revenueData = [];
   $maxRevenue = 0;
   $monthsLabel = [];
@@ -91,10 +91,32 @@
       $monthStart = $dt->copy()->startOfMonth();
       $monthEnd = $dt->copy()->endOfMonth();
 
-      $amount = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+      // Course earnings in this month
+      $courseEarnings = \App\Models\ManualPayment::where('status', 'settled')
+          ->whereHas('course', function ($q) use ($trainer) {
+              $q->where('trainer_id', $trainer->id);
+          })
+          ->whereBetween('created_at', [$monthStart, $monthEnd])
+          ->with('course')
+          ->get()
+          ->sum(function ($payment) {
+              return ($payment->amount * ($payment->course->trainer_revenue_percent ?? 0)) / 100;
+          });
+
+      // Event payments/fees approved/date in this month
+      $eventEarnings = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+          ->where('type', 'event_fee')
           ->where('status', 'approved')
-          ->whereBetween('payment_date', [$monthStart, $monthEnd])
+          ->where(function ($query) use ($monthStart, $monthEnd) {
+              $query->whereBetween('payment_date', [$monthStart, $monthEnd])
+                    ->orWhere(function ($q) use ($monthStart, $monthEnd) {
+                        $q->whereNull('payment_date')
+                          ->whereBetween('created_at', [$monthStart, $monthEnd]);
+                    });
+          })
           ->sum('amount');
+
+      $amount = $courseEarnings + $eventEarnings;
 
       $revenueData[] = $amount;
       $monthsLabel[] = $dt->translatedFormat('M Y');
@@ -122,9 +144,10 @@
   }
   $areaD = $pathD . " L {$svgPoints[4]['x']} 150 L {$svgPoints[0]['x']} 150 Z";
 
-  $totalRevenue = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+  $withdrawnRevenue = \App\Models\TrainerPayment::where('user_id', $trainer->id)
       ->where('status', 'approved')
       ->sum('amount');
+  $totalRevenue = $walletBalance + $withdrawnRevenue;
 
   $thisMonthRevenue = $revenueData[4] ?? 0;
   $lastMonthRevenue = $revenueData[3] ?? 0;
@@ -773,6 +796,18 @@ body {
             
             <div class="revenue-amount" style="position: relative; z-index: 2;">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
             
+            <!-- Breakdown Section -->
+            <div style="position: relative; z-index: 2; display: flex; gap: 16px; margin: 8px 0; font-size: 12px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 8px;">
+                <div>
+                    <span style="opacity: 0.8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Saldo Dompet</span>
+                    <strong style="font-size: 13px; color: #fff;">Rp {{ number_format($walletBalance, 0, ',', '.') }}</strong>
+                </div>
+                <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 16px;">
+                    <span style="opacity: 0.8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Telah Dicairkan</span>
+                    <strong style="font-size: 13px; color: #e2e8f0;">Rp {{ number_format($withdrawnRevenue, 0, ',', '.') }}</strong>
+                </div>
+            </div>
+            
             <div class="revenue-growth" style="position: relative; z-index: 2;">
                 @if($revenueGrowth >= 0)
                 <span class="badge-up" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="bi bi-graph-up-arrow"></i> +{{ number_format($revenueGrowth, 1) }}%</span> 
@@ -818,6 +853,10 @@ body {
                     </div>
                 </div>
                 @endforeach
+            </div>
+            <div style="position: relative; z-index: 2; margin-top: auto; padding: 0 24px 12px 24px; font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px;">
+                <span>Saldo Course Tersedia:</span>
+                <span style="font-weight: 800;">Rp {{ number_format($walletBalance, 0, ',', '.') }}</span>
             </div>
             
             <div class="revenue-btn-wrapper">

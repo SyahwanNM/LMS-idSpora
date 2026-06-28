@@ -1,5 +1,3 @@
-{{-- @include ('partials.navbar-after-login') --}}
-@include ('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,6 +13,83 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}"> --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        /* Typography & layout consistency */
+        body {
+            background-color: #f8f9fa !important;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Subtle transition & hover animations */
+        .hover-card-up {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+            border-radius: 16px !important;
+        }
+        .hover-card-up:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Hover scale for button */
+        .hover-scale {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .hover-scale:hover {
+            transform: scale(1.015);
+            box-shadow: 0 6px 15px rgba(255, 193, 7, 0.2) !important;
+        }
+
+        /* Fade-in animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in {
+            animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        /* FAQ Section Hover Fix (Remove yellow hover background/color) */
+        .accordion-button {
+            transition: background-color 0.2s ease, color 0.2s ease;
+            color: #212529 !important;
+            font-weight: 500 !important;
+            background-color: #ffffff !important;
+            border: 1px solid rgba(0,0,0,.08) !important;
+        }
+        .accordion-button:hover {
+            background-color: #f8f9fa !important; 
+            color: #212529 !important;
+        }
+        .accordion-button:focus {
+            box-shadow: none !important;
+            border-color: rgba(0, 0, 0, 0.08) !important;
+            background-color: #ffffff !important;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #fffaf0 !important; 
+            color: #ffc107 !important;
+            border-color: #fcd34d !important;
+        }
+
+        /* Table UI cleanups */
+        .table thead th {
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            border-bottom: 2px solid #dee2e6 !important;
+        }
+
         .reseller-action-btn {
             width: 44px;
             height: 44px;
@@ -23,6 +98,43 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .reseller-action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Custom Beautiful Pagination Styling */
+        .page-link-custom {
+            width: 36px;
+            height: 36px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            user-select: none;
+        }
+        .page-link-custom:hover {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-color: #ffc107;
+            color: #ffc107;
+        }
+        .page-link-custom.active {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            color: #212529 !important;
+            box-shadow: 0 4px 10px rgba(255, 193, 7, 0.2);
+        }
+        .pagination-custom .disabled .page-link-custom {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            background-color: #f9fafb;
         }
 
         @media (max-width: 576px) {
@@ -32,10 +144,107 @@
                 border-radius: 10px;
             }
         }
+
+        /* Onboarding Tour Style Rules */
+        .tour-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.55);
+            z-index: 1040;
+            transition: opacity 0.3s ease;
+        }
+
+        .tour-highlighted-element {
+            position: relative;
+            z-index: 1045 !important;
+            box-shadow: 0 0 0 10px rgba(109, 40, 217, 0.25), 0 0 0 9999px rgba(0, 0, 0, 0.65) !important;
+            pointer-events: none; /* disable pointer events during highlighting */
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .tour-popover {
+            position: absolute;
+            z-index: 1050;
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            width: 320px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+        }
+
+        .tour-popover.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .tour-popover-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e1b4b; /* Navy */
+            margin-bottom: 8px;
+        }
+
+        .tour-popover-desc {
+            font-size: 0.85rem;
+            color: #64748b; /* Slate 500 */
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+
+        .tour-popover-progress {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        /* Popover Arrow */
+        .tour-popover-arrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+
+        /* Positioning variations for popover arrow */
+        .tour-popover[data-popper-placement^="top"] .tour-popover-arrow {
+            bottom: -8px;
+            left: calc(50% - 8px);
+            border-width: 8px 8px 0 8px;
+            border-color: #ffffff transparent transparent transparent;
+        }
+
+        .tour-popover[data-popper-placement^="bottom"] .tour-popover-arrow {
+            top: -8px;
+            left: calc(50% - 8px);
+            border-width: 0 8px 8px 8px;
+            border-color: transparent transparent #ffffff transparent;
+        }
+
+        .tour-popover[data-popper-placement^="left"] .tour-popover-arrow {
+            right: -8px;
+            top: calc(50% - 8px);
+            border-width: 8px 0 8px 8px;
+            border-color: transparent transparent transparent #ffffff;
+        }
+
+        .tour-popover[data-popper-placement^="right"] .tour-popover-arrow {
+            left: -8px;
+            top: calc(50% - 8px);
+            border-width: 8px 8px 8px 0;
+            border-color: transparent #ffffff transparent transparent;
+        }
     </style>
 </head>
 
 <body>
+    @include ('partials.navbar-after-login')
     <div class="hero-box" aria-hidden="true"></div>
     <main class="pt-4 mt-4">
         <!-- Navbar -->
@@ -99,37 +308,51 @@
             <!-- End of Card for Target Komisi Bulan Ini -->
 
             <!-- Withdraw Komisi Content -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body p-4 mt-2">
-                    <h5 class="mb-3 d-flex align-items-start gap-2">
-                        <i class="bi bi-cash-coin text-warning fs-2"></i>
-                        <span class="fw-bold">Withdraw Komisi</span>
-                    </h5>
+            <div id="tour-withdraw-box" class="card mb-4 border-0 shadow-sm animate-fade-in" style="border-radius: 16px;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="m-0 d-flex align-items-center gap-2 text-dark">
+                            <i class="bi bi-cash-coin text-warning fs-3"></i>
+                            <span class="fw-semibold" style="letter-spacing: -0.2px;">Withdraw Komisi</span>
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill d-flex align-items-center gap-1 fw-semibold px-3 py-1.5" onclick="startOnboardingTour()" style="font-size: 0.8rem;">
+                            <i class="bi bi-question-circle"></i>
+                            <span>Panduan Pengguna</span>
+                        </button>
+                    </div>
 
-                    <div class="row g-4 align-items-end">
+                    <div class="row g-4 align-items-center">
+                        <!-- Saldo Bisa Ditarik -->
                         <div class="col-md-4">
-                            <div class="border rounded-3 p-3 h-100">
-                                <small class="text-muted">Saldo Bisa Ditarik</small>
-                                <h3 class="text-success mb-0">Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}
+                            <div class="border rounded-3 p-3 bg-white" style="border-color: #e5e7eb !important;">
+                                <div class="text-muted small mb-1" style="font-size: 0.85rem; font-weight: 400;">Saldo Bisa Ditarik</div>
+                                <h3 class="mb-0 text-success" style="font-weight: 500; font-size: 2.1rem; letter-spacing: -0.5px;">
+                                    Rp {{ number_format($user->wallet_balance, 0, ',', '.') }}
                                 </h3>
                             </div>
                         </div>
 
+                        <!-- Saldo Pending -->
                         <div class="col-md-4">
-                            <div class="border rounded-3 p-3 h-100 bg-light">
-                                <small class="text-muted">Saldo Pending</small>
-                                <h3 class="text-warning mb-0">Rp {{ number_format($pendingEarnings, 0, ',', '.') }}</h3>
+                            <div class="border rounded-3 p-3 bg-light" style="border-color: #e5e7eb !important; background-color: #f9fafb !important;">
+                                <div class="text-muted small mb-1" style="font-size: 0.85rem; font-weight: 400;">Saldo Pending</div>
+                                <h3 class="mb-0 text-warning" style="font-weight: 500; font-size: 2.1rem; letter-spacing: -0.5px;">
+                                    Rp {{ number_format($pendingEarnings, 0, ',', '.') }}
+                                </h3>
                             </div>
                         </div>
 
-                        <div class="col-md-4">
-                            <div class="text-muted mt-2 mb-2 border border-warning rounded-3 p-2 text-center">
+                        <!-- Aksi Penarikan -->
+                        <div class="col-md-4 d-flex flex-column gap-2">
+                            <div class="py-2 px-3 border border-warning rounded-pill text-center small bg-white text-muted" 
+                                 style="font-size: 0.85rem; font-weight: 500;">
                                 Minimal penarikan Rp 50.000
                             </div>
-                            <button class="btn btn-warning px-5 py-2 w-100 fw-bold" data-bs-toggle="modal"
-                                data-bs-target="#withdrawModal">
-                                <i class="bi bi-wallet-fill me-1"></i>
-                                Tarik Komisi
+                            <button class="btn btn-warning py-2 w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 text-dark rounded-3 hover-scale" 
+                                    data-bs-toggle="modal" data-bs-target="#withdrawModal"
+                                    style="font-size: 0.95rem;">
+                                <i class="bi bi-briefcase-fill"></i>
+                                <span>Tarik Komisi</span>
                             </button>
                         </div>
                     </div>
@@ -137,80 +360,127 @@
             </div>
 
             <!-- Cards Section -->
-            <div class="row row-cols-1 row-cols-md-3">
-                <div class="col mb-3">
-                    <div class="card h-100  shadow-sm">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary d-flex align-items-center gap-1">Total Earnings (All Time)
-                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Total keseluruhan komisi yang sudah Anda dapatkan." style="font-size: 0.85rem; cursor: help;"></i>
-                                </h6>
-                                <h3 class="card-title">Rp {{ number_format($totalEarnings, 0, ',', '.') }}</h3>
-                                <p class="card-text text-success mb-0">+Rp {{ number_format($earningsThisMonth/1000, 0)
-                                    }}k bulan ini</p>
-                            </div>
-                            <i class="bi bi-cash-stack fs-1 text-warning"></i>
-                        </div>
-                        <div class="card-footer">
-                            {{-- Jam Pembaruan Realtime --}}
-                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i:s') }}
-                                WIB</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary mb-1 d-flex align-items-center gap-1">Total Referrals
-                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Jumlah total orang yang telah membeli menggunakan kode referral Anda." style="font-size: 0.85rem; cursor: help;"></i>
-                                </h6>
-
-                                {{-- Angka Total Referrals Dinamis --}}
-                                <h3 class="card-title mb-1">{{ number_format($totalReferrals, 0, ',', '.') }}</h3>
-
-                                <div class="d-flex align-items-center">
-                                    {{-- Angka Referral Bulan Ini --}}
-                                    <p class="card-text text-success mb-0">
-                                        +{{ $referralsThisMonth }} bulan ini
-                                    </p>
-
-                                    {{-- Icon Panah (Muncul kalau ada referral bulan ini) --}}
-                                    @if($referralsThisMonth > 0)
-                                    <i class="bi bi-arrow-up-right text-success ms-3"></i>
-                                    @else
-                                    <i class="bi bi-dash text-secondary ms-3"></i>
-                                    @endif
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+                <!-- Card 1: Total Earnings -->
+                <div class="col animate-fade-in">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Total Earnings
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Total komisi lunas yang Anda peroleh." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">Rp {{ number_format($totalEarnings, 0, ',', '.') }}</h4>
                                 </div>
-
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-cash-stack fs-5"></i>
+                                </div>
                             </div>
-                            <i class="bi bi-person-circle fs-1 text-warning"></i>
-
-                        </div>
-                        <div class="card-footer">
-                            {{-- Jam Pembaruan Realtime --}}
-                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i:s') }}
-                                WIB</small>
+                            <div class="mt-auto">
+                                <span class="text-success small fw-medium">+Rp {{ number_format($earningsThisMonth/1000, 0) }}k bulan ini</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col mb-3">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-body-secondary d-flex align-items-center gap-1">Conversion Rate
-                                    <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Persentase orang yang daftar setelah membuka link referralmu." style="font-size: 0.85rem; cursor: help;"></i>
-                                </h6>
-                                {{-- Angka Dinamis --}}
-                                <h3 class="card-title">{{ number_format($conversionRate, 1) }}%</h3>
-                                <p class="card-text text-success mb-0">Berdasarkan data transaksi</p>
+
+                <!-- Card 2: Total Klik Link -->
+                <div class="col animate-fade-in delay-1">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Total Klik Link
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Jumlah total klik pada link referral Anda." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($totalClicks, 0, ',', '.') }}</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-cursor-fill fs-5"></i>
+                                </div>
                             </div>
-                            <i class="bi bi-graph-up fs-1 text-warning"></i>
+                            <div class="mt-auto">
+                                <span class="text-muted small">Klik unik terdeteksi</span>
+                            </div>
                         </div>
-                        <div class="card-footer">
-                            <small class="text-body-secondary">Pembaruan terakhir: {{ now()->format('H:i') }}
-                                WIB</small>
+                    </div>
+                </div>
+
+                <!-- Card 3: Pendaftar Baru -->
+                <div class="col animate-fade-in delay-2">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Pendaftar Baru
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Jumlah pengguna yang mendaftar melalui link Anda." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($totalSignups, 0, ',', '.') }}</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-person-plus-fill fs-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <span class="text-muted small">Registrasi akun baru</span>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Pembelian -->
+                <div class="col animate-fade-in delay-3">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Pembelian
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Transaksi pembelian event/course yang menggunakan kode Anda (settled/pending)." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($totalPurchases, 0, ',', '.') }}</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-cart-check-fill fs-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <span class="text-success small fw-medium">+{{ $referralsThisMonth }} transaksi bulan ini</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Conversion Rate -->
+                <div class="col animate-fade-in delay-4">
+                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Conversion Rate
+                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Rasio pembelian dibanding total klik link." style="font-size: 0.75rem; cursor: help;"></i>
+                                    </h6>
+                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($conversionRate, 1) }}%</h4>
+                                </div>
+                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                                    <i class="bi bi-graph-up fs-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <span class="text-muted small">Rasio Klik-ke-Beli</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Performance Chart Card -->
+            <div class="card mb-4 border-0 shadow-sm animate-fade-in delay-1" style="border-radius: 16px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-4 d-flex align-items-center gap-2 text-dark">
+                        <i class="bi bi-graph-up-arrow text-warning fs-3"></i>
+                        <span>Grafik Performa Reseller (6 Bulan Terakhir)</span>
+                    </h5>
+                    <div style="position: relative; height: 320px; width: 100%;">
+                        <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -218,7 +488,7 @@
 
 
             <!-- Referral Tools Section -->
-            <div class="card mb-4  shadow-sm">
+            <div id="tour-tools-box" class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-4">
                         <i class="bi bi-megaphone-fill text-warning me-3"></i>
@@ -237,6 +507,15 @@
                                     onclick="copyToClipboard(this, 'referralCode')" title="Copy code">
                                     <i class="bi bi-clipboard"></i>
                                 </button>
+                                @if($totalPurchases >= 5)
+                                    <button class="btn btn-outline-warning" type="button" data-bs-toggle="modal" data-bs-target="#editReferralCodeModal" title="Kustomisasi Kode">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </button>
+                                @else
+                                    <button class="btn btn-outline-secondary disabled" type="button" data-bs-toggle="tooltip" data-bs-placement="top" title="Minimal 5 pembelian" style="pointer-events: auto !important; cursor: not-allowed;">
+                                        <i class="bi bi-lock-fill"></i> Edit
+                                    </button>
+                                @endif
                             </div>
                         </div>
 
@@ -289,7 +568,7 @@
                         <div class="col-lg-4 text-center">
                             <i class="bi bi-cash-stack fs-1 mb-2 text-warning"></i><br>
                             <p class="mt-3 text-body-secondary">Dapatkan komisi 10-15% dari setiap transaksi yang
-                                sukses. Makin banyak ajak teman, makin cuan!</p>
+                                sukses. Semakin banyak rekan yang Anda ajak, semakin besar komisi yang didapatkan!</p>
                         </div>
                     </div>
                 </div>
@@ -297,7 +576,7 @@
             <!-- End of Referral Tools Section -->
 
             <!-- List Produk Komisi Reseller -->
-            <div class="card mb-4 shadow-sm rounded-3">
+            <div id="tour-products-box" class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                         <h5 class="fw-bold mb-0">
@@ -307,8 +586,9 @@
                         <div class="d-flex gap-2 align-items-center flex-wrap">
                             <form action="{{ route('reseller.index') }}" method="GET" class="d-flex m-0">
                                 <div class="input-group input-group-sm">
-                                    <input type="text" name="search" class="form-control" placeholder="Cari program..." value="{{ request('search') }}">
-                                    <button class="btn btn-outline-secondary bg-white" type="submit"><i class="bi bi-search"></i></button>
+                                    <label for="searchProgram" class="visually-hidden">Cari program</label>
+                                    <input type="text" id="searchProgram" name="search" class="form-control" placeholder="Cari program..." value="{{ request('search') }}">
+                                    <button class="btn btn-outline-secondary bg-white" type="submit" aria-label="Cari" title="Cari"><i class="bi bi-search"></i></button>
                                 </div>
                             </form>
                             <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning-subtle px-3 py-2">
@@ -342,14 +622,24 @@
                                         Rp {{ number_format($product['price'], 0, ',', '.') }}
                                     </td>
                                     <td class="py-3 text-start">
-                                        <div class="fw-bold text-success">Rp {{ number_format($product['commission_amount'], 0, ',', '.') }}</div>
+                                        <div class="fw-bold text-success">
+                                            Rp {{ number_format($product['commission_amount'], 0, ',', '.') }}
+                                        </div>
+                                        @if($product['is_custom'])
+                                            <div class="d-inline-flex align-items-center gap-1 mt-1 flex-wrap">
+                                                <span class="badge border text-warning border-warning bg-dark py-1 px-2 rounded-pill" style="font-size: 9px; padding: 1px 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px;">
+                                                    <i class="bi bi-star-fill" style="font-size: 8px;"></i> Spesial
+                                                </span>
+                                                <small class="text-muted" style="font-size: 11px;">({{ number_format($product['commission_rate'] * 100, 0) }}%)</small>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="py-3 text-start">
                                         <button type="button"
-                                            class="btn btn-warning text-light fw-bold shadow-sm reseller-action-btn"
+                                            class="btn btn-border-warning btn-outline-warning fw-bold shadow-sm reseller-action-btn"
                                             onclick="copyTextValue(this, @js($product['referral_link']))"
                                             title="Salin link referral">
-                                            <i class="bi bi-clipboard"></i>
+                                            <i class="bi bi-link-45deg"></i>
                                             <span class="visually-hidden">Salin link referral</span>
                                         </button>
                                     </td>                                    
@@ -365,10 +655,53 @@
                             </tbody>
                         </table>
                     </div>
-                    @if(method_exists($commissionProducts, 'hasPages') && $commissionProducts->hasPages())
-                    <div class="mt-4 d-flex justify-content-center">
-                        {{ $commissionProducts->appends(['search' => request('search')])->links('pagination::bootstrap-5') }}
-                    </div>
+                    @if($commissionProducts->hasPages())
+                    <nav class="mt-4 d-flex justify-content-center" aria-label="Product navigation">
+                        <ul class="pagination pagination-custom d-flex align-items-center gap-1 list-unstyled p-0 m-0">
+                            {{-- Previous Page Link --}}
+                            @if($commissionProducts->onFirstPage())
+                                <li class="page-item disabled">
+                                    <span class="page-link-custom d-flex align-items-center justify-content-center" aria-hidden="true">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </span>
+                                </li>
+                            @else
+                                <li class="page-item">
+                                    <a class="page-link-custom d-flex align-items-center justify-content-center" href="{{ $commissionProducts->appends(['search' => request('search')])->previousPageUrl() }}" rel="prev">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            @endif
+
+                            {{-- Page Numbers --}}
+                            @foreach($commissionProducts->appends(['search' => request('search')])->getUrlRange(1, $commissionProducts->lastPage()) as $pageNumber => $url)
+                                @if($pageNumber == $commissionProducts->currentPage())
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link-custom active d-flex align-items-center justify-content-center">{{ $pageNumber }}</span>
+                                    </li>
+                                @else
+                                    <li class="page-item">
+                                        <a class="page-link-custom d-flex align-items-center justify-content-center" href="{{ $url }}">{{ $pageNumber }}</a>
+                                    </li>
+                                @endif
+                            @endforeach
+
+                            {{-- Next Page Link --}}
+                            @if($commissionProducts->hasMorePages())
+                                <li class="page-item">
+                                    <a class="page-link-custom d-flex align-items-center justify-content-center" href="{{ $commissionProducts->appends(['search' => request('search')])->nextPageUrl() }}" rel="next">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                            @else
+                                <li class="page-item disabled">
+                                    <span class="page-link-custom d-flex align-items-center justify-content-center" aria-hidden="true">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </span>
+                                </li>
+                            @endif
+                        </ul>
+                    </nav>
                     @endif
                 </div>
             </div>
@@ -377,7 +710,7 @@
             <div class="row g-4 mb-4">
                 {{-- Level Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-3">
+                    <div id="tour-level-box" class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
                         <div class="card-body p-4">
                             <h5 class="fw-bold mb-4">Level Anda</h5>
 
@@ -453,8 +786,6 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 10%</span>
                                         </div>
                                     </div>
-                                    {{-- Logic Icon: Kalau level Bronze (active) atau lebih tinggi (sudah lewat),
-                                    tampilkan checklist --}}
                                     @if($totalReferrals >= 0)
                                     <i
                                         class="bi bi-check-circle-fill {{ $level == 'Bronze' ? 'text-warning' : 'text-success' }}"></i>
@@ -472,7 +803,6 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 12%</span>
                                         </div>
                                     </div>
-                                    {{-- Logic Icon: Checklist jika Silver/Gold, Gembok jika Bronze --}}
                                     @if($totalReferrals >= 51)
                                     <i
                                         class="bi bi-check-circle-fill {{ $level == 'Silver' ? 'text-warning' : 'text-success' }}"></i>
@@ -491,7 +821,6 @@
                                             <span class="d-block text-muted" style="font-size: 10px;">Komisi 15%</span>
                                         </div>
                                     </div>
-                                    {{-- Logic Icon: Checklist jika Gold, Gembok jika belum --}}
                                     @if($totalReferrals >= 151)
                                     <i class="bi bi-check-circle-fill text-warning"></i>
                                     @else
@@ -506,7 +835,7 @@
 
                 {{-- Top Resellers Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-3">
+                    <div id="tour-rank-box" class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="fw-bold mb-0">Top Resellers (Monthly)</h5>
@@ -524,9 +853,9 @@
                                     </div>
 
                                     {{-- FOTO PROFIL --}}
-                                    @if(!empty($reseller->profile_photo_path))
+                                    @if(!empty($reseller->avatar))
                                     {{-- Jika punya foto di database --}}
-                                    <img src="{{ asset('storage/' . $reseller->profile_photo_path) }}"
+                                    <img src="{{ $reseller->avatar_url }}"
                                         alt="{{ $reseller->name }}"
                                         class="rounded-circle border {{ $index < 3 ? 'border-warning' : '' }} me-3"
                                         style="width: 40px; height: 40px; object-fit: cover;">
@@ -545,14 +874,17 @@
                                             }} referrals</small>
                                     </div>
 
-                                    {{-- Total Cuan (Badge) --}}
+                                    {{-- Total Komisi (Badge) --}}
                                     <span
                                         class="badge {{ $index < 3 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-light text-secondary border' }} rounded-pill">
-                                        Rp {{ number_format(($reseller->referrals_sum_amount ?? 0) / 1000, 0) }}k
+                                        @if(($reseller->referrals_sum_amount ?? 0) >= 1000)
+                                            Rp {{ number_format(($reseller->referrals_sum_amount) / 1000, 0) }}k
+                                        @else
+                                            Rp {{ number_format($reseller->referrals_sum_amount ?? 0, 0) }}
+                                        @endif
                                     </span>
                                 </li>
                                 @empty
-                                {{-- Empty State (Tetap sama seperti sebelumnya) --}}
                                 <li class="list-group-item border-0 text-center py-5">
                                     <div class="mb-3">
                                         <i class="bi bi-trophy text-secondary opacity-25" style="font-size: 3rem;"></i>
@@ -578,8 +910,8 @@
                                 <div class="text-dark fst-italic me-2" style="min-width: 30px;">#{{ $userRank }}</div>
 
                                 {{-- FOTO PROFIL USER SENDIRI --}}
-                                @if(!empty($user->profile_photo_path))
-                                <img src="{{ asset('storage/' . $user->profile_photo_path) }}" alt="{{ $user->name }}"
+                                @if(!empty($user->avatar))
+                                <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}"
                                     class="rounded-circle border border-warning me-3"
                                     style="width: 40px; height: 40px; object-fit: cover;">
                                 @else
@@ -590,14 +922,18 @@
 
                                 <div class="flex-grow-1 lh-sm">
                                     <div class="fw-bold text-dark small mb-0">{{ Str::limit($user->name, 15) }}</div>
-                                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $totalReferrals }}
+                                    <small class="text-dark opacity-75" style="font-size: 11px;">{{ $paidReferralsCount }}
                                         referrals</small>
                                 </div>
                                 <div class="d-flex flex-column align-items-end gap-1">
                                     <span class="badge bg-white text-warning border border-warning rounded-pill"
                                         style="font-size: 9px; letter-spacing: 0.5px;">ANDA</span>
                                     <span class="badge bg-light text-dark border border-warning rounded-pill">
-                                        Rp {{ number_format($totalEarnings / 1000, 0) }}k
+                                        @if($totalEarnings >= 1000)
+                                            Rp {{ number_format($totalEarnings / 1000, 0) }}k
+                                        @else
+                                            Rp {{ number_format($totalEarnings, 0) }}
+                                        @endif
                                     </span>
                                 </div>
                             </div>
@@ -608,22 +944,14 @@
 
                 {{-- Riwayat (History) Section --}}
                 <div class="col-lg-4">
-                    <div class="card h-100 shadow-sm rounded-3">
+                    <div id="tour-history-box" class="card h-100 border-0 shadow-sm" style="border-radius: 16px;">
                         <div class="card-body p-4 d-flex flex-column gap-3">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <h5 class="fw-bold mb-0">Riwayat Referral</h5>
-
-                                <div class="d-flex gap-2">
                                     <a href="{{ route('reseller.history') }}"
                                         class="btn btn-sm btn-outline-dark fw-bold px-3 shadow-sm" title="Lihat semua">
                                         <i class="bi bi-clock-history me-1"></i> Lihat Semua
                                     </a>
-                                    <a href="{{ route('reseller.history.download') }}"
-                                        class="btn btn-sm btn-outline-warning text-dark fw-bold px-3 shadow-sm"
-                                        title="Download Riwayat">
-                                        <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh
-                                    </a>
-                                </div>
                             </div>
 
                             @forelse($history as $item)
@@ -675,7 +1003,7 @@
             </div>
 
             <!-- Withdraw History -->
-            <div class="card mb-4 shadow-sm rounded-3">
+            <div id="tour-withdraw-history-box" class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold mb-0">
@@ -697,63 +1025,91 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle border-top mb-0">
+                        <table class="table align-middle table-hover mb-0">
                             <thead>
                                 <tr class="text-muted small">
-                                    <th class="py-3 border-0">ID Penarikan</th>
-                                    <th class="py-3 border-0">Tanggal Pengajuan</th>
-                                    <th class="py-3 border-0">Total</th>
-                                    <th class="py-3 border-0">Status</th>
-                                    <th class="py-3 border-0">Tanggal Diproses</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600; border-radius: 8px 0 0 8px;">ID Penarikan</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Tanggal Pengajuan</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Pengguna</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Bank Tujuan</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #f8fafc; font-weight: 600;">Nomor Rekening</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Total Penarikan</th>
+                                    <th class="border-0 py-3 text-center text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600;">Status</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #f8fafc; font-weight: 600; border-radius: 0 8px 8px 0;">Tanggal Diproses</th>
                                 </tr>
                             </thead>
                             <tbody>
-
-                                @forelse($user->withdrawals()->latest()->get() as $wd)
-                                <tr>
-                                    <td class="py-3">
-                                        <div class="fw-bold text-dark">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}
-                                        </div>
-                                        <small class="text-muted">{{ $wd->bank_name }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="text-dark">{{ $wd->created_at->format('d M Y') }}</div>
-                                        <small class="text-muted">{{ $wd->created_at->format('H:i') }} WIB</small>
-                                    </td>
-                                    <td class="fw-bold text-dark">
-                                        Rp {{ number_format($wd->amount, 0, ',', '.') }}
-                                    </td>
-                                    <td>
-                                        @if($wd->status == 'approved')
-                                        <span class="badge bg-success bg-opacity-10 text-success px-3">
-                                            <i class="bi bi-check-circle-fill me-1"></i> Approved
-                                        </span>
-                                        @elseif($wd->status == 'rejected')
-                                        <span class="badge bg-danger bg-opacity-10 text-danger px-3">
-                                            <i class="bi bi-x-circle-fill me-1"></i> Rejected
-                                        </span>
-                                        @else
-                                        <span class="badge bg-warning bg-opacity-10 text-warning-emphasis px-3">
-                                            <i class="bi bi-clock-fill me-1"></i> Pending
-                                        </span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($wd->status != 'pending')
-                                        <div class="text-dark">{{ $wd->updated_at->format('d M Y') }}</div>
-                                        <small class="text-muted">{{ $wd->updated_at->format('H:i') }} WIB</small>
-                                        @else
-                                        <span class="text-muted small fst-italic">Belum diproses</span>
-                                        @endif
-                                    </td>
-                                </tr>
+                                @forelse($user->withdrawals()->latest()->take(5)->get() as $wd)
+                                    @php
+                                        $status = strtolower($wd->status);
+                                        $isRejected = $status === 'rejected';
+                                        
+                                        // Set status badge style
+                                        if ($status === 'approved') {
+                                            $statusBadge = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-check-circle-fill"></i> Approved</span>';
+                                        } elseif ($isRejected) {
+                                            $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-x-circle-fill"></i> Rejected</span>';
+                                        } else {
+                                            $statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-clock-fill"></i> Pending</span>';
+                                        }
+                                        
+                                        // Mask and format account number with spacing
+                                        $accountLen = strlen($wd->account_number);
+                                        if ($accountLen > 4) {
+                                            $maskedRaw = str_repeat('•', $accountLen - 4) . substr($wd->account_number, -4);
+                                        } else {
+                                            $maskedRaw = $wd->account_number;
+                                        }
+                                        preg_match_all('/.{1,4}/u', $maskedRaw, $matches);
+                                        $maskedFormatted = implode(' ', $matches[0]);
+                                    @endphp
+                                    <tr>
+                                        <td class="py-3">
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'opacity-50' : '' }}">#WD-{{ str_pad($wd->id, 4, '0', STR_PAD_LEFT) }}</div>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="text-dark fw-medium {{ $isRejected ? 'opacity-50' : '' }}">{{ $wd->created_at->format('d M Y') }}</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ $wd->created_at->format('H:i') }} WIB</small>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'opacity-50' : '' }}">{{ $wd->user->name ?? Auth::user()->name }}</div>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="d-flex align-items-center gap-2 {{ $isRejected ? 'opacity-50' : '' }}">
+                                                <i class="bi bi-bank fs-5" style="color: var(--primary);"></i>
+                                                <span class="fw-medium text-dark">{{ $wd->bank_name }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'opacity-50' : '' }}">
+                                                {{ $maskedFormatted }}
+                                            </div>
+                                            <small class="text-muted d-block" style="font-size: 0.75rem;">A/n. {{ $wd->account_holder }}</small>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-bold text-success {{ $isRejected ? 'text-danger text-decoration-line-through opacity-50' : '' }}" style="font-size: 1.05rem;">
+                                                Rp {{ number_format($wd->amount, 0, ',', '.') }}
+                                            </div>
+                                        </td>
+                                        <td class="py-3 text-center">
+                                            {!! $statusBadge !!}
+                                        </td>
+                                        <td class="py-3">
+                                            @if($status !== 'pending')
+                                                <div class="text-dark fw-medium">{{ $wd->updated_at->format('d M Y') }}</div>
+                                                <small class="text-muted" style="font-size: 0.75rem;">{{ $wd->updated_at->format('H:i') }} WIB</small>
+                                            @else
+                                                <span class="text-muted fst-italic small">Belum diproses</span>
+                                            @endif
+                                        </td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted small">
-                                        <i class="bi bi-wallet2 fs-1 opacity-25 d-block mb-3"></i>
-                                        Belum ada riwayat penarikan dana.
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            <i class="bi bi-wallet2 fs-1 d-block mb-3 opacity-25"></i>
+                                            Belum ada riwayat penarikan dana.
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -764,7 +1120,7 @@
 
 
             {{-- <div class="card mb-4"> --}}
-                <div class="card mb-4  shadow-sm">
+                <div class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-4">
                             <i class="bi bi-question-circle-fill text-warning me-3"></i>
@@ -773,7 +1129,7 @@
 
                         <div class="accordion" id="faqAccordion">
 
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="display-2 accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq1">
@@ -784,10 +1140,7 @@
                                     <div class="accordion-body text-muted small">
                                         Dana dapat ditarik melalui menu "Withdraw" di dashboard reseller.
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                                    </div>
                                 <h2 class="display-2 accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq2">
@@ -799,9 +1152,7 @@
                                         Komisi masuk setelah pembelian berhasil & tidak refund.
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq3">
@@ -813,9 +1164,7 @@
                                         Link berlaku tanpa batas selama akun Anda aktif.
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq4">
@@ -827,9 +1176,7 @@
                                         Tidak, referral untuk pembelian orang lain.
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="accordion-item mb-2">
+                            
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" data-bs-toggle="collapse"
                                         data-bs-target="#faq5">
@@ -841,7 +1188,6 @@
                                         Tingkatkan jumlah referral sesuai persyaratan tier.
                                     </div>
                                 </div>
-                            </div>
 
                         </div>
 
@@ -870,7 +1216,250 @@
 
     @include('partials.withdraw-modal')
     @include ('partials.footer-after-login')
+
+    <!-- Modal Edit Kode Referral -->
+    <div class="modal fade" id="editReferralCodeModal" tabindex="-1" aria-labelledby="editReferralCodeModalLabel" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content overflow-hidden border-0 shadow" style="border-radius: 20px; background-color: #ffffff; color: #333333;">
+                <div class="modal-header border-0 p-3">
+                    <h5 class="modal-title fw-bold text-dark" id="editReferralCodeModalLabel">Kustomisasi Kode Referral</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editReferralCodeForm" action="{{ route('reseller.update-code') }}" method="POST">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning border-0 small d-flex gap-2 mb-3 align-items-center" style="background-color: rgba(251, 189, 35, 0.1); color: #856404; border-radius: 12px;">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+                            <div>
+                                <strong>Peringatan:</strong> Kode referral hanya dapat diganti <strong>sekali seminggu</strong>.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                           <label for="newReferralCodeInput" class="form-label fw-bold small text-secondary">Kode Referral Baru</label>
+                           <input type="text" class="form-control border-secondary-subtle" id="newReferralCodeInput" name="referral_code" 
+                               value="{{ $user->referral_code }}" placeholder="Contoh: SPORABUDI" required 
+                               maxlength="10"
+                               style="text-transform: uppercase;">
+                           <!-- Error Message (Plain Red Text Below Input) -->
+                           <div id="modalErrorMessage" class="text-danger small mt-1 d-none" style="font-size: 11px; font-weight: 500; display: block !important; width: 100% !important;"></div>
+
+                           <div class="form-text text-muted mt-1" style="font-size: 11px;">
+                               Gunakan huruf besar dan angka saja (minimal 3 karakter, maksimal 10 karakter, tanpa spasi/simbol).
+                           </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 p-3 justify-content-end gap-2">
+                        <button type="button" class="btn btn-light border rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" id="btnSubmitReferralCode" class="btn btn-warning text-dark fw-bold rounded-pill px-4">Simpan Kode</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Toast Notifikasi Real-time -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+        <!-- Real-time Notif Toast -->
+        <div id="resellerToast" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 12px; background: linear-gradient(135deg, #FF9F1C 0%, #FF6B6B 100%) !important;">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2">
+                    <i class="bi bi-bell-fill fs-5"></i>
+                    <div>
+                        <strong id="toastTitle" class="d-block text-white" style="font-size: 13px;">Notifikasi Baru</strong>
+                        <span id="toastMessage" style="font-size: 12px; opacity: 0.95;">Pesan notifikasi.</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+
+        <!-- Copy Clipboard Toast (White) -->
+        <div id="copyToast" class="toast align-items-center text-dark border-0 bg-white shadow-sm" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 12px; border: 1px solid #e5e7eb !important;">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2 py-3 px-3">
+                    <div class="d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle" style="width: 28px; height: 28px;">
+                        <i class="bi bi-check-lg" style="font-size: 1rem;"></i>
+                    </div>
+                    <div>
+                        <strong id="copyToastTitle" class="d-block text-dark" style="font-size: 13px; font-weight: 600;">Berhasil Disalin</strong>
+                        <span id="copyToastMessage" class="text-secondary" style="font-size: 11px;">Teks telah disalin ke clipboard.</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close me-3 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Inisialisasi Grafik Chart.js
+            const ctx = document.getElementById('performanceChart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($chartLabels) !!},
+                        datasets: [
+                            {
+                                label: 'Klik Link',
+                                data: {!! json_encode($clicksData) !!},
+                                borderColor: '#FF9F1C',
+                                backgroundColor: 'rgba(255, 159, 28, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            },
+                            {
+                                label: 'Pendaftar Baru',
+                                data: {!! json_encode($signupsData) !!},
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            },
+                            {
+                                label: 'Pembelian (Referral)',
+                                data: {!! json_encode($purchasesData) !!},
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    font: {
+                                        family: 'Plus Jakarta Sans',
+                                        weight: '600'
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Real-time Notification Polling
+            @php 
+                $latestNotifId = \App\Models\UserNotification::where('user_id', Auth::id())->orderByDesc('id')->first()?->id ?? 0;
+            @endphp
+            let latestSeenId = {{ $latestNotifId }};
+            const resellerToastEl = document.getElementById('resellerToast');
+            const resellerToast = resellerToastEl ? new bootstrap.Toast(resellerToastEl, { delay: 10000 }) : null;
+
+            function pollNotifications() {
+                fetch('{{ route("notifications.index") }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.items && data.items.length > 0) {
+                            let newNotifications = data.items.filter(item => item.id > latestSeenId);
+                            
+                            // Urutkan dari terlama ke terbaru agar toast muncul berurutan
+                            newNotifications.sort((a, b) => a.id - b.id);
+
+                            const notifList = document.getElementById('notificationList');
+
+                            newNotifications.forEach(notif => {
+                                // Tampilkan toast jika tipenya reseller
+                                if (notif.type === 'reseller' && resellerToast) {
+                                    document.getElementById('toastTitle').innerText = notif.title;
+                                    document.getElementById('toastMessage').innerText = notif.message;
+                                    resellerToast.show();
+                                }
+
+                                // Prepend ke daftar notifikasi di navbar
+                                if (notifList) {
+                                    // Hapus state kosong jika ada
+                                    const emptyPlaceholder = notifList.querySelector('.text-muted') || (notifList.innerText.includes('Tidak ada notifikasi') ? notifList : null);
+                                    if (emptyPlaceholder && emptyPlaceholder.innerText.includes('Tidak ada notifikasi')) {
+                                        notifList.innerHTML = '';
+                                    }
+
+                                    const notifEl = document.createElement('div');
+                                    notifEl.className = `dropdown-item p-3 border-bottom js-notif-item ${notif.read_at ? '' : 'bg-opacity-10 bg-primary'}`;
+                                    notifEl.style.whiteSpace = 'normal';
+                                    notifEl.style.cursor = 'pointer';
+                                    notifEl.setAttribute('role', 'button');
+                                    notifEl.setAttribute('tabindex', '0');
+                                    notifEl.setAttribute('aria-expanded', 'false');
+
+                                    notifEl.innerHTML = `
+                                        <div class="d-flex w-100 justify-content-between align-items-start">
+                                            <div class="d-flex align-items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-circle-fill text-warning me-2 flex-shrink-0" viewBox="0 0 16 16">
+                                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                                </svg>
+                                                <h6 class="mb-1 fw-bold text-white small">${notif.title}</h6>
+                                            </div>
+                                            <small class="text-white-50 ms-2" style="font-size: 0.7rem; white-space: nowrap;">${notif.time_ago || 'Baru saja'}</small>
+                                        </div>
+                                        <p class="mb-1 small text-white-50 ms-4 notif-message-short">${notif.message.length > 80 ? notif.message.substring(0, 80) + '...' : notif.message}</p>
+                                        <p class="mb-1 small text-white-50 ms-4 notif-message-full" style="display: none;">${notif.message}</p>
+                                    `;
+                                    
+                                    notifList.insertBefore(notifEl, notifList.firstChild);
+                                }
+                                
+                                // Update ID notifikasi terakhir yang dilihat
+                                if (notif.id > latestSeenId) {
+                                    latestSeenId = notif.id;
+                                }
+                            });
+
+                            // Update badge jumlah notifikasi di navbar jika unread berubah
+                            const desktopBadge = document.getElementById('notificationBadge');
+                            const mobileBadge = document.getElementById('notificationBadgeMobile');
+                            
+                            if (data.unread > 0) {
+                                if (desktopBadge) {
+                                    desktopBadge.innerText = data.unread;
+                                    desktopBadge.style.display = 'block';
+                                }
+                                if (mobileBadge) {
+                                    mobileBadge.innerText = data.unread;
+                                    mobileBadge.style.display = 'block';
+                                }
+                            } else {
+                                if (desktopBadge) desktopBadge.style.display = 'none';
+                                if (mobileBadge) mobileBadge.style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error polling notifications:', error));
+            }
+
+            // Jalankan polling setiap 30 detik
+            setInterval(pollNotifications, 30000);
+        });
+    </script>
+
+    <script>
+        function showCopyToast(title, message) {
+            const toastEl = document.getElementById('copyToast');
+            if (toastEl) {
+                document.getElementById('copyToastTitle').innerText = title;
+                document.getElementById('copyToastMessage').innerText = message;
+                const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+                toast.show();
+            }
+        }
+
         function animateCopyIcon(button) {
             var icon = button.querySelector('i');
             if (!icon) return;
@@ -899,7 +1488,7 @@
             // Simpan class asli (bi-clipboard)
             var originalClass = "bi bi-clipboard";
             // Class untuk checklist
-            var successClass = "bi bi-check-lg"; // Bootstrap icon checklist tebal
+            var successClass = "bi bi-check-lg";
 
             // Ubah ikon jadi checklist
             icon.className = successClass;
@@ -908,6 +1497,13 @@
             setTimeout(function () {
                 icon.className = originalClass;
             }, 2000);
+
+            // Tampilkan Toast
+            let label = 'Teks';
+            if (elementId === 'referralCode') label = 'Kode referral';
+            if (elementId === 'referralLink') label = 'Link referral';
+            if (elementId === 'referralCaption') label = 'Caption broadcast';
+            showCopyToast('Berhasil Disalin', `${label} berhasil disalin ke clipboard.`);
         }
 
         function copyTextValue(button, value) {
@@ -915,8 +1511,354 @@
 
             navigator.clipboard.writeText(value);
             animateCopyIcon(button);
+            showCopyToast('Link Disalin', 'Link referral produk berhasil disalin ke clipboard.');
         }
+
+        // Onboarding Tour JS Logic
+        let tourSteps = [
+            {
+                elementId: 'tour-withdraw-box',
+                title: 'Tarik Komisi & Saldo',
+                description: 'Di sini Anda dapat melihat saldo dompet terkini, saldo pending, dan mengajukan penarikan dana.',
+                placement: 'bottom'
+            },
+            {
+                elementId: 'tour-tools-box',
+                title: 'Alat Promosi Referral',
+                description: 'Salin kode unik, link referral, atau caption broadcast secara instan untuk dibagikan ke media sosial Anda.',
+                placement: 'bottom'
+            },
+            {
+                elementId: 'tour-products-box',
+                title: 'Katalog Produk Komisi',
+                description: 'Cari course atau event yang aktif, salin tautan referral uniknya, lalu sebarkan untuk mendapatkan komisi 10% - 15%.',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-level-box',
+                title: 'Tingkatan Level Anda',
+                description: 'Tingkatkan jumlah referral sukses untuk naik level dari Bronze ke Silver atau Gold, guna mendapatkan rate komisi yang lebih besar.',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-rank-box',
+                title: 'Leaderboard & Top Reseller',
+                description: 'Pantau peringkat performa terbaik bulanan. Pacu promosi Anda untuk menduduki peringkat teratas secara global!',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-history-box',
+                title: 'Riwayat Referral',
+                description: 'Lihat daftar transaksi referral Anda di sini. Riwayat ini menampilkan nama pembeli yang menggunakan kode Anda beserta nominal komisi dan statusnya.',
+                placement: 'top'
+            },
+            {
+                elementId: 'tour-withdraw-history-box',
+                title: 'Riwayat Penarikan Dana',
+                description: 'Pantau status pencairan dana Anda di sini, mulai dari pengajuan pending, disetujui (approved), hingga ditolak (rejected) oleh admin.',
+                placement: 'top'
+            }
+        ];
+
+        let currentTourStep = 0;
+
+        function startOnboardingTour() {
+            currentTourStep = 0;
+            const overlay = document.getElementById('tour-overlay');
+            const popover = document.getElementById('tour-popover');
+            
+            if (overlay && popover) {
+                overlay.style.display = 'block';
+                popover.style.display = 'block';
+                // Trigger reflow for transition
+                popover.offsetHeight;
+                popover.classList.add('show');
+                showStep(currentTourStep);
+            }
+        }
+
+        function showStep(stepIndex) {
+            let step = tourSteps[stepIndex];
+            
+            // Clean previous highlight
+            document.querySelectorAll('.tour-highlighted-element').forEach(el => {
+                el.classList.remove('tour-highlighted-element');
+            });
+
+            let targetEl = document.getElementById(step.elementId);
+            if (!targetEl) {
+                // If element is not found, skip to next step
+                nextTourStep();
+                return;
+            }
+
+            // Highlight target element
+            targetEl.classList.add('tour-highlighted-element');
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Set content
+            document.getElementById('tour-title').innerText = step.title;
+            document.getElementById('tour-description').innerText = step.description;
+            document.getElementById('tour-progress').innerText = `${stepIndex + 1} dari ${tourSteps.length}`;
+
+            // Handle Buttons visibility/label
+            document.getElementById('tour-btn-prev').style.display = stepIndex === 0 ? 'none' : 'inline-block';
+            if (stepIndex === tourSteps.length - 1) {
+                document.getElementById('tour-btn-next').style.display = 'none';
+                document.getElementById('tour-btn-finish').style.display = 'inline-block';
+            } else {
+                document.getElementById('tour-btn-next').style.display = 'inline-block';
+                document.getElementById('tour-btn-finish').style.display = 'none';
+            }
+
+            // Wait a tiny bit for scrolling to complete, then calculate position
+            setTimeout(() => {
+                positionPopover(targetEl, step.placement);
+            }, 150);
+        }
+
+        function positionPopover(targetEl, placement) {
+            let popover = document.getElementById('tour-popover');
+            if (!popover) return;
+            
+            let rect = targetEl.getBoundingClientRect();
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            let scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+            let popoverWidth = popover.offsetWidth;
+            let popoverHeight = popover.offsetHeight;
+
+            let top = 0;
+            let left = 0;
+
+            // Simple placement calculation
+            if (placement === 'bottom') {
+                top = rect.bottom + scrollTop + 12;
+                left = rect.left + scrollLeft + (rect.width / 2) - (popoverWidth / 2);
+            } else if (placement === 'top') {
+                top = rect.top + scrollTop - popoverHeight - 12;
+                left = rect.left + scrollLeft + (rect.width / 2) - (popoverWidth / 2);
+            } else if (placement === 'left') {
+                top = rect.top + scrollTop + (rect.height / 2) - (popoverHeight / 2);
+                left = rect.left + scrollLeft - popoverWidth - 12;
+            } else if (placement === 'right') {
+                top = rect.top + scrollTop + (rect.height / 2) - (popoverHeight / 2);
+                left = rect.right + scrollLeft + 12;
+            }
+
+            // Adjust bounding to screen edges
+            if (left < 10) left = 10;
+            if (left + popoverWidth > window.innerWidth - 10) {
+                left = window.innerWidth - popoverWidth - 10;
+            }
+            if (top < 10) top = 10;
+
+            popover.style.top = `${top}px`;
+            popover.style.left = `${left}px`;
+            popover.setAttribute('data-popper-placement', placement);
+        }
+
+        function nextTourStep() {
+            currentTourStep++;
+            if (currentTourStep >= tourSteps.length) {
+                finishTour();
+            } else {
+                showStep(currentTourStep);
+            }
+        }
+
+        function prevTourStep() {
+            currentTourStep--;
+            if (currentTourStep < 0) {
+                currentTourStep = 0;
+            }
+            showStep(currentTourStep);
+        }
+
+        // Allow close overlay when click outside
+        function skipTour() {
+            finishTour();
+        }
+
+        function finishTour() {
+            const overlay = document.getElementById('tour-overlay');
+            const popover = document.getElementById('tour-popover');
+            
+            if (overlay) overlay.style.display = 'none';
+            if (popover) {
+                popover.style.display = 'none';
+                popover.classList.remove('show');
+            }
+            document.querySelectorAll('.tour-highlighted-element').forEach(el => {
+                el.classList.remove('tour-highlighted-element');
+            });
+            localStorage.setItem('idspora_reseller_tour_done', 'true');
+        }
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            let popover = document.getElementById('tour-popover');
+            if (popover && popover.style.display !== 'none') {
+                let step = tourSteps[currentTourStep];
+                let targetEl = document.getElementById(step.elementId);
+                if (targetEl) {
+                    positionPopover(targetEl, step.placement);
+                }
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
+            // Auto run tour on first visit
+            if (!localStorage.getItem('idspora_reseller_tour_done')) {
+                setTimeout(() => {
+                    startOnboardingTour();
+                }, 1000);
+            }
+
+            // AJAX Form Handling and Validation for Edit Referral Code Modal
+            var editForm = document.getElementById('editReferralCodeForm');
+            var inputField = document.getElementById('newReferralCodeInput');
+            var submitBtn = document.getElementById('btnSubmitReferralCode');
+            var modalErrorMessage = document.getElementById('modalErrorMessage');
+
+            if (editForm && inputField) {
+                // Force uppercase on typing
+                inputField.addEventListener('input', function() {
+                    var val = inputField.value.toUpperCase();
+                    inputField.value = val;
+                    // Remove error style and hide text message as user corrects it
+                    inputField.classList.remove('is-invalid');
+                    modalErrorMessage.classList.add('d-none');
+                });
+
+                // Reset modal errors on close
+                var editModalEl = document.getElementById('editReferralCodeModal');
+                if (editModalEl) {
+                    editModalEl.addEventListener('hidden.bs.modal', function () {
+                        inputField.classList.remove('is-invalid');
+                        modalErrorMessage.classList.add('d-none');
+                        submitBtn.disabled = false;
+                    });
+                }
+
+                // AJAX Form Submission
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // Hide previous alerts
+                    modalErrorMessage.classList.add('d-none');
+                    inputField.classList.remove('is-invalid');
+
+                    var val = inputField.value.trim().toUpperCase();
+
+                    var hasError = false;
+                    var errorMsg = '';
+
+                    // Check validation format on submit
+                    if (val.length === 0) {
+                        hasError = true;
+                        errorMsg = 'Kode referral baru harus diisi.';
+                    } else if (!/^[A-Z0-9]+$/.test(val)) {
+                        hasError = true;
+                        errorMsg = 'Kode hanya boleh berisi huruf besar dan angka (tanpa spasi/simbol).';
+                    } else if (val.length < 3) {
+                        hasError = true;
+                        errorMsg = 'Kode referral minimal terdiri dari 3 karakter.';
+                    } else if (val.length > 10) {
+                        hasError = true;
+                        errorMsg = 'Kode referral maksimal terdiri dari 10 karakter.';
+                    }
+
+                    if (hasError) {
+                        inputField.classList.add('is-invalid');
+                        modalErrorMessage.innerText = errorMsg;
+                        modalErrorMessage.classList.remove('d-none');
+                        return;
+                    }
+
+                    // Disable button to prevent double submit
+                    var originalText = submitBtn.innerText;
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = 'Menyimpan...';
+
+                    var formData = new FormData(editForm);
+
+                    fetch(editForm.getAttribute('action'), {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    })
+                    .then(function(response) {
+                        var contentType = response.headers.get('content-type');
+                        if (contentType && contentType.indexOf('application/json') !== -1) {
+                            return response.json().then(function(data) {
+                                if (!response.ok) {
+                                    throw data;
+                                }
+                                return data;
+                            });
+                        } else {
+                            throw { message: 'Terjadi kesalahan pada server. Silakan coba kembali.' };
+                        }
+                    })
+                    .then(function(data) {
+                        // Success - reload page to apply changes
+                        window.location.reload();
+                    })
+                    .catch(function(err) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = originalText;
+
+                        // Display validation errors or backend message
+                        var errMsg = 'Terjadi kesalahan sistem.';
+                        if (err.errors && err.errors.referral_code) {
+                            errMsg = err.errors.referral_code[0];
+                            inputField.classList.add('is-invalid');
+                        } else if (err.message) {
+                            errMsg = err.message;
+                            if (errMsg.includes('sudah digunakan') || errMsg.includes('sama dengan')) {
+                                inputField.classList.add('is-invalid');
+                            }
+                        } else if (err.error) {
+                            errMsg = err.error;
+                        }
+                        
+                        modalErrorMessage.innerText = errMsg;
+                        modalErrorMessage.classList.remove('d-none');
+                    });
+                });
+            }
+        });
     </script>
+
+    <!-- Onboarding Tour Elements -->
+    <div id="tour-overlay" class="tour-overlay" style="display: none;" onclick="skipTour()"></div>
+    <div id="tour-popover" class="tour-popover" style="display: none;" role="dialog">
+        <div class="tour-popover-arrow"></div>
+        <div class="tour-popover-content">
+            <h6 id="tour-title" class="tour-popover-title">Judul Panduan</h6>
+            <p id="tour-description" class="tour-popover-desc">Penjelasan langkah panduan...</p>
+        </div>
+        <div class="tour-popover-footer d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+            <span id="tour-progress" class="tour-popover-progress text-muted small fw-medium">Langkah 1 dari 5</span>
+            <div class="d-flex gap-2">
+                <button type="button" id="tour-btn-skip" class="btn btn-sm btn-link text-decoration-none text-muted fw-semibold px-2 py-1" onclick="skipTour()" style="font-size: 0.85rem;">Lewati</button>
+                <button type="button" id="tour-btn-prev" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold" onclick="prevTourStep()" style="display: none; font-size: 0.85rem;">Kembali</button>
+                <button type="button" id="tour-btn-next" class="btn btn-sm btn-warning rounded-pill px-3 py-1 fw-bold text-dark shadow-sm" onclick="nextTourStep()" style="font-size: 0.85rem;">Lanjut</button>
+                <button type="button" id="tour-btn-finish" class="btn btn-sm btn-warning rounded-pill px-3 py-1 fw-bold text-dark shadow-sm" onclick="finishTour()" style="display: none; font-size: 0.85rem;">Selesai</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

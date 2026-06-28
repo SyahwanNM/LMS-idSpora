@@ -516,7 +516,7 @@
 <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
-            <form action="{{ route('admin.finance.store-expense') }}" method="POST">
+            <form action="{{ route('admin.finance.store-expense') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Tambah Pengeluaran Manual</h5>
@@ -538,6 +538,10 @@
                     <div class="mb-3">
                         <label class="form-label">Kategori (Opsional)</label>
                         <input type="text" name="category" class="form-control" placeholder="Contoh: Operasional, Pemasaran">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bukti Pembayaran (Wajib)</label>
+                        <input type="file" name="proof_of_payment" class="form-control" accept="image/*" required>
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -371,8 +371,45 @@
         </div>
     </div>
     <div class="preview">
+        <!-- Course Rejection Modal -->
+        <div class="modal fade" id="courseRejectModal" tabindex="-1" aria-labelledby="courseRejectModalLabel" aria-hidden="true" style="z-index: 1060;">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+                <div class="modal-content border-0 shadow">
+                    <form id="courseRejectForm" method="POST" action="">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-semibold" id="courseRejectModalLabel">Tolak Pembayaran Manual</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small mb-3">Pilih alasan penolakan pembayaran untuk <strong id="courseRejectUserName"></strong>.</p>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Alasan Penolakan</label>
+                                <select name="reason" class="form-select" required style="border-radius: 8px;">
+                                    <option value="">-- Pilih Alasan --</option>
+                                    <option value="Nominal pembayaran kurang">Nominal pembayaran kurang</option>
+                                    <option value="Nominal pembayaran lebih">Nominal pembayaran lebih</option>
+                                    <option value="Gambar bukti pembayaran blur/buram. Silahkan kirim ulang">Gambar bukti pembayaran blur/buram. Silahkan kirim ulang</option>
+                                    <option value="Pembayaran dinyatakan tidak valid">Pembayaran dinyatakan tidak valid</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 pt-0 d-flex gap-2">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px; font-weight: 600; flex: 1;">Batal</button>
+                            <button type="submit" class="btn btn-danger" style="border-radius: 8px; font-weight: 600; flex: 1;">Tolak Pembayaran</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Approval Form -->
+        <form id="courseApproveForm" method="POST" action="" style="display:none;">
+            @csrf
+        </form>
+
         <div class="modal" id="coursePreviewModal" tabindex="-1">
-            <div class="modal-dialog ">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 id="coursePreviewLabel" class="modal-title">Modal title</h5>
@@ -551,12 +588,14 @@
                                             <th>Progress</th>
                                             <th>Status</th>
                                             <th>Active Date</th>
+                                            <th>Bukti Transfer</th>
+                                            <th>Aksi</th>
                                         </tr>
                                     </thead>
 
                                     <tbody id="participantTableBody">
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted">Pilih course untuk melihat participant.</td>
+                                            <td colspan="7" class="text-center text-muted">Pilih course untuk melihat participant.</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -798,11 +837,11 @@
                     var tbody = document.getElementById('participantTableBody');
                     if (!tbody) return;
 
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Memuat participant...</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Memuat participant...</td></tr>';
 
                     var url = data.participants_url;
                     if (!url) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Participant data is not available.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Participant data is not available.</td></tr>';
                         return;
                     }
 
@@ -818,7 +857,7 @@
                     .then(function(json) {
                         var participants = (json && json.participants) ? json.participants : [];
                         if (!participants.length) {
-                            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No participants have taken this course yet.</td></tr>';
+                            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No participants have taken this course yet.</td></tr>';
                             return;
                         }
 
@@ -828,6 +867,26 @@
                             var progress = (p && typeof p.progress_percent !== 'undefined') ? (String(p.progress_percent) + '%') : '0%';
                             var status = (p && p.status_label) ? p.status_label : (p && p.status ? p.status : '-');
                             var enrolledAt = (p && p.enrolled_at) ? p.enrolled_at : '-';
+
+                            // Bukti Transfer Column
+                            var proofCol = '-';
+                            if (p.payment_proof_url) {
+                                proofCol = '<a href="' + p.payment_proof_url + '" target="_blank" class="btn btn-sm btn-outline-info" style="padding: 2px 8px; font-size: 11px;"><i class="bi bi-file-earmark-image"></i> Lihat Bukti</a>';
+                            }
+
+                            // Aksi Column
+                            var actionCol = '-';
+                            if (p.payment_status === 'pending') {
+                                actionCol = '<div class="d-flex gap-1">' +
+                                    '<button type="button" class="btn btn-sm btn-success btn-approve-payment" data-course-id="' + json.course_id + '" data-payment-id="' + p.payment_id + '" style="padding: 2px 8px; font-size: 11px; font-weight: 600;">Approve</button>' +
+                                    '<button type="button" class="btn btn-sm btn-danger btn-reject-payment" data-course-id="' + json.course_id + '" data-payment-id="' + p.payment_id + '" data-user-name="' + escapeHtml(name) + '" style="padding: 2px 8px; font-size: 11px; font-weight: 600;">Reject</button>' +
+                                '</div>';
+                            } else if (p.payment_status === 'settled') {
+                                actionCol = '<span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 10px;">Lunas</span>';
+                            } else if (p.payment_status === 'rejected') {
+                                actionCol = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 10px;">Ditolak</span>';
+                            }
+
                             return (
                                 '<tr>' +
                                     '<td>' + escapeHtml(name) + '</td>' +
@@ -835,14 +894,46 @@
                                     '<td>' + escapeHtml(progress) + '</td>' +
                                     '<td>' + escapeHtml(status) + '</td>' +
                                     '<td>' + escapeHtml(enrolledAt) + '</td>' +
+                                    '<td>' + proofCol + '</td>' +
+                                    '<td>' + actionCol + '</td>' +
                                 '</tr>'
                             );
                         }).join('');
                     })
                     .catch(function() {
-                        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Gagal memuat participant.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Gagal memuat participant.</td></tr>';
                     });
                 })();
+
+                // --- EVENT DELEGATION FOR APPROVE/REJECT ACTIONS ---
+                var tableBody = document.getElementById('participantTableBody');
+                if (tableBody && !tableBody.dataset.listenerRegistered) {
+                    tableBody.dataset.listenerRegistered = 'true';
+                    tableBody.addEventListener('click', function(e) {
+                        if (e.target.classList.contains('btn-approve-payment')) {
+                            var courseId = e.target.getAttribute('data-course-id');
+                            var paymentId = e.target.getAttribute('data-payment-id');
+                            if (confirm('Apakah Anda yakin ingin menyetujui pembayaran manual ini?')) {
+                                var form = document.getElementById('courseApproveForm');
+                                form.action = '/admin/courses/' + courseId + '/manual-payments/' + paymentId + '/approve';
+                                form.submit();
+                            }
+                        } else if (e.target.classList.contains('btn-reject-payment')) {
+                            var courseId = e.target.getAttribute('data-course-id');
+                            var paymentId = e.target.getAttribute('data-payment-id');
+                            var userName = e.target.getAttribute('data-user-name');
+
+                            document.getElementById('courseRejectUserName').textContent = userName;
+                            document.getElementById('courseRejectForm').action = '/admin/courses/' + courseId + '/manual-payments/' + paymentId + '/reject';
+
+                            var modalEl = document.getElementById('courseRejectModal');
+                            if (modalEl && window.bootstrap) {
+                                var rejectModal = new window.bootstrap.Modal(modalEl);
+                                rejectModal.show();
+                            }
+                        }
+                    });
+                }
 
                 // 1. Hitung Ringkasan (hanya yang sudah ada konten/diapprove)
                 var countPdf = visibleModules.filter(m => m.type === 'pdf').length;

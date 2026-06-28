@@ -62,14 +62,44 @@ class SocialAuthController extends Controller
                 }
                 $user->save();
             } else {
+                $referrerId = null;
+                if ($cookieCode = request()->cookie('referral_code')) {
+                    $referrer = User::where('referral_code', $cookieCode)->first();
+                    if ($referrer) {
+                        $referrerId = $referrer->id;
+                    }
+                }
+
                 $user = User::create([
                     'name' => $nameFromGoogle,
                     'email' => $emailFromGoogle,
                     'google_id' => $googleUser->getId(),
                     'avatar' => $avatarFromGoogle,
                     'role' => 'user',
+                    'referrer_id' => $referrerId,
                     'password' => Str::password(16),
                 ]);
+
+                if ($referrerId) {
+                    try {
+                        $referrer = User::find($referrerId);
+                        if ($referrer) {
+                            $msg = "Pendaftaran Baru! " . $user->name . " telah mendaftar menggunakan link referral Anda (Google).";
+                            \App\Models\UserNotification::create([
+                                'user_id' => $referrer->id,
+                                'type' => 'reseller',
+                                'title' => 'Pendaftaran Baru!',
+                                'message' => $msg,
+                                'data' => ['url' => route('reseller.index')],
+                            ]);
+                            if ($referrer->phone) {
+                                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::error('Google registration referral notify failed: ' . $e->getMessage());
+                    }
+                }
             }
         }
 

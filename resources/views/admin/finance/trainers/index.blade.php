@@ -400,15 +400,24 @@
                     <div class="col-md-6 col-lg-4">
                         <div class="premium-card trainer-card p-4 h-100 d-flex flex-column justify-content-between">
                             <div>
+                                @php
+                                    $hasBank = !empty($trainer->bank_name) && !empty($trainer->bank_account_number);
+                                @endphp
                                 <!-- Top Row: Avatar & Status Badge -->
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div class="avatar-initials">
                                         {{ strtoupper(substr($trainer->name, 0, 2)) }}
                                     </div>
                                     @if(($trainer->wallet_balance ?? 0) >= $minDisburse)
-                                        <span class="pill-badge pill-badge-success">
-                                            <span class="pulse-dot"></span> Siap Cair
-                                        </span>
+                                        @if($hasBank)
+                                            <span class="pill-badge pill-badge-success">
+                                                <span class="pulse-dot"></span> Siap Cair
+                                            </span>
+                                        @else
+                                            <span class="pill-badge pill-badge-warning">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> Belum Set Rekening
+                                            </span>
+                                        @endif
                                     @else
                                         <span class="pill-badge pill-badge-muted">
                                             Belum Capai Batas
@@ -430,9 +439,16 @@
                             <!-- Action button -->
                             <div class="mt-3">
                                 @if(($trainer->wallet_balance ?? 0) >= $minDisburse)
-                                    <button class="btn btn-premium-primary w-100 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#disburseModal{{ $trainer->id }}">
-                                        <i class="bi bi-cash-stack"></i> Cairkan Saldo Sekarang
-                                    </button>
+                                    @if($hasBank)
+                                        <button class="btn btn-premium-primary w-100 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#disburseModal{{ $trainer->id }}">
+                                            <i class="bi bi-cash-stack"></i> Cairkan Saldo Sekarang
+                                        </button>
+                                    @else
+                                        <button class="btn btn-premium-primary w-100 d-flex align-items-center justify-content-center gap-2" disabled style="background: #E2E8F0; color: #94A3B8; border: none; cursor: not-allowed;">
+                                            <i class="bi bi-exclamation-circle"></i> Rekening Belum Set
+                                        </button>
+                                        <small class="text-danger text-center d-block mt-2" style="font-size: 0.75rem; font-weight: 600;">Trainer belum mengatur rekening bank</small>
+                                    @endif
                                 @else
                                     <button class="btn btn-premium-primary w-100 d-flex align-items-center justify-content-center gap-2" disabled>
                                         <i class="bi bi-cash-stack"></i> Saldo Belum Cukup
@@ -498,15 +514,19 @@
                                     <td>
                                         <span class="fw-800 text-success" style="font-size: 1rem;">Rp {{ number_format($fee->amount, 0, ',', '.') }}</span>
                                     </td>
+                                    @php
+                                        $feeHasBank = !empty($fee->trainer?->bank_name) && !empty($fee->trainer?->bank_account_number);
+                                    @endphp
                                     <td class="text-end">
-                                        <div class="d-inline-flex gap-2">
+                                        @if($feeHasBank)
                                             <button class="btn btn-premium-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#payFeeModal{{ $fee->id }}">
                                                 <i class="bi bi-wallet2 me-1"></i> Bayar Sekarang
                                             </button>
-                                            <button class="btn btn-outline-danger btn-sm rounded-4 px-3 fw-bold" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#rejectFeeModal{{ $fee->id }}">
-                                                Tolak
+                                        @else
+                                            <button class="btn btn-secondary btn-sm px-3 opacity-75" disabled title="Trainer belum mengatur rekening bank">
+                                                <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> Belum Set Rekening
                                             </button>
-                                        </div>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
@@ -656,7 +676,7 @@
                             </div>
                             <div class="modal-footer border-0 pt-0">
                                 <button type="button" class="btn btn-premium-secondary px-4 py-2" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-premium-primary px-4 py-2"><i class="bi bi-check-circle-fill me-1"></i> Konfirmasi & Cairkan</button>
+                                <button type="submit" class="btn btn-premium-primary px-4 py-2" {{ !$hasBank ? 'disabled' : '' }}><i class="bi bi-check-circle-fill me-1"></i> Konfirmasi & Cairkan</button>
                             </div>
                         </form>
                     </div>
@@ -667,6 +687,9 @@
 
         <!-- 3. Pay Fee & Reject Fee Modals (Permintaan Fee Event) -->
         @foreach($pendingEventFees as $fee)
+            @php
+                $feeHasBank = !empty($fee->trainer?->bank_name) && !empty($fee->trainer?->bank_account_number);
+            @endphp
             <!-- Pay Fee Modal -->
             <div class="modal fade" id="payFeeModal{{ $fee->id }}" tabindex="-1" aria-labelledby="payFeeModalLabel{{ $fee->id }}" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
@@ -685,46 +708,42 @@
                                     <small class="text-muted uppercase fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">TOTAL TRANSFER</small>
                                     <h3 class="fw-800 text-success mb-0" style="font-size: 1.85rem;">Rp {{ number_format($fee->amount, 0, ',', '.') }}</h3>
                                 </div>
+                                <!-- Trainer Info Details -->
+                                <div class="p-3 bg-light rounded-3 mb-4 text-start">
+                                    <div class="row g-2">
+                                        <div class="col-5 text-muted small fw-bold">TRAINER PENERIMA:</div>
+                                        <div class="col-7 small text-dark fw-bold">{{ $fee->trainer->name ?? $fee->trainer_name }}</div>
+                                        
+                                        <div class="col-5 text-muted small fw-bold">BANK DETAILS:</div>
+                                        <div class="col-7 small text-dark fw-bold">
+                                            @if($feeHasBank)
+                                                {{ $fee->trainer->bank_name }} - {{ $fee->trainer->bank_account_number }}
+                                            @else
+                                                <span class="text-danger italic"><i class="bi bi-exclamation-triangle-fill me-1"></i>Belum set rekening</span>
+                                            @endif
+                                        </div>
+                                        
+                                        @if($fee->trainer?->bank_account_holder || $fee->trainer?->bank_account_name)
+                                        <div class="col-5 text-muted small fw-bold">ATAS NAMA:</div>
+                                        <div class="col-7 small text-dark fw-bold">{{ $fee->trainer->bank_account_holder ?? $fee->trainer->bank_account_name }}</div>
+                                        @endif
+                                    </div>
+                                </div>
                                 <div class="text-start mb-3">
                                     <label class="form-label modal-form-label"><i class="bi bi-cloud-arrow-up-fill me-1"></i>Upload Bukti Transfer</label>
-                                    <input type="file" name="proof_of_payment" class="form-control form-control-premium" required>
+                                    <input type="file" name="proof_of_payment" class="form-control form-control-premium" required {{ !$feeHasBank ? 'disabled' : '' }}>
                                     <div class="form-text small">Ukuran file maksimal: 5MB (PNG/JPG/JPEG)</div>
                                 </div>
                             </div>
                             <div class="modal-footer border-0 pt-0">
                                 <button type="button" class="btn btn-premium-secondary px-4 py-2" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-premium-primary px-4 py-2"><i class="bi bi-check2-circle"></i> Konfirmasi Pembayaran</button>
+                                <button type="submit" class="btn btn-premium-primary px-4 py-2" {{ !$feeHasBank ? 'disabled' : '' }}><i class="bi bi-check2-circle"></i> Konfirmasi Pembayaran</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- Reject Fee Modal -->
-            <div class="modal fade" id="rejectFeeModal{{ $fee->id }}" tabindex="-1" aria-labelledby="rejectFeeModalLabel{{ $fee->id }}" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content text-start">
-                        <form action="{{ route('admin.finance.event-fee.reject', $fee->id) }}" method="POST">
-                            @csrf
-                            <div class="modal-header border-0 pb-0">
-                                <div>
-                                    <h5 class="modal-title fw-800 text-danger" id="rejectFeeModalLabel{{ $fee->id }}">Tolak Permintaan Fee</h5>
-                                    <p class="text-muted small mb-0">Mohon berikan alasan penolakan agar trainer dapat mengetahuinya.</p>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body p-4">
-                                <label class="form-label modal-form-label">Alasan Penolakan</label>
-                                <textarea name="rejected_reason" class="form-control form-control-premium" rows="3" required placeholder="Jelaskan alasan penolakan secara logis..."></textarea>
-                            </div>
-                            <div class="modal-footer border-0 pt-0">
-                                <button type="button" class="btn btn-premium-secondary px-4 py-2" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-danger rounded-4 px-4 py-2 fw-bold" style="font-size: 0.9rem;">Ya, Tolak Permintaan</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
         @endforeach
 
     </main>

@@ -479,12 +479,22 @@ class FinanceController extends Controller
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
-            'category' => 'nullable|string'
+            'category' => 'nullable|string',
+            'proof_of_payment' => 'required|image|max:5120'
         ]);
 
-        Expense::create($request->all());
+        $data = $request->except('proof_of_payment');
 
-        return back()->with('success', 'Pengeluaran berhasil dicatat.');
+        if ($request->hasFile('proof_of_payment')) {
+            $path = $request->file('proof_of_payment')->store('finance/proofs/manual', 'public');
+            $data['proof_of_payment'] = $path;
+        }
+
+        $data['status'] = 'approved';
+
+        Expense::create($data);
+
+        return back()->with('success', 'Pengeluaran manual berhasil dicatat dengan bukti pembayaran.');
     }
 
     /* ═══════════════════════════════════════════
@@ -581,6 +591,10 @@ class FinanceController extends Controller
             return back()->with('error', 'Saldo trainer belum mencapai minimum pencairan Rp ' . number_format($minDisburse, 0, ',', '.'));
         }
 
+        if (empty($trainer->bank_name) || empty($trainer->bank_account_number)) {
+            return back()->with('error', 'Pencairan gagal. Trainer belum mengatur informasi rekening bank.');
+        }
+
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',
             'notes'            => 'nullable|string|max:500',
@@ -653,6 +667,10 @@ class FinanceController extends Controller
     public function approveEventFeePayment(Request $request, $paymentId)
     {
         $payment = TrainerPayment::with('trainer')->findOrFail($paymentId);
+
+        if (!$payment->trainer || empty($payment->trainer->bank_name) || empty($payment->trainer->bank_account_number)) {
+            return back()->with('error', 'Pembayaran fee gagal. Trainer belum mengatur informasi rekening bank.');
+        }
 
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',

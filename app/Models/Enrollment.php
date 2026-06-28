@@ -59,6 +59,14 @@ class Enrollment extends Model
     }
 
     /**
+     * Get the manual payment records for this enrollment.
+     */
+    public function manualPayments(): HasMany
+    {
+        return $this->hasMany(ManualPayment::class);
+    }
+
+    /**
      * Get the ID of the next module to continue (first incomplete module).
      * Returns null if all modules are completed or no modules exist.
      */
