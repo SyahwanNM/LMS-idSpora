@@ -395,6 +395,7 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
+        EventExpense::where('event_id', $event->id)->delete();
         $event->delete();
 
         return response()->json([

@@ -234,6 +234,48 @@
                             </div>
                             <div id="promoMessage" class="form-text small text-danger" style="display:none;">&nbsp;</div>
                             <div class="form-text small">Masukkan Kode Voucher (dari Poin) atau Kode Referral Reseller untuk mendapatkan potongan harga.</div>
+
+                            @php
+                                $myUsableVouchers = Auth::check() 
+                                    ? \App\Models\VoucherRedemption::where('user_id', Auth::id())
+                                        ->where('is_used', false)
+                                        ->where(function($q) {
+                                            $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                                        })
+                                        ->with('voucher')
+                                        ->get()
+                                        ->filter(fn($item) => $item->voucher !== null && $item->voucher->active)
+                                    : collect();
+                            @endphp
+
+                            @if($myUsableVouchers->count() > 0)
+                            <div style="margin-top: 14px; padding: 14px; background: #f0fdf4; border: 1.5px dashed #22c55e; border-radius: 12px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                                    <span style="font-size: 13px; font-weight: 700; color: #15803d; display: flex; align-items: center; gap: 6px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M3 4.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-1zM3 8.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-1zM3 12.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-1z"/></svg>
+                                        Voucher Milik Anda (Siap Digunakan)
+                                    </span>
+                                    <span style="font-size: 11px; font-weight: 600; background: #16a34a; color: #fff; padding: 2px 8px; border-radius: 10px;">{{ $myUsableVouchers->count() }} Tersedia</span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    @foreach($myUsableVouchers as $userVoucher)
+                                        @php
+                                            $v = $userVoucher->voucher;
+                                            $discountText = $v->discount_type === 'percentage' ? $v->discount_value . '%' : 'Rp ' . number_format($v->discount_value, 0, ',', '.');
+                                        @endphp
+                                        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #dcfce7; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                            <div>
+                                                <div style="font-size: 13px; font-weight: 700; color: #166534;">{{ $v->name }} (<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;color:#0f172a;">{{ $userVoucher->code }}</code>)</div>
+                                                <div style="font-size: 11px; color: #4b5563;">Potongan {{ $discountText }} @if($v->min_purchase > 0) &bull; Min. Rp{{ number_format($v->min_purchase, 0, ',', '.') }} @endif</div>
+                                            </div>
+                                            <button type="button" onclick="applyMyVoucher('{{ $userVoucher->code }}')" style="padding: 6px 14px; background: #16a34a; color: #ffffff; font-size: 12px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">
+                                                Gunakan
+                                            </button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         <!-- Hidden inputs for validation state and submission -->
@@ -985,6 +1027,18 @@
             promoInput.addEventListener('input', schedulePromoValidation);
             promoInput.addEventListener('blur', schedulePromoValidation);
         }
+
+        window.applyMyVoucher = function(code) {
+            if (promoInput) {
+                promoInput.value = code;
+                const checkBtn = document.getElementById('checkPromoBtn');
+                if (checkBtn) {
+                    checkBtn.click();
+                } else {
+                    schedulePromoValidation();
+                }
+            }
+        };
 
         const checkPromoBtn = document.getElementById('checkPromoBtn');
         if (checkPromoBtn) {

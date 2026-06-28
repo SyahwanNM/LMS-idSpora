@@ -1390,6 +1390,7 @@ class EventController extends Controller
             abort(403, 'Event admin cannot delete events.');
         }
 
+        \App\Models\EventExpense::where('event_id', $event->id)->delete();
         $event->delete();
         // Redirect back to history page if the user came from there; otherwise to add-event
         $prev = url()->previous();
