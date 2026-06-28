@@ -587,7 +587,7 @@ class FinanceController extends Controller
         foreach ($trainers as $t) {
             $t->total_paid = 0;
             $t->pending_payout = false;
-            $t->can_disburse = ($t->wallet_balance ?? 0) >= $minDisburse;
+            $t->can_disburse = ($t->wallet_balance ?? 0) >= $minDisburse && !empty($t->bank_name) && !empty($t->bank_account_number);
         }
 
         // Ended events that don't have fee payouts yet
@@ -654,6 +654,13 @@ class FinanceController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Saldo trainer belum mencapai minimum pencairan Rp ' . number_format($minDisburse, 0, ',', '.')
+            ], 400);
+        }
+
+        if (empty($trainer->bank_name) || empty($trainer->bank_account_number)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pencairan gagal. Trainer belum mengatur informasi rekening bank.'
             ], 400);
         }
 
@@ -765,6 +772,13 @@ class FinanceController extends Controller
                 'status' => 'error',
                 'message' => 'Permintaan pembayaran tidak ditemukan.'
             ], 404);
+        }
+
+        if (!$payment->trainer || empty($payment->trainer->bank_name) || empty($payment->trainer->bank_account_number)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran fee gagal. Trainer belum mengatur informasi rekening bank.'
+            ], 400);
         }
 
         $validator = Validator::make($request->all(), [

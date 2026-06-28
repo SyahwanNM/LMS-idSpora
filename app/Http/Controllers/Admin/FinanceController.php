@@ -591,6 +591,10 @@ class FinanceController extends Controller
             return back()->with('error', 'Saldo trainer belum mencapai minimum pencairan Rp ' . number_format($minDisburse, 0, ',', '.'));
         }
 
+        if (empty($trainer->bank_name) || empty($trainer->bank_account_number)) {
+            return back()->with('error', 'Pencairan gagal. Trainer belum mengatur informasi rekening bank.');
+        }
+
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',
             'notes'            => 'nullable|string|max:500',
@@ -663,6 +667,10 @@ class FinanceController extends Controller
     public function approveEventFeePayment(Request $request, $paymentId)
     {
         $payment = TrainerPayment::with('trainer')->findOrFail($paymentId);
+
+        if (!$payment->trainer || empty($payment->trainer->bank_name) || empty($payment->trainer->bank_account_number)) {
+            return back()->with('error', 'Pembayaran fee gagal. Trainer belum mengatur informasi rekening bank.');
+        }
 
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',
