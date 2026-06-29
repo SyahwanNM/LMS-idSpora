@@ -532,13 +532,16 @@
                                                           @endif
                                                         <td class="text-muted">{{ optional($reg->created_at)->format('d M Y H:i') }}</td>
                                                         <td>
-                                                            @if($st === 'pending' && !empty($reg->payment_proof))
-                                                                <div class="d-flex flex-column gap-1" style="width:fit-content;">
+                                                            <div class="d-flex flex-column gap-2" style="width:fit-content;">
+                                                                @if(!empty($reg->payment_proof))
                                                                     <a href="{{ Storage::disk('public')->url($reg->payment_proof) }}"
                                                                        target="_blank"
                                                                        class="btn btn-xs btn-outline-secondary py-0 px-2" style="font-size:11px;width:fit-content;">
                                                                         <i class="bi bi-image me-1"></i>Bukti
                                                                     </a>
+                                                                @endif
+
+                                                                @if($st === 'pending' && !empty($reg->payment_proof))
                                                                     <div class="d-flex gap-1">
                                                                         <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
                                                                             data-bs-toggle="modal"
@@ -557,69 +560,69 @@
                                                                             <i class="bi bi-x"></i> Reject
                                                                         </button>
                                                                     </div>
-                                                                </div>
-                                                            @elseif($st === 'active')
-                                                                 <div class="d-flex flex-column gap-2" style="width:fit-content;">
-                                                                     @if($pendingStage2Payment && $stage2ProofPath)
-                                                                         <div class="d-flex flex-column gap-1 p-2 border border-info rounded bg-info-subtle" style="min-width: 140px;">
-                                                                             <span class="small text-dark fw-bold d-block" style="font-size: 10px;">Tahap 2 Manual:</span>
-                                                                             <a href="{{ Storage::disk('public')->url($stage2ProofPath) }}"
-                                                                                target="_blank"
-                                                                                class="btn btn-xs btn-outline-secondary py-0 px-2 mb-1 bg-white" style="font-size:11px;width:fit-content;">
-                                                                                 <i class="bi bi-image me-1"></i>Bukti T2
-                                                                             </a>
-                                                                             <div class="d-flex gap-1">
-                                                                                 <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
-                                                                                     data-bs-toggle="modal"
-                                                                                     data-bs-target="#approveModal"
-                                                                                     data-reg-id="{{ $reg->id }}"
-                                                                                     data-event-id="{{ $event->id }}"
-                                                                                     data-user-name="{{ $reg->user->name ?? '-' }}">
-                                                                                     <i class="bi bi-check2"></i> OK
-                                                                                 </button>
-                                                                                 <button type="button" class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;"
-                                                                                     data-bs-toggle="modal"
-                                                                                     data-bs-target="#rejectModal"
-                                                                                     data-reg-id="{{ $reg->id }}"
-                                                                                     data-event-id="{{ $event->id }}"
-                                                                                     data-user-name="{{ $reg->user->name ?? '-' }}">
-                                                                                     <i class="bi bi-x"></i> Reject
-                                                                                 </button>
+                                                                @elseif($st === 'active')
+                                                                     <div class="d-flex flex-column gap-2" style="width:fit-content;">
+                                                                         @if($pendingStage2Payment && $stage2ProofPath)
+                                                                             <div class="d-flex flex-column gap-1 p-2 border border-info rounded bg-info-subtle" style="min-width: 140px;">
+                                                                                 <span class="small text-dark fw-bold d-block" style="font-size: 10px;">Tahap 2 Manual:</span>
+                                                                                 <a href="{{ Storage::disk('public')->url($stage2ProofPath) }}"
+                                                                                    target="_blank"
+                                                                                    class="btn btn-xs btn-outline-secondary py-0 px-2 mb-1 bg-white" style="font-size:11px;width:fit-content;">
+                                                                                     <i class="bi bi-image me-1"></i>Bukti T2
+                                                                                 </a>
+                                                                                 <div class="d-flex gap-1">
+                                                                                     <button type="button" class="btn btn-xs btn-success py-0 px-2" style="font-size:11px;"
+                                                                                         data-bs-toggle="modal"
+                                                                                         data-bs-target="#approveModal"
+                                                                                         data-reg-id="{{ $reg->id }}"
+                                                                                         data-event-id="{{ $event->id }}"
+                                                                                         data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                                         <i class="bi bi-check2"></i> OK
+                                                                                     </button>
+                                                                                     <button type="button" class="btn btn-xs btn-danger py-0 px-2" style="font-size:11px;"
+                                                                                         data-bs-toggle="modal"
+                                                                                         data-bs-target="#rejectModal"
+                                                                                         data-reg-id="{{ $reg->id }}"
+                                                                                         data-event-id="{{ $event->id }}"
+                                                                                         data-user-name="{{ $reg->user->name ?? '-' }}">
+                                                                                         <i class="bi bi-x"></i> Reject
+                                                                                     </button>
+                                                                                 </div>
                                                                              </div>
-                                                                         </div>
-                                                                     @endif
-                                                                     <div class="d-flex align-items-center gap-1">
-                                                                         @php
-                                                                             $attendedDays = $reg->dailyAttendances->pluck('day_number')->toArray();
-                                                                             $totalEventDays = max(1, count($dailyQrs));
-                                                                         @endphp
-                                                                         @if(strtolower(trim($event->jenis ?? '')) !== 'lomba')
-                                                                         <button class="btn btn-xs btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
-                                                                                 type="button"
-                                                                                 data-bs-toggle="modal"
-                                                                                 data-bs-target="#presenceModal"
-                                                                                 data-reg-id="{{ $reg->id }}"
-                                                                                 data-user-name="{{ $reg->user->name ?? '-' }}"
-                                                                                 data-attended-days="{{ json_encode($attendedDays) }}"
-                                                                                 data-total-days="{{ $totalEventDays }}"
-                                                                                 data-reg-status-yes="{{ $reg->attendance_status === 'yes' ? 1 : 0 }}"
-                                                                                 style="font-size:11px; height: 22px; line-height: 22px;">
-                                                                             <i class="bi bi-calendar-check"></i> Presensi
-                                                                         </button>
                                                                          @endif
-                                                                         <form method="POST" action="{{ route('admin.events.registrations.cancel', [$event, $reg]) }}" class="d-inline m-0">
-                                                                             @csrf
-                                                                             @method('PATCH')
-                                                                             <button type="submit" class="btn btn-xs btn-danger text-white py-0 px-2 fw-semibold" style="font-size:11px; height: 22px; line-height: 22px;"
-                                                                                 onclick="return confirm('Batalkan approval ini? Status akan kembali ke pending.')">
-                                                                                 <i class="bi bi-arrow-counterclockwise"></i> Batal ACC
+                                                                         <div class="d-flex align-items-center gap-1">
+                                                                             @php
+                                                                                 $attendedDays = $reg->dailyAttendances->pluck('day_number')->toArray();
+                                                                                 $totalEventDays = max(1, count($dailyQrs));
+                                                                             @endphp
+                                                                             @if(strtolower(trim($event->jenis ?? '')) !== 'lomba')
+                                                                             <button class="btn btn-xs btn-outline-primary py-0 px-2 d-flex align-items-center gap-1"
+                                                                                     type="button"
+                                                                                     data-bs-toggle="modal"
+                                                                                     data-bs-target="#presenceModal"
+                                                                                     data-reg-id="{{ $reg->id }}"
+                                                                                     data-user-name="{{ $reg->user->name ?? '-' }}"
+                                                                                     data-attended-days="{{ json_encode($attendedDays) }}"
+                                                                                     data-total-days="{{ $totalEventDays }}"
+                                                                                     data-reg-status-yes="{{ $reg->attendance_status === 'yes' ? 1 : 0 }}"
+                                                                                     style="font-size:11px; height: 22px; line-height: 22px;">
+                                                                                 <i class="bi bi-calendar-check"></i> Presensi
                                                                              </button>
-                                                                         </form>
+                                                                             @endif
+                                                                             <form method="POST" action="{{ route('admin.events.registrations.cancel', [$event, $reg]) }}" class="d-inline m-0">
+                                                                                 @csrf
+                                                                                 @method('PATCH')
+                                                                                 <button type="submit" class="btn btn-xs btn-danger text-white py-0 px-2 fw-semibold" style="font-size:11px; height: 22px; line-height: 22px;"
+                                                                                     onclick="return confirm('Batalkan approval ini? Status akan kembali ke pending.')">
+                                                                                     <i class="bi bi-arrow-counterclockwise"></i> Batal ACC
+                                                                                 </button>
+                                                                             </form>
+                                                                         </div>
                                                                      </div>
-                                                                 </div>
-                                                            @else
-                                                                <span class="text-muted small">-</span>
-                                                            @endif
+                                                                @elseif(empty($reg->payment_proof))
+                                                                     <span class="text-muted small">-</span>
+                                                                @endif
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     @endforeach
