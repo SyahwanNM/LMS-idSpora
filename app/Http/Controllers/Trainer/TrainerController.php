@@ -799,7 +799,16 @@ class TrainerController extends Controller
                 $statusFromData = trim((string) data_get($notification->data, 'invitation_status', ''));
                 $statusFromColumn = trim((string) ($notification->invitation_status ?? ''));
                 $effectiveStatus = $statusFromData !== '' ? $statusFromData : ($statusFromColumn !== '' ? $statusFromColumn : 'pending');
-                return $effectiveStatus === 'pending';
+                if ($effectiveStatus !== 'pending') return false;
+
+                $entityType = (string) data_get($notification->data, 'entity_type', '');
+                $entityId = (int) data_get($notification->data, 'entity_id', 0);
+                if ($entityType === 'event' || $notification->type === 'event_invitation') {
+                    return $entityId > 0 && Event::where('id', $entityId)->exists();
+                } elseif ($entityType === 'course' || $notification->type === 'course_invitation') {
+                    return $entityId > 0 && Course::where('id', $entityId)->exists();
+                }
+                return true;
             })
             ->take(5)
             ->values();
@@ -812,7 +821,16 @@ class TrainerController extends Controller
             ->get()
             ->filter(function ($notification) {
                 $status = (string) data_get($notification->data, 'invitation_status', 'pending');
-                return $status === 'pending';
+                if ($status !== 'pending') return false;
+
+                $entityType = (string) data_get($notification->data, 'entity_type', '');
+                $entityId = (int) data_get($notification->data, 'entity_id', 0);
+                if ($entityType === 'event' || $notification->type === 'event_invitation') {
+                    return $entityId > 0 && Event::where('id', $entityId)->exists();
+                } elseif ($entityType === 'course' || $notification->type === 'course_invitation') {
+                    return $entityId > 0 && Course::where('id', $entityId)->exists();
+                }
+                return true;
             })
             ->take(4)
             ->values();
@@ -826,7 +844,16 @@ class TrainerController extends Controller
                 $statusFromData = trim((string) data_get($notification->data, 'invitation_status', ''));
                 $statusFromColumn = trim((string) ($notification->invitation_status ?? ''));
                 $effectiveStatus = $statusFromData !== '' ? $statusFromData : ($statusFromColumn !== '' ? $statusFromColumn : 'pending');
-                return $effectiveStatus === 'pending';
+                if ($effectiveStatus !== 'pending') return false;
+
+                $entityType = (string) data_get($notification->data, 'entity_type', '');
+                $entityId = (int) data_get($notification->data, 'entity_id', 0);
+                if ($entityType === 'event' || $notification->type === 'event_invitation') {
+                    return $entityId > 0 && Event::where('id', $entityId)->exists();
+                } elseif ($entityType === 'course' || $notification->type === 'course_invitation') {
+                    return $entityId > 0 && Course::where('id', $entityId)->exists();
+                }
+                return true;
             })
             ->count();
 
@@ -835,8 +862,11 @@ class TrainerController extends Controller
             ->whereIn('status', ['sent', 'published'])
             ->with('certifiable')
             ->latest('issued_at')
-            ->limit(3)
-            ->get();
+            ->limit(10)
+            ->get()
+            ->filter(fn($cert) => $cert->certifiable !== null)
+            ->take(3)
+            ->values();
 
         foreach ($teachingHistory as $cert) {
             $model = $cert->certifiable;
@@ -850,6 +880,7 @@ class TrainerController extends Controller
         }
 
         $activeAssignmentItems = TrainerAssignment::query()
+            ->whereHas('event')
             ->where('trainer_id', $user->id)
             ->where('status', 'accepted')
             ->with([

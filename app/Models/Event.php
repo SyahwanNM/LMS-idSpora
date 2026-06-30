@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Storage;
 class Event extends Model
 {
     use SoftDeletes;
+
+    protected static function booted()
+    {
+        static::deleting(function ($event) {
+            EventExpense::where('event_id', $event->id)->forceDelete();
+        });
+    }
+
     protected $fillable = [
         'trainer_id',
         'title',

@@ -35,7 +35,7 @@ class FinanceController extends Controller
         // Approved Expenses
         $totalExpenses = Expense::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
         $totalTrainerPayments = TrainerPayment::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
-        $totalEventExpenses = \App\Models\EventExpense::where('status', 'approved')->sum('total');
+        $totalEventExpenses = \App\Models\EventExpense::whereHas('event')->where('status', 'approved')->sum('total');
         
         $pendapatanBersih = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPayments - $totalEventExpenses;
 
@@ -66,13 +66,13 @@ class FinanceController extends Controller
             ->whereMonth('expense_date', $thisMonth)->whereYear('expense_date', $thisYear)->sum('amount');
         $totalExpenseThisMonth += TrainerPayment::where(function($q) { $q->where('status','approved')->orWhereNull('status'); })
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('amount');
-        $totalExpenseThisMonth += \App\Models\EventExpense::where('status','approved')
+        $totalExpenseThisMonth += \App\Models\EventExpense::whereHas('event')->where('status','approved')
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('total');
 
         // 6. Pending Expenses Count (Pengeluaran menunggu persetujuan)
         $pendingExpensesCount = Expense::where('status', 'pending')->count()
             + TrainerPayment::where('status', 'pending')->count()
-            + \App\Models\EventExpense::where('status', 'pending')->count();
+            + \App\Models\EventExpense::whereHas('event')->where('status', 'pending')->count();
 
         // 7. Pending Withdrawals
         $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
@@ -217,7 +217,7 @@ class FinanceController extends Controller
             })
             ->get();
 
-        $eventExpenses = \App\Models\EventExpense::with('event')
+        $eventExpenses = \App\Models\EventExpense::whereHas('event')->with('event')
             ->whereBetween('created_at', [$start, $end])
             ->where('status', 'approved')
             ->get();
@@ -733,7 +733,7 @@ class FinanceController extends Controller
         $paidCommissions  = \App\Models\Withdrawal::where('status', 'approved')->sum('amount');
         $totalExpenses    = \App\Models\Expense::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
         $totalTrainerPay  = \App\Models\TrainerPayment::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
-        $totalEventExp    = \App\Models\EventExpense::where('status', 'approved')->sum('total');
+        $totalEventExp    = \App\Models\EventExpense::whereHas('event')->where('status', 'approved')->sum('total');
 
         $currentBalance = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPay - $totalEventExp;
 
@@ -774,7 +774,7 @@ class FinanceController extends Controller
     {
         $wQuery = \App\Models\Withdrawal::with('user');
         $tpQuery = \App\Models\TrainerPayment::with('trainer');
-        $eeQuery = \App\Models\EventExpense::with('event');
+        $eeQuery = \App\Models\EventExpense::whereHas('event')->with('event');
         $geQuery = \App\Models\Expense::query();
 
         if ($request->filled('month')) {

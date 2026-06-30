@@ -68,13 +68,13 @@ class TrainerManagementController extends Controller
                 });
         })->count();
 
-        $pendingEventCount = EventTrainerModule::where('status', 'pending_review')->count();
+        $pendingEventCount = EventTrainerModule::whereHas('event')->where('status', 'pending_review')->count();
         $pendingReviews = $pendingCourseCount + $pendingEventCount;
 
         $approvedMaterials = Course::whereIn('status', ['approved', 'active'])->count()
-            + EventTrainerModule::where('status', 'approved')->count();
+            + EventTrainerModule::whereHas('event')->where('status', 'approved')->count();
         $rejectedMaterials = Course::where('status', 'rejected')->count()
-            + EventTrainerModule::where('status', 'rejected')->count();
+            + EventTrainerModule::whereHas('event')->where('status', 'rejected')->count();
 
         $approvalTotal = $pendingReviews + $approvedMaterials + $rejectedMaterials;
         $approvalStats = [
@@ -92,29 +92,29 @@ class TrainerManagementController extends Controller
         $eventLast30 = Event::where('created_at', '>=', now()->subDays(30))->count();
         $eventPrev30 = Event::whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])->count();
 
-        $pendingLast7 = CourseModule::where('review_status', 'pending_review')
+        $pendingLast7 = CourseModule::whereHas('course')->where('review_status', 'pending_review')
             ->where('updated_at', '>=', now()->subDays(7))
             ->count()
-            + EventTrainerModule::where('status', 'pending_review')
+            + EventTrainerModule::whereHas('event')->where('status', 'pending_review')
                 ->where('created_at', '>=', now()->subDays(7))
                 ->count();
-        $pendingPrev7 = CourseModule::where('review_status', 'pending_review')
+        $pendingPrev7 = CourseModule::whereHas('course')->where('review_status', 'pending_review')
             ->whereBetween('updated_at', [now()->subDays(14), now()->subDays(7)])
             ->count()
-            + EventTrainerModule::where('status', 'pending_review')
+            + EventTrainerModule::whereHas('event')->where('status', 'pending_review')
                 ->whereBetween('created_at', [now()->subDays(14), now()->subDays(7)])
                 ->count();
 
         $approvedLast30 = Course::whereIn('status', ['approved', 'active'])
             ->where('updated_at', '>=', now()->subDays(30))
             ->count()
-            + EventTrainerModule::where('status', 'approved')
+            + EventTrainerModule::whereHas('event')->where('status', 'approved')
                 ->where('updated_at', '>=', now()->subDays(30))
                 ->count();
         $approvedPrev30 = Course::whereIn('status', ['approved', 'active'])
             ->whereBetween('updated_at', [now()->subDays(60), now()->subDays(30)])
             ->count()
-            + EventTrainerModule::where('status', 'approved')
+            + EventTrainerModule::whereHas('event')->where('status', 'approved')
                 ->whereBetween('updated_at', [now()->subDays(60), now()->subDays(30)])
                 ->count();
 
@@ -173,7 +173,8 @@ class TrainerManagementController extends Controller
             ->take(80)
             ->get();
         $courseInvites = $courseInvites->filter(fn($invite) => data_get($invite->data, 'entity_type') === 'course'
-            && !empty(data_get($invite->data, 'due_at')));
+            && !empty(data_get($invite->data, 'due_at'))
+            && Course::where('id', (int) data_get($invite->data, 'entity_id'))->exists());
 
         $courseIds = $courseInvites
             ->map(fn($invite) => (int) data_get($invite->data, 'entity_id'))
@@ -325,10 +326,10 @@ class TrainerManagementController extends Controller
         $courseSeries = $chartDays->map(fn($day) => Course::whereDate('created_at', $day)->count());
         $eventSeries = $chartDays->map(fn($day) => Event::whereDate('created_at', $day)->count());
         $materialSeries = $chartDays->map(function ($day) {
-            $courseCount = CourseModule::where('review_status', 'pending_review')
+            $courseCount = CourseModule::whereHas('course')->where('review_status', 'pending_review')
                 ->whereDate('updated_at', $day)
                 ->count();
-            $eventCount = EventTrainerModule::where('status', 'pending_review')
+            $eventCount = EventTrainerModule::whereHas('event')->where('status', 'pending_review')
                 ->whereDate('created_at', $day)
                 ->count();
             return $courseCount + $eventCount;
@@ -337,7 +338,7 @@ class TrainerManagementController extends Controller
             $courseCount = Course::whereIn('status', ['approved', 'active'])
                 ->whereDate('updated_at', $day)
                 ->count();
-            $eventCount = EventTrainerModule::where('status', 'approved')
+            $eventCount = EventTrainerModule::whereHas('event')->where('status', 'approved')
                 ->whereDate('updated_at', $day)
                 ->count();
             return $courseCount + $eventCount;
@@ -410,7 +411,7 @@ class TrainerManagementController extends Controller
         }
 
         // 1. Pending Course Modules & Event Modules list
-        $pendingCourseModules = CourseModule::with(['course', 'course.trainer'])
+        $pendingCourseModules = CourseModule::whereHas('course')->with(['course', 'course.trainer'])
             ->where('review_status', 'pending_review')
             ->whereNotNull('content_url')
             ->where('content_url', '!=', '')
@@ -427,7 +428,7 @@ class TrainerManagementController extends Controller
                 ];
             });
 
-        $pendingEventModulesList = EventTrainerModule::with(['event', 'trainer'])
+        $pendingEventModulesList = EventTrainerModule::whereHas('event')->with(['event', 'trainer'])
             ->where('status', 'pending_review')
             ->latest('created_at')
             ->get()
@@ -601,7 +602,9 @@ class TrainerManagementController extends Controller
             ->where('trainer_id', $trainer->id)
             ->latest('issued_at')
             ->latest('created_at')
-            ->get();
+            ->get()
+            ->filter(fn($cert) => $cert->certifiable !== null)
+            ->values();
 
         $courseReviews = \App\Models\Review::query()
             ->whereHas('course', function($q) use ($trainer) {

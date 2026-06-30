@@ -484,7 +484,7 @@ class CRMController extends Controller
                 if($dateFrom) $courseReviewsQuery->whereDate('created_at', '>=', $dateFrom);
                 if($dateTo) $courseReviewsQuery->whereDate('created_at', '<=', $dateTo);
                 
-                $courseReviews = $courseReviewsQuery->orderBy('created_at', 'desc')->get();
+                $courseReviews = (clone $courseReviewsQuery)->orderBy('created_at', 'desc')->get();
 
                 $courseRatingDistributionDetail = (clone $courseReviewsQuery)
                     ->select('rating', DB::raw('count(*) as count'))
