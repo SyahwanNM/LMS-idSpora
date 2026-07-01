@@ -105,12 +105,21 @@
                             <span class="input-group-text">Rp</span>
                             <input type="number" class="form-control" id="withdrawAmount" name="amount" placeholder="0">
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
                             <small class="text-muted fw-lighter">Minimal Rp 50.000</small>
-                            <button type="button" class="btn btn-link btn-sm text-primary p-0"
-        onclick="setWithdrawAll({{ auth()->user()->wallet_balance ?? 0 }})">
-        Tarik Semua
-    </button>
+                            <button type="button" class="btn btn-link btn-sm text-primary p-0 fw-medium text-decoration-none"
+                                onclick="setWithdrawAll({{ max(0, (auth()->user()->wallet_balance ?? 0) - 20000) }})">
+                                Tarik Semua
+                            </button>
+                        </div>
+                        <div class="alert alert-light border border-light-subtle rounded-3 p-3 mb-3" style="font-size: 0.75rem; color: #475569; background-color: #f8fafc;">
+                            <div class="d-flex gap-2">
+                                <i class="bi bi-info-circle-fill text-warning fs-6"></i>
+                                <ul class="mb-0 ps-3 fw-light" style="line-height: 1.4;">
+                                    <li>Biaya admin Rp <strong>3.000</strong> per transaksi (potong dari jumlah penarikan).</li>
+                                    <li>Wajib menyisakan minimal <strong>Rp 20.000</strong> di saldo Anda.</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -169,9 +178,24 @@
                                 <div class="col-5 text-muted small">No. Rekening</div>
                                 <div class="col-7 fw-semibold text-end" id="confirmRekening">Unknown</div>
                             </div>
-                            <div class="row">
+                            <div class="row mb-2">
                                 <div class="col-5 text-muted small">Atas Nama</div>
                                 <div class="col-7 fw-semibold text-end" id="confirmName">Unknown</div>
+                            </div>
+                            <hr class="my-2" style="border-top: 1px dashed #ccc;">
+                            <div class="row mb-1">
+                                <div class="col-5 text-muted small">Nominal Penarikan</div>
+                                <div class="col-7 fw-semibold text-end text-dark" id="confirmGrossAmount">Rp 0</div>
+                            </div>
+                            <div class="row mb-1">
+                                <div class="col-5 text-muted small">Biaya Admin</div>
+                                <div class="col-7 fw-semibold text-end">
+                                    <span class="text-danger" style="width: auto !important; font-size: inherit;">- Rp 3.000</span>
+                                </div>
+                            </div>
+                            <div class="row border-top border-1">
+                                <div class="col-5 text-muted small">Total Diterima</div>
+                                <div class="col-7 fw-bold text-end text-success" id="confirmNetAmount">Rp 0</div>
                             </div>
                         </div>
 
@@ -242,6 +266,10 @@
         const rekening = document.getElementById('account_number')?.value;
         const name = document.getElementById('account_holder')?.value;
 
+        const adminFee = 3000;
+        const minHolding = 20000;
+        const maxWithdrawAllowed = maxBalance - minHolding;
+
         // 1. Validasi form kosong
         if(!amount || !bank || !rekening || !name) {
             alert("Mohon lengkapi semua data penarikan.");
@@ -254,22 +282,33 @@
             return;
         }
 
-        // 3. TAMBAHAN: Validasi saldo cukup atau tidak
-        if(parseInt(amount) > maxBalance) {
-            alert("Maaf, saldo kamu tidak mencukupi untuk penarikan ini. Saldo maksimal: Rp " + new Intl.NumberFormat('id-ID').format(maxBalance));
+        if(parseInt(amount) > maxWithdrawAllowed) {
+            alert("Maaf, penarikan gagal. Anda wajib menyisakan dana minimal Rp " + new Intl.NumberFormat('id-ID').format(minHolding) + " di saldo Anda. Maksimal penarikan: Rp " + new Intl.NumberFormat('id-ID').format(Math.max(0, maxWithdrawAllowed)));
             return;
         }
 
-        const formattedAmount = new Intl.NumberFormat('id-ID', { 
+        const netAmount = Number(amount) - adminFee;
+
+        const formattedGross = new Intl.NumberFormat('id-ID', { 
             style: 'currency', 
             currency: 'IDR',
             minimumFractionDigits: 0
         }).format(Number(amount));
 
-        document.getElementById('confirmAmountDisplay').innerText = formattedAmount;
+        const formattedNet = new Intl.NumberFormat('id-ID', { 
+            style: 'currency', 
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(netAmount);
+
+        document.getElementById('confirmAmountDisplay').innerText = formattedGross; // Tetap tampilkan gross di judul utama konfirmasi
         document.getElementById('confirmBank').innerText = bank;
         document.getElementById('confirmRekening').innerText = rekening;
         document.getElementById('confirmName').innerText = name;
+
+        // Breakdown detail biaya
+        document.getElementById('confirmGrossAmount').innerText = formattedGross;
+        document.getElementById('confirmNetAmount').innerText = formattedNet;
 
         document.getElementById('stepInput').style.display = 'none';
         document.getElementById('stepConfirm').style.display = 'block';

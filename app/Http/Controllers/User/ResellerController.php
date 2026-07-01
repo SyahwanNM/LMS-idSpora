@@ -1006,15 +1006,25 @@ class ResellerController extends Controller
         $user = Auth::user();
         $accountNumber = str_replace(' ', '', $request->account_number);
 
-        // 2. Cek kecukupan saldo user
-        if ($user->wallet_balance < $request->amount) {
+        $adminFee = 3000;
+        $minHolding = 20000;
+
+        // 2. Cek kecukupan saldo user dengan ketentuan dana mengendap
+        if ($user->wallet_balance - $request->amount < $minHolding) {
             return response()->json([
-                'message' => 'Saldo Anda tidak mencukupi untuk penarikan ini.'
+                'message' => 'Penarikan gagal. Saldo Anda setelah penarikan harus menyisakan dana mengendap minimal Rp ' . number_format($minHolding, 0, ',', '.') . '.'
+            ], 400);
+        }
+
+        $netAmount = $request->amount - $adminFee;
+        if ($netAmount <= 0) {
+            return response()->json([
+                'message' => 'Jumlah penarikan harus lebih besar dari biaya admin.'
             ], 400);
         }
 
         // 3. Proses Transaksi (Database Transaction)
-        DB::transaction(function () use ($request, $user, $accountNumber) {
+        DB::transaction(function () use ($request, $user, $accountNumber, $adminFee, $netAmount) {
 
             // A. Kurangi saldo user (Wallet Balance)
             $user->wallet_balance = $user->wallet_balance - $request->amount;
@@ -1024,6 +1034,8 @@ class ResellerController extends Controller
             Withdrawal::create([
                 'user_id' => $user->id,
                 'amount' => $request->amount,
+                'admin_fee' => $adminFee,
+                'net_amount' => $netAmount,
                 'bank_name' => $request->bank_name,
                 'account_number' => $accountNumber,
                 'account_holder' => $request->account_holder,
