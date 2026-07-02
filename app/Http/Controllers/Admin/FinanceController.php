@@ -1047,4 +1047,49 @@ class FinanceController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+    public function invoiceHistory(Request $request)
+    {
+        $query = \App\Models\ManualPayment::with(['user', 'event', 'course'])
+            ->where('status', 'settled');
+
+        // Filter by month
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        // Filter by year
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        // Filter by type: event / course / other
+        if ($request->filled('type')) {
+            if ($request->type === 'event') {
+                $query->whereNotNull('event_id');
+            } elseif ($request->type === 'course') {
+                $query->whereNotNull('course_id');
+            } elseif ($request->type === 'other') {
+                $query->whereNull('event_id')->whereNull('course_id');
+            }
+        }
+
+        $invoices = $query->orderByDesc('created_at')
+            ->paginate(20)
+            ->appends($request->except('page'));
+
+        // Summary stats (all-time, unaffected by filters)
+        $totalInvoices = \App\Models\ManualPayment::where('status', 'settled')->count();
+        $totalRevenue  = \App\Models\ManualPayment::where('status', 'settled')->sum('amount');
+        $filteredTotal = (clone $query)->sum('amount');
+        $filteredCount = $invoices->total();
+
+        $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
+
+        return view('admin.finance.invoice_history', compact(
+            'invoices',
+            'totalInvoices',
+            'totalRevenue',
+            'filteredTotal',
+            'filteredCount',
+            'pendingWithdrawalsCount'
+        ));
+    }
 }

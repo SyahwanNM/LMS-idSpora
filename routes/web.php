@@ -396,6 +396,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
     Route::post('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
 
+    // Riwayat Invoice User (dapat diunduh kapan saja)
+    Route::get('/profile/invoice-history', [\App\Http\Controllers\User\ProfileController::class, 'invoiceHistory'])->name('profile.invoice-history');
+
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\User\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
     Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\User\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
@@ -539,7 +542,11 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
+        // History Invoice & Receipt (admin finance)
+        Route::get('/admin/finance/invoice-history', [\App\Http\Controllers\Admin\FinanceController::class, 'invoiceHistory'])->name('admin.finance.invoice-history');
+
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
+
         Route::get('/admin/withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('admin.withdrawals.index');
         Route::post('/admin/withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
         Route::post('/admin/withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
