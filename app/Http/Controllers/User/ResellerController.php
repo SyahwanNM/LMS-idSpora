@@ -829,11 +829,19 @@ class ResellerController extends Controller
         ));
     }
 
-    public function activate()
+    public function activate(Request $request)
     {
         if ($this->isSuspended()) {
             return back()->with('error', 'Akun reseller Anda ditangguhkan.');
         }
+
+        $request->validate([
+            'agree_tos' => 'required|accepted',
+        ], [
+            'agree_tos.accepted' => 'Anda harus menyetujui Syarat dan Ketentuan untuk mengaktifkan akun Reseller.',
+            'agree_tos.required' => 'Anda harus menyetujui Syarat dan Ketentuan untuk mengaktifkan akun Reseller.',
+        ]);
+
         $user = Auth::user();
 
         // Validasi dan generate kode referral unik jika belum memilikinya
@@ -1001,6 +1009,7 @@ class ResellerController extends Controller
             'bank_name' => 'required|string',
             'account_number' => 'required|string',
             'account_holder' => 'required|string',
+            'save_account' => 'nullable|boolean',
         ]);
 
         $user = Auth::user();
@@ -1028,6 +1037,14 @@ class ResellerController extends Controller
 
             // A. Kurangi saldo user (Wallet Balance)
             $user->wallet_balance = $user->wallet_balance - $request->amount;
+            
+            // Simpan info rekening ke profil user jika dicentang
+            if ($request->save_account) {
+                $user->bank_name = $request->bank_name;
+                $user->bank_account_number = $accountNumber;
+                $user->bank_account_holder = $request->account_holder;
+            }
+            
             $user->save();
 
             // B. Simpan data ke tabel withdrawals

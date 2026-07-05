@@ -45,6 +45,23 @@
                     </h2>
                 </div>
 
+                {{-- Rekening Tersimpan --}}
+                @if(auth()->user()->bank_account_number)
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light border border-light-subtle rounded-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-credit-card-2-front text-muted fs-5"></i>
+                        <div>
+                            <span class="d-block text-muted" style="font-size: 0.7rem; font-weight: 500; line-height: 1;">Rekening Tersimpan</span>
+                            <span class="fw-semibold text-dark" style="font-size: 0.8rem;">{{ auth()->user()->bank_name }} - {{ auth()->user()->bank_account_number }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-warning fw-semibold rounded-pill px-3 py-1" style="font-size: 0.75rem;"
+                        onclick="fillSavedAccount('{{ auth()->user()->bank_name }}', '{{ auth()->user()->bank_account_number }}', '{{ auth()->user()->bank_account_holder }}')">
+                        Gunakan
+                    </button>
+                </div>
+                @endif
+
                 {{-- Metode --}}
                 {{-- <div class="mb-3">
                     <label class="form-label small">Metode Penarikan</label>
@@ -99,6 +116,14 @@
                         <input type="text" class="form-control bg-light border-0 py-2" id="account_holder"
                             name="account_holder" placeholder="Nama Pemilik" required>
                     </div>
+                    <div class="col-12 mt-1 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="save_account" name="save_account" value="1">
+                            <label class="form-check-label small text-muted fw-light" for="save_account">
+                                Simpan rekening ini untuk penarikan berikutnya
+                            </label>
+                        </div>
+                    </div>
                     <div class="mb-2">
                         <label for="withdrawAmount" class="form-label fw-light small text-muted">Jumlah Penarikan</label>
                         <div class="input-group">
@@ -116,7 +141,7 @@
                             <div class="d-flex gap-2">
                                 <i class="bi bi-info-circle-fill text-warning fs-6"></i>
                                 <ul class="mb-0 ps-3 fw-light" style="line-height: 1.4;">
-                                    <li>Biaya admin Rp <strong>3.000</strong> per transaksi (potong dari jumlah penarikan).</li>
+                                    <li>Biaya admin Rp <strong>3.000</strong> per transaksi.</li>
                                     <li>Wajib menyisakan minimal <strong>Rp 20.000</strong> di saldo Anda.</li>
                                 </ul>
                             </div>
@@ -157,7 +182,6 @@
                         <h1 class="modal-title fs-5 fw-bold text-center w-100">
                             Konfirmasi Penarikan
                         </h1>
-                        <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close" style="background: transparent url('data:image/svg+xml,%3csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22%23000%22%3e%3cpath d=%22M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z%22/%3e%3c/svg%3e') center/1em auto no-repeat !important; border: none !important; padding: 0.5rem !important; opacity: 0.5 !important; box-shadow: none !important; width: 1em !important; height: 1em !important; min-width: auto !important; min-height: auto !important; box-sizing: content-box !important;"></button>
                     </div>
 
                     <div class="modal-body text-center pt-3">
@@ -249,6 +273,25 @@
             });
         }
     });
+
+    function fillSavedAccount(bankName, accountNumber, accountHolder) {
+        const bankSelect = document.getElementById('bank_name');
+        const numberInput = document.getElementById('account_number');
+        const holderInput = document.getElementById('account_holder');
+
+        if (bankSelect) {
+            bankSelect.value = bankName;
+            bankSelect.classList.remove('text-muted');
+        }
+        if (numberInput) {
+            let formatted = accountNumber.replace(/\D/g, '');
+            let spaced = formatted.match(/.{1,4}/g)?.join(' ') || formatted;
+            numberInput.value = spaced;
+        }
+        if (holderInput) {
+            holderInput.value = accountHolder;
+        }
+    }
 
     // Menyimpan saldo user di variabel JS agar mudah diakses
     const maxBalance = {{ auth()->user()->wallet_balance ?? 0 }};
