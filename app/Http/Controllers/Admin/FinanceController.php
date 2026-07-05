@@ -35,7 +35,7 @@ class FinanceController extends Controller
         // Approved Expenses
         $totalExpenses = Expense::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
         $totalTrainerPayments = TrainerPayment::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
-        $totalEventExpenses = \App\Models\EventExpense::where('status', 'approved')->sum('total');
+        $totalEventExpenses = \App\Models\EventExpense::whereHas('event')->where('status', 'approved')->sum('total');
         
         $pendapatanBersih = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPayments - $totalEventExpenses;
 
@@ -66,13 +66,13 @@ class FinanceController extends Controller
             ->whereMonth('expense_date', $thisMonth)->whereYear('expense_date', $thisYear)->sum('amount');
         $totalExpenseThisMonth += TrainerPayment::where(function($q) { $q->where('status','approved')->orWhereNull('status'); })
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('amount');
-        $totalExpenseThisMonth += \App\Models\EventExpense::where('status','approved')
+        $totalExpenseThisMonth += \App\Models\EventExpense::whereHas('event')->where('status','approved')
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('total');
 
         // 6. Pending Expenses Count (Pengeluaran menunggu persetujuan)
         $pendingExpensesCount = Expense::where('status', 'pending')->count()
             + TrainerPayment::where('status', 'pending')->count()
-            + \App\Models\EventExpense::where('status', 'pending')->count();
+            + \App\Models\EventExpense::whereHas('event')->where('status', 'pending')->count();
 
         // 7. Pending Withdrawals
         $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
@@ -217,7 +217,7 @@ class FinanceController extends Controller
             })
             ->get();
 
-        $eventExpenses = \App\Models\EventExpense::with('event')
+        $eventExpenses = \App\Models\EventExpense::whereHas('event')->with('event')
             ->whereBetween('created_at', [$start, $end])
             ->where('status', 'approved')
             ->get();
@@ -591,6 +591,10 @@ class FinanceController extends Controller
             return back()->with('error', 'Saldo trainer belum mencapai minimum pencairan Rp ' . number_format($minDisburse, 0, ',', '.'));
         }
 
+        if (empty($trainer->bank_name) || empty($trainer->bank_account_number)) {
+            return back()->with('error', 'Pencairan gagal. Trainer belum mengatur informasi rekening bank.');
+        }
+
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',
             'notes'            => 'nullable|string|max:500',
@@ -664,6 +668,10 @@ class FinanceController extends Controller
     {
         $payment = TrainerPayment::with('trainer')->findOrFail($paymentId);
 
+        if (!$payment->trainer || empty($payment->trainer->bank_name) || empty($payment->trainer->bank_account_number)) {
+            return back()->with('error', 'Pembayaran fee gagal. Trainer belum mengatur informasi rekening bank.');
+        }
+
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',
         ]);
@@ -725,7 +733,7 @@ class FinanceController extends Controller
         $paidCommissions  = \App\Models\Withdrawal::where('status', 'approved')->sum('amount');
         $totalExpenses    = \App\Models\Expense::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
         $totalTrainerPay  = \App\Models\TrainerPayment::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
-        $totalEventExp    = \App\Models\EventExpense::where('status', 'approved')->sum('total');
+        $totalEventExp    = \App\Models\EventExpense::whereHas('event')->where('status', 'approved')->sum('total');
 
         $currentBalance = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPay - $totalEventExp;
 
@@ -766,7 +774,7 @@ class FinanceController extends Controller
     {
         $wQuery = \App\Models\Withdrawal::with('user');
         $tpQuery = \App\Models\TrainerPayment::with('trainer');
-        $eeQuery = \App\Models\EventExpense::with('event');
+        $eeQuery = \App\Models\EventExpense::whereHas('event')->with('event');
         $geQuery = \App\Models\Expense::query();
 
         if ($request->filled('month')) {
@@ -1038,5 +1046,50 @@ class FinanceController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+    public function invoiceHistory(Request $request)
+    {
+        $query = \App\Models\ManualPayment::with(['user', 'event', 'course'])
+            ->where('status', 'settled');
+
+        // Filter by month
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        // Filter by year
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        // Filter by type: event / course / other
+        if ($request->filled('type')) {
+            if ($request->type === 'event') {
+                $query->whereNotNull('event_id');
+            } elseif ($request->type === 'course') {
+                $query->whereNotNull('course_id');
+            } elseif ($request->type === 'other') {
+                $query->whereNull('event_id')->whereNull('course_id');
+            }
+        }
+
+        $invoices = $query->orderByDesc('created_at')
+            ->paginate(20)
+            ->appends($request->except('page'));
+
+        // Summary stats (all-time, unaffected by filters)
+        $totalInvoices = \App\Models\ManualPayment::where('status', 'settled')->count();
+        $totalRevenue  = \App\Models\ManualPayment::where('status', 'settled')->sum('amount');
+        $filteredTotal = (clone $query)->sum('amount');
+        $filteredCount = $invoices->total();
+
+        $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
+
+        return view('admin.finance.invoice_history', compact(
+            'invoices',
+            'totalInvoices',
+            'totalRevenue',
+            'filteredTotal',
+            'filteredCount',
+            'pendingWithdrawalsCount'
+        ));
     }
 }

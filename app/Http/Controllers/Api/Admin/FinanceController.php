@@ -34,7 +34,7 @@ class FinanceController extends Controller
         $paidCommissions = Referral::where('status', 'paid')->sum('amount');
         $totalExpenses = Expense::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
         $totalTrainerPayments = TrainerPayment::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
-        $totalEventExpenses = EventExpense::where('status', 'approved')->sum('total');
+        $totalEventExpenses = EventExpense::whereHas('event')->where('status', 'approved')->sum('total');
         
         $pendapatanBersih = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPayments - $totalEventExpenses;
 
@@ -77,13 +77,13 @@ class FinanceController extends Controller
             ->whereMonth('expense_date', $thisMonth)->whereYear('expense_date', $thisYear)->sum('amount');
         $totalExpenseThisMonth += TrainerPayment::where(function($q) { $q->where('status','approved')->orWhereNull('status'); })
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('amount');
-        $totalExpenseThisMonth += EventExpense::where('status','approved')
+        $totalExpenseThisMonth += EventExpense::whereHas('event')->where('status','approved')
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('total');
 
         // Pending Expenses Counts
         $pendingExpensesCount = Expense::where('status', 'pending')->count()
             + TrainerPayment::where('status', 'pending')->count()
-            + EventExpense::where('status', 'pending')->count();
+            + EventExpense::whereHas('event')->where('status', 'pending')->count();
 
         $pendingWithdrawalsCount = Withdrawal::where('status', 'pending')->count();
 
@@ -296,7 +296,7 @@ class FinanceController extends Controller
     {
         $wQuery = Withdrawal::with('user');
         $tpQuery = TrainerPayment::with('trainer');
-        $eeQuery = EventExpense::with('event');
+        $eeQuery = EventExpense::whereHas('event')->with('event');
         $geQuery = Expense::query();
 
         if ($request->filled('month')) {
@@ -587,7 +587,7 @@ class FinanceController extends Controller
         foreach ($trainers as $t) {
             $t->total_paid = 0;
             $t->pending_payout = false;
-            $t->can_disburse = ($t->wallet_balance ?? 0) >= $minDisburse;
+            $t->can_disburse = ($t->wallet_balance ?? 0) >= $minDisburse && !empty($t->bank_name) && !empty($t->bank_account_number);
         }
 
         // Ended events that don't have fee payouts yet
@@ -654,6 +654,13 @@ class FinanceController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Saldo trainer belum mencapai minimum pencairan Rp ' . number_format($minDisburse, 0, ',', '.')
+            ], 400);
+        }
+
+        if (empty($trainer->bank_name) || empty($trainer->bank_account_number)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pencairan gagal. Trainer belum mengatur informasi rekening bank.'
             ], 400);
         }
 
@@ -765,6 +772,13 @@ class FinanceController extends Controller
                 'status' => 'error',
                 'message' => 'Permintaan pembayaran tidak ditemukan.'
             ], 404);
+        }
+
+        if (!$payment->trainer || empty($payment->trainer->bank_name) || empty($payment->trainer->bank_account_number)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembayaran fee gagal. Trainer belum mengatur informasi rekening bank.'
+            ], 400);
         }
 
         $validator = Validator::make($request->all(), [
@@ -892,7 +906,7 @@ class FinanceController extends Controller
             })
             ->get();
 
-        $eventExpenses = EventExpense::with('event')
+        $eventExpenses = EventExpense::whereHas('event')->with('event')
             ->whereBetween('created_at', [$start, $end])
             ->where('status', 'approved')
             ->get();

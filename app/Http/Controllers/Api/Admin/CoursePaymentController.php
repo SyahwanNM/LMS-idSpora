@@ -253,6 +253,9 @@ class CoursePaymentController extends Controller
 
     private function processReferralCommission(Course $course, ManualPayment $coursePayment): void
     {
+        if (!(bool) ($course->is_reseller_course ?? false)) {
+            return;
+        }
         if (empty($coursePayment->referral_code)) {
             return;
         }
@@ -262,7 +265,27 @@ class CoursePaymentController extends Controller
             return;
         }
 
-        $commissionAmount = ((float) $coursePayment->amount) * 0.10;
+        $totalReferrals = Referral::where('user_id', $referrer->id)->count();
+        if ($totalReferrals >= 151) {
+            $level = 'Gold';
+        } elseif ($totalReferrals >= 51) {
+            $level = 'Silver';
+        } else {
+            $level = 'Bronze';
+        }
+
+        $bronze = $course->reseller_commission_bronze ?? 10;
+        $silver = $course->reseller_commission_silver ?? 12;
+        $gold = $course->reseller_commission_gold ?? 15;
+
+        $pct = match ($level) {
+            'Gold' => $gold,
+            'Silver' => $silver,
+            default => $bronze,
+        };
+        $rate = ((float) $pct) / 100;
+
+        $commissionAmount = ((float) $coursePayment->amount) * $rate;
         if ($commissionAmount <= 0) {
             return;
         }
