@@ -18,9 +18,7 @@
     @include('partials.navbar-after-login')
     <div>
         <div class="row justify-content-center">
-
-            {{-- Bagian Teks & Tombol (Kanan di Desktop) --}}
-            <div class="col-md-7 p-5">
+            <div class="col-md-9 p-5">
                 <div class="text-start">
                     <span
                         class="badge bg-warning bg-opacity-25 text-warning-emphasis mb-3 px-3 py-2 rounded-pill fw-bold">
@@ -45,13 +43,78 @@
                         </li>
                     </ul>
 
-                    <form action="{{ route('reseller.activate') }}" method="POST">
+                    @if ($errors->any())
+                        <div class="alert alert-danger mb-3">
+                            <ul class="mb-0 small">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark mb-2">Syarat & Ketentuan Reseller</label>
+                        <div class="p-3 border rounded-3 bg-light text-muted small" style="max-height: 200px; overflow-y: scroll; text-align: justify; line-height: 1.6;">
+                            <p>Dengan mengaktifkan akun Reseller, pengguna menyatakan telah membaca, memahami, dan menyetujui seluruh syarat dan ketentuan berikut:</p>
+                            <ol class="ps-3 mb-3">
+                                <li class="mb-2">Program Reseller hanya dapat diikuti oleh pengguna yang telah memiliki akun aktif pada LMS idSpora.</li>
+                                <li class="mb-2">Setelah akun reseller diaktifkan, sistem akan membuat <strong>kode referral</strong> dan <strong>tautan referral</strong> yang bersifat unik.</li>
+                                <li class="mb-2">Reseller akan memperoleh komisi dari setiap transaksi pembelian program pelatihan yang dilakukan melalui kode atau tautan referral miliknya dengan status pembayaran <strong>berhasil</strong>.</li>
+                                <li class="mb-2">Besaran komisi untuk setiap program pelatihan akan ditampilkan pada halaman detail produk sebelum reseller mulai melakukan promosi.</li>
+                                <li class="mb-2">Pengajuan pencairan komisi (<em>withdraw</em>) hanya dapat dilakukan apabila saldo komisi telah mencapai minimal <strong>Rp50.000</strong>.</li>
+                                <li class="mb-2">Setiap pencairan komisi dikenakan <strong>biaya administrasi transfer sebesar Rp2.500</strong> yang akan dipotong langsung dari nominal pencairan dan ditampilkan sebelum reseller mengonfirmasi pengajuan <em>withdraw</em>.</li>
+                                <li class="mb-2">Reseller wajib mengisi data rekening bank yang benar dan masih aktif. Dana akan dikirim ke rekening yang tersimpan pada akun reseller. Kesalahan pengisian data rekening menjadi tanggung jawab reseller.</li>
+                                <li class="mb-2">
+                                    Reseller dilarang melakukan tindakan berikut:
+                                    <ul class="ps-3 mt-1" style="list-style-type: disc;">
+                                        <li>Membuat transaksi fiktif untuk memperoleh komisi.</li>
+                                        <li>Menggunakan akun ganda untuk memanipulasi transaksi.</li>
+                                        <li>Menggunakan bot, spam, atau metode promosi yang mengganggu pihak lain.</li>
+                                        <li>Memberikan informasi yang tidak benar mengenai program pelatihan idSpora.</li>
+                                        <li>Melakukan tindakan yang dapat merugikan idSpora maupun peserta pelatihan.</li>
+                                    </ul>
+                                </li>
+                                <li class="mb-2">
+                                    Apabila reseller terbukti melakukan pelanggaran sebagaimana disebutkan pada poin 8, idSpora berhak:
+                                    <ul class="ps-3 mt-1" style="list-style-type: disc;">
+                                        <li>Membatalkan komisi dari transaksi yang melanggar.</li>
+                                        <li>Menolak pengajuan pencairan komisi.</li>
+                                        <li>Menangguhkan akun reseller untuk sementara.</li>
+                                        <li>Menonaktifkan akun reseller secara permanen apabila pelanggaran dilakukan berulang atau terbukti merupakan tindakan kecurangan.</li>
+                                    </ul>
+                                </li>
+                                <li class="mb-2">Reseller dapat berhenti mengikuti Program Reseller kapan saja melalui pengajuan kepada administrator. Saldo komisi yang telah memenuhi syarat <em>withdraw</em> tetap dapat dicairkan sesuai ketentuan yang berlaku.</li>
+                            </ol>
+                            <p class="mb-0">Dengan mencentang kotak persetujuan, pengguna menyatakan telah membaca, memahami, dan menyetujui seluruh Syarat dan Ketentuan Program Reseller LMS idSpora.</p>
+                        </div>
+                    </div>
+
+                    <form action="{{ route('reseller.activate') }}" method="POST" id="activateForm">
                         @csrf
-                        <button type="submit" class="btn btn-warning w-100 py-3 rounded-3 fw-bold shadow-sm hover-scale">
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="agree_tos" name="agree_tos" value="1" required>
+                            <label class="form-check-label small text-secondary" for="agree_tos" style="cursor: pointer;">
+                                Saya telah membaca, memahami, dan menyetujui seluruh Syarat & Ketentuan di atas.
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 py-3 rounded-3 fw-bold shadow-sm hover-scale" id="submitBtn" disabled>
                             <i class="bi bi-magic me-2"></i> Generate Kode Referral Saya
                         </button>
                     </form>
                     <p class="text-center mt-3 small text-muted">Gratis, tanpa biaya pendaftaran!</p>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const checkbox = document.getElementById('agree_tos');
+                            const button = document.getElementById('submitBtn');
+                            if (checkbox && button) {
+                                checkbox.addEventListener('change', function() {
+                                    button.disabled = !this.checked;
+                                });
+                            }
+                        });
+                    </script>
                 </div>
             </div>
         </div>

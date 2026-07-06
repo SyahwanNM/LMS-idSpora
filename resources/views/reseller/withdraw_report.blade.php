@@ -89,7 +89,9 @@
                     <th>Pengguna</th>
                     <th>Bank Tujuan</th>
                     <th>Nomor Rekening</th>
-                    <th style="text-align: right;">Total Penarikan</th>
+                    <th style="text-align: right;">Nominal Penarikan</th>
+                    <th style="text-align: right;">Biaya Admin</th>
+                    <th style="text-align: right;">Bersih Diterima</th>
                     <th style="text-align: center;">Status</th>
                     <th>Tanggal Diproses</th>
                 </tr>
@@ -125,8 +127,14 @@
                         <div style="font-weight: bold; {{ $strikeStyle }}">{{ $maskedAccount }}</div>
                         <div style="color: #666; font-size: 11px; {{ $strikeStyle }}">A/n. {{ $wd->account_holder }}</div>
                     </td>
-                    <td style="text-align: right; font-weight: bold; {{ $isRejected ? 'text-decoration: line-through; opacity: 0.5; color: #dc3545;' : 'color: #198754;' }}">
+                    <td style="text-align: right; {{ $strikeStyle }}">
                         Rp {{ number_format($wd->amount, 0, ',', '.') }}
+                    </td>
+                    <td style="text-align: right; color: #666; {{ $strikeStyle }}">
+                        Rp {{ number_format($wd->admin_fee ?? 3000, 0, ',', '.') }}
+                    </td>
+                    <td style="text-align: right; font-weight: bold; {{ $isRejected ? 'text-decoration: line-through; opacity: 0.5; color: #dc3545;' : 'color: #198754;' }}">
+                        Rp {{ number_format($wd->net_amount ?? ($wd->amount - ($wd->admin_fee ?? 3000)), 0, ',', '.') }}
                     </td>
                     <td style="text-align: center;">
                         @if(strtolower($wd->status) == 'approved')
@@ -148,7 +156,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" style="text-align: center; color: #999; padding: 30px;">Belum ada riwayat penarikan dana.</td>
+                    <td colspan="10" style="text-align: center; color: #999; padding: 30px;">Belum ada riwayat penarikan dana.</td>
                 </tr>
                 @endforelse
             </tbody>

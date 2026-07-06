@@ -360,7 +360,7 @@
             </div>
 
             <!-- Cards Section -->
-            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-5 g-3 mb-4">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mb-4">
                 <!-- Card 1: Total Earnings -->
                 <div class="col animate-fade-in">
                     <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
@@ -444,28 +444,6 @@
                             </div>
                             <div class="mt-auto">
                                 <span class="text-success small fw-medium">+{{ $referralsThisMonth }} transaksi bulan ini</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 5: Conversion Rate -->
-                <div class="col animate-fade-in delay-4">
-                    <div class="card h-100 shadow-sm border-0 hover-card-up" style="border-radius: 16px;">
-                        <div class="card-body p-3 d-flex flex-column justify-content-between">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h6 class="text-muted small fw-medium mb-1 d-flex align-items-center gap-1" style="font-size: 0.8rem;">Conversion Rate
-                                        <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="Rasio pembelian dibanding total klik link." style="font-size: 0.75rem; cursor: help;"></i>
-                                    </h6>
-                                    <h4 class="fw-semibold mb-0 text-dark">{{ number_format($conversionRate, 1) }}%</h4>
-                                </div>
-                                <div class="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
-                                    <i class="bi bi-graph-up fs-5"></i>
-                                </div>
-                            </div>
-                            <div class="mt-auto">
-                                <span class="text-muted small">Rasio Klik-ke-Beli</span>
                             </div>
                         </div>
                     </div>
