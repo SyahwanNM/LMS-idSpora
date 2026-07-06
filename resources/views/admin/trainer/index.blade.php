@@ -60,7 +60,7 @@
             --dash-purple: #1e1b4b;
             --dash-blue: #1e1b4b;
             --dash-green: #10b981;
-            --dash-orange: #475569;
+            --dash-orange: #f59e0b;
             --dash-red: #f43f5e;
             --dash-muted: #64748b;
             --dash-soft: #f8fafc;
@@ -88,7 +88,7 @@
         /* Hero banner & Target widget */
         .hero-grid {
             display: grid;
-            grid-template-columns: 2.2fr 1fr;
+            grid-template-columns: 1fr;
             gap: 28px;
         }
         .welcome-card {
@@ -322,8 +322,8 @@
             box-shadow: 0 16px 36px -8px rgba(37, 99, 235, 0.08);
         }
         .metric-card-clean.theme-orange:hover {
-            border-color: rgba(71, 85, 105, 0.2);
-            box-shadow: 0 16px 36px -8px rgba(71, 85, 105, 0.08);
+            border-color: rgba(245, 158, 11, 0.2);
+            box-shadow: 0 16px 36px -8px rgba(245, 158, 11, 0.08);
         }
         .metric-card-clean.theme-green:hover {
             border-color: rgba(16, 185, 129, 0.2);
@@ -346,7 +346,7 @@
         }
         .metric-circle-icon.purple { background: #eff6ff; color: #1e1b4b; }
         .metric-circle-icon.blue { background: #eff6ff; color: #1e1b4b; }
-        .metric-circle-icon.orange { background: #f1f5f9; color: #475569; }
+        .metric-circle-icon.orange { background: #fef3c7; color: #d97706; }
         .metric-circle-icon.green { background: #ecfdf5; color: #10b981; }
         
         .metric-titles {
@@ -376,15 +376,7 @@
             color: #64748b;
             font-weight: 500;
         }
-        .metric-sparkline-container {
-            height: 32px;
-            width: 100%;
-            margin: 4px 0;
-        }
-        .metric-sparkline-svg {
-            width: 100%;
-            height: 100%;
-        }
+
         .metric-clean-change {
             font-size: 12px;
             font-weight: 700;
@@ -394,6 +386,7 @@
         }
         .metric-clean-change.up { color: #10b981; }
         .metric-clean-change.down { color: #f43f5e; }
+        .metric-clean-change.neutral { color: var(--dash-muted); }
 
         /* General Dash Card */
         .dash-card {
@@ -971,49 +964,6 @@
 @endpush
 
 @section('admin-trainer-content')
-    @php
-        // Premium wavy sparklines when actual data is flat (all Y values are equal)
-        $sparkCourse = $chartPoints['spark_course'] ?? '';
-        $yCourse = [];
-        foreach (explode(' ', $sparkCourse) as $p) {
-            $parts = explode(',', $p);
-            if (isset($parts[1])) $yCourse[] = $parts[1];
-        }
-        if (empty($sparkCourse) || count(array_unique($yCourse)) <= 1) {
-            $sparkCourse = '0,42 20,35 40,40 60,30 80,45 100,25 120,35';
-        }
-        
-        $sparkEvent = $chartPoints['spark_event'] ?? '';
-        $yEvent = [];
-        foreach (explode(' ', $sparkEvent) as $p) {
-            $parts = explode(',', $p);
-            if (isset($parts[1])) $yEvent[] = $parts[1];
-        }
-        if (empty($sparkEvent) || count(array_unique($yEvent)) <= 1) {
-            $sparkEvent = '0,45 20,40 40,43 60,35 80,42 100,30 120,38';
-        }
-        
-        $sparkPending = $chartPoints['spark_pending'] ?? '';
-        $yPending = [];
-        foreach (explode(' ', $sparkPending) as $p) {
-            $parts = explode(',', $p);
-            if (isset($parts[1])) $yPending[] = $parts[1];
-        }
-        if (empty($sparkPending) || count(array_unique($yPending)) <= 1) {
-            $sparkPending = '0,40 20,45 40,38 60,42 80,35 100,40 120,38';
-        }
-        
-        $sparkApproved = $chartPoints['spark_approved'] ?? '';
-        $yApproved = [];
-        foreach (explode(' ', $sparkApproved) as $p) {
-            $parts = explode(',', $p);
-            if (isset($parts[1])) $yApproved[] = $parts[1];
-        }
-        if (empty($sparkApproved) || count(array_unique($yApproved)) <= 1) {
-            $sparkApproved = '0,38 20,42 40,35 60,40 80,38 100,45 120,42';
-        }
-    @endphp
-
     <div class="admin-dashboard">
 
         @if(request()->query('view') !== 'list')
@@ -1025,67 +975,6 @@
                     <div class="welcome-title-sub">Selamat datang kembali,</div>
                     <div class="welcome-title-main">Admin Trainer! 👋</div>
                     <div class="welcome-desc">Kelola trainer, materi, course, dan event dengan lebih efisien.</div>
-                    
-                    <div class="welcome-stats">
-                        <div class="welcome-stat-pill">
-                            <div class="welcome-stat-icon orange">
-                                <i class="bi bi-clock-history"></i>
-                            </div>
-                            <div>
-                                <div class="welcome-stat-num">{{ $pendingReviews }}</div>
-                                <div class="welcome-stat-label">Menunggu Review</div>
-                            </div>
-                        </div>
-                        <div class="welcome-stat-pill">
-                            <div class="welcome-stat-icon green">
-                                <i class="bi bi-check2-circle"></i>
-                            </div>
-                            <div>
-                                <div class="welcome-stat-num">{{ $approvedMaterials }}</div>
-                                <div class="welcome-stat-label">Telah Disetujui</div>
-                            </div>
-                        </div>
-                        <div class="welcome-stat-pill">
-                            <div class="welcome-stat-icon blue">
-                                <i class="bi bi-calendar3"></i>
-                            </div>
-                            <div>
-                                <div class="welcome-stat-num">{{ $totalEvents }}</div>
-                                <div class="welcome-stat-label">Event Aktif</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Date & Target widget -->
-            <div class="target-card">
-                <div class="target-date-row">
-                    <div class="target-date-icon">
-                        <i class="bi bi-calendar3"></i>
-                    </div>
-                    <div>
-                        <div class="target-date-title">{{ $todayLabel }}</div>
-                        <div class="target-date-sub">{{ $timeLabel }}</div>
-                    </div>
-                </div>
-                
-                <div class="target-body">
-                    <div class="target-header">
-                        <span class="target-title">Target Bulanan</span>
-                        <span class="target-value">{{ $targetPct }}%</span>
-                    </div>
-                    
-                    <div class="target-progress-container">
-                        <div class="target-progress-bar">
-                            <div class="target-progress-fill" style="width: {{ $targetPct }}%;"></div>
-                        </div>
-                        <svg class="target-sparkline" viewBox="0 0 60 30">
-                            <path d="M 0 25 Q 15 5, 30 20 T 60 5" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" />
-                        </svg>
-                    </div>
-                    
-                    <div class="target-footer-text">{{ $monthlyCreated }} dari {{ $monthlyTargetVal }} program baru bulan ini</div>
                 </div>
             </div>
         </div>
@@ -1099,17 +988,12 @@
                         <i class="bi bi-journal-richtext"></i>
                     </div>
                     <div class="metric-titles">
-                        <span class="metric-clean-label">Course Aktif</span>
+                        <span class="metric-clean-label">Course Baru (Bulan Ini)</span>
                         <div class="metric-clean-val-row">
                             <span class="metric-clean-value">{{ $totalCourses }}</span>
                             <span class="metric-clean-suffix">Course</span>
                         </div>
                     </div>
-                </div>
-                <div class="metric-sparkline-container">
-                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
-                        <path d="M {{ str_replace(' ', ' L ', $sparkCourse) }}" fill="none" stroke="#1e1b4b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
                 </div>
                 @php
                     $courseChange = $metricChanges['courses'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'up'];
@@ -1127,17 +1011,12 @@
                         <i class="bi bi-calendar-event"></i>
                     </div>
                     <div class="metric-titles">
-                        <span class="metric-clean-label">Event Berjalan</span>
+                        <span class="metric-clean-label">Event Baru (Bulan Ini)</span>
                         <div class="metric-clean-val-row">
                             <span class="metric-clean-value">{{ $totalEvents }}</span>
                             <span class="metric-clean-suffix">Event</span>
                         </div>
                     </div>
-                </div>
-                <div class="metric-sparkline-container">
-                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
-                        <path d="M {{ str_replace(' ', ' L ', $sparkEvent) }}" fill="none" stroke="#1e1b4b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
                 </div>
                 @php
                     $eventChange = $metricChanges['events'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'up'];
@@ -1162,11 +1041,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="metric-sparkline-container">
-                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
-                        <path d="M {{ str_replace(' ', ' L ', $sparkPending) }}" fill="none" stroke="#475569" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </div>
                 @php
                     $pendingChange = $metricChanges['pending'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'down'];
                     $pendingText = str_replace(['+', '-'], ['↑ ', '↓ '], $pendingChange['text']);
@@ -1185,17 +1059,12 @@
                         <i class="bi bi-patch-check-fill"></i>
                     </div>
                     <div class="metric-titles">
-                        <span class="metric-clean-label">Sertifikat Terbit</span>
+                        <span class="metric-clean-label">Sertifikat Terbit (Bulan Ini)</span>
                         <div class="metric-clean-val-row">
                             <span class="metric-clean-value">{{ $approvedMaterials }}</span>
                             <span class="metric-clean-suffix">Sertifikat</span>
                         </div>
                     </div>
-                </div>
-                <div class="metric-sparkline-container">
-                    <svg class="metric-sparkline-svg" viewBox="0 0 120 50">
-                        <path d="M {{ str_replace(' ', ' L ', $sparkApproved) }}" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
                 </div>
                 @php
                     $approvedChange = $metricChanges['approved'] ?? ['text' => '0 dari periode sebelumnya', 'direction' => 'up'];
@@ -1323,6 +1192,10 @@
                     $pendingPct = (float) ($approvalStats['pending_pct'] ?? 0);
                     $approvedPct = (float) ($approvalStats['approved_pct'] ?? 0);
                     $splitPct = min(100, $pendingPct + $approvedPct);
+                    $totalApprovals = (int) ($approvalStats['total'] ?? 0);
+                    $gradientStyle = $totalApprovals > 0 
+                        ? "conic-gradient(#10b981 0 {$approvedPct}%, #f59e0b {$approvedPct}% {$splitPct}%, #ef4444 {$splitPct}% 100%)" 
+                        : "#e2e8f0";
                 @endphp
                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; width: 100%; flex: 1; padding: 10px 0;">
                     <div class="approval-donut" id="approval-donut-chart"
@@ -1332,19 +1205,15 @@
                         data-pending-pct="{{ $approvalStats['pending_pct'] }}"
                         data-rejected="{{ $approvalStats['rejected'] }}"
                         data-rejected-pct="{{ $approvalStats['rejected_pct'] }}"
-                        style="background: conic-gradient(#10b981 0 {{ $approvedPct }}%, #475569 {{ $approvedPct }}% {{ $splitPct }}%, #ef4444 {{ $splitPct }}% 100%); margin: 0 auto;">
+                        style="background: {{ $gradientStyle }}; margin: 0 auto;">
                         <div class="approval-donut-inner">
-                            <div style="font-size: 28px; font-weight: 800; color: var(--dash-navy); line-height: 1; letter-spacing: -0.03em;">{{ round($approvalStats['approved_pct']) }}%</div>
-                            <div style="font-size: 10px; font-weight: 700; color: var(--dash-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Approval Rate</div>
-                            <div style="font-size: 11px; font-weight: 700; color: #10b981; margin-top: 6px; display: flex; align-items: center; gap: 2px;">
-                                <i class="bi bi-arrow-up-short"></i> 12%
-                            </div>
-                            <div style="font-size: 9px; color: var(--dash-muted); margin-top: 1px;">dari bulan lalu</div>
+                            <div style="font-size: 32px; font-weight: 800; color: var(--dash-navy); line-height: 1; letter-spacing: -0.03em;">{{ $approvalStats['total'] }}</div>
+                            <div style="font-size: 10px; font-weight: 700; color: var(--dash-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Total Materi</div>
                         </div>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-top: 8px;">
-                        <div style="text-align: center; background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.08); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
+                        <div style="text-align: center; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
                             <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #059669; font-weight: 700; margin-bottom: 4px;">
                                 <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981;"></span>
                                 Disetujui
@@ -1353,16 +1222,16 @@
                                 {{ $approvalStats['approved'] }} <span style="font-weight:600; font-size:11px; color:#64748b">({{ $approvalStats['approved_pct'] }}%)</span>
                             </div>
                         </div>
-                        <div style="text-align: center; background: rgba(71, 85, 105, 0.04); border: 1px solid rgba(71, 85, 105, 0.08); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
-                            <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 4px;">
-                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #475569;"></span>
+                        <div style="text-align: center; background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.15); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
+                            <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #d97706; font-weight: 700; margin-bottom: 4px;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #f59e0b;"></span>
                                 Menunggu
                             </div>
                             <div style="font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: -0.2px;">
                                 {{ $approvalStats['pending'] }} <span style="font-weight:600; font-size:11px; color:#64748b">({{ $approvalStats['pending_pct'] }}%)</span>
                             </div>
                         </div>
-                        <div style="text-align: center; background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.08); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
+                        <div style="text-align: center; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.15); padding: 12px 8px; border-radius: 16px; transition: all 0.2s ease;">
                             <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #dc2626; font-weight: 700; margin-bottom: 4px;">
                                 <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ef4444;"></span>
                                 Ditolak
@@ -1460,17 +1329,17 @@
                 </div>
 
                 <div class="legend-row">
-                    <span class="legend-item">
+                    <span class="legend-item" id="legend-course" style="cursor: pointer; user-select: none; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                         <span class="legend-dot" style="background:#1e1b4b;"></span>
                         Course Dibuat
                     </span>
 
-                    <span class="legend-item">
+                    <span class="legend-item" id="legend-event" style="cursor: pointer; user-select: none; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                         <span class="legend-dot" style="background:#10b981;"></span>
                         Event Berjalan
                     </span>
 
-                    <span class="legend-item">
+                    <span class="legend-item" id="legend-material" style="cursor: pointer; user-select: none; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                         <span class="legend-dot" style="background:#475569;"></span>
                         Materi Dikirim
                     </span>
@@ -1483,6 +1352,16 @@
                             <div>{{ $tick }}</div>
                         @endforeach
                     </div>
+                    @php
+                        $coursePointsStr = $chartPoints['course'] ?? '';
+                        $coursePoints = array_filter(explode(' ', $coursePointsStr));
+                        
+                        $eventPointsStr = $chartPoints['event'] ?? '';
+                        $eventPoints = array_filter(explode(' ', $eventPointsStr));
+                        
+                        $materialPointsStr = $chartPoints['material'] ?? '';
+                        $materialPoints = array_filter(explode(' ', $materialPointsStr));
+                    @endphp
                     <svg class="line-chart" id="dashboard-line-chart" viewBox="0 0 680 260" preserveAspectRatio="none">
                         <line x1="0" y1="35" x2="680" y2="35" stroke="#e7edf6" />
                         <line x1="0" y1="80" x2="680" y2="80" stroke="#e7edf6" />
@@ -1490,12 +1369,35 @@
                         <line x1="0" y1="170" x2="680" y2="170" stroke="#e7edf6" />
                         <line x1="0" y1="215" x2="680" y2="215" stroke="#e7edf6" />
 
-                        <polyline points="{{ $chartPoints['course'] ?? '' }}" fill="none" stroke="#1e1b4b" stroke-width="4"
-                            stroke-linecap="round" />
-                        <polyline points="{{ $chartPoints['event'] ?? '' }}" fill="none" stroke="#10b981" stroke-width="4"
-                            stroke-linecap="round" />
-                        <polyline points="{{ $chartPoints['material'] ?? '' }}" fill="none" stroke="#475569"
-                            stroke-width="4" stroke-linecap="round" />
+                        <g id="group-course" style="transition: opacity 0.3s ease;">
+                            <polyline points="{{ $coursePointsStr }}" fill="none" stroke="#1e1b4b" stroke-width="4" stroke-linecap="round" />
+                            @foreach($coursePoints as $point)
+                                @if(str_contains($point, ','))
+                                    @php list($x, $y) = explode(',', $point); @endphp
+                                    <circle cx="{{ $x }}" cy="{{ $y }}" r="5" fill="#1e1b4b" stroke="#ffffff" stroke-width="1.5" />
+                                @endif
+                            @endforeach
+                        </g>
+
+                        <g id="group-event" style="transition: opacity 0.3s ease;">
+                            <polyline points="{{ $eventPointsStr }}" fill="none" stroke="#10b981" stroke-width="4" stroke-linecap="round" />
+                            @foreach($eventPoints as $point)
+                                @if(str_contains($point, ','))
+                                    @php list($x, $y) = explode(',', $point); @endphp
+                                    <circle cx="{{ $x }}" cy="{{ $y }}" r="5" fill="#10b981" stroke="#ffffff" stroke-width="1.5" />
+                                @endif
+                            @endforeach
+                        </g>
+
+                        <g id="group-material" style="transition: opacity 0.3s ease;">
+                            <polyline points="{{ $materialPointsStr }}" fill="none" stroke="#475569" stroke-width="4" stroke-linecap="round" />
+                            @foreach($materialPoints as $point)
+                                @if(str_contains($point, ','))
+                                    @php list($x, $y) = explode(',', $point); @endphp
+                                    <circle cx="{{ $x }}" cy="{{ $y }}" r="5" fill="#475569" stroke="#ffffff" stroke-width="1.5" />
+                                @endif
+                            @endforeach
+                        </g>
                     </svg>
                     <div class="chart-x-axis">
                         @foreach($chartData['labels'] ?? [] as $label)
@@ -1507,9 +1409,14 @@
 
             <!-- Top Trainer -->
             <div class="dash-card">
-                <div class="card-header-clean">
-                    <h5 class="card-title-clean">Top Trainer <span style="font-size:11px; font-weight:500; color:var(--dash-muted);">(Berdasarkan Event/Course Bulan Ini)</span></h5>
-                    <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="card-link" style="font-size: 11px; font-weight: 600;">Lihat semua</a>
+                <div class="card-header-clean" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid var(--dash-border); padding-bottom: 12px; margin-bottom: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <h5 class="card-title-clean" style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">
+                            <i class="bi bi-trophy-fill" style="color: #f59e0b; margin-right: 6px;"></i>Top Trainer
+                        </h5>
+                        <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="card-link" style="font-size: 11px; font-weight: 600;">Lihat semua</a>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 500; color: var(--dash-muted);">(Berdasarkan Total Event & Course)</span>
                 </div>
 
                 <div class="trainer-list">
@@ -1517,39 +1424,41 @@
                         @php
                             $rankClass = ['gold', 'silver', 'bronze'][$index] ?? 'silver';
                             $score = (int) ($trainer->score ?? 0);
-                            $scorePct = (int) ($trainer->score_pct ?? 0);
-                            $badgeText = ['Top Creator', 'Fast Responder', 'Rising Trainer'][$index] ?? 'Trainer';
+                            $badgeText = $score > 0 ? (['Top Creator', 'Fast Responder', 'Rising Trainer'][$index] ?? null) : null;
                             $badgeBg = ['#eff6ff', '#eff6ff', '#f0fdf4'][$index] ?? '#f1f5f9';
                             $badgeColor = ['#1e1b4b', '#1e1b4b', '#10b981'][$index] ?? '#475569';
+                            
+                            $fallbackUrl = 'https://ui-avatars.com/api/?name=' . urlencode($trainer->name ?? 'Trainer') . '&background=1e1b4b&color=fff&bold=true';
+                            $avatarUrl = $trainer->avatar_url ?: $fallbackUrl;
                         @endphp
 
-                        <div class="trainer-item">
-                            <div class="rank-icon {{ $rankClass }}">
+                        <div class="trainer-item" style="border: 1px solid var(--dash-border); border-radius: 18px; padding: 14px; display: flex; gap: 12px; align-items: center; background: #fff; transition: all 0.2s;">
+                            <div class="rank-icon {{ $rankClass }}" style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0;">
                                 {{ $index + 1 }}
                             </div>
 
-                            <img src="{{ $trainer->avatar_url ?? ('https://ui-avatars.com/api/?name=' . urlencode($trainer->name ?? 'Trainer') . '&background=1e3a8a&color=fff&bold=true') }}"
-                                class="trainer-avatar" alt="{{ $trainer->name ?? 'Trainer' }}">
+                            <img src="{{ $avatarUrl }}"
+                                 onerror="this.onerror=null; this.src='{{ $fallbackUrl }}'"
+                                 class="trainer-avatar" 
+                                 style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1.5px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);" 
+                                 alt="{{ $trainer->name ?? 'Trainer' }}">
 
-                            <div style="min-width: 0;">
-                                <div class="trainer-name" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                    <a href="{{ route('admin.trainer.show', $trainer->id ?? 0) }}" class="text-decoration-none text-dark hover-primary" style="font-weight:700;">
+                            <div style="min-width: 0; flex: 1;">
+                                <div class="trainer-name" style="margin-bottom: 2px;">
+                                    <a href="{{ route('admin.trainer.show', $trainer->id ?? 0) }}" class="text-decoration-none text-dark hover-primary" style="font-weight: 700; font-size: 13.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                         {{ $trainer->name ?? 'Trainer' }}
                                     </a>
-                                    <span class="badge" style="background: {{ $badgeBg }}; color: {{ $badgeColor }}; font-size: 9px; padding: 2px 6px; font-weight: 800; border-radius: 4px;">{{ $badgeText }}</span>
                                 </div>
-                                <div class="trainer-meta">
-                                    {{ $trainer->courses_as_trainer_count ?? 0 }} Course •
-                                    {{ $trainer->events_as_trainer_count ?? 0 }} Event
-                                </div>
+                                @if($badgeText)
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                         <span class="badge" style="background: {{ $badgeBg }}; color: {{ $badgeColor }}; font-size: 9px; padding: 2px 6px; font-weight: 800; border-radius: 4px;">{{ $badgeText }}</span>
+                                    </div>
+                                @endif
                             </div>
 
-                            <div class="score-area">
-                                <strong style="font-size: 16px; font-weight: 800; color: var(--dash-navy);">{{ $score }}</strong>
-                                <span style="font-size: 10px; color: var(--dash-muted);">Event/Course</span>
-                                <div class="score-bar" style="width: 100%;">
-                                    <span style="width: {{ $scorePct }}%;"></span>
-                                </div>
+                            <div class="score-area" style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 80px; flex-shrink: 0; margin-left: 12px; font-size: 12px; font-weight: 700; color: #0f172a; line-height: 1.4;">
+                                <div>{{ $trainer->courses_as_trainer_count ?? 0 }} Course</div>
+                                <div style="color: var(--dash-muted); font-size: 11px; font-weight: 500;">{{ $trainer->events_as_trainer_count ?? 0 }} Event</div>
                             </div>
                         </div>
                     @empty
@@ -1559,7 +1468,7 @@
                     @endforelse
                 </div>
 
-                <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="card-link mt-auto">
+                <a href="{{ route('admin.trainer.index', ['view' => 'list']) }}" class="card-link mt-auto" style="border-top: 1px solid var(--dash-border); padding-top: 12px; margin-top: 4px;">
                     Lihat semua trainer
                     <i class="bi bi-arrow-right"></i>
                 </a>
@@ -1569,7 +1478,7 @@
             <div class="dash-card">
                 <div class="card-header-clean">
                     <h5 class="card-title-clean">Feedback Terbaru</h5>
-                    <a href="{{ route('admin.trainer.material.approved') }}" class="card-link" style="font-size: 11px; font-weight: 600;">Lihat semua &rarr;</a>
+                    <a href="{{ route('admin.crm.feedback.index') }}" class="card-link" style="font-size: 11px; font-weight: 600;">Lihat semua &rarr;</a>
                 </div>
 
                 <div class="feedback-list">
@@ -1584,16 +1493,17 @@
                                 {{ $initials }}
                             </div>
 
-                            <div style="min-width: 0;">
-                                <div class="stars">{{ $item['stars'] ?? '★★★★★' }}</div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: flex !important; align-items: center !important; width: 100% !important; margin-bottom: 4px !important;">
+                                    <div class="stars" style="display: inline-flex !important; width: auto !important; min-width: 0 !important; justify-content: flex-start !important; margin-bottom: 0 !important; margin-left: 0 !important; margin-right: auto !important;">{{ $item['stars'] ?? '★★★★★' }}</div>
+                                    <div class="feedback-time" style="font-size: 11px !important; color: var(--dash-muted) !important; margin-left: 12px !important; margin-right: 0 !important; flex-shrink: 0 !important;">{{ $item['time'] ?? '-' }}</div>
+                                </div>
                                 <div class="feedback-title" style="font-size: 12px; font-weight: 700; color: var(--dash-navy); margin-bottom: 2px;">{{ $item['title'] ?? '' }}</div>
                                 <div class="feedback-text" style="font-style: italic; font-size: 12px; color: var(--dash-muted); margin-bottom: 4px; line-height: 1.3;">
                                     "{{ $item['comment'] ?? 'Tidak ada komentar.' }}"
                                 </div>
                                 <div class="feedback-name" style="font-weight: 600; color: #475569; font-size: 11px;">{{ $item['name'] ?? 'User' }}</div>
                             </div>
-
-                            <div class="feedback-time" style="font-size: 11px; color: var(--dash-muted);">{{ $item['time'] ?? '-' }}</div>
                         </div>
                     @empty
                         <div class="text-muted text-center py-3" style="font-size:13px;">
@@ -1602,7 +1512,7 @@
                     @endforelse
                 </div>
 
-                <a href="{{ route('admin.trainer.material.approved') }}" class="card-link mt-auto">
+                <a href="{{ route('admin.crm.feedback.index') }}" class="card-link mt-auto">
                     Lihat semua feedback
                     <i class="bi bi-arrow-right"></i>
                 </a>
@@ -1778,11 +1688,32 @@
                     </tbody>
                 </table>
             </div>
-            @if($trainers->hasPages())
-                <div class="d-flex justify-content-end mt-4 p-3">
-                    {{ $trainers->links('pagination::bootstrap-5') }}
+            <div class="d-flex align-items-center justify-content-between mt-3 p-3" style="border-top: 1px solid #f1f5f9; background: #fff;">
+                <div class="small text-muted" style="font-weight: 600; font-size: 13px;">
+                    Menampilkan Halaman {{ $trainers->currentPage() }} dari {{ $trainers->lastPage() }}
                 </div>
-            @endif
+                <div class="d-flex align-items-center gap-2">
+                    @if(!$trainers->onFirstPage())
+                        <a href="{{ $trainers->previousPageUrl() }}" class="btn d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(30, 27, 75, 0.15); color: #1e1b4b; background: #fff; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='var(--dash-blue)'" onmouseout="this.style.background='#fff'; this.style.borderColor='rgba(30, 27, 75, 0.15)'">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    @else
+                        <button class="btn d-flex align-items-center justify-content-center" disabled style="width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(30, 27, 75, 0.08); color: #cbd5e1; background: #f8fafc; cursor: not-allowed;">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    @endif
+
+                    @if($trainers->hasMorePages())
+                        <a href="{{ $trainers->nextPageUrl() }}" class="btn d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(30, 27, 75, 0.15); color: #1e1b4b; background: #fff; transition: all 0.2s;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='var(--dash-blue)'" onmouseout="this.style.background='#fff'; this.style.borderColor='rgba(30, 27, 75, 0.15)'">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    @else
+                        <button class="btn d-flex align-items-center justify-content-center" disabled style="width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(30, 27, 75, 0.08); color: #cbd5e1; background: #f8fafc; cursor: not-allowed;">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    @endif
+                </div>
+            </div>
         </div>
         @endif
 
@@ -1856,12 +1787,59 @@
 
             var max = maxValue();
 
+            var activeSeries = { course: true, event: true, material: true };
+
+            function toggleSeries(name, groupEl, legendEl) {
+                activeSeries[name] = !activeSeries[name];
+                if (activeSeries[name]) {
+                    groupEl.style.opacity = '1';
+                    legendEl.style.opacity = '1';
+                    legendEl.style.textDecoration = 'none';
+                    legendEl.style.color = 'var(--dash-muted)';
+                } else {
+                    groupEl.style.opacity = '0.12';
+                    legendEl.style.opacity = '0.4';
+                    legendEl.style.textDecoration = 'line-through';
+                    legendEl.style.color = '#94a3b8';
+                }
+            }
+
+            var groupCourse = document.getElementById('group-course');
+            var legendCourse = document.getElementById('legend-course');
+            if (groupCourse && legendCourse) {
+                legendCourse.addEventListener('click', function () {
+                    toggleSeries('course', groupCourse, legendCourse);
+                });
+            }
+
+            var groupEvent = document.getElementById('group-event');
+            var legendEvent = document.getElementById('legend-event');
+            if (groupEvent && legendEvent) {
+                legendEvent.addEventListener('click', function () {
+                    toggleSeries('event', groupEvent, legendEvent);
+                });
+            }
+
+            var groupMaterial = document.getElementById('group-material');
+            var legendMaterial = document.getElementById('legend-material');
+            if (groupMaterial && legendMaterial) {
+                legendMaterial.addEventListener('click', function () {
+                    toggleSeries('material', groupMaterial, legendMaterial);
+                });
+            }
+
             function formatTooltip(index) {
                 var label = labels[index] || '';
-                var html = '<div style="font-weight:700;margin-bottom:4px;">' + label + '</div>';
-                series.forEach(function (item) {
+                var html = '<div style="font-weight:700;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:4px;">' + label + '</div>';
+                series.forEach(function (item, idx) {
+                    var key = ['course', 'event', 'material'][idx];
+                    var isActive = activeSeries[key] !== false;
                     var value = item.values[index] ?? 0;
-                    html += '<div style="color:' + item.color + '">' + item.name + ': ' + value + '</div>';
+                    if (isActive) {
+                        html += '<div style="color:' + item.color + ';font-weight:700;display:flex;justify-content:space-between;gap:12px;"><span>' + item.name + ':</span><strong>' + value + '</strong></div>';
+                    } else {
+                        html += '<div style="color:#64748b;text-decoration:line-through;opacity:0.5;display:flex;justify-content:space-between;gap:12px;"><span>' + item.name + ':</span><strong>' + value + '</strong></div>';
+                    }
                 });
                 tooltip.innerHTML = html;
             }
@@ -1873,19 +1851,25 @@
                 hoverLine.style.opacity = '1';
 
                 series.forEach(function (item, idx) {
-                    var value = item.values[index] ?? 0;
-                    var ratio = max > 0 ? (value / max) : 0;
-                    var y = yBottom - (ratio * ySpan);
-                    hoverDots[idx].setAttribute('cx', x);
-                    hoverDots[idx].setAttribute('cy', y);
-                    hoverDots[idx].style.opacity = '1';
+                    var key = ['course', 'event', 'material'][idx];
+                    var isActive = activeSeries[key] !== false;
+                    if (isActive) {
+                        var value = item.values[index] ?? 0;
+                        var ratio = max > 0 ? (value / max) : 0;
+                        var y = yBottom - (ratio * ySpan);
+                        hoverDots[idx].setAttribute('cx', x);
+                        hoverDots[idx].setAttribute('cy', y);
+                        hoverDots[idx].style.opacity = '1';
+                    } else {
+                        hoverDots[idx].style.opacity = '0';
+                    }
                 });
 
                 formatTooltip(index);
 
                 var rect = svg.getBoundingClientRect();
-                var tooltipX = clientX - rect.left + 48;
-                var tooltipY = clientY - rect.top - 30;
+                var tooltipX = clientX - rect.left + 24;
+                var tooltipY = clientY - rect.top - 60;
 
                 tooltip.style.left = tooltipX + 'px';
                 tooltip.style.top = tooltipY + 'px';
@@ -1930,7 +1914,7 @@
 
                 tooltip.innerHTML = '<div style="font-weight:700;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.15);padding-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Detail Persetujuan</div>' +
                     '<div style="color:#10b981;display:flex;justify-content:space-between;gap:16px;margin-bottom:2px;"><span>Disetujui:</span><strong>' + approved + ' (' + approvedPct + '%)</strong></div>' +
-                    '<div style="color:#cbd5e1;display:flex;justify-content:space-between;gap:16px;margin-bottom:2px;"><span>Menunggu:</span><strong>' + pending + ' (' + pendingPct + '%)</strong></div>' +
+                    '<div style="color:#f59e0b;display:flex;justify-content:space-between;gap:16px;margin-bottom:2px;"><span>Menunggu:</span><strong>' + pending + ' (' + pendingPct + '%)</strong></div>' +
                     '<div style="color:#f43f5e;display:flex;justify-content:space-between;gap:16px;"><span>Ditolak:</span><strong>' + rejected + ' (' + rejectedPct + '%)</strong></div>';
 
                 tooltip.style.left = x + 'px';

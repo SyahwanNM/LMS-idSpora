@@ -57,18 +57,26 @@ class TrainerController extends Controller
     private function trainerEventQuery(int $trainerId, string $trainerName = '', bool $includeLegacySpeakerMatch = false): \Illuminate\Database\Eloquent\Builder
     {
         return Event::query()->where(function ($query) use ($trainerId, $trainerName, $includeLegacySpeakerMatch) {
-            $query->where('trainer_id', $trainerId)
-                ->orWhereHas('speakers', function ($speakerQuery) use ($trainerId) {
-                    $speakerQuery->where('trainer_id', $trainerId);
-                })
-                ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainerId) {
-                    $assignmentQuery->where('trainer_id', $trainerId)
-                        ->where('status', 'accepted');
-                });
+            $query->where(function ($inner) use ($trainerId, $trainerName, $includeLegacySpeakerMatch) {
+                $inner->where('trainer_id', $trainerId)
+                    ->orWhereHas('speakers', function ($speakerQuery) use ($trainerId) {
+                        $speakerQuery->where('trainer_id', $trainerId);
+                    })
+                    ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainerId) {
+                        $assignmentQuery->where('trainer_id', $trainerId)
+                            ->where('status', 'accepted');
+                    });
 
-            if ($includeLegacySpeakerMatch && $trainerName !== '') {
-                $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
-            }
+                if ($includeLegacySpeakerMatch && $trainerName !== '') {
+                    $inner->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            })
+            ->where(function ($inner) use ($trainerId) {
+                $inner->whereDoesntHave('trainerAssignments', function ($q) use ($trainerId) {
+                    $q->where('trainer_id', $trainerId)
+                        ->where('status', '!=', 'accepted');
+                });
+            });
         });
     }
 
@@ -686,6 +694,7 @@ class TrainerController extends Controller
     {
         $user = Auth::user();
         $this->ensureEventInvitationsExistForTrainer($user);
+        $this->ensureTrainerCertificatesSynced($user);
         $activityService = app(TrainerActivityService::class);
         $trainerActivity = $activityService->refresh($user);
         $availableContributionSchemes = $activityService->availableContributionSchemes($user);
@@ -708,16 +717,12 @@ class TrainerController extends Controller
             ->whereNotIn('id', $pendingInvitationCourseIds);
 
         $priorityCourses = (clone $coursesQuery)
+            ->whereIn('status', ['published', 'approved', 'active'])
             ->withCount([
                 'enrollments' => function ($query) {
                     $query->where('enrollments.status', 'active');
                 }
             ])
-            ->orderByRaw("CASE
-                WHEN status IN ('archive', 'archived', 'draft') THEN 0
-                WHEN status IN ('published', 'approved', 'active') THEN 1
-                ELSE 2
-            END")
             ->orderByDesc('updated_at')
             ->limit(6)
             ->get();
@@ -753,6 +758,12 @@ class TrainerController extends Controller
             $activeEventsQuery->whereRaw("datetime(date(event_date, 'localtime') || ' ' || COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
         } else {
             $activeEventsQuery->whereRaw("TIMESTAMP(event_date, COALESCE(event_time_end, COALESCE(event_time, '23:59:59'))) >= ?", [now()->format('Y-m-d H:i:s')]);
+        }
+
+        // Ensure assignment records exist for active events
+        $allActiveEvents = (clone $activeEventsQuery)->get();
+        foreach ($allActiveEvents as $event) {
+            $this->ensureEventAssignmentForTrainer($event, $user);
         }
 
         $priorityEvents = (clone $activeEventsQuery)
@@ -989,10 +1000,11 @@ class TrainerController extends Controller
             ->get()
             ->map(function ($review) {
                 $review->type = 'course';
+                $review->original_rating = $review->rating;
                 $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
                 return $review;
             });
-
+ 
         $eventFeedbacks = Feedback::query()
             ->whereHas('event', function ($query) use ($user) {
                 $query->where(function ($eventQuery) use ($user) {
@@ -1012,6 +1024,7 @@ class TrainerController extends Controller
             ->get()
             ->map(function ($feedback) {
                 $feedback->type = 'event';
+                $feedback->original_rating = $feedback->rating;
                 $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
                 return $feedback;
             });
@@ -1021,9 +1034,26 @@ class TrainerController extends Controller
             ->take(5)
             ->values();
 
-        $totalCertificates = (clone TrainerCertificate::query())
+        $totalCertificates = TrainerCertificate::query()
             ->where('trainer_id', $user->id)
             ->whereIn('status', ['sent', 'published'])
+            ->where(function ($q) {
+                $q->where(function ($sq) {
+                    $sq->whereIn('certifiable_type', [\App\Models\Course::class, 'course'])
+                        ->whereExists(function ($eq) {
+                            $eq->select(\Illuminate\Support\Facades\DB::raw(1))
+                                ->from('courses')
+                                ->whereRaw('courses.id = trainer_certificates.certifiable_id');
+                        });
+                })->orWhere(function ($sq) {
+                    $sq->whereIn('certifiable_type', [\App\Models\Event::class, 'event'])
+                        ->whereExists(function ($eq) {
+                            $eq->select(\Illuminate\Support\Facades\DB::raw(1))
+                                ->from('events')
+                                ->whereRaw('events.id = trainer_certificates.certifiable_id');
+                        });
+                });
+            })
             ->count();
 
         return view('trainer.dashboard', compact(
@@ -1471,9 +1501,16 @@ class TrainerController extends Controller
             }
         }
 
+        $activeStudents = \App\Models\EventRegistration::where('event_id', $event->id)
+            ->where('status', 'active')
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $enrollmentCount = $activeStudents->count();
+
         $eventCompensation = $this->resolveEventCompensation($event, (int) $trainerId);
 
-        return view('trainer.detail-event', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation'));
+        return view('trainer.detail-event', compact('event', 'myModules', 'myMaterialStatus', 'eventCompensation', 'activeStudents', 'enrollmentCount'));
     }
 
     public function downloadEventVbg($id)
@@ -2343,6 +2380,7 @@ class TrainerController extends Controller
             ->get()
             ->map(function ($review) {
                 $review->type = 'course';
+                $review->original_rating = $review->rating;
                 $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
                 $review->setRelation('replies', collect());
                 return $review;
@@ -2354,6 +2392,7 @@ class TrainerController extends Controller
             ->get()
             ->map(function ($feedback) {
                 $feedback->type = 'event';
+                $feedback->original_rating = $feedback->rating;
                 $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
                 return $feedback;
             });
@@ -2463,7 +2502,7 @@ class TrainerController extends Controller
         // Calculate aspect ratings based on speaker_rating and overall rating
         $avgSpeakerRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg('rating'), 1) : 0.0;
         $avgOverallRating = $totalFeedbacks > 0 ? round($allFeedbacks->avg(function ($item) {
-            return $item->type === 'course' ? ($item->rating ?? 0) : ($item->rating ?? 0);
+            return $item->original_rating ?? $item->rating ?? 0;
         }), 1) : 0.0;
 
         $aspectRatings = [
@@ -3694,7 +3733,7 @@ class TrainerController extends Controller
     public function certificatesIndex()
     {
         $trainer = Auth::user();
-        // $this->ensureTrainerCertificatesSynced($trainer);
+        $this->ensureTrainerCertificatesSynced($trainer);
 
         $context = (string) request()->query('context', '');
         $targetId = (int) request()->query('id', 0);
