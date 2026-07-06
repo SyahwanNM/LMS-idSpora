@@ -24,6 +24,19 @@ class RedirectIfAuthenticated
                 return redirect()->route('admin.dashboard');
             }
 
+            if ($role === 'event_admin') {
+                $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                    ->where('user_id', Auth::id())
+                    ->pluck('event_id')
+                    ->toArray();
+                if (count($assignedEventIds) === 1) {
+                    return redirect()->route('admin.events.show', $assignedEventIds[0]);
+                } elseif (count($assignedEventIds) > 1) {
+                    return redirect()->route('admin.events.index');
+                }
+                return redirect()->route('admin.dashboard');
+            }
+
             // During maintenance, keep non-admin users on landing page.
             if (AdminSettings::maintenanceEnabled()) {
                 $msg = AdminSettings::maintenanceMessage() ?: 'Mohon maaf, akses LMS sedang maintenance.';
