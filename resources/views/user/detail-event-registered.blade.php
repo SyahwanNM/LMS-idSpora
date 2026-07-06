@@ -2552,11 +2552,11 @@
                                     <div class="d-flex align-items-center justify-content-between team-member-item">
                                         <div class="d-flex align-items-center gap-2.5">
                                             <div class="team-avatar">
-                                                {{ strtoupper(substr($member->user->name, 0, 1)) }}
+                                                {{ $member->user ? strtoupper(substr($member->user->name, 0, 1)) : '?' }}
                                             </div>
                                             <div>
-                                                <span class="fw-semibold text-white d-block" style="font-size: 0.9rem; line-height: 1.2;">{{ $member->user->name }}</span>
-                                                <small style="font-size: 0.75rem; color: #94a3b8 !important;">{{ $member->user->email }}</small>
+                                                <span class="fw-semibold text-white d-block" style="font-size: 0.9rem; line-height: 1.2;">{{ $member->user->name ?? 'Deleted User' }}</span>
+                                                <small style="font-size: 0.75rem; color: #94a3b8 !important;">{{ $member->user->email ?? '-' }}</small>
                                             </div>
                                         </div>
                                         @if((bool) $member->is_team_leader)

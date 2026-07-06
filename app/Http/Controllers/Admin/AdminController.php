@@ -32,11 +32,14 @@ class AdminController extends Controller
         // event_admin: redirect to their assigned event directly
         $user = auth()->user();
         if ($user && $user->role === 'event_admin') {
-            $assignedEventId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+            $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
                 ->where('user_id', $user->id)
-                ->value('event_id');
-            if ($assignedEventId) {
-                return redirect()->route('admin.events.show', $assignedEventId);
+                ->pluck('event_id')
+                ->toArray();
+            if (count($assignedEventIds) === 1) {
+                return redirect()->route('admin.events.show', $assignedEventIds[0]);
+            } elseif (count($assignedEventIds) > 1) {
+                return redirect()->route('admin.events.index');
             }
             abort(403, 'No event assigned to your account.');
         }

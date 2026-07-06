@@ -2434,7 +2434,7 @@ class EventController extends Controller
         }
     }
 
-    private function processEventReferralCommission(Event $event, \App\Models\ManualPayment $payment): void
+    private function processEventReferralCommission(\App\Models\Event $event, \App\Models\ManualPayment $payment): void
     {
         if (!(bool) ($event->is_reseller_event ?? false)) {
             return;
@@ -2443,7 +2443,7 @@ class EventController extends Controller
             return;
         }
 
-        $referrer = User::query()->where('referral_code', $payment->referral_code)->first();
+        $referrer = \App\Models\User::query()->where('referral_code', $payment->referral_code)->first();
         if (!$referrer || (int) $referrer->id === (int) $payment->user_id) {
             return;
         }

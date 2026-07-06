@@ -2147,7 +2147,21 @@
                                                         <div class="small text-muted">Peserta</div>
                                                     </td>
                                                     <td class="text-dark">
-                                                        {{ data_get($review, 'course.name', data_get($review, 'event.title', '-')) }}
+                                                        @if(data_get($review, 'type') === 'event')
+                                                            <span class="badge bg-warning bg-opacity-10 border-0 px-2 py-1" style="font-size: 10px; font-weight: 700; color: #d97706 !important; background-color: #fef3c7 !important;">
+                                                                <i class="bi bi-calendar-event me-1"></i>EVENT
+                                                            </span>
+                                                            <div class="mt-1 fw-semibold" style="font-size: 13px;">
+                                                                {{ data_get($review, 'event.title', '-') }}
+                                                            </div>
+                                                        @else
+                                                            <span class="badge bg-info bg-opacity-10 border-0 px-2 py-1" style="font-size: 10px; font-weight: 700; color: #2563eb !important; background-color: #dbeafe !important;">
+                                                                <i class="bi bi-book me-1"></i>KELAS
+                                                            </span>
+                                                            <div class="mt-1 fw-semibold" style="font-size: 13px;">
+                                                                {{ data_get($review, 'course.name', '-') }}
+                                                            </div>
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         @php $ratingValue = (int) round((float) data_get($review, 'rating', 0)); @endphp

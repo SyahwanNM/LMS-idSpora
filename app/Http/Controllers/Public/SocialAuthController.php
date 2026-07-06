@@ -157,6 +157,20 @@ class SocialAuthController extends Controller
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
             return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
         }
+        if (strcasecmp($user->role ?? '', 'event_admin') === 0) {
+            $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->pluck('event_id')
+                ->toArray();
+            if (count($assignedEventIds) === 1) {
+                return redirect()->route('admin.events.show', $assignedEventIds[0])
+                    ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+            } elseif (count($assignedEventIds) > 1) {
+                return redirect()->route('admin.events.index')
+                    ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+            }
+            return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+        }
         // (Maintenance for non-admin is handled above before login session is created.)
         if ($redirect) {
             return redirect($redirect)->with('success', 'Login berhasil!');
