@@ -239,7 +239,7 @@
                             <div class="flex gap-2">
                                 @if($item['certificate_route'])
                                     <a href="{{ $item['certificate_route'] }}" class="btn btn-sm btn-primary border-0 rounded-xl px-4 py-2 font-bold" style="background:#4f46e5;"><i class="bi bi-download me-2"></i> Sertifikat</a>
-                                @endif
+git                                @endif
                                 <a href="{{ $item['detail_route'] }}" class="btn btn-sm bg-slate-50 border-0 rounded-xl px-4 py-2 font-bold text-slate-600">Detail</a>
                                 
                                 <button onclick="toggleSave(this, '{{ $item['save_route'] }}')" class="btn btn-sm {{ $item['is_saved'] ? 'btn-danger' : 'btn-outline-secondary' }} border-0 rounded-xl px-4 py-2 font-bold" style="{{ $item['is_saved'] ? 'background:#fee2e2; color:#ef4444;' : 'background:#f1f5f9; color:#64748b;' }}">
