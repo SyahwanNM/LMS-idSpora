@@ -950,7 +950,11 @@
                                          </div>
                                          <div class="col-md-6 mb-2" id="max_team_members_wrapper" style="{{ in_array(old('lomba_kategori'), ['team', 'both']) ? '' : 'display: none;' }}">
                                              <label for="max_team_members" class="form-label small fw-semibold mb-1">Maksimal Anggota Tim <span class="text-danger">*</span></label>
+<<<<<<< HEAD
                                              <input type="number" name="max_team_members" id="max_team_members" class="form-control form-control-sm" min="2" value="{{ old('max_team_members', 5) }}">
+=======
+                                             <input type="text" name="max_team_members" id="max_team_members" class="form-control form-control-sm" placeholder="Contoh: 2-5, 2-3 atau 5" value="{{ old('max_team_members', 5) }}">
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
                                          </div>
                                         <div class="col-12 mb-2">
                                             <hr class="my-1">

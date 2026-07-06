@@ -35,7 +35,7 @@ class FinanceController extends Controller
         // Approved Expenses
         $totalExpenses = Expense::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
         $totalTrainerPayments = TrainerPayment::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
-        $totalEventExpenses = \App\Models\EventExpense::where('status', 'approved')->sum('total');
+        $totalEventExpenses = \App\Models\EventExpense::whereHas('event')->where('status', 'approved')->sum('total');
         
         $pendapatanBersih = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPayments - $totalEventExpenses;
 
@@ -66,13 +66,13 @@ class FinanceController extends Controller
             ->whereMonth('expense_date', $thisMonth)->whereYear('expense_date', $thisYear)->sum('amount');
         $totalExpenseThisMonth += TrainerPayment::where(function($q) { $q->where('status','approved')->orWhereNull('status'); })
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('amount');
-        $totalExpenseThisMonth += \App\Models\EventExpense::where('status','approved')
+        $totalExpenseThisMonth += \App\Models\EventExpense::whereHas('event')->where('status','approved')
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('total');
 
         // 6. Pending Expenses Count (Pengeluaran menunggu persetujuan)
         $pendingExpensesCount = Expense::where('status', 'pending')->count()
             + TrainerPayment::where('status', 'pending')->count()
-            + \App\Models\EventExpense::where('status', 'pending')->count();
+            + \App\Models\EventExpense::whereHas('event')->where('status', 'pending')->count();
 
         // 7. Pending Withdrawals
         $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
@@ -217,7 +217,7 @@ class FinanceController extends Controller
             })
             ->get();
 
-        $eventExpenses = \App\Models\EventExpense::with('event')
+        $eventExpenses = \App\Models\EventExpense::whereHas('event')->with('event')
             ->whereBetween('created_at', [$start, $end])
             ->where('status', 'approved')
             ->get();
@@ -479,12 +479,22 @@ class FinanceController extends Controller
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
-            'category' => 'nullable|string'
+            'category' => 'nullable|string',
+            'proof_of_payment' => 'required|image|max:5120'
         ]);
 
-        Expense::create($request->all());
+        $data = $request->except('proof_of_payment');
 
-        return back()->with('success', 'Pengeluaran berhasil dicatat.');
+        if ($request->hasFile('proof_of_payment')) {
+            $path = $request->file('proof_of_payment')->store('finance/proofs/manual', 'public');
+            $data['proof_of_payment'] = $path;
+        }
+
+        $data['status'] = 'approved';
+
+        Expense::create($data);
+
+        return back()->with('success', 'Pengeluaran manual berhasil dicatat dengan bukti pembayaran.');
     }
 
     /* ═══════════════════════════════════════════
@@ -514,8 +524,8 @@ class FinanceController extends Controller
         }
 
         // 3. Auto-generate pending fee requests for speakers of finished events
-        $finishedEvents = Event::whereNotNull('ended_at')
-            ->where('ended_at', '<', now())
+        $finishedEvents = Event::withTrashed()
+            ->finished()
             ->with('speakers')
             ->get();
 
@@ -581,6 +591,10 @@ class FinanceController extends Controller
             return back()->with('error', 'Saldo trainer belum mencapai minimum pencairan Rp ' . number_format($minDisburse, 0, ',', '.'));
         }
 
+        if (empty($trainer->bank_name) || empty($trainer->bank_account_number)) {
+            return back()->with('error', 'Pencairan gagal. Trainer belum mengatur informasi rekening bank.');
+        }
+
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',
             'notes'            => 'nullable|string|max:500',
@@ -622,7 +636,7 @@ class FinanceController extends Controller
      */
     public function createEventFeeRequest(Request $request, $eventId)
     {
-        $event = \App\Models\Event::with('trainer')->findOrFail($eventId);
+        $event = \App\Models\Event::withTrashed()->with('trainer')->findOrFail($eventId);
 
         if (!$event->trainer_id) {
             return back()->with('error', 'Event ini tidak memiliki trainer yang terdaftar.');
@@ -653,6 +667,10 @@ class FinanceController extends Controller
     public function approveEventFeePayment(Request $request, $paymentId)
     {
         $payment = TrainerPayment::with('trainer')->findOrFail($paymentId);
+
+        if (!$payment->trainer || empty($payment->trainer->bank_name) || empty($payment->trainer->bank_account_number)) {
+            return back()->with('error', 'Pembayaran fee gagal. Trainer belum mengatur informasi rekening bank.');
+        }
 
         $request->validate([
             'proof_of_payment' => 'required|image|max:5120',
@@ -715,7 +733,7 @@ class FinanceController extends Controller
         $paidCommissions  = \App\Models\Withdrawal::where('status', 'approved')->sum('amount');
         $totalExpenses    = \App\Models\Expense::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
         $totalTrainerPay  = \App\Models\TrainerPayment::where(function($q) { $q->where('status', 'approved')->orWhereNull('status'); })->sum('amount');
-        $totalEventExp    = \App\Models\EventExpense::where('status', 'approved')->sum('total');
+        $totalEventExp    = \App\Models\EventExpense::whereHas('event')->where('status', 'approved')->sum('total');
 
         $currentBalance = $totalOmzet - $paidCommissions - $totalExpenses - $totalTrainerPay - $totalEventExp;
 
@@ -756,7 +774,7 @@ class FinanceController extends Controller
     {
         $wQuery = \App\Models\Withdrawal::with('user');
         $tpQuery = \App\Models\TrainerPayment::with('trainer');
-        $eeQuery = \App\Models\EventExpense::with('event');
+        $eeQuery = \App\Models\EventExpense::whereHas('event')->with('event');
         $geQuery = \App\Models\Expense::query();
 
         if ($request->filled('month')) {
@@ -830,5 +848,248 @@ class FinanceController extends Controller
         $payment = TrainerPayment::with('trainer', 'event')->findOrFail($id);
 
         return view('admin.finance.trainers.invoice', compact('payment'));
+    }
+
+    public function exportEvent(Request $request, $id)
+    {
+        $event = Event::with(['expenses'])->findOrFail($id);
+        $format = $request->get('format', 'pdf');
+
+        $transactions = ManualPayment::with('user')
+            ->where('event_id', $id)
+            ->where('status', 'settled')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalIncome = $transactions->sum('amount');
+        $opExpenses = $event->expenses_total;
+        $commissions = Referral::where('description', 'LIKE', '%' . $event->title . '%')->where('status', 'paid')->sum('amount');
+        $netProfit = $totalIncome - $opExpenses - $commissions;
+
+        if ($format == 'excel') {
+            return $this->exportEventToExcel($event, $transactions, $totalIncome, $opExpenses, $commissions, $netProfit);
+        }
+
+        // Export to PDF
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+
+        $html = view('admin.finance.event_report_pdf', compact(
+            'event', 'transactions', 'totalIncome', 'opExpenses', 'commissions', 'netProfit'
+        ))->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Laporan_Keuangan_Event_' . str_replace(' ', '_', $event->title) . '_' . now()->format('YmdHis') . '.pdf';
+
+        return response($dompdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    private function exportEventToExcel($event, $transactions, $totalIncome, $opExpenses, $commissions, $netProfit)
+    {
+        $filename = 'Laporan_Keuangan_Event_' . str_replace(' ', '_', $event->title) . '_' . now()->format('YmdHis') . '.csv';
+        $headers = [
+            "Content-Type" => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=\"$filename\"",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $callback = function() use ($event, $transactions, $totalIncome, $opExpenses, $commissions, $netProfit) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for Excel UTF-8
+            fputs($file, (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+
+            fputcsv($file, ['IDSPORA - LAPORAN KEUANGAN EVENT']);
+            fputcsv($file, ['Nama Event:', $event->title]);
+            fputcsv($file, ['Tanggal Event:', $event->event_date ? $event->event_date->format('Y-m-d') : '-']);
+            fputcsv($file, ['Lokasi:', $event->location ?? '-']);
+            fputcsv($file, ['Trainer/Speaker:', $event->speaker ?? ($event->trainer->name ?? '-')]);
+            fputcsv($file, []);
+
+            // Summary
+            fputcsv($file, ['RINGKASAN KEUANGAN']);
+            fputcsv($file, ['Total Pendapatan Kotor (Gross Income)', $totalIncome]);
+            fputcsv($file, ['Total Biaya Operasional (Event Expenses)', $opExpenses]);
+            fputcsv($file, ['Total Komisi Reseller', $commissions]);
+            fputcsv($file, ['Estimasi Pendapatan Bersih (Net Profit)', $netProfit]);
+            fputcsv($file, []);
+
+            // Incomes Header
+            fputcsv($file, ['RINCIAN PEMASUKAN (TRANSAKSI SETTLED)']);
+            fputcsv($file, ['Tanggal', 'Nama Peserta', 'Email', 'Order ID', 'Metode', 'Jumlah']);
+
+            foreach ($transactions as $t) {
+                fputcsv($file, [
+                    $t->created_at->format('Y-m-d H:i'),
+                    $t->user->name ?? 'Guest',
+                    $t->user->email ?? '-',
+                    $t->order_id,
+                    strtoupper($t->method),
+                    $t->amount
+                ]);
+            }
+            fputcsv($file, []);
+
+            // Expenses Header
+            fputcsv($file, ['RINCIAN PENGELUARAN OPERASIONAL']);
+            fputcsv($file, ['Item Pengeluaran', 'Qty', 'Harga Satuan', 'Total']);
+
+            foreach ($event->expenses as $exp) {
+                fputcsv($file, [
+                    $exp->item,
+                    $exp->quantity,
+                    $exp->unit_price,
+                    $exp->total
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportCourse(Request $request, $id)
+    {
+        $course = Course::findOrFail($id);
+        $format = $request->get('format', 'pdf');
+
+        $transactions = ManualPayment::with('user')
+            ->where('course_id', $id)
+            ->where('status', 'settled')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalIncome = $transactions->sum('amount');
+        $commissions = Referral::where('description', 'LIKE', '%' . $course->name . '%')->where('status', 'paid')->sum('amount');
+        $netProfit = $totalIncome - $commissions;
+
+        if ($format == 'excel') {
+            return $this->exportCourseToExcel($course, $transactions, $totalIncome, $commissions, $netProfit);
+        }
+
+        // Export to PDF
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+
+        $html = view('admin.finance.course_report_pdf', compact(
+            'course', 'transactions', 'totalIncome', 'commissions', 'netProfit'
+        ))->render();
+
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'Laporan_Keuangan_Course_' . str_replace(' ', '_', $course->name) . '_' . now()->format('YmdHis') . '.pdf';
+
+        return response($dompdf->output(), 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    private function exportCourseToExcel($course, $transactions, $totalIncome, $commissions, $netProfit)
+    {
+        $filename = 'Laporan_Keuangan_Course_' . str_replace(' ', '_', $course->name) . '_' . now()->format('YmdHis') . '.csv';
+        $headers = [
+            "Content-Type" => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=\"$filename\"",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
+        ];
+
+        $callback = function() use ($course, $transactions, $totalIncome, $commissions, $netProfit) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for Excel UTF-8
+            fputs($file, (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+
+            fputcsv($file, ['IDSPORA - LAPORAN KEUANGAN COURSE']);
+            fputcsv($file, ['Nama Course:', $course->name]);
+            fputcsv($file, ['Tanggal Cetak:', now()->format('Y-m-d H:i')]);
+            fputcsv($file, []);
+
+            // Summary
+            fputcsv($file, ['RINGKASAN KEUANGAN']);
+            fputcsv($file, ['Total Pendapatan Kotor (Gross Income)', $totalIncome]);
+            fputcsv($file, ['Total Komisi Reseller', $commissions]);
+            fputcsv($file, ['Estimasi Pendapatan Bersih (Net Profit)', $netProfit]);
+            fputcsv($file, []);
+
+            // Incomes Header
+            fputcsv($file, ['RINCIAN PEMASUKAN (TRANSAKSI SETTLED)']);
+            fputcsv($file, ['Tanggal', 'Nama Siswa', 'Email', 'Order ID', 'Metode', 'Jumlah']);
+
+            foreach ($transactions as $t) {
+                fputcsv($file, [
+                    $t->created_at->format('Y-m-d H:i'),
+                    $t->user->name ?? 'Guest',
+                    $t->user->email ?? '-',
+                    $t->order_id,
+                    strtoupper($t->method),
+                    $t->amount
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+    public function invoiceHistory(Request $request)
+    {
+        $query = \App\Models\ManualPayment::with(['user', 'event', 'course'])
+            ->where('status', 'settled');
+
+        // Filter by month
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        // Filter by year
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        // Filter by type: event / course / other
+        if ($request->filled('type')) {
+            if ($request->type === 'event') {
+                $query->whereNotNull('event_id');
+            } elseif ($request->type === 'course') {
+                $query->whereNotNull('course_id');
+            } elseif ($request->type === 'other') {
+                $query->whereNull('event_id')->whereNull('course_id');
+            }
+        }
+
+        $invoices = $query->orderByDesc('created_at')
+            ->paginate(20)
+            ->appends($request->except('page'));
+
+        // Summary stats (all-time, unaffected by filters)
+        $totalInvoices = \App\Models\ManualPayment::where('status', 'settled')->count();
+        $totalRevenue  = \App\Models\ManualPayment::where('status', 'settled')->sum('amount');
+        $filteredTotal = (clone $query)->sum('amount');
+        $filteredCount = $invoices->total();
+
+        $pendingWithdrawalsCount = \App\Models\Withdrawal::where('status', 'pending')->count();
+
+        return view('admin.finance.invoice_history', compact(
+            'invoices',
+            'totalInvoices',
+            'totalRevenue',
+            'filteredTotal',
+            'filteredCount',
+            'pendingWithdrawalsCount'
+        ));
     }
 }

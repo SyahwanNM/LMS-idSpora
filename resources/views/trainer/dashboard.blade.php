@@ -38,21 +38,35 @@
   // 1. Calculate total reviews/feedbacks for the rating card
   $courseReviews = \App\Models\Review::whereHas('course', function ($q) use ($trainer) {
     $q->where('trainer_id', $trainer->id);
-  })->get(['rating']);
+  })->get(['rating', 'trainer_rating']);
   
   $eventFeedbacks = \App\Models\Feedback::whereHas('event', function ($q) use ($trainer) {
-    $q->where('trainer_id', $trainer->id);
-  })->get(['rating']);
+    $q->where(function ($inner) use ($trainer) {
+        $inner->where('trainer_id', $trainer->id)
+              ->orWhereHas('speakers', function ($sq) use ($trainer) {
+                  $sq->where('trainer_id', $trainer->id);
+              })
+              ->orWhereHas('trainerAssignments', function ($aq) use ($trainer) {
+                  $aq->where('trainer_id', $trainer->id)
+                     ->where('status', 'accepted');
+              });
+        
+        $trainerName = trim((string) ($trainer->name ?? ''));
+        if ($trainerName !== '') {
+            $inner->orWhere('speaker', 'like', '%' . $trainerName . '%');
+        }
+    });
+  })->get(['rating', 'speaker_rating']);
   
   $totalRatings = $courseReviews->count() + $eventFeedbacks->count();
   
   $ratingCounts = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
   foreach($courseReviews as $r) { 
-      $val = (int) round($r->rating);
+      $val = (int) round($r->trainer_rating ?? $r->rating ?? 0);
       if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
   }
   foreach($eventFeedbacks as $f) { 
-      $val = (int) round($f->rating);
+      $val = (int) round($f->speaker_rating ?? $f->rating ?? 0);
       if($val >= 1 && $val <= 5) $ratingCounts[$val]++; 
   }
   
@@ -81,7 +95,7 @@
     $greeting = 'Selamat malam';
   }
 
-  // 3b. Fetch 5-Month Revenue Data
+  // 3b. Fetch 5-Month Revenue Data (Course Sales Share + Event Fees)
   $revenueData = [];
   $maxRevenue = 0;
   $monthsLabel = [];
@@ -91,10 +105,32 @@
       $monthStart = $dt->copy()->startOfMonth();
       $monthEnd = $dt->copy()->endOfMonth();
 
-      $amount = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+      // Course earnings in this month
+      $courseEarnings = \App\Models\ManualPayment::where('status', 'settled')
+          ->whereHas('course', function ($q) use ($trainer) {
+              $q->where('trainer_id', $trainer->id);
+          })
+          ->whereBetween('created_at', [$monthStart, $monthEnd])
+          ->with('course')
+          ->get()
+          ->sum(function ($payment) {
+              return ($payment->amount * ($payment->course->trainer_revenue_percent ?? 0)) / 100;
+          });
+
+      // Event payments/fees approved/date in this month
+      $eventEarnings = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+          ->where('type', 'event_fee')
           ->where('status', 'approved')
-          ->whereBetween('payment_date', [$monthStart, $monthEnd])
+          ->where(function ($query) use ($monthStart, $monthEnd) {
+              $query->whereBetween('payment_date', [$monthStart, $monthEnd])
+                    ->orWhere(function ($q) use ($monthStart, $monthEnd) {
+                        $q->whereNull('payment_date')
+                          ->whereBetween('created_at', [$monthStart, $monthEnd]);
+                    });
+          })
           ->sum('amount');
+
+      $amount = $courseEarnings + $eventEarnings;
 
       $revenueData[] = $amount;
       $monthsLabel[] = $dt->translatedFormat('M Y');
@@ -122,9 +158,10 @@
   }
   $areaD = $pathD . " L {$svgPoints[4]['x']} 150 L {$svgPoints[0]['x']} 150 Z";
 
-  $totalRevenue = \App\Models\TrainerPayment::where('user_id', $trainer->id)
+  $withdrawnRevenue = \App\Models\TrainerPayment::where('user_id', $trainer->id)
       ->where('status', 'approved')
       ->sum('amount');
+  $totalRevenue = $walletBalance + $withdrawnRevenue;
 
   $thisMonthRevenue = $revenueData[4] ?? 0;
   $lastMonthRevenue = $revenueData[3] ?? 0;
@@ -158,7 +195,7 @@
       'progress' => $progressPercent,
       'progress_label' => 'Progres Materi',
       'count_label' => 'Siswa',
-      'count_value' => $course->enrollments_count,
+      'count_value' => $course->active_enrollments_count ?? $course->enrollments_count ?? 0,
       'date_label' => 'Disetujui',
       'date_value' => $course->approved_at ? $course->approved_at->format('d M Y') : '-',
       'url' => route('trainer.courses.studio', $course->id),
@@ -166,7 +203,8 @@
       'icon_style' => 'course-style',
       'gradient_class' => 'green-gradient',
       'track_class' => 'track-green',
-      'fill_class' => 'fill-green'
+      'fill_class' => 'fill-green',
+      'raw_date' => $course->approved_at ?? $course->created_at
     ];
   }
 
@@ -216,9 +254,20 @@
       'icon_style' => 'event-style',
       'gradient_class' => $gradient,
       'track_class' => $track,
-      'fill_class' => $fill
+      'fill_class' => $fill,
+      'raw_date' => $row['event_date']
     ];
   }
+
+  // Sort combined kegiatanBerjalan by raw_date descending
+  usort($kegiatanBerjalan, function ($a, $b) {
+      $dateA = !empty($a['raw_date']) ? \Carbon\Carbon::parse($a['raw_date']) : null;
+      $dateB = !empty($b['raw_date']) ? \Carbon\Carbon::parse($b['raw_date']) : null;
+      if (!$dateA && !$dateB) return 0;
+      if (!$dateA) return 1;
+      if (!$dateB) return -1;
+      return $dateB->timestamp <=> $dateA->timestamp;
+  });
 
   // 5. Calculate "Tugas & Kewajiban"
   $tugasItems = [];
@@ -249,7 +298,8 @@
         'icon_class' => 'bi-cloud-arrow-up-fill',
         'days_left' => $daysLeft !== null ? max(0, $daysLeft) : '-',
         'raw_days_left' => $daysLeft,
-        'date_str' => $deadline ? $deadline->format('d M Y') : 'Jadwal menyusul'
+        'date_str' => $deadline ? $deadline->format('d M Y') : 'Jadwal menyusul',
+        'deadline' => $deadline
       ];
     }
   }
@@ -279,7 +329,8 @@
       'icon_class' => 'bi-cloud-arrow-up-fill',
       'days_left' => max(0, $daysLeft),
       'raw_days_left' => $daysLeft,
-      'date_str' => $moduleDeadline->format('d M Y')
+      'date_str' => $moduleDeadline->format('d M Y'),
+      'deadline' => $moduleDeadline
     ];
   }
 
@@ -355,19 +406,23 @@
   $allTrainerEvents = \App\Models\Event::query()
     ->whereNotNull('event_date')
     ->where(function ($query) use ($trainer) {
-        $query->where('trainer_id', $trainer->id)
-            ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
-                $speakerQuery->where('trainer_id', $trainer->id);
-            })
-            ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
-                $assignmentQuery->where('trainer_id', $trainer->id)
-                    ->where('status', 'accepted');
+        $query->where(function ($inner) use ($trainer) {
+            $inner->where('trainer_id', $trainer->id)
+                ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                    $speakerQuery->where('trainer_id', $trainer->id);
+                });
+            
+            $trainerName = trim((string) ($trainer->name ?? ''));
+            if ($trainerName !== '') {
+                $inner->orWhere('speaker', 'like', '%' . $trainerName . '%');
+            }
+        })
+        ->where(function ($inner) use ($trainer) {
+            $inner->whereDoesntHave('trainerAssignments', function ($q) use ($trainer) {
+                $q->where('trainer_id', $trainer->id)
+                    ->where('status', '!=', 'accepted');
             });
-        
-        $trainerName = trim((string) ($trainer->name ?? ''));
-        if ($trainerName !== '') {
-            $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
-        }
+        });
     })
     ->get();
 
@@ -407,19 +462,23 @@
   $agendaEvents = \App\Models\Event::query()
     ->whereNotNull('event_date')
     ->where(function ($query) use ($trainer) {
-        $query->where('trainer_id', $trainer->id)
-            ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
-                $speakerQuery->where('trainer_id', $trainer->id);
-            })
-            ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
-                $assignmentQuery->where('trainer_id', $trainer->id)
-                    ->where('status', 'accepted');
+        $query->where(function ($inner) use ($trainer) {
+            $inner->where('trainer_id', $trainer->id)
+                ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                    $speakerQuery->where('trainer_id', $trainer->id);
+                });
+            
+            $trainerName = trim((string) ($trainer->name ?? ''));
+            if ($trainerName !== '') {
+                $inner->orWhere('speaker', 'like', '%' . $trainerName . '%');
+            }
+        })
+        ->where(function ($inner) use ($trainer) {
+            $inner->whereDoesntHave('trainerAssignments', function ($q) use ($trainer) {
+                $q->where('trainer_id', $trainer->id)
+                    ->where('status', '!=', 'accepted');
             });
-        
-        $trainerName = trim((string) ($trainer->name ?? ''));
-        if ($trainerName !== '') {
-            $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
-        }
+        });
     })
     ->whereDate('event_date', $today->toDateString())
     ->orderBy('event_time', 'asc')
@@ -429,19 +488,23 @@
     $agendaEvents = \App\Models\Event::query()
       ->whereNotNull('event_date')
       ->where(function ($query) use ($trainer) {
-          $query->where('trainer_id', $trainer->id)
-              ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
-                  $speakerQuery->where('trainer_id', $trainer->id);
-              })
-              ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainer) {
-                  $assignmentQuery->where('trainer_id', $trainer->id)
-                      ->where('status', 'accepted');
+          $query->where(function ($inner) use ($trainer) {
+              $inner->where('trainer_id', $trainer->id)
+                  ->orWhereHas('speakers', function ($speakerQuery) use ($trainer) {
+                      $speakerQuery->where('trainer_id', $trainer->id);
+                  });
+              
+              $trainerName = trim((string) ($trainer->name ?? ''));
+              if ($trainerName !== '') {
+                  $inner->orWhere('speaker', 'like', '%' . $trainerName . '%');
+              }
+          })
+          ->where(function ($inner) use ($trainer) {
+              $inner->whereDoesntHave('trainerAssignments', function ($q) use ($trainer) {
+                  $q->where('trainer_id', $trainer->id)
+                      ->where('status', '!=', 'accepted');
               });
-          
-          $trainerName = trim((string) ($trainer->name ?? ''));
-          if ($trainerName !== '') {
-              $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
-          }
+          });
       })
       ->whereDate('event_date', '>=', $today->toDateString())
       ->orderBy('event_date', 'asc')
@@ -526,13 +589,13 @@ body {
 .dash-card-link:hover { color: #51376c; text-decoration: underline; }
 
 /* Pendapatan Total */
-.dash-revenue-card { background: linear-gradient(135deg, #624388 0%, #8562b3 100%); color: white; border: none; padding: 24px 24px 0 24px; position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(98, 67, 136, 0.4); }
+.dash-revenue-card { background: linear-gradient(135deg, #624388 0%, #8562b3 100%); color: white; border: none; padding: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(98, 67, 136, 0.4); }
 .revenue-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; }
 .revenue-amount { font-size: 36px; font-weight: 800; margin: 16px 0 12px 0; letter-spacing: -1px; }
 .revenue-growth { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 500; margin-bottom: 0; }
 .revenue-growth .badge-up { padding: 4px 10px; border-radius: 99px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .chart-container { width: calc(100% + 48px); flex: 1; min-height: 160px; margin-top: 24px; position: relative; margin-left: -24px; margin-bottom: -15px; }
-.revenue-btn-wrapper { padding: 0 24px 24px 24px; position: relative; z-index: 10; margin-left: -24px; width: calc(100% + 48px); }
+.revenue-btn-wrapper { position: relative; z-index: 10; margin-top: 16px; }
 .revenue-btn { display: block; width: 100%; background: #ffffff; color: #1e3a8a; padding: 14px; border-radius: 12px; text-align: center; font-weight: 700; font-size: 14px; text-decoration: none; transition: all 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
 .revenue-btn:hover { background: #f8fafc; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); }
 
@@ -548,16 +611,31 @@ body {
 .hover-target:hover + .graph-tooltip { opacity: 1; visibility: visible; margin-top: -20px; }
 
 /* Ringkasan Aktivitas */
-.activity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; margin-bottom: 24px; }
-.activity-item { display: flex; flex-direction: column; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 16px; text-align: left; }
-.activity-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 12px; }
-.icon-purple { background: #f7f5fa; color: #624388; }
-.icon-green { background: #d1fae5; color: #10b981; }
-.icon-orange { background: #ffedd5; color: #f97316; }
-.icon-blue { background: #f7f5fa; color: #624388; }
-.activity-val { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; margin-bottom: 6px; }
-.activity-lbl { font-size: 13px; color: #475569; font-weight: 600; }
-.activity-sub { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.activity-header-left { display: flex; flex-direction: column; gap: 4px; }
+.activity-subtitle { font-size: 13px; color: #64748b; font-weight: 500; }
+.activity-badge-today { display: inline-flex; align-items: center; gap: 8px; background-color: #f3e8ff; color: #7c3aed; padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 600; border: none; }
+.activity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; margin-bottom: 0; align-content: center; }
+.activity-item { display: flex; flex-direction: column; background: #ffffff; border: 1px solid #f1f5f9; border-radius: 20px; padding: 24px; text-align: left; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01); }
+.activity-item:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
+.activity-top-row { display: flex; align-items: center; gap: 16px; }
+.activity-icon-box { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.activity-value-group { display: flex; flex-direction: column; gap: 2px; }
+.activity-item-val { font-size: 32px; font-weight: 800; color: #0f172a; line-height: 1; }
+.activity-item-lbl { font-size: 13px; font-weight: 700; color: #334155; }
+.activity-divider { margin: 12px 0; border-top: 1px solid #f1f5f9; }
+.activity-bottom-row { display: flex; justify-content: space-between; align-items: center; }
+.activity-item-sub { font-size: 12px; color: #94a3b8; font-weight: 500; }
+.activity-chevron { font-size: 14px; font-weight: 800; }
+
+/* Icon & Chevron colors */
+.icon-box-purple { background: #f3e8ff; color: #7c3aed; }
+.chevron-purple { color: #7c3aed; }
+.icon-box-green { background: #e6fdf4; color: #059669; }
+.chevron-green { color: #059669; }
+.icon-box-orange { background: #fff5eb; color: #f97316; }
+.chevron-orange { color: #f97316; }
+.icon-box-yellow { background: #fffbeb; color: #d97706; }
+.chevron-yellow { color: #d97706; }
 
 /* E-Sertifikat Saya */
 .cert-count-row { margin-bottom: 24px; }
@@ -664,9 +742,27 @@ body {
 .review-tag { background: #f7f5fa; color: #624388; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
 .review-date { font-size: 10px; color: #94a3b8; }
 
-/* Kelas & Event Berjalan Grid */
-.ongoing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-.ongoing-card { position: relative; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; background: #ffffff; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease; cursor: pointer; min-height: 190px; }
+/* Kelas & Event Berjalan Grid (Redesigned as Grid Pagination) */
+.ongoing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    padding: 6px 4px 16px 4px;
+}
+.ongoing-card {
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease;
+    cursor: pointer;
+    min-height: 190px;
+}
 .ongoing-card:hover { transform: translateY(-6px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02); border-color: #cbd5e1; }
 .ongoing-card::before { content: ''; position: absolute; top: 0; right: 0; width: 160px; height: 160px; background: radial-gradient(circle, rgba(98,67,136,0.06) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; transform: translate(30%, -30%); z-index: 1; pointer-events: none; }
 .ongoing-card .tag-badge { margin-bottom: 0; position: relative; z-index: 2; }
@@ -676,6 +772,73 @@ body {
 .icon-gradient-green { background: linear-gradient(135deg, #34d399 0%, #059669 100%); }
 .icon-gradient-purple { background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%); }
 .icon-gradient-blue { background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%); }
+/* Pagination Styles */
+.ongoing-pagination-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    padding: 0 4px;
+}
+.pagination-info {
+    font-size: 14px;
+    color: #475569;
+    font-weight: 500;
+}
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pag-pages {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.pag-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    color: #475569 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    outline: none !important;
+    box-shadow: none !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+.pag-btn:hover:not(:disabled) {
+    border-color: #cbd5e1 !important;
+    background: #f8fafc !important;
+    color: #1e293b !important;
+}
+.pag-btn:focus, .pag-btn:active {
+    outline: none !important;
+    box-shadow: none !important;
+}
+.pag-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #94a3b8 !important;
+}
+.pag-btn.active {
+    background: #624388 !important;
+    color: #ffffff !important;
+    border-color: #624388 !important;
+}
+.pag-btn.active:hover {
+    background: #51376c !important;
+    border-color: #51376c !important;
+    color: #ffffff !important;
+}
 
 /* Kalender */
 .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -716,6 +879,7 @@ body {
 @media (max-width: 768px) {
     .grid-3-col { grid-template-columns: 1fr; }
     .ongoing-grid { grid-template-columns: 1fr; }
+    .ongoing-pagination-wrapper { flex-direction: column; gap: 16px; text-align: center; }
 }
 </style>
 @endpush
@@ -809,6 +973,18 @@ body {
             
             <div class="revenue-amount" style="position: relative; z-index: 2;">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</div>
             
+            <!-- Breakdown Section -->
+            <div style="position: relative; z-index: 2; display: flex; gap: 16px; margin: 8px 0; font-size: 12px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 8px;">
+                <div>
+                    <span style="opacity: 0.8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Saldo Dompet</span>
+                    <strong style="font-size: 13px; color: #fff;">Rp {{ number_format($walletBalance, 0, ',', '.') }}</strong>
+                </div>
+                <div style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 16px;">
+                    <span style="opacity: 0.8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Telah Dicairkan</span>
+                    <strong style="font-size: 13px; color: #e2e8f0;">Rp {{ number_format($withdrawnRevenue, 0, ',', '.') }}</strong>
+                </div>
+            </div>
+            
             <div class="revenue-growth" style="position: relative; z-index: 2;">
                 @if($revenueGrowth >= 0)
                 <span class="badge-up" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="bi bi-graph-up-arrow"></i> +{{ number_format($revenueGrowth, 1) }}%</span> 
@@ -855,6 +1031,10 @@ body {
                 </div>
                 @endforeach
             </div>
+            <div style="position: relative; z-index: 2; margin-top: auto; padding: 12px 0; font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15);">
+                <span>Saldo Course Tersedia:</span>
+                <span style="font-weight: 800;">Rp {{ number_format($walletBalance, 0, ',', '.') }}</span>
+            </div>
             
             <div class="revenue-btn-wrapper">
                 <a href="{{ route('trainer.finance') }}" class="revenue-btn">Kelola Pendapatan</a>
@@ -863,41 +1043,86 @@ body {
 
         {{-- Ringkasan Aktivitas --}}
         <div class="dash-card">
-            <div class="dash-card-header">
-                <h3 class="dash-card-title">Ringkasan Aktivitas</h3>
+            <div class="dash-card-header" style="align-items: flex-start; margin-bottom: 24px;">
+                <div class="activity-header-left">
+                    <h3 class="dash-card-title" style="font-size: 20px;">Ringkasan Aktivitas</h3>
+                    <span class="activity-subtitle">Statistik aktivitas trainer saat ini</span>
+                </div>
+                <button class="activity-badge-today">
+                    <i class="bi bi-calendar2-week"></i> Hari Ini
+                </button>
             </div>
             <div class="activity-grid">
-                <div class="activity-item">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                        <div class="activity-icon icon-purple" style="margin-bottom: 0;">
-                          <i class="bi bi-calendar-event"></i>
+                <!-- Kelas Berjalan -->
+                <div class="activity-item" onclick="document.getElementById('kelas-event-berjalan')?.scrollIntoView({behavior: 'smooth'})">
+                    <div class="activity-top-row">
+                        <div class="activity-icon-box icon-box-purple">
+                            <i class="bi bi-calendar-event"></i>
                         </div>
-                        <div class="activity-val" style="margin-bottom: 0;">{{ $activeCourseCount + $activeEventCount }}</div>
+                        <div class="activity-value-group">
+                            <div class="activity-item-val">{{ $activeCourseCount + $activeEventCount }}</div>
+                            <div class="activity-item-lbl">Kelas Berjalan</div>
+                        </div>
                     </div>
-                    <div class="activity-lbl">Kelas Berjalan</div>
+                    <div class="activity-divider"></div>
+                    <div class="activity-bottom-row">
+                        <span class="activity-item-sub">Kelas yang sedang aktif</span>
+                        <i class="bi bi-chevron-right activity-chevron chevron-purple"></i>
+                    </div>
                 </div>
-                <div class="activity-item">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                        <div class="activity-icon icon-green" style="margin-bottom: 0;"><i class="bi bi-people"></i></div>
-                        <div class="activity-val" style="margin-bottom: 0;">{{ number_format($totalStudents) }}</div>
+
+                <!-- Peserta Aktif (Ganti jadi Jumlah Event) -->
+                <div class="activity-item" onclick="document.getElementById('kelas-event-berjalan')?.scrollIntoView({behavior: 'smooth'})">
+                    <div class="activity-top-row">
+                        <div class="activity-icon-box icon-box-green">
+                            <i class="bi bi-camera-video"></i>
+                        </div>
+                        <div class="activity-value-group">
+                            <div class="activity-item-val">{{ $allTrainerEvents->count() }}</div>
+                            <div class="activity-item-lbl">Jumlah Event</div>
+                        </div>
                     </div>
-                    <div class="activity-lbl">Peserta Aktif</div>
+                    <div class="activity-divider"></div>
+                    <div class="activity-bottom-row">
+                        <span class="activity-item-sub">Total event mengajar</span>
+                        <i class="bi bi-chevron-right activity-chevron chevron-green"></i>
+                    </div>
                 </div>
-                <div class="activity-item">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                        <div class="activity-icon icon-orange" style="margin-bottom: 0;"><i class="bi bi-file-earmark-text"></i></div>
-                        <div class="activity-val" style="margin-bottom: 0;">{{ $tugasMenungguCount }}</div>
+
+                <!-- Tugas Menunggu -->
+                <div class="activity-item" onclick="document.getElementById('deadline-materi')?.scrollIntoView({behavior: 'smooth'})">
+                    <div class="activity-top-row">
+                        <div class="activity-icon-box icon-box-orange">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div class="activity-value-group">
+                            <div class="activity-item-val">{{ $tugasMenungguCount }}</div>
+                            <div class="activity-item-lbl">Tugas Menunggu</div>
+                        </div>
                     </div>
-                    <div class="activity-lbl">Tugas Menunggu</div>
-                    <div class="activity-sub">Perlu diselesaikan</div>
+                    <div class="activity-divider"></div>
+                    <div class="activity-bottom-row">
+                        <span class="activity-item-sub">Perlu diselesaikan</span>
+                        <i class="bi bi-chevron-right activity-chevron chevron-orange"></i>
+                    </div>
                 </div>
-                <div class="activity-item">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                        <div class="activity-icon icon-blue" style="margin-bottom: 0;"><i class="bi bi-star"></i></div>
-                        <div class="activity-val" style="margin-bottom: 0;">{{ number_format($averageRating, 1) }}</div>
+
+                <!-- Rating Trainer -->
+                <div class="activity-item" onclick="document.getElementById('rating-ulasan')?.scrollIntoView({behavior: 'smooth'})">
+                    <div class="activity-top-row">
+                        <div class="activity-icon-box icon-box-yellow">
+                            <i class="bi bi-star"></i>
+                        </div>
+                        <div class="activity-value-group">
+                            <div class="activity-item-val">{{ number_format($averageRating, 1) }}</div>
+                            <div class="activity-item-lbl">Rating Trainer</div>
+                        </div>
                     </div>
-                    <div class="activity-lbl">Rating Trainer</div>
-                    <div class="activity-sub">Dari {{ number_format($totalRatings) }} ulasan</div>
+                    <div class="activity-divider"></div>
+                    <div class="activity-bottom-row">
+                        <span class="activity-item-sub">Dari {{ number_format($totalRatings) }} ulasan</span>
+                        <i class="bi bi-chevron-right activity-chevron chevron-yellow"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -992,10 +1217,10 @@ body {
                                         <button type="submit" class="btn btn-sm" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; background-color:#624388; border:none; color:white; padding:8px;" onclick="event.stopPropagation();">Terima</button>
                                     </form>
                                 @endif
-                                <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
+                                <form method="POST" class="js-invitation-response-form" data-confirm="Apakah Anda yakin ingin menolak undangan ini?" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="flex:1; margin:0;">
                                     @csrf
                                     <input type="hidden" name="decision" value="reject">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation(); return confirm('Apakah Anda yakin ingin menolak undangan ini?');">Tolak</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" style="width:100%; font-size:12px; font-weight:600; border-radius:8px; border:1px solid #ef4444; color:#ef4444; background:white; padding:8px;" onclick="event.stopPropagation();" data-loading-text="Memproses...">Tolak</button>
                                 </form>
                             </div>
                         </div>
@@ -1015,7 +1240,7 @@ body {
     {{-- ROW 2: 3 Columns --}}
     <div class="grid-3-col">
         {{-- E-Sertifikat Saya --}}
-        <div class="dash-card" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="window.location.href='{{ route('trainer.certificates.index') }}'" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 20px -5px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        <div class="dash-card" style="cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onclick="window.location.href='{{ route('trainer.certificates.index') }}'" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 20px -5px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
             <div style="width: 100%;">
                 <div class="dash-card-header" style="margin-bottom: 16px;">
                     <h3 class="dash-card-title">E-Sertifikat Saya</h3>
@@ -1080,7 +1305,7 @@ body {
         </div>
 
         {{-- Deadline Materi --}}
-        <div class="dash-card card-orange-top">
+        <div class="dash-card card-orange-top" id="deadline-materi" style="scroll-margin-top: 100px;">
             <div class="dash-card-header">
                 <h3 class="dash-card-title">Deadline Materi</h3>
                 @if($tugasMenungguCount > 0)
@@ -1131,7 +1356,7 @@ body {
         </div>
 
         {{-- Rating & Ulasan --}}
-        <div class="dash-card">
+        <div class="dash-card" id="rating-ulasan" style="scroll-margin-top: 100px;">
             <div class="dash-card-header">
                 <h3 class="dash-card-title">Rating & Ulasan Peserta</h3>
                 <a href="{{ route('trainer.feedback') }}" class="dash-card-link" style="font-size: 11px;">Lihat Semua</a>
@@ -1157,7 +1382,7 @@ body {
                 $fbRating = (float)($fb->rating ?? 5);
                 $fbName = $fb->user->name ?? ($fb->participant_name ?? 'Peserta');
                 $fbComment = $fb->comment ?? ($fb->feedback ?? '-');
-                $fbEvent = $fb->event->title ?? ($fb->event_title ?? 'Materi');
+                $fbEvent = $fb->event->title ?? $fb->course->name ?? $fb->event_title ?? 'Materi';
                 $fbDate = $fb->created_at ? $fb->created_at->format('d M Y') : '-';
             @endphp
             <div class="review-box mt-2" style="margin-bottom:12px;">
@@ -1174,7 +1399,13 @@ body {
                     </div>
                     <p class="review-text">{{ Str::limit($fbComment, 80) }}</p>
                     <div class="review-footer">
-                        <span class="review-tag">{{ Str::limit($fbEvent, 15) }}</span>
+                        <span class="review-tag">
+                            @if(($fb->type ?? '') === 'event')
+                                <i class="bi bi-calendar-event" style="margin-right: 4px;"></i>EVENT: {{ Str::limit(strtoupper($fbEvent), 25) }}
+                            @else
+                                <i class="bi bi-book" style="margin-right: 4px;"></i>KELAS: {{ Str::limit(strtoupper($fbEvent), 25) }}
+                            @endif
+                        </span>
                         <span class="review-date">{{ $fbDate }}</span>
                     </div>
                 </div>
@@ -1189,16 +1420,18 @@ body {
         </div>
     </div>
 
-    {{-- ROW 3: Kelas & Kalender --}}
     <div class="grid-2-col-wide">
         {{-- Kelas & Event Berjalan --}}
-        <div>
-            <div class="dash-card-header" style="margin-bottom: 16px;">
+        <div id="kelas-event-berjalan" style="scroll-margin-top: 100px;">
+            <div class="dash-card-header" style="margin-bottom: 16px; align-items: center;">
                 <h3 class="dash-card-title">Kelas & Event Berjalan</h3>
+                @if(($activeCourseCount + $activeEventCount) > 0)
+                <span style="font-size: 12px; font-weight: 700; color: #059669; background: #e6fdf4; padding: 4px 10px; border-radius: 20px;">{{ $activeCourseCount + $activeEventCount }} Aktif</span>
+                @endif
             </div>
             
             <div class="ongoing-grid">
-                @forelse(array_slice($kegiatanBerjalan, 0, 3) as $idx => $item)
+                @forelse($kegiatanBerjalan as $idx => $item)
                 @php
                     $isCourse = $item['type'] === 'course';
                     $tagClass = $isCourse ? 'tag-course' : 'tag-event';
@@ -1215,7 +1448,7 @@ body {
                     
                     <div style="display: flex; align-items: flex-end; justify-content: space-between; position: relative; z-index: 2; margin-top: auto;">
                         <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <span style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Peserta Aktif</span>
+                            <span style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">{{ $item['count_label'] ?? 'Peserta' }}</span>
                             <span style="font-size: 20px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;"><i class="bi bi-people-fill" style="color: #94a3b8; font-size: 16px;"></i> {{ $item['count_value'] }}</span>
                         </div>
                         
@@ -1225,6 +1458,24 @@ body {
                 @empty
                 <div style="grid-column: span 3; text-align: center; padding: 40px; color: #64748b; background: #ffffff; border-radius: 16px; border: 1px solid #f1f5f9;">Belum ada kelas atau event.</div>
                 @endforelse
+            </div>
+
+            {{-- Pagination --}}
+            <div class="ongoing-pagination-wrapper">
+                <div class="pagination-info">
+                    Menampilkan <span id="ongoing-pag-start">0</span> - <span id="ongoing-pag-end">0</span> dari <span id="ongoing-pag-total">0</span> data
+                </div>
+                <div class="pagination-controls">
+                    <button class="pag-btn prev-btn" id="ongoing-pag-prev">
+                        <i class="bi bi-chevron-left" style="-webkit-text-stroke: 0.5px;"></i>
+                    </button>
+                    <div class="pag-pages" id="ongoing-pag-pages-container">
+                        <!-- Dynamic page numbers -->
+                    </div>
+                    <button class="pag-btn next-btn" id="ongoing-pag-next">
+                        <i class="bi bi-chevron-right" style="-webkit-text-stroke: 0.5px;"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1301,6 +1552,83 @@ function handleStatusToggle(checkbox) {
 @push('scripts')
     <script>
       document.addEventListener('DOMContentLoaded', function () {
+        // Client-side pagination for Kelas & Event Berjalan
+        const ongoingGrid = document.querySelector('.ongoing-grid');
+        if (ongoingGrid) {
+            const cards = Array.from(ongoingGrid.querySelectorAll('.ongoing-card'));
+            const paginationWrapper = document.querySelector('.ongoing-pagination-wrapper');
+            
+            if (cards.length === 0) {
+                if (paginationWrapper) paginationWrapper.style.display = 'none';
+            } else {
+                const itemsPerPage = 3;
+                let currentPage = 1;
+                const totalPages = Math.ceil(cards.length / itemsPerPage);
+
+                const pagStartSpan = document.getElementById('ongoing-pag-start');
+                const pagEndSpan = document.getElementById('ongoing-pag-end');
+                const pagTotalSpan = document.getElementById('ongoing-pag-total');
+                const prevBtn = document.getElementById('ongoing-pag-prev');
+                const nextBtn = document.getElementById('ongoing-pag-next');
+                const pagesContainer = document.getElementById('ongoing-pag-pages-container');
+
+                function showPage(page) {
+                    currentPage = page;
+
+                    cards.forEach((card, idx) => {
+                        const startIdx = (page - 1) * itemsPerPage;
+                        const endIdx = startIdx + itemsPerPage;
+                        if (idx >= startIdx && idx < endIdx) {
+                            card.style.display = 'flex';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    const start = (page - 1) * itemsPerPage + 1;
+                    const end = Math.min(page * itemsPerPage, cards.length);
+                    if (pagStartSpan) pagStartSpan.innerText = start;
+                    if (pagEndSpan) pagEndSpan.innerText = end;
+                    if (pagTotalSpan) pagTotalSpan.innerText = cards.length;
+
+                    if (prevBtn) prevBtn.disabled = (page === 1);
+                    if (nextBtn) nextBtn.disabled = (page === totalPages);
+
+                    renderPageNumbers();
+                }
+
+                function renderPageNumbers() {
+                    if (!pagesContainer) return;
+                    pagesContainer.innerHTML = '';
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        const btn = document.createElement('button');
+                        btn.className = 'pag-btn';
+                        if (i === currentPage) {
+                            btn.classList.add('active');
+                        }
+                        btn.innerText = i;
+                        btn.addEventListener('click', () => showPage(i));
+                        pagesContainer.appendChild(btn);
+                    }
+                }
+
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        if (currentPage > 1) showPage(currentPage - 1);
+                    });
+                }
+
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        if (currentPage < totalPages) showPage(currentPage + 1);
+                    });
+                }
+
+                showPage(1);
+            }
+        }
+
         const replyModal = document.getElementById('feedbackReplyModal');
         const replyForm = document.getElementById('feedbackReplyForm');
         const replyInput = document.getElementById('replyResponseInput');

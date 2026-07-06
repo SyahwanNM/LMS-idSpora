@@ -102,6 +102,7 @@ class CoursePaymentController extends Controller
                 $coursePayment->save();
 
                 $this->processReferralCommission($course, $coursePayment);
+                $this->processCourseTrainerRevenue($course, $coursePayment);
             }
 
             $enrollment = $coursePayment->enrollment;
@@ -252,6 +253,9 @@ class CoursePaymentController extends Controller
 
     private function processReferralCommission(Course $course, ManualPayment $coursePayment): void
     {
+        if (!(bool) ($course->is_reseller_course ?? false)) {
+            return;
+        }
         if (empty($coursePayment->referral_code)) {
             return;
         }
@@ -261,7 +265,27 @@ class CoursePaymentController extends Controller
             return;
         }
 
-        $commissionAmount = ((float) $coursePayment->amount) * 0.10;
+        $totalReferrals = Referral::where('user_id', $referrer->id)->count();
+        if ($totalReferrals >= 151) {
+            $level = 'Gold';
+        } elseif ($totalReferrals >= 51) {
+            $level = 'Silver';
+        } else {
+            $level = 'Bronze';
+        }
+
+        $bronze = $course->reseller_commission_bronze ?? 10;
+        $silver = $course->reseller_commission_silver ?? 12;
+        $gold = $course->reseller_commission_gold ?? 15;
+
+        $pct = match ($level) {
+            'Gold' => $gold,
+            'Silver' => $silver,
+            default => $bronze,
+        };
+        $rate = ((float) $pct) / 100;
+
+        $commissionAmount = ((float) $coursePayment->amount) * $rate;
         if ($commissionAmount <= 0) {
             return;
         }
@@ -287,5 +311,42 @@ class CoursePaymentController extends Controller
         ]);
 
         $referrer->increment('wallet_balance', $commissionAmount);
+
+        try {
+            $msg = "Komisi Baru Masuk! Anda mendapatkan komisi sebesar Rp " . number_format($commissionAmount, 0, ',', '.') . " dari pembelian kursus '" . ($course->name ?? 'Course') . "'.";
+            \App\Models\UserNotification::create([
+                'user_id' => $referrer->id,
+                'type' => 'reseller',
+                'title' => 'Komisi Baru Masuk!',
+                'message' => $msg,
+                'data' => ['url' => route('reseller.index')],
+            ]);
+            if ($referrer->phone) {
+                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Course admin referral commission notification failed: ' . $e->getMessage());
+        }
+    }
+
+    private function processCourseTrainerRevenue(Course $course, ManualPayment $payment): void
+    {
+        if ($course->trainer_id && $course->trainer_revenue_percent > 0) {
+            $trainer = User::find($course->trainer_id);
+            if ($trainer) {
+                $trainerShare = ($payment->amount * $course->trainer_revenue_percent) / 100;
+                if ($trainerShare > 0) {
+                    $trainer->increment('wallet_balance', $trainerShare);
+
+                    \App\Models\TrainerNotification::create([
+                        'trainer_id' => $trainer->id,
+                        'type' => 'revenue_share',
+                        'title' => 'Pendapatan Course Baru',
+                        'message' => 'Anda menerima bagi hasil sebesar Rp ' . number_format($trainerShare, 0, ',', '.') . ' dari penjualan course: ' . $course->name,
+                        'data' => ['amount' => $trainerShare, 'course_id' => $course->id]
+                    ]);
+                }
+            }
+        }
     }
 }

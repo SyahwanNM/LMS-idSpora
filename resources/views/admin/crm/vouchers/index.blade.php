@@ -260,16 +260,29 @@
                     </thead>
                     <tbody>
                         @forelse($redemptions as $log)
+                        @php
+                            $logUserName = $log->user?->name ?? 'Pengguna (Dihapus)';
+                            $logUserEmail = $log->user?->email ?? '-';
+                            $logUserAvatar = $log->user?->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($logUserName) . '&background=7c3aed&color=fff&bold=true';
+                        @endphp
                         <tr>
                             <td style="padding-left:1.25rem;">
-                                <a href="{{ route('admin.crm.customers.show', $log->user) }}" class="d-flex align-items-center gap-3 text-decoration-none">
-                                    <img src="{{ $log->user->avatar_url }}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;border:1px solid var(--crm-border);"
-                                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($log->user->name) }}&background=7c3aed&color=fff&bold=true'">
+                                @if($log->user)
+                                <a href="{{ route('admin.crm.customers.show', $log->user->id) }}" class="d-flex align-items-center gap-3 text-decoration-none">
+                                @else
+                                <div class="d-flex align-items-center gap-3">
+                                @endif
+                                    <img src="{{ $logUserAvatar }}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;border:1px solid var(--crm-border);"
+                                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($logUserName) }}&background=7c3aed&color=fff&bold=true'">
                                     <div>
-                                        <div style="font-weight:700;font-size:0.8rem;color:var(--crm-navy);">{{ $log->user->name }}</div>
-                                        <div style="font-size:0.68rem;color:var(--crm-text-subtle);">{{ $log->user->email }}</div>
+                                        <div style="font-weight:700;font-size:0.8rem;color:var(--crm-navy);">{{ $logUserName }}</div>
+                                        <div style="font-size:0.68rem;color:var(--crm-text-subtle);">{{ $logUserEmail }}</div>
                                     </div>
+                                @if($log->user)
                                 </a>
+                                @else
+                                </div>
+                                @endif
                             </td>
                             <td>
                                 <div style="font-weight:700;font-size:0.8rem;color:var(--crm-navy);">{{ $log->voucher->name }}</div>
@@ -331,7 +344,7 @@
             </div>
             @if($redemptions->hasPages())
             <div style="padding:1rem 1.25rem;border-top:1px solid var(--crm-border-soft);">
-                {{ $redemptions->appends(request()->query())->links() }}
+                {{ $redemptions->appends(request()->query())->links('pagination::bootstrap-5') }}
             </div>
             @endif
         </div>

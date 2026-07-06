@@ -13,6 +13,9 @@
             <span class="badge-notif">{{ $pendingWithdrawals }}</span>
         @endif
     </a>
+    <a href="{{ route('admin.finance.invoice-history') }}" class="sidebar-link {{ request()->routeIs('admin.finance.invoice-history') ? 'active' : '' }}">
+        <i class="bi bi-receipt"></i> History Invoice
+    </a>
     <a href="{{ route('admin.finance.trainers') }}" class="sidebar-link {{ request()->routeIs('admin.finance.trainers') ? 'active' : '' }}">
         <i class="bi bi-person-check"></i> Kelola Trainer
     </a>

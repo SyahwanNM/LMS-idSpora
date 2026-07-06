@@ -78,7 +78,11 @@ class EventRegistration extends Model
     }
 
     public function event(){
-        return $this->belongsTo(Event::class);
+        return $this->belongsTo(Event::class)->withTrashed();
+    }
+
+    public function team(){
+        return $this->belongsTo(Team::class);
     }
 
     public function team(){

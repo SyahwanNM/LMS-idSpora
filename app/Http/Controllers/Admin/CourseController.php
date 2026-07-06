@@ -757,7 +757,13 @@ class CourseController extends Controller
         $totalModules = $course->modules ? $course->modules->count() : $course->modules()->count();
 
         $enrollments = $course->enrollments()
-            ->with(['user:id,name,email', 'progress:enrollment_id,course_module_id,completed'])
+            ->with([
+                'user:id,name,email',
+                'progress:enrollment_id,course_module_id,completed',
+                'manualPayments' => function ($q) {
+                    $q->with('proofs')->orderByDesc('created_at');
+                }
+            ])
             ->orderByDesc('enrolled_at')
             ->orderByDesc('created_at')
             ->get();
@@ -776,13 +782,32 @@ class CourseController extends Controller
 
             $enrolledAt = $enr->enrolled_at ?? $enr->created_at;
 
+            $latestPayment = $enr->manualPayments->first();
+            if (!$latestPayment) {
+                $latestPayment = \App\Models\ManualPayment::where('course_id', $enr->course_id)
+                    ->where('user_id', $enr->user_id)
+                    ->with('proofs')
+                    ->latest()
+                    ->first();
+            }
+            $paymentStatus = $latestPayment ? $latestPayment->status : null;
+            $paymentId = $latestPayment ? $latestPayment->id : null;
+            $paymentProofUrl = null;
+            if ($latestPayment && $latestPayment->proofs->isNotEmpty()) {
+                $paymentProofUrl = asset('storage/' . $latestPayment->proofs->first()->file_path);
+            }
+
             return [
+                'id' => $enr->id,
                 'name' => $enr->user->name ?? 'User',
                 'email' => $enr->user->email ?? '-',
                 'progress_percent' => $percent,
                 'status' => (string) ($enr->status ?? ''),
                 'status_label' => ((string) ($enr->status ?? '')) === 'active' ? 'Aktif' : ucfirst((string) ($enr->status ?? '-')),
                 'enrolled_at' => $enrolledAt ? $enrolledAt->format('d-m-Y') : '-',
+                'payment_status' => $paymentStatus,
+                'payment_id' => $paymentId,
+                'payment_proof_url' => $paymentProofUrl,
             ];
         })->values();
 
@@ -942,6 +967,7 @@ class CourseController extends Controller
                     $query->whereRaw('LOWER(role) = ?', ['trainer']);
                 }),
             ],
+            'trainer_contribution_scheme' => 'nullable|string|in:e2e,module_video,video_only',
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
@@ -1036,6 +1062,17 @@ class CourseController extends Controller
             $cardThumbPath = $request->file('card_thumbnail')->store('courses/card_thumbnails', 'public');
         }
 
+        $contribScheme = $request->input('trainer_contribution_scheme') ?: null;
+        $revenuePercent = null;
+        if ($contribScheme) {
+            $revenuePercent = match ($contribScheme) {
+                'e2e' => 35,
+                'module_video' => 25,
+                'video_only' => 10,
+                default => null,
+            };
+        }
+
         // Create course
         $course = Course::create([
             'name' => $request->name,
@@ -1043,6 +1080,9 @@ class CourseController extends Controller
             'template_id' => $template?->id,
             'template_version' => $template?->version,
             'trainer_id' => $request->input('trainer_id') ?: null,
+            'trainer_contribution_scheme' => $contribScheme,
+            'trainer_revenue_percent' => $revenuePercent,
+            'trainer_scheme_accepted_at' => $contribScheme ? now() : null,
             'description' => $this->sanitizeDescription($request->description),
             'level' => $request->level,
             'status' => $request->status,
@@ -1236,6 +1276,7 @@ class CourseController extends Controller
                     $query->whereRaw('LOWER(role) = ?', ['trainer']);
                 }),
             ],
+            'trainer_contribution_scheme' => 'nullable|string|in:e2e,module_video,video_only',
             'description' => 'nullable|string',
             'level' => 'required|in:beginner,intermediate,advanced',
             'status' => 'required|in:active,archive',
@@ -1333,10 +1374,24 @@ class CourseController extends Controller
             }
         }
 
+        $contribScheme = $request->input('trainer_contribution_scheme') ?: null;
+        $revenuePercent = null;
+        if ($contribScheme) {
+            $revenuePercent = match ($contribScheme) {
+                'e2e' => 35,
+                'module_video' => 25,
+                'video_only' => 10,
+                default => null,
+            };
+        }
+
         $data = [
             'name' => $request->name,
             'category_id' => $request->category_id,
             'trainer_id' => $request->input('trainer_id') ?: null,
+            'trainer_contribution_scheme' => $contribScheme,
+            'trainer_revenue_percent' => $revenuePercent,
+            'trainer_scheme_accepted_at' => $contribScheme ? ($course->trainer_scheme_accepted_at ?? now()) : null,
             'description' => $this->sanitizeDescription($request->description),
             'level' => $request->level,
             'status' => $request->status,

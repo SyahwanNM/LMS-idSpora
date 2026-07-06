@@ -22,40 +22,77 @@ class PublicTrainerProfileController extends Controller
             abort(404);
         }
 
-        $activeCourses = Course::query()
+        $trainerId = (int) $trainer->id;
+        $trainerName = trim((string) ($trainer->name ?? ''));
+
+        // Courses queries
+        $coursesQuery = Course::query()
+            ->where('trainer_id', $trainerId)
+            ->whereIn('status', ['published', 'approved', 'active']);
+
+        $coursesCount = (clone $coursesQuery)->count();
+
+        $activeCourses = $coursesQuery
             ->with(['category'])
             ->withCount([
                 'enrollments as students_count' => function ($q) {
                     $q->where('status', 'active');
                 },
             ])
-            ->where('trainer_id', $trainer->id)
-            ->where('status', 'active')
+            ->withCount('modules')
+            ->withAvg('reviews as rating', 'rating')
             ->orderByDesc('updated_at')
             ->take(6)
             ->get();
 
-        $activeEvents = Event::query()
+        // Events queries
+        $eventsQuery = Event::query()
+            ->where('is_published', true)
+            ->where(function ($query) use ($trainerId, $trainerName) {
+                $query->where('trainer_id', $trainerId)
+                    ->orWhereHas('speakers', function ($speakerQuery) use ($trainerId) {
+                        $speakerQuery->where('trainer_id', $trainerId);
+                    })
+                    ->orWhereHas('trainerAssignments', function ($assignmentQuery) use ($trainerId) {
+                        $assignmentQuery->where('trainer_id', $trainerId)
+                            ->where('status', 'accepted');
+                    });
+                if ($trainerName !== '') {
+                    $query->orWhere('speaker', 'like', '%' . $trainerName . '%');
+                }
+            });
+
+        $eventsCount = (clone $eventsQuery)->count();
+
+        $activeEvents = $eventsQuery
             ->withCount([
                 'registrations as participants_count' => function ($q) {
                     $q->where('status', 'active');
                 },
             ])
-            ->where('trainer_id', $trainer->id)
-            ->whereDate('event_date', '>=', now()->toDateString())
-            ->orderBy('event_date')
+            ->orderByDesc('event_date')
             ->take(6)
             ->get();
 
+        // Course ratings statistics
         $courseRatingStats = Review::query()
             ->join('courses', 'courses.id', '=', 'reviews.course_id')
-            ->where('courses.trainer_id', $trainer->id)
-            ->selectRaw('AVG(reviews.rating) as avg_rating, COUNT(reviews.id) as total_reviews')
+            ->where('courses.trainer_id', $trainerId)
+            ->whereIn('courses.status', ['published', 'approved', 'active'])
+            ->selectRaw('AVG(COALESCE(reviews.trainer_rating, reviews.rating)) as avg_rating, COUNT(reviews.id) as total_reviews')
             ->first();
 
-        $eventRatingStats = Feedback::query()
-            ->join('events', 'events.id', '=', 'feedback.event_id')
-            ->where('events.trainer_id', $trainer->id)
+        // Event ratings statistics
+        $eventIds = (clone $eventsQuery)->pluck('id');
+
+        $eventRatingStatsQuery = Feedback::query();
+        if ($eventIds->isNotEmpty()) {
+            $eventRatingStatsQuery->whereIn('feedback.event_id', $eventIds);
+        } else {
+            $eventRatingStatsQuery->whereRaw('1 = 0');
+        }
+
+        $eventRatingStats = $eventRatingStatsQuery
             ->whereNotNull('feedback.speaker_rating')
             ->selectRaw('AVG(feedback.speaker_rating) as avg_rating, COUNT(feedback.id) as total_reviews')
             ->first();
@@ -70,33 +107,65 @@ class PublicTrainerProfileController extends Controller
             ? (($courseAverage * $courseRatingCount) + ($eventAverage * $eventRatingCount)) / $totalRatings
             : 0.0;
 
+        // Course student count
         $courseStudents = Enrollment::query()
             ->join('courses', 'courses.id', '=', 'enrollments.course_id')
-            ->where('courses.trainer_id', $trainer->id)
+            ->where('courses.trainer_id', $trainerId)
+            ->whereIn('courses.status', ['published', 'approved', 'active'])
             ->where('enrollments.status', 'active')
             ->distinct('enrollments.user_id')
             ->count('enrollments.user_id');
 
-        $eventStudents = EventRegistration::query()
+        // Event student count
+        $eventStudentsQuery = EventRegistration::query()
             ->join('events', 'events.id', '=', 'event_registrations.event_id')
-            ->where('events.trainer_id', $trainer->id)
-            ->where('event_registrations.status', 'active')
+            ->where('event_registrations.status', 'active');
+
+        if ($eventIds->isNotEmpty()) {
+            $eventStudentsQuery->whereIn('events.id', $eventIds);
+        } else {
+            $eventStudentsQuery->whereRaw('1 = 0');
+        }
+
+        $eventStudents = $eventStudentsQuery
             ->distinct('event_registrations.user_id')
             ->count('event_registrations.user_id');
 
-        $eventIds = Event::query()
-            ->where('trainer_id', $trainer->id)
-            ->pluck('id');
-
-        $feedbacks = Feedback::query()
+        // Combined feedback reviews
+        $courseReviews = Review::query()
             ->with('user:id,name,avatar')
-            ->whereIn('event_id', $eventIds)
+            ->join('courses', 'courses.id', '=', 'reviews.course_id')
+            ->where('courses.trainer_id', $trainerId)
+            ->whereIn('courses.status', ['published', 'approved', 'active'])
+            ->select('reviews.*')
+            ->latest('reviews.created_at')
+            ->take(6)
+            ->get()
+            ->map(function ($review) {
+                $user = $review->user;
+                return (object) [
+                    'rating' => (int) ($review->trainer_rating ?? $review->rating ?? 0),
+                    'comment' => (string) ($review->comment ?? ''),
+                    'user_name' => (string) ($user->name ?? 'Anonim'),
+                    'user_role' => 'Siswa',
+                    'user_avatar_url' => $user ? $user->avatar_url : null,
+                    'created_at' => $review->created_at,
+                ];
+            });
+
+        $eventFeedbacksQuery = Feedback::query()->with('user:id,name,avatar');
+        if ($eventIds->isNotEmpty()) {
+            $eventFeedbacksQuery->whereIn('event_id', $eventIds);
+        } else {
+            $eventFeedbacksQuery->whereRaw('1 = 0');
+        }
+
+        $eventFeedbacks = $eventFeedbacksQuery
             ->latest('created_at')
             ->take(6)
             ->get()
             ->map(function ($feedback) {
                 $user = $feedback->user;
-
                 return (object) [
                     'rating' => (int) ($feedback->speaker_rating ?? $feedback->rating ?? 0),
                     'comment' => (string) ($feedback->comment ?? ''),
@@ -106,6 +175,11 @@ class PublicTrainerProfileController extends Controller
                     'created_at' => $feedback->created_at,
                 ];
             });
+
+        $feedbacks = $courseReviews->concat($eventFeedbacks)
+            ->sortByDesc('created_at')
+            ->take(6)
+            ->values();
 
         // Process experiences from model
         $experiences = collect();
@@ -210,6 +284,13 @@ class PublicTrainerProfileController extends Controller
 
         $certificates = $systemCertificates->concat($manualCertificates)->take(6);
 
+        $systemCertificatesCount = TrainerCertificate::query()
+            ->where('trainer_id', $trainerId)
+            ->whereIn('status', ['sent', 'published'])
+            ->count();
+        $manualCertificatesCount = collect($trainer->trainer_certifications ?? [])->count();
+        $certificatesCount = $systemCertificatesCount + $manualCertificatesCount;
+
         // Experience years calculation
         $experienceYears = 0;
         $rawExperiencesList = $trainer->trainer_experiences ?? [];
@@ -220,7 +301,7 @@ class PublicTrainerProfileController extends Controller
                     $exp = (array) $exp;
                     if (!empty($exp['start_date'])) {
                         $startYear = (int) \Carbon\Carbon::parse($exp['start_date'])->format('Y');
-                        if ($startYear < $earliestYear) {
+                        if ($startYear < $earliestYear && $startYear > 1900) {
                             $earliestYear = $startYear;
                         }
                     }
@@ -229,15 +310,47 @@ class PublicTrainerProfileController extends Controller
             $experienceYears = max(1, (int) now()->format('Y') - $earliestYear);
         }
         if ($experienceYears === 0) {
-            $experienceYears = 5; // Fallback
+            $experienceYears = max(1, (int) now()->format('Y') - (int) $trainer->created_at->format('Y'));
         }
 
         // Dynamic success rate
-        $successRate = 95;
-        if ($combinedRating > 4.0) {
-            $successRate += (int) (($combinedRating - 4.0) * 10);
+        $successRate = 100;
+        if ($totalRatings > 0) {
+            $positiveCourseReviews = Review::query()
+                ->join('courses', 'courses.id', '=', 'reviews.course_id')
+                ->where('courses.trainer_id', $trainerId)
+                ->whereIn('courses.status', ['published', 'approved', 'active'])
+                ->whereRaw('COALESCE(reviews.trainer_rating, reviews.rating) >= 4')
+                ->count();
+
+            $positiveEventFeedbacks = 0;
+            if ($eventIds->isNotEmpty()) {
+                $positiveEventFeedbacks = Feedback::query()
+                    ->whereIn('event_id', $eventIds)
+                    ->where('speaker_rating', '>=', 4)
+                    ->count();
+            }
+
+            $positiveRatings = $positiveCourseReviews + $positiveEventFeedbacks;
+            $successRate = (int) round(($positiveRatings / $totalRatings) * 100);
+        } else {
+            $totalEnrollments = Enrollment::join('courses', 'courses.id', '=', 'enrollments.course_id')
+                ->where('courses.trainer_id', $trainerId)
+                ->count();
+            if ($totalEnrollments > 0) {
+                $completedEnrollments = Enrollment::join('courses', 'courses.id', '=', 'enrollments.course_id')
+                    ->where('courses.trainer_id', $trainerId)
+                    ->where('enrollments.status', 'completed')
+                    ->count();
+                $successRate = (int) round(($completedEnrollments / $totalEnrollments) * 100);
+                if ($successRate === 0) {
+                    $successRate = 100;
+                }
+            } else {
+                $successRate = 100;
+            }
         }
-        $successRate = min(100, max(85, $successRate));
+        $successRate = min(100, max(0, $successRate));
 
         $reputation = [
             'rating' => round($combinedRating, 1),
@@ -308,6 +421,9 @@ class PublicTrainerProfileController extends Controller
             'feedbacks' => $feedbacks,
             'philosophy' => $philosophy,
             'outcomes' => $outcomes,
+            'coursesCount' => $coursesCount,
+            'eventsCount' => $eventsCount,
+            'certificatesCount' => $certificatesCount,
         ]);
     }
 }

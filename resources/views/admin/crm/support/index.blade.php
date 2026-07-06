@@ -185,7 +185,7 @@
     </div>
     @if($messages->hasPages())
     <div style="padding:1rem 1.25rem;border-top:1px solid var(--crm-border-soft);">
-        {{ $messages->links() }}
+        {{ $messages->links('pagination::bootstrap-5') }}
     </div>
     @endif
 </div>

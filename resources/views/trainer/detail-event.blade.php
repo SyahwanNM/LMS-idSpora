@@ -13,10 +13,19 @@
 
 @push('styles')
 <style>
-    /* Detail Event Page Specific Styles */
+    /* Global styles and variables */
+    :root {
+        --purple-brand: #51376c;
+        --purple-hover: #3f2a54;
+        --purple-light: #f5ecf7;
+        --purple-border: #e6d5ec;
+        --gray-text: #475467;
+        --dark-text: #101828;
+    }
+
     main {
-        padding: var(--spacing-4xl);
-        background-color: var(--base-clr);
+        padding: 32px;
+        background-color: #F8F9FC;
         overflow-y: auto;
         max-width: none;
         margin: 0;
@@ -24,945 +33,1023 @@
         display: flex;
         flex-direction: column;
         gap: 0;
+        font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", sans-serif;
     }
 
+    /* Hero Section */
     .hero-section {
         width: 100%;
-        margin: 0;
-        padding: var(--spacing-3xl) var(--spacing-4xl);
+        margin: 0 0 24px 0;
+        padding: 32px;
         background: linear-gradient(135deg, #2e2050 0%, #51376c 100%);
-        border-radius: 20px;
+        border-radius: 16px;
+        position: relative;
         overflow: hidden;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 10px 25px rgba(27, 23, 99, 0.15);
     }
 
     .hero-container {
         max-width: none;
         margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
 
     .hero-top-row {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: var(--spacing-2xl);
+        align-items: center;
     }
 
     .back-button {
         display: inline-flex;
         align-items: center;
-        gap: var(--spacing-xs);
-        padding: 12px 20px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: var(--radius-lg);
-        color: var(--white-clr);
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
+        gap: 8px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 14px;
+        font-weight: 700;
         cursor: pointer;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
+        transition: all 0.2s ease;
     }
 
     .back-button:hover {
-        background: rgba(255, 255, 255, 0.15);
-        border-color: rgba(255, 255, 255, 0.3);
-        transform: translateX(-4px);
-    }
-
-    .back-button svg {
-        width: 16px;
-        height: 16px;
-    }
-
-    .event-status-badges {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 16px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 20px;
-        color: rgba(224, 224, 242, 0.95);
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        backdrop-filter: blur(10px);
-    }
-
-    .event-category-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 14px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 999px;
-        color: rgba(224, 224, 242, 0.95);
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.6px;
-        text-transform: uppercase;
-        margin-bottom: var(--spacing-lg);
-        width: fit-content;
-    }
-
-    .event-category-badge .badge-icon {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #a2388c;
-        box-shadow: 0 0 0 3px rgba(162, 56, 140, 0.2);
-    }
-
-    .event-category-badge .badge-sep {
-        color: rgba(224, 224, 242, 0.65);
-    }
-
-    .event-hero-title {
-        color: var(--white-clr);
-        font-size: 44px;
-        font-weight: 700;
-        line-height: 1.2;
-        margin: 0 0 var(--spacing-2xl) 0;
-        padding: 0;
-        letter-spacing: -0.5px;
-    }
-
-    .event-hero-title span {
-        color: #c052aa;
-        font-style: italic;
-        font-weight: 600;
+        color: #ffffff;
+        transform: translateX(-3px);
     }
 
     .hero-body {
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        gap: var(--spacing-3xl);
+        align-items: center;
+        gap: 40px;
+        z-index: 2;
     }
 
     .hero-left {
         flex: 1;
-        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .event-hero-title {
+        font-size: 40px;
+        font-weight: 800;
+        color: #ffffff;
+        margin: 0;
+        letter-spacing: -1px;
+        line-height: 1.2;
+    }
+
+    .event-hero-subtitle {
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.75);
+        margin: 0;
+        line-height: 1.6;
+        max-width: 650px;
+    }
+
+    .hero-tags {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .tag-purple {
+        background: rgba(255, 255, 255, 0.15);
+        color: #FFFFFF;
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .tag-outline {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffffff;
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .hero-media {
-        width: 240px;
-        height: 150px;
+        width: 320px;
+        height: 180px;
         flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        border: 2px solid rgba(255,255,255,0.2);
     }
 
     .hero-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 16px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
     }
 
     .hero-image-placeholder {
         width: 100%;
         height: 100%;
-        border-radius: 16px;
-        background: linear-gradient(135deg, var(--main-navy-clr) 0%, #3659aa 100%);
+        background: linear-gradient(135deg, #51376c 0%, #2e2050 100%);
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 2px solid rgba(255, 255, 255, 0.25);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-    }
-
-    .hero-image-placeholder span {
+        color: #FFFFFF;
         font-size: 48px;
         font-weight: 800;
-        color: var(--main-navy-clr);
-        font-family: 'Sora', sans-serif;
     }
 
-    .event-info-cards {
-        display: flex;
-        flex-wrap: wrap;
+    /* Metadata cards row */
+    .hero-meta-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
         gap: 12px;
         width: 100%;
-        margin-top: var(--spacing-xl);
+        margin-top: 12px;
     }
 
-    .info-card {
+    @media (max-width: 992px) {
+        .hero-meta-row {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+        .hero-body {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .hero-media {
+            width: 100%;
+            height: 200px;
+        }
+    }
+
+    .meta-card {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 12px 16px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 16px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 14px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        transition: all 0.25s ease;
+        gap: 12px;
+        box-shadow: none;
+        backdrop-filter: blur(4px);
+        transition: all 0.2s ease;
     }
 
-    .info-card:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        transform: translateY(-2px);
+    .meta-card:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.25);
     }
 
-    .info-icon-shell {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.08);
-        display: inline-flex;
+    .meta-icon-wrapper {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 16px;
         flex-shrink: 0;
     }
 
-    .info-card svg {
-        flex-shrink: 0;
-        color: var(--white-clr);
-        width: 16px;
-        height: 16px;
-    }
-
-    .info-card-content {
+    .meta-info {
         display: flex;
         flex-direction: column;
         gap: 2px;
+        min-width: 0;
     }
 
-    .info-card-label {
+    .meta-label {
         font-size: 9px;
         font-weight: 700;
         color: rgba(255, 255, 255, 0.6);
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.5px;
     }
 
-    .info-card-value {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--white-clr);
+    .meta-value {
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffffff;
         white-space: nowrap;
-    }
-
-    .detail-layout {
-        --detail-panel-bg: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-        --detail-border: rgba(148, 163, 184, 0.24);
-        --detail-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
-        --detail-title: var(--main-navy-clr);
-        --detail-muted: #667085;
-        --detail-accent: var(--main-navy-clr);
-        --detail-accent-soft: rgba(31, 26, 90, 0.14);
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-        margin-top: var(--spacing-3xl);
-        width: 100%;
-        font-family: "Plus Jakarta Sans", "Manrope", "Segoe UI", sans-serif;
-    }
-
-    .detail-layout-top {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        align-items: flex-start;
-        gap: 28px;
-        width: 100%;
-    }
-
-    .detail-box {
-        width: 100%;
-        background: var(--detail-panel-bg);
-        border: 1px solid var(--detail-border);
-        border-radius: 20px;
-        padding: 22px;
-        box-shadow: var(--detail-shadow);
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-    }
-
-    .detail-box-context {
-        position: relative;
-        border-left: 4px solid #8b1e77 !important;
-    }
-
-    .vsa-section {
-        background: transparent;
-        min-width: 0;
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 28px;
-    }
-
-    .detail-group {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        width: 100%;
-    }
-
-    .vsa-title {
-        font-size: 18px;
-        font-weight: 800;
-        color: var(--main-navy-clr);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        letter-spacing: -0.3px;
-    }
-
-    .vsa-title::before {
-        content: "";
-        display: inline-block;
-        width: 4px;
-        height: 18px;
-        background: linear-gradient(180deg, #8b1e77 0%, #4a0e4e 100%);
-        border-radius: 99px;
-    }
-
-    .vsa-grid {
-        display: flex;
-        flex-direction: row;
-        gap: 18px;
-        width: 100%;
-    }
-
-    .vsa-card {
-        flex: 1;
-        min-width: 0;
-        background: #f8fafc;
-        border: 1px solid var(--detail-border);
-        border-radius: 18px;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        transition: all 0.25s ease;
-    }
-
-    .vsa-card:hover {
-        background: #f1f5f9;
-        transform: translateY(-2px);
-        border-color: rgba(139, 30, 119, 0.25);
-    }
-
-    .vsa-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-    }
-
-    .vsa-icon-plum {
-        background: linear-gradient(
-            145deg,
-            rgba(139, 30, 119, 0.15),
-            rgba(139, 30, 119, 0.08)
-        );
-        color: #8b1e77;
-    }
-
-    .vsa-icon svg {
-        width: 22px;
-        height: 22px;
-    }
-
-    .vsa-meta h3 {
-        margin: 0;
-        font-size: 17px;
-        font-weight: 700;
-        color: var(--detail-title);
-        line-height: 1.35;
-    }
-
-    .vsa-label {
-        margin: 0 0 6px 0;
-        font-size: 11px;
-        font-weight: 700;
-        color: #7b8798;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-    }
-
-    .vsa-link,
-    .vsa-desc {
-        margin: 6px 0 0 0;
-        font-size: 13px;
-        color: #5f6b7d;
-        line-height: 1.5;
-        word-break: break-all;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
-    .vsa-btn {
-        margin-top: auto;
-        display: inline-flex;
+    /* Tab switcher */
+    .course-tabs {
+        display: flex;
+        background: #FFFFFF;
+        border: 1px solid #EAECF0;
+        border-radius: 12px;
+        padding: 0;
+        overflow: hidden;
+        margin: 24px 0;
+        width: 100%;
+    }
+
+    .tab-pill {
+        flex: 1;
+        display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
-        padding: 12px 16px;
-        border-radius: 12px;
-        border: none;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        cursor: pointer;
-        text-decoration: none;
-        transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease,
-            filter 0.2s ease;
-    }
-
-    .vsa-btn[disabled] {
-        opacity: 0.5;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-
-    .vsa-btn-plum {
-        background: linear-gradient(135deg, #8b1e77 0%, #4a0e4e 100%);
-        color: var(--white-clr);
-        box-shadow: 0 10px 20px rgba(139, 30, 119, 0.25);
-    }
-
-    .vsa-btn:hover {
-        transform: translateY(-1px);
-        filter: saturate(1.08);
-    }
-
-    .vsa-btn:active {
-        transform: translateY(0);
-    }
-
-    .vsa-context {
+        gap: 8px;
+        padding: 16px 20px;
         background: transparent;
         border: none;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
+        font-size: 14px;
+        font-weight: 700;
+        color: #475467;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 3px solid transparent;
     }
 
-    .vsa-context-body {
-        margin: 0;
-        font-size: 15px;
-        color: #1f2937;
-        line-height: 1.75;
+    .tab-pill:hover {
+        color: var(--purple-hover);
+        background: #F9FAFB;
     }
 
-    .vsa-context-body p {
-        margin: 0 0 10px 0;
+    .tab-pill.active {
+        color: var(--purple-brand);
+        border-bottom-color: var(--purple-brand);
+        background: var(--purple-light);
     }
 
-    .vsa-context-body p:last-child {
-        margin-bottom: 0;
+    .tab-pill i {
+        font-size: 16px;
     }
 
-    .vsa-context-body ul,
-    .vsa-context-body ol {
-        margin: 8px 0 12px 20px;
-        padding: 0;
-    }
-
-    .vsa-context-body li {
-        margin-bottom: 6px;
-    }
-
-    .hub-sidebar-card {
-        background: var(--white-clr);
-        border: 1px solid var(--detail-border);
-        border-radius: 20px;
-        padding: 22px;
-        box-shadow: var(--detail-shadow);
+    /* Tab content container */
+    .tab-content {
+        display: none;
+        animation: fadeInTab 0.35s ease;
         width: 100%;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeInTab {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* 2 Column Layout */
+    .modern-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 24px;
+        width: 100%;
+        align-items: flex-start;
+    }
+
+    @media (max-width: 992px) {
+        .modern-detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .detail-main-content {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .detail-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    /* Left Card content wrapper */
+    .detail-card-wrapper {
+        background: #FFFFFF;
+        border: 1px solid #EAECF0;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .section-divider {
+        border: 0;
+        border-top: 1px solid #EAECF0;
+        margin: 0;
+    }
+
+    /* About section */
+    .about-header-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--purple-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .about-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: #101828;
+        margin: 0 0 16px 0;
+    }
+
+    .about-body-cols {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 24px;
+        margin-top: 12px;
+    }
+
+    @media (max-width: 768px) {
+        .about-body-cols {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .about-text-content {
         display: flex;
         flex-direction: column;
         gap: 16px;
     }
 
-    .hub-sidebar-title {
-        font-size: 16px;
-        font-weight: 800;
-        color: var(--main-navy-clr);
+    .about-p {
+        font-size: 14px;
+        color: #475467;
+        line-height: 1.6;
         margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        letter-spacing: -0.2px;
     }
 
-    .hub-sidebar-title::before {
-        content: "";
-        display: inline-block;
-        width: 3px;
-        height: 16px;
-        background: linear-gradient(180deg, #8b1e77 0%, #4a0e4e 100%);
-        border-radius: 99px;
+    .event-description-text {
+        font-size: 14px;
+        color: #475467;
+        line-height: 1.6;
+    }
+    .event-description-text p {
+        font-size: 14px;
+        color: #475467;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+    .event-description-text p:last-child {
+        margin-bottom: 0;
+    }
+    .event-description-text h1,
+    .event-description-text h2,
+    .event-description-text h3 {
+        color: #101828;
+        font-weight: 700;
+        margin-top: 16px;
+        margin-bottom: 8px;
+    }
+    .event-description-text h1 { font-size: 18px; }
+    .event-description-text h2 { font-size: 16px; }
+    .event-description-text h3 { font-size: 14px; }
+    .event-description-text ul,
+    .event-description-text ol {
+        margin-bottom: 12px;
+        padding-left: 20px;
+    }
+    .event-description-text li {
+        margin-bottom: 4px;
     }
 
-    .hub-actions-column {
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-        flex: 0 0 340px;
-        width: 340px;
-        margin-left: auto;
-    }
-
-    .hub-actions-column .detail-group {
-        position: sticky;
-        top: 24px;
-    }
-
-    .hub-actions-column .hub-section {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .material-status-banner {
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 13px;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .material-status-banner.status-approved {
-        background: #dcfce7;
-        color: #166534;
-        border: 1px solid rgba(22, 101, 52, 0.15);
-    }
-
-    .material-status-banner.status-pending_review {
-        background: #fef3c7;
-        color: #92400e;
-        border: 1px solid rgba(146, 64, 14, 0.15);
-    }
-
-    .material-status-banner.status-rejected {
-        background: #fee2e2;
-        color: #991b1b;
-        border: 1px solid rgba(153, 27, 27, 0.15);
-    }
-
-    .material-status-banner.status-not_uploaded {
-        background: #f1f5f9;
-        color: #64748b;
-        border: 1px solid rgba(100, 116, 139, 0.15);
-    }
-
-    .uploaded-modules-list {
+    /* Features list */
+    .features-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 14px;
         margin-top: 8px;
     }
 
-    .module-item-row {
+    .feature-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .feature-icon-shell {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: var(--purple-light);
+        color: var(--purple-brand);
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 10px 12px;
-        background: #f8fafc;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .feature-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .feature-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #344054;
+    }
+
+    .feature-sub {
         font-size: 12px;
-        transition: all 0.2s ease;
+        color: #667085;
     }
 
-    .module-item-row:hover {
-        background: #f1f5f9;
-        border-color: #cbd5e1;
+    
+    /* Rundown Timeline */
+    .timeline-header-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--purple-brand);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        display: block;
     }
 
-    .module-item-left {
+    .timeline-track {
+        position: relative;
+        padding-left: 120px;
+        margin-left: 20px;
+        border-left: 2px solid var(--purple-border);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .timeline-row {
+        position: relative;
+        min-height: 24px;
+    }
+
+    .timeline-time-label {
+        position: absolute;
+        left: -130px;
+        width: 100px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--purple-hover);
+    }
+
+    .timeline-row-dot {
+        position: absolute;
+        left: -6px;
+        top: 4px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--purple-brand);
+        box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 6px var(--purple-light);
+    }
+
+    .timeline-row-content {
+        font-size: 13px;
+        font-weight: 600;
+        color: #344054;
+        padding-left: 16px;
+        line-height: 1.4;
+    }
+
+    .timeline-empty {
+        text-align: center;
+        padding: 24px;
+        color: #667085;
+        font-size: 13px;
+    }
+
+    /* Sidebar Cards */
+    .sidebar-card {
+        background: #FFFFFF;
+        border: 1px solid #EAECF0;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .sidebar-header {
         display: flex;
         align-items: center;
         gap: 8px;
-        overflow: hidden;
-        color: var(--main-navy-clr);
+        font-size: 13px;
+        font-weight: 700;
+        color: #344054;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #F2F4F7;
+        padding-bottom: 12px;
+        margin-bottom: 4px;
     }
 
-    .module-item-left svg {
+    .sidebar-header i {
+        color: var(--purple-brand);
+        font-size: 16px;
+    }
+
+    /* Assets & Materials rows */
+    .sidebar-row-item {
+        border: 1px solid #EAECF0;
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #FFFFFF;
+    }
+
+    .row-item-left {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        min-width: 0;
+    }
+
+    .row-item-icon-shell {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
         flex-shrink: 0;
-        color: var(--text-clr);
     }
 
-    .module-item-name {
+    .row-item-icon-shell.purple { background: var(--purple-light); color: var(--purple-brand); }
+    .row-item-icon-shell.red { background: #FEF3F2; color: #D92D20; }
+    .row-item-icon-shell.green { background: #D1FADF; color: #039855; }
+
+    .row-item-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .row-item-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #344054;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 150px;
-        font-weight: 600;
     }
 
-    .module-status-badge {
+    .row-item-sub {
         font-size: 11px;
-        padding: 3px 8px;
-        border-radius: 20px;
+        color: #667085;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Action Buttons inside rows */
+    .row-btn-solid {
+        background: var(--purple-brand);
+        color: #FFFFFF;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .row-btn-solid:hover {
+        background: var(--purple-hover);
+    }
+
+    .row-btn-outline {
+        border: 1px solid #D0D5DD;
+        background: #FFFFFF;
+        color: #344054;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .row-btn-outline:hover {
+        background: #F9FAFB;
+        border-color: #CBD5E1;
+    }
+
+    .materials-action {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .materials-action:hover {
+        border-color: var(--purple-border);
+        background: var(--purple-light);
+    }
+
+    /* Green status banner */
+    .materi-uploaded-banner {
+        background: #ECFDF5;
+        border: 1px solid #D1FADF;
+        color: #027A48;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Files listing */
+    .file-items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .file-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border: 1px solid #F2F4F7;
+        background: #FAFAFA;
+        border-radius: 8px;
+        gap: 12px;
+    }
+
+    .file-row-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .file-row-left i {
+        color: #667085;
+        font-size: 16px;
+    }
+
+    .file-row-name {
+        font-size: 12px;
+        color: #344054;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Status badge capsules */
+    .status-capsule {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 9px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.3px;
     }
 
-    .module-status-badge.status-approved {
-        background: #dcfce7;
-        color: #166534;
+    .status-capsule.approved {
+        background: #D1FADF;
+        color: #027A48;
     }
 
-    .module-status-badge.status-rejected {
-        background: #fee2e2;
-        color: #991b1b;
+    .status-capsule.rejected {
+        background: #FEE4E2;
+        color: #B42318;
     }
 
-    .module-status-badge.status-pending_review,
-    .module-status-badge.status-pending {
-        background: #fef3c7;
-        color: #92400e;
+    .status-capsule.pending {
+        background: #FEF0C7;
+        color: #B54708;
     }
 
-    .hub-item {
+    /* Tab 2: Participants design styling */
+    .event-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+        width: 100%;
+    }
+
+    .stat-card-mini {
+        background: #FFFFFF;
+        border: 1px solid #EAECF0;
+        border-radius: 16px;
+        padding: 16px 20px;
         display: flex;
-        gap: 14px;
         align-items: center;
-        padding: 14px;
-        border: 1px solid rgba(148, 163, 184, 0.22);
+        gap: 14px;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .stat-card-mini:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(16, 24, 40, 0.08);
+        border-color: var(--purple-border);
+    }
+
+    .stat-icon-wrapper {
+        width: 42px;
+        height: 42px;
         border-radius: 12px;
-        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-        transition: all 0.25s ease;
-    }
-
-    .hub-item > div:last-child {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .hub-item h4 {
-        color: #0f172a;
-    }
-
-    .hub-item:hover {
-        background: #ffffff;
-        border-color: rgba(139, 30, 119, 0.25);
-        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
-    }
-
-    .hub-item-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: linear-gradient(
-            140deg,
-            rgba(139, 30, 119, 0.15),
-            rgba(139, 30, 119, 0.08)
-        );
-        color: #8b1e77;
-        border: 1px solid rgba(139, 30, 119, 0.16);
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 18px;
         flex-shrink: 0;
     }
 
-    .hub-item-icon svg {
-        width: 20px;
-        height: 20px;
-        stroke: currentColor;
-    }
+    .stat-icon-wrapper.blue { background: rgba(37, 99, 235, 0.08); color: #2563eb; }
+    .stat-icon-wrapper.green { background: rgba(16, 185, 129, 0.08); color: #10b981; }
+    .stat-icon-wrapper.amber { background: rgba(245, 158, 11, 0.08); color: #f59e0b; }
+    .stat-icon-wrapper.purple { background: rgba(81, 55, 108, 0.08); color: var(--purple-brand); }
 
-    .hub-item h4 {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-
-    .hub-item p {
-        margin: 0;
-        font-size: 12px;
-        font-weight: 600;
-        color: #5f6b7d;
-        letter-spacing: 0;
-        text-transform: none;
-        line-height: 1.45;
-        word-break: break-word;
-    }
-
-    /* Rundown List Timeline Design */
-    .rundown-timeline {
-        position: relative;
-        padding-left: 28px;
-        margin: 0;
-        list-style: none;
+    .stat-info-mini {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 2px;
     }
 
-    .rundown-timeline::before {
-        content: "";
-        position: absolute;
-        top: 8px;
-        bottom: 8px;
-        left: 9px;
-        width: 2px;
-        background: rgba(139, 30, 119, 0.12);
+    .stat-label-mini {
+        font-size: 10px;
+        font-weight: 700;
+        color: #667085;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .rundown-timeline-item {
-        position: relative;
-        width: 100%;
+    .stat-val-mini {
+        font-size: 15px;
+        font-weight: 800;
+        color: #101828;
     }
 
-    .rundown-timeline-dot {
-        position: absolute;
-        left: -24px;
-        top: 20px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #8b1e77 0%, #4a0e4e 100%);
-        box-shadow: 0 0 0 4px var(--base-clr), 0 0 0 6px rgba(139, 30, 119, 0.25);
-        z-index: 2;
+    .participant-filters {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #EAECF0;
+        padding-bottom: 16px;
     }
 
-    .rundown-timeline-card {
-        background: #f8fafc;
-        border: 1px solid var(--detail-border);
-        border-radius: var(--radius-xl);
-        padding: 14px 18px;
+    .filter-pill {
+        padding: 8px 16px;
+        border-radius: 99px;
+        border: 1px solid #EAECF0;
+        background: #FFFFFF;
+        color: #475467;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 20px;
-        width: 100%;
-        transition: all 0.25s ease;
+        gap: 6px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .rundown-timeline-card:hover {
-        background: #f1f5f9;
-        transform: translateX(4px);
-        border-color: rgba(139, 30, 119, 0.25);
+    .filter-pill:hover {
+        background: var(--purple-light);
+        color: var(--purple-brand);
+        border-color: var(--purple-border);
     }
 
-    .time-rundown {
-        color: var(--main-navy-clr);
+    .filter-pill.active {
+        background: var(--purple-light);
+        color: var(--purple-brand);
+        border-color: var(--purple-border);
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+    }
+
+    .enrollment-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        background: #FFFFFF;
+        border: 1px solid #EAECF0;
+        border-radius: 12px;
+        padding: 14px 20px;
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05);
+    }
+
+    .enrollment-header h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        color: #344054;
+        text-transform: uppercase;
+    }
+
+    .total-badge {
+        background: var(--purple-brand);
+        color: #FFFFFF;
+        padding: 4px 12px;
+        border-radius: 99px;
+        font-size: 10px;
         font-weight: 700;
-        font-size: 13px;
-        white-space: nowrap;
-        min-width: 110px;
-        letter-spacing: 0.2px;
+    }
+
+    .participant-table-wrapper {
+        background: #FFFFFF;
+        border: 1px solid #EAECF0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(16, 24, 40, 0.03);
+        margin-top: 16px;
+    }
+
+    .participant-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .participant-table th {
+        background: #F9FAFB;
+        padding: 14px 20px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #475467;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #EAECF0;
+    }
+
+    .participant-table td {
+        padding: 16px 20px;
+        border-bottom: 1px solid #EAECF0;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .participant-row {
+        transition: all 0.2s ease;
+    }
+
+    .participant-row:hover {
+        background: #F9FAFB;
+    }
+
+    .participant-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .participant-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #F2F4F7;
+    }
+
+    .participant-name-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .participant-name {
+        font-weight: 700;
+        color: #101828;
+        font-size: 14px;
+    }
+
+    .participant-email {
+        font-size: 12px;
+        color: #667085;
+    }
+
+    .whatsapp-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        padding: 6px 12px;
+        border-radius: 99px;
+        background: #E8F5E9;
+        color: #2E7D32;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid #C8E6C9;
     }
 
-    .activity-rundown {
-        color: #334155;
+    .whatsapp-badge:hover {
+        background: #C8E6C9;
+        transform: translateY(-1px);
+    }
+
+    .no-contact {
+        color: #98A2B3;
+        font-size: 13px;
+    }
+
+    .participant-reg-date {
+        font-size: 13px;
+        color: #475467;
+        font-weight: 500;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
+
+    .status-pill.status-present {
+        background: #ECFDF5;
+        color: #027A48;
+        border: 1px solid #D1FADF;
+    }
+
+    .status-pill.status-absent {
+        background: #FFF9E6;
+        color: #B45309;
+        border: 1px solid #FFE5A3;
+    }
+
+    .attendance-timestamp {
+        font-size: 13px;
+        color: #027A48;
+        font-weight: 600;
+    }
+
+    .no-attendance-timestamp {
+        color: #98A2B3;
+        font-size: 13px;
+    }
+
+    .empty-table-state {
+        text-align: center;
+        padding: 48px !important;
+        color: #667085;
+    }
+
+    .empty-table-state .empty-icon {
+        font-size: 40px;
+        color: #D0D5DD;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .empty-table-state p {
+        margin: 0;
         font-size: 14px;
-        line-height: 1.6;
-        flex: 1;
-    }
-
-    @media (max-width: 1200px) {
-        .detail-layout-top {
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .hub-actions-column {
-            width: 100%;
-            flex: 1 1 auto;
-            margin-left: 0;
-        }
-
-        .hub-actions-column .detail-group {
-            position: static;
-            top: auto;
-        }
-    }
-
-    @media (max-width: 992px) {
-        main {
-            flex-direction: column;
-            margin-left: var(--spacing-sm);
-            padding: var(--spacing-lg);
-            gap: var(--spacing-lg);
-        }
-
-        .hero-top-row {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .event-status-badges {
-            width: 100%;
-            justify-content: flex-start;
-        }
-
-        .hero-body {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--spacing-xl);
-        }
-
-        .hero-left {
-            width: 100%;
-        }
-
-        .hero-media {
-            width: 100%;
-            max-width: 420px;
-            height: auto;
-        }
-
-        .hero-image,
-        .hero-image-placeholder {
-            height: 200px;
-            border-radius: 16px;
-        }
-
-        .event-info-cards {
-            width: 100%;
-            gap: 12px;
-            max-width: 100%;
-        }
-
-        .event-hero-title {
-            font-size: 38px;
-            margin-bottom: var(--spacing-xl);
-        }
-    }
-
-    @media (max-width: 768px) {
-        main {
-            margin-left: 0;
-            padding: var(--spacing-lg) var(--spacing-md) 100px var(--spacing-md);
-        }
-
-        .vsa-grid {
-            flex-direction: column;
-        }
-
-        .vsa-title,
-        .hub-sidebar-title {
-            font-size: 18px;
-        }
-
-        .hero-section {
-            padding: var(--spacing-2xl) var(--spacing-lg);
-        }
-
-        .event-hero-title {
-            font-size: 32px;
-            line-height: 1.25;
-            word-break: break-word;
-        }
-
-        .back-button {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .status-badge {
-            font-size: 10px;
-            padding: 7px 12px;
-        }
-
-        .event-info-cards {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .info-card {
-            width: 100%;
-        }
-
-        .info-card-value {
-            white-space: normal;
-        }
-
-        .time-rundown {
-            min-width: 100px;
-            font-size: var(--font-size-sm);
-        }
-
-        .activity-rundown {
-            font-size: var(--font-size-sm);
-        }
-
-        .rundown-timeline-card {
-            padding: var(--spacing-md) var(--spacing-lg);
-        }
-
-        .vsa-card {
-            padding: var(--spacing-md) var(--spacing-lg);
-        }
-    }
-
-    @media (max-width: 480px) {
-        .hero-section {
-            padding: var(--spacing-xl) var(--spacing-md);
-            border-radius: 16px;
-        }
-
-        .event-hero-title {
-            font-size: 28px;
-        }
-
-        .hero-image,
-        .hero-image-placeholder {
-            height: 180px;
-        }
-
-        .time-rundown {
-            min-width: 0;
-            font-size: var(--font-size-sm);
-        }
-
-        .activity-rundown {
-            font-size: var(--font-size-sm);
-        }
-
-        .rundown-timeline-card {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-            padding: 12px 14px;
-        }
-
-        .vsa-card {
-            padding: var(--spacing-md);
-        }
+        font-weight: 500;
     }
 </style>
 @endpush
@@ -1007,11 +1094,8 @@
     <div class="hero-container">
       <div class="hero-top-row">
         <button class="back-button" onclick="window.location.href = '{{ route('trainer.events') }}'">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          <span>ALL SESSIONS</span>
+          <i class="bi bi-arrow-left"></i>
+          <span>Kembali ke Semua Event</span>
         </button>
       </div>
 
@@ -1020,134 +1104,88 @@
           <h1 class="event-hero-title">
             {{ $event->title }}
           </h1>
-          <div class="event-info-cards">
-            <div class="info-card">
-              <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-              </div>
-              <div class="info-card-content">
-                <span class="info-card-label">DATE</span>
-                <span class="info-card-value">
-                  @php
-                    $startDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
-                    $untilDate = !empty($event->event_until_date) ? \Carbon\Carbon::parse($event->event_until_date) : null;
-                  @endphp
-                  @if($startDate)
-                    @if($untilDate && $untilDate->ne($startDate))
-                      @if($startDate->format('M Y') === $untilDate->format('M Y'))
-                        {{ $startDate->format('d') }} – {{ $untilDate->format('d M Y') }}
-                      @else
-                        {{ $startDate->format('d M Y') }} – {{ $untilDate->format('d M Y') }}
-                      @endif
-                    @else
-                      {{ $startDate->format('d M Y') }}
-                    @endif
-                  @else
-                    TBA
-                  @endif
-                </span>
+          
+          <p class="event-hero-subtitle">
+            {{ $event->short_description ?: 'Webinar interaktif dengan berbagai sesi inspiratif, materi berkualitas, dan diskusi mendalam bersama para narasumber.' }}
+          </p>
+
+          <div class="hero-tags">
+            <span class="tag-purple"><i class="bi bi-plus-lg"></i> Daftar Event</span>
+            <span class="tag-outline"><i class="bi bi-globe"></i> {{ $event->category ?? 'Webinar' }}</span>
+          </div>
+
+          @php
+            $startDate = $event->event_date ? \Carbon\Carbon::parse($event->event_date) : null;
+            $untilDate = !empty($event->event_until_date) ? \Carbon\Carbon::parse($event->event_until_date) : null;
+            
+            $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : null;
+            $endTime = !empty($event->event_until_time) 
+              ? \Carbon\Carbon::parse($event->event_until_time)->format('H:i') 
+              : (!empty($event->event_time_end) ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : null);
+
+            $titleLower = strtolower($event->title ?? '');
+            if (str_contains($titleLower, 'dosen') || str_contains($titleLower, 'guru') || str_contains($titleLower, 'pendidik')) {
+                $targetAudience = 'Dosen & Pendidik';
+            } elseif (str_contains($titleLower, 'lomba') || str_contains($titleLower, 'mahasiswa') || str_contains($titleLower, 'siswa')) {
+                $targetAudience = 'Mahasiswa & Siswa';
+            } else {
+                $targetAudience = 'Mahasiswa, Dosen, & Umum';
+            }
+          @endphp
+
+          <div class="hero-meta-row">
+            <!-- Tanggal -->
+            <div class="meta-card">
+              <div class="meta-icon-wrapper"><i class="bi bi-calendar3"></i></div>
+              <div class="meta-info">
+                <span class="meta-label">TANGGAL</span>
+                <span class="meta-value">{{ $startDate ? $startDate->format('d M Y') : 'TBA' }}</span>
               </div>
             </div>
-
-            <div class="info-card">
-              <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-              </div>
-              <div class="info-card-content">
-                <span class="info-card-label">TIME</span>
-                <span class="info-card-value">
-                  @php
-                    $startTime = $event->event_time ? \Carbon\Carbon::parse($event->event_time)->format('H:i') : null;
-                    $endTime = !empty($event->event_until_time) 
-                      ? \Carbon\Carbon::parse($event->event_until_time)->format('H:i') 
-                      : (!empty($event->event_time_end) ? \Carbon\Carbon::parse($event->event_time_end)->format('H:i') : null);
-                  @endphp
+            <!-- Waktu -->
+            <div class="meta-card">
+              <div class="meta-icon-wrapper"><i class="bi bi-clock"></i></div>
+              <div class="meta-info">
+                <span class="meta-label">WAKTU</span>
+                <span class="meta-value">
                   @if($startTime)
-                    {{ $startTime }}
-                    @if($endTime) - {{ $endTime }} @endif
-                    WIB
+                    {{ $startTime }} @if($endTime) - {{ $endTime }} @endif WIB
                   @else
                     TBA
                   @endif
                 </span>
               </div>
             </div>
-
-            <div class="info-card">
-              <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-              </div>
-              <div class="info-card-content">
-                <span class="info-card-label">VENUE</span>
-                <span class="info-card-value">{{ $event->location ?? 'Tech Hub Hall A' }}</span>
+            <!-- Lokasi -->
+            <div class="meta-card">
+              <div class="meta-icon-wrapper"><i class="bi bi-laptop"></i></div>
+              <div class="meta-info">
+                <span class="meta-label">LOKASI / MODE</span>
+                <span class="meta-value">{{ $event->zoom_link ? 'Online' : 'Offline' }}</span>
               </div>
             </div>
-
-            <div class="info-card">
-              <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M16 8h-5a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H8"></path>
-                  <path d="M12 6v2"></path>
-                  <path d="M12 16v2"></path>
-                </svg>
-              </div>
-              <div class="info-card-content">
-                <span class="info-card-label">FEE TRAINER</span>
-                @if((float) ($eventCompensation['speaker_salary'] ?? 0) > 0)
-                  <span class="info-card-value">
+            <!-- Biaya / Fee -->
+            <div class="meta-card">
+              <div class="meta-icon-wrapper"><i class="bi bi-tags"></i></div>
+              <div class="meta-info">
+                <span class="meta-label">BIAYA</span>
+                <span class="meta-value">
+                  @if((float) ($eventCompensation['speaker_salary'] ?? 0) > 0)
                     Rp {{ number_format((float) $eventCompensation['speaker_salary'], 0, ',', '.') }}
-                  </span>
-                @elseif((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
-                  <span class="info-card-value">
-                    Rp {{ number_format((float) $eventCompensation['fee_per_participant'], 0, ',', '.') }}/peserta
-                  </span>
-                @else
-                  <span class="info-card-value">Belum diatur admin</span>
-                @endif
+                  @elseif((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
+                    Rp {{ number_format((float) $eventCompensation['fee_per_participant'], 0, ',', '.') }}/pax
+                  @else
+                    Rp 100.000
+                  @endif
+                </span>
               </div>
             </div>
-
-            <div class="info-card">
-              <div class="info-icon-shell">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
-              </div>
-              <div class="info-card-content">
-                <span class="info-card-label">TARGET PESERTA</span>
-                <span class="info-card-value">
-                  @php
-                    $titleLower = strtolower($event->title ?? '');
-                    if (str_contains($titleLower, 'dosen') || str_contains($titleLower, 'guru') || str_contains($titleLower, 'pendidik')) {
-                        $targetAudience = 'Dosen & Pendidik';
-                    } elseif (str_contains($titleLower, 'lomba') || str_contains($titleLower, 'mahasiswa') || str_contains($titleLower, 'siswa')) {
-                        $targetAudience = 'Mahasiswa & Siswa';
-                    } else {
-                        $targetAudience = 'Mahasiswa, Dosen, & Umum';
-                    }
-                  @endphp
-                  {{ $targetAudience }}
-                </span>
+            <!-- Target -->
+            <div class="meta-card">
+              <div class="meta-icon-wrapper"><i class="bi bi-people"></i></div>
+              <div class="meta-info">
+                <span class="meta-label">TARGET PESERTA</span>
+                <span class="meta-value">{{ $targetAudience }}</span>
               </div>
             </div>
           </div>
@@ -1165,100 +1203,29 @@
       </div>
     </div>
   </div>
-
   <div class="detail-layout">
-    <div class="detail-layout-top">
-      <section class="vsa-section">
+    <div class="modern-detail-grid">
+      <!-- Left Column: Tabs & Tab Content -->
+      <div class="detail-main-content">
         
-        <!-- Aset Acara Group -->
-        <div class="detail-group">
-          <h2 class="vsa-title">Aset Acara</h2>
-          <div class="detail-box">
-            <div class="vsa-grid">
-              @if($hasMapLink)
-                <article class="vsa-card">
-                  <div class="vsa-icon vsa-icon-plum">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                      <path
-                        d="M8 0a5 5 0 0 0-5 5c0 1.676 1.3 4.02 3.163 6.275A24.7 24.7 0 0 0 8 15c.837-1.08 1.837-2.36 2.837-3.725C12.7 9.02 14 6.676 14 5a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
-                    </svg>
-                  </div>
-                  <div class="vsa-meta">
-                    <p class="vsa-label">PETA LOKASI</p>
-                    <h3>Lokasi Event</h3>
-                    <p class="vsa-link">{{ $event->location ?? 'Lokasi belum tersedia' }}</p>
-                  </div>
-                  <a href="{{ $mapLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-plum" {{ empty($mapLink) ? 'disabled' : '' }}>
-                    BUKA PETA
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                      <path fill-rule="evenodd"
-                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                      <path fill-rule="evenodd"
-                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                    </svg>
-                  </a>
-                </article>
-              @endif
-
-              @if($hasZoomLink)
-                <article class="vsa-card">
-                  <div class="vsa-icon vsa-icon-plum">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                      <path fill-rule="evenodd"
-                        d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2zm11.5 5.175 3.5 1.556V4.269l-3.5 1.556zM2 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h7.5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1z" />
-                    </svg>
-                  </div>
-                  <div class="vsa-meta">
-                    <p class="vsa-label">SESI ONLINE</p>
-                    <h3>Rapat Virtual</h3>
-                    <p class="vsa-link">{{ $zoomLink ?: 'Link belum tersedia' }}</p>
-                  </div>
-                  <a href="{{ $zoomLink ?: '#' }}" target="_blank" class="vsa-btn vsa-btn-plum" {{ empty($zoomLink) ? 'disabled' : '' }}>
-                    GABUNG SESI
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                      <path fill-rule="evenodd"
-                        d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5" />
-                      <path fill-rule="evenodd"
-                        d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z" />
-                    </svg>
-                  </a>
-                </article>
-              @endif
-
-              @if(!empty($vbgUrl))
-                <article class="vsa-card">
-                  <div class="vsa-icon vsa-icon-plum">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
-                      <path
-                        d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" />
-                    </svg>
-                  </div>
-                  <div class="vsa-meta">
-                    <p class="vsa-label">LATAR VIRTUAL</p>
-                    <h3>Latar Virtual</h3>
-                    <p class="vsa-desc">PNG Resolusi Tinggi Berlogo</p>
-                  </div>
-                  <a href="{{ $vbgUrl }}" class="vsa-btn vsa-btn-plum" download>
-                    UNDUH VBG
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                      <path
-                        d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
-                      <path
-                        d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-                    </svg>
-                  </a>
-                </article>
-              @endif
-            </div>
-          </div>
+        <!-- Tab navigation inside Left Column -->
+        <div class="course-tabs" style="margin-top: 0;">
+            <button class="tab-pill active" type="button" data-target="event-detail-info">
+                <i class="bi bi-info-circle"></i>
+                <span>Detail Informasi Event</span>
+            </button>
+            <button class="tab-pill" type="button" data-target="event-participants">
+                <i class="bi bi-people"></i>
+                <span>Daftar Peserta</span>
+            </button>
         </div>
 
-        <!-- Deskripsi Event Group -->
-        <div class="detail-group">
-          <h2 class="vsa-title">Deskripsi Event</h2>
-          <div class="detail-box detail-box-context">
-            <div class="vsa-context">
+        <!-- Tab 1: Detail Informasi Event -->
+        <section id="event-detail-info" class="tab-content active">
+          <div class="detail-card-wrapper">
+            <div>
+              <span class="about-header-label">TENTANG EVENT</span>
+              
               @php
                 $eventDescription = trim((string) ($event->description ?? ''));
                 if ($eventDescription === '') {
@@ -1268,162 +1235,342 @@
                   $eventDescription = trim((string) ($event->materi ?? ''));
                 }
               @endphp
-              <div class="vsa-context-body">
-                {!! $eventDescription !== '' ? $eventDescription : '<p>Deskripsi event belum tersedia.</p>' !!}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Rundown Acara Group -->
-        <div class="detail-group">
-          <h2 class="vsa-title">Rundown Acara</h2>
-          <div class="detail-box">
-            @php
-              $items = collect();
-
-              if (isset($event)) {
-                try {
-                  $items = $event->relationLoaded('scheduleItems')
-                    ? ($event->scheduleItems ?? collect())
-                    : $event->scheduleItems()->get();
-                } catch (\Throwable $e) {
-                  $items = collect();
-                }
-
-                if ($items->isEmpty()) {
-                  $rawSchedule = $event->schedule_json ?? null;
-
-                  $scheduleArr = null;
-                  if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
-                    $decoded = json_decode($rawSchedule, true);
-                    $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
-                  } elseif (is_array($rawSchedule)) {
-                    $scheduleArr = $rawSchedule;
-                  } elseif (is_object($rawSchedule)) {
-                    $scheduleArr = json_decode(json_encode($rawSchedule), true);
-                  }
-
-                  if (is_array($scheduleArr)) {
-                    $items = collect($scheduleArr)->map(function ($row) {
-                      $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
-                      return (object) [
-                        'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
-                        'end' => $row['end'] ?? ($row['time_end'] ?? null),
-                        'title' => $row['title'] ?? ($row['activity'] ?? ''),
-                        'description' => $row['description'] ?? ($row['desc'] ?? ''),
-                      ];
-                    })->filter(function ($it) {
-                      return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
-                    })->values();
-                  }
-                }
-              }
-
-              $formatTime = function ($t) {
-                if (empty($t)) {
-                  return null;
-                }
-                try {
-                  return \Carbon\Carbon::parse($t)->format('H:i');
-                } catch (\Throwable $e) {
-                  return is_string($t) ? $t : null;
-                }
-              };
-            @endphp
-            <ul class="rundown-timeline">
-              @forelse($items as $it)
-                @php
-                  $start = $formatTime($it->start ?? null);
-                  $end = $formatTime($it->end ?? null);
-                  $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
-                  $activity = trim((string) ($it->title ?? ''));
-                  if ($activity === '') {
-                    $activity = trim((string) ($it->description ?? ''));
-                  }
-                @endphp
-                <li class="rundown-timeline-item">
-                  <div class="rundown-timeline-dot"></div>
-                  <div class="rundown-timeline-card">
-                    <span class="time-rundown">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock" viewBox="0 0 24 24" style="margin-right: 4px; color: var(--text-clr); width: 14px; height: 14px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                      {{ $timeStr !== '' ? $timeStr : '-' }}
-                    </span>
-                    <span class="activity-rundown">{{ $activity !== '' ? $activity : '-' }}</span>
+              <div class="about-body-cols">
+                <!-- Left: Text and Features -->
+                <div class="about-text-content">
+                  <div class="event-description-text">
+                    {!! $eventDescription !== '' ? $eventDescription : '<p class="about-p">Deskripsi event belum tersedia.</p>' !!}
                   </div>
-                </li>
-              @empty
-                <li class="rundown-timeline-item is-empty">
-                  <div class="rundown-timeline-dot" style="background: #cbd5e1; box-shadow: none;"></div>
-                  <div class="rundown-timeline-card" style="background: #f8fafc; border-style: dashed; box-shadow: none;">
-                    <span class="time-rundown">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock" viewBox="0 0 24 24" style="margin-right: 4px; color: var(--text-clr); width: 14px; height: 14px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                      —
-                    </span>
-                    <span class="activity-rundown" style="color: var(--text-clr);">Schedule will be announced.</span>
-                  </div>
-                </li>
-              @endforelse
-            </ul>
-          </div>
-        </div>
-      </section>
 
-      <!-- Sidebar Column -->
-      <div class="hub-actions-column">
-        <div class="detail-group">
-          <h2 class="hub-sidebar-title">Materi Acara</h2>
-          <aside class="hub-sidebar-card">
-            <div class="hub-section">
-              <div class="hub-item" data-redirect="{{ route('trainer.events.studio', $event->id) }}">
-                <div class="hub-item-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
-                    aria-hidden="true">
-                    <path
-                      d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v9A2.5 2.5 0 0 1 18.5 21h-13A2.5 2.5 0 0 1 3 18.5z" />
-                    <path d="M12 11v7" />
-                    <path d="m8.8 14.2 3.2-3.2 3.2 3.2" />
-                  </svg>
-                </div>
-                <div>
-                  <h4>Kirim Materi</h4>
-                </div>
-              </div>
-            </div>
-
-            @php
-              $statusLabel = match($myMaterialStatus ?? 'not_uploaded') {
-                'approved'     => '✓ Materi Disetujui',
-                'pending_review' => '⏳ Menunggu Review',
-                'rejected'     => '✕ Perlu Revisi',
-                default        => '— Belum Upload',
-              };
-            @endphp
-
-            <div class="material-status-banner status-{{ $myMaterialStatus ?? 'not_uploaded' }}">
-              {{ $statusLabel }}
-            </div>
-
-            @if(($myModules ?? collect())->isNotEmpty())
-              <div class="uploaded-modules-list">
-                @foreach($myModules as $mod)
-                  <div class="module-item-row">
-                    <div class="module-item-left">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5z"/>
-                        <path d="M9.5 0V3a1.5 1.5 0 0 0 1.5 1.5H14"/>
-                      </svg>
-                      <span class="module-item-name" title="{{ $mod->original_name }}">{{ $mod->original_name }}</span>
+                  @php
+                    $benefits = [];
+                    if (!empty($event->benefit)) {
+                      if (is_array($event->benefit)) {
+                        $benefits = $event->benefit;
+                      } elseif (is_string($event->benefit)) {
+                        $benefits = collect(explode('|', $event->benefit))->map(fn($b) => trim($b))->filter()->all();
+                      }
+                    }
+                  @endphp
+                  @if(!empty($benefits))
+                    <div class="features-list">
+                      @foreach($benefits as $ben)
+                        @if(trim((string)$ben) !== '')
+                          <div class="feature-item">
+                            <div class="feature-icon-shell"><i class="bi bi-shield-check"></i></div>
+                            <div class="feature-info">
+                              <span class="feature-title">{{ $ben }}</span>
+                            </div>
+                          </div>
+                        @endif
+                      @endforeach
                     </div>
-                    <span class="module-status-badge status-{{ $mod->status }}">
-                      {{ $mod->status === 'approved' ? 'Approved' : ($mod->status === 'rejected' ? 'Ditolak' : 'Pending') }}
-                    </span>
-                  </div>
-                @endforeach
+                  @endif
+                </div>
               </div>
-            @endif
-          </aside>
+            </div>
+
+            <hr class="section-divider" />
+            <div>
+              <span class="timeline-header-label">RUNDOWN ACARA</span>
+              @php
+                $items = collect();
+
+                if (isset($event)) {
+                  try {
+                    $items = $event->relationLoaded('scheduleItems')
+                      ? ($event->scheduleItems ?? collect())
+                      : $event->scheduleItems()->get();
+                  } catch (\Throwable $e) {
+                    $items = collect();
+                  }
+
+                  if ($items->isEmpty()) {
+                    $rawSchedule = $event->schedule_json ?? null;
+
+                    $scheduleArr = null;
+                    if (is_string($rawSchedule) && trim($rawSchedule) !== '') {
+                      $decoded = json_decode($rawSchedule, true);
+                      $scheduleArr = (json_last_error() === JSON_ERROR_NONE) ? $decoded : null;
+                    } elseif (is_array($rawSchedule)) {
+                      $scheduleArr = $rawSchedule;
+                    } elseif (is_object($rawSchedule)) {
+                      $scheduleArr = json_decode(json_encode($rawSchedule), true);
+                    }
+
+                    if (is_array($scheduleArr)) {
+                      $items = collect($scheduleArr)->map(function ($row) {
+                        $row = is_array($row) ? $row : (is_object($row) ? (array) $row : []);
+                        return (object) [
+                          'start' => $row['start'] ?? ($row['time_start'] ?? ($row['time'] ?? null)),
+                          'end' => $row['end'] ?? ($row['time_end'] ?? null),
+                          'title' => $row['title'] ?? ($row['activity'] ?? ''),
+                          'description' => $row['description'] ?? ($row['desc'] ?? ''),
+                        ];
+                      })->filter(function ($it) {
+                        return !empty($it->title) || !empty($it->description) || !empty($it->start) || !empty($it->end);
+                      })->values();
+                    }
+                  }
+                }
+
+                $formatTime = function ($t) {
+                  if (empty($t)) {
+                    return null;
+                  }
+                  try {
+                    return \Carbon\Carbon::parse($t)->format('H:i');
+                  } catch (\Throwable $e) {
+                    return is_string($t) ? $t : null;
+                  }
+                };
+              @endphp
+              <div class="timeline-track">
+                @forelse($items as $it)
+                  @php
+                    $start = $formatTime($it->start ?? null);
+                    $end = $formatTime($it->end ?? null);
+                    $timeStr = trim(($start ?: '') . ($end ? ' - ' . $end : ''));
+                    $activity = trim((string) ($it->title ?? ''));
+                    if ($activity === '') {
+                      $activity = trim((string) ($it->description ?? ''));
+                    }
+                  @endphp
+                  <div class="timeline-row">
+                    <span class="timeline-time-label">{{ $timeStr ?: '-' }}</span>
+                    <span class="timeline-row-dot"></span>
+                    <div class="timeline-row-content">{{ $activity ?: '-' }}</div>
+                  </div>
+                @empty
+                  <div class="timeline-empty">
+                    <i class="bi bi-calendar-x"></i> Jadwal detail belum diumumkan.
+                  </div>
+                @endforelse
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab 2: Daftar Peserta -->
+        <section id="event-participants" class="tab-content">
+          @php
+              $totalRegistered = $activeStudents->count();
+              $attendedCount = $activeStudents->filter(function ($s) {
+                  return !empty($s->attended_at) || in_array(strtolower((string) $s->attendance_status), ['yes', 'present', 'attended']);
+              })->count();
+              $notAttendedCount = $totalRegistered - $attendedCount;
+              $attendanceRate = $totalRegistered > 0 ? round(($attendedCount / $totalRegistered) * 100) : 0;
+          @endphp
+
+          <!-- Stats overview panel -->
+          <div class="event-stats-grid">
+              <div class="stat-card-mini">
+                  <span class="stat-icon-wrapper blue"><i class="bi bi-people-fill"></i></span>
+                  <div class="stat-info-mini">
+                      <span class="stat-label-mini">Total Terdaftar</span>
+                      <strong class="stat-val-mini">{{ $totalRegistered }} Peserta</strong>
+                  </div>
+              </div>
+              <div class="stat-card-mini">
+                  <span class="stat-icon-wrapper green"><i class="bi bi-check-circle-fill"></i></span>
+                  <div class="stat-info-mini">
+                      <span class="stat-label-mini">Sudah Absen</span>
+                      <strong class="stat-val-mini">{{ $attendedCount }} Peserta</strong>
+                  </div>
+              </div>
+              <div class="stat-card-mini">
+                  <span class="stat-icon-wrapper amber"><i class="bi bi-clock-history"></i></span>
+                  <div class="stat-info-mini">
+                      <span class="stat-label-mini">Belum Absen</span>
+                      <strong class="stat-val-mini">{{ $notAttendedCount }} Peserta</strong>
+                  </div>
+              </div>
+              <div class="stat-card-mini">
+                  <span class="stat-icon-wrapper purple"><i class="bi bi-graph-up"></i></span>
+                  <div class="stat-info-mini">
+                      <span class="stat-label-mini">Tingkat Kehadiran</span>
+                      <strong class="stat-val-mini">{{ $attendanceRate }}%</strong>
+                  </div>
+              </div>
+          </div>
+
+          <!-- Interactive Filters -->
+          <div class="participant-filters">
+              <button class="filter-pill active" type="button" data-filter="all">
+                  <i class="bi bi-grid-fill"></i> Semua
+              </button>
+              <button class="filter-pill" type="button" data-filter="present">
+                  <i class="bi bi-check-circle-fill" style="color: #10b981;"></i> Sudah Absen
+              </button>
+              <button class="filter-pill" type="button" data-filter="absent">
+                  <i class="bi bi-dash-circle-fill" style="color: #f59e0b;"></i> Belum Absen
+              </button>
+          </div>
+
+          <div class="enrollment-header">
+              <h3>PESERTA TERDAFTAR</h3>
+              <span class="total-badge">{{ $totalRegistered }} TOTAL</span>
+          </div>
+
+          <div class="participant-table-wrapper">
+              <table class="participant-table">
+                  <thead>
+                      <tr>
+                          <th>Peserta</th>
+                          <th>Tanggal Daftar</th>
+                          <th>Status Absensi</th>
+                          <th>Waktu Hadir</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      @forelse($activeStudents as $enrollment)
+                          @php
+                              $hasAttended = !empty($enrollment->attended_at) || in_array(strtolower((string) $enrollment->attendance_status), ['yes', 'present', 'attended']);
+                          @endphp
+                          <tr class="participant-row" data-attended="{{ $hasAttended ? 'true' : 'false' }}">
+                              <td>
+                                  <div class="participant-user-info">
+                                      <img src="{{ $enrollment->user->avatar_url ?? 'https://ui-avatars.com/api/?name=' . urlencode($enrollment->full_name ?: ($enrollment->user->name ?? 'User')) . '&background=f5ecf7&color=51376c' }}"
+                                          alt="{{ $enrollment->full_name ?: ($enrollment->user->name ?? 'User') }}" class="participant-avatar" />
+                                      <div class="participant-name-wrapper">
+                                          <span class="participant-name">{{ $enrollment->full_name ?: ($enrollment->user->name ?? 'Anonim') }}</span>
+                                          <span class="participant-email">{{ strtolower($enrollment->user->email ?? '') }}</span>
+                                      </div>
+                                  </div>
+                              </td>
+                              <td>
+                                  <span class="participant-reg-date">
+                                      <i class="bi bi-calendar3 me-1"></i> {{ $enrollment->created_at->format('d M Y') }}
+                                  </span>
+                              </td>
+                              <td>
+                                  @if($hasAttended)
+                                      <span class="status-pill status-present">
+                                          <i class="bi bi-check-circle-fill"></i> Hadir
+                                      </span>
+                                  @else
+                                      <span class="status-pill status-absent">
+                                          <i class="bi bi-dash-circle-fill"></i> Belum Absen
+                                      </span>
+                                  @endif
+                              </td>
+                              <td>
+                                  @if($hasAttended && $enrollment->attended_at)
+                                      <span class="attendance-timestamp">
+                                          <i class="bi bi-clock-fill me-1"></i> {{ $enrollment->attended_at->format('H:i') }} WIB
+                                      </span>
+                                  @else
+                                      <span class="no-attendance-timestamp">-</span>
+                                  @endif
+                              </td>
+                          </tr>
+                      @empty
+                          <tr>
+                              <td colspan="4" class="empty-table-state">
+                                  <i class="bi bi-people-fill empty-icon"></i>
+                                  <p>Belum ada peserta terdaftar untuk event ini.</p>
+                              </td>
+                          </tr>
+                      @endforelse
+                  </tbody>
+              </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column: Sidebar (Assets & Materials) -->
+      <div class="detail-sidebar">
+        <!-- Quick Assets Card (Links & Maps) -->
+        <div class="sidebar-card assets-card">
+          <div class="sidebar-header">
+            <i class="bi bi-folder-fill"></i>
+            <span>ASET ACARA</span>
+          </div>
+          
+          @if($hasZoomLink)
+            <div class="sidebar-row-item">
+              <div class="row-item-left">
+                <div class="row-item-icon-shell purple"><i class="bi bi-camera-video"></i></div>
+                <div class="row-item-info">
+                  <span class="row-item-title">Rapat Virtual / Sesi Video Online</span>
+                  <span class="row-item-sub">Akses ruang meeting untuk mengikuti acara</span>
+                </div>
+              </div>
+              <a href="{{ $zoomLink }}" target="_blank" class="row-btn-solid" style="text-decoration: none;">
+                Gabung Zoom <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
+              </a>
+            </div>
+          @endif
+
+          @if(!empty($vbgUrl))
+            <div class="sidebar-row-item">
+              <div class="row-item-left">
+                <div class="row-item-icon-shell purple"><i class="bi bi-image"></i></div>
+                <div class="row-item-info">
+                  <span class="row-item-title">Latar Virtual Event</span>
+                  <span class="row-item-sub">Unduh background resmi acara</span>
+                </div>
+              </div>
+              <a href="{{ $vbgUrl }}" class="row-btn-outline" download style="text-decoration: none;">
+                Unduh <i class="bi bi-download"></i>
+              </a>
+            </div>
+          @endif
+
+          @if(!$hasZoomLink && empty($vbgUrl))
+            <p class="muted-text text-center" style="font-size: 12px; margin: 0; color: #667085;">Akses link belum tersedia.</p>
+          @endif
+        </div>
+
+        <!-- Materials Card -->
+        <div class="sidebar-card materials-card">
+          <div class="sidebar-header">
+            <i class="bi bi-folder-fill"></i>
+            <span>MATERI ACARA</span>
+          </div>
+
+          <div class="sidebar-row-item materials-action" onclick="window.location.href='{{ route('trainer.events.studio', $event->id) }}'">
+            <div class="row-item-left">
+              <div class="row-item-icon-shell red"><i class="bi bi-cloud-arrow-up"></i></div>
+              <div class="row-item-info">
+                <span class="row-item-title">Kirim / Edit Materi</span>
+                <span class="row-item-sub">Unggah materi dan izin materi Anda</span>
+              </div>
+            </div>
+            <i class="bi bi-chevron-right" style="color: #98A2B3; font-size: 14px;"></i>
+          </div>
+
+          @if(($myModules ?? collect())->isNotEmpty())
+            <div class="materi-uploaded-banner" style="margin-top: 12px;">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>Materi Diunggah</span>
+            </div>
+
+            <div class="file-items-list" style="margin-top: 12px;">
+              @foreach($myModules as $mod)
+                <div class="file-row">
+                  <div class="file-row-left">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span class="file-row-name" title="{{ $mod->original_name }}">{{ $mod->original_name }}</span>
+                  </div>
+                  @php
+                    $capsuleClass = match($mod->status) {
+                      'approved' => 'approved',
+                      'rejected' => 'rejected',
+                      default => 'pending',
+                    };
+                    $capsuleLabel = match($mod->status) {
+                      'approved' => 'Approved',
+                      'rejected' => 'Ditolak',
+                      default => 'Pending',
+                    };
+                  @endphp
+                  <span class="status-capsule {{ $capsuleClass }}">{{ $capsuleLabel }}</span>
+                </div>
+              @endforeach
+            </div>
+          @endif
         </div>
       </div>
     </div>
@@ -1432,6 +1579,47 @@
 
 @push('scripts')
   <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Tab switching logic
+        const tabButtons = document.querySelectorAll(".tab-pill");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        tabButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                tabButtons.forEach((btn) => btn.classList.remove("active"));
+                tabContents.forEach((content) => content.classList.remove("active"));
+
+                button.classList.add("active");
+                const targetId = button.getAttribute("data-target");
+                const target = document.getElementById(targetId);
+                if (target) target.classList.add("active");
+            });
+        });
+
+        // Participant filtering logic
+        const filterButtons = document.querySelectorAll(".filter-pill");
+        const rows = document.querySelectorAll(".participant-row");
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener("click", () => {
+                filterButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+
+                const filter = btn.getAttribute("data-filter");
+                rows.forEach(row => {
+                    const isPresent = row.getAttribute("data-attended") === "true";
+                    if (filter === "all") {
+                        row.style.display = "";
+                    } else if (filter === "present") {
+                        row.style.display = isPresent ? "" : "none";
+                    } else if (filter === "absent") {
+                        row.style.display = !isPresent ? "" : "none";
+                    }
+                });
+            });
+        });
+    });
+
     document.addEventListener("click", (event) => {
       const item = event.target.closest(".hub-item[data-redirect]");
       if (!item) return;

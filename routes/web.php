@@ -89,19 +89,20 @@ Route::middleware(['auth', 'admin'])->get('/admin/add-users', function () {
 
 
 Route::middleware(['auth'])->group(function () {
+    // --- Fitur Reseller ---
     Route::get('/reseller', [ResellerController::class, 'index'])->name('reseller.index');
-    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
-
-    // Route Baru untuk Generate Kode
     Route::post('/reseller/activate', [ResellerController::class, 'activate'])->name('reseller.activate');
-    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
+    Route::post('/reseller/update-code', [ResellerController::class, 'updateReferralCode'])->name('reseller.update-code');
+    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
+
+    // Penarikan Dana (Withdrawal)
+    Route::post('/reseller/withdraw', [ResellerController::class, 'storeWithdraw'])->name('reseller.withdraw');
     Route::get('/reseller/withdraw/history', [ResellerController::class, 'withdrawHistory'])->name('reseller.withdraw.history');
 
+    // Riwayat & Laporan (Cetak/Unduh)
+    Route::get('/reseller/history', [ResellerController::class, 'history'])->name('reseller.history');
     Route::get('/reseller/history/download', [ResellerController::class, 'downloadHistory'])->name('reseller.history.download');
     Route::get('/reseller/withdraw/download', [ResellerController::class, 'downloadWithdrawHistory'])->name('reseller.withdraw.download');
-
-    // --- TAMBAHAN ROUTE BUAT CEK KODE REFERRAL AJAX BIAR AUTO GA PERLU REFRESH ---
-    Route::post('/reseller/check', [ResellerController::class, 'checkReferral'])->name('check.referral');
 });
 
 
@@ -395,6 +396,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'accountSettings'])->name('profile.account-settings');
     Route::post('/profile/account-settings', [\App\Http\Controllers\User\ProfileController::class, 'updateAccountSettings'])->name('profile.update-account-settings');
 
+    // Riwayat Invoice User (dapat diunduh kapan saja)
+    Route::get('/profile/invoice-history', [\App\Http\Controllers\User\ProfileController::class, 'invoiceHistory'])->name('profile.invoice-history');
+
     // Profile Reminder API
     Route::get('/api/profile-reminder/check', [\App\Http\Controllers\User\ProfileReminderController::class, 'check'])->name('profile.reminder.check');
     Route::post('/api/profile-reminder/dismiss', [\App\Http\Controllers\User\ProfileReminderController::class, 'dismiss'])->name('profile.reminder.dismiss');
@@ -500,6 +504,10 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::get('/admin/reseller/dashboard', [\App\Http\Controllers\User\ResellerController::class, 'adminDashboard'])->name('admin.reseller.dashboard');
         Route::get('/admin/reseller/data', [\App\Http\Controllers\User\ResellerController::class, 'adminData'])->name('admin.reseller.data');
+        Route::get('/admin/reseller/katalog', [\App\Http\Controllers\User\ResellerController::class, 'adminKatalog'])->name('admin.reseller.katalog');
+        Route::get('/admin/reseller/laporan', [\App\Http\Controllers\User\ResellerController::class, 'adminLaporan'])->name('admin.reseller.laporan');
+        Route::get('/admin/reseller/export/excel', [\App\Http\Controllers\User\ResellerController::class, 'adminExportExcel'])->name('admin.reseller.export.excel');
+        Route::get('/admin/reseller/export/pdf', [\App\Http\Controllers\User\ResellerController::class, 'adminExportPdf'])->name('admin.reseller.export.pdf');
         // Admin view: Pendapatan (financial breakdown)
         Route::get('/admin/view-pendapatan', [CourseRevenueDetailController::class, 'show'])
             ->name('admin.view-pendapatan');
@@ -521,8 +529,10 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/finance/events', [\App\Http\Controllers\Admin\FinanceController::class, 'events'])->name('admin.finance.events');
         Route::get('/admin/finance/events/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'eventDetail'])->name('admin.finance.event-detail');
+        Route::get('/admin/finance/events/{id}/export', [\App\Http\Controllers\Admin\FinanceController::class, 'exportEvent'])->name('admin.finance.events.export');
         Route::get('/admin/finance/courses', [\App\Http\Controllers\Admin\FinanceController::class, 'courses'])->name('admin.finance.courses');
         Route::get('/admin/finance/courses/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'courseDetail'])->name('admin.finance.course-detail');
+        Route::get('/admin/finance/courses/{id}/export', [\App\Http\Controllers\Admin\FinanceController::class, 'exportCourse'])->name('admin.finance.courses.export');
         Route::get('/admin/finance/trainers', [\App\Http\Controllers\Admin\FinanceController::class, 'trainers'])->name('admin.finance.trainers');
         Route::post('/admin/finance/trainers/{id}/disburse', [\App\Http\Controllers\Admin\FinanceController::class, 'disburseCourseBalance'])->name('admin.finance.trainers.disburse');
         Route::post('/admin/finance/events/{id}/fee-request', [\App\Http\Controllers\Admin\FinanceController::class, 'createEventFeeRequest'])->name('admin.finance.events.fee-request');
@@ -532,7 +542,11 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/admin/finance/export', [\App\Http\Controllers\Admin\FinanceController::class, 'export'])->name('admin.finance.export');
 
+        // History Invoice & Receipt (admin finance)
+        Route::get('/admin/finance/invoice-history', [\App\Http\Controllers\Admin\FinanceController::class, 'invoiceHistory'])->name('admin.finance.invoice-history');
+
         Route::get('/invoice/manual/{order_id}', [\App\Http\Controllers\Admin\InvoiceController::class, 'manualInvoice'])->name('invoice.manual');
+
         Route::get('/admin/withdrawals', [\App\Http\Controllers\Admin\WithdrawalController::class, 'index'])->name('admin.withdrawals.index');
         Route::post('/admin/withdrawals/{withdrawal}/approve', [\App\Http\Controllers\Admin\WithdrawalController::class, 'approve'])->name('admin.withdrawals.approve');
         Route::post('/admin/withdrawals/{withdrawal}/reject', [\App\Http\Controllers\Admin\WithdrawalController::class, 'reject'])->name('admin.withdrawals.reject');
@@ -697,6 +711,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
     Route::get('/events/{id}', [TrainerController::class, 'eventDetail'])->name('events.show');
     Route::get('/feedback', [TrainerController::class, 'feedback'])->name('feedback');
     Route::post('/feedback/reply/store', [TrainerController::class, 'storeFeedbackReply'])->name('feedback.reply.store');
+    Route::post('/feedback/{id}/like', [TrainerController::class, 'toggleLike'])->name('feedback.like');
     Route::get('/notifications', [TrainerNotificationsController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-all-read', [TrainerNotificationsController::class, 'markAllRead'])->name('notifications.markAllRead');
     Route::get('/notifications/{notification}/open', [TrainerNotificationsController::class, 'open'])->name('notifications.open');
@@ -769,6 +784,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/material/{material}', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'show'])->name('admin.trainer.material.show');
     Route::post('/admin/material/{material}/approve', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'approve'])->name('admin.trainer.material.approve');
     Route::post('/admin/material/{material}/reject', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'reject'])->name('admin.trainer.material.reject');
+    Route::post('/admin/material/{material}/revoke', [\App\Http\Controllers\Admin\MaterialApprovalController::class, 'revoke'])->name('admin.trainer.material.revoke');
 
     // Event Material Approval Routes
     Route::get('/admin/event-materials', [\App\Http\Controllers\Admin\EventMaterialApprovalController::class, 'index'])->name('admin.event-materials.index');

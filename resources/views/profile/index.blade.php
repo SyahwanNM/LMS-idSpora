@@ -1082,6 +1082,29 @@
         </div>
     </div>
 
+    {{-- Invoice History Quick Access --}}
+    <div style="max-width:1040px; margin:0 auto; padding:0 1rem 2rem;">
+        <div class="profile-soft-card p-5 d-flex align-items-center justify-content-between flex-wrap gap-3"
+             style="border-radius:18px;">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg,#fef3c7,#fde68a); display:flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-receipt" style="font-size:1.3rem; color:#92400e;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:800; color:#111827; font-size:1rem;">Riwayat Invoice Saya</div>
+                    <div style="font-size:0.82rem; color:#6b7280;">Lihat dan unduh invoice PDF untuk semua transaksi event & course yang telah selesai.</div>
+                </div>
+            </div>
+            <a href="{{ route('profile.invoice-history') }}"
+               style="display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border-radius:12px;
+                      background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#1c1917; font-weight:800; font-size:0.88rem;
+                      text-decoration:none; white-space:nowrap; box-shadow:0 4px 14px rgba(251,191,36,0.35);
+                      transition:all 0.2s;">
+                <i class="bi bi-file-earmark-arrow-down-fill"></i> Lihat Invoice
+            </a>
+        </div>
+    </div>
+
     <!-- Redeem Voucher Modal -->
     <div class="modal fade" id="redeemVoucherModal" tabindex="-1" aria-labelledby="redeemVoucherModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">

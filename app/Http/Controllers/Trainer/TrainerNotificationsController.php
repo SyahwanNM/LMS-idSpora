@@ -35,8 +35,19 @@ class TrainerNotificationsController extends Controller
         if ($request->expectsJson() || $request->ajax()) {
             $items = TrainerNotification::where('trainer_id', $uid)
                 ->orderByDesc('created_at')
-                ->limit(15)
+                ->limit(50)
                 ->get()
+                ->filter(function (TrainerNotification $notification) {
+                    $type = (string) data_get($notification->data, 'entity_type', '');
+                    $id = (int) data_get($notification->data, 'entity_id', 0);
+                    if ($type === 'event' || $notification->type === 'event_invitation') {
+                        return $id > 0 && Event::where('id', $id)->exists();
+                    } elseif ($type === 'course' || $notification->type === 'course_invitation') {
+                        return $id > 0 && Course::where('id', $id)->exists();
+                    }
+                    return true;
+                })
+                ->take(15)
                 ->map(function (TrainerNotification $notification) {
                     return [
                         'id' => $notification->id,
@@ -52,6 +63,17 @@ class TrainerNotificationsController extends Controller
 
             $unread = TrainerNotification::where('trainer_id', $uid)
                 ->whereNull('read_at')
+                ->get()
+                ->filter(function (TrainerNotification $notification) {
+                    $type = (string) data_get($notification->data, 'entity_type', '');
+                    $id = (int) data_get($notification->data, 'entity_id', 0);
+                    if ($type === 'event' || $notification->type === 'event_invitation') {
+                        return $id > 0 && Event::where('id', $id)->exists();
+                    } elseif ($type === 'course' || $notification->type === 'course_invitation') {
+                        return $id > 0 && Course::where('id', $id)->exists();
+                    }
+                    return true;
+                })
                 ->count();
 
             return response()->json([
@@ -60,11 +82,31 @@ class TrainerNotificationsController extends Controller
             ]);
         }
 
-        $invitations = TrainerNotification::where('trainer_id', $uid)
+        $invitationCollection = TrainerNotification::where('trainer_id', $uid)
             ->whereIn('type', ['course_invitation', 'event_invitation'])
             ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
             ->orderByDesc('created_at')
-            ->paginate(15);
+            ->get()
+            ->filter(function (TrainerNotification $notification) {
+                $type = (string) data_get($notification->data, 'entity_type', '');
+                $id = (int) data_get($notification->data, 'entity_id', 0);
+                if ($type === 'event' || $notification->type === 'event_invitation') {
+                    return $id > 0 && Event::where('id', $id)->exists();
+                } elseif ($type === 'course' || $notification->type === 'course_invitation') {
+                    return $id > 0 && Course::where('id', $id)->exists();
+                }
+                return true;
+            });
+
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+        $perPage = 15;
+        $invitations = new \Illuminate\Pagination\LengthAwarePaginator(
+            $invitationCollection->forPage($page, $perPage)->values(),
+            $invitationCollection->count(),
+            $perPage,
+            $page,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
 
         $viewHtml = <<<'HTML'
 @extends('layouts.trainer')
@@ -537,10 +579,10 @@ class TrainerNotificationsController extends Controller
                                 </form>
                             @endif
 
-                            <form method="POST" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="margin:0; display:inline-block;">
+                            <form method="POST" class="js-invitation-response-form" data-confirm="Apakah Anda yakin ingin menolak undangan ini?" action="{{ route('trainer.notifications.respond', $invite->id) }}" style="margin:0; display:inline-block;">
                                 @csrf
                                 <input type="hidden" name="decision" value="reject">
-                                <button type="submit" class="btn-action-danger-outline" onclick="return confirm('Apakah Anda yakin ingin menolak undangan ini?');">
+                                <button type="submit" class="btn-action-danger-outline" data-loading-text="Memproses...">
                                     <i class="bi bi-x-circle"></i> Tolak
                                 </button>
                             </form>
@@ -644,12 +686,20 @@ HTML;
 
         $data = is_array($notification->data) ? $notification->data : [];
         $currentStatus = (string) data_get($data, 'invitation_status', 'pending');
-        if (in_array($currentStatus, ['accepted', 'rejected'], true)) {
-            return back()->with('success', 'Undangan ini sudah diproses sebelumnya.');
-        }
-
         $entityType = (string) data_get($data, 'entity_type', '');
         $entityId = (int) data_get($data, 'entity_id', 0);
+
+        $needsSchemeSetup = false;
+        if ($entityType === 'course' && $entityId > 0) {
+            $course = Course::query()->find($entityId);
+            if ($course && empty($course->trainer_contribution_scheme)) {
+                $needsSchemeSetup = true;
+            }
+        }
+
+        if (!$needsSchemeSetup && in_array($currentStatus, ['accepted', 'rejected'], true)) {
+            return back()->with('success', 'Undangan ini sudah diproses sebelumnya.');
+        }
 
         if ($entityType === 'course' && $entityId > 0) {
             $course = Course::query()->find($entityId);

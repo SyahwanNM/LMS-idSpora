@@ -38,6 +38,7 @@ class User extends Authenticatable
         'average_rating',
         'late_uploads',
         'user_status',
+        'reseller_status',
         'consecutive_expired_invitations',
         'consecutive_late_uploads',
         'last_teaching_at',
@@ -47,12 +48,14 @@ class User extends Authenticatable
         'bank_account_number',
         'bank_account_holder',
         'referral_code',
+        'referral_code_updated_at',
         'wallet_balance',
         'referrer_id',
         'trainer_skills',
         'trainer_experiences',
         'trainer_educations',
         'trainer_certifications',
+        'trainer_specializations',
     ];
 
     /**
@@ -81,13 +84,16 @@ class User extends Authenticatable
             'average_rating' => 'decimal:2',
             'late_uploads' => 'integer',
             'user_status' => 'string',
+            'reseller_status' => 'string',
             'consecutive_expired_invitations' => 'integer',
             'consecutive_late_uploads' => 'integer',
             'last_teaching_at' => 'datetime',
+            'referral_code_updated_at' => 'datetime',
             'trainer_skills' => 'array',
             'trainer_experiences' => 'array',
             'trainer_educations' => 'array',
             'trainer_certifications' => 'array',
+            'trainer_specializations' => 'array',
         ];
     }
 
@@ -487,12 +493,5 @@ class User extends Authenticatable
     {
         parent::boot();
 
-        static::creating(function ($user) {
-            // Bikin kode random 6 karakter (angka & huruf), lalu uppercase
-            // Contoh output: 616JA0
-            if (empty($user->referral_code)) {
-                $user->referral_code = strtoupper(Str::random(6) . rand(10, 99));
-            }
-        });
     }
 }

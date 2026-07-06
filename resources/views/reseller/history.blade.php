@@ -1,4 +1,3 @@
-@include('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,121 +9,132 @@
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
         integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body {
-            background:
-                radial-gradient(circle at top left, rgba(255, 193, 7, 0.22), transparent 28%),
-                radial-gradient(circle at top right, rgba(33, 37, 41, 0.08), transparent 25%),
-                linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        .btn-pdf-download {
+            border: 1px solid var(--primary) !important;
+            color: var(--primary) !important;
+            background-color: transparent !important;
+            transition: all 0.2s ease-in-out;
         }
-
-        .page-shell {
-            position: relative;
-            overflow-x: hidden;
-            overflow-y: auto;
-            min-height: 100vh;
-        }
-
-        .page-shell::before,
-        .page-shell::after {
-            content: '';
-            position: fixed;
-            border-radius: 999px;
-            filter: blur(50px);
-            pointer-events: none;
-            z-index: 0;
-            opacity: 0.45;
-        }
-
-        .page-shell::before {
-            width: 220px;
-            height: 220px;
-            background: rgba(255, 193, 7, 0.35);
-            top: 12%;
-            right: -70px;
-        }
-
-        .page-shell::after {
-            width: 260px;
-            height: 260px;
-            background: rgba(13, 110, 253, 0.12);
-            bottom: 6%;
-            left: -90px;
-        }
-
-        .history-hero {
-            background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #495057 100%);
-            color: #fff;
-        }
-
-        .history-card {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        .action-group .btn {
-            min-width: 132px;
-        }
-
-        .stat-chip {
-            border: 1px solid rgba(255, 193, 7, 0.18);
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 248, 225, 0.92));
+        .btn-pdf-download:hover {
+            background-color: var(--primary) !important;
+            color: #ffffff !important;
+            border-color: var(--primary) !important;
         }
     </style>
 </head>
 
-<body class="page-shell">
-    <main class="pt-4 mt-4 position-relative" style="z-index: 1;">
-        <div class="container-xxl pb-5">
-            <div class="card history-hero border-0 shadow-lg rounded-4 mb-4 overflow-hidden">
-                <div class="card-body p-4 p-lg-5">
-                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-4 align-items-start">
-                        <div>
-                            <div class="d-inline-flex align-items-center gap-2 badge rounded-pill bg-warning text-dark px-3 py-2 mb-3">
-                                <i class="bi bi-clock-history"></i>
-                                Riwayat Referral
-                            </div>
-                            <h1 class="fw-bold mb-2">Semua aktivitas referral dalam satu tampilan.</h1>
-                            <p class="text-white-50 mb-0" style="max-width: 720px;">
-                                Pantau transaksi referral, status komisi, dan progres pembayaran Anda.
-                            </p>
-                        </div>
+<body class="bg-light" style="font-family: 'Inter', system-ui, -apple-system, sans-serif;">
+    @include('partials.navbar-after-login')
+    <main class="pt-4 mt-4">
+        <div class="container-xxl">
+            <!-- Header Section -->
+            <div class="d-flex align-items-center mb-4 mt-2">
+                <a href="{{ route('reseller.index') }}" class="btn btn-outline-secondary bg-white border-light-subtle rounded-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px; color: #475569;" title="Kembali ke Dashboard">
+                    <i class="bi bi-arrow-left fs-5"></i>
+                </a>
+                <div class="ms-3">
+                    <h3 class="mb-1 fw-bold text-dark fs-4">Riwayat Referral</h3>
+                    <p class="text-muted mb-0 small">Kelola dan pantau semua transaksi referral Anda</p>
+                </div>
+            </div>
 
-                        <div class="action-group d-flex flex-column flex-sm-row gap-2 ms-lg-auto align-items-stretch align-items-sm-center">
-                            <a href="{{ route('reseller.index') }}" class="btn btn-light fw-bold px-4">
-                                <i class="bi bi-arrow-left me-1"></i> Kembali
-                            </a>
-                            <a href="{{ route('reseller.history.download') }}" class="btn btn-warning fw-bold px-4">
-                                <i class="bi bi-cloud-arrow-down-fill me-1"></i> Unduh PDF
-                            </a>
+            <!-- Stats Section (3 Separate Cards) -->
+            <div class="row g-3 mb-4 animate-fade-in">
+                <!-- Komisi Terbayar -->
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm bg-white p-3 rounded-4 position-relative" style="border-radius: 16px;">
+                        <div class="position-absolute top-0 end-0 p-3 text-secondary opacity-50" style="cursor: pointer;" title="Total komisi yang telah disetujui dan dibayarkan ke saldo Anda">
+                            <i class="bi bi-info-circle"></i>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success" style="width: 56px; height: 56px;">
+                                <i class="bi bi-wallet2 fs-3"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted small fw-medium mb-1" style="font-size: 0.8rem;">Total Komisi Terbayar</h6>
+                                <h4 class="fw-semibold mb-0 text-success">Rp {{ number_format($totalPaid, 0, ',', '.') }}</h4>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Total komisi berhasil dicairkan</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Komisi Pending -->
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm bg-white p-3 rounded-4 position-relative" style="border-radius: 16px;">
+                        <div class="position-absolute top-0 end-0 p-3 text-secondary opacity-50" style="cursor: pointer;" title="Komisi dalam proses verifikasi transaksi pembeli">
+                            <i class="bi bi-info-circle"></i>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning" style="width: 56px; height: 56px;">
+                                <i class="bi bi-clock fs-3"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted small fw-medium mb-1" style="font-size: 0.8rem;">Komisi Pending</h6>
+                                <h4 class="fw-semibold mb-0 text-warning">Rp {{ number_format($totalPending, 0, ',', '.') }}</h4>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Komisi pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Komisi Ditolak -->
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm bg-white p-3 rounded-4 position-relative" style="border-radius: 16px;">
+                        <div class="position-absolute top-0 end-0 p-3 text-secondary opacity-50" style="cursor: pointer;" title="Komisi yang dibatalkan atau ditolak">
+                            <i class="bi bi-info-circle"></i>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger" style="width: 56px; height: 56px;">
+                                <i class="bi bi-x-circle fs-3"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted small fw-medium mb-1" style="font-size: 0.8rem;">Komisi Ditolak</h6>
+                                <h4 class="fw-semibold mb-0 text-danger">Rp {{ number_format($totalRejected, 0, ',', '.') }}</h4>
+                                <span class="text-muted small" style="font-size: 0.75rem;">Komisi ditolak</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4 history-card mb-4">
-                <div class="card-body p-4 p-lg-4">
+            <!-- Filter Section -->
+            <div class="card border-0 shadow-sm mb-4 bg-white animate-fade-in delay-1" style="border-radius: 16px;">
+                <div class="card-body p-4">
                     <form method="GET" action="{{ route('reseller.history') }}" class="row g-3 align-items-end">
-                        <div class="col-lg-6">
-                            <label class="form-label fw-semibold text-muted small">Cari referral</label>
-                            <input type="search" name="search" value="{{ request('search') }}" class="form-control form-control-lg"
-                                placeholder="Nama, email, atau deskripsi transaksi">
+                        <!-- Search Input -->
+                        <div class="col-12 col-md-4">
+                            <label class="form-label text-muted small mb-2 fw-medium" for="searchReferral">Cari Referral</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="search" name="search" id="searchReferral" value="{{ request('search') }}" class="form-control bg-light border-0 py-2 fs-6" style="border-radius: 0 8px 8px 0;" placeholder="Nama, email, atau detail transaksi...">
+                            </div>
                         </div>
-                        <div class="col-lg-3">
-                            <label class="form-label fw-semibold text-muted small">Status</label>
-                            <select name="status" class="form-select form-select-lg">
-                                <option value="">Semua status</option>
+                        <!-- Status Dropdown -->
+                        <div class="col-12 col-md-2">
+                            <label class="form-label text-muted small mb-2 fw-medium" for="statusFilter">Status</label>
+                            <select name="status" id="statusFilter" class="form-select bg-light border-0 py-2 fs-6" style="border-radius: 8px;">
+                                <option value="">Semua Status</option>
                                 <option value="paid" @selected(request('status') === 'paid')>Paid</option>
                                 <option value="pending" @selected(request('status') === 'pending')>Pending</option>
                                 <option value="rejected" @selected(request('status') === 'rejected')>Rejected</option>
                             </select>
                         </div>
-                        <div class="col-lg-3 d-flex gap-2 justify-content-lg-end">
-                            <button type="submit" class="btn btn-warning fw-bold flex-grow-1 flex-lg-grow-0 px-4">
-                                <i class="bi bi-search me-1"></i> Filter
+                        <!-- Periode Tanggal -->
+                        <div class="col-12 col-md-3">
+                            <label class="form-label text-muted small mb-2 fw-medium" for="dateRangePicker">Periode Tanggal</label>
+                            <div class="input-group">
+                                <input type="text" name="date_range" id="dateRangePicker" value="{{ request('date_range') }}" class="form-control bg-light border-0 py-2 fs-6" style="border-radius: 8px 0 0 8px;" placeholder="Pilih Periode Tanggal">
+                                <span class="input-group-text bg-light border-0" style="cursor: pointer;"><i class="bi bi-calendar3 text-muted"></i></span>
+                            </div>
+                        </div>
+                        <!-- Filter Actions -->
+                        <div class="col-12 col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn text-white py-2 px-3 fw-medium flex-grow-1" style="background-color: var(--primary); border-radius: 8px; border: none;">
+                                <i class="bi bi-funnel me-1"></i> Terapkan Filter
                             </button>
-                            <a href="{{ route('reseller.history') }}" class="btn btn-outline-secondary fw-bold px-4">
+                            <a href="{{ route('reseller.history') }}" class="btn btn-outline-secondary py-2 px-3 flex-grow-1" style="border-radius: 8px;">
                                 Reset
                             </a>
                         </div>
@@ -132,89 +142,98 @@
                 </div>
             </div>
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <div class="card history-card shadow-sm border-0 rounded-4 h-100">
-                        <div class="card-body p-4">
-                            <small class="text-muted">Total Komisi Terbayar</small>
-                            <h3 class="mb-0 text-success fw-bold">Rp {{ number_format($totalPaid, 0, ',', '.') }}</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card history-card shadow-sm border-0 rounded-4 h-100">
-                        <div class="card-body p-4">
-                            <small class="text-muted">Komisi Pending</small>
-                            <h3 class="mb-0 text-warning fw-bold">Rp {{ number_format($totalPending, 0, ',', '.') }}</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card history-card shadow-sm border-0 rounded-4 h-100">
-                        <div class="card-body p-4">
-                            <small class="text-muted">Komisi Ditolak</small>
-                            <h3 class="mb-0 text-danger fw-bold">Rp {{ number_format($totalRejected, 0, ',', '.') }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm rounded-4 history-card">
-                <div class="card-body p-4 p-lg-5">
+            <!-- Table Card -->
+            <div class="card border-0 shadow-sm bg-white animate-fade-in delay-2 mb-4" style="border-radius: 16px;">
+                <div class="card-body p-4">
+                    <!-- Table Header Actions -->
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-                        <div>
-                            <h4 class="fw-bold mb-1">Daftar Riwayat Referral</h4>
-                            <p class="text-muted mb-0">Menampilkan semua transaksi referral yang tercatat untuk akun Anda.</p>
+                        <div class="d-flex align-items-center">
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="bi bi-clock-history text-warning me-3"></i>
+                                Daftar Riwayat Referral
+                            </h5>
+                            <span class="badge rounded-pill bg-light text-secondary border border-light-subtle px-3 py-2 ms-2" style="font-weight: 500; font-size: 0.75rem;">{{ $history->total() }} hasil</span>
                         </div>
-                        <span class="badge rounded-pill bg-warning text-dark px-3 py-2">{{ $history->total() }} hasil</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{{ route('reseller.history.download', request()->query()) }}" class="btn btn-pdf-download btn-sm fw-medium px-3 py-1.5 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.85rem;" target="_blank">
+                                <i class="bi bi-cloud-arrow-down-fill"></i>
+                                <span>Unduh PDF</span>
+                            </a>
+                        </div>
                     </div>
 
+                    <!-- Responsive Table -->
                     <div class="table-responsive">
                         <table class="table align-middle table-hover mb-0">
                             <thead>
                                 <tr class="text-muted small">
-                                    <th class="border-0 py-3">Tanggal</th>
-                                    <th class="border-0 py-3">Pengguna Baru</th>
-                                    <th class="border-0 py-3">Detail</th>
-                                    <th class="border-0 py-3 text-center">Status</th>
-                                    <th class="border-0 py-3 text-end">Komisi</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600; border-radius: 8px 0 0 8px; width: 15%;">Tanggal <i class="bi bi-chevron-expand small"></i></th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #F9F9FC; font-weight: 600; width: 25%;">Pengguna</th>
+                                    <th class="border-0 py-3 text-secondary" style="background-color: #F9F9FC; font-weight: 600; width: 25%;">Detail Transaksi</th>
+                                    <th class="border-0 py-3 text-center text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600; width: 15%;">Status</th>
+                                    <th class="border-0 py-3 text-end text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600; width: 10%;">Komisi</th>
+                                    <th class="border-0 py-3 text-center text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600; border-radius: 0 8px 8px 0; width: 10%;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($history as $item)
                                     @php
                                         $status = strtolower($item->status);
-                                        $badgeClass = $status === 'paid' ? 'bg-success text-success' : ($status === 'rejected' ? 'bg-danger text-danger' : 'bg-warning text-warning');
                                         $isRejected = $status === 'rejected';
+                                        
+                                        // Set status badge style
+                                        if ($status === 'paid') {
+                                            $statusBadge = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-check-circle-fill"></i> Paid</span>';
+                                        } elseif ($isRejected) {
+                                            $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-x-circle-fill"></i> Rejected</span>';
+                                        } else {
+                                            $statusBadge = '<span class="badge bg-warning bg-opacity-10 text-warning-emphasis rounded-pill" style="font-weight: 500; font-size: 13px !important; padding: 5px 10px !important; display: inline-flex !important; align-items: center; justify-content: center; width: fit-content; gap: 0.25rem;"><i class="bi bi-clock-fill"></i> Pending</span>';
+                                        }
                                     @endphp
                                     <tr>
                                         <td class="py-3">
                                             <div class="fw-semibold text-dark">{{ $item->created_at->format('d M Y') }}</div>
-                                            <small class="text-muted">{{ $item->created_at->format('H:i') }} WIB</small>
+                                            <small class="text-muted" style="font-size: 0.75rem;">{{ $item->created_at->format('H:i') }} WIB</small>
                                         </td>
                                         <td class="py-3">
-                                            <div class="fw-semibold text-dark">{{ $item->referredUser->name ?? 'Pengguna Baru' }}</div>
-                                            <small class="text-muted">{{ $item->referredUser->email ?? '-' }}</small>
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'text-decoration-line-through opacity-50' : '' }}">{{ $item->referredUser->name ?? 'Pengguna Baru' }}</div>
+                                            <small class="text-muted d-block" style="font-size: 0.75rem;">{{ $item->referredUser->email ?? '-' }}</small>
                                         </td>
                                         <td class="py-3">
-                                            <div class="text-dark {{ $isRejected ? 'text-decoration-line-through opacity-75' : '' }}">
+                                            <div class="text-dark {{ $isRejected ? 'text-decoration-line-through opacity-50' : '' }}">
                                                 {{ $item->description ?? 'Pembelian event atau course' }}
                                             </div>
                                         </td>
                                         <td class="py-3 text-center">
-                                            <span class="badge {{ $badgeClass }} bg-opacity-10 rounded-pill px-3 py-2">
-                                                {{ ucfirst($item->status) }}
-                                            </span>
+                                            {!! $statusBadge !!}
                                         </td>
                                         <td class="py-3 text-end">
-                                            <div class="fw-bold {{ $isRejected ? 'text-danger text-decoration-line-through opacity-75' : 'text-dark' }}">
+                                            <div class="fw-bold {{ $isRejected ? 'text-danger text-decoration-line-through opacity-50' : 'text-success' }}" style="font-size: 1.05rem;">
                                                 {{ $isRejected ? '-' : '+' }}Rp {{ number_format($item->amount, 0, ',', '.') }}
+                                            </div>
+                                        </td>
+                                        <td class="py-3 text-center">
+                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-light border border-light-subtle rounded-3 text-dark fw-medium px-2.5 py-1.5 btn-view-detail" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#refDetailModal"
+                                                        data-id="#REF-{{ str_pad($item->id, 4, '0', STR_PAD_LEFT) }}"
+                                                        data-date="{{ $item->created_at->format('d M Y, H:i') }} WIB"
+                                                        data-user="{{ $item->referredUser->name ?? 'Pengguna Baru' }}"
+                                                        data-email="{{ $item->referredUser->email ?? '-' }}"
+                                                        data-desc="{{ $item->description ?? 'Pembelian event atau course' }}"
+                                                        data-amount="Rp {{ number_format($item->amount, 0, ',', '.') }}"
+                                                        data-status-badge="{{ str_replace('"', "'", $statusBadge) }}"
+                                                        style="font-size: 0.8rem;">
+                                                    Detail
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-5 text-muted">
+                                        <td colspan="6" class="text-center py-5 text-muted">
                                             <i class="bi bi-inbox fs-1 d-block mb-3 opacity-25"></i>
                                             Belum ada riwayat referral.
                                         </td>
@@ -224,15 +243,124 @@
                         </table>
                     </div>
 
+                    <!-- Pagination -->
                     <div class="mt-4">
                         {{ $history->links() }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Banner -->
+            <div class="alert alert-primary border-0 p-4 shadow-sm animate-fade-in delay-3" style="background-color:var(--primary-dark); border-radius: 16px;">
+                <div class="d-flex align-items-start gap-3 text-white">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-white shadow-sm" style="color:var(--primary-dark); width: 36px; height: 36px; min-width: 36px;">
+                        <i class="bi bi-info-circle-fill fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Informasi Penting</h6>
+                        <p class="mb-0 small">Komisi referral akan diverifikasi secara otomatis setelah pembayaran pembeli berhasil dikonfirmasi. Saldo dompet Anda akan bertambah secara real-time untuk transaksi referral dengan status PAID. Pencairan komisi dapat diajukan melalui halaman dashboard reseller jika saldo dompet telah mencapai batas minimum penarikan.</p>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    @include('partials.footer-after-login')
-</body>
+    <!-- Referral Detail Modal -->
+    <div class="modal fade" id="refDetailModal" tabindex="-1" aria-labelledby="refDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-bottom-0 pb-0 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center text-white" style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%); box-shadow: 0 4px 12px rgba(109, 40, 217, 0.2);">
+                            <i class="bi bi-person-badge fs-4"></i>
+                        </div>
+                        <h5 class="modal-title fw-bold text-dark mb-0" id="refDetailModalLabel">Detail Riwayat Referral</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Status Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom mt-2">
+                        <div>
+                            <span class="text-muted d-block small mb-1" style="font-size: 0.8rem;">Rincian Transaksi</span>
+                            <h4 class="fw-bold text-dark mb-0" id="modalRefId" style="letter-spacing: -0.5px;">#REF-0000</h4>
+                        </div>
+                        <div id="modalRefStatusBadge">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
 
+                    <!-- Details grid -->
+                    <div class="row g-3">
+                        <div class="col-12 mb-2">
+                            <span class="text-muted d-block small mb-1" style="font-size: 0.75rem;">Tanggal Transaksi</span>
+                            <span class="fw-semibold text-dark fs-6" id="modalRefDate">-</span>
+                        </div>
+                        
+                        <div class="col-12 mb-2">
+                            <div class="p-3 rounded-4" style="background-color: #F8F9FD; border: 1px solid #E2E8F0;">
+                                <span class="text-muted d-block small mb-2" style="font-size: 0.75rem;">Pengguna Terdaftar</span>
+                                <span class="fw-semibold text-dark d-block fs-6" id="modalRefUser">-</span>
+                                <span class="text-muted small d-block" id="modalRefEmail">-</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <span class="text-muted d-block small mb-1" style="font-size: 0.75rem;">Detail Program / Pembelian</span>
+                            <span class="fw-semibold text-dark fs-6" id="modalRefDesc">-</span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center py-3 px-3 rounded-4" style="background-color: var(--primary-subtle); border: 1px solid var(--primary-light);">
+                                <span class="fw-semibold small" style="color: var(--primary-dark);">Komisi Anda</span>
+                                <span class="fw-semibold fs-4 text-dark" id="modalRefAmount">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-primary w-100 py-3 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 shadow-sm" style="background-color: var(--primary); border: none; border-radius: 12px; font-size: 1rem;" data-bs-dismiss="modal">
+                        <i class="bi bi-check-lg fs-5"></i> Selesai
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @include('partials.footer-after-login')
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Flatpickr initialization
+            flatpickr("#dateRangePicker", {
+                mode: "range",
+                dateFormat: "d/m/Y",
+                locale: {
+                    rangeSeparator: " - "
+                }
+            });
+
+            const detailButtons = document.querySelectorAll('.btn-view-detail');
+            detailButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    populateRefModal(this);
+                });
+            });
+
+            function populateRefModal(btn) {
+                document.getElementById('modalRefId').innerText = btn.getAttribute('data-id');
+                document.getElementById('modalRefDate').innerText = btn.getAttribute('data-date');
+                document.getElementById('modalRefUser').innerText = btn.getAttribute('data-user');
+                document.getElementById('modalRefEmail').innerText = btn.getAttribute('data-email');
+                document.getElementById('modalRefDesc').innerText = btn.getAttribute('data-desc');
+                document.getElementById('modalRefAmount').innerText = btn.getAttribute('data-amount');
+                
+                const badgeContainer = document.getElementById('modalRefStatusBadge');
+                badgeContainer.innerHTML = btn.getAttribute('data-status-badge');
+            }
+        });
+    </script>
+</body>
 </html>

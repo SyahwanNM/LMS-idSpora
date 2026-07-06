@@ -1388,12 +1388,21 @@
                 </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
                 <div style="display:grid;gap:6px;">
                     <label for="name" style="font-size:12px;font-weight:600;color:#334155;">Nama</label>
                     <input id="name" name="name" type="text" value="{{ old('name', $trainer->name) }}" required
                         style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
                     @error('name')
+                        <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div style="display:grid;gap:6px;">
+                    <label for="email" style="font-size:12px;font-weight:600;color:#334155;">Email</label>
+                    <input id="email" name="email" type="email" value="{{ old('email', $trainer->email) }}" required
+                        style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                    @error('email')
                         <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
                     @enderror
                 </div>
@@ -1500,6 +1509,39 @@
                 @error('bio')
                     <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
                 @enderror
+            </div>
+
+            <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 16px; display: grid; gap: 12px;">
+                <h3 style="font-size: 14px; font-weight: 700; color: #2e2050; margin: 0;">Ubah Password <span style="font-weight: 400; color: #64748b; font-size: 12px;">(Kosongkan jika tidak ingin mengubah)</span></h3>
+                
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">
+                    <div style="display:grid;gap:6px;">
+                        <label for="current_password" style="font-size:12px;font-weight:600;color:#334155;">Password Saat Ini</label>
+                        <input id="current_password" name="current_password" type="password" autocomplete="current-password"
+                            style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                        @error('current_password')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div style="display:grid;gap:6px;">
+                        <label for="password" style="font-size:12px;font-weight:600;color:#334155;">Password Baru</label>
+                        <input id="password" name="password" type="password" autocomplete="new-password"
+                            style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                        @error('password')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div style="display:grid;gap:6px;">
+                        <label for="password_confirmation" style="font-size:12px;font-weight:600;color:#334155;">Konfirmasi Password Baru</label>
+                        <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password"
+                            style="border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;" />
+                        @error('password_confirmation')
+                            <span class="text-danger small" style="font-size: 11px; margin-top: 2px; display: block;">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
             </div>
 
             <div style="display:flex;justify-content:flex-end;gap:8px;">

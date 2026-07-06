@@ -1,5 +1,3 @@
-{{-- @include ('partials.navbar-after-login') --}}
-@include ('partials.navbar-after-login')
 <!DOCTYPE html>
 <html lang="en">
 
@@ -17,6 +15,7 @@
 </head>
 
 <body>
+    @include ('partials.navbar-after-login')
     <div class="hero-box" aria-hidden="true"></div>
     <main class="container-xxl pt-5 mt-4">
         <!-- Navbar -->

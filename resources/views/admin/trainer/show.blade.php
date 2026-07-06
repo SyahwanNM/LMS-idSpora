@@ -977,6 +977,7 @@
             border: 1px solid var(--border-light) !important;
             overflow-x: auto !important;
             flex-wrap: nowrap !important;
+            margin-bottom: 12px !important;
         }
         .profile-tabs::-webkit-scrollbar {
             display: none !important;
@@ -1189,19 +1190,22 @@
                 $statusBadgeClass = $statusLabel === 'Aktif' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger';
                 $rawAvatar = trim((string) ($trainer->avatar ?? ''));
                 $profilePhotoUrl = $rawAvatar !== '' ? ($trainer->avatar_url ?? '') : '';
-                $skills = collect($trainer->trainer_skills ?? [])
+                $specializations = collect($trainer->trainer_specializations ?? [])
                     ->filter()
-                    ->take(4)
+                    ->take(6)
                     ->values();
-                if ($skills->isEmpty() && $profession !== '') {
-                    $skills = collect(explode(' ', $profession))
+                if ($specializations->isEmpty() && $profession !== '') {
+                    $specializations = collect(explode(' ', $profession))
                         ->filter()
                         ->take(4)
                         ->values();
                 }
-                if ($skills->isEmpty()) {
-                    $skills = collect(['Kecerdasan Buatan', 'Pembelajaran Mesin', 'Sains Data']);
+                if ($specializations->isEmpty()) {
+                    $specializations = collect(['Kecerdasan Buatan', 'Pembelajaran Mesin', 'Sains Data']);
                 }
+                $skills = collect($trainer->trainer_skills ?? [])
+                    ->filter()
+                    ->values();
                 $educationList = collect($trainer->trainer_educations ?? [])->filter()->values();
                 $certificationList = collect($trainer->trainer_certifications ?? [])->filter()->values();
                 $profileCompletion = method_exists($trainer, 'getProfileCompletionPercentage')
@@ -1321,13 +1325,18 @@
                         <i class="bi bi-award"></i> Sertifikat
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="keuangan-tab" data-bs-toggle="tab" data-bs-target="#tab-keuangan"
+                        type="button" role="tab">
+                        <i class="bi bi-wallet2"></i> Keuangan & Saldo
+                    </button>
+                </li>
             </ul>
 
             <!-- Tabs Content -->
             <div class="tab-content" id="trainerTabsContent"
-                style="display: block !important; visibility: visible !important; min-height: 500px;">
-                <div class="tab-pane show active" id="tab-profil" role="tabpanel" aria-labelledby="profil-tab"
-                    style="display: block !important; opacity: 1 !important; visibility: visible !important;">
+                style="display: block !important; visibility: visible !important; min-height: auto;">
+                <div class="tab-pane show active" id="tab-profil" role="tabpanel" aria-labelledby="profil-tab">
                     <div class="row g-4">
                         <div class="col-lg-8">
                             <div class="profile-card mb-4">
@@ -1405,12 +1414,31 @@
                                     </div>
 
                                     <div class="info-block mb-4">
+                                        <span class="info-block-label">Spesialisasi</span>
+                                        <div class="info-block-value">
+                                            <div class="profile-tag-list mt-2">
+                                                @foreach($specializations as $spec)
+                                                    <span class="profile-tag px-3 py-2" style="font-size: 12px; border-radius: 8px;">{{ $spec }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="info-block mb-4">
                                         <span class="info-block-label">Keahlian (Skill)</span>
                                         <div class="info-block-value">
                                             <div class="profile-tag-list mt-2">
-                                                @foreach($skills as $skill)
-                                                    <span class="profile-tag px-3 py-2" style="font-size: 12px; border-radius: 8px;">{{ $skill }}</span>
-                                                @endforeach
+                                                @forelse($skills as $skill)
+                                                    @php
+                                                        $skillName = is_array($skill) ? ($skill['name'] ?? '') : $skill;
+                                                        $skillPercent = is_array($skill) ? ($skill['percent'] ?? '100') : '100';
+                                                    @endphp
+                                                    <span class="profile-tag px-3 py-2" style="font-size: 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; background: #f3f4f6; color: #1f2937; border: 1px solid #e5e7eb;">
+                                                        {{ $skillName }} <strong style="color: #4f46e5;">({{ $skillPercent }}%)</strong>
+                                                    </span>
+                                                @empty
+                                                    <span style="font-size: 13px; color: #64748b;">-</span>
+                                                @endforelse
                                             </div>
                                         </div>
                                     </div>
@@ -2119,7 +2147,21 @@
                                                         <div class="small text-muted">Peserta</div>
                                                     </td>
                                                     <td class="text-dark">
-                                                        {{ data_get($review, 'course.name', data_get($review, 'event.title', '-')) }}
+                                                        @if(data_get($review, 'type') === 'event')
+                                                            <span class="badge bg-warning bg-opacity-10 border-0 px-2 py-1" style="font-size: 10px; font-weight: 700; color: #d97706 !important; background-color: #fef3c7 !important;">
+                                                                <i class="bi bi-calendar-event me-1"></i>EVENT
+                                                            </span>
+                                                            <div class="mt-1 fw-semibold" style="font-size: 13px;">
+                                                                {{ data_get($review, 'event.title', '-') }}
+                                                            </div>
+                                                        @else
+                                                            <span class="badge bg-info bg-opacity-10 border-0 px-2 py-1" style="font-size: 10px; font-weight: 700; color: #2563eb !important; background-color: #dbeafe !important;">
+                                                                <i class="bi bi-book me-1"></i>KELAS
+                                                            </span>
+                                                            <div class="mt-1 fw-semibold" style="font-size: 13px;">
+                                                                {{ data_get($review, 'course.name', '-') }}
+                                                            </div>
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         @php $ratingValue = (int) round((float) data_get($review, 'rating', 0)); @endphp
@@ -2416,6 +2458,117 @@
                                                 style="font-size: 13px;">Template</span></a></div>
                                 </div>
                             </div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tab-keuangan" role="tabpanel" aria-labelledby="keuangan-tab">
+                    <div class="row g-4">
+                        <div class="col-12">
+                            <div class="content-card mb-4">
+                                <div class="profile-card-header mb-3">
+                                    <h5 class="content-card-title mb-0">Informasi Keuangan & Saldo</h5>
+                                </div>
+                                <div class="profile-card-body">
+                                    <div class="stat-grid-3 mb-4" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                                        <div class="stat-box">
+                                            <div class="stat-icon purple">
+                                                <i class="bi bi-wallet2"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <h3 class="stat-value">Rp {{ number_format($walletBalance, 0, ',', '.') }}</h3>
+                                                <p class="stat-label">Saldo Course Tersedia</p>
+                                            </div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-icon green">
+                                                <i class="bi bi-cash-stack"></i>
+                                            </div>
+                                            <div class="stat-content">
+                                                <h3 class="stat-value">Rp {{ number_format($totalPaidOut, 0, ',', '.') }}</h3>
+                                                <p class="stat-label">Total Cair (Gaji & Fee)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info border-0 rounded-3 p-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-info-circle-fill text-info"></i>
+                                            <span class="fw-semibold text-info" style="font-size: 13px;">
+                                                Pencairan Saldo Course dikelola secara terpusat melalui halaman <a href="{{ route('admin.finance.trainers') }}" class="text-decoration-underline fw-bold text-info">Admin Finance: Kelola Trainer & Saldo</a>.
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="content-card">
+                                <div class="profile-card-header mb-4">
+                                    <h5 class="content-card-title mb-0">Riwayat Pencairan Saldo & Payout</h5>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Tanggal</th>
+                                                <th>Deskripsi</th>
+                                                <th>Jenis</th>
+                                                <th>Status</th>
+                                                <th class="text-end">Jumlah</th>
+                                                <th class="text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($trainerPayouts as $payout)
+                                                <tr>
+                                                    <td style="font-size: 13px; font-weight: 600;">
+                                                        {{ $payout->payment_date ? $payout->payment_date->format('d M Y') : $payout->created_at->format('d M Y') }}
+                                                    </td>
+                                                    <td>
+                                                        <div class="fw-bold" style="font-size: 13px;">{{ $payout->title }}</div>
+                                                        @if($payout->notes)
+                                                            <div class="text-muted small"><i class="bi bi-chat-left-text me-1"></i> {{ $payout->notes }}</div>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($payout->type == 'course_payout')
+                                                            <span class="badge bg-primary bg-opacity-10 text-primary">Saldo Course</span>
+                                                        @else
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning">Fee Event</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($payout->status == 'approved')
+                                                            <span class="badge bg-success bg-opacity-10 text-success">Lunas</span>
+                                                        @elseif($payout->status == 'pending')
+                                                            <span class="badge bg-warning bg-opacity-10 text-warning">Proses</span>
+                                                        @else
+                                                            <span class="badge bg-danger bg-opacity-10 text-danger">Ditolak</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end fw-bold" style="font-size: 14px;">
+                                                        Rp {{ number_format($payout->amount, 0, ',', '.') }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if($payout->status == 'approved')
+                                                            <a href="{{ route('admin.finance.payouts.invoice', $payout->id) }}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 11px; font-weight: 700;">
+                                                                <i class="bi bi-receipt me-1"></i> Invoice
+                                                            </a>
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="6" class="text-center py-4 text-muted italic" style="font-size: 13px;">
+                                                        Belum ada riwayat pencairan dana untuk trainer ini.
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

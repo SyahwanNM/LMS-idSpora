@@ -32,11 +32,14 @@ class AdminController extends Controller
         // event_admin: redirect to their assigned event directly
         $user = auth()->user();
         if ($user && $user->role === 'event_admin') {
-            $assignedEventId = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+            $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
                 ->where('user_id', $user->id)
-                ->value('event_id');
-            if ($assignedEventId) {
-                return redirect()->route('admin.events.show', $assignedEventId);
+                ->pluck('event_id')
+                ->toArray();
+            if (count($assignedEventIds) === 1) {
+                return redirect()->route('admin.events.show', $assignedEventIds[0]);
+            } elseif (count($assignedEventIds) > 1) {
+                return redirect()->route('admin.events.index');
             }
             abort(403, 'No event assigned to your account.');
         }
@@ -52,7 +55,8 @@ class AdminController extends Controller
                     ->orWhereRaw("TIMESTAMP(event_date, COALESCE(event_time,'00:00:00')) >= ?", [$threshold]);
             })
             ->count();
-        $totalCertificates = Certificate::count();
+        $totalCertificates = \App\Models\EventRegistration::whereNotNull('certificate_number')->count()
+            + \App\Models\Enrollment::whereNotNull('certificate_number')->count();
         $totalRevenue = Course::sum('price') ?? 0; // Adjust if you have real transaction table
 
         // Snapshot logic (daily)

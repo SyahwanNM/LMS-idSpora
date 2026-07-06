@@ -220,13 +220,19 @@
                             <th>TANGGAL</th>
                             <th>USER</th>
                             <th>BANK & REKENING</th>
-                            <th>JUMLAH</th>
+                            <th>NOMINAL PENARIKAN</th>
+                            <th>BIAYA ADMIN</th>
+                            <th>NET TRANSFER</th>
                             <th>STATUS</th>
                             <th>AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($withdrawals as $w)
+                            @php
+                                $wAdminFee = $w->admin_fee ?? 3000;
+                                $wNetAmount = $w->net_amount ?? ($w->amount - $wAdminFee);
+                            @endphp
                             <tr>
                                 <td>{{ $w->created_at->format('d M Y H:i') }}</td>
                                 <td>{{ $w->user->name ?? 'Unknown' }}</td>
@@ -234,7 +240,9 @@
                                     <strong>{{ $w->bank_name }}</strong><br>
                                     <small>{{ $w->account_number }} ({{ $w->account_holder }})</small>
                                 </td>
-                                <td style="font-weight: 600;">Rp {{ number_format($w->amount, 0, ',', '.') }}</td>
+                                <td>Rp {{ number_format($w->amount, 0, ',', '.') }}</td>
+                                <td><span class="text-danger" style="width: auto !important; font-size: inherit;">- Rp {{ number_format($wAdminFee, 0, ',', '.') }}</span></td>
+                                <td style="font-weight: 600; color: #10b981;">Rp {{ number_format($wNetAmount, 0, ',', '.') }}</td>
                                 <td><span class="badge-status {{ strtolower($w->status) }}">{{ $w->status }}</span></td>
                                 <td>
                                     @if($w->status == 'pending')
@@ -260,7 +268,7 @@
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <p>Upload bukti transfer untuk pencairan sejumlah <strong>Rp {{ number_format($w->amount, 0, ',', '.') }}</strong> ke rekening <strong>{{ $w->bank_name }} - {{ $w->account_number }} a/n {{ $w->account_holder }}</strong>.</p>
+                                                <p>Upload bukti transfer untuk pencairan sejumlah bersih <strong>Rp {{ number_format($wNetAmount, 0, ',', '.') }}</strong> (setelah dipotong biaya admin Rp {{ number_format($wAdminFee, 0, ',', '.') }} dari nominal penarikan Rp {{ number_format($w->amount, 0, ',', '.') }}) ke rekening <strong>{{ $w->bank_name }} - {{ $w->account_number }} a/n {{ $w->account_holder }}</strong>.</p>
                                                 <div class="mb-3">
                                                     <label class="form-label">Bukti Transfer (Wajib)</label>
                                                     <input type="file" name="proof_of_transfer" class="form-control" accept="image/*" required>
@@ -301,7 +309,7 @@
                             </div>
                             @endif
                         @empty
-                            <tr><td colspan="6" class="text-center py-4">Belum ada request payout.</td></tr>
+                            <tr><td colspan="8" class="text-center py-4">Belum ada request payout.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -516,7 +524,7 @@
 <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none;">
-            <form action="{{ route('admin.finance.store-expense') }}" method="POST">
+            <form action="{{ route('admin.finance.store-expense') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Tambah Pengeluaran Manual</h5>
@@ -538,6 +546,10 @@
                     <div class="mb-3">
                         <label class="form-label">Kategori (Opsional)</label>
                         <input type="text" name="category" class="form-control" placeholder="Contoh: Operasional, Pemasaran">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bukti Pembayaran (Wajib)</label>
+                        <input type="file" name="proof_of_payment" class="form-control" accept="image/*" required>
                     </div>
                 </div>
                 <div class="modal-footer">

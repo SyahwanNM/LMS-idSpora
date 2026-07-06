@@ -318,7 +318,36 @@ class EventController extends Controller
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
             'lomba_kategori' => 'required_if:jenis,Lomba|nullable|in:individual,team,both',
+<<<<<<< HEAD
             'max_team_members' => 'required_if:lomba_kategori,team,both|nullable|integer|min:2',
+=======
+            'max_team_members' => [
+                'required_if:lomba_kategori,team,both',
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (is_numeric($value)) {
+                        $valInt = (int) $value;
+                        if ($valInt < 2) {
+                            $fail('Maksimal anggota tim minimal harus bernilai 2.');
+                        }
+                    } else {
+                        if (!preg_match('/^(\d+)-(\d+)$/', trim($value), $matches)) {
+                            $fail('Format maksimal anggota tim harus berupa angka (min 2) atau rentang (misal: 2-5).');
+                            return;
+                        }
+                        $min = (int) $matches[1];
+                        $max = (int) $matches[2];
+                        if ($min < 2) {
+                            $fail('Batas bawah rentang minimal harus bernilai 2.');
+                        }
+                        if ($max < $min) {
+                            $fail('Batas atas rentang tidak boleh lebih kecil dari batas bawah.');
+                        }
+                    }
+                }
+            ],
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
         ]);
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
@@ -447,7 +476,11 @@ class EventController extends Controller
             'finalist_payment_start' => $request->finalist_payment_start,
             'finalist_payment_end' => $request->finalist_payment_end,
             'lomba_kategori' => $request->lomba_kategori ?? 'individual',
+<<<<<<< HEAD
             'max_team_members' => $request->max_team_members ? (int) $request->max_team_members : 5,
+=======
+            'max_team_members' => $request->max_team_members ? trim($request->max_team_members) : '5',
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
         ]);
 
         $assignedTrainerIds = $this->resolveAssignedTrainerIds(
@@ -1117,7 +1150,36 @@ class EventController extends Controller
             'finalist_payment_start' => 'nullable|date',
             'finalist_payment_end' => 'nullable|date|after:finalist_payment_start',
             'lomba_kategori' => 'required_if:jenis,Lomba|nullable|in:individual,team,both',
+<<<<<<< HEAD
             'max_team_members' => 'required_if:lomba_kategori,team,both|nullable|integer|min:2',
+=======
+            'max_team_members' => [
+                'required_if:lomba_kategori,team,both',
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (is_numeric($value)) {
+                        $valInt = (int) $value;
+                        if ($valInt < 2) {
+                            $fail('Maksimal anggota tim minimal harus bernilai 2.');
+                        }
+                    } else {
+                        if (!preg_match('/^(\d+)-(\d+)$/', trim($value), $matches)) {
+                            $fail('Format maksimal anggota tim harus berupa angka (min 2) atau rentang (misal: 2-5).');
+                            return;
+                        }
+                        $min = (int) $matches[1];
+                        $max = (int) $matches[2];
+                        if ($min < 2) {
+                            $fail('Batas bawah rentang minimal harus bernilai 2.');
+                        }
+                        if ($max < $min) {
+                            $fail('Batas atas rentang tidak boleh lebih kecil dari batas bawah.');
+                        }
+                    }
+                }
+            ],
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
         ]);
 
         $data = $request->only([
@@ -1166,7 +1228,11 @@ class EventController extends Controller
         ]);
 
         $data['lomba_kategori'] = $data['lomba_kategori'] ?? 'individual';
+<<<<<<< HEAD
         $data['max_team_members'] = !empty($data['max_team_members']) ? (int) $data['max_team_members'] : 5;
+=======
+        $data['max_team_members'] = !empty($data['max_team_members']) ? trim($data['max_team_members']) : '5';
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
 
         // Allow hybrid events: maps_url and zoom_link may both be filled.
         // Normalize empty strings to null. Lat/lng only kept when maps_url is provided.
@@ -1340,6 +1406,7 @@ class EventController extends Controller
             abort(403, 'Event admin cannot delete events.');
         }
 
+        \App\Models\EventExpense::where('event_id', $event->id)->forceDelete();
         $event->delete();
         // Redirect back to history page if the user came from there; otherwise to add-event
         $prev = url()->previous();
@@ -2196,6 +2263,7 @@ class EventController extends Controller
 
         if ($pendingPayment) {
             $pendingPayment->update(['status' => 'settled']);
+            $this->processEventReferralCommission($event, $pendingPayment);
         }
 
         // Notify user
@@ -2379,6 +2447,82 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             \Log::error('Registration deletion failed', ['id' => $registration->id, 'error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal menghapus pendaftaran: ' . $e->getMessage());
+        }
+    }
+
+    private function processEventReferralCommission(\App\Models\Event $event, \App\Models\ManualPayment $payment): void
+    {
+        if (!(bool) ($event->is_reseller_event ?? false)) {
+            return;
+        }
+        if (empty($payment->referral_code)) {
+            return;
+        }
+
+        $referrer = \App\Models\User::query()->where('referral_code', $payment->referral_code)->first();
+        if (!$referrer || (int) $referrer->id === (int) $payment->user_id) {
+            return;
+        }
+
+        $totalReferrals = \App\Models\Referral::where('user_id', $referrer->id)->count();
+        if ($totalReferrals >= 151) {
+            $level = 'Gold';
+        } elseif ($totalReferrals >= 51) {
+            $level = 'Silver';
+        } else {
+            $level = 'Bronze';
+        }
+
+        $bronze = $event->reseller_commission_bronze ?? 10;
+        $silver = $event->reseller_commission_silver ?? 12;
+        $gold = $event->reseller_commission_gold ?? 15;
+
+        $pct = match ($level) {
+            'Gold' => $gold,
+            'Silver' => $silver,
+            default => $bronze,
+        };
+        $rate = ((float) $pct) / 100;
+
+        $commissionAmount = ((float) $payment->amount) * $rate;
+        if ($commissionAmount <= 0) {
+            return;
+        }
+
+        $existingReferral = \App\Models\Referral::query()
+            ->where('user_id', $referrer->id)
+            ->where('referred_user_id', $payment->user_id)
+            ->where('description', 'Komisi Event: ' . $event->title)
+            ->first();
+
+        if ($existingReferral) {
+            return;
+        }
+
+        \App\Models\Referral::create([
+            'user_id' => $referrer->id,
+            'referred_user_id' => $payment->user_id,
+            'amount' => $commissionAmount,
+            'status' => 'paid',
+            'description' => 'Komisi Event: ' . $event->title,
+        ]);
+
+        $referrer->increment('wallet_balance', $commissionAmount);
+
+        try {
+            $msg = "Komisi Baru Masuk! Anda mendapatkan komisi sebesar Rp " . number_format($commissionAmount, 0, ',', '.') . " dari pembelian event '" . $event->title . "'.";
+            \App\Models\UserNotification::create([
+                'user_id' => $referrer->id,
+                'type' => 'reseller',
+                'title' => 'Komisi Baru Masuk!',
+                'message' => $msg,
+                'data' => ['url' => route('reseller.index')],
+            ]);
+            if ($referrer->phone) {
+                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Event referral commission notification failed: ' . $e->getMessage());
         }
     }
 }

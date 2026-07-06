@@ -30,6 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\AppendApiResponseCode::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            '/logout',
+        ]);
+
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'admin' => \App\Http\Middleware\AdminMiddleware::class,

@@ -255,6 +255,26 @@
         .btn_bayar_payment:hover {
             background-color: #e0b120;
         }
+        .btn_cek_promo {
+            padding: 12px 20px;
+            background-color: #f4c430; /* Matches course payment button theme */
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            white-space: nowrap;
+            height: 45px;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn_cek_promo:hover {
+            background-color: #e0b120;
+        }
 
         /* Disabled state: keep neutral + prevent hover effect */
         .btn_bayar_payment:disabled,
@@ -328,38 +348,71 @@
                         <input class="input_nomor" type="text" placeholder="Example: 6281234567890" id="whatsappNumberInput" inputmode="tel" autocomplete="tel" style="width:100%;">
                     </div>
                 </div>
-                @if((bool) ($course->is_reseller_course ?? false))
-                    <div class="input_biodata">
-                        <p>Referral Code</p>
+                <div class="input_biodata">
+                    <p>Kode Promo / Referral</p>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
                         <input
                             class="kolom_input_biodata"
                             type="text"
-                            id="referralCodeInput"
-                            placeholder="Enter the reseller referral code if any"
+                            id="promoCodeInput"
+                            placeholder="Masukkan Kode Voucher atau Referral jika ada"
                             value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}"
                             autocomplete="off"
+                            style="flex: 1; margin-bottom: 0;"
                         >
-                        <div id="referralMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
-                        <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-                            Valid code will give 10% discount.
+                        <button type="button" id="checkPromoBtn" class="btn_cek_promo">Cek Kode</button>
+                    </div>
+                    <div id="promoMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
+                    <div style="margin-top:6px; font-size:12px; color:#6b7280;">
+                        Masukkan Kode Voucher (dari Poin) atau Kode Referral Reseller untuk mendapatkan potongan harga.
+                    </div>
+
+                    @php
+                        $myUsableVouchers = Auth::check() 
+                            ? \App\Models\VoucherRedemption::where('user_id', Auth::id())
+                                ->where('is_used', false)
+                                ->where(function($q) {
+                                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                                })
+                                ->with('voucher')
+                                ->get()
+                                ->filter(fn($item) => $item->voucher !== null && $item->voucher->active)
+                            : collect();
+                    @endphp
+
+                    @if($myUsableVouchers->count() > 0)
+                    <div style="margin-top: 14px; padding: 14px; background: #f0fdf4; border: 1.5px dashed #22c55e; border-radius: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                            <span style="font-size: 13px; font-weight: 700; color: #15803d; display: flex; align-items: center; gap: 6px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M3 4.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-1zM3 8.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-1zM3 12.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-1z"/></svg>
+                                Voucher Milik Anda (Siap Digunakan)
+                            </span>
+                            <span style="font-size: 11px; font-weight: 600; background: #16a34a; color: #fff; padding: 2px 8px; border-radius: 10px;">{{ $myUsableVouchers->count() }} Tersedia</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @foreach($myUsableVouchers as $userVoucher)
+                                @php
+                                    $v = $userVoucher->voucher;
+                                    $discountText = $v->discount_type === 'percentage' ? $v->discount_value . '%' : 'Rp ' . number_format($v->discount_value, 0, ',', '.');
+                                @endphp
+                                <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 10px 12px; border-radius: 8px; border: 1px solid #dcfce7; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                    <div>
+                                        <div style="font-size: 13px; font-weight: 700; color: #166534;">{{ $v->name }} (<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;color:#0f172a;">{{ $userVoucher->code }}</code>)</div>
+                                        <div style="font-size: 11px; color: #4b5563;">Potongan {{ $discountText }} @if($v->min_purchase > 0) &bull; Min. Rp{{ number_format($v->min_purchase, 0, ',', '.') }} @endif</div>
+                                    </div>
+                                    <button type="button" onclick="applyMyVoucher('{{ $userVoucher->code }}')" style="padding: 6px 14px; background: #16a34a; color: #ffffff; font-size: 12px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">
+                                        Gunakan
+                                    </button>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
-                @endif
-
-                <div class="input_biodata">
-                    <p>Voucher Code</p>
-                    <input
-                        class="kolom_input_biodata"
-                        type="text"
-                        id="voucherCodeInput"
-                        placeholder="Masukkan kode voucher penukaran Anda"
-                        autocomplete="off"
-                    >
-                    <div id="voucherMessage" style="display:none; margin-top:8px; font-size:13px; line-height:1.5;"></div>
-                    <div style="margin-top:6px; font-size:12px; color:#6b7280;">
-                        Masukkan kode voucher yang telah ditukarkan di halaman profil untuk potongan harga.
-                    </div>
+                    @endif
                 </div>
+
+                <!-- Hidden inputs for validation state and submission -->
+                <input type="hidden" id="referralCodeInput" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
+                <input type="hidden" id="voucherCodeInput" value="">
 
 
 
@@ -400,6 +453,18 @@
 
                     <div class="ticket-divider"></div>
 
+                    <!-- Detail rincian potongan harga -->
+                    <div style="margin: 15px 0; padding-bottom: 10px; border-bottom: 1px dashed #e5e7eb; font-family: sans-serif;">
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; margin-bottom: 8px;">
+                            <span>Harga Asli</span>
+                            <span id="originalPriceText">Rp {{ number_format($course->hasDiscount() ? $course->discounted_price : ($course->price ?? 0), 0, ',', '.') }}</span>
+                        </div>
+                        <div id="discountRow" style="display: none; justify-content: space-between; font-size: 13px; color: #16a34a; margin-bottom: 8px; font-weight: 500;">
+                            <span id="discountLabel">Diskon Promo</span>
+                            <span id="discountValueText">-Rp 0</span>
+                        </div>
+                    </div>
+
                     <div class="harga_teks_payment">
                         <div class="teks_payment">
                             <p>Total</p>
@@ -421,22 +486,56 @@
                     </div>
                 </div>
 
-                <!-- Manual payment via QRIS: show QR image modal when clicking Bayar -->
                 @php
                     $isFreeCourse = (int) ($course->price ?? 0) <= 0;
                 @endphp
-                <form id="manualPaymentForm" method="POST" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : '#' }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}">
+                <form id="manualPaymentForm" method="POST" enctype="multipart/form-data" action="{{ $isFreeCourse ? route('courses.free-enroll', $course) : route('courses.manual-payment.upload', $course) }}" data-is-free="{{ $isFreeCourse ? '1' : '0' }}" data-manual-action="{{ route('courses.manual-payment.upload', $course) }}" data-free-action="{{ route('courses.free-enroll', $course) }}">
                     @csrf
                     <input type="hidden" name="email" value="{{ Auth::user()->email ?? '' }}">
+                    <input type="hidden" name="payment_method" id="formPaymentMethodInput" value="{{ $isFreeCourse ? 'free' : 'midtrans' }}">
                     <input type="hidden" name="name" id="hiddenNameInput" value="{{ Auth::user()->name ?? '' }}">
                     <input type="hidden" name="kode_dial" id="formKodeDialInput" value="+62">
                     <input type="hidden" name="whatsapp" id="formWhatsappInput">
                     <input type="hidden" name="referral_code" id="formReferralCodeInput" value="{{ request()->query('ref', request()->cookie('referral_code', '')) }}">
+                    <input type="hidden" name="voucher_code" id="formVoucherCodeInput" value="">
+
+                    @if(!$isFreeCourse)
+                        <div class="input_biodata" style="margin-bottom:20px;">
+                            <p>Payment Method</p>
+                            <div class="radio_input_box">
+                                <label class="radio_input" id="method-midtrans-label" style="border:2px solid #4f46e5; background:#eef2ff; color:#4338ca; padding:12px 14px; border-radius:12px;">
+                                    <input type="radio" name="payment_method_select" value="midtrans" id="method-midtrans" checked>
+                                    <span>Online Payment</span>
+                                </label>
+                                <label class="radio_input" id="method-transfer-label" style="border:2px solid #e0e0e0; background:#fff; color:#374151; padding:12px 14px; border-radius:12px;">
+                                    <input type="radio" name="payment_method_select" value="transfer" id="method-transfer">
+                                    <span>Transfer Rekening</span>
+                                </label>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div id="transferProofSection" style="display:none; margin-top:10px;">
+                        <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:14px;">
+                            <div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:6px;">Tujuan Transfer</div>
+                            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                <div>
+                                    <div style="font-size:15px;font-weight:700;color:#15803d;">1111-999-236</div>
+                                    <div style="font-size:12px;color:#374151;">Bank BNI · a.n. APTIKOM JABAR</div>
+                                </div>
+                                <button type="button" onclick="navigator.clipboard.writeText('1111-999-236'); this.textContent='✓ Copied'; setTimeout(()=>this.textContent='Copy',1500);" style="font-size:11px;padding:8px 12px;border-radius:8px;border:1px solid #16a34a;background:#fff;color:#16a34a;cursor:pointer;font-weight:700;">Copy</button>
+                            </div>
+                        </div>
+                        <label class="form-label-custom" for="paymentProofInput" style="font-weight:600;display:block;margin-bottom:8px;">Upload Bukti Transfer <span style="color:#ef4444;">*</span></label>
+                        <input type="file" name="payment_proof" id="paymentProofInput" class="kolom_input_biodata" accept="image/jpeg,image/png,image/jpg,image/webp" style="padding:12px;">
+                        <div id="proofSizeError" style="display:none;margin-top:10px;color:#dc2626;font-size:13px;">Ukuran file maksimal 1 MB.</div>
+                    </div>
 
                     @if($isFreeCourse)
                         <button type="submit" id="freeEnrollBtn" class="btn_bayar_payment" disabled>Study Now!</button>
                     @else
                         <button type="button" id="midtransPayBtnCourse" class="btn_bayar_payment" disabled>Pay Now</button>
+                        <button type="button" id="transferPayBtn" class="btn_bayar_payment" style="background:#059669;display:none;" disabled>Upload Bukti Transfer</button>
                     @endif
                 </form>
             </div>
@@ -468,20 +567,27 @@
             var formWhatsappFullInput = document.getElementById('formWhatsappFullInput');
             var freeEnrollBtn = document.getElementById('freeEnrollBtn');
             var midtransPayBtn = document.getElementById('midtransPayBtnCourse');
+            var transferPayBtn = document.getElementById('transferPayBtn');
+            var paymentMethodInput = document.getElementById('formPaymentMethodInput');
             var manualPaymentForm = document.getElementById('manualPaymentForm');
-            var referralInput = document.getElementById('referralCodeInput');
-            var referralMessageEl = document.getElementById('referralMessage');
+            var promoInput = document.getElementById('promoCodeInput');
+            var promoMessageEl = document.getElementById('promoMessage');
+            var referralInput = document.getElementById('referralCodeInput'); // hidden
+            var voucherInput = document.getElementById('voucherCodeInput'); // hidden
             var formReferralCodeInput = document.getElementById('formReferralCodeInput');
-            var checkReferralUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-referral', $course) : '');
+            var formVoucherCodeInput = document.getElementById('formVoucherCodeInput');
+            var methodMidtrans = document.getElementById('method-midtrans');
+            var methodTransfer = document.getElementById('method-transfer');
+            var transferProofSection = document.getElementById('transferProofSection');
+            var proofInput = document.getElementById('paymentProofInput');
+            
+            var checkCodeUrl = @json((bool) ($course->is_reseller_course ?? false) ? route('courses.check-code', $course) : '');
             var currentUserReferral = @json((string) (Auth::user()->referral_code ?? ''));
-            var referralState = referralInput ? 'idle' : 'disabled';
-            var referralTimer = null;
-
-            var voucherInput = document.getElementById('voucherCodeInput');
-            var voucherMessageEl = document.getElementById('voucherMessage');
-            var voucherState = voucherInput ? 'idle' : 'disabled';
-            var voucherTimer = null;
+            
+            var referralState = 'idle';
+            var voucherState = 'idle';
             var currentDiscount = 0;
+            var promoTimer = null;
 
             var isFreeCourse = false;
             if (manualPaymentForm) {
@@ -514,30 +620,17 @@
                 }
             }
 
-            function setReferralMessage(message, kind) {
-                if (!referralMessageEl) return;
+            function setPromoMessage(message, kind) {
+                if (!promoMessageEl) return;
                 if (!message) {
-                    referralMessageEl.style.display = 'none';
-                    referralMessageEl.textContent = '';
-                    referralMessageEl.style.color = '';
+                    promoMessageEl.style.display = 'none';
+                    promoMessageEl.textContent = '';
+                    promoMessageEl.style.color = '';
                     return;
                 }
-                referralMessageEl.style.display = '';
-                referralMessageEl.textContent = message;
-                referralMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
-            }
-
-            function setVoucherMessage(message, kind) {
-                if (!voucherMessageEl) return;
-                if (!message) {
-                    voucherMessageEl.style.display = 'none';
-                    voucherMessageEl.textContent = '';
-                    voucherMessageEl.style.color = '';
-                    return;
-                }
-                voucherMessageEl.style.display = '';
-                voucherMessageEl.textContent = message;
-                voucherMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
+                promoMessageEl.style.display = '';
+                promoMessageEl.textContent = message;
+                promoMessageEl.style.color = kind === 'success' ? '#15803d' : (kind === 'info' ? '#6b7280' : '#dc2626');
             }
 
             function setTotalAmount(amount) {
@@ -558,6 +651,28 @@
                 }
                 setTotalAmount(finalAmount);
 
+                // Update discount row
+                var discountRow = document.getElementById('discountRow');
+                var discountLabel = document.getElementById('discountLabel');
+                var discountValueText = document.getElementById('discountValueText');
+                
+                var discountAmount = baseAmount - finalAmount;
+                if (discountAmount > 0) {
+                    if (discountRow) discountRow.style.display = 'flex';
+                    if (discountLabel) {
+                        if (referralState === 'valid') {
+                            discountLabel.textContent = 'Diskon Referral (10%)';
+                        } else if (voucherState === 'valid') {
+                            discountLabel.textContent = 'Diskon Voucher';
+                        } else {
+                            discountLabel.textContent = 'Potongan Harga';
+                        }
+                    }
+                    if (discountValueText) discountValueText.textContent = '-Rp ' + formatIdrNumber(discountAmount);
+                } else {
+                    if (discountRow) discountRow.style.display = 'none';
+                }
+
                 if (midtransPayBtn) {
                     if (finalAmount === 0) {
                         midtransPayBtn.textContent = 'Study Now (Free)';
@@ -576,10 +691,10 @@
                 return (value || '').replace(/[^0-9]/g, '');
             }
 
-            async function validateReferralServer(code) {
-                if (!checkReferralUrl || !code) return null;
+            async function validatePromoCodeServer(code) {
+                if (!checkCodeUrl || !code) return null;
                 try {
-                    var url = new URL(checkReferralUrl, window.location.origin);
+                    var url = new URL(checkCodeUrl, window.location.origin);
                     url.searchParams.set('code', code);
                     var res = await fetch(url.toString(), {
                         method: 'GET',
@@ -593,205 +708,124 @@
                 }
             }
 
-            async function validateVoucherServer(code) {
-                if (!code) return null;
-                try {
-                    var url = new URL(@json(route('courses.check-voucher', $course)), window.location.origin);
-                    url.searchParams.set('code', code);
-                    var referralVal = getReferralCode();
-                    if (referralVal && referralState === 'valid') {
-                        url.searchParams.set('referral_code', referralVal);
-                    }
-                    var res = await fetch(url.toString(), {
-                        method: 'GET',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        credentials: 'same-origin'
-                    });
-                    if (!res.ok) return null;
-                    return await res.json();
-                } catch (_e) {
-                    return null;
-                }
+            function getSelectedCoursePaymentMethod() {
+                if (!methodTransfer) return 'midtrans';
+                if (methodTransfer.checked) return 'transfer';
+                return 'midtrans';
             }
 
             function updatePayButtonState() {
                 var wa = normalizePhone(whatsappInput ? whatsappInput.value : '');
                 var fullName = (fullNameInput ? fullNameInput.value : '').trim();
                 var disable = wa.length < 8 || fullName.length === 0;
-                if (referralInput) {
-                    var code = getReferralCode();
-                    if (code !== '' && referralState !== 'valid') {
-                        disable = true;
-                    }
-                }
-                if (voucherInput) {
-                    var vCode = getVoucherCode();
-                    if (vCode !== '' && voucherState !== 'valid') {
+                var code = promoInput ? promoInput.value.trim() : '';
+                if (code !== '') {
+                    if (referralState !== 'valid' && voucherState !== 'valid') {
                         disable = true;
                     }
                 }
                 if (freeEnrollBtn) freeEnrollBtn.disabled = disable;
-                if (midtransPayBtn) midtransPayBtn.disabled = disable;
-            }
 
-            if (whatsappInput) {
-                whatsappInput.addEventListener('input', updatePayButtonState);
-            }
+                var method = getSelectedCoursePaymentMethod();
+                var hasProof = proofInput && proofInput.files && proofInput.files.length > 0 && proofInput.files[0].size <= 1 * 1024 * 1024;
 
-            function updateReferralUIFromResult(data) {
-                var baseAmount = getBaseAmount();
-                if (!referralInput) {
-                    referralFinalAmount = baseAmount;
-                    updateTotalDisplay();
-                    updatePayButtonState();
-                    return;
+                if (midtransPayBtn) {
+                    midtransPayBtn.disabled = disable || method !== 'midtrans';
+                    midtransPayBtn.style.opacity = midtransPayBtn.disabled ? '0.5' : '1';
                 }
+                if (transferPayBtn) {
+                    transferPayBtn.disabled = disable || method !== 'transfer' || !hasProof;
+                    transferPayBtn.style.opacity = transferPayBtn.disabled ? '0.5' : '1';
+                }
+            }
 
-                var code = getReferralCode();
-                syncReferralInput();
-
+            function handlePromoCodeUI(data, code) {
+                var baseAmount = getBaseAmount();
+                
                 if (code === '') {
                     referralState = 'idle';
-                    setReferralMessage('', 'info');
-                    referralFinalAmount = baseAmount;
-                    if (getVoucherCode() !== '') {
-                        scheduleVoucherValidation();
-                    } else {
-                        updateTotalDisplay();
-                        updatePayButtonState();
-                    }
-                    return;
-                }
-
-                if (currentUserReferral && code.toUpperCase() === String(currentUserReferral).trim().toUpperCase()) {
-                    referralState = 'invalid';
-                    setReferralMessage('Kode referral tidak boleh menggunakan kode milik sendiri.', 'error');
-                    referralFinalAmount = baseAmount;
-                    if (getVoucherCode() !== '') {
-                        scheduleVoucherValidation();
-                    } else {
-                        updateTotalDisplay();
-                        updatePayButtonState();
-                    }
-                    return;
-                }
-
-                if (!data) {
-                    referralState = 'invalid';
-                    setReferralMessage('Gagal memeriksa kode referral. Coba lagi.', 'error');
-                    referralFinalAmount = baseAmount;
-                    if (getVoucherCode() !== '') {
-                        scheduleVoucherValidation();
-                    } else {
-                        updateTotalDisplay();
-                        updatePayButtonState();
-                    }
-                    return;
-                }
-
-                if (data.valid) {
-                    referralState = 'valid';
-                    setReferralMessage(data.message || 'Kode referral valid. Diskon 10% diterapkan.', 'success');
-                    referralFinalAmount = data.final_amount || baseAmount;
-                } else {
-                    referralState = 'invalid';
-                    setReferralMessage(data.message || 'Kode referral tidak valid.', 'error');
-                    referralFinalAmount = baseAmount;
-                }
-
-                if (getVoucherCode() !== '') {
-                    scheduleVoucherValidation();
-                } else {
-                    updateTotalDisplay();
-                    updatePayButtonState();
-                }
-            }
-
-            function scheduleReferralValidation() {
-                if (!referralInput) return;
-                if (referralTimer) {
-                    clearTimeout(referralTimer);
-                }
-
-                var code = getReferralCode();
-                syncReferralInput();
-
-                if (code === '') {
-                    updateReferralUIFromResult({ valid: false, message: '' });
-                    return;
-                }
-
-                referralState = 'checking';
-                setReferralMessage('Memeriksa kode referral...', 'info');
-                updatePayButtonState();
-
-                referralTimer = setTimeout(async function() {
-                    var data = await validateReferralServer(code);
-                    if (code !== getReferralCode()) {
-                        return;
-                    }
-                    updateReferralUIFromResult(data);
-                }, 400);
-            }
-
-            function updateVoucherUIFromResult(data) {
-                var code = getVoucherCode();
-
-                if (code === '') {
                     voucherState = 'idle';
                     currentDiscount = 0;
-                    setVoucherMessage('', 'info');
+                    referralFinalAmount = baseAmount;
+                    if (referralInput) referralInput.value = '';
+                    if (voucherInput) voucherInput.value = '';
+                    syncReferralInput();
+                    setPromoMessage('', 'info');
                     updateTotalDisplay();
                     updatePayButtonState();
                     return;
                 }
 
                 if (!data) {
+                    referralState = 'invalid';
                     voucherState = 'invalid';
                     currentDiscount = 0;
-                    setVoucherMessage('Gagal memeriksa kode voucher. Coba lagi.', 'error');
+                    referralFinalAmount = baseAmount;
+                    if (referralInput) referralInput.value = '';
+                    if (voucherInput) voucherInput.value = '';
+                    syncReferralInput();
+                    setPromoMessage('Gagal memvalidasi kode. Coba lagi.', 'error');
                     updateTotalDisplay();
                     updatePayButtonState();
                     return;
                 }
 
                 if (data.valid) {
-                    voucherState = 'valid';
-                    currentDiscount = data.discount || 0;
-                    setVoucherMessage(data.message || 'Voucher berhasil diterapkan.', 'success');
+                    if (data.type === 'referral') {
+                        referralState = 'valid';
+                        voucherState = 'idle';
+                        currentDiscount = 0;
+                        referralFinalAmount = data.final_amount || baseAmount;
+                        if (referralInput) referralInput.value = code;
+                        if (voucherInput) voucherInput.value = '';
+                    } else if (data.type === 'voucher') {
+                        referralState = 'idle';
+                        voucherState = 'valid';
+                        currentDiscount = data.discount || 0;
+                        referralFinalAmount = baseAmount;
+                        if (referralInput) referralInput.value = '';
+                        if (voucherInput) voucherInput.value = code;
+                    }
+                    syncReferralInput();
+                    setPromoMessage(data.message, 'success');
                 } else {
+                    referralState = 'invalid';
                     voucherState = 'invalid';
                     currentDiscount = 0;
-                    setVoucherMessage(data.message || 'Voucher tidak valid.', 'error');
+                    referralFinalAmount = baseAmount;
+                    if (referralInput) referralInput.value = '';
+                    if (voucherInput) voucherInput.value = '';
+                    syncReferralInput();
+                    setPromoMessage(data.message || 'Kode tidak valid.', 'error');
                 }
 
                 updateTotalDisplay();
                 updatePayButtonState();
             }
 
-            function scheduleVoucherValidation() {
-                if (!voucherInput) return;
-                if (voucherTimer) {
-                    clearTimeout(voucherTimer);
+            function schedulePromoValidation() {
+                if (promoTimer) {
+                    clearTimeout(promoTimer);
                 }
 
-                var code = getVoucherCode();
+                var code = promoInput ? promoInput.value.trim() : '';
 
                 if (code === '') {
-                    updateVoucherUIFromResult({ valid: false, message: '' });
+                    handlePromoCodeUI({ valid: false, message: '' }, '');
                     return;
                 }
 
+                referralState = 'checking';
                 voucherState = 'checking';
-                setVoucherMessage('Memeriksa kode voucher...', 'info');
+                setPromoMessage('Memeriksa kode...', 'info');
                 updatePayButtonState();
 
-                voucherTimer = setTimeout(async function() {
-                    var data = await validateVoucherServer(code);
-                    if (code !== getVoucherCode()) {
+                promoTimer = setTimeout(async function() {
+                    var data = await validatePromoCodeServer(code);
+                    if (promoInput && code !== promoInput.value.trim()) {
                         return;
                     }
-                    updateVoucherUIFromResult(data);
+                    handlePromoCodeUI(data, code);
                 }, 400);
             }
 
@@ -803,15 +837,10 @@
                     return;
                 }
 
-                if (referralInput && getReferralCode() !== '' && referralState !== 'valid') {
-                    alert('Kode referral belum valid. Silakan cek kembali kode referral Anda.');
-                    try { referralInput.focus(); } catch (_e) {}
-                    return;
-                }
-
-                if (voucherInput && getVoucherCode() !== '' && voucherState !== 'valid') {
-                    alert('Kode voucher belum valid. Silakan cek kembali kode voucher Anda.');
-                    try { voucherInput.focus(); } catch (_e) {}
+                var code = promoInput ? promoInput.value.trim() : '';
+                if (code !== '' && referralState !== 'valid' && voucherState !== 'valid') {
+                    alert('Kode belum valid. Silakan periksa kembali kode Anda.');
+                    try { promoInput.focus(); } catch (_e) {}
                     return;
                 }
             }
@@ -822,17 +851,125 @@
                 whatsappInput.addEventListener('input', updatePayButtonState);
                 whatsappInput.addEventListener('blur', updatePayButtonState);
             }
-            if (referralInput) {
-                referralInput.addEventListener('input', scheduleReferralValidation);
-                referralInput.addEventListener('blur', scheduleReferralValidation);
-                scheduleReferralValidation();
+            window.applyMyVoucher = function(code) {
+                if (promoInput) {
+                    promoInput.value = code;
+                    var checkBtn = document.getElementById('checkPromoBtn');
+                    if (checkBtn) {
+                        checkBtn.click();
+                    } else {
+                        schedulePromoValidation();
+                    }
+                }
+            };
+
+            var checkPromoBtn = document.getElementById('checkPromoBtn');
+            if (checkPromoBtn) {
+                checkPromoBtn.addEventListener('click', function() {
+                    if (promoTimer) clearTimeout(promoTimer);
+                    var code = promoInput ? promoInput.value.trim() : '';
+                    if (code === '') {
+                        handlePromoCodeUI({ valid: false, message: 'Silakan masukkan kode terlebih dahulu.' }, '');
+                        return;
+                    }
+                    referralState = 'checking';
+                    voucherState = 'checking';
+                    setPromoMessage('Memeriksa kode...', 'info');
+                    updatePayButtonState();
+                    validatePromoCodeServer(code).then(function(data) {
+                        handlePromoCodeUI(data, code);
+                    });
+                });
+            }
+
+            if (promoInput) {
+                promoInput.addEventListener('input', schedulePromoValidation);
+                promoInput.addEventListener('blur', schedulePromoValidation);
+                if (promoInput.value.trim() !== '') {
+                    schedulePromoValidation();
+                }
             } else {
                 referralFinalAmount = getBaseAmount();
                 updateTotalDisplay();
             }
-            if (voucherInput) {
-                voucherInput.addEventListener('input', scheduleVoucherValidation);
-                voucherInput.addEventListener('blur', scheduleVoucherValidation);
+
+            function syncCoursePaymentMethod() {
+                var method = getSelectedCoursePaymentMethod();
+                var isMidtrans = method === 'midtrans';
+                if (transferProofSection) {
+                    transferProofSection.style.display = isMidtrans ? 'none' : '';
+                }
+                if (transferPayBtn) {
+                    transferPayBtn.style.display = isMidtrans ? 'none' : '';
+                }
+                if (midtransPayBtn) {
+                    midtransPayBtn.style.display = isMidtrans ? '' : 'none';
+                }
+                if (paymentMethodInput) {
+                    paymentMethodInput.value = method;
+                }
+                if (methodMidtrans && methodTransfer) {
+                    var midtransLabel = methodMidtrans.closest('label');
+                    var transferLabel = methodTransfer.closest('label');
+                    if (midtransLabel) midtransLabel.classList.toggle('bg-slate-50', isMidtrans);
+                    if (transferLabel) transferLabel.classList.toggle('bg-slate-50', !isMidtrans);
+                }
+                updatePayButtonState();
+            }
+
+            function validateManualPaymentForm() {
+                if (!proofInput) return true;
+                var files = proofInput.files;
+                if (!files || files.length === 0) {
+                    return false;
+                }
+                return files[0].size <= 1 * 1024 * 1024;
+            }
+
+            if (methodMidtrans) {
+                methodMidtrans.addEventListener('change', syncCoursePaymentMethod);
+            }
+            if (methodTransfer) {
+                methodTransfer.addEventListener('change', syncCoursePaymentMethod);
+            }
+            if (proofInput) {
+                proofInput.addEventListener('change', function() {
+                    var error = document.getElementById('proofSizeError');
+                    if (this.files && this.files.length > 0 && this.files[0].size > 1 * 1024 * 1024) {
+                        if (error) error.style.display = 'block';
+                        this.value = '';
+                    } else if (error) {
+                        error.style.display = 'none';
+                    }
+                    updatePayButtonState();
+                });
+            }
+            syncCoursePaymentMethod();
+
+            if (transferPayBtn) {
+                transferPayBtn.addEventListener('click', function(e) {
+                    if (transferPayBtn.disabled) {
+                        e.preventDefault();
+                        showPaymentValidationAlert();
+                        return;
+                    }
+                    var method = getSelectedCoursePaymentMethod();
+                    if (method !== 'transfer') return;
+                    if (!validateManualPaymentForm()) {
+                        e.preventDefault();
+                        var error = document.getElementById('proofSizeError');
+                        if (error) {
+                            error.style.display = 'block';
+                        }
+                        alert('Silakan unggah bukti transfer manual maksimal 1 MB.');
+                        return;
+                    }
+                    if (formWhatsappInput) formWhatsappInput.value = whatsappInput ? whatsappInput.value : '';
+                    syncReferralInput();
+                    if (formVoucherCodeInput) formVoucherCodeInput.value = getVoucherCode();
+                    if (paymentMethodInput) paymentMethodInput.value = 'transfer';
+                    manualPaymentForm.submit();
+                });
             }
 
             // Handle free registration submit

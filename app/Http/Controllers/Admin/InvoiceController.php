@@ -35,7 +35,8 @@ class InvoiceController extends Controller
         $itemName = $this->getItemName($payment);
         $user = $payment->user;
 
-        return $this->generatePdf($payment, $itemName, $user, 'Manual Transfer');
+        $forceDownload = request()->query('download') === '1';
+        return $this->generatePdf($payment, $itemName, $user, 'Manual Transfer', $forceDownload);
     }
 
     private function getItemName($payment)
@@ -49,7 +50,7 @@ class InvoiceController extends Controller
         return 'Spora Service';
     }
 
-    private function generatePdf($payment, $itemName, $user, $method)
+    private function generatePdf($payment, $itemName, $user, $method, $forceDownload = false)
     {
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -71,8 +72,9 @@ class InvoiceController extends Controller
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
+        $disposition = $forceDownload ? 'attachment' : 'inline';
         return response($dompdf->output(), 200)
             ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename="Invoice_' . $payment->order_id . '.pdf"');
+            ->header('Content-Disposition', $disposition . '; filename="Invoice_' . $payment->order_id . '.pdf"');
     }
 }

@@ -502,6 +502,8 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
+            width: fit-content;
+            align-self: flex-start;
         }
 
         .module-btn-approve {
@@ -1274,7 +1276,7 @@
 
                                             {{-- Inline action buttons if pending review --}}
                                             @if((($materialStatus ?? 'pending') === 'pending' || ($materialStatus ?? 'pending') === 'pending_review') && $reviewStatus !== 'approved')
-                                                <div class="module-decision-stack" style="align-items: flex-end;">
+                                                <div class="module-decision-stack" style="align-items: flex-start; flex-direction: column;">
                                                     <form method="POST" action="{{ route('admin.event-material.approve', $event->id) }}" class="module-action-form" style="display:flex; flex-direction:column; gap:6px;">
                                                         @csrf
                                                         <input type="hidden" name="module_id" value="{{ $module->id }}">
@@ -1284,13 +1286,15 @@
                                                                 Bubuhkan Logo idSpora
                                                             </label>
                                                         </div>
-                                                        <button type="submit" class="module-btn-approve">
-                                                            Setujui Modul
-                                                        </button>
+                                                        <div style="display:flex; align-items:center; gap:8px;">
+                                                            <button type="submit" class="module-btn-approve" style="margin:0;">
+                                                                Setujui Modul
+                                                            </button>
+                                                            <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}" style="margin:0;">
+                                                                Revisi
+                                                            </button>
+                                                        </div>
                                                     </form>
-                                                    <button type="button" class="module-btn-reject" data-bs-toggle="collapse" data-bs-target="#rejectModuleForm-{{ $module->id }}" style="margin-bottom: 0;">
-                                                        Revisi
-                                                    </button>
                                                 </div>
 
                                                 <div class="collapse module-reject-form" id="rejectModuleForm-{{ $module->id }}">

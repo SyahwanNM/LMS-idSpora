@@ -62,14 +62,44 @@ class SocialAuthController extends Controller
                 }
                 $user->save();
             } else {
+                $referrerId = null;
+                if ($cookieCode = request()->cookie('referral_code')) {
+                    $referrer = User::where('referral_code', $cookieCode)->first();
+                    if ($referrer) {
+                        $referrerId = $referrer->id;
+                    }
+                }
+
                 $user = User::create([
                     'name' => $nameFromGoogle,
                     'email' => $emailFromGoogle,
                     'google_id' => $googleUser->getId(),
                     'avatar' => $avatarFromGoogle,
                     'role' => 'user',
+                    'referrer_id' => $referrerId,
                     'password' => Str::password(16),
                 ]);
+
+                if ($referrerId) {
+                    try {
+                        $referrer = User::find($referrerId);
+                        if ($referrer) {
+                            $msg = "Pendaftaran Baru! " . $user->name . " telah mendaftar menggunakan link referral Anda (Google).";
+                            \App\Models\UserNotification::create([
+                                'user_id' => $referrer->id,
+                                'type' => 'reseller',
+                                'title' => 'Pendaftaran Baru!',
+                                'message' => $msg,
+                                'data' => ['url' => route('reseller.index')],
+                            ]);
+                            if ($referrer->phone) {
+                                \App\Helpers\WhatsAppHelper::send($referrer->phone, $msg);
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::error('Google registration referral notify failed: ' . $e->getMessage());
+                    }
+                }
             }
         }
 
@@ -125,6 +155,20 @@ class SocialAuthController extends Controller
         Auth::login($user, true);
         $redirect = session()->pull('social_redirect');
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
+            return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+        }
+        if (strcasecmp($user->role ?? '', 'event_admin') === 0) {
+            $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->pluck('event_id')
+                ->toArray();
+            if (count($assignedEventIds) === 1) {
+                return redirect()->route('admin.events.show', $assignedEventIds[0])
+                    ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+            } elseif (count($assignedEventIds) > 1) {
+                return redirect()->route('admin.events.index')
+                    ->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
+            }
             return redirect('/admin/dashboard')->with('login_success', 'Login berhasil! Selamat datang di Admin Panel!');
         }
         // (Maintenance for non-admin is handled above before login session is created.)

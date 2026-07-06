@@ -88,6 +88,7 @@
                 'status' => $isFinished ? 'history' : 'ongoing',
                 'is_saved' => in_array($event->id, $savedEventIds),
                 'certificate_route' => $isFinished ? route('certificates.download', [$event->id, $reg->id]) : null,
+                'invoice_route' => $reg->invoice_url ?? null,
                 'detail_route' => route('events.show', $event->id),
                 'save_route' => route('events.save', $event->id)
             ]);
@@ -239,6 +240,9 @@
                             <div class="flex gap-2">
                                 @if($item['certificate_route'])
                                     <a href="{{ $item['certificate_route'] }}" class="btn btn-sm btn-primary border-0 rounded-xl px-4 py-2 font-bold" style="background:#4f46e5;"><i class="bi bi-download me-2"></i> Sertifikat</a>
+                                @endif
+                                @if(!empty($item['invoice_route']))
+                                    <a href="{{ $item['invoice_route'] }}?download=1" class="btn btn-sm btn-outline-primary border-0 rounded-xl px-4 py-2 font-bold" style="background:#f8fafc; color:#0f172a; border:1px solid #e5e7eb;"><i class="bi bi-receipt me-2"></i> Invoice</a>
                                 @endif
                                 <a href="{{ $item['detail_route'] }}" class="btn btn-sm bg-slate-50 border-0 rounded-xl px-4 py-2 font-bold text-slate-600">Detail</a>
                                 

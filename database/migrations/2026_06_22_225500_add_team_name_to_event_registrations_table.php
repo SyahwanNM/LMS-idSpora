@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('event_registrations', function (Blueprint $table) {
+<<<<<<< HEAD
             $table->string('team_name')->nullable()->after('whatsapp_number');
+=======
+            if (!Schema::hasColumn('event_registrations', 'team_name')) {
+                $table->string('team_name')->nullable()->after('whatsapp_number');
+            }
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
         });
     }
 
@@ -22,7 +28,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('event_registrations', function (Blueprint $table) {
+<<<<<<< HEAD
             $table->dropColumn('team_name');
+=======
+            if (Schema::hasColumn('event_registrations', 'team_name')) {
+                $table->dropColumn('team_name');
+            }
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
         });
     }
 };

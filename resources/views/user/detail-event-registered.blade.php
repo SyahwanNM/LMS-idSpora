@@ -1647,7 +1647,11 @@
                             <button class="bookseat" disabled style="background:#10b981; color:#fff;">Team Registered</button>
                         @else
                             @if((bool) $registration->is_team_leader)
+<<<<<<< HEAD
                                 @if($registration->team->registrations()->count() >= (int) ($event->max_team_members ?? 5))
+=======
+                                @if($registration->team->registrations()->count() >= $event->min_team_members)
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
                                     <a class="bookseat text-white text-center" href="{{ route('payment', $event) }}"
                                         style="text-decoration:none;">Proceed to Payment</a>
                                 @else
@@ -2470,8 +2474,15 @@
             @php
                 $team = $registration->team;
                 $teamMembers = $team->registrations()->with('user')->get();
+<<<<<<< HEAD
                 $maxMembers = (int) ($event->max_team_members ?? 5);
                 $isLeader = (bool) $registration->is_team_leader;
+=======
+                $minMembers = $event->min_team_members;
+                $maxMembers = $event->max_team_members_count;
+                $isLeader = (bool) $registration->is_team_leader;
+                $isTeamReadyToPay = $teamMembers->count() >= $minMembers;
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
                 $isTeamComplete = $teamMembers->count() >= $maxMembers;
             @endphp
             <div class="card team-card mb-4">
@@ -2514,16 +2525,26 @@
                             <div class="mt-3">
                                 @if($team->status !== 'active')
                                     @if($isLeader)
+<<<<<<< HEAD
                                         @if($isTeamComplete)
                                             <div class="alert alert-info border-0 rounded-3 p-3 bg-opacity-10 text-info bg-info mb-2.5" style="font-size: 0.85rem; border-left: 4px solid #0dcaf0 !important;">
                                                 <i class="bi bi-info-circle-fill me-2"></i>Your team is complete ({{ $teamMembers->count() }}/{{ $maxMembers }}). The Team Leader can proceed to payment.
+=======
+                                        @if($isTeamReadyToPay)
+                                            <div class="alert alert-info border-0 rounded-3 p-3 bg-opacity-10 text-info bg-info mb-2.5" style="font-size: 0.85rem; border-left: 4px solid #0dcaf0 !important;">
+                                                <i class="bi bi-info-circle-fill me-2"></i>Your team has met the minimum size ({{ $teamMembers->count() }}/{{ $maxMembers }} members). The Team Leader can proceed to payment.
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
                                             </div>
                                             <a href="{{ route('payment', $event) }}" class="btn btn-warning w-100 fw-bold py-2.5 rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="background-color: #f59e0b; border-color: #f59e0b; color: #0f172a; font-size: 0.95rem;">
                                                 <i class="bi bi-credit-card-fill"></i> Proceed to Payment
                                             </a>
                                         @else
                                             <div class="alert alert-warning border-0 rounded-3 p-3 bg-opacity-10 text-warning bg-warning mb-2.5" style="font-size: 0.85rem; border-left: 4px solid #ffc107 !important;">
+<<<<<<< HEAD
                                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>Payment is locked. Wait until all member slots are filled ({{ $teamMembers->count() }}/{{ $maxMembers }} members).
+=======
+                                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Payment is locked. Wait until the minimum member slots are filled ({{ $teamMembers->count() }}/{{ $minMembers }} members).
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
                                             </div>
                                             <button class="btn btn-secondary w-100 fw-bold py-2.5 rounded-3 cursor-not-allowed opacity-50 d-flex align-items-center justify-content-center gap-2" disabled style="font-size: 0.95rem;">
                                                 <i class="bi bi-lock-fill"></i> Proceed to Payment (Locked)
@@ -2550,11 +2571,19 @@
                                     <div class="d-flex align-items-center justify-content-between team-member-item">
                                         <div class="d-flex align-items-center gap-2.5">
                                             <div class="team-avatar">
+<<<<<<< HEAD
                                                 {{ strtoupper(substr($member->user->name, 0, 1)) }}
                                             </div>
                                             <div>
                                                 <span class="fw-semibold text-white d-block" style="font-size: 0.9rem; line-height: 1.2;">{{ $member->user->name }}</span>
                                                 <small style="font-size: 0.75rem; color: #94a3b8 !important;">{{ $member->user->email }}</small>
+=======
+                                                {{ $member->user ? strtoupper(substr($member->user->name, 0, 1)) : '?' }}
+                                            </div>
+                                            <div>
+                                                <span class="fw-semibold text-white d-block" style="font-size: 0.9rem; line-height: 1.2;">{{ $member->user->name ?? 'Deleted User' }}</span>
+                                                <small style="font-size: 0.75rem; color: #94a3b8 !important;">{{ $member->user->email ?? '-' }}</small>
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
                                             </div>
                                         </div>
                                         @if((bool) $member->is_team_leader)

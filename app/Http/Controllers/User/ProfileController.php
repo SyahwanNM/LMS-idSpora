@@ -14,6 +14,7 @@ use App\Models\Voucher;
 use App\Models\VoucherRedemption;
 use App\Models\Course;
 use App\Models\Event;
+use App\Models\ManualPayment;
 use App\Services\ProfileReminderService;
 use Carbon\Carbon;
 
@@ -484,5 +485,38 @@ class ProfileController extends Controller
             'discount' => (int) $discount,
             'final_amount' => (int) $finalAmount
         ]);
+    }
+
+    /**
+     * Riwayat invoice user — bisa diunduh kapan saja.
+     */
+    public function invoiceHistory(Request $request)
+    {
+        $user = Auth::user();
+
+        $query = ManualPayment::with(['event', 'course'])
+            ->where('user_id', $user->id)
+            ->where('status', 'settled');
+
+        // Filter berdasarkan tipe
+        if ($request->filled('type')) {
+            if ($request->type === 'event') {
+                $query->whereNotNull('event_id');
+            } elseif ($request->type === 'course') {
+                $query->whereNotNull('course_id');
+            }
+        }
+
+        // Filter berdasarkan tahun
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+
+        $invoices = $query->orderByDesc('created_at')->paginate(15)->appends($request->except('page'));
+
+        $totalSpent = ManualPayment::where('user_id', $user->id)->where('status', 'settled')->sum('amount');
+        $totalInvoiceCount = ManualPayment::where('user_id', $user->id)->where('status', 'settled')->count();
+
+        return view('profile.invoice-history', compact('invoices', 'totalSpent', 'totalInvoiceCount'));
     }
 }

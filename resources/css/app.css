@@ -1351,7 +1351,7 @@ body {
     height: 100%;
 }
 
-.card-body h5 {
+.card-body {
     margin-top: 10px;
 }
 
@@ -2502,7 +2502,7 @@ section.event .header-card h3 {
     color: #000;
 }
 
-.text-danger {
+.course-detail-page .text-danger {
     width: 190px;
     font-size: medium;
 }

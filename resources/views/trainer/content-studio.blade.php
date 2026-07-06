@@ -1,8 +1,37 @@
 @php
     $isAdmin = $isAdmin ?? false;
-    $moduleLocked = $isAdmin ? !($schemePermissions['can_module'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_module'] ?? false));
-    $videoLocked = $isAdmin ? !($schemePermissions['can_video'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_video'] ?? false));
-    $quizLocked = $isAdmin ? !($schemePermissions['can_quiz'] ?? false) : ($courseMaterialLocked || !($schemePermissions['can_quiz'] ?? false));
+
+    $moduleTargetModules = collect($activeUnitModules ?? [])->filter(function ($module) {
+        return (string) ($module->type ?? '') === 'pdf';
+    });
+    $videoTargetModules = collect($activeUnitModules ?? [])->filter(function ($module) {
+        return (string) ($module->type ?? '') === 'video';
+    });
+    $existingQuizModules = collect($activeUnitModules ?? [])->filter(function ($module) {
+        return (string) ($module->type ?? '') === 'quiz';
+    });
+
+    $isModuleApproved = $moduleTargetModules->isNotEmpty() && $moduleTargetModules->every(fn($m) => ($m->review_status ?? '') === 'approved');
+    $isVideoApproved = $videoTargetModules->isNotEmpty() && $videoTargetModules->every(fn($m) => ($m->review_status ?? '') === 'approved');
+    $isQuizApproved = $existingQuizModules->isNotEmpty() && $existingQuizModules->every(fn($m) => ($m->review_status ?? '') === 'approved');
+
+    $hasEmptyModuleSlot = $moduleTargetModules->contains(fn($m) => empty($m->content_url));
+    $hasEmptyVideoSlot = $videoTargetModules->contains(fn($m) => empty($m->content_url));
+    $hasEmptyQuizSlot = $existingQuizModules->contains(fn($m) => ($m->quiz_questions_count ?? 0) <= 0);
+
+    $moduleLocked = $isAdmin
+        ? !($schemePermissions['can_module'] ?? false)
+        : ($courseMaterialLocked || !($schemePermissions['can_module'] ?? false) || $isModuleApproved);
+    $videoLocked = $isAdmin
+        ? !($schemePermissions['can_video'] ?? false)
+        : ($courseMaterialLocked || !($schemePermissions['can_video'] ?? false) || $isVideoApproved);
+    $quizLocked = $isAdmin
+        ? !($schemePermissions['can_quiz'] ?? false)
+        : ($courseMaterialLocked || !($schemePermissions['can_quiz'] ?? false) || $isQuizApproved);
+
+    $moduleTabLocked = $isAdmin ? false : !($schemePermissions['can_module'] ?? false);
+    $videoTabLocked = $isAdmin ? false : !($schemePermissions['can_video'] ?? false);
+    $quizTabLocked = $isAdmin ? false : !($schemePermissions['can_quiz'] ?? false);
 @endphp
 @extends($isAdmin ? 'layouts.admin-trainer' : 'layouts.trainer')
 
@@ -107,14 +136,14 @@
     gap: var(--spacing-md);
 }
 
-/* Badge Kuning */
+/* Badge Accent */
 .hero-pill-accent {
-    background: var(--yellow-clr);
-    color: var(--main-navy-clr);
+    background: var(--main-navy-clr, #1a1d78);
+    color: var(--white-clr);
     padding: var(--spacing-sm) var(--spacing-lg);
     border-radius: 999px;
     font-size: var(--font-size-xs);
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.5px;
 }
 
@@ -207,11 +236,11 @@
     font-size: var(--font-size-base);
     flex-shrink: 0;
     -webkit-text-fill-color: transparent;
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip:nth-child(3) > i {
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip > div {
@@ -1405,14 +1434,14 @@ main.detail-course {
     gap: var(--spacing-md);
 }
 
-/* Badge Kuning */
+/* Badge Accent */
 .hero-pill-accent {
-    background: var(--yellow-clr);
-    color: var(--main-navy-clr);
+    background: var(--main-navy-clr, #1a1d78);
+    color: var(--white-clr);
     padding: var(--spacing-sm) var(--spacing-lg);
     border-radius: 999px;
     font-size: var(--font-size-xs);
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.5px;
 }
 
@@ -1505,11 +1534,11 @@ main.detail-course {
     font-size: var(--font-size-base);
     flex-shrink: 0;
     -webkit-text-fill-color: transparent;
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip:nth-child(3) > i {
-    -webkit-text-stroke: 1.2px var(--yellow-clr);
+    -webkit-text-stroke: 1.2px var(--white-clr);
 }
 
 .stat-chip > div {
@@ -2851,6 +2880,10 @@ main.detail-course {
             font-weight: 600;
             padding: var(--spacing-sm) var(--spacing-lg);
             cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .studio-tab.active {
@@ -2862,7 +2895,6 @@ main.detail-course {
         .studio-tab.is-locked {
             opacity: 0.5;
             cursor: not-allowed;
-            pointer-events: none;
         }
 
         .revision-alert {
@@ -3109,14 +3141,28 @@ main.detail-course {
             background: #fff;
         }
 
+        .wysiwyg-container {
+            border: 1px solid #cdd8e8;
+            border-radius: 12px;
+            background: #ffffff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+        }
+
+        .wysiwyg-container:focus-within {
+            border-color: var(--main-navy-clr);
+            box-shadow: 0 0 0 3px rgba(35, 29, 121, 0.12);
+        }
+
         .wysiwyg-toolbar {
             display: flex;
+            align-items: center;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #d5e0ef;
-            border-radius: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #e2e8f0;
             background: #f8fafd;
         }
 
@@ -3133,29 +3179,59 @@ main.detail-course {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            vertical-align: middle;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .wysiwyg-btn:hover {
+            border-color: var(--main-navy-clr, #2e2050);
+            background-color: rgba(46, 32, 80, 0.08); /* Fallback light plum */
+            background-color: color-mix(in srgb, var(--main-navy-clr, #2e2050) 8%, transparent);
+            color: var(--main-navy-clr, #2e2050);
+        }
+
+        .wysiwyg-select {
+            border: 1px solid #ccd9ea;
+            background: #fff;
+            color: #334155;
+            border-radius: 8px;
+            height: 34px;
+            padding: 0 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .wysiwyg-select:hover {
             border-color: var(--main-navy-clr);
             color: var(--main-navy-clr);
         }
 
         .wysiwyg-editor {
-            min-height: 260px;
-            border: 1px solid #cdd8e8;
-            border-radius: 12px;
-            padding: 14px;
+            min-height: 350px;
+            padding: 16px;
             font-size: 15px;
             line-height: 1.7;
             color: #1e293b;
             background: #fff;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
         }
 
         .wysiwyg-editor:focus {
             outline: none;
-            border-color: var(--main-navy-clr);
-            box-shadow: 0 0 0 3px rgba(35, 29, 121, 0.12);
+        }
+
+        .wysiwyg-editor[placeholder].is-editor-empty:before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-style: italic;
+            pointer-events: none;
+            display: block;
         }
 
         .wysiwyg-editor h1,
@@ -3180,6 +3256,14 @@ main.detail-course {
 
         .wysiwyg-editor ul {
             margin: 0 0 10px 20px;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+
+        .wysiwyg-editor ol {
+            margin: 0 0 10px 20px;
+            padding-left: 20px;
+            list-style-type: decimal;
         }
 
         .wysiwyg-editor img {
@@ -3257,11 +3341,34 @@ main.detail-course {
             font-size: 12px;
             padding: 4px 8px;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
 
-        .module-code-copy:hover {
-            border-color: var(--main-navy-clr);
-            color: var(--main-navy-clr);
+        .module-code-copy:hover,
+        .module-preview-article .module-code-copy:hover {
+            background: var(--main-navy-clr, #2e2050) !important;
+            color: #ffffff !important;
+            border-color: var(--main-navy-clr, #2e2050) !important;
+        }
+
+        .module-code-delete {
+            border: 1px solid #f87171;
+            border-radius: 6px;
+            background: #fff;
+            color: #ef4444;
+            font-size: 12px;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .module-code-delete:hover {
+            background: #ef4444 !important;
+            color: #ffffff !important;
+            border-color: #ef4444 !important;
         }
 
         .module-code-block pre {
@@ -3336,6 +3443,7 @@ main.detail-course {
             border-top: 1px solid var(--line-clr);
             display: flex;
             justify-content: flex-end;
+            gap: 5px;
         }
 
         .primary-btn {
@@ -3352,8 +3460,13 @@ main.detail-course {
             gap: var(--spacing-sm);
         }
 
+        .primary-btn:hover {
+            background: #4c3366 !important;
+            color: var(--white-clr) !important;
+        }
+
         .primary-btn i {
-            color: var(--yellow-clr);
+            color: var(--white-clr);
         }
 
         .secondary-btn {
@@ -3367,7 +3480,6 @@ main.detail-course {
             letter-spacing: 0.06em;
             display: inline-flex;
             align-items: center;
-            gap: var(--spacing-sm);
         }
 
         .secondary-btn:hover {
@@ -3385,7 +3497,7 @@ main.detail-course {
 
         .validation-card h3 {
             margin: 0 0 var(--spacing-md) 0;
-            color: var(--yellow-clr);
+            color: var(--white-clr);
             font-size: var(--font-size-md);
             font-weight: 600;
         }
@@ -3414,7 +3526,7 @@ main.detail-course {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--yellow-clr);
+            color: var(--white-clr);
             font-weight: 600;
             font-size: var(--font-size-sm);
         }
@@ -3546,7 +3658,7 @@ main.detail-course {
             min-width: 40px;
             border-radius: 12px;
             background: #3f2a54;
-            color: var(--yellow-clr);
+            color: var(--white-clr);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -3804,7 +3916,7 @@ main.detail-course {
         }
 
         .quiz-save-btn i {
-            color: var(--yellow-clr);
+            color: var(--white-clr);
         }
 
         .quiz-save-btn:hover {
@@ -3857,6 +3969,282 @@ main.detail-course {
                 margin-bottom: var(--spacing-xs);
             }
         }
+
+        /* Split view body */
+        .studio-split-body {
+            display: grid;
+            grid-template-columns: 1fr;
+            background: #ffffff;
+        }
+
+        @media (min-width: 992px) {
+            .split-active .studio-split-body {
+                grid-template-columns: 1fr 1fr;
+                align-items: stretch;
+                height: 750px;
+                border: 1px solid var(--line-clr);
+                border-radius: 12px;
+                overflow: hidden;
+            }
+        }
+
+        .studio-editor-pane {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .studio-preview-pane {
+            display: none;
+            min-width: 0;
+            height: 100%;
+        }
+
+        @media (min-width: 992px) {
+            .split-active .studio-preview-pane {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                min-height: 0;
+                border-left: 1px solid var(--line-clr);
+                background: #ffffff;
+                padding: 0;
+            }
+        }
+
+        .preview-header {
+            display: none;
+        }
+
+        @media (min-width: 992px) {
+            .split-active .preview-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                min-height: 55px;
+                padding: 10px 16px;
+                border-bottom: 1px solid var(--line-clr);
+                background: #f8fafc;
+                box-sizing: border-box;
+                flex-shrink: 0;
+            }
+        }
+
+        .live-preview-body {
+            flex: 1;
+            overflow-y: auto;
+            background: transparent;
+            padding: 0;
+        }
+
+        @media (min-width: 992px) {
+            .split-active .live-preview-body {
+                padding: 16px !important;
+                background: #ffffff;
+                min-height: 0;
+            }
+        }
+
+        /* Beautiful Modern Scrollbars */
+        .wysiwyg-editor,
+        .live-preview-body,
+        #modulePreviewBody {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 rgba(0, 0, 0, 0.02);
+        }
+
+        .wysiwyg-editor::-webkit-scrollbar,
+        .live-preview-body::-webkit-scrollbar,
+        #modulePreviewBody::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .wysiwyg-editor::-webkit-scrollbar-track,
+        .live-preview-body::-webkit-scrollbar-track,
+        #modulePreviewBody::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 10px;
+        }
+
+        .wysiwyg-editor::-webkit-scrollbar-thumb,
+        .live-preview-body::-webkit-scrollbar-thumb,
+        #modulePreviewBody::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .wysiwyg-editor::-webkit-scrollbar-thumb:hover,
+        .live-preview-body::-webkit-scrollbar-thumb:hover,
+        #modulePreviewBody::-webkit-scrollbar-thumb:hover {
+            background: var(--main-navy-clr, #1a1d78);
+        }
+
+        .module-code-block pre {
+            scrollbar-width: thin;
+            scrollbar-color: #475569 rgba(0, 0, 0, 0.02);
+        }
+
+        .module-code-block pre::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .module-code-block pre::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .module-code-block pre::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .module-code-block pre::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Set up the editor pane to fill height and be borderless when split is active */
+        @media (min-width: 992px) {
+            .split-active .studio-editor-pane {
+                padding: 0;
+                background: #ffffff;
+                height: 100%;
+                min-height: 0;
+            }
+            .split-active .wysiwyg-container {
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+                height: 100%;
+                min-height: 0;
+            }
+            .split-active .wysiwyg-container:focus-within {
+                border: none;
+                box-shadow: none;
+            }
+            .split-active .wysiwyg-toolbar {
+                border-radius: 0;
+                border: none;
+                border-bottom: 1px solid var(--line-clr);
+                background: #f8fafc;
+                padding: 10px 16px;
+                min-height: 55px;
+                height: auto;
+                flex-wrap: wrap;
+                box-sizing: border-box;
+                display: flex;
+                align-items: center;
+            }
+            .split-active .wysiwyg-editor {
+                flex: 1;
+                overflow-y: auto;
+                min-height: 0 !important;
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                padding: 16px !important;
+            }
+            /* Hide the redundant labels and helper notes inside editor pane in split mode */
+            .split-active .studio-editor-pane > .text-editor-label,
+            .split-active .studio-editor-pane > .text-editor-note {
+                display: none !important;
+            }
+        }
+        
+        .module-preview-article {
+            color: var(--main-text-clr, #1e293b);
+            font-size: var(--font-size-base, 14px);
+            line-height: var(--line-height-normal, 1.65);
+        }
+        
+        .module-preview-article h1,
+        .module-preview-article h2,
+        .module-preview-article h3 {
+            color: var(--main-navy-clr);
+            margin: 1.5em 0 0.8em;
+            font-weight: 700;
+        }
+        
+        .module-preview-article h1:first-child,
+        .module-preview-article h2:first-child,
+        .module-preview-article h3:first-child {
+            margin-top: 0;
+        }
+        
+        .module-preview-article h1 { font-size: 1.55rem; border-bottom: 1px solid var(--line-clr); padding-bottom: 8px; }
+        .module-preview-article h2 { font-size: 1.35rem; }
+        .module-preview-article h3 { font-size: 1.15rem; }
+        
+        .module-preview-article p {
+            margin: 0 0 1em;
+        }
+        
+        .module-preview-article ul {
+            margin: 0 0 1em 20px;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+        
+        .module-preview-article ol {
+            margin: 0 0 1em 20px;
+            padding-left: 20px;
+            list-style-type: decimal;
+        }
+        
+        .module-preview-article li {
+            margin-bottom: 0.5em;
+        }
+        
+        .module-preview-article img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 16px auto;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .module-preview-article .module-inline-image {
+            margin: 16px 0;
+            display: flex;
+        }
+        
+        .module-preview-article .module-inline-image img {
+            max-width: 100%;
+            max-height: 360px;
+            object-fit: contain;
+        }
+        
+        .module-preview-article .module-inline-image[data-image-align="left"] {
+            justify-content: flex-start;
+        }
+        
+        .module-preview-article .module-inline-image[data-image-align="center"] {
+            justify-content: center;
+        }
+        
+        .module-preview-article .module-inline-image[data-image-align="right"] {
+            justify-content: flex-end;
+        }
+        
+        .btn-propose.split-active {
+            background: var(--main-navy-clr) !important;
+            color: #fff !important;
+            border-color: var(--main-navy-clr) !important;
+        }
+        
+        .spin-icon {
+            display: inline-block;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 @endpush
 
@@ -3874,30 +4262,33 @@ main.detail-course {
             </div>
 
             <div class="studio-tabs" role="tablist">
-                <button
-                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ $moduleLocked ? 'is-locked' : '' }}"
-                    data-tab="module" type="button" {{ $moduleLocked ? 'data-locked="1"' : '' }}>
+                <a
+                    href="{{ $moduleTabLocked ? 'javascript:void(0)' : request()->fullUrlWithQuery(['tab' => 'module']) }}"
+                    class="studio-tab {{ $activeTab === 'module' ? 'active' : '' }} {{ $moduleTabLocked ? 'is-locked' : '' }}"
+                    data-tab="module" {{ $moduleTabLocked ? 'data-locked="1"' : '' }}>
                     MODUL
-                    @if($moduleLocked)
+                    @if($moduleTabLocked)
                         <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
                     @endif
-                </button>
-                <button
-                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ $videoLocked ? 'is-locked' : '' }}"
-                    data-tab="video" type="button" {{ $videoLocked ? 'data-locked="1"' : '' }}>
+                </a>
+                <a
+                    href="{{ $videoTabLocked ? 'javascript:void(0)' : request()->fullUrlWithQuery(['tab' => 'video']) }}"
+                    class="studio-tab {{ $activeTab === 'video' ? 'active' : '' }} {{ $videoTabLocked ? 'is-locked' : '' }}"
+                    data-tab="video" {{ $videoTabLocked ? 'data-locked="1"' : '' }}>
                     VIDEO
-                    @if($videoLocked)
+                    @if($videoTabLocked)
                         <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
                     @endif
-                </button>
-                <button
-                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ $quizLocked ? 'is-locked' : '' }}"
-                    data-tab="quiz" type="button" {{ $quizLocked ? 'data-locked="1"' : '' }}>
+                </a>
+                <a
+                    href="{{ $quizTabLocked ? 'javascript:void(0)' : request()->fullUrlWithQuery(['tab' => 'quiz']) }}"
+                    class="studio-tab {{ $activeTab === 'quiz' ? 'active' : '' }} {{ $quizTabLocked ? 'is-locked' : '' }}"
+                    data-tab="quiz" {{ $quizTabLocked ? 'data-locked="1"' : '' }}>
                     PENYUSUNAN QUIZ
-                    @if($quizLocked)
+                    @if($quizTabLocked)
                         <i class="bi bi-lock-fill ms-1 text-warning" style="font-size: 0.9rem;"></i>
                     @endif
-                </button>
+                </a>
             </div>
         </header>
 
@@ -3930,11 +4321,21 @@ main.detail-course {
 
         @if($courseMaterialLocked)
             <section
-                style="margin-bottom:16px; padding: 12px 14px; border:1px solid #f59e0b; border-radius: 12px; background:#fffbeb; color:#92400e; font-size:13px;">
-                Materi course masih terkunci sampai undangan trainer diterima. Kamu masih bisa melihat detail course
-                ini, tetapi semua upload, penggantian file, dan penyusunan quiz dinonaktifkan sementara.
+                style="margin-bottom:20px; padding: 16px; border: 1px solid #f59e0b; border-radius: 12px; background: #fffbeb; color: #92400e; font-size: 13px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: start; gap: 12px; flex: 1;">
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem; color: #d97706; margin-top: 2px;"></i>
+                    <div>
+                        <strong style="display: block; margin-bottom: 4px;">Materi Course Terkunci</strong>
+                        Materi course masih terkunci sampai undangan trainer diterima. Kamu masih bisa melihat detail course ini, tetapi semua upload, penggantian file, dan penyusunan quiz dinonaktifkan sementara.
+                    </div>
+                </div>
+                @if(isset($courseInvitation) && $courseInvitation)
+                    <button type="button" class="btn-propose" onclick="openSchemeSelectionModal({{ $courseInvitation->id }}, '{{ addslashes($course->name) }}', 'course')" style="border: 1.5px solid var(--main-navy-clr, #1a1d78); color: #ffffff; font-weight: 700; height: 34px; padding: 0 var(--spacing-md); font-size: 0.72rem; border-radius: 8px; background: var(--main-navy-clr, #1a1d78); border-color: var(--main-navy-clr, #1a1d78); flex-shrink: 0; transition: all 0.2s;" onmouseover="this.style.background='var(--main-navy-hover, #151761)'; this.style.borderColor='var(--main-navy-hover, #151761)';" onmouseout="this.style.background='var(--main-navy-clr, #1a1d78)'; this.style.borderColor='var(--main-navy-clr, #1a1d78)';">
+                        <i class="bi bi-check-circle-fill"></i> TERIMA UNDANGAN & PILIH SKEMA
+                    </button>
+                @endif
             </section>
-        @elseif(!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz'])
+        @elseif(!$isAdmin && (!$schemePermissions['can_module'] || !$schemePermissions['can_video'] || !$schemePermissions['can_quiz']))
             <section
                 style="margin-bottom:16px; padding: 12px 14px; border:1px dashed #cbd5e1; border-radius: 12px; background:#f8fafc; color:#475569; font-size:13px;">
                 @if(!$schemePermissions['can_module'])
@@ -3970,9 +4371,18 @@ main.detail-course {
 
         <section class="studio-layout">
             <div class="studio-panels">
-                <section class="panel panel-module {{ $activeTab === 'module' ? 'active' : '' }}" data-panel="module">
+                <section id="studioSplitWrapper" class="panel panel-module {{ $activeTab === 'module' ? 'active' : '' }}" data-panel="module">
+                    @if(!$isAdmin && $isModuleApproved)
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); color: #059669; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <i class="bi bi-patch-check-fill" style="font-size: 24px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Materi Telah Disetujui (Terkunci)</strong>
+                            <span style="font-size: 14px;">Modul teks ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.</span>
+                        </div>
+                    </div>
+                    @endif
                     @if(isset($isAdmin) && $isAdmin && !$schemePermissions['can_module'])
-                    <div style="background: rgba(245, 197, 66, 0.1); border: 1px solid #f5c542; color: #b8860b; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
                         <i class="bi bi-info-circle-fill" style="font-size: 24px;"></i>
                         <div>
                             <strong style="display: block; margin-bottom: 4px;">Mode Pantau (Read-Only)</strong>
@@ -3989,57 +4399,84 @@ main.detail-course {
                         <input type="hidden" name="replace_module_id" value="">
                         <input type="hidden" name="module_content_html" id="moduleContentHtml" value="">
 
-                        <div class="text-upload-shell">
-                            <div class="text-upload-header">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-sm);">
-                                    <h3>Tulis Materi Seperti Modul Teks</h3>
-                                    <button type="button" class="btn-propose" data-bs-toggle="modal" data-bs-target="#styleGuideModal" style="border: 1.5px solid var(--main-navy-clr, #1a1d78); color: var(--main-navy-clr, #1a1d78); font-weight: 700; height: 34px; padding: 0 var(--spacing-md); font-size: 0.72rem; border-radius: 8px;">
-                                        <i class="bi bi-journal-text" style="color: var(--yellow-clr, #ffcd00);"></i> STYLE GUIDE
-                                    </button>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--spacing-sm); padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--line-clr);">
+                            <div>
+                                <h3 style="margin: 0; font-size: 16px; color: var(--main-navy-clr); font-weight: 800;">Tulis Materi Seperti Modul Teks</h3>
+                                <p style="margin: 4px 0 0; font-size: 12px; color: var(--gray-second-clr);">
+                                    Susun penjelasan materi dalam bentuk teks secara terstruktur, lalu sisipkan gambar pendukung.
+                                </p>
+                            </div>
+                            <div style="display: flex; gap: var(--spacing-sm); align-items: center;">
+                                <button type="button" id="toggleSplitViewBtn" class="btn-propose">
+                                    <i class="bi bi-columns-gap"></i> SPLIT VIEW
+                                </button>
+                                <button type="button" class="btn-propose" data-bs-toggle="modal" data-bs-target="#styleGuideModal">
+                                    <i class="bi bi-journal-text"></i> STYLE GUIDE
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Split Pane Body -->
+                        <div class="studio-split-body">
+                            <!-- Left Column: Editor Pane -->
+                            <div class="studio-editor-pane">
+                                <p class="text-editor-label mb-2">Editor Materi</p>
+                                <div class="wysiwyg-container">
+                                    <div class="wysiwyg-toolbar" id="wysiwygToolbar">
+                                        <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-type-bold"></i></button>
+                                        <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic" {{ $moduleLocked ? 'disabled' : '' }}><i
+                                                class="bi bi-type-italic"></i></button>
+                                        <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1" {{ $moduleLocked ? 'disabled' : '' }}>H1</button>
+                                        <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2" {{ $moduleLocked ? 'disabled' : '' }}>H2</button>
+                                        <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3" {{ $moduleLocked ? 'disabled' : '' }}>H3</button>
+                                        <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-list-ul"></i></button>
+                                        <select class="wysiwyg-select" id="listStyleSelect" title="Ubah Gaya List" {{ $moduleLocked ? 'disabled' : '' }} style="margin-left: 2px;">
+                                            <option value="" disabled selected>Gaya List</option>
+                                            <option value="disc">Bulatan (Disc)</option>
+                                            <option value="circle">Lingkaran (Circle)</option>
+                                            <option value="square">Kotak (Square)</option>
+                                            <option value="decimal">Angka (1, 2, 3)</option>
+                                            <option value="lower-alpha">Huruf Kecil (a, b, c)</option>
+                                            <option value="upper-alpha">Huruf Besar (A, B, C)</option>
+                                            <option value="lower-roman">Romawi Kecil (i, ii, iii)</option>
+                                            <option value="upper-roman">Romawi Besar (I, II, III)</option>
+                                        </select>
+                                        <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-image"></i></button>
+                                        <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-text-left"></i></button>
+                                        <button type="button" class="wysiwyg-btn" data-action="align-center"
+                                            title="Rata Tengah" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-text-center"></i></button>
+                                        <button type="button" class="wysiwyg-btn" data-action="align-right" {{ $moduleLocked ? 'disabled' : '' }} title="Rata Kanan"><i
+                                                class="bi bi-text-right"></i></button>
+                                        <button type="button" class="wysiwyg-btn" data-action="code" {{ $moduleLocked ? 'disabled' : '' }} title="Insert Code Block"><i
+                                                class="bi bi-code-square"></i></button>
+                                    </div>
+                                    <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" {{ $moduleLocked ? 'disabled' : '' }} />
+                                    @php
+                                        $firstModuleContent = $moduleTargetModules->first()->description ?? '';
+                                    @endphp
+                                    <div id="moduleWysiwygEditor" class="wysiwyg-editor"
+                                        contenteditable="{{ $moduleLocked ? 'false' : 'true' }}" spellcheck="true"
+                                        placeholder="Tulis pengantar materi di sini..."
+                                        style="{{ $moduleLocked ? 'pointer-events:none; opacity:.72; background:#f8fafc;' : '' }}">{!! !empty($firstModuleContent) ? $firstModuleContent : '<p><br></p>' !!}</div>
                                 </div>
-                                <p>Susun penjelasan materi dalam bentuk teks, lalu sisipkan gambar jika perlu supaya materi
-                                    lebih mudah dipahami admin dan peserta.</p>
-                                <ul class="material-outline">
-                                    <li>Awali dengan konteks pembelajaran atau studi kasus singkat.</li>
-                                    <li>Tuliskan langkah-langkah atau poin pembahasan secara terstruktur.</li>
-                                    <li>Tutup dengan rangkuman, lalu tambahkan gambar pendukung jika dibutuhkan.</li>
-                                </ul>
+                                <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk gambar, atau <strong>Code Block</strong> untuk potongan kode.</p>
                             </div>
 
-                            <div class="text-editor-block">
-                                <p class="text-editor-label mb-2">Editor Materi</p>
-                                <div class="wysiwyg-toolbar" id="wysiwygToolbar">
-                                    <button type="button" class="wysiwyg-btn" data-action="bold" title="Bold" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-type-bold"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="italic" title="Italic" {{ $moduleLocked ? 'disabled' : '' }}><i
-                                            class="bi bi-type-italic"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h1" title="Heading 1" {{ $moduleLocked ? 'disabled' : '' }}>H1</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h2" title="Heading 2" {{ $moduleLocked ? 'disabled' : '' }}>H2</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="h3" title="Heading 3" {{ $moduleLocked ? 'disabled' : '' }}>H3</button>
-                                    <button type="button" class="wysiwyg-btn" data-action="ul" title="Bullet List" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-list-ul"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="image" title="Insert Image" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-image"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-left" title="Rata Kiri" {{ $moduleLocked ? 'disabled' : '' }}><i class="bi bi-text-left"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-center"
-                                        title="Rata Tengah"><i class="bi bi-text-center"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="align-right" {{ $moduleLocked ? 'disabled' : '' }} title="Rata Kanan"><i
-                                            class="bi bi-text-right"></i></button>
-                                    <button type="button" class="wysiwyg-btn" data-action="code" {{ $moduleLocked ? 'disabled' : '' }} title="Insert Code Block"><i
-                                            class="bi bi-code-square"></i></button>
+                            <!-- Right Column: Live Preview -->
+                            <div class="studio-preview-pane">
+                                <div class="preview-header">
+                                    <p class="text-editor-label" style="margin: 0;">Live Preview</p>
+                                    <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(32, 179, 134, 0.1); color: rgb(32, 179, 134); display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="bi bi-arrow-repeat spin-icon"></i> REAL-TIME
+                                    </span>
                                 </div>
-                                <input type="file" id="moduleImageInput" accept="image/*" style="display:none;" {{ $moduleLocked ? 'disabled' : '' }} />
-                                <div id="moduleWysiwygEditor" class="wysiwyg-editor"
-                                    contenteditable="{{ $moduleLocked ? 'false' : 'true' }}" spellcheck="true"
-                                    style="{{ $moduleLocked ? 'pointer-events:none; opacity:.72; background:#f8fafc;' : '' }}">
-                                    <p>Tulis pengantar materi di sini...</p>
-                                </div>
-                                <p class="text-editor-note">Gunakan tombol <strong>Image</strong> untuk menyisipkan gambar
-                                    di dalam teks, atau tombol <strong>Code Block</strong> untuk potongan kode.</p>
-
+                                <div class="live-preview-body" id="moduleLivePreview"></div>
                             </div>
                         </div>
 
                         <div class="panel-footer">
                             <button type="button" class="secondary-btn" id="previewModuleBtn">
-                                <i class="bi bi-eye"></i> PREVIEW MODUL
+                                <i class="bi bi-eye"></i> PREVIEW FULLSCREEN
                             </button>
                             <button type="submit" id="uploadSubmitBtn" class="primary-btn" {{ $moduleLocked ? 'disabled' : '' }}>
                                 <i class="bi bi-cloud-arrow-up-fill"></i> SIMPAN MATERI TEKS
@@ -4049,6 +4486,15 @@ main.detail-course {
                 </section>
 
                 <section class="panel panel-video {{ $activeTab === 'video' ? 'active' : '' }}" data-panel="video">
+                    @if(!$isAdmin && $isVideoApproved)
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); color: #059669; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <i class="bi bi-patch-check-fill" style="font-size: 24px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Video Telah Disetujui (Terkunci)</strong>
+                            <span style="font-size: 14px;">Lampiran video ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.</span>
+                        </div>
+                    </div>
+                    @endif
                     @if(isset($isAdmin) && $isAdmin && !$schemePermissions['can_video'])
                     <div style="background: rgba(245, 197, 66, 0.1); border: 1px solid #f5c542; color: #b8860b; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
                         <i class="bi bi-info-circle-fill" style="font-size: 24px;"></i>
@@ -4154,10 +4600,10 @@ main.detail-course {
                                                 onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                 <i class="bi bi-eye-fill"></i>
                                             </button>
-                                            <button type="button" class="select-replace-btn" {{ $videoLocked ? 'disabled' : '' }} data-module-id="{{ $material->id }}" data-module-type="video"
+                                            <button type="button" class="select-replace-btn" {{ ($videoLocked || $material->review_status === 'approved') ? 'disabled' : '' }} data-module-id="{{ $material->id }}" data-module-type="video"
                                                 data-file-name="{{ $material->file_name ?: basename($material->content_url) }}"
                                                 title="Ganti File"
-                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px; {{ ($videoLocked || $material->review_status === 'approved') ? 'opacity: 0.5; pointer-events: none;' : '' }}"
                                                 onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                 <i class="bi bi-arrow-repeat"></i>
                                             </button>
@@ -4176,6 +4622,15 @@ main.detail-course {
                 </section>
 
                 <section class="panel panel-quiz {{ $activeTab === 'quiz' ? 'active' : '' }}" data-panel="quiz">
+                    @if(!$isAdmin && $isQuizApproved)
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); color: #059669; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <i class="bi bi-patch-check-fill" style="font-size: 24px;"></i>
+                        <div>
+                            <strong style="display: block; margin-bottom: 4px;">Kuis Telah Disetujui (Terkunci)</strong>
+                            <span style="font-size: 14px;">Kuis unit ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.</span>
+                        </div>
+                    </div>
+                    @endif
                     @if(isset($isAdmin) && $isAdmin && !$schemePermissions['can_quiz'])
                     <div style="background: rgba(245, 197, 66, 0.1); border: 1px solid #f5c542; color: #b8860b; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
                         <i class="bi bi-info-circle-fill" style="font-size: 24px;"></i>
@@ -4359,7 +4814,7 @@ main.detail-course {
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <div id="modulePreviewBody" style="padding:18px; overflow:auto; background:#f8fafc;"></div>
+            <div id="modulePreviewBody" style="padding:18px; overflow:auto; background:#f8fafc; flex:1; min-height:0;"></div>
         </div>
     </div>
 
@@ -4505,7 +4960,7 @@ main.detail-course {
     <script>
         const courseId = @json($course->id);
         const editorImageUploadUrl = @json($isAdmin ? route('admin.courses.studio.editor-image', $course->id) : route('trainer.courses.studio.editor-image', $course->id));
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         
         let replacementState = {
             moduleId: null,
@@ -4658,11 +5113,13 @@ main.detail-course {
             };
 
             tabs.forEach((tab) => {
-                tab.addEventListener("click", () => {
+                tab.addEventListener("click", (e) => {
                     if (tab.dataset.locked === '1') {
+                        e.preventDefault();
                         showNotificationModal('Fitur Dikunci Skema', `Tab ${String(tab.dataset.tab || '').toUpperCase()} tidak tersedia pada skema aktif.`, 'warning');
                         return;
                     }
+                    e.preventDefault();
                     setTab(tab.dataset.tab);
                 });
             });
@@ -4716,6 +5173,7 @@ main.detail-course {
             const moduleForm = document.getElementById("moduleForm");
             const uploadBtn = document.getElementById("uploadSubmitBtn");
             const courseMaterialsLocked = @json($courseMaterialLocked);
+            const videoLocked = @json($videoLocked);
             const targetModulesInput = moduleForm.querySelector('input[name="target_modules"]');
             const materialDraftInput = document.getElementById('materialDraftInput');
             const materialDraftStorageKey = `trainer-course-draft-${{ (int) $course->id }}`;
@@ -4748,13 +5206,94 @@ main.detail-course {
                                         <div class="module-code-block" contenteditable="false">
                                             <div class="module-code-top">
                                                 <select class="module-code-lang">${codeLangOptions}</select>
-                                                <button type="button" class="module-code-copy">Copy Code</button>
+                                                <div class="module-code-actions" style="display: flex; gap: 6px;">
+                                                    <button type="button" class="module-code-copy">Copy Code</button>
+                                                    <button type="button" class="module-code-delete"><i class="bi bi-trash"></i> Hapus</button>
+                                                </div>
                                             </div>
                                             <pre><code class="language-html" contenteditable="true" spellcheck="false"></code></pre>
                                         </div>
                                         <p><br></p>
                                     `;
                 document.execCommand('insertHTML', false, codeBlockHtml);
+            }
+
+            let lastEditorRange = null;
+            document.addEventListener('selectionchange', () => {
+                if (isSelectionInEditor()) {
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0) {
+                        lastEditorRange = sel.getRangeAt(0).cloneRange();
+                    }
+                }
+            });
+
+            function applyListStyle(styleType) {
+                if (!styleType) return;
+                
+                if (lastEditorRange) {
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(lastEditorRange);
+                } else if (!isSelectionInEditor()) {
+                    focusEditorEnd();
+                }
+
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) return;
+
+                let anchor = selection.anchorNode;
+                let listNode = null;
+                while (anchor && anchor !== moduleEditor) {
+                    if (anchor.nodeName === 'UL' || anchor.nodeName === 'OL') {
+                        listNode = anchor;
+                        break;
+                    }
+                    anchor = anchor.parentNode;
+                }
+
+                if (!listNode) {
+                    const isOrdered = ['decimal', 'lower-alpha', 'upper-alpha', 'lower-roman', 'upper-roman'].includes(styleType);
+                    if (isOrdered) {
+                        document.execCommand('insertOrderedList');
+                    } else {
+                        document.execCommand('insertUnorderedList');
+                    }
+
+                    const newSelection = window.getSelection();
+                    let newAnchor = newSelection.anchorNode;
+                    while (newAnchor && newAnchor !== moduleEditor) {
+                        if (newAnchor.nodeName === 'UL' || newAnchor.nodeName === 'OL') {
+                            listNode = newAnchor;
+                            break;
+                        }
+                        newAnchor = newAnchor.parentNode;
+                    }
+                }
+
+                if (listNode) {
+                    const isOrderedStyle = ['decimal', 'lower-alpha', 'upper-alpha', 'lower-roman', 'upper-roman'].includes(styleType);
+                    if (isOrderedStyle && listNode.nodeName === 'UL') {
+                        const ol = document.createElement('ol');
+                        ol.style.listStyleType = styleType;
+                        while (listNode.firstChild) {
+                            ol.appendChild(listNode.firstChild);
+                        }
+                        listNode.parentNode.replaceChild(ol, listNode);
+                        listNode = ol;
+                    } else if (!isOrderedStyle && listNode.nodeName === 'OL') {
+                        const ul = document.createElement('ul');
+                        ul.style.listStyleType = styleType;
+                        while (listNode.firstChild) {
+                            ul.appendChild(listNode.firstChild);
+                        }
+                        listNode.parentNode.replaceChild(ul, listNode);
+                        listNode = ul;
+                    } else {
+                        listNode.style.listStyleType = styleType;
+                    }
+                }
+                syncEditorContentToInput();
             }
 
             async function insertImageFromFile(file) {
@@ -4820,120 +5359,12 @@ main.detail-course {
                 syncEditorContentToInput();
             }
 
-            function syncEditorContentToInput() {
-                if (!moduleEditor || !moduleContentInput) return;
-                moduleContentInput.value = moduleEditor.innerHTML.trim();
-                try {
-                    localStorage.setItem(materialDraftStorageKey, moduleContentInput.value);
-                } catch (_) {
-                }
-            }
-
-            if (moduleEditor && moduleContentInput) {
-                try {
-                    const savedRichDraft = localStorage.getItem(materialDraftStorageKey);
-                    if (
-                        savedRichDraft &&
-                        savedRichDraft.trim() !== '' &&
-                        !savedRichDraft.includes('data:image/') &&
-                        savedRichDraft.length <= 60000
-                    ) {
-                        moduleEditor.innerHTML = savedRichDraft;
-                    } else if (savedRichDraft && (savedRichDraft.includes('data:image/') || savedRichDraft.length > 60000)) {
-                        localStorage.removeItem(materialDraftStorageKey);
-                    }
-                } catch (_) {
-                }
-
-                moduleEditor.addEventListener('input', syncEditorContentToInput);
-                moduleEditor.addEventListener('change', syncEditorContentToInput);
-            }
-
-            if (toolbar) {
-                toolbar.addEventListener('click', function (event) {
-                    if (courseMaterialsLocked) {
-                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
-                        return;
-                    }
-
-                    const btn = event.target.closest('.wysiwyg-btn');
-                    if (!btn) return;
-                    const action = btn.dataset.action;
-
-                    if (action === 'bold') document.execCommand('bold');
-                    if (action === 'italic') document.execCommand('italic');
-                    if (action === 'ul') document.execCommand('insertUnorderedList');
-                    if (action === 'h1') document.execCommand('formatBlock', false, 'h1');
-                    if (action === 'h2') document.execCommand('formatBlock', false, 'h2');
-                    if (action === 'h3') document.execCommand('formatBlock', false, 'h3');
-                    if (action === 'image' && moduleImageInput) moduleImageInput.click();
-                    if (action === 'align-left') setSelectedImageAlignment('left');
-                    if (action === 'align-center') setSelectedImageAlignment('center');
-                    if (action === 'align-right') setSelectedImageAlignment('right');
-                    if (action === 'code') insertCodeBlock();
-
-                    syncEditorContentToInput();
-                });
-            }
-
-            if (moduleImageInput) {
-                moduleImageInput.addEventListener('change', function (event) {
-                    if (courseMaterialsLocked) {
-                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
-                        moduleImageInput.value = '';
-                        return;
-                    }
-
-                    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
-                    if (file) {
-                        insertImageFromFile(file);
-                    }
-                    moduleImageInput.value = '';
-                });
-            }
-
-            if (moduleEditor) {
-                moduleEditor.addEventListener('click', function (event) {
-                    const clickedImage = event.target.closest('.module-inline-image, .module-inline-image img');
-                    if (clickedImage) {
-                        selectedModuleImage = clickedImage.classList.contains('module-inline-image')
-                            ? clickedImage
-                            : clickedImage.closest('.module-inline-image');
-
-                        moduleEditor.querySelectorAll('.module-inline-image').forEach((figure) => {
-                            figure.classList.toggle('is-selected', figure === selectedModuleImage);
-                        });
-                    }
-
-                    const copyBtn = event.target.closest('.module-code-copy');
-                    if (!copyBtn) return;
-                    const codeEl = copyBtn.closest('.module-code-block')?.querySelector('code');
-                    const text = codeEl ? codeEl.textContent || '' : '';
-                    navigator.clipboard.writeText(text).then(() => {
-                        const old = copyBtn.textContent;
-                        copyBtn.textContent = 'Copied';
-                        setTimeout(() => copyBtn.textContent = old, 1000);
-                    }).catch(() => {
-                    });
-                });
-
-                moduleEditor.addEventListener('change', function (event) {
-                    const langSelect = event.target.closest('.module-code-lang');
-                    if (!langSelect) return;
-                    const codeEl = langSelect.closest('.module-code-block')?.querySelector('code');
-                    if (codeEl) {
-                        codeEl.className = `language-${langSelect.value}`;
-                    }
-                    syncEditorContentToInput();
-                }, true);
-            }
-
-            function openModulePreview() {
-                if (!moduleEditor || !modulePreviewModal || !modulePreviewBody) return;
-                syncEditorContentToInput();
-                const rawHtml = moduleContentInput.value || '';
-                if (rawHtml.trim() === '') {
-                    showNotificationModal('Preview Kosong', 'Silakan isi materi terlebih dahulu sebelum preview.', 'warning');
+            function renderPreviewContent(targetContainer) {
+                if (!moduleEditor || !targetContainer) return;
+                const rawHtml = moduleEditor.innerHTML || '';
+                
+                if (rawHtml.replace(/<[^>]*>/g, '').trim() === '' && !rawHtml.includes('<img')) {
+                    targetContainer.innerHTML = '<div style="color: #94a3b8; font-style: italic; text-align: center; padding: 40px 0;">Belum ada konten materi. Mulai menulis di editor sebelah kiri...</div>';
                     return;
                 }
 
@@ -4967,15 +5398,336 @@ main.detail-course {
                     block.replaceWith(holder);
                 });
 
-                modulePreviewBody.innerHTML = '';
-                modulePreviewBody.appendChild(wrapper);
+                targetContainer.innerHTML = '';
+                targetContainer.appendChild(wrapper);
 
-                modulePreviewBody.querySelectorAll('pre code').forEach((el) => {
+                targetContainer.querySelectorAll('pre code').forEach((el) => {
                     if (window.hljs) {
                         window.hljs.highlightElement(el);
                     }
                 });
+            }
 
+            let previewDebounceTimer;
+            function updateLivePreviewDebounced() {
+                clearTimeout(previewDebounceTimer);
+                previewDebounceTimer = setTimeout(() => {
+                    const livePreviewContainer = document.getElementById('moduleLivePreview');
+                    if (livePreviewContainer && livePreviewContainer.offsetParent !== null) {
+                        renderPreviewContent(livePreviewContainer);
+                    }
+                }, 250);
+            }
+
+            function checkEditorEmpty() {
+                if (!moduleEditor) return;
+                const text = moduleEditor.textContent.trim();
+                const hasImages = moduleEditor.querySelector('img') !== null;
+                const isEmpty = text === '' && !hasImages;
+                moduleEditor.classList.toggle('is-editor-empty', isEmpty);
+                updateLivePreviewDebounced();
+            }
+
+            function syncEditorContentToInput() {
+                if (!moduleEditor || !moduleContentInput) return;
+                moduleContentInput.value = moduleEditor.innerHTML.trim();
+                try {
+                    localStorage.setItem(materialDraftStorageKey, moduleContentInput.value);
+                } catch (_) {
+                }
+                checkEditorEmpty();
+            }
+
+            if (moduleEditor && moduleContentInput) {
+                try {
+                    const savedRichDraft = localStorage.getItem(materialDraftStorageKey);
+                    if (
+                        savedRichDraft &&
+                        savedRichDraft.trim() !== '' &&
+                        !savedRichDraft.includes('data:image/') &&
+                        savedRichDraft.length <= 60000
+                    ) {
+                        moduleEditor.innerHTML = savedRichDraft;
+                    } else if (savedRichDraft && (savedRichDraft.includes('data:image/') || savedRichDraft.length > 60000)) {
+                        localStorage.removeItem(materialDraftStorageKey);
+                    }
+                } catch (_) {
+                }
+
+                moduleEditor.addEventListener('input', syncEditorContentToInput);
+                moduleEditor.addEventListener('change', syncEditorContentToInput);
+                
+                // Sanitize pasted content to prevent dirty styles (which block text editor actions)
+                moduleEditor.addEventListener('paste', function (e) {
+                    e.preventDefault();
+                    // Get plain text from clipboard
+                    const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                    
+                    // Insert plain text at the current cursor position
+                    if (document.queryCommandSupported('insertText')) {
+                        document.execCommand('insertText', false, text);
+                    } else {
+                        const selection = window.getSelection();
+                        if (!selection.rangeCount) return;
+                        selection.deleteFromDocument();
+                        selection.getRangeAt(0).insertNode(document.createTextNode(text));
+                    }
+                    syncEditorContentToInput();
+                });
+                
+                checkEditorEmpty();
+            }
+
+            const toggleSplitViewBtn = document.getElementById('toggleSplitViewBtn');
+            const splitWrapper = document.getElementById('studioSplitWrapper');
+            const livePreviewContainer = document.getElementById('moduleLivePreview');
+
+            let isSplitActive = localStorage.getItem('moduleSplitViewActive') !== 'false';
+            if (window.innerWidth < 992) {
+                isSplitActive = false;
+            }
+
+            function setSplitView(active) {
+                isSplitActive = active;
+                if (splitWrapper) {
+                    splitWrapper.classList.toggle('split-active', active);
+                }
+                if (toggleSplitViewBtn) {
+                    toggleSplitViewBtn.classList.toggle('split-active', active);
+                    toggleSplitViewBtn.innerHTML = active 
+                        ? '<i class="bi bi-columns-gap"></i> EDITOR ONLY' 
+                        : '<i class="bi bi-columns-gap"></i> SPLIT VIEW';
+                }
+                localStorage.setItem('moduleSplitViewActive', active);
+                if (active) {
+                    renderPreviewContent(livePreviewContainer);
+                }
+            }
+
+            if (toggleSplitViewBtn) {
+                toggleSplitViewBtn.addEventListener('click', () => {
+                    setSplitView(!isSplitActive);
+                });
+            }
+
+            setSplitView(isSplitActive);
+
+            // Sync heights of wysiwygToolbar and previewHeader to prevent vertical misalignment
+            const wysiwygToolbar = document.getElementById('wysiwygToolbar');
+            const previewHeader = document.querySelector('.preview-header');
+            if (wysiwygToolbar && previewHeader) {
+                const syncHeaderHeight = () => {
+                    if (splitWrapper && splitWrapper.classList.contains('split-active')) {
+                        previewHeader.style.height = `${wysiwygToolbar.offsetHeight}px`;
+                    } else {
+                        previewHeader.style.height = '';
+                    }
+                };
+
+                // Watch resize of toolbar dynamically
+                if (typeof ResizeObserver !== 'undefined') {
+                    const observer = new ResizeObserver(() => {
+                        syncHeaderHeight();
+                    });
+                    observer.observe(wysiwygToolbar);
+                }
+
+                // Call on split view toggle
+                const originalSetSplitView = setSplitView;
+                setSplitView = function(active) {
+                    originalSetSplitView(active);
+                    syncHeaderHeight();
+                };
+
+                // Initial sync
+                syncHeaderHeight();
+            }
+
+            function isSelectionInEditor() {
+                if (!moduleEditor) return false;
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    return moduleEditor.contains(range.commonAncestorContainer);
+                }
+                return false;
+            }
+
+            function focusEditorEnd() {
+                if (!moduleEditor) return;
+                moduleEditor.focus();
+                
+                const targetNode = moduleEditor.querySelector('p') || moduleEditor;
+                const range = document.createRange();
+                const selection = window.getSelection();
+                range.selectNodeContents(targetNode);
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+
+            if (toolbar) {
+                toolbar.addEventListener('mousedown', function (event) {
+                    if (courseMaterialsLocked) {
+                        event.preventDefault();
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        return;
+                    }
+
+                    const btn = event.target.closest('.wysiwyg-btn');
+                    if (!btn) return;
+
+                    // Prevent focus loss on the button click
+                    event.preventDefault();
+
+                    const action = btn.dataset.action;
+
+                    // Focus the editor if selection is not currently inside it
+                    if (!isSelectionInEditor()) {
+                        focusEditorEnd();
+                    }
+
+                    if (action === 'bold') document.execCommand('bold');
+                    if (action === 'italic') document.execCommand('italic');
+                    if (action === 'ul') document.execCommand('insertUnorderedList');
+                    if (action === 'h1') document.execCommand('formatBlock', false, 'h1');
+                    if (action === 'h2') document.execCommand('formatBlock', false, 'h2');
+                    if (action === 'h3') document.execCommand('formatBlock', false, 'h3');
+                    if (action === 'image' && moduleImageInput) moduleImageInput.click();
+                    if (action === 'align-left') {
+                        if (selectedModuleImage) {
+                            setSelectedImageAlignment('left');
+                        } else {
+                            document.execCommand('justifyLeft');
+                        }
+                    }
+                    if (action === 'align-center') {
+                        if (selectedModuleImage) {
+                            setSelectedImageAlignment('center');
+                        } else {
+                            document.execCommand('justifyCenter');
+                        }
+                    }
+                    if (action === 'align-right') {
+                        if (selectedModuleImage) {
+                            setSelectedImageAlignment('right');
+                        } else {
+                            document.execCommand('justifyRight');
+                        }
+                    }
+                    if (action === 'code') insertCodeBlock();
+
+                    syncEditorContentToInput();
+                });
+            }
+
+            if (moduleImageInput) {
+                moduleImageInput.addEventListener('change', function (event) {
+                    if (courseMaterialsLocked) {
+                        showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                        moduleImageInput.value = '';
+                        return;
+                    }
+
+                    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    if (file) {
+                        insertImageFromFile(file);
+                    }
+                    moduleImageInput.value = '';
+                });
+            }
+
+            if (moduleEditor) {
+                moduleEditor.addEventListener('click', function (event) {
+                    const clickedImage = event.target.closest('.module-inline-image, .module-inline-image img');
+                    if (clickedImage) {
+                        selectedModuleImage = clickedImage.classList.contains('module-inline-image')
+                            ? clickedImage
+                            : clickedImage.closest('.module-inline-image');
+                    } else {
+                        selectedModuleImage = null;
+                    }
+
+                    moduleEditor.querySelectorAll('.module-inline-image').forEach((figure) => {
+                        figure.classList.toggle('is-selected', figure === selectedModuleImage);
+                    });
+
+                    const copyBtn = event.target.closest('.module-code-copy');
+                    if (copyBtn) {
+                        const codeEl = copyBtn.closest('.module-code-block')?.querySelector('code');
+                        const text = codeEl ? codeEl.textContent || '' : '';
+                        navigator.clipboard.writeText(text).then(() => {
+                            const old = copyBtn.textContent;
+                            copyBtn.textContent = 'Copied';
+                            setTimeout(() => copyBtn.textContent = old, 1000);
+                        }).catch(() => {
+                        });
+                        return;
+                    }
+
+                    const deleteBtn = event.target.closest('.module-code-delete');
+                    if (deleteBtn) {
+                        if (courseMaterialsLocked) {
+                            showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                            return;
+                        }
+                        const codeBlock = deleteBtn.closest('.module-code-block');
+                        if (codeBlock) {
+                            codeBlock.remove();
+                            syncEditorContentToInput();
+                        }
+                        return;
+                    }
+                });
+
+                moduleEditor.addEventListener('change', function (event) {
+                    const langSelect = event.target.closest('.module-code-lang');
+                    if (!langSelect) return;
+                    const codeEl = langSelect.closest('.module-code-block')?.querySelector('code');
+                    if (codeEl) {
+                        codeEl.className = `language-${langSelect.value}`;
+                    }
+                    syncEditorContentToInput();
+                }, true);
+
+                const listStyleSelect = document.getElementById('listStyleSelect');
+                if (listStyleSelect) {
+                    listStyleSelect.addEventListener('change', function (event) {
+                        if (courseMaterialsLocked) {
+                            event.preventDefault();
+                            listStyleSelect.value = '';
+                            showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                            return;
+                        }
+
+                        const styleType = event.target.value;
+                        if (styleType) {
+                            applyListStyle(styleType);
+                        }
+                        
+                        event.target.value = '';
+                    });
+
+                    listStyleSelect.addEventListener('mousedown', function(event) {
+                        if (courseMaterialsLocked) {
+                            event.preventDefault();
+                            showNotificationModal('Materi Terkunci', 'Materi course belum bisa diubah sebelum undangan diterima.', 'warning');
+                            return;
+                        }
+                    });
+                }
+            }
+
+            function openModulePreview() {
+                if (!moduleEditor || !modulePreviewModal || !modulePreviewBody) return;
+                syncEditorContentToInput();
+                const rawHtml = moduleContentInput.value || '';
+                if (rawHtml.trim() === '') {
+                    showNotificationModal('Preview Kosong', 'Silakan isi materi terlebih dahulu sebelum preview.', 'warning');
+                    return;
+                }
+
+                renderPreviewContent(modulePreviewBody);
                 modulePreviewModal.style.display = 'flex';
             }
 
@@ -5061,9 +5813,10 @@ main.detail-course {
                                                                     <i class="bi bi-eye-fill"></i>
                                                                 </button>
                                                                 <button type="button" class="select-replace-btn"
+                                                                    ${(videoLocked || material.review_status === 'approved') ? 'disabled' : ''}
                                                                     data-module-id="${moduleId}" data-module-type="video" data-file-name="${fileName}"
                                                                     title="Ganti File"
-                                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px;"
+                                                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--main-navy-clr); color: var(--white-clr); border: none; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; font-size: 12px; ${(videoLocked || material.review_status === 'approved') ? 'opacity: 0.5; pointer-events: none;' : ''}"
                                                                     onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
                                                                     <i class="bi bi-arrow-repeat"></i>
                                                                 </button>
@@ -5473,8 +6226,13 @@ main.detail-course {
 
                 syncEditorContentToInput();
                 const editorContent = moduleContentInput ? moduleContentInput.value.trim() : '';
-                const isDefaultContent = editorContent === '<p>Tulis pengantar materi di sini...</p>' || editorContent === '';
-                const hasEditorContent = !isDefaultContent;
+                
+                // Detailed check for empty markup
+                const editorText = moduleEditor ? moduleEditor.textContent.replace(/\s+/g, '').replace(/\xa0/g, '').trim() : '';
+                const hasMedia = moduleEditor ? (moduleEditor.querySelector('img, iframe, video, audio, svg, embed, object') !== null) : false;
+                
+                const isDefaultContent = editorContent === '<p>Tulis pengantar materi di sini...</p>';
+                const hasEditorContent = (editorText !== '' || hasMedia) && !isDefaultContent;
 
                 const pdfFiles = document.getElementById('pdfFileInput')?.files;
                 const hasPdfFile = pdfFiles && pdfFiles.length > 0;
@@ -5522,11 +6280,12 @@ main.detail-course {
                                     persistedMaterials.push(row);
                                 }
                             });
+                            try {
+                                localStorage.removeItem(materialDraftStorageKey);
+                            } catch (_) {}
+
                             if (moduleEditor) {
-                                moduleEditor.innerHTML = '<p>Tulis pengantar materi di sini...</p>';
-                            }
-                            if (moduleContentInput) {
-                                moduleContentInput.value = '';
+                                checkEditorEmpty();
                             }
                             showNotificationModal('Berhasil', data.message || 'Materi berhasil disubmit ke Admin!', 'success');
                             return;
@@ -5897,6 +6656,7 @@ main.detail-course {
             </div>
         </div>
     </div>
+    @include('trainer.partials.scheme-selection-modal')
 @endsection
 
 

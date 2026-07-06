@@ -12,11 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('event_trainer_modules', function (Blueprint $table) {
-            $table->boolean('logo_stamped')->default(false)->after('status');
+            if (!Schema::hasColumn('event_trainer_modules', 'logo_stamped')) {
+                $table->boolean('logo_stamped')->default(false)->after('status');
+            }
         });
 
         Schema::table('trainer_assignments', function (Blueprint $table) {
-            $table->boolean('logo_stamped')->default(false)->after('material_status');
+            if (!Schema::hasColumn('trainer_assignments', 'logo_stamped')) {
+                $table->boolean('logo_stamped')->default(false)->after('material_status');
+            }
         });
     }
 
@@ -26,11 +30,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('event_trainer_modules', function (Blueprint $table) {
-            $table->dropColumn('logo_stamped');
+            if (Schema::hasColumn('event_trainer_modules', 'logo_stamped')) {
+                $table->dropColumn('logo_stamped');
+            }
         });
 
         Schema::table('trainer_assignments', function (Blueprint $table) {
-            $table->dropColumn('logo_stamped');
+            if (Schema::hasColumn('trainer_assignments', 'logo_stamped')) {
+                $table->dropColumn('logo_stamped');
+            }
         });
     }
 };

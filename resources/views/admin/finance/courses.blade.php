@@ -182,13 +182,30 @@
                                 <td>
                                     <div class="pending-text text-muted">Rp {{ number_format($course->pending_revenue, 0, ',', '.') }}</div>
                                 </td>
-                                <td class="text-center">
-                                    <a href="{{ route('admin.finance.course-detail', $course->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">Detail</a>
-                                </td>
+                                 <td class="text-center">
+                                      <div class="btn-group">
+                                          <a href="{{ route('admin.finance.course-detail', $course->id) }}" class="btn btn-sm btn-outline-primary rounded-start-pill px-3 fw-bold">Detail</a>
+                                          <button type="button" class="btn btn-sm btn-outline-primary rounded-end-pill dropdown-toggle dropdown-toggle-split px-2" data-bs-toggle="dropdown" aria-expanded="false">
+                                              <span class="visually-hidden">Toggle Dropdown</span>
+                                          </button>
+                                          <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
+                                              <li>
+                                                  <a class="dropdown-item small py-2 fw-semibold" href="{{ route('admin.finance.courses.export', ['id' => $course->id, 'format' => 'pdf']) }}">
+                                                      <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Unduh PDF
+                                                  </a>
+                                              </li>
+                                              <li>
+                                                  <a class="dropdown-item small py-2 fw-semibold" href="{{ route('admin.finance.courses.export', ['id' => $course->id, 'format' => 'excel']) }}">
+                                                      <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i> Unduh Excel
+                                                  </a>
+                                              </li>
+                                          </ul>
+                                      </div>
+                                  </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-5 text-muted">Belum ada data course.</td>
+                                <td colspan="6" class="text-center py-5 text-muted">Belum ada data course.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -33,7 +33,7 @@ class CRMController extends Controller
         }
 
         // Get statistics
-        $totalCustomers = User::where('role', 'customer')->count();
+        $totalCustomers = User::where('role', 'user')->count();
         $totalResellers = User::where('role', 'reseller')->count();
         $totalTrainers = User::where('role', 'trainer')->count();
         
@@ -57,9 +57,10 @@ class CRMController extends Controller
         $totalCourseCerts = Enrollment::whereNotNull('certificate_number')->count();
         $totalCerts = $totalEventCerts + $totalCourseCerts;
         
-        // Recent registrations (only show registrations with valid events)
+        // Recent registrations (only show registrations with valid events and users)
         $recentRegistrations = EventRegistration::with(['user', 'event'])
             ->whereHas('event')
+            ->whereHas('user')
             ->where('status', 'active')
             ->orderBy('created_at', 'desc')
             ->limit(8)
@@ -385,7 +386,7 @@ class CRMController extends Controller
                 if($dateFrom) $eventFeedbacksQuery->whereDate('created_at', '>=', $dateFrom);
                 if($dateTo) $eventFeedbacksQuery->whereDate('created_at', '<=', $dateTo);
 
-                $eventFeedbacks = $eventFeedbacksQuery->orderBy('created_at', 'desc')->get();
+                $eventFeedbacks = (clone $eventFeedbacksQuery)->orderBy('created_at', 'desc')->get();
 
                 $eventRatingDistribution = (clone $eventFeedbacksQuery)
                     ->select('rating', DB::raw('count(*) as count'))
@@ -483,7 +484,7 @@ class CRMController extends Controller
                 if($dateFrom) $courseReviewsQuery->whereDate('created_at', '>=', $dateFrom);
                 if($dateTo) $courseReviewsQuery->whereDate('created_at', '<=', $dateTo);
                 
-                $courseReviews = $courseReviewsQuery->orderBy('created_at', 'desc')->get();
+                $courseReviews = (clone $courseReviewsQuery)->orderBy('created_at', 'desc')->get();
 
                 $courseRatingDistributionDetail = (clone $courseReviewsQuery)
                     ->select('rating', DB::raw('count(*) as count'))
@@ -582,13 +583,29 @@ class CRMController extends Controller
         if (in_array($request->status, ['resolved', 'ignored']) && $message->email) {
             try {
                 Mail::to($message->email)->send(new \App\Mail\SupportTicketStatusMail($message));
+<<<<<<< HEAD
             } catch (\Exception $e) {
                 \Log::error('Gagal mengirim email status tiket support ke ' . $message->email . ': ' . $e->getMessage());
             }
         }
 
         return back()->with('success', 'Status pesan berhasil diperbarui');
+=======
+                \Log::info('Email notifikasi tiket support terkirim ke ' . $message->email . ' (ID: ' . $message->id . ', status: ' . $request->status . ')');
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim email status tiket support ke ' . $message->email . ': ' . $e->getMessage(), [
+                    'ticket_id'  => $message->id,
+                    'status'     => $request->status,
+                    'exception'  => $e->getTraceAsString(),
+                ]);
+                return back()->with('warning', 'Status berhasil diperbarui, namun notifikasi email ke user gagal terkirim. Silakan cek log server.');
+            }
+        }
+
+        return back()->with('success', 'Status pesan berhasil diperbarui' . (in_array($request->status, ['resolved', 'ignored']) ? ' dan notifikasi email telah dikirim ke user.' : '.'));
+>>>>>>> b863fb54e2abec006fb54479f68889751e33734a
     }
+
 
     /**
      * Display Broadcast List

@@ -108,5 +108,25 @@ class AppServiceProvider extends ServiceProvider
             $view->with('trainerNotifications', $trainerNotifications)
                 ->with('trainerUnreadNotificationCount', $trainerUnreadNotificationCount);
         });
+
+        // Dynamic database schema updates to support trainer replies and likes
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('reviews', 'trainer_reply')) {
+                \Illuminate\Support\Facades\Schema::table('reviews', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->text('trainer_reply')->nullable();
+                    $table->timestamp('trainer_reply_at')->nullable();
+                });
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('reviews', 'is_liked')) {
+                \Illuminate\Support\Facades\Schema::table('reviews', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->boolean('is_liked')->default(false);
+                });
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('feedback', 'is_liked')) {
+                \Illuminate\Support\Facades\Schema::table('feedback', function (\Illuminate\Database\Schema\Blueprint $table) {
+                    $table->boolean('is_liked')->default(false);
+                });
+            }
+        } catch (\Throwable $e) {}
     }
 }
