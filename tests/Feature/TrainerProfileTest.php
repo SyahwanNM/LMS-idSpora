@@ -310,11 +310,11 @@ class TrainerProfileTest extends TestCase
 
         // Check if correct data was passed to the view
         $response->assertViewHas('ratingCounts', function ($ratingCounts) {
-            return $ratingCounts[5] === 1 && $ratingCounts[4] === 1 && $ratingCounts[3] === 0;
+            return $ratingCounts[5] === 1 && $ratingCounts[3] === 1 && $ratingCounts[4] === 0;
         });
 
         $response->assertViewHas('ratingPercentages', function ($ratingPercentages) {
-            return $ratingPercentages[5] === 50 && $ratingPercentages[4] === 50 && $ratingPercentages[3] === 0;
+            return $ratingPercentages[5] === 50 && $ratingPercentages[3] === 50 && $ratingPercentages[4] === 0;
         });
 
         // Avg speaker_rating is (5+3)/2 = 4.0
