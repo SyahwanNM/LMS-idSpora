@@ -44,11 +44,19 @@ class TrainerManagementController extends Controller
     private function buildMetricChange(int $current, int $previous): array
     {
         $delta = $current - $previous;
-        $direction = $delta >= 0 ? 'up' : 'down';
-        $abs = abs($delta);
+        if ($delta > 0) {
+            $direction = 'up';
+            $text = '+' . $delta . ' dari periode sebelumnya';
+        } elseif ($delta < 0) {
+            $direction = 'down';
+            $text = '-' . abs($delta) . ' dari periode sebelumnya';
+        } else {
+            $direction = 'neutral';
+            $text = '0 dari periode sebelumnya';
+        }
 
         return [
-            'text' => ($delta >= 0 ? '+' : '-') . $abs . ' dari periode sebelumnya',
+            'text' => $text,
             'direction' => $direction,
         ];
     }
@@ -56,8 +64,11 @@ class TrainerManagementController extends Controller
     // Menampilkan daftar trainer
     public function index(Request $request)
     {
-        $totalCourses = Course::count();
-        $totalEvents = Event::count();
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $totalCourses = Course::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
+        $totalEvents = Event::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
 
         $pendingCourseCount = Course::where(function ($q) {
             $q->where('status', 'pending_review')
@@ -71,10 +82,10 @@ class TrainerManagementController extends Controller
         $pendingEventCount = EventTrainerModule::whereHas('event')->where('status', 'pending_review')->count();
         $pendingReviews = $pendingCourseCount + $pendingEventCount;
 
-        $approvedMaterials = Course::whereIn('status', ['approved', 'active'])->count()
-            + EventTrainerModule::whereHas('event')->where('status', 'approved')->count();
-        $rejectedMaterials = Course::where('status', 'rejected')->count()
-            + EventTrainerModule::whereHas('event')->where('status', 'rejected')->count();
+        $approvedMaterials = Course::whereIn('status', ['approved', 'active'])->whereBetween('updated_at', [$startOfMonth, $endOfMonth])->count()
+            + EventTrainerModule::whereHas('event')->where('status', 'approved')->whereBetween('updated_at', [$startOfMonth, $endOfMonth])->count();
+        $rejectedMaterials = Course::where('status', 'rejected')->whereBetween('updated_at', [$startOfMonth, $endOfMonth])->count()
+            + EventTrainerModule::whereHas('event')->where('status', 'rejected')->whereBetween('updated_at', [$startOfMonth, $endOfMonth])->count();
 
         $approvalTotal = $pendingReviews + $approvedMaterials + $rejectedMaterials;
         $approvalStats = [
@@ -88,66 +99,55 @@ class TrainerManagementController extends Controller
         ];
 
         $courseLast30 = Course::where('created_at', '>=', now()->subDays(30))->count();
-        $coursePrev30 = Course::whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])->count();
         $eventLast30 = Event::where('created_at', '>=', now()->subDays(30))->count();
-        $eventPrev30 = Event::whereBetween('created_at', [now()->subDays(60), now()->subDays(30)])->count();
 
-        $pendingLast7 = CourseModule::whereHas('course')->where('review_status', 'pending_review')
-            ->where('updated_at', '>=', now()->subDays(7))
+        $startOfLastMonth = now()->subMonth()->startOfMonth();
+        $endOfLastMonth = now()->subMonth()->endOfMonth();
+
+        $courseLastMonth = Course::whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])->count();
+        $eventLastMonth = Event::whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])->count();
+
+        $pendingThisMonth = CourseModule::whereHas('course')->where('review_status', 'pending_review')
+            ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
             ->count()
             + EventTrainerModule::whereHas('event')->where('status', 'pending_review')
-                ->where('created_at', '>=', now()->subDays(7))
+                ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
                 ->count();
-        $pendingPrev7 = CourseModule::whereHas('course')->where('review_status', 'pending_review')
-            ->whereBetween('updated_at', [now()->subDays(14), now()->subDays(7)])
+        $pendingLastMonth = CourseModule::whereHas('course')->where('review_status', 'pending_review')
+            ->whereBetween('updated_at', [$startOfLastMonth, $endOfLastMonth])
             ->count()
             + EventTrainerModule::whereHas('event')->where('status', 'pending_review')
-                ->whereBetween('created_at', [now()->subDays(14), now()->subDays(7)])
+                ->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])
                 ->count();
 
-        $approvedLast30 = Course::whereIn('status', ['approved', 'active'])
-            ->where('updated_at', '>=', now()->subDays(30))
-            ->count()
-            + EventTrainerModule::whereHas('event')->where('status', 'approved')
-                ->where('updated_at', '>=', now()->subDays(30))
-                ->count();
-        $approvedPrev30 = Course::whereIn('status', ['approved', 'active'])
-            ->whereBetween('updated_at', [now()->subDays(60), now()->subDays(30)])
-            ->count()
-            + EventTrainerModule::whereHas('event')->where('status', 'approved')
-                ->whereBetween('updated_at', [now()->subDays(60), now()->subDays(30)])
-                ->count();
+        $approvedLastMonth = Course::whereIn('status', ['approved', 'active'])->whereBetween('updated_at', [$startOfLastMonth, $endOfLastMonth])->count()
+            + EventTrainerModule::whereHas('event')->where('status', 'approved')->whereBetween('updated_at', [$startOfLastMonth, $endOfLastMonth])->count();
 
         $metricChanges = [
-            'courses' => $this->buildMetricChange($courseLast30, $coursePrev30),
-            'events' => $this->buildMetricChange($eventLast30, $eventPrev30),
-            'pending' => $this->buildMetricChange($pendingLast7, $pendingPrev7),
-            'approved' => $this->buildMetricChange($approvedLast30, $approvedPrev30),
+            'courses' => $this->buildMetricChange($totalCourses, $courseLastMonth),
+            'events' => $this->buildMetricChange($totalEvents, $eventLastMonth),
+            'pending' => $this->buildMetricChange($pendingThisMonth, $pendingLastMonth),
+            'approved' => $this->buildMetricChange($approvedMaterials, $approvedLastMonth),
         ];
 
-        $totalTrainers = User::whereIn('role', ['trainer', 'Trainer'])->count();
+        $totalTrainers = User::whereIn('role', ['trainer', 'Trainer'])->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
         $activeTrainers = User::whereIn('role', ['trainer', 'Trainer'])
             ->where('user_status', 'active')
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
             ->count();
         $teachingTrainers = User::whereIn('role', ['trainer', 'Trainer'])
-            ->where(function ($query) {
-                $query->whereHas('coursesAsTrainer')
-                    ->orWhereHas('eventsAsTrainer');
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->whereHas('coursesAsTrainer', function ($q) use ($startOfMonth, $endOfMonth) {
+                    $q->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
+                })
+                ->orWhereHas('eventsAsTrainer', function ($q) use ($startOfMonth, $endOfMonth) {
+                    $q->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
+                });
             })
             ->count();
 
-        $startOfMonth = now()->startOfMonth();
-        $endOfMonth = now()->endOfMonth();
-
         $trainerCollection = User::whereIn('role', ['trainer', 'Trainer'])
-            ->withCount([
-                'coursesAsTrainer' => function ($query) use ($startOfMonth, $endOfMonth) {
-                    $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
-                },
-                'eventsAsTrainer' => function ($query) use ($startOfMonth, $endOfMonth) {
-                    $query->whereBetween('created_at', [$startOfMonth, $endOfMonth]);
-                }
-            ])
+            ->withCount(['coursesAsTrainer', 'eventsAsTrainer'])
             ->get();
         $topTrainers = $trainerCollection
             ->map(function (User $trainer) {
@@ -258,7 +258,7 @@ class TrainerManagementController extends Controller
 
         $feedbackItems = $courseReviews
             ->map(function (Review $review) {
-                $rating = (int) ($review->rating ?? $review->trainer_rating ?? 0);
+                $rating = (int) ($review->trainer_rating ?? $review->rating ?? 0);
                 $rating = max(0, min(5, $rating));
 
                 return [
@@ -271,7 +271,7 @@ class TrainerManagementController extends Controller
                 ];
             })
             ->merge($eventFeedback->map(function (Feedback $feedback) {
-                $rating = (int) ($feedback->rating ?? $feedback->speaker_rating ?? $feedback->committee_rating ?? 0);
+                $rating = (int) ($feedback->speaker_rating ?? $feedback->rating ?? $feedback->committee_rating ?? 0);
                 $rating = max(0, min(5, $rating));
 
                 return [
@@ -612,7 +612,13 @@ class TrainerManagementController extends Controller
             })
             ->with(['user:id,name', 'course:id,name'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($review) {
+                $review->type = 'course';
+                $review->original_rating = $review->rating;
+                $review->rating = $review->trainer_rating ?? $review->rating ?? 0;
+                return $review;
+            });
 
         $eventFeedback = \App\Models\Feedback::query()
             ->whereHas('event', function($q) use ($trainer) {
@@ -632,7 +638,13 @@ class TrainerManagementController extends Controller
             })
             ->with(['user:id,name', 'event:id,title'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($feedback) {
+                $feedback->type = 'event';
+                $feedback->original_rating = $feedback->rating;
+                $feedback->rating = $feedback->speaker_rating ?? $feedback->rating ?? 0;
+                return $feedback;
+            });
 
         $trainerPayouts = \App\Models\TrainerPayment::query()
             ->where('user_id', $trainer->id)

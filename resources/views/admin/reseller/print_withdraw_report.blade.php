@@ -150,11 +150,13 @@
         <thead>
             <tr>
                 <th style="width: 5%;">No</th>
-                <th style="width: 15%;">Tanggal Pengajuan</th>
-                <th style="width: 20%;">Reseller</th>
-                <th style="width: 25%;">Detail Rekening Bank</th>
-                <th style="width: 15%; text-align: right;">Jumlah Penarikan (IDR)</th>
-                <th style="width: 20%; text-align: center;">Status</th>
+                <th style="width: 12%;">Tanggal Pengajuan</th>
+                <th style="width: 18%;">Reseller</th>
+                <th style="width: 20%;">Detail Rekening Bank</th>
+                <th style="width: 12%; text-align: right;">Penarikan (Gross)</th>
+                <th style="width: 10%; text-align: right;">Biaya Admin</th>
+                <th style="width: 13%; text-align: right;">Transfer Bersih</th>
+                <th style="width: 10%; text-align: center;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -171,7 +173,9 @@
                         <span class="d-block text-secondary" style="font-size: 10px;">Rek: {{ $wd->account_number ?? '-' }}</span>
                         <span class="text-muted" style="font-size: 10px;">A/N: {{ $wd->account_holder ?? '-' }}</span>
                     </td>
-                    <td style="text-align: right; font-weight: 600;">Rp {{ number_format($wd->amount, 0, ',', '.') }}</td>
+                    <td style="text-align: right;">Rp {{ number_format($wd->amount, 0, ',', '.') }}</td>
+                    <td style="text-align: right; color: #dc2626;">Rp {{ number_format($wd->admin_fee ?? 3000, 0, ',', '.') }}</td>
+                    <td style="text-align: right; font-weight: 600; color: #16a34a;">Rp {{ number_format($wd->net_amount ?? ($wd->amount - ($wd->admin_fee ?? 3000)), 0, ',', '.') }}</td>
                     <td style="text-align: center;">
                         <span class="badge-status {{ $wd->status === 'approved' ? 'badge-approved' : ($wd->status === 'pending' ? 'badge-pending' : 'badge-rejected') }}">
                             {{ strtoupper($wd->status) }}
@@ -180,7 +184,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">Belum ada transaksi penarikan dana yang terdaftar untuk periode ini.</td>
+                    <td colspan="8" class="text-center py-4 text-muted">Belum ada transaksi penarikan dana yang terdaftar untuk periode ini.</td>
                 </tr>
             @endforelse
         </tbody>

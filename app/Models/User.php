@@ -55,6 +55,7 @@ class User extends Authenticatable
         'trainer_experiences',
         'trainer_educations',
         'trainer_certifications',
+        'trainer_specializations',
     ];
 
     /**
@@ -92,6 +93,7 @@ class User extends Authenticatable
             'trainer_experiences' => 'array',
             'trainer_educations' => 'array',
             'trainer_certifications' => 'array',
+            'trainer_specializations' => 'array',
         ];
     }
 

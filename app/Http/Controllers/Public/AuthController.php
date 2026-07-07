@@ -86,6 +86,23 @@ class AuthController extends Controller
                 ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
         }
 
+        // event_admin: redirect to their assigned event directly
+        if (strcasecmp($user->role ?? '', 'event_admin') === 0) {
+            $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->pluck('event_id')
+                ->toArray();
+            if (count($assignedEventIds) === 1) {
+                return redirect()->route('admin.events.show', $assignedEventIds[0])
+                    ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
+            } elseif (count($assignedEventIds) > 1) {
+                return redirect()->route('admin.events.index')
+                    ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
+            }
+            return redirect('/admin/dashboard')
+                ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
+        }
+
         // (Maintenance for non-admin is handled above before login session is created.)
         //trainer
         if (strcasecmp($user->role ?? '', 'trainer') === 0) {
@@ -638,6 +655,22 @@ class AuthController extends Controller
 
         $user = Auth::user();
         if (strcasecmp($user->role ?? '', 'admin') === 0) {
+            return redirect('/admin/dashboard')
+                ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
+        }
+        // event_admin: redirect to their assigned event directly
+        if (strcasecmp($user->role ?? '', 'event_admin') === 0) {
+            $assignedEventIds = \Illuminate\Support\Facades\DB::table('event_admin_assignments')
+                ->where('user_id', $user->id)
+                ->pluck('event_id')
+                ->toArray();
+            if (count($assignedEventIds) === 1) {
+                return redirect()->route('admin.events.show', $assignedEventIds[0])
+                    ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
+            } elseif (count($assignedEventIds) > 1) {
+                return redirect()->route('admin.events.index')
+                    ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
+            }
             return redirect('/admin/dashboard')
                 ->with('login_success', 'Login successful! Welcome to the Admin Panel!');
         }

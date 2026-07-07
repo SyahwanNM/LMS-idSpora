@@ -155,7 +155,7 @@
                             <span class="badge rounded-pill bg-light text-secondary border border-light-subtle px-3 py-2 ms-2" style="font-weight: 500; font-size: 0.75rem;">{{ $history->total() }} hasil</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="{{ route('reseller.history.download') }}" class="btn btn-pdf-download btn-sm fw-medium px-3 py-1.5 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.85rem;" target="_blank">
+                            <a href="{{ route('reseller.history.download', request()->query()) }}" class="btn btn-pdf-download btn-sm fw-medium px-3 py-1.5 rounded-pill d-flex align-items-center gap-1" style="font-size: 0.85rem;" target="_blank">
                                 <i class="bi bi-cloud-arrow-down-fill"></i>
                                 <span>Unduh PDF</span>
                             </a>

@@ -177,7 +177,9 @@
                                     <th class="border-0 py-3 text-secondary" style="background-color: #F9F9FC; font-weight: 600;">Pengguna</th>
                                     <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600;">Bank Tujuan</th>
                                     <th class="border-0 py-3 text-secondary" style="background-color: #F9F9FC; font-weight: 600;">Nomor Rekening <i class="bi bi-eye text-primary px-5" id="toggleAllAccounts" title="Tampilkan/Sembunyikan Semua Rekening" style="cursor: pointer;"></i></th>
-                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600;">Total Penarikan</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600;">Nominal Penarikan</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600;">Biaya Admin</th>
+                                    <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600;">Bersih Diterima</th>
                                     <th class="border-0 py-3 text-center text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600;">Status</th>
                                     <th class="border-0 py-3 text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600;">Tanggal Diproses</th>
                                     <th class="border-0 py-3 text-center text-secondary text-nowrap" style="background-color: #F9F9FC; font-weight: 600; border-radius: 0 8px 8px 0;">Aksi</th>
@@ -237,8 +239,18 @@
                                             <small class="text-muted d-block" style="font-size: 0.75rem;">A/n. {{ $wd->account_holder }}</small>
                                         </td>
                                         <td class="py-3">
-                                            <div class="fw-bold text-success {{ $isRejected ? 'text-danger text-decoration-line-through opacity-50' : '' }}" style="font-size: 1.05rem;">
+                                            <div class="fw-semibold text-dark {{ $isRejected ? 'text-decoration-line-through opacity-50' : '' }}">
                                                 Rp {{ number_format($wd->amount, 0, ',', '.') }}
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="text-muted {{ $isRejected ? 'opacity-50' : '' }}">
+                                                Rp {{ number_format($wd->admin_fee ?? 3000, 0, ',', '.') }}
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="fw-bold text-success {{ $isRejected ? 'text-danger text-decoration-line-through opacity-50' : '' }}" style="font-size: 1.05rem;">
+                                                Rp {{ number_format($wd->net_amount ?? ($wd->amount - ($wd->admin_fee ?? 3000)), 0, ',', '.') }}
                                             </div>
                                         </td>
                                         <td class="py-3 text-center">

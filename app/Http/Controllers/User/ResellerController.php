@@ -266,6 +266,11 @@ class ResellerController extends Controller
             }
         }
 
+        $averageCommission = Referral::where('status', 'paid')->avg('amount') ?? 0;
+        $totalPurchases = Referral::whereIn('status', ['paid', 'pending'])->count();
+        $totalClicks = \DB::table('referral_clicks')->count();
+        $conversionRate = $totalClicks > 0 ? ($totalPurchases / $totalClicks) * 100 : 0;
+
         $totalKomisi6BulanVal = $totalKomisiVal;
         $highestKomisiVal = $totalKomisiVal;
 
@@ -291,7 +296,9 @@ class ResellerController extends Controller
             'chartValues',
             'range',
             'labelTotalKomisi',
-            'labelBestPeriod'
+            'labelBestPeriod',
+            'averageCommission',
+            'conversionRate'
         ));
     }
 
@@ -822,11 +829,19 @@ class ResellerController extends Controller
         ));
     }
 
-    public function activate()
+    public function activate(Request $request)
     {
         if ($this->isSuspended()) {
             return back()->with('error', 'Akun reseller Anda ditangguhkan.');
         }
+
+        $request->validate([
+            'agree_tos' => 'required|accepted',
+        ], [
+            'agree_tos.accepted' => 'Anda harus menyetujui Syarat dan Ketentuan untuk mengaktifkan akun Reseller.',
+            'agree_tos.required' => 'Anda harus menyetujui Syarat dan Ketentuan untuk mengaktifkan akun Reseller.',
+        ]);
+
         $user = Auth::user();
 
         // Validasi dan generate kode referral unik jika belum memilikinya
@@ -994,29 +1009,50 @@ class ResellerController extends Controller
             'bank_name' => 'required|string',
             'account_number' => 'required|string',
             'account_holder' => 'required|string',
+            'save_account' => 'nullable|boolean',
         ]);
 
         $user = Auth::user();
         $accountNumber = str_replace(' ', '', $request->account_number);
 
-        // 2. Cek kecukupan saldo user
-        if ($user->wallet_balance < $request->amount) {
+        $adminFee = 3000;
+        $minHolding = 20000;
+
+        // 2. Cek kecukupan saldo user dengan ketentuan dana mengendap
+        if ($user->wallet_balance - $request->amount < $minHolding) {
             return response()->json([
-                'message' => 'Saldo Anda tidak mencukupi untuk penarikan ini.'
+                'message' => 'Penarikan gagal. Saldo Anda setelah penarikan harus menyisakan dana mengendap minimal Rp ' . number_format($minHolding, 0, ',', '.') . '.'
+            ], 400);
+        }
+
+        $netAmount = $request->amount - $adminFee;
+        if ($netAmount <= 0) {
+            return response()->json([
+                'message' => 'Jumlah penarikan harus lebih besar dari biaya admin.'
             ], 400);
         }
 
         // 3. Proses Transaksi (Database Transaction)
-        DB::transaction(function () use ($request, $user, $accountNumber) {
+        DB::transaction(function () use ($request, $user, $accountNumber, $adminFee, $netAmount) {
 
             // A. Kurangi saldo user (Wallet Balance)
             $user->wallet_balance = $user->wallet_balance - $request->amount;
+            
+            // Simpan info rekening ke profil user jika dicentang
+            if ($request->save_account) {
+                $user->bank_name = $request->bank_name;
+                $user->bank_account_number = $accountNumber;
+                $user->bank_account_holder = $request->account_holder;
+            }
+            
             $user->save();
 
             // B. Simpan data ke tabel withdrawals
             Withdrawal::create([
                 'user_id' => $user->id,
                 'amount' => $request->amount,
+                'admin_fee' => $adminFee,
+                'net_amount' => $netAmount,
                 'bank_name' => $request->bank_name,
                 'account_number' => $accountNumber,
                 'account_holder' => $request->account_holder,
@@ -1052,11 +1088,37 @@ class ResellerController extends Controller
             return response()->view('reseller.suspended', compact('user'));
         }
 
-        // Ambil semua data history referral (termasuk yang rejected)
-        $history = $user->referrals()
+        $query = $user->referrals()
             ->with(['referredUser'])
-            ->latest()
-            ->get();
+            ->latest();
+
+        if ($search = request('search')) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->whereHas('referredUser', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%');
+                })->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        if ($status = request('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($date_range = request('date_range')) {
+            $dates = explode(' - ', $date_range);
+            if (count($dates) === 2) {
+                try {
+                    $start = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[0]))->startOfDay();
+                    $end = \Carbon\Carbon::createFromFormat('d/m/Y', trim($dates[1]))->endOfDay();
+                    $query->whereBetween('created_at', [$start, $end]);
+                } catch (\Exception $e) {
+                    // Ignore invalid format
+                }
+            }
+        }
+
+        $history = $query->get();
 
         // Hitung total komisi LUNAS (paid) 
         $totalKomisi = $history->filter(function ($item) {

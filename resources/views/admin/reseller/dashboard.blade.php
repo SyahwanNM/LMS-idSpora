@@ -419,7 +419,7 @@
                                     @endforelse
                                 </div>
                                 <div class="text-center mt-3 border-top pt-3">
-                                    <a href="{{ route('admin.reseller.dashboard', ['tab' => 'katalog']) }}" class="btn w-100 fw-bold text-primary-dark py-2 shadow-sm" style="font-size: 0.85rem; border: 1px solid var(--primary-dark); background-color: transparent;">
+                                    <a href="{{ route('admin.reseller.katalog') }}" class="btn w-100 fw-bold text-primary-dark py-2 shadow-sm" style="font-size: 0.85rem; border: 1px solid var(--primary-dark); background-color: transparent;">
                                         Lihat Semua Produk <i class="bi bi-arrow-right ms-1"></i>
                                     </a>
                                 </div>
