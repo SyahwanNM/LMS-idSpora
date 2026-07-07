@@ -483,6 +483,28 @@
                     @endforeach
                 </div>
                 <input type="hidden" name="certificate_template" id="selected_template" value="{{ $course->certificate_template ?? 'template_1' }}">
+
+                <div class="mt-4 p-3 rounded-4 bg-light border d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-bold text-dark small"><i class="bi bi-magic me-1 text-warning"></i> Custom Template Builder</div>
+                        <div class="text-muted" style="font-size:0.75rem;">Buat template sertifikat custom Anda sendiri secara visual dengan drag &amp; drop.</div>
+                    </div>
+                    <a href="{{ route('admin.crm.certificates.template-builder-course', $course) }}" class="btn btn-sm btn-primary fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                        Buka Builder
+                    </a>
+                </div>
+
+                @if(!empty($course->certificate_custom_template))
+                <div class="mt-3 p-3 rounded-4 border d-flex justify-content-between align-items-center" style="background:#ecfdf5; border-color:#a7f3d0;">
+                    <div>
+                        <div class="fw-bold text-success small"><i class="bi bi-patch-check-fill me-1"></i> Menggunakan Template Custom</div>
+                        <div class="text-muted" style="font-size:0.75rem;">Template custom sedang aktif untuk kursus ini.</div>
+                    </div>
+                    <button type="submit" form="reset-custom-form-course" class="btn btn-sm btn-outline-danger fw-bold px-3 py-1.5" style="font-size:0.75rem; border-radius:8px;">
+                        Hapus Custom
+                    </button>
+                </div>
+                @endif
             </div>
 
             {{-- Step 2 --}}
@@ -1175,4 +1197,10 @@
         window.addEventListener('resize', scalePreview);
     });
 </script>
+
+@if(!empty($course->certificate_custom_template))
+<form id="reset-custom-form-course" action="{{ route('admin.crm.certificates.reset-custom-template-course', $course) }}" method="POST" style="display:none;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus template custom dan kembali menggunakan template bawaan?')">
+    @csrf
+</form>
+@endif
 @endsection

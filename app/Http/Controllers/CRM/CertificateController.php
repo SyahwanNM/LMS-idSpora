@@ -291,6 +291,10 @@ class CertificateController extends Controller
             return redirect()->back()->with('info','Sertifikat belum tersedia.');
         }
 
+        if (empty($registration->user)) {
+            return redirect()->back()->with('error', 'Gagal mengunduh: Akun user terkait pendaftaran ini tidak ditemukan di database.');
+        }
+
         if(!$registration->certificate_number) {
             $registration->update([
                 'certificate_number' => self::generateCertificateNumber($event, $registration),
@@ -300,8 +304,13 @@ class CertificateController extends Controller
         
         $data = $this->getCertificateData($event, $registration->fresh());
         
+        // Gunakan template custom jika tersedia, otherwise gunakan template bawaan
+        $viewName = !empty($event->certificate_custom_template)
+            ? 'events.certificate-custom'
+            : 'events.certificate-pdf-only';
+
         $dompdf = $this->makeDompdf();
-        $html = trim(view('events.certificate-pdf-only', $data)->render());
+        $html = trim(view($viewName, $data)->render());
         $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->render();
         
@@ -322,6 +331,9 @@ class CertificateController extends Controller
         if(!is_dir($tempDir)) mkdir($tempDir, 0755, true);
 
         foreach($registrations as $registration) {
+            if (empty($registration->user)) {
+                continue; // Lewati registrasi jika data akun user relasi kosong/dihapus
+            }
             if(!$registration->certificate_number) {
                 $registration->update([
                     'certificate_number' => $this->generateCertificateNumber($event, $registration),
@@ -329,7 +341,11 @@ class CertificateController extends Controller
                 ]);
             }
             $data = $this->getCertificateData($event, $registration->fresh());
-            $html = trim(view('events.certificate-pdf-only', $data)->render());
+            
+            $viewName = !empty($event->certificate_custom_template)
+                ? 'events.certificate-custom'
+                : 'events.certificate-pdf-only';
+            $html = trim(view($viewName, $data)->render());
 
             // Buat instance Dompdf BARU untuk setiap sertifikat agar state tidak bocor
             $dompdf = $this->makeDompdf();
@@ -374,6 +390,10 @@ class CertificateController extends Controller
             return redirect()->back()->with('error','Kursus belum selesai.');
         }
 
+        if (empty($enrollment->user)) {
+            return redirect()->back()->with('error', 'Gagal mengunduh: Akun user terkait pendaftaran ini tidak ditemukan di database.');
+        }
+
         if($certificateReady && $enrollment->status !== 'completed'){
             $enrollment->update(['status' => 'completed']);
         }
@@ -388,8 +408,12 @@ class CertificateController extends Controller
         
         $data = $this->getCertificateDataCourse($course, $enrollment->fresh());
         
+        $viewName = !empty($course->certificate_custom_template)
+            ? 'events.certificate-custom'
+            : 'courses.certificate-pdf-only';
+
         $dompdf = $this->makeDompdf();
-        $html = trim(view('courses.certificate-pdf-only', $data)->render());
+        $html = trim(view($viewName, $data)->render());
         $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->render();
         
@@ -443,6 +467,9 @@ class CertificateController extends Controller
         if(!is_dir($tempDir)) mkdir($tempDir, 0755, true);
 
         foreach($enrollments as $enrollment) {
+            if (empty($enrollment->user)) {
+                continue; // Lewati enrollment jika data akun user relasi kosong/dihapus
+            }
             if(!$enrollment->certificate_number) {
                 $enrollment->update([
                     'certificate_number' => self::generateCertificateNumberCourse($course, $enrollment),
@@ -450,7 +477,11 @@ class CertificateController extends Controller
                 ]);
             }
             $data = $this->getCertificateDataCourse($course, $enrollment->fresh());
-            $html = trim(view('courses.certificate-pdf-only', $data)->render());
+            
+            $viewName = !empty($course->certificate_custom_template)
+                ? 'events.certificate-custom'
+                : 'courses.certificate-pdf-only';
+            $html = trim(view($viewName, $data)->render());
 
             // Buat instance Dompdf BARU untuk setiap sertifikat agar state tidak bocor
             $dompdf = $this->makeDompdf();
@@ -630,5 +661,188 @@ class CertificateController extends Controller
 
     public static function generateCertificateNumberCourse($course, $enrollment) {
         return 'CERT-CRS-' . now()->format('Ymd') . '-' . $course->id . '-' . $enrollment->id . '-' . strtoupper(Str::random(4));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CUSTOM TEMPLATE BUILDER
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Show the visual template builder for an Event certificate.
+     */
+    public function templateBuilder(Event $event)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+
+        $existingLogos = [];
+        foreach (is_array($event->certificate_logo) ? $event->certificate_logo : [] as $l) {
+            $path = str_replace('storage/', '', $l);
+            if (Storage::disk('public')->exists($path)) {
+                $mime    = Storage::disk('public')->mimeType($path);
+                $content = base64_encode(Storage::disk('public')->get($path));
+                $existingLogos[] = [
+                    'path'   => $l,
+                    'base64' => "data:$mime;base64,$content",
+                ];
+            }
+        }
+
+        $existingSigs = [];
+        foreach (is_array($event->certificate_signature) ? $event->certificate_signature : [] as $s) {
+            $imgPath = is_array($s) ? ($s['image'] ?? '') : $s;
+            $sigName = is_array($s) ? ($s['name'] ?? '') : '';
+            $sigPos  = is_array($s) ? ($s['position'] ?? '') : '';
+            $path    = str_replace('storage/', '', $imgPath);
+            if ($path && Storage::disk('public')->exists($path)) {
+                $mime    = Storage::disk('public')->mimeType($path);
+                $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
+                $existingSigs[] = ['path' => $imgPath, 'base64' => $b64, 'name' => $sigName, 'position' => $sigPos];
+            }
+        }
+
+        $customTemplate = $event->certificate_custom_template;
+
+        return view('admin.certificates.template_builder', compact('event', 'existingLogos', 'existingSigs', 'customTemplate'));
+    }
+
+    /**
+     * Save the custom template JSON for an Event.
+     */
+    public function saveCustomTemplate(Request $request, Event $event)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+
+        $validated = $request->validate([
+            'template_json' => 'required|string',
+        ]);
+
+        $templateData = json_decode($validated['template_json'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['error' => 'JSON tidak valid'], 422);
+        }
+
+        $event->update(['certificate_custom_template' => $templateData]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Template berhasil disimpan!']);
+        }
+
+        return redirect()->route('admin.crm.certificates.edit', $event)
+            ->with('success', 'Template custom sertifikat berhasil disimpan!');
+    }
+
+    /**
+     * Reset (delete) the custom template for an Event.
+     */
+    public function resetCustomTemplate(Event $event)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+        $event->update(['certificate_custom_template' => null]);
+        return redirect()->route('admin.crm.certificates.edit', $event)
+            ->with('success', 'Template custom telah dihapus. Sistem akan menggunakan template bawaan.');
+    }
+
+    /**
+     * Show the visual template builder for a Course certificate.
+     */
+    public function templateBuilderCourse(Course $course)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+
+        $existingLogos = [];
+        foreach (is_array($course->certificate_logo) ? $course->certificate_logo : [] as $l) {
+            $path = str_replace('storage/', '', $l);
+            if (Storage::disk('public')->exists($path)) {
+                $mime    = Storage::disk('public')->mimeType($path);
+                $content = base64_encode(Storage::disk('public')->get($path));
+                $existingLogos[] = ['path' => $l, 'base64' => "data:$mime;base64,$content"];
+            }
+        }
+
+        $existingSigs = [];
+        foreach (is_array($course->certificate_signature) ? $course->certificate_signature : [] as $s) {
+            $imgPath = is_array($s) ? ($s['image'] ?? '') : $s;
+            $sigName = is_array($s) ? ($s['name'] ?? '') : '';
+            $sigPos  = is_array($s) ? ($s['position'] ?? '') : '';
+            $path    = str_replace('storage/', '', $imgPath);
+            if ($path && Storage::disk('public')->exists($path)) {
+                $mime    = Storage::disk('public')->mimeType($path);
+                $b64     = "data:$mime;base64," . base64_encode(Storage::disk('public')->get($path));
+                $existingSigs[] = ['path' => $imgPath, 'base64' => $b64, 'name' => $sigName, 'position' => $sigPos];
+            }
+        }
+
+        $customTemplate = $course->certificate_custom_template;
+
+        return view('admin.certificates.template_builder', [
+            'event'          => null,
+            'course'         => $course,
+            'existingLogos'  => $existingLogos,
+            'existingSigs'   => $existingSigs,
+            'customTemplate' => $customTemplate,
+            'mode'           => 'course',
+        ]);
+    }
+
+    /**
+     * Save the custom template JSON for a Course.
+     */
+    public function saveCustomTemplateCourse(Request $request, Course $course)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+
+        $validated = $request->validate([
+            'template_json' => 'required|string',
+        ]);
+
+        $templateData = json_decode($validated['template_json'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['error' => 'JSON tidak valid'], 422);
+        }
+
+        $course->update(['certificate_custom_template' => $templateData]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Template berhasil disimpan!']);
+        }
+
+        return redirect()->route('admin.crm.certificates.edit-course', $course)
+            ->with('success', 'Template custom sertifikat kursus berhasil disimpan!');
+    }
+
+    /**
+     * Reset (delete) the custom template for a Course.
+     */
+    public function resetCustomTemplateCourse(Course $course)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+        $course->update(['certificate_custom_template' => null]);
+        return redirect()->route('admin.crm.certificates.edit-course', $course)
+            ->with('success', 'Template custom telah dihapus.');
+    }
+
+    /**
+     * Upload an asset (logo/signature) for use in the template builder.
+     */
+    public function uploadBuilderAsset(Request $request)
+    {
+        if (!Auth::check() || Auth::user()->role !== 'admin') abort(403);
+
+        $request->validate([
+            'file' => 'required|image|mimes:jpg,jpeg,png,webp,svg|max:3072',
+        ]);
+
+        $path = $request->file('file')->store('certificates/builder', 'public');
+        $url  = asset('storage/' . $path);
+
+        $mime    = Storage::disk('public')->mimeType($path);
+        $content = base64_encode(Storage::disk('public')->get($path));
+        $base64  = "data:$mime;base64,$content";
+
+        return response()->json([
+            'path'   => $path,
+            'url'    => $url,
+            'base64' => $base64,
+        ]);
     }
 }

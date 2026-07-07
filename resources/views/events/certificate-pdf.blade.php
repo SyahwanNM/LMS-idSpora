@@ -1,4 +1,8 @@
 @php
+    if (!empty($event->certificate_custom_template)) {
+        echo view('events.certificate-custom', array_merge(get_defined_vars(), ['is_preview' => $is_preview ?? false]))->render();
+        return;
+    }
     $template = $event->certificate_template ?? 'template_1';
 @endphp
 @if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat</title>@endif<style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');

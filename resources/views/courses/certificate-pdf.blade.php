@@ -1,4 +1,8 @@
 @php
+    if (!empty($course->certificate_custom_template)) {
+        echo view('events.certificate-custom', array_merge(get_defined_vars(), ['is_preview' => $is_preview ?? false]))->render();
+        return;
+    }
     $template = $course->certificate_template ?? 'template_1';
 @endphp
 @if(!isset($is_preview) || !$is_preview)<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Sertifikat Kursus</title>@endif<style>@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');@if(!isset($is_preview) || !$is_preview)@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;-webkit-print-color-adjust:exact;}html,body{margin:0;padding:0;width:297mm;@if($template != 'template_4')height:210mm;overflow:hidden;@endif background:white;font-family:'Helvetica','Arial',sans-serif;}@endif

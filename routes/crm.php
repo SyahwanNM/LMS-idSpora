@@ -35,11 +35,24 @@ use App\Http\Controllers\User\ResellerController;
             Route::get('/certificates/events/{event}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'edit'])->name('certificates.edit');
             Route::put('/certificates/events/{event}', [\App\Http\Controllers\CRM\CertificateController::class, 'update'])->name('certificates.update');
             Route::get('/events/{event}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassal'])->name('certificates.generate-massal');
+            
+            // Custom Template Builder for Events
+            Route::get('/certificates/events/{event}/template-builder', [\App\Http\Controllers\CRM\CertificateController::class, 'templateBuilder'])->name('certificates.template-builder');
+            Route::post('/certificates/events/{event}/template-builder', [\App\Http\Controllers\CRM\CertificateController::class, 'saveCustomTemplate'])->name('certificates.save-custom-template');
+            Route::post('/certificates/events/{event}/template-builder/reset', [\App\Http\Controllers\CRM\CertificateController::class, 'resetCustomTemplate'])->name('certificates.reset-custom-template');
 
             // Course Certificates
             Route::get('/certificates/courses/{course}/edit', [\App\Http\Controllers\CRM\CertificateController::class, 'editCourse'])->name('certificates.edit-course');
             Route::put('/certificates/courses/{course}', [\App\Http\Controllers\CRM\CertificateController::class, 'updateCourse'])->name('certificates.update-course');
             Route::get('/courses/{course}/certificates/generate-massal', [\App\Http\Controllers\CRM\CertificateController::class, 'generateMassalCourse'])->name('certificates.generate-massal-course');
+
+            // Custom Template Builder for Courses
+            Route::get('/certificates/courses/{course}/template-builder', [\App\Http\Controllers\CRM\CertificateController::class, 'templateBuilderCourse'])->name('certificates.template-builder-course');
+            Route::post('/certificates/courses/{course}/template-builder', [\App\Http\Controllers\CRM\CertificateController::class, 'saveCustomTemplateCourse'])->name('certificates.save-custom-template-course');
+            Route::post('/certificates/courses/{course}/template-builder/reset', [\App\Http\Controllers\CRM\CertificateController::class, 'resetCustomTemplateCourse'])->name('certificates.reset-custom-template-course');
+
+            // Shared Asset Upload for Builder
+            Route::post('/certificates/builder/upload-asset', [\App\Http\Controllers\CRM\CertificateController::class, 'uploadBuilderAsset'])->name('certificates.builder-upload-asset');
 
             // Customer management
             Route::get('/customers', [\App\Http\Controllers\CRM\CRMController::class, 'customers'])->name('customers.index');

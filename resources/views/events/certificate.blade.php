@@ -113,7 +113,11 @@
         <!-- The actual certificate render -->
         <div class="paper-container mb-5">
             <div class="cert-scaler">
-                @include('events.certificate-pdf', ['is_preview' => true])
+                @if(!empty($event->certificate_custom_template))
+                    @include('events.certificate-custom', ['is_preview' => true])
+                @else
+                    @include('events.certificate-pdf', ['is_preview' => true])
+                @endif
             </div>
         </div>
     </div>

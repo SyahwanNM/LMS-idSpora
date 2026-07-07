@@ -35,6 +35,7 @@ class Course extends Model
         'certificate_logo',
         'certificate_signature',
         'certificate_template',
+        'certificate_custom_template',
         'material_deadline',
         'is_reseller_course',
         'trainer_contribution_scheme',
@@ -50,6 +51,7 @@ class Course extends Model
         'expenses_json' => 'array',
         'certificate_logo' => 'array',
         'certificate_signature' => 'array',
+        'certificate_custom_template' => 'array',
         'material_deadline' => 'datetime',
     ];
 
