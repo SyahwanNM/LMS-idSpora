@@ -1256,7 +1256,7 @@
                 </div>
 
                 <div class="timeline-container" style="flex: 1;">
-                    @forelse($deadlineItems->take(3) as $item)
+                    @forelse($deadlineItems->take(5) as $item)
                         @php
                             $dotColor = $item['badge_class'] ?? 'green';
                             if ($dotColor === 'blue') {
@@ -1290,16 +1290,26 @@
                                     </span>
                                 </div>
                                 <div class="timeline-title">
-                                    {{ $item['type'] === 'event' ? 'Acara:' : 'Materi:' }} {{ $item['title'] }}
+                                    {{ $item['type'] === 'event' ? 'Event:' : 'Materi:' }} {{ $item['title'] }}
                                 </div>
                                 <div class="timeline-trainer">Trainer: {{ $item['trainer'] }}</div>
-                                @if($item['badge_class'] !== 'red')
-                                    <div class="timeline-date">{{ $item['date_text'] }}</div>
-                                @endif
+                                <div class="timeline-meta mt-1 small text-muted" style="font-size: 11px;">
+                                    @if($item['type'] === 'event' && !empty($item['event_date']))
+                                        Tgl Event: <span class="fw-bold text-dark">{{ \Carbon\Carbon::parse($item['event_date'])->translatedFormat('d M Y') }}</span>
+                                        <span class="mx-1">|</span>
+                                    @endif
+                                    Deadline: <span class="fw-bold text-primary">{{ $item['date_text'] }}</span>
+                                </div>
                             </div>
-                            <div class="timeline-icon-box neutral">
-                                <i class="bi bi-calendar3"></i>
-                            </div>
+                            <form action="{{ route('admin.trainer.send-reminder') }}" method="POST" style="margin: 0; display: inline;">
+                                @csrf
+                                <input type="hidden" name="type" value="{{ $item['type'] }}">
+                                <input type="hidden" name="id" value="{{ $item['id'] }}">
+                                <input type="hidden" name="trainer_id" value="{{ $item['trainer_id'] }}">
+                                <button type="submit" class="timeline-icon-box neutral" style="cursor: pointer; border: 1px solid #e2e8f0; padding: 0; background: #f8fafc;" title="Kirim Pengingat">
+                                    <i class="bi bi-bell"></i>
+                                </button>
+                            </form>
                         </div>
                     @empty
                         <div class="text-muted" style="font-size:13px;">

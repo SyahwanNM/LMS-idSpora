@@ -58,8 +58,9 @@ class ModuleProcessingController extends Controller
     {
         $this->ensureModuleBelongsToCourse($material, $module);
 
-        $validated = $request->validate([
-            'processed_file' => 'required|file|mimes:mp4,mov,mkv,webm|max:1024000',
+        $request->validate([
+            'processed_file' => 'required_without:processed_link|nullable|file|mimes:mp4,mov,mkv,webm|max:1024000',
+            'processed_link' => 'required_without:processed_file|nullable|url|max:255',
             'assignment_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -67,29 +68,30 @@ class ModuleProcessingController extends Controller
             return back()->with('error', 'Upload hasil edit hanya berlaku untuk modul video.');
         }
 
-        $currentProcessingStatus = (string) ($module->processing_status ?? '');
-        if (!in_array($currentProcessingStatus, ['assigned_to_admin_course', 'revision_requested'], true)) {
-            return back()->with('error', 'Modul harus berada pada tahap handoff sebelum upload hasil edit.');
+        if ($request->hasFile('processed_file')) {
+            $path = $request->file('processed_file')->store('courses/' . $material->id . '/processed', 'public');
+            $fileName = $request->file('processed_file')->getClientOriginalName();
+            $mime = (string) $request->file('processed_file')->getClientMimeType();
+            $size = (int) $request->file('processed_file')->getSize();
+        } else {
+            $path = $request->input('processed_link');
+            $fileName = 'Link Video Hasil Edit';
+            $mime = 'text/html';
+            $size = null;
         }
-
-        if (empty($module->assigned_to_admin_course_id)) {
-            return back()->with('error', 'Admin course tujuan belum ditentukan.');
-        }
-
-        $path = $validated['processed_file']->store('courses/' . $material->id . '/processed', 'public');
 
         $module->update([
             'processing_status' => 'processed_uploaded',
             'processed_file_url' => $path,
-            'processed_file_name' => $validated['processed_file']->getClientOriginalName(),
-            'processed_mime' => (string) $validated['processed_file']->getClientMimeType(),
-            'processed_file_size' => (int) $validated['processed_file']->getSize(),
+            'processed_file_name' => $fileName,
+            'processed_mime' => $mime,
+            'processed_file_size' => $size,
             'processed_at' => now(),
-            'assignment_notes' => $validated['assignment_notes'] ?? $module->assignment_notes,
+            'assignment_notes' => $request->input('assignment_notes') ?? $module->assignment_notes,
             'processing_version' => (int) ($module->processing_version ?? 0) + 1,
         ]);
 
-        return back()->with('success', 'Video hasil edit berhasil diunggah ke modul ini.');
+        return back()->with('success', 'Video hasil edit/link video berhasil disimpan.');
     }
 
     public function acceptProcessed(Course $material, CourseModule $module)

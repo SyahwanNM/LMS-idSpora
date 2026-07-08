@@ -1567,6 +1567,29 @@
                                                         </div>
                                                     @endif
                                                 @endif
+
+                                                @if($module->type === 'video')
+                                                    <div class="mt-3 p-3 bg-light rounded-3 border">
+                                                        <h6 class="fw-bold mb-2 text-dark" style="font-size: 13px;">
+                                                            <i class="bi bi-link-45deg me-1"></i> Link Video Hasil Edit
+                                                        </h6>
+                                                        <form method="POST" action="{{ route('admin.trainer.material.module.upload-processed', [$material, $module]) }}" class="d-flex align-items-center gap-2 m-0">
+                                                            @csrf
+                                                            <input type="url" name="processed_link" class="form-control form-control-sm rounded-pill px-3" 
+                                                                placeholder="Masukkan link Google Drive / YouTube / CDN video..." 
+                                                                value="{{ $module->processed_file_url && str_starts_with($module->processed_file_url, 'http') ? $module->processed_file_url : '' }}" 
+                                                                style="font-size: 12px; border: 1.5px solid #cbd5e1;" required>
+                                                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3 bg-primary text-white border-0" style="font-size: 11px; white-space: nowrap; height: 32px;">
+                                                                Simpan Link
+                                                            </button>
+                                                        </form>
+                                                        @if($module->processed_file_url)
+                                                            <div class="mt-2 text-muted small" style="font-size: 11px;">
+                                                                Link Saat Ini: <a href="{{ $module->processed_file_url }}" target="_blank" class="fw-semibold text-primary text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>Buka Video</a>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
 
                                         </div>

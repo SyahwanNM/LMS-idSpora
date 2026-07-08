@@ -237,5 +237,194 @@ class TrainerOperationalFlowTest extends TestCase
         });
         $response->assertViewHas('averageRating', 4.5);
     }
+
+    /** @test */
+    public function admin_trainer_dashboard_only_includes_feedback_for_trainers(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $trainer = User::factory()->create(['role' => 'trainer']);
+
+        $category = \App\Models\Category::create([
+            'name' => 'Test Category',
+            'description' => 'Test Description',
+        ]);
+
+        $course = \App\Models\Course::create([
+            'name' => 'Test Course',
+            'category_id' => $category->id,
+            'trainer_id' => $trainer->id,
+            'description' => 'Test',
+            'status' => 'active',
+            'price' => 0,
+        ]);
+
+        $event = \App\Models\Event::create([
+            'title' => 'Test Event',
+            'image' => 'uploads/events/test.jpg',
+            'speaker' => $trainer->name,
+            'trainer_id' => $trainer->id,
+            'description' => 'Test description',
+            'location' => 'Online',
+            'price' => 0,
+            'event_time' => '10:00:00',
+            'event_date' => now()->subDay()->toDateString(),
+            'material_status' => 'approved',
+        ]);
+
+        // Review 1: Has trainer_rating (should be included)
+        $review1 = \App\Models\Review::create([
+            'course_id' => $course->id,
+            'user_id' => User::factory()->create()->id,
+            'rating' => 5,
+            'trainer_rating' => 4,
+            'comment' => 'Included Course Review',
+        ]);
+
+        // Review 2: Does NOT have trainer_rating (should NOT be included)
+        $review2 = \App\Models\Review::create([
+            'course_id' => $course->id,
+            'user_id' => User::factory()->create()->id,
+            'rating' => 5,
+            'trainer_rating' => null,
+            'comment' => 'Excluded Course Review',
+        ]);
+
+        // Feedback 1: Has speaker_rating (should be included)
+        $feedback1 = \App\Models\Feedback::create([
+            'event_id' => $event->id,
+            'user_id' => User::factory()->create()->id,
+            'rating' => 5,
+            'speaker_rating' => 3,
+            'comment' => 'Included Event Feedback',
+        ]);
+
+        // Feedback 2: Does NOT have speaker_rating (should NOT be included)
+        $feedback2 = \App\Models\Feedback::create([
+            'event_id' => $event->id,
+            'user_id' => User::factory()->create()->id,
+            'rating' => 5,
+            'speaker_rating' => null,
+            'comment' => 'Excluded Event Feedback',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.trainer.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('feedbackItems', function ($feedbackItems) {
+            $comments = collect($feedbackItems)->pluck('comment');
+            return $comments->contains('Included Course Review')
+                && $comments->contains('Included Event Feedback')
+                && !$comments->contains('Excluded Course Review')
+                && !$comments->contains('Excluded Event Feedback');
+        });
+    }
+
+    /** @test */
+    public function admin_can_send_reminder_notification_to_trainer(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $trainer = User::factory()->create(['role' => 'trainer']);
+
+        $category = \App\Models\Category::create([
+            'name' => 'Test Category',
+            'description' => 'Test Description',
+        ]);
+
+        $course = \App\Models\Course::create([
+            'name' => 'Test Course',
+            'category_id' => $category->id,
+            'trainer_id' => $trainer->id,
+            'description' => 'Test',
+            'status' => 'active',
+            'price' => 0,
+        ]);
+
+        $event = \App\Models\Event::create([
+            'title' => 'Test Event',
+            'image' => 'placeholder.png',
+            'speaker' => $trainer->name,
+            'trainer_id' => $trainer->id,
+            'description' => 'Test description',
+            'location' => 'Online',
+            'price' => 0,
+            'event_time' => '10:00:00',
+            'event_date' => now()->subDay()->toDateString(),
+            'material_status' => 'approved',
+        ]);
+
+        // 1. Send Course Reminder
+        $response = $this->actingAs($admin)->post(route('admin.trainer.send-reminder'), [
+            'type' => 'course',
+            'id' => $course->id,
+            'trainer_id' => $trainer->id,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('trainer_notifications', [
+            'trainer_id' => $trainer->id,
+            'type' => 'course_reminder',
+            'title' => 'Pengingat Pengiriman Materi Course',
+        ]);
+
+        // 2. Send Event Reminder
+        $response = $this->actingAs($admin)->post(route('admin.trainer.send-reminder'), [
+            'type' => 'event',
+            'id' => $event->id,
+            'trainer_id' => $trainer->id,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('trainer_notifications', [
+            'trainer_id' => $trainer->id,
+            'type' => 'event_reminder',
+            'title' => 'Pengingat Pengiriman Materi Event',
+        ]);
+    }
+
+    /** @test */
+    public function admin_can_update_trainer_data_directly(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $trainer = User::factory()->create([
+            'role' => 'trainer',
+            'name' => 'Old Trainer Name',
+            'email' => 'old_trainer@example.com',
+            'phone' => '12345',
+            'profession' => 'Old Profession',
+            'institution' => 'Old Institution',
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.trainer.update', $trainer), [
+            'edit_box' => 'all',
+            'name' => 'New Trainer Name',
+            'email' => 'new_trainer@example.com',
+            'phone' => '54321',
+            'profession' => 'New Profession',
+            'institution' => 'New Institution',
+            'website' => 'https://newwebsite.com',
+            'linkedin_url' => 'https://linkedin.com/in/newprofile',
+            'bio' => 'New Bio Information',
+        ]);
+
+        $response->assertRedirect(route('admin.trainer.show', ['trainer' => $trainer->id, 'edit' => 'all']));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $trainer->id,
+            'name' => 'New Trainer Name',
+            'email' => 'new_trainer@example.com',
+            'phone' => '54321',
+            'profession' => 'New Profession',
+            'institution' => 'New Institution',
+            'website' => 'https://newwebsite.com',
+            'linkedin_url' => 'https://linkedin.com/in/newprofile',
+            'bio' => 'New Bio Information',
+        ]);
+    }
 }
+
 
