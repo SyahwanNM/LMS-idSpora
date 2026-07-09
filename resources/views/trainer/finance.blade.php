@@ -437,7 +437,7 @@
             <div class="stat-title">Saldo Course Tersedia</div>
             <h2 class="stat-amount">Rp {{ number_format(Auth::user()->wallet_balance ?? 0, 0, ',', '.') }}</h2>
             <p class="stat-desc">
-                Saldo bagi hasil course Anda yang siap dicairkan. Batas minimum pencairan adalah Rp 200.000 (Hubungi admin untuk pencairan).
+                Saldo bagi hasil course Anda yang siap dicairkan. Saldo pada course akan dicairkan setiap bulannya.
             </p>
         </div>
 
