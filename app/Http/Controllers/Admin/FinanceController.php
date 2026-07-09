@@ -753,10 +753,10 @@ class FinanceController extends Controller
         $request->validate([
             'description' => 'required|string',
             'amount' => 'required|numeric|min:1',
-            'received_date' => 'required|date'
+            'received_date' => 'required|date|before_or_equal:today',
         ]);
 
-        \App\Models\ManualPayment::create([
+        $payment = new \App\Models\ManualPayment([
             'amount' => $request->amount,
             'status' => 'settled',
             'method' => 'manual_external',
@@ -764,10 +764,31 @@ class FinanceController extends Controller
             'metadata' => [
                 'description' => $request->description,
                 'received_date' => $request->received_date,
+                'is_manual_admin' => true,
             ],
         ]);
 
+        // Simpan dengan tanggal yang ditentukan admin (bukan tanggal sekarang)
+        $payment->save();
+        $payment->created_at = \Carbon\Carbon::parse($request->received_date);
+        $payment->updated_at = \Carbon\Carbon::parse($request->received_date);
+        $payment->saveQuietly();
+
         return back()->with('success', 'Pemasukan manual berhasil ditambahkan.');
+    }
+
+    public function deleteIncome($id)
+    {
+        $payment = \App\Models\ManualPayment::findOrFail($id);
+
+        // Hanya boleh hapus pemasukan manual dari admin (method = manual_external)
+        if ($payment->method !== 'manual_external') {
+            return back()->with('error', 'Hanya pemasukan yang diinput manual oleh admin yang dapat dihapus.');
+        }
+
+        $payment->delete();
+
+        return back()->with('success', 'Pemasukan manual berhasil dihapus.');
     }
 
     public function expenses(Request $request)

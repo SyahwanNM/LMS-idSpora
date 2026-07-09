@@ -516,6 +516,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/finance', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('admin.finance.index');
         Route::get('/admin/finance/incomes', [\App\Http\Controllers\Admin\FinanceController::class, 'incomes'])->name('admin.finance.incomes');
         Route::post('/admin/finance/store-income', [\App\Http\Controllers\Admin\FinanceController::class, 'storeIncome'])->name('admin.finance.store-income');
+        Route::delete('/admin/finance/incomes/{id}', [\App\Http\Controllers\Admin\FinanceController::class, 'deleteIncome'])->name('admin.finance.delete-income');
         Route::get('/admin/finance/expenses', [\App\Http\Controllers\Admin\FinanceController::class, 'expenses'])->name('admin.finance.expenses');
         Route::post('/admin/finance/expense', [\App\Http\Controllers\Admin\FinanceController::class, 'storeExpense'])->name('admin.finance.store-expense');
 
