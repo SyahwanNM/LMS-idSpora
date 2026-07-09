@@ -743,6 +743,7 @@ Route::middleware(['auth', 'trainer'])->prefix('trainer')->name('trainer.')->gro
 
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'index'])->name('admin.trainer.index');
+    Route::post('/admin/trainer/send-reminder', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'sendReminder'])->name('admin.trainer.send-reminder');
     Route::get('/admin/trainer/create', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'create'])->name('admin.trainer.create');
     Route::post('/admin/trainer', [\App\Http\Controllers\Admin\TrainerManagementController::class, 'store'])->name('admin.trainer.store');
 

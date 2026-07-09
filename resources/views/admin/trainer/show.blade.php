@@ -158,14 +158,14 @@
         /* Stat Boxes */
         .stat-grid-4 {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 24px;
         }
 
         .stat-grid-3 {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 24px;
         }
@@ -746,18 +746,36 @@
         }
 
         .profile-hero-actions {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            gap: 12px;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: flex-end !important;
+            align-items: center !important;
+            gap: 12px !important;
+            width: auto !important;
+            flex: 0 0 auto !important;
+        }
+
+        .profile-hero-actions form {
+            display: inline-block !important;
+            width: fit-content !important;
+            flex: 0 0 auto !important;
+            margin: 0 !important;
         }
 
         .profile-hero-action {
-            min-width: 136px;
-            border-radius: 10px;
-            padding: 10px 16px;
-            font-weight: 700;
-            font-size: 13px;
+            width: fit-content !important;
+            min-width: auto !important;
+            max-width: 100% !important;
+            flex: 0 0 auto !important;
+            white-space: nowrap !important;
+            border-radius: 999px !important;
+            padding: 10px 20px !important;
+            font-weight: 700 !important;
+            font-size: 13px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
         }
 
         .profile-tabs {
@@ -931,6 +949,7 @@
             .profile-hero-actions {
                 justify-content: flex-start;
                 margin-top: 16px;
+                width: 100%;
             }
 
             .profile-hero {
@@ -939,6 +958,30 @@
 
             .profile-label {
                 width: 118px;
+            }
+
+            .profile-hero-meta .divider, .profile-hero-links .divider {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .profile-hero-actions {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                width: 100% !important;
+                gap: 8px !important;
+            }
+            .profile-hero-action {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            .profile-hero-actions form {
+                display: block !important;
+                width: 100% !important;
+            }
+            .profile-hero-actions form button {
+                width: 100% !important;
             }
         }
     
@@ -954,17 +997,7 @@
             text-align: center;
         }
 
-        /* Responsive Grids */
-        @media (max-width: 1200px) {
-            .stat-grid-4 {
-                grid-template-columns: repeat(2, 1fr) !important;
-            }
-        }
-        @media (max-width: 768px) {
-            .stat-grid-4, .stat-grid-3 {
-                grid-template-columns: 1fr !important;
-            }
-        }
+
 
         /* Pill-shaped Tabs Styling */
         .profile-tabs {
@@ -1006,7 +1039,7 @@
         /* Info Blocks Redesign */
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
             gap: 16px;
         }
         .info-block {
@@ -1149,10 +1182,82 @@
             color: #0ea5e9 !important;
         }
 
-        /* Pill filter active state override to match Indigo theme */
-        .rating-filter-pill-active {
-            background-color: var(--primary-blue) !important;
+        /* Modal Custom Style - Premium, Compact, and Brand Consistent */
+        .btn-modal-save {
+            background-color: #1e1b4b !important;
+            border-color: #1e1b4b !important;
             color: #ffffff !important;
+            font-weight: 700 !important;
+            border-radius: 999px !important;
+            padding: 8px 24px !important;
+            font-size: 13px !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-modal-save:hover {
+            background-color: #312e81 !important;
+            border-color: #312e81 !important;
+            color: #ffffff !important;
+        }
+        .btn-modal-cancel {
+            background-color: #f1f5f9 !important;
+            border-color: #e2e8f0 !important;
+            color: #64748b !important;
+            font-weight: 700 !important;
+            border-radius: 999px !important;
+            padding: 8px 24px !important;
+            font-size: 13px !important;
+            transition: all 0.2s ease !important;
+        }
+        .btn-modal-cancel:hover {
+            background-color: #e2e8f0 !important;
+            color: #334155 !important;
+        }
+        .modal-form-input {
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            padding: 8px 12px !important;
+            font-size: 13.5px !important;
+            transition: all 0.2s ease !important;
+        }
+        .modal-form-input:focus {
+            border-color: #1e1b4b !important;
+            box-shadow: 0 0 0 0.25rem rgba(30, 27, 75, 0.15) !important;
+            background-color: #f8fafc !important;
+            outline: none !important;
+        }
+        .deadline-date-input {
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 999px !important;
+            padding: 5px 12px !important;
+            font-size: 13px !important;
+            transition: all 0.2s ease !important;
+            max-width: 170px !important;
+            color: #334155 !important;
+            cursor: pointer;
+        }
+        .deadline-date-input:focus {
+            border-color: #1e1b4b !important;
+            box-shadow: 0 0 0 0.25rem rgba(30, 27, 75, 0.15) !important;
+            background-color: #ffffff !important;
+            outline: none !important;
+        }
+        .pagination-slide-controls button {
+            transition: all 0.2s ease;
+            font-weight: 700 !important;
+            font-size: 11px !important;
+            border-color: #e2e8f0 !important;
+            color: #64748b !important;
+            background: #ffffff !important;
+        }
+        .pagination-slide-controls button:hover:not(:disabled) {
+            background: #1e1b4b !important;
+            border-color: #1e1b4b !important;
+            color: #ffffff !important;
+        }
+        .pagination-slide-controls button:disabled {
+            border-color: #f1f5f9 !important;
+            color: #94a3b8 !important;
+            background: #f8fafc !important;
         }
     </style>
 
@@ -1229,8 +1334,8 @@
                 $positiveRatingPct = ($ratingPercentages[4] ?? 0) + ($ratingPercentages[5] ?? 0);
             @endphp
             <div class="profile-hero">
-                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
-                    <div class="d-flex align-items-center gap-4 flex-wrap flex-lg-nowrap">
+                <div class="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-4 flex-wrap flex-xl-nowrap">
                         <div class="profile-hero-avatar">
                             @if($profilePhotoUrl)
                                 <img src="{{ $profilePhotoUrl }}" alt="{{ $trainerName }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
@@ -1263,10 +1368,12 @@
                     </div>
 
                     <div class="profile-hero-actions">
-                        <a href="{{ route('admin.trainer.edit', $trainer) }}"
-                            class="btn btn-outline-primary profile-hero-action">
+                        <button type="button"
+                            class="btn btn-outline-primary profile-hero-action"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editTrainerModal">
                             <i class="bi bi-pencil me-1"></i> Edit Trainer
-                        </a>
+                        </button>
                         <a href="{{ route('admin.add-event', ['open_modal' => 'addEventModal', 'speaker' => $trainerName]) }}"
                             class="btn btn-outline-primary profile-hero-action">
                             <i class="bi bi-calendar-event me-1"></i> Undang ke Event
@@ -1342,9 +1449,13 @@
                             <div class="profile-card mb-4">
                                 <div class="profile-card-header">
                                     <h5 class="profile-card-title">Informasi Profil</h5>
-                                    <a href="{{ route('admin.trainer.edit', $trainer) }}"
-                                        class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold text-decoration-none"
-                                        style="font-size: 12px;"><i class="bi bi-pencil me-1"></i> Edit</a>
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold"
+                                        style="font-size: 12px;"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editTrainerModal">
+                                        <i class="bi bi-pencil me-1"></i> Edit
+                                    </button>
                                 </div>
                                 <div class="profile-card-body">
                                     <!-- Section: Informasi Pribadi & Kontak -->
@@ -1521,7 +1632,7 @@
 
                 <div class="tab-pane" id="tab-event" role="tabpanel" aria-labelledby="event-tab">
                     <div class="row g-4 mb-4">
-                        <div class="col-lg-7">
+                        <div class="col-xl-7">
                             <div class="event-course-panel h-100">
                                 <div class="event-course-panel-header">
                                     <div>
@@ -1615,7 +1726,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-5">
+                        <div class="col-xl-5">
                             <div class="event-course-panel h-100">
                                 <div class="event-course-panel-header">
                                     <div>
@@ -1682,7 +1793,7 @@
                     </div>
 
                     <div class="row g-4">
-                        <div class="col-lg-6">
+                        <div class="col-xl-12 col-xxl-6">
                             <div class="event-course-panel">
                                 <div class="event-course-panel-header">
                                     <div>
@@ -1740,7 +1851,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-xl-12 col-xxl-6">
                             <div class="event-course-panel">
                                 <div class="event-course-panel-header">
                                     <div>
@@ -1807,15 +1918,15 @@
 
                 <div class="tab-pane" id="tab-materi" role="tabpanel" aria-labelledby="materi-tab">
                     <div class="row g-4">
-                        <div class="col-lg-8">
+                        <div class="col-xl-8">
                             <div class="content-card mb-4">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                                     <div>
                                         <h5 class="content-card-title mb-1">Tenggat Waktu Materi</h5>
                                         <div class="text-muted small">Ringkasan status materi yang perlu dikelola</div>
                                     </div>
-                                    <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2">Fokus
-                                        tindak lanjut</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">Fokus
+                                        Tindak Lanjut</span>
                                 </div>
                                 <div class="stat-grid-4 mb-0">
                                     <!-- Card 1: Terlambat -->
@@ -1887,44 +1998,56 @@
                             <div class="content-card mb-4" id="materi-deadline-section">
                                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                     <h5 class="content-card-title mb-0">Atur Tenggat Waktu Materi Kursus</h5>
-                                    <a href="{{ route('admin.trainer.material.approvals') }}" class="btn btn-sm btn-primary rounded-pill px-3 text-decoration-none">
+                                    <a href="{{ route('admin.trainer.material.approvals') }}" class="btn btn-sm btn-primary rounded-pill px-3 text-decoration-none bg-primary">
                                         <i class="bi bi-journal-check me-1"></i> Persetujuan Materi
                                     </a>
                                 </div>
                                 <div class="table-responsive">
-                                    <table class="table table-borderless align-middle mb-0">
-                                        <thead>
-                                            <tr class="table-light">
-                                                <th>Nama Kursus</th>
-                                                <th>Deadline Pengumpulan</th>
-                                                <th class="text-end">Aksi</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @forelse($trainerCourses as $course)
-                                                <tr>
-                                                    <td class="fw-semibold text-dark">{{ $course->name }}</td>
-                                                    <td>
-                                                        <form id="deadline-course-{{ $course->id }}" action="{{ route('admin.trainer.courses.deadline', [$trainer, $course]) }}" method="POST" class="d-flex align-items-center gap-2">
-                                                            @csrf
-                                                            <input type="date" name="material_deadline" class="form-control form-control-sm rounded-pill px-3"
-                                                                value="{{ $course->material_deadline ? \Carbon\Carbon::parse($course->material_deadline)->format('Y-m-d') : '' }}" required>
-                                                        </form>
-                                                    </td>
-                                                    <td class="text-end">
-                                                        <button type="submit" form="deadline-course-{{ $course->id }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                                            Simpan
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                     <td colspan="3" class="text-center text-muted py-3">Tidak ada kursus untuk trainer ini.</td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
+                                     <table class="table table-borderless align-middle mb-0 js-paginated-table" data-page-size="5">
+                                         <thead>
+                                             <tr class="table-light">
+                                                 <th style="width: 45%;">Nama Kursus</th>
+                                                 <th style="width: 25%;">Tenggat Saat Ini</th>
+                                                 <th style="width: 30%;">Pilih Tanggal Baru</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody>
+                                             @forelse($trainerCourses as $course)
+                                                 <tr>
+                                                     <td>
+                                                         <div class="fw-semibold text-dark">{{ $course->name }}</div>
+                                                         <div class="text-muted small mt-1" style="font-size: 11px;">
+                                                             <i class="bi bi-journal-bookmark-fill me-1 text-primary"></i>Kursus Trainer
+                                                         </div>
+                                                     </td>
+                                                     <td>
+                                                         @if($course->material_deadline)
+                                                             <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-2 rounded-pill" style="font-size: 12px;">
+                                                                 {{ \Carbon\Carbon::parse($course->material_deadline)->translatedFormat('d M Y') }}
+                                                             </span>
+                                                         @else
+                                                             <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-2 rounded-pill" style="font-size: 12px;">
+                                                                 Belum diatur
+                                                             </span>
+                                                         @endif
+                                                     </td>
+                                                     <td>
+                                                         <form id="deadline-course-{{ $course->id }}" action="{{ route('admin.trainer.courses.deadline', [$trainer, $course]) }}" method="POST" class="m-0">
+                                                             @csrf
+                                                             <input type="date" name="material_deadline" class="form-control form-control-sm deadline-date-input"
+                                                                 value="{{ $course->material_deadline ? \Carbon\Carbon::parse($course->material_deadline)->format('Y-m-d') : '' }}"
+                                                                 onchange="this.form.submit()" required>
+                                                         </form>
+                                                     </td>
+                                                 </tr>
+                                             @empty
+                                                 <tr class="empty-row">
+                                                      <td colspan="3" class="text-center text-muted py-3">Tidak ada kursus untuk trainer ini.</td>
+                                                 </tr>
+                                             @endforelse
+                                         </tbody>
+                                     </table>
+                                 </div>
                             </div>
 
                             <div class="content-card mb-0">
@@ -1932,42 +2055,54 @@
                                     <h5 class="content-card-title mb-0">Atur Tenggat Waktu Materi Acara</h5>
                                 </div>
                                 <div class="table-responsive">
-                                    <table class="table table-borderless align-middle mb-0">
-                                        <thead>
-                                            <tr class="table-light">
-                                                <th>Nama Acara</th>
-                                                <th>Deadline Pengumpulan</th>
-                                                <th class="text-end">Aksi</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @forelse($trainerEvents as $event)
-                                                <tr>
-                                                    <td class="fw-semibold text-dark">{{ $event->title }}</td>
-                                                    <td>
-                                                        <form id="deadline-event-{{ $event->id }}" action="{{ route('admin.trainer.events.deadline', [$trainer, $event]) }}" method="POST" class="d-flex align-items-center gap-2">
-                                                            @csrf
-                                                            <input type="date" name="material_deadline" class="form-control form-control-sm rounded-pill px-3"
-                                                                value="{{ $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d') : '' }}" required>
-                                                        </form>
-                                                    </td>
-                                                    <td class="text-end">
-                                                        <button type="submit" form="deadline-event-{{ $event->id }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                                            Simpan
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                     <td colspan="3" class="text-center text-muted py-3">Tidak ada acara untuk trainer ini.</td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                </div>
+                                     <table class="table table-borderless align-middle mb-0 js-paginated-table" data-page-size="5">
+                                         <thead>
+                                             <tr class="table-light">
+                                                 <th style="width: 45%;">Nama Acara</th>
+                                                 <th style="width: 25%;">Tenggat Saat Ini</th>
+                                                 <th style="width: 30%;">Pilih Tanggal Baru</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody>
+                                             @forelse($trainerEvents as $event)
+                                                 <tr>
+                                                     <td>
+                                                         <div class="fw-semibold text-dark">{{ $event->title }}</div>
+                                                         <div class="text-muted small mt-1" style="font-size: 11px;">
+                                                             <i class="bi bi-calendar-event me-1 text-dark"></i>Tanggal Event: <span class="fw-bold text-dark">{{ $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d M Y') : '-' }}</span>
+                                                         </div>
+                                                     </td>
+                                                     <td>
+                                                         @if($event->material_deadline)
+                                                             <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-2 rounded-pill" style="font-size: 12px;">
+                                                                 {{ \Carbon\Carbon::parse($event->material_deadline)->translatedFormat('d M Y') }}
+                                                             </span>
+                                                         @else
+                                                             <span class="badge bg-secondary bg-opacity-10 text-secondary fw-bold px-3 py-2 rounded-pill" style="font-size: 12px;">
+                                                                 Belum diatur
+                                                             </span>
+                                                         @endif
+                                                     </td>
+                                                     <td>
+                                                         <form id="deadline-event-{{ $event->id }}" action="{{ route('admin.trainer.events.deadline', [$trainer, $event]) }}" method="POST" class="m-0">
+                                                             @csrf
+                                                             <input type="date" name="material_deadline" class="form-control form-control-sm deadline-date-input"
+                                                                 value="{{ $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->format('Y-m-d') : '' }}"
+                                                                 onchange="this.form.submit()" required>
+                                                         </form>
+                                                     </td>
+                                                 </tr>
+                                             @empty
+                                                 <tr class="empty-row">
+                                                      <td colspan="3" class="text-center text-muted py-3">Tidak ada acara untuk trainer ini.</td>
+                                                 </tr>
+                                             @endforelse
+                                         </tbody>
+                                     </table>
+                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4 sidebar-right">
+                        <div class="col-xl-4 sidebar-right">
                             <div class="content-card">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="content-card-title mb-0">Tenggat Waktu Mendekati</h5>
@@ -2006,29 +2141,6 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="content-card">
-                                <h5 class="content-card-title mb-3">Aksi Cepat</h5>
-                                <div class="row g-3">
-                                    <div class="col-6"><a href="https://wa.me/{{ preg_replace('/\D/', '', $whatsapp) }}?text=Halo%20{{ rawurlencode($trainerName) }},%20mohon%20segera%20melengkapi%20materi%20kelas/event%20Anda%20di%20LMS%20idSpora.%20Terima%20kasih!"
-                                            target="_blank"
-                                            class="btn btn-outline-primary w-100 h-100 p-3 text-start rounded-3 border-0 bg-primary bg-opacity-10 d-block text-decoration-none"><i
-                                                class="bi bi-bell-fill fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Kirim Reminder</span></a></div>
-                                    <div class="col-6"><button class="btn w-100 h-100 p-3 text-start rounded-3 border-0"
-                                            style="background:#faf5ff;color:#7c3aed;"
-                                            onclick="document.getElementById('materi-deadline-section').scrollIntoView({ behavior: 'smooth' })"><i
-                                                class="bi bi-calendar-check-fill fs-4 d-block mb-2"></i><span
-                                                class="fw-bold" style="font-size: 13px;">Atur Deadline</span></button></div>
-                                    <div class="col-6"><a href="{{ route('admin.templates.index') }}"
-                                            class="btn btn-outline-success w-100 h-100 p-3 text-start rounded-3 border-0 bg-success bg-opacity-10 d-block text-decoration-none"><i
-                                                class="bi bi-file-earmark-text-fill fs-4 d-block mb-2"></i><span
-                                                class="fw-bold" style="font-size: 13px;">Template</span></a></div>
-                                    <div class="col-6"><a href="{{ route('report') }}"
-                                            class="btn btn-outline-warning w-100 h-100 p-3 text-start rounded-3 border-0 bg-warning bg-opacity-10 text-warning d-block text-decoration-none"><i
-                                                class="bi bi-bar-chart-fill fs-4 d-block mb-2"></i><span class="fw-bold"
-                                                style="font-size: 13px;">Laporan</span></a></div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -2037,7 +2149,7 @@
 
                 <div class="tab-pane" id="tab-rating" role="tabpanel" aria-labelledby="rating-tab">
                     <div class="row g-4">
-                        <div class="col-lg-8">
+                        <div class="col-xl-8">
                             <div class="content-card mb-4">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                                     <div>
@@ -2048,7 +2160,7 @@
                                         class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">{{ $ratingBadge }}</span>
                                 </div>
                                 <div class="row g-4 align-items-stretch">
-                                    <div class="col-md-4">
+                                    <div class="col-12 col-md-6 col-xl-4">
                                         <div class="profile-card h-100">
                                             <div class="profile-card-body text-center py-4">
                                                 <div class="fw-bold text-primary" style="font-size: 64px; line-height: 1;">
@@ -2063,7 +2175,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-5">
+                                    <div class="col-12 col-md-6 col-xl-5">
                                         <div class="profile-card h-100">
                                             <div class="profile-card-body py-4">
                                                 @foreach([5, 4, 3, 2, 1] as $star)
@@ -2082,7 +2194,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-12 col-md-12 col-xl-3">
                                         <div class="profile-card h-100">
                                             <div class="profile-card-body d-flex flex-column gap-3 py-4">
                                                 <div class="d-flex align-items-center gap-3">
@@ -2185,38 +2297,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4 sidebar-right">
-                            <div class="content-card">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h5 class="content-card-title mb-0">Rating per Kategori</h5>
-                                    <span class="badge bg-light text-dark border">Top {{ $topStarPct }}%</span>
-                                </div>
-                                <div class="d-flex flex-column gap-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <span class="category-icon indigo"><i class="bi bi-mortarboard"></i></span>
-                                            <span class="fw-semibold text-dark">Penguasaan Materi</span>
-                                        </div>
-                                        <div class="fw-bold text-dark" style="font-size: 14px;">{{ number_format($averageRating ?: 0, 1) }}</div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <span class="category-icon sky"><i class="bi bi-chat-dots"></i></span>
-                                            <span class="fw-semibold text-dark">Interaksi</span>
-                                        </div>
-                                        <div class="fw-bold text-dark" style="font-size: 14px;">{{ max(0, $positiveRatingPct - 4) }}</div>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <span class="category-icon indigo"><i class="bi bi-clock"></i></span>
-                                            <span class="fw-semibold text-dark">Ketepatan Waktu</span>
-                                        </div>
-                                        <div class="fw-bold text-dark" style="font-size: 14px;">
-                                            {{ max(0, 100 - (int) data_get($trainerActivity, 'late_uploads', 0) * 5) }}%
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-xl-4 sidebar-right">
+
                             <div class="content-card">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="content-card-title mb-0">Tren Rating</h5>
@@ -2233,7 +2315,7 @@
 
                 <div class="tab-pane" id="tab-sertifikat" role="tabpanel" aria-labelledby="sertifikat-tab">
                     <div class="row g-4">
-                        <div class="col-lg-8">
+                        <div class="col-xl-8">
                             <div class="content-card mb-4">
                                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                                     <div>
@@ -2379,7 +2461,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4 sidebar-right">
+                        <div class="col-xl-4 sidebar-right">
                             <div class="content-card">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="content-card-title mb-0">Distribusi Sertifikat</h5>
@@ -2572,16 +2654,124 @@
                         </div>
                     </div>
                 </div>
+            <!-- Modal Edit Trainer -->
+            <div class="modal fade" id="editTrainerModal" tabindex="-1" aria-labelledby="editTrainerModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden; background: #ffffff;">
+                        <div class="modal-header border-0 px-4 py-3 text-white" style="background: #1e1b4b;">
+                            <h5 class="modal-title fw-bold" id="editTrainerModalLabel" style="font-size: 15px; color: #ffffff;"><i class="bi bi-pencil-square me-2"></i>Edit Data Trainer</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ route('admin.trainer.update', $trainer) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="edit_box" value="all">
+                            <div class="modal-body px-4 py-3" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+                                @if($errors->any())
+                                    <div class="alert alert-danger border-0 rounded-3 mb-3 p-2" style="font-size: 12px; background-color: #fef2f2; color: #991b1b;">
+                                        <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Perbaiki Kesalahan:</div>
+                                        <ul class="mb-0 ps-3">
+                                            @foreach($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+                                
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">Nama Lengkap <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" class="form-control rounded-3 modal-form-input" value="{{ old('name', $trainer->name) }}" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">Email <span class="text-danger">*</span></label>
+                                        <input type="email" name="email" class="form-control rounded-3 modal-form-input" value="{{ old('email', $trainer->email) }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">Nomor WhatsApp</label>
+                                        <input type="text" name="phone" class="form-control rounded-3 modal-form-input" value="{{ old('phone', $trainer->phone) }}" placeholder="0812...">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">Profesi / Jabatan</label>
+                                        <input type="text" name="profession" class="form-control rounded-3 modal-form-input" value="{{ old('profession', $trainer->profession) }}" placeholder="Contoh: Senior Developer">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">Institusi / Perusahaan</label>
+                                        <input type="text" name="institution" class="form-control rounded-3 modal-form-input" value="{{ old('institution', $trainer->institution) }}" placeholder="Contoh: PT. Spora">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">Website</label>
+                                        <input type="text" name="website" class="form-control rounded-3 modal-form-input" value="{{ old('website', $trainer->website) }}" placeholder="https://example.com">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">LinkedIn URL</label>
+                                        <input type="url" name="linkedin_url" class="form-control rounded-3 modal-form-input" value="{{ old('linkedin_url', $trainer->linkedin_url) }}" placeholder="https://linkedin.com/in/username">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold mb-1" style="font-size: 12px; color: #475569;">Bio Singkat</label>
+                                        <textarea name="bio" rows="3" class="form-control rounded-3 modal-form-input" placeholder="Ceritakan pengalaman trainer...">{{ old('bio', $trainer->bio) }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-2 border-top">
+                                    <h6 class="fw-bold mb-2" style="font-size: 13px; color: #1e1b4b;"><i class="bi bi-key me-1"></i> Perbarui Password (Opsional)</h6>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold mb-1" style="font-size: 11px; color: #475569;">Password Baru</label>
+                                            <input type="password" name="password" class="form-control rounded-3 modal-form-input" placeholder="Kosongkan jika tidak diubah">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold mb-1" style="font-size: 11px; color: #475569;">Konfirmasi Password</label>
+                                            <input type="password" name="password_confirmation" class="form-control rounded-3 modal-form-input" placeholder="Ulangi password baru">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 px-4 py-3 bg-light d-flex justify-content-between">
+                                <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-modal-save">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
 @endsection
 
 @push('admin-trainer-scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Restore active tab from sessionStorage
+            const activeTabId = sessionStorage.getItem('trainerActiveTab');
+            if (activeTabId) {
+                const activeBtn = document.querySelector(`#trainerTabs button[data-bs-target="${activeTabId}"]`);
+                if (activeBtn) {
+                    // Remove active from all buttons
+                    document.querySelectorAll('#trainerTabs button').forEach(button => button.classList.remove('active'));
+                    activeBtn.classList.add('active');
+
+                    // Hide all tab panes
+                    document.querySelectorAll('.tab-pane').forEach(pane => {
+                        pane.classList.remove('show', 'active');
+                        pane.style.setProperty('display', 'none', 'important');
+                    });
+
+                    // Show target tab pane
+                    const targetPane = document.querySelector(activeTabId);
+                    if (targetPane) {
+                        targetPane.classList.add('show', 'active');
+                        targetPane.style.setProperty('display', 'block', 'important');
+                    }
+                }
+            }
+
             const triggerTabList = Array.from(document.querySelectorAll('#trainerTabs button'));
 
             triggerTabList.forEach(function (triggerEl) {
                 triggerEl.addEventListener('click', function (event) {
                     event.preventDefault();
+
+                    const targetId = this.getAttribute('data-bs-target');
+                    sessionStorage.setItem('trainerActiveTab', targetId);
 
                     document.querySelectorAll('#trainerTabs button').forEach(button => button.classList.remove('active'));
                     this.classList.add('active');
@@ -2591,12 +2781,92 @@
                         pane.style.setProperty('display', 'none', 'important');
                     });
 
-                    const target = document.querySelector(this.getAttribute('data-bs-target'));
+                    const target = document.querySelector(targetId);
                     if (target) {
                         target.classList.add('show', 'active');
                         target.style.setProperty('display', 'block', 'important');
                     }
                 });
+            });
+
+            @if($errors->any() && old('edit_box', 'all') === 'all')
+                var editModal = new bootstrap.Modal(document.getElementById('editTrainerModal'));
+                editModal.show();
+            @endif
+
+            // Client-side pagination for tables
+            document.querySelectorAll('.js-paginated-table').forEach(table => {
+                const pageSize = parseInt(table.getAttribute('data-page-size') || '5', 10);
+                const tbody = table.querySelector('tbody');
+                if (!tbody) return;
+                const rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+                
+                if (rows.length <= pageSize) return; // No pagination needed
+
+                let currentPage = 0;
+                const totalPages = Math.ceil(rows.length / pageSize);
+
+                // Create pagination controls container
+                const card = table.closest('.content-card');
+                const navContainer = document.createElement('div');
+                navContainer.className = 'd-flex justify-content-between align-items-center mt-3 pt-3 border-top pagination-slide-controls';
+                
+                const infoText = document.createElement('div');
+                infoText.className = 'text-muted small fw-semibold';
+                
+                const btnContainer = document.createElement('div');
+                btnContainer.className = 'd-flex gap-1';
+
+                const prevBtn = document.createElement('button');
+                prevBtn.type = 'button';
+                prevBtn.className = 'btn btn-sm btn-outline-secondary rounded-pill px-3';
+                prevBtn.innerHTML = '<i class="bi bi-chevron-left me-1"></i> Prev';
+                
+                const nextBtn = document.createElement('button');
+                nextBtn.type = 'button';
+                nextBtn.className = 'btn btn-sm btn-outline-secondary rounded-pill px-3';
+                nextBtn.innerHTML = 'Next <i class="bi bi-chevron-right ms-1"></i>';
+
+                btnContainer.appendChild(prevBtn);
+                btnContainer.appendChild(nextBtn);
+                navContainer.appendChild(infoText);
+                navContainer.appendChild(btnContainer);
+                card.appendChild(navContainer);
+
+                function showPage(pageIndex) {
+                    currentPage = pageIndex;
+                    
+                    // Show/hide rows
+                    rows.forEach((row, idx) => {
+                        const start = currentPage * pageSize;
+                        const end = start + pageSize;
+                        if (idx >= start && idx < end) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    // Update info text
+                    const startItem = currentPage * pageSize + 1;
+                    const endItem = Math.min((currentPage + 1) * pageSize, rows.length);
+                    infoText.textContent = `Menampilkan ${startItem}-${endItem} dari ${rows.length}`;
+
+                    // Update button states
+                    prevBtn.disabled = currentPage === 0;
+                    nextBtn.disabled = currentPage === totalPages - 1;
+                }
+
+                prevBtn.addEventListener('click', () => {
+                    if (currentPage > 0) showPage(currentPage - 1);
+                });
+
+                nextBtn.addEventListener('click', () => {
+                    if (currentPage < totalPages - 1) showPage(currentPage + 1);
+                });
+
+                // Initialize first page
+                showPage(0);
             });
         });
     </script>

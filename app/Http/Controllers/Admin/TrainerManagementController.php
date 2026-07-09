@@ -201,10 +201,12 @@ class TrainerManagementController extends Controller
             }
             $deadlineItems->push([
                 'type' => 'course',
+                'id' => $course->id,
                 'title' => $course->name ?? 'Course',
                 'trainer' => $course->trainer?->name ?? 'Trainer',
                 'trainer_id' => $course->trainer_id,
                 'due_at' => $dueAt,
+                'event_date' => null,
             ]);
         }
 
@@ -221,16 +223,18 @@ class TrainerManagementController extends Controller
             }
             $deadlineItems->push([
                 'type' => 'event',
+                'id' => $event->id,
                 'title' => $event->title ?? 'Event',
                 'trainer' => $event->trainer?->name ?? 'Trainer',
                 'trainer_id' => $event->trainer_id ?? $event->trainer?->id,
                 'due_at' => Carbon::parse($event->material_deadline),
+                'event_date' => $event->event_date,
             ]);
         }
 
         $deadlineItems = $deadlineItems
             ->sortBy('due_at')
-            ->take(3)
+            ->take(5)
             ->values()
             ->map(function (array $item) {
                 $now = Carbon::now();
@@ -247,22 +251,24 @@ class TrainerManagementController extends Controller
                 ]);
             });
 
-        $courseReviews = Review::with(['user:id,name', 'course:id,name'])
+        $courseReviews = Review::whereNotNull('trainer_rating')
+            ->with(['user:id,name', 'course:id,name'])
             ->latest()
             ->take(10)
             ->get();
-        $eventFeedback = Feedback::with(['user:id,name', 'event:id,title'])
+        $eventFeedback = Feedback::whereNotNull('speaker_rating')
+            ->with(['user:id,name', 'event:id,title'])
             ->latest()
             ->take(10)
             ->get();
 
         $feedbackItems = $courseReviews
             ->map(function (Review $review) {
-                $rating = (int) ($review->trainer_rating ?? $review->rating ?? 0);
+                $rating = (int) ($review->trainer_rating ?? 0);
                 $rating = max(0, min(5, $rating));
 
                 return [
-                    'title' => 'Kursus: ' . ($review->course?->name ?? 'Kursus'),
+                    'title' => 'Course: ' . ($review->course?->name ?? 'Course'),
                     'name' => $review->user?->name ?? 'User',
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $review->created_at?->diffForHumans() ?? '-',
@@ -271,11 +277,11 @@ class TrainerManagementController extends Controller
                 ];
             })
             ->merge($eventFeedback->map(function (Feedback $feedback) {
-                $rating = (int) ($feedback->speaker_rating ?? $feedback->rating ?? $feedback->committee_rating ?? 0);
+                $rating = (int) ($feedback->speaker_rating ?? 0);
                 $rating = max(0, min(5, $rating));
 
                 return [
-                    'title' => 'Acara: ' . ($feedback->event?->title ?? 'Acara'),
+                    'title' => 'Event: ' . ($feedback->event?->title ?? 'Event'),
                     'name' => $feedback->user?->name ?? 'User',
                     'stars' => str_repeat('★', $rating) . str_repeat('☆', 5 - $rating),
                     'time' => $feedback->created_at?->diffForHumans() ?? '-',
@@ -421,7 +427,7 @@ class TrainerManagementController extends Controller
                 return [
                     'type' => 'course',
                     'title' => $module->title,
-                    'source' => $module->course?->name ?? 'Kursus',
+                    'source' => $module->course?->name ?? 'Course',
                     'trainer' => $module->course?->trainer?->name ?? 'Trainer',
                     'date' => $module->updated_at,
                     'url' => route('admin.trainer.material.show', $module->course_id),
@@ -435,8 +441,8 @@ class TrainerManagementController extends Controller
             ->map(function ($module) {
                 return [
                     'type' => 'event',
-                    'title' => $module->original_name ?? 'Materi Acara',
-                    'source' => $module->event?->title ?? 'Acara',
+                    'title' => $module->original_name ?? 'Materi Event',
+                    'source' => $module->event?->title ?? 'Event',
                     'trainer' => $module->trainer?->name ?? 'Trainer',
                     'date' => $module->created_at,
                     'url' => route('admin.event-material.show', $module->event_id),
@@ -574,7 +580,7 @@ class TrainerManagementController extends Controller
             }])
             ->orderByDesc('approved_at')
             ->orderByDesc('created_at')
-            ->get(['id', 'name', 'status', 'approved_at', 'created_at']);
+            ->get(['id', 'name', 'status', 'approved_at', 'created_at', 'material_deadline']);
 
         $trainerEvents = Event::query()
             ->where(function($query) use ($trainer) {
@@ -1278,5 +1284,46 @@ class TrainerManagementController extends Controller
         ]);
 
         return back()->with('success', 'Deadline materi event "' . $event->title . '" berhasil diperbarui.' . ($urgencyLabel ? ' ' . trim($urgencyLabel) : ''));
+    }
+
+    public function sendReminder(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:course,event',
+            'id' => 'required|integer',
+            'trainer_id' => 'required|integer',
+        ]);
+
+        $trainer = User::findOrFail($request->trainer_id);
+
+        if ($request->type === 'course') {
+            $course = Course::findOrFail($request->id);
+            $title = 'Pengingat Pengiriman Materi Course';
+            $deadlineStr = $course->material_deadline ? \Carbon\Carbon::parse($course->material_deadline)->translatedFormat('d F Y') : 'belum ditentukan';
+            $message = 'Harap segera mengirimkan materi untuk course "' . $course->name . '" yang ditugaskan. Batas waktu pengumpulan (deadline): ' . $deadlineStr . '.';
+            $url = route('trainer.detail-course', $course->id);
+        } else {
+            $event = Event::findOrFail($request->id);
+            $title = 'Pengingat Pengiriman Materi Event';
+            $eventDateStr = $event->event_date ? \Carbon\Carbon::parse($event->event_date)->translatedFormat('d F Y') : '-';
+            $deadlineStr = $event->material_deadline ? \Carbon\Carbon::parse($event->material_deadline)->translatedFormat('d F Y') : 'belum ditentukan';
+            $message = 'Harap segera mengirimkan materi untuk event "' . $event->title . '" yang ditugaskan. Event akan berlangsung pada: ' . $eventDateStr . ' dengan batas waktu pengumpulan (deadline): ' . $deadlineStr . '.';
+            $url = route('trainer.events.show', $event->id);
+        }
+
+        TrainerNotification::create([
+            'trainer_id' => $trainer->id,
+            'type'       => $request->type . '_reminder',
+            'title'      => $title,
+            'message'    => $message,
+            'data'       => [
+                'entity_type' => $request->type,
+                'entity_id'   => (int) $request->id,
+                'url'         => $url,
+            ],
+            'expires_at' => now()->addDays(14),
+        ]);
+
+        return back()->with('success', 'Reminder berhasil dikirim ke trainer ' . $trainer->name . '!');
     }
 }

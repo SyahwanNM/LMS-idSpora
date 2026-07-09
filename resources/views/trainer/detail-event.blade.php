@@ -261,7 +261,7 @@
         border-radius: 12px;
         padding: 0;
         overflow: hidden;
-        margin: 24px 0;
+        margin: 24px 0 0 0;
         width: 100%;
     }
 
@@ -1051,6 +1051,566 @@
         font-size: 14px;
         font-weight: 500;
     }
+
+    /* ==========================================================================
+       TRAINER EVENT DETAIL STYLING (EXACT COHESION WITH FINANCE.BLADE.PHP DESIGN)
+       ========================================================================== */
+
+    /* Import Google Font 'Outfit' (Identical to Finance page) */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+    /* 1. Global Page Font & Background */
+    main {
+        font-family: 'Outfit', sans-serif !important;
+        background-color: #f8fafc !important;
+        padding: 32px !important;
+        color: #334155 !important;
+    }
+
+    main * {
+        box-sizing: border-box !important;
+        font-family: 'Outfit', sans-serif !important;
+    }
+
+    /* 2. Hero Section (Identical to realized earnings navy card) */
+    .hero-section {
+        background: linear-gradient(135deg, #2e2050 0%, #624388 100%) !important;
+        border-radius: 24px !important;
+        padding: 32px !important;
+        position: relative !important;
+        overflow: hidden !important;
+        color: white !important;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+        margin-bottom: 24px !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+    }
+    
+    /* Decorative circles identical to finance.blade.php */
+    .hero-section::before, .hero-section::after {
+        content: '' !important;
+        position: absolute !important;
+        border-radius: 50% !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+        transition: transform 0.5s ease !important;
+        pointer-events: none !important;
+    }
+    .hero-section::before {
+        width: 150px !important;
+        height: 150px !important;
+        top: -40px !important;
+        right: -40px !important;
+    }
+    .hero-section::after {
+        width: 250px !important;
+        height: 250px !important;
+        bottom: -100px !important;
+        right: 10% !important;
+    }
+    .hero-section:hover::before {
+        transform: scale(1.1) translate(-10px, 10px) !important;
+    }
+    .hero-section:hover::after {
+        transform: scale(1.05) translate(10px, -10px) !important;
+    }
+
+    /* Back Navigation & Titles */
+    .back-button {
+        color: rgba(255, 255, 255, 0.85) !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        transition: all 0.2s ease !important;
+        background: transparent !important;
+        border: none !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    .back-button:hover {
+        color: #ffffff !important;
+        transform: translateX(-3px) !important;
+    }
+    .event-hero-title {
+        font-size: 38px !important;
+        font-weight: 800 !important;
+        color: #ffffff !important;
+        letter-spacing: -1px !important;
+        line-height: 1.1 !important;
+        margin: 12px 0 12px 0 !important;
+    }
+    .event-hero-subtitle {
+        font-size: 14px !important;
+        color: rgba(255, 255, 255, 0.75) !important;
+        line-height: 1.5 !important;
+        max-width: 750px !important;
+        margin: 0 !important;
+    }
+    .tag-outline {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        padding: 5px 14px !important;
+        border-radius: 99px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* 3. Cards & Container Boxes (Identical to bd-card / table-section) */
+    .detail-card-wrapper, .sidebar-card, .participant-table-wrapper {
+        background: #ffffff !important;
+        border-radius: 20px !important;
+        padding: 24px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+        border: 1px solid #f1f5f9 !important;
+        transition: box-shadow 0.3s ease !important;
+    }
+    .detail-card-wrapper:hover, .sidebar-card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    .about-body-cols {
+        grid-template-columns: 1fr !important;
+        gap: 0 !important;
+    }
+
+    .about-header-label {
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    .about-header-label::before {
+        content: '' !important;
+        width: 12px !important;
+        height: 12px !important;
+        border-radius: 50% !important;
+        background: #fbbf24 !important;
+        display: inline-block !important;
+    }
+    .event-description-text p {
+        font-size: 14.5px !important;
+        color: #334155 !important;
+        line-height: 1.65 !important;
+    }
+
+    .feature-icon-shell {
+        background: #f1f5f9 !important;
+        color: #2e2050 !important;
+        border-radius: 8px !important;
+        width: 32px !important;
+        height: 32px !important;
+    }
+    .feature-title {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+    }
+
+    /* Rundown Timeline */
+    .timeline-header-label {
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    .timeline-header-label::before {
+        content: '' !important;
+        width: 12px !important;
+        height: 12px !important;
+        border-radius: 50% !important;
+        background: #fbbf24 !important;
+        display: inline-block !important;
+    }
+    .timeline-track {
+        padding-left: 120px !important;
+        border-left: 2px solid #f1f5f9 !important;
+        gap: 24px !important;
+        margin-left: 20px !important;
+        margin-top: 16px !important;
+    }
+    .timeline-time-label {
+        left: -130px !important;
+        width: 100px !important;
+        color: #64748b !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+    }
+    .timeline-row-dot {
+        background: #fbbf24 !important;
+        box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 5px #f1f5f9 !important;
+        width: 12px !important;
+        height: 12px !important;
+        top: 3px !important;
+        left: -7px !important;
+    }
+    .timeline-row-content {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #334155 !important;
+    }
+
+    .detail-main-content {
+        gap: 12px !important;
+    }
+
+    /* 4. Tabs Switching Control (Segmented nav style) */
+    .course-tabs {
+        background: #f8fafc !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        padding: 6px !important;
+        display: inline-flex !important;
+        width: fit-content !important;
+        gap: 6px !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+        margin: 0 0 10px 0 !important;
+    }
+    .tab-pill {
+        flex: initial !important;
+        padding: 10px 24px !important;
+        border-radius: 12px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        border: none !important;
+        background: transparent !important;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border-bottom: none !important;
+    }
+    .tab-pill:hover {
+        color: #0f172a !important;
+        background: rgba(255, 255, 255, 0.6) !important;
+    }
+    .tab-pill.active {
+        color: #ffffff !important;
+        background: linear-gradient(135deg, #2e2050 0%, #51376c 100%) !important;
+        box-shadow: 0 4px 10px rgba(27, 23, 99, 0.2) !important;
+    }
+
+    /* 5. Inner Grid Boxes & Sidebar Items (Identical to bd-item style) */
+    .info-grid-box {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        padding-top: 14px !important;
+    }
+    .info-grid-item, .sidebar-row-item, .file-row {
+        padding: 16px !important;
+        background: #f8fafc !important;
+        border-radius: 12px !important;
+        border: 1px solid #f1f5f9 !important;
+        transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease !important;
+        width: 100% !important;
+    }
+    .info-grid-item {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+    }
+    .info-grid-item:hover, .sidebar-row-item:hover, .file-row:hover {
+        transform: translateX(4px) !important;
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+    }
+    .info-grid-item.full-width {
+        grid-column: span 2 !important;
+    }
+    .info-grid-label {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+    .info-grid-label i {
+        color: #2e2050 !important;
+        font-size: 13px !important;
+    }
+    .info-grid-val {
+        font-size: 14px !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+    }
+
+    /* 6. Plain Mini Badge Stats Row */
+    .participant-simple-stats-row {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        margin-bottom: 24px !important;
+        width: 100% !important;
+    }
+    .stat-mini-pill {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 8px 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        font-size: 13px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+    }
+    .stat-mini-label {
+        color: #64748b !important;
+        font-weight: 500 !important;
+    }
+    .stat-mini-value {
+        color: #0f172a !important;
+        font-weight: 800 !important;
+    }
+    /* 7. Participant Table Header & Dropdown Layout */
+    .enrollment-header {
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        padding: 12px 20px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01) !important;
+        border: 1px solid #f1f5f9 !important;
+        margin-bottom: 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
+    }
+    .enrollment-header h3 {
+        font-size: 14px !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        margin: 0 !important;
+    }
+    .enrollment-header-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+    }
+    .total-badge {
+        background: #2e2050 !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+    }
+    .participant-filter-dropdown {
+        font-family: 'Outfit', sans-serif !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 6px 32px 6px 12px !important;
+        background: #ffffff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") no-repeat right 12px center/10px auto !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        outline: none !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+    }
+    .participant-filter-dropdown:hover {
+        border-color: #cbd5e1 !important;
+        background-color: #f8fafc !important;
+    }
+    .participant-filter-dropdown:focus {
+        border-color: #2e2050 !important;
+        box-shadow: 0 0 0 3px rgba(46, 32, 80, 0.1) !important;
+    }
+
+    .participant-table-wrapper {
+        background: #ffffff !important;
+        border-radius: 20px !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+        border: 1px solid #f1f5f9 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        max-height: 520px !important;
+        overflow-y: auto !important;
+    }
+    .participant-table th {
+        background: #f8fafc !important;
+        color: #64748b !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid #f1f5f9 !important;
+        padding: 16px 20px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    .participant-table td {
+        padding: 16px 20px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        color: #334155 !important;
+        font-size: 14px !important;
+    }
+    .participant-row {
+        transition: background 0.2s ease !important;
+    }
+    .participant-row:hover {
+        background: #f8fafc !important;
+    }
+    .participant-avatar {
+        width: 40px !important;
+        height: 40px !important;
+        border: 2px solid #f1f5f9 !important;
+    }
+    .participant-name {
+        font-weight: 700 !important;
+        color: #0f172a !important;
+    }
+    .participant-email {
+        color: #64748b !important;
+    }
+    
+    /* WhatsApp Badge Outlines */
+    .whatsapp-badge {
+        background: #e8f5e9 !important;
+        color: #2e7d32 !important;
+        border: 1px solid #c8e6c9 !important;
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        border-radius: 99px !important;
+    }
+    .whatsapp-badge:hover {
+        background: #c8e6c9 !important;
+        transform: translateY(-1px) !important;
+    }
+    .status-pill.status-present {
+        background: #dcfce7 !important;
+        color: #166534 !important;
+        border: 1px solid #bbf7d0 !important;
+        font-weight: 700 !important;
+    }
+    .status-pill.status-absent {
+        background: #fef3c7 !important;
+        color: #92400e !important;
+        border: 1px solid #fde68a !important;
+        font-weight: 700 !important;
+    }
+
+    /* 8. Sticky Sidebar Card */
+    .detail-sidebar {
+        position: sticky !important;
+        top: 100px !important;
+        z-index: 10 !important;
+    }
+    .sidebar-header {
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding-bottom: 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    .sidebar-header i {
+        color: #2e2050 !important;
+    }
+    .row-item-title {
+        font-weight: 700 !important;
+        color: #0f172a !important;
+    }
+    .row-item-sub {
+        color: #64748b !important;
+    }
+
+    /* Action Buttons (Consistent with btn-invoice / finance page style) */
+    .row-btn-solid {
+        background: linear-gradient(135deg, #2e2050 0%, #51376c 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 8px 16px !important;
+        border-radius: 8px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 10px rgba(27, 23, 99, 0.2) !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+    }
+    .row-btn-solid:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 15px rgba(27, 23, 99, 0.3) !important;
+    }
+    .row-btn-outline {
+        border: 1px solid #d0d5dd !important;
+        background: #ffffff !important;
+        color: #344054 !important;
+        padding: 8px 16px !important;
+        border-radius: 8px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        transition: all 0.2s ease !important;
+    }
+    .row-btn-outline:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .materi-uploaded-banner {
+        background: #dcfce7 !important;
+        border: 1px solid #bbf7d0 !important;
+        color: #166534 !important;
+        padding: 10px 14px !important;
+        border-radius: 8px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+    }
+    .file-row {
+        padding: 12px 14px !important;
+        border: 1px solid #f1f5f9 !important;
+        background: #f8fafc !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+    .file-row-name {
+        font-size: 12.5px !important;
+        color: #334155 !important;
+        font-weight: 600 !important;
+    }
+    .status-capsule.approved { background: #dcfce7 !important; color: #166534 !important; }
+    .status-capsule.rejected { background: #fee2e2 !important; color: #991b1b !important; }
+    .status-capsule.pending { background: #fef3c7 !important; color: #92400e !important; }
+
+    /* 10. Plain Event Summary List (No Box, No Icon, No Bold, Natural Font) */
+    .event-meta-plain-list {
+        margin-top: 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+    .plain-list-item {
+        font-size: 14.5px !important;
+        color: #334155 !important;
+        line-height: 1.65 !important;
+        font-weight: 400 !important;
+    }
+
+    /* Media overrides */
+    @media (max-width: 992px) {
+        .detail-sidebar {
+            position: static !important;
+        }
+        .course-tabs {
+            display: flex !important;
+            width: 100% !important;
+        }
+        .tab-pill {
+            flex: 1 !important;
+            padding: 12px 10px !important;
+        }
+    }
 </style>
 @endpush
 
@@ -1110,7 +1670,6 @@
           </p>
 
           <div class="hero-tags">
-            <span class="tag-purple"><i class="bi bi-plus-lg"></i> Daftar Event</span>
             <span class="tag-outline"><i class="bi bi-globe"></i> {{ $event->category ?? 'Webinar' }}</span>
           </div>
 
@@ -1133,73 +1692,10 @@
             }
           @endphp
 
-          <div class="hero-meta-row">
-            <!-- Tanggal -->
-            <div class="meta-card">
-              <div class="meta-icon-wrapper"><i class="bi bi-calendar3"></i></div>
-              <div class="meta-info">
-                <span class="meta-label">TANGGAL</span>
-                <span class="meta-value">{{ $startDate ? $startDate->format('d M Y') : 'TBA' }}</span>
-              </div>
-            </div>
-            <!-- Waktu -->
-            <div class="meta-card">
-              <div class="meta-icon-wrapper"><i class="bi bi-clock"></i></div>
-              <div class="meta-info">
-                <span class="meta-label">WAKTU</span>
-                <span class="meta-value">
-                  @if($startTime)
-                    {{ $startTime }} @if($endTime) - {{ $endTime }} @endif WIB
-                  @else
-                    TBA
-                  @endif
-                </span>
-              </div>
-            </div>
-            <!-- Lokasi -->
-            <div class="meta-card">
-              <div class="meta-icon-wrapper"><i class="bi bi-laptop"></i></div>
-              <div class="meta-info">
-                <span class="meta-label">LOKASI / MODE</span>
-                <span class="meta-value">{{ $event->zoom_link ? 'Online' : 'Offline' }}</span>
-              </div>
-            </div>
-            <!-- Biaya / Fee -->
-            <div class="meta-card">
-              <div class="meta-icon-wrapper"><i class="bi bi-tags"></i></div>
-              <div class="meta-info">
-                <span class="meta-label">BIAYA</span>
-                <span class="meta-value">
-                  @if((float) ($eventCompensation['speaker_salary'] ?? 0) > 0)
-                    Rp {{ number_format((float) $eventCompensation['speaker_salary'], 0, ',', '.') }}
-                  @elseif((float) ($eventCompensation['fee_per_participant'] ?? 0) > 0)
-                    Rp {{ number_format((float) $eventCompensation['fee_per_participant'], 0, ',', '.') }}/pax
-                  @else
-                    Rp 100.000
-                  @endif
-                </span>
-              </div>
-            </div>
-            <!-- Target -->
-            <div class="meta-card">
-              <div class="meta-icon-wrapper"><i class="bi bi-people"></i></div>
-              <div class="meta-info">
-                <span class="meta-label">TARGET PESERTA</span>
-                <span class="meta-value">{{ $targetAudience }}</span>
-              </div>
-            </div>
-          </div>
+
         </div>
 
-        <div class="hero-media">
-          @if($event->image_url)
-            <img src="{{ $event->image_url }}" alt="{{ $event->title }}" class="hero-image" />
-          @else
-            <div class="hero-image-placeholder">
-              <span>{{ strtoupper(substr($event->title, 0, 1)) }}</span>
-            </div>
-          @endif
-        </div>
+
       </div>
     </div>
   </div>
@@ -1241,6 +1737,15 @@
                 <div class="about-text-content">
                   <div class="event-description-text">
                     {!! $eventDescription !== '' ? $eventDescription : '<p class="about-p">Deskripsi event belum tersedia.</p>' !!}
+                  </div>
+
+                  <!-- Highlighted Event Summary Callout List (Plain List, directly under description) -->
+                  <div class="event-meta-plain-list">
+                    <div class="plain-list-item">Tanggal: {{ $startDate ? $startDate->format('d M Y') : 'TBA' }}</div>
+                    <div class="plain-list-item">Waktu: {{ $startTime ? $startTime . ($endTime ? ' - ' . $endTime : '') : 'TBA' }} WIB</div>
+                    <div class="plain-list-item">Lokasi: {{ $event->location ?? ($event->zoom_link ? 'Online' : 'Offline') }}</div>
+                    <div class="plain-list-item">Biaya: Rp{{ number_format((float) ($event->price ?? 0), 0, ',', '.') }}</div>
+                    <div class="plain-list-item">Target Peserta: {{ $targetAudience }}</div>
                   </div>
 
                   @php
@@ -1364,53 +1869,38 @@
           @endphp
 
           <!-- Stats overview panel -->
-          <div class="event-stats-grid">
-              <div class="stat-card-mini">
-                  <span class="stat-icon-wrapper blue"><i class="bi bi-people-fill"></i></span>
-                  <div class="stat-info-mini">
-                      <span class="stat-label-mini">Total Terdaftar</span>
-                      <strong class="stat-val-mini">{{ $totalRegistered }} Peserta</strong>
-                  </div>
+          <div class="participant-simple-stats-row">
+              <div class="stat-mini-pill">
+                  <span class="stat-mini-label">Total Terdaftar</span>
+                  <span class="stat-mini-value">{{ $totalRegistered }}</span>
               </div>
-              <div class="stat-card-mini">
-                  <span class="stat-icon-wrapper green"><i class="bi bi-check-circle-fill"></i></span>
-                  <div class="stat-info-mini">
-                      <span class="stat-label-mini">Sudah Absen</span>
-                      <strong class="stat-val-mini">{{ $attendedCount }} Peserta</strong>
-                  </div>
+              <div class="stat-mini-pill">
+                  <span class="stat-mini-label">Sudah Absen</span>
+                  <span class="stat-mini-value">{{ $attendedCount }}</span>
               </div>
-              <div class="stat-card-mini">
-                  <span class="stat-icon-wrapper amber"><i class="bi bi-clock-history"></i></span>
-                  <div class="stat-info-mini">
-                      <span class="stat-label-mini">Belum Absen</span>
-                      <strong class="stat-val-mini">{{ $notAttendedCount }} Peserta</strong>
-                  </div>
+              <div class="stat-mini-pill">
+                  <span class="stat-mini-label">Belum Absen</span>
+                  <span class="stat-mini-value">{{ $notAttendedCount }}</span>
               </div>
-              <div class="stat-card-mini">
-                  <span class="stat-icon-wrapper purple"><i class="bi bi-graph-up"></i></span>
-                  <div class="stat-info-mini">
-                      <span class="stat-label-mini">Tingkat Kehadiran</span>
-                      <strong class="stat-val-mini">{{ $attendanceRate }}%</strong>
-                  </div>
+              <div class="stat-mini-pill">
+                  <span class="stat-mini-label">Kehadiran</span>
+                  <span class="stat-mini-value">{{ $attendanceRate }}%</span>
               </div>
           </div>
 
-          <!-- Interactive Filters -->
-          <div class="participant-filters">
-              <button class="filter-pill active" type="button" data-filter="all">
-                  <i class="bi bi-grid-fill"></i> Semua
-              </button>
-              <button class="filter-pill" type="button" data-filter="present">
-                  <i class="bi bi-check-circle-fill" style="color: #10b981;"></i> Sudah Absen
-              </button>
-              <button class="filter-pill" type="button" data-filter="absent">
-                  <i class="bi bi-dash-circle-fill" style="color: #f59e0b;"></i> Belum Absen
-              </button>
-          </div>
 
           <div class="enrollment-header">
-              <h3>PESERTA TERDAFTAR</h3>
-              <span class="total-badge">{{ $totalRegistered }} TOTAL</span>
+              <div class="enrollment-header-left">
+                  <h3>PESERTA TERDAFTAR</h3>
+                  <span class="total-badge">{{ $totalRegistered }} TOTAL</span>
+              </div>
+              <div class="enrollment-header-right">
+                  <select id="participant-filter-select" class="participant-filter-dropdown">
+                      <option value="all">Semua Peserta</option>
+                      <option value="present">Sudah Absen</option>
+                      <option value="absent">Belum Absen</option>
+                  </select>
+              </div>
           </div>
 
           <div class="participant-table-wrapper">
@@ -1481,96 +1971,85 @@
 
       <!-- Right Column: Sidebar (Assets & Materials) -->
       <div class="detail-sidebar">
-        <!-- Quick Assets Card (Links & Maps) -->
-        <div class="sidebar-card assets-card">
+        <!-- Akses & Materi Card (Consolidated) -->
+        <div class="sidebar-card assets-materials-card">
           <div class="sidebar-header">
             <i class="bi bi-folder-fill"></i>
-            <span>ASET ACARA</span>
-          </div>
-          
-          @if($hasZoomLink)
-            <div class="sidebar-row-item">
-              <div class="row-item-left">
-                <div class="row-item-icon-shell purple"><i class="bi bi-camera-video"></i></div>
-                <div class="row-item-info">
-                  <span class="row-item-title">Rapat Virtual / Sesi Video Online</span>
-                  <span class="row-item-sub">Akses ruang meeting untuk mengikuti acara</span>
-                </div>
-              </div>
-              <a href="{{ $zoomLink }}" target="_blank" class="row-btn-solid" style="text-decoration: none;">
-                Gabung Zoom <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
-              </a>
-            </div>
-          @endif
-
-          @if(!empty($vbgUrl))
-            <div class="sidebar-row-item">
-              <div class="row-item-left">
-                <div class="row-item-icon-shell purple"><i class="bi bi-image"></i></div>
-                <div class="row-item-info">
-                  <span class="row-item-title">Latar Virtual Event</span>
-                  <span class="row-item-sub">Unduh background resmi acara</span>
-                </div>
-              </div>
-              <a href="{{ $vbgUrl }}" class="row-btn-outline" download style="text-decoration: none;">
-                Unduh <i class="bi bi-download"></i>
-              </a>
-            </div>
-          @endif
-
-          @if(!$hasZoomLink && empty($vbgUrl))
-            <p class="muted-text text-center" style="font-size: 12px; margin: 0; color: #667085;">Akses link belum tersedia.</p>
-          @endif
-        </div>
-
-        <!-- Materials Card -->
-        <div class="sidebar-card materials-card">
-          <div class="sidebar-header">
-            <i class="bi bi-folder-fill"></i>
-            <span>MATERI ACARA</span>
+            <span>AKSES & MATERI</span>
           </div>
 
-          <div class="sidebar-row-item materials-action" onclick="window.location.href='{{ route('trainer.events.studio', $event->id) }}'">
-            <div class="row-item-left">
-              <div class="row-item-icon-shell red"><i class="bi bi-cloud-arrow-up"></i></div>
-              <div class="row-item-info">
-                <span class="row-item-title">Kirim / Edit Materi</span>
-                <span class="row-item-sub">Unggah materi dan izin materi Anda</span>
-              </div>
-            </div>
-            <i class="bi bi-chevron-right" style="color: #98A2B3; font-size: 14px;"></i>
-          </div>
-
-          @if(($myModules ?? collect())->isNotEmpty())
-            <div class="materi-uploaded-banner" style="margin-top: 12px;">
-              <i class="bi bi-check-circle-fill"></i>
-              <span>Materi Diunggah</span>
-            </div>
-
-            <div class="file-items-list" style="margin-top: 12px;">
-              @foreach($myModules as $mod)
-                <div class="file-row">
-                  <div class="file-row-left">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span class="file-row-name" title="{{ $mod->original_name }}">{{ $mod->original_name }}</span>
+          <div class="sidebar-content-box" style="display: flex; flex-direction: column; gap: 14px; margin-top: 14px;">
+            <!-- Zoom Link -->
+            @if($hasZoomLink)
+              <div class="sidebar-row-item">
+                <div class="row-item-left">
+                  <div class="row-item-icon-shell purple"><i class="bi bi-camera-video"></i></div>
+                  <div class="row-item-info">
+                    <span class="row-item-title">Rapat Virtual</span>
+                    <span class="row-item-sub">Gabung ke sesi video online</span>
                   </div>
-                  @php
-                    $capsuleClass = match($mod->status) {
-                      'approved' => 'approved',
-                      'rejected' => 'rejected',
-                      default => 'pending',
-                    };
-                    $capsuleLabel = match($mod->status) {
-                      'approved' => 'Approved',
-                      'rejected' => 'Ditolak',
-                      default => 'Pending',
-                    };
-                  @endphp
-                  <span class="status-capsule {{ $capsuleClass }}">{{ $capsuleLabel }}</span>
                 </div>
-              @endforeach
+                <a href="{{ $zoomLink }}" target="_blank" class="row-btn-solid" style="text-decoration: none;">
+                  Zoom <i class="bi bi-chevron-right" style="font-size: 10px;"></i>
+                </a>
+              </div>
+            @endif
+
+            <!-- Virtual Background -->
+            @if(!empty($vbgUrl))
+              <div class="sidebar-row-item">
+                <div class="row-item-left">
+                  <div class="row-item-icon-shell purple"><i class="bi bi-image"></i></div>
+                  <div class="row-item-info">
+                    <span class="row-item-title">Latar Virtual</span>
+                    <span class="row-item-sub">Background resmi event</span>
+                  </div>
+                </div>
+                <a href="{{ $vbgUrl }}" class="row-btn-outline" download style="text-decoration: none; padding: 6px 12px; font-size: 11px;">
+                  Unduh <i class="bi bi-download"></i>
+                </a>
+              </div>
+            @endif
+
+            <!-- Kirim / Edit Materi Button (Action row) -->
+            <div class="sidebar-row-item materials-action" onclick="window.location.href='{{ route('trainer.events.studio', $event->id) }}'" style="cursor: pointer;">
+              <div class="row-item-left">
+                <div class="row-item-icon-shell red"><i class="bi bi-cloud-arrow-up"></i></div>
+                <div class="row-item-info">
+                  <span class="row-item-title">Kirim / Edit Materi</span>
+                  <span class="row-item-sub">Unggah modul & presentasi Anda</span>
+                </div>
+              </div>
+              <i class="bi bi-chevron-right" style="color: #98A2B3; font-size: 14px;"></i>
             </div>
-          @endif
+
+            <!-- Uploaded Modules -->
+            @if(($myModules ?? collect())->isNotEmpty())
+              <div class="file-items-list" style="display: flex; flex-direction: column; gap: 8px;">
+                @foreach($myModules as $mod)
+                  <div class="file-row">
+                    <div class="file-row-left">
+                      <i class="bi bi-file-earmark-text"></i>
+                      <span class="file-row-name" title="{{ $mod->original_name }}">{{ $mod->original_name }}</span>
+                    </div>
+                    @php
+                      $capsuleClass = match($mod->status) {
+                        'approved' => 'approved',
+                        'rejected' => 'rejected',
+                        default => 'pending',
+                      };
+                      $capsuleLabel = match($mod->status) {
+                        'approved' => 'Approved',
+                        'rejected' => 'Ditolak',
+                        default => 'Pending',
+                      };
+                    @endphp
+                    <span class="status-capsule {{ $capsuleClass }}">{{ $capsuleLabel }}</span>
+                  </div>
+                @endforeach
+              </div>
+            @endif
+          </div>
         </div>
       </div>
     </div>
@@ -1597,15 +2076,12 @@
         });
 
         // Participant filtering logic
-        const filterButtons = document.querySelectorAll(".filter-pill");
+        const filterSelect = document.getElementById("participant-filter-select");
         const rows = document.querySelectorAll(".participant-row");
 
-        filterButtons.forEach(btn => {
-            btn.addEventListener("click", () => {
-                filterButtons.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-
-                const filter = btn.getAttribute("data-filter");
+        if (filterSelect) {
+            filterSelect.addEventListener("change", () => {
+                const filter = filterSelect.value;
                 rows.forEach(row => {
                     const isPresent = row.getAttribute("data-attended") === "true";
                     if (filter === "all") {
@@ -1617,7 +2093,7 @@
                     }
                 });
             });
-        });
+        }
     });
 
     document.addEventListener("click", (event) => {
