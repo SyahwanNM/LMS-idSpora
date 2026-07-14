@@ -4253,8 +4253,10 @@
         document.addEventListener('DOMContentLoaded', function () {
             initModalOtherFieldToggle('create_info_source', 'create_info_source_other');
             initModalOtherFieldToggle('create_educational_background', 'create_educational_background_other');
+            initModalOtherFieldToggle('create_university_origin', 'create_university_origin_other');
             initModalOtherFieldToggle('join_info_source', 'join_info_source_other');
             initModalOtherFieldToggle('join_educational_background', 'join_educational_background_other');
+            initModalOtherFieldToggle('join_university_origin', 'join_university_origin_other');
         });
     </script>
 
@@ -4297,10 +4299,23 @@
                             <label for="create_university_origin" class="form-label fw-semibold"
                                 style="color: #334155;">Institution/Organization <span
                                     class="text-danger">*</span></label>
-                            <input type="text" name="university_origin" id="create_university_origin"
-                                class="form-control rounded-3 py-2" value="{{ auth()->user()->institution ?? '' }}"
-                                placeholder="Enter your institution or organization..." required
+                            @php
+                                $createPresetInst = trim(auth()->user()->institution ?? '');
+                                $createIsPresetTelkom = strcasecmp($createPresetInst, 'Telkom University') === 0 || strcasecmp($createPresetInst, 'Universitas Telkom') === 0;
+                                $createShowOther = !empty($createPresetInst) && !$createIsPresetTelkom;
+                            @endphp
+                            <select name="university_origin" id="create_university_origin" class="form-select rounded-3 py-2" required
                                 style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                                <option value="" disabled {{ empty($createPresetInst) ? 'selected' : '' }}>Select institution / organization</option>
+                                <option value="Telkom University" {{ $createIsPresetTelkom ? 'selected' : '' }}>Telkom University</option>
+                                <option value="other" {{ $createShowOther ? 'selected' : '' }}>Lainnya / Other</option>
+                            </select>
+                            <input type="text" id="create_university_origin_other"
+                                class="form-control rounded-3 py-2 mt-2"
+                                value="{{ $createPresetInst }}"
+                                placeholder="Specify your institution or organization..."
+                                style="{{ $createShowOther ? 'display:block;' : 'display:none;' }} background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;"
+                                required>
                         </div>
                         <div class="mb-3">
                             <label for="create_whatsapp_number" class="form-label fw-semibold"
@@ -4405,10 +4420,23 @@
                             <label for="join_university_origin" class="form-label fw-semibold"
                                 style="color: #334155;">Institution/Organization <span
                                     class="text-danger">*</span></label>
-                            <input type="text" name="university_origin" id="join_university_origin"
-                                class="form-control rounded-3 py-2" value="{{ auth()->user()->institution ?? '' }}"
-                                placeholder="Enter your institution or organization..." required
+                            @php
+                                $joinPresetInst = trim(auth()->user()->institution ?? '');
+                                $joinIsPresetTelkom = strcasecmp($joinPresetInst, 'Telkom University') === 0 || strcasecmp($joinPresetInst, 'Universitas Telkom') === 0;
+                                $joinShowOther = !empty($joinPresetInst) && !$joinIsPresetTelkom;
+                            @endphp
+                            <select name="university_origin" id="join_university_origin" class="form-select rounded-3 py-2" required
                                 style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                                <option value="" disabled {{ empty($joinPresetInst) ? 'selected' : '' }}>Select institution / organization</option>
+                                <option value="Telkom University" {{ $joinIsPresetTelkom ? 'selected' : '' }}>Telkom University</option>
+                                <option value="other" {{ $joinShowOther ? 'selected' : '' }}>Lainnya / Other</option>
+                            </select>
+                            <input type="text" id="join_university_origin_other"
+                                class="form-control rounded-3 py-2 mt-2"
+                                value="{{ $joinPresetInst }}"
+                                placeholder="Specify your institution or organization..."
+                                style="{{ $joinShowOther ? 'display:block;' : 'display:none;' }} background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;"
+                                required>
                         </div>
                         <div class="mb-3">
                             <label for="join_whatsapp_number" class="form-label fw-semibold"

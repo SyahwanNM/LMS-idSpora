@@ -97,6 +97,7 @@ class Event extends Model
         'finalist_payment_end',
         'lomba_kategori',
         'max_team_members',
+        'is_free_telkom',
     ];
 
     protected $casts = [
@@ -127,6 +128,7 @@ class Event extends Model
         'price_stage2' => 'decimal:2',
         'finalist_payment_start' => 'datetime',
         'finalist_payment_end' => 'datetime',
+        'is_free_telkom' => 'boolean',
     ];
 
     protected $virtualAttributes = [];

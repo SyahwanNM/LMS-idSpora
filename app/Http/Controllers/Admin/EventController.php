@@ -293,10 +293,10 @@ class EventController extends Controller
             'event_until_date' => 'nullable|date|after_or_equal:event_date',
             'event_until_time' => 'nullable',
             'material_deadline' => 'nullable|date|after_or_equal:today|before:event_date',
-            // Increase max image size to 5MB (5120 KB)
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
             'accept_online_payment' => 'boolean',
             'accept_manual_transfer' => 'boolean',
+            'is_free_telkom' => 'boolean',
             'bank_account_number' => 'required_if:accept_manual_transfer,true,1|nullable|string|max:255',
             'bank_name' => 'required_if:accept_manual_transfer,true,1|nullable|string|max:255',
             'bank_account_holder' => 'required_if:accept_manual_transfer,true,1|nullable|string|max:255',
@@ -459,6 +459,7 @@ class EventController extends Controller
             'schedule_json' => $scheduleRows,
             'expenses_json' => $expenseRows,
             'is_reseller_event' => (bool) $isReseller,
+            'is_free_telkom' => $request->boolean('is_free_telkom'),
             'accept_online_payment' => (bool) $acceptOnline,
             'accept_manual_transfer' => (bool) $acceptManual,
             'bank_account_number' => $request->bank_account_number,
@@ -1026,6 +1027,7 @@ class EventController extends Controller
             'maps_url' => $normalizedMapsUrl,
             'zoom_link' => $normalizedZoomLink,
             'is_reseller_event' => (bool) $isReseller,
+            'is_free_telkom' => $request->boolean('is_free_telkom'),
         ]);
 
         // Derive location for update as well
@@ -1119,6 +1121,7 @@ class EventController extends Controller
             // Increase max image size to 5MB (5120 KB)
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'is_reseller_event' => 'boolean',
+            'is_free_telkom' => 'boolean',
             'accept_online_payment' => 'boolean',
             'accept_manual_transfer' => 'boolean',
             'bank_account_number' => 'required_if:accept_manual_transfer,true,1|nullable|string|max:255',
@@ -1199,6 +1202,7 @@ class EventController extends Controller
             'event_until_time',
             'material_deadline',
             'is_reseller_event',
+            'is_free_telkom',
             'accept_online_payment',
             'accept_manual_transfer',
             'bank_account_number',
@@ -1686,11 +1690,40 @@ class EventController extends Controller
             $user->refresh();
         }
 
+        $universityOrigin = trim((string) ($request->input('university_origin') ?: $user->institution));
+        $isTelkom = false;
+        if ($universityOrigin !== '') {
+            $lowerUniv = strtolower($universityOrigin);
+            if (str_contains($lowerUniv, 'telkom university') || str_contains($lowerUniv, 'universitas telkom')) {
+                $isTelkom = true;
+            }
+        }
+
+        // Hitung final price (sesudah diskon bila ada)
+        $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
+        $isFree = ((int) $finalPrice === 0) || ($event->is_free_telkom && $isTelkom);
+
         $existing = EventRegistration::where('user_id', $user->id)->where('event_id', $event->id)->first();
+        $reg = null;
         if ($existing) {
             if ($existing->status === 'rejected') {
                 // Allow re-registration: delete old rejected record
                 $existing->delete();
+            } elseif ($existing->status === 'pending' && $isFree) {
+                $existing->update([
+                    'status' => 'active',
+                    'total_price' => 0.00,
+                    'university_origin' => $request->input('university_origin'),
+                    'study_program' => $request->input('study_program'),
+                    'position' => $request->input('position'),
+                    'full_name' => $fullName,
+                    'whatsapp_number' => $phone,
+                    'team_name' => $request->input('team_name'),
+                    'institution_location' => $request->input('institution_location'),
+                    'info_source' => $request->input('info_source'),
+                    'educational_background' => $request->input('educational_background'),
+                ]);
+                $reg = $existing;
             } else {
                 return response()->json([
                     'status' => 'already',
@@ -1700,9 +1733,6 @@ class EventController extends Controller
                 ]);
             }
         }
-        // Hitung final price (sesudah diskon bila ada)
-        $finalPrice = $event->hasDiscount() ? $event->discounted_price : $event->price;
-        $isFree = (int) $finalPrice === 0;
 
         if (!$isFree) {
             // Event berbayar: jangan langsung daftar; arahkan ke payment
@@ -1715,27 +1745,30 @@ class EventController extends Controller
 
         // Event gratis: langsung daftarkan
         if ($isFree) {
-            $reg = EventRegistration::create([
-                'user_id' => $user->id,
-                'event_id' => $event->id,
-                'status' => 'active',
-                'registration_code' => 'EVT-' . strtoupper(uniqid()),
-                'total_price' => 0.00,
-                'university_origin' => $request->input('university_origin'),
-                'study_program' => $request->input('study_program'),
-                'position' => $request->input('position'),
-                'full_name' => $fullName,
-                'whatsapp_number' => $phone,
-                'team_name' => $request->input('team_name'),
-                'institution_location' => $request->input('institution_location'),
-                'info_source' => $request->input('info_source'),
-                'educational_background' => $request->input('educational_background'),
-            ]);
+            if (!$reg) {
+                $reg = EventRegistration::create([
+                    'user_id' => $user->id,
+                    'event_id' => $event->id,
+                    'status' => 'active',
+                    'registration_code' => 'EVT-' . strtoupper(uniqid()),
+                    'total_price' => 0.00,
+                    'university_origin' => $request->input('university_origin'),
+                    'study_program' => $request->input('study_program'),
+                    'position' => $request->input('position'),
+                    'full_name' => $fullName,
+                    'whatsapp_number' => $phone,
+                    'team_name' => $request->input('team_name'),
+                    'institution_location' => $request->input('institution_location'),
+                    'info_source' => $request->input('info_source'),
+                    'educational_background' => $request->input('educational_background'),
+                ]);
+            }
 
             // Track in Finance (Amount 0)
-            \App\Models\ManualPayment::create([
-                'event_id' => $event->id,
+            \App\Models\ManualPayment::updateOrCreate([
                 'event_registration_id' => $reg->id,
+            ], [
+                'event_id' => $event->id,
                 'user_id' => $user->id,
                 'order_id' => $reg->registration_code,
                 'amount' => 0,

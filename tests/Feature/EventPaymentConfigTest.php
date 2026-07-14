@@ -250,4 +250,120 @@ class EventPaymentConfigTest extends TestCase
         $this->assertNotNull($registration);
         $this->assertEquals('Team Alpha Omega', $registration->team_name);
     }
+
+    public function test_admin_can_create_event_with_is_free_telkom_setting(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('admin.events.store'), [
+            'title' => 'Event Free Telkom Admin',
+            'speaker' => 'Speaker Test',
+            'speakers' => ['Speaker Test'],
+            'speaker_salaries' => [0],
+            'manage_action' => 'manage',
+            'short_description' => 'Short desc',
+            'description' => 'Long desc',
+            'location' => 'Online',
+            'location_mode' => 'online',
+            'price' => 50000,
+            'event_date' => now()->addDay()->toDateString(),
+            'event_time' => '10:00',
+            'accept_online_payment' => '1',
+            'accept_manual_transfer' => '1',
+            'is_free_telkom' => '1',
+            'is_reseller_event' => '0',
+            'bank_name' => 'Bank BNI',
+            'bank_account_number' => '1111-999-236',
+            'bank_account_holder' => 'a.n. APTIKOM JABAR',
+            'image' => UploadedFile::fake()->image('event.jpg'),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $event = Event::where('title', 'Event Free Telkom Admin')->first();
+        $this->assertNotNull($event);
+        $this->assertTrue($event->is_free_telkom);
+    }
+
+    public function test_event_free_for_telkom_university_registers_immediately_without_proof(): void
+    {
+        $buyer = User::factory()->create();
+
+        $event = Event::create([
+            'title' => 'Event Free Telkom',
+            'image' => 'uploads/events/test.jpg',
+            'speaker' => 'Speaker Test',
+            'description' => 'Test event description',
+            'location' => 'Offline',
+            'price' => 100000,
+            'event_time' => '10:00:00',
+            'event_date' => now()->addDay()->toDateString(),
+            'accept_online_payment' => false,
+            'accept_manual_transfer' => true,
+            'is_reseller_event' => false,
+            'bank_name' => 'Bank Mandiri',
+            'bank_account_number' => '123456',
+            'bank_account_holder' => 'Holder Name',
+            'is_free_telkom' => true,
+            'is_published' => true,
+        ]);
+
+        $response = $this->actingAs($buyer)->post(route('payment.manual.register', $event->id), [
+            'payment_method' => 'transfer',
+            'full_name' => $buyer->name,
+            'whatsapp' => '081234567890',
+            'university_origin' => 'Telkom University',
+            'study_program' => 'Teknik',
+            'position' => 'Mahasiswa',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertJson([
+            'success' => true,
+            'redirect' => route('events.registered.detail', $event->id),
+        ]);
+
+        $registration = \App\Models\EventRegistration::where('user_id', $buyer->id)
+            ->where('event_id', $event->id)
+            ->first();
+
+        $this->assertNotNull($registration);
+        $this->assertEquals('active', $registration->status);
+        $this->assertEquals(0, $registration->total_price);
+    }
+
+    public function test_event_free_for_telkom_university_requires_payment_if_other_university(): void
+    {
+        $buyer = User::factory()->create();
+
+        $event = Event::create([
+            'title' => 'Event Free Telkom 2',
+            'image' => 'uploads/events/test.jpg',
+            'speaker' => 'Speaker Test',
+            'description' => 'Test event description',
+            'location' => 'Offline',
+            'price' => 100000,
+            'event_time' => '10:00:00',
+            'event_date' => now()->addDay()->toDateString(),
+            'accept_online_payment' => false,
+            'accept_manual_transfer' => true,
+            'is_reseller_event' => false,
+            'bank_name' => 'Bank Mandiri',
+            'bank_account_number' => '123456',
+            'bank_account_holder' => 'Holder Name',
+            'is_free_telkom' => true,
+            'is_published' => true,
+        ]);
+
+        $response = $this->actingAs($buyer)->post(route('payment.manual.register', $event->id), [
+            'payment_method' => 'transfer',
+            'full_name' => $buyer->name,
+            'whatsapp' => '081234567890',
+            'university_origin' => 'Universitas Indonesia',
+            'study_program' => 'Teknik',
+            'position' => 'Mahasiswa',
+            // Missing payment proof!
+        ]);
+
+        $response->assertSessionHasErrors(['payment_proof']);
+    }
 }

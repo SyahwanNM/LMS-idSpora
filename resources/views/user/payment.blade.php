@@ -212,7 +212,22 @@
                         <!-- Asal Perguruan Tinggi -->
                         <div class="mb-custom">
                             <label class="form-label-custom">Company Name/Organization <span style="color:#ef4444;">*</span></label>
-                            <input type="text" class="form-control-custom" name="university_origin" value="{{ auth()->user()->institution ?? '' }}" placeholder="Contoh: Universitas Indonesia" required>
+                            @php
+                                $presetInstitution = trim(auth()->user()->institution ?? '');
+                                $isPresetTelkom = strcasecmp($presetInstitution, 'Telkom University') === 0 || strcasecmp($presetInstitution, 'Universitas Telkom') === 0;
+                                $showCustomInput = !empty($presetInstitution) && !$isPresetTelkom;
+                            @endphp
+                            <select class="form-control-custom" id="university_origin_select" style="padding: 10px 14px; background: #fff;" required>
+                                <option value="" disabled {{ empty($presetInstitution) ? 'selected' : '' }}>-- Pilih Perguruan Tinggi / Organisasi --</option>
+                                <option value="Telkom University" {{ $isPresetTelkom ? 'selected' : '' }}>Telkom University</option>
+                                <option value="other" {{ $showCustomInput ? 'selected' : '' }}>Lainnya / Other</option>
+                            </select>
+                            
+                            <input type="text" class="form-control-custom mt-2" name="university_origin" id="university_origin_custom" 
+                                   value="{{ $presetInstitution }}" 
+                                   placeholder="Ketik nama institusi / organisasi Anda" 
+                                   data-preset-value="{{ $isPresetTelkom ? '' : $presetInstitution }}"
+                                   style="{{ $showCustomInput ? '' : 'display: none;' }}" required>
                         </div>
 
                         <!-- Program Studi / Departemen / Unit Kerja -->
@@ -363,21 +378,22 @@
                             </div>
                         </div>
 
-                    @if(!$isFree)
-                        @php
-                            $showOnline = isset($event) && (bool)$event->accept_online_payment;
-                            $showManual = isset($event) && (bool)$event->accept_manual_transfer;
+                    @php
+                        $showOnline = isset($event) && (bool)$event->accept_online_payment;
+                        $showManual = isset($event) && (bool)$event->accept_manual_transfer;
 
-                            if (!$showOnline && !$showManual) {
-                                $showOnline = true;
-                                $showManual = true;
-                            }
+                        if (!$showOnline && !$showManual) {
+                            $showOnline = true;
+                            $showManual = true;
+                        }
 
-                            // If only manual is available, check manual by default
-                            // If online is available (alone or both), check online by default
-                            $onlineChecked = $showOnline ? 'checked' : '';
-                            $manualChecked = ($showManual && !$showOnline) ? 'checked' : '';
-                        @endphp
+                        // If only manual is available, check manual by default
+                        // If online is available (alone or both), check online by default
+                        $onlineChecked = $showOnline ? 'checked' : '';
+                        $manualChecked = ($showManual && !$showOnline) ? 'checked' : '';
+                    @endphp
+
+                    <div id="paymentMethodsBlock" style="{{ $isFree ? 'display:none;' : '' }}">
                                 <div class="mt-3">
                                     <div class="form-label-custom" style="margin-bottom:8px; font-weight:600;">Payment Method</div>
                                     <div style="display:flex; flex-direction:column; gap:10px;">
@@ -434,17 +450,13 @@
                                     <div id="proofSizeError" class="form-text small text-danger mt-1" style="display:none;">Ukuran file melebihi 1 MB. Pilih file yang lebih kecil.</div>
                                 </div>
                                 @endif
-                            @endif
-
                     </div>
 
-                    @if(isset($event) && $isFree)
-                        <div class="mt-3" id="manualPaySection">
-                            <button type="submit" class="btn-pay" id="freeRegBtn">Register Now!</button>
-                        </div>
-                    @endif
+                    <div class="mt-3" id="manualPaySection" style="{{ !$isFree ? 'display:none;' : '' }}">
+                        <button type="submit" class="btn-pay" id="freeRegBtn">Register Now!</button>
+                    </div>
 
-                    @if(!$isFree)
+                    <div id="paidActionButtons" style="{{ $isFree ? 'display:none;' : '' }}">
                         @if($showOnline)
                         {{-- Online/Midtrans action button: visible by default when online is available --}}
                         <div id="midtransSection">
@@ -463,7 +475,7 @@
                             <div class="small text-muted mt-2">Pembayaran akan diverifikasi oleh admin dalam 1×24 jam.</div>
                         </div>
                         @endif
-                    @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -725,6 +737,10 @@
                 finalAmount = Math.max(0, finalAmount - currentDiscount);
             }
 
+            if (typeof isFree !== 'undefined' && isFree) {
+                finalAmount = 0;
+            }
+
             // Update discount row
             const discountRow = document.getElementById('discountRow');
             const discountLabel = document.getElementById('discountLabel');
@@ -734,7 +750,9 @@
             if (discountAmount > 0) {
                 if (discountRow) discountRow.style.display = 'flex';
                 if (discountLabel) {
-                    if (referralState === 'valid') {
+                    if (typeof isFree !== 'undefined' && isFree && typeof isFreeTelkomAllowed !== 'undefined' && isFreeTelkomAllowed && !isEventFreeBase) {
+                        discountLabel.textContent = 'Free Telkom University';
+                    } else if (referralState === 'valid') {
                         discountLabel.textContent = 'Diskon Referral (10%)';
                     } else if (voucherState === 'valid') {
                         discountLabel.textContent = 'Diskon Voucher';
@@ -899,7 +917,39 @@
         const manualPaySection = document.getElementById('manualPaySection');
         const midtransSection = document.getElementById('midtransSection');
         const midtransPayBtn = document.getElementById('midtransPayBtn');
-        const isFree = @json(isset($event) ? ((int)($finalPrice ?? 0) === 0) : false);
+        
+        let isFree = @json(isset($event) ? ((int)($finalPrice ?? 0) === 0) : false);
+        const isEventFreeBase = isFree;
+        const isFreeTelkomAllowed = @json(isset($event) && (bool)$event->is_free_telkom);
+
+        function recalculatePriceAndFreeStatus() {
+            const univVal = universityInput ? universityInput.value.trim().toLowerCase() : '';
+            const isTelkom = univVal.includes('telkom university') || univVal.includes('universitas telkom');
+            
+            if (isFreeTelkomAllowed && isTelkom) {
+                isFree = true;
+            } else {
+                isFree = isEventFreeBase;
+            }
+
+            const paymentMethodsBlock = document.getElementById('paymentMethodsBlock');
+            const manualPaySection = document.getElementById('manualPaySection');
+            const paidActionButtons = document.getElementById('paidActionButtons');
+
+            if (isFree) {
+                if (paymentMethodsBlock) paymentMethodsBlock.style.display = 'none';
+                if (manualPaySection) manualPaySection.style.display = '';
+                if (paidActionButtons) paidActionButtons.style.display = 'none';
+            } else {
+                if (paymentMethodsBlock) paymentMethodsBlock.style.display = '';
+                if (manualPaySection) manualPaySection.style.display = 'none';
+                if (paidActionButtons) paidActionButtons.style.display = '';
+            }
+
+            updateTotalDisplay();
+            syncMethodUI();
+            validate();
+        }
 
         let pendingProofSubmit = false;
 
@@ -1022,6 +1072,34 @@
 
         // Init payment method UI
         syncMethodUI();
+
+        const selectEl = document.getElementById('university_origin_select');
+        const customInputEl = document.getElementById('university_origin_custom');
+        
+        if (selectEl && customInputEl) {
+            selectEl.addEventListener('change', function() {
+                if (this.value === 'Telkom University') {
+                    customInputEl.value = 'Telkom University';
+                    customInputEl.style.display = 'none';
+                    customInputEl.required = false;
+                } else if (this.value === 'other') {
+                    customInputEl.value = customInputEl.dataset.presetValue || '';
+                    customInputEl.style.display = '';
+                    customInputEl.required = true;
+                } else {
+                    customInputEl.value = '';
+                    customInputEl.style.display = 'none';
+                    customInputEl.required = false;
+                }
+                recalculatePriceAndFreeStatus();
+            });
+            
+            ['input','change','keyup','blur'].forEach(evt => {
+                customInputEl.addEventListener(evt, recalculatePriceAndFreeStatus);
+            });
+            
+            recalculatePriceAndFreeStatus();
+        }
 
         if (promoInput) {
             promoInput.addEventListener('input', schedulePromoValidation);
