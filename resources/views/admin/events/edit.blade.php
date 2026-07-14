@@ -385,6 +385,15 @@
                                 <div class="form-text text-muted">Pilih metode pembayaran yang diperbolehkan untuk event ini.</div>
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Khusus Telkom University</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_free_telkom" id="is_free_telkom" value="1" {{ old('is_free_telkom', $event->is_free_telkom) ? 'checked' : '' }}>
+                                    <label class="form-check-label fw-medium text-dark" for="is_free_telkom">🎓 Gratis untuk Pendaftar asal Telkom University</label>
+                                </div>
+                                <div class="form-text text-muted">Jika diaktifkan, pendaftar (individu maupun tim) dari Telkom University tidak perlu membayar (gratis) dan tidak perlu mengunggah bukti pembayaran.</div>
+                            </div>
+
                             {{-- Bank details container — shown only when accept_manual_transfer is checked --}}
                             <div id="bankDetailsContainer" class="p-3 border rounded mb-3 bg-light" style="{{ old('accept_manual_transfer', $event->accept_manual_transfer) ? '' : 'display: none;' }}">
                                 <h6 class="fw-bold mb-3 text-secondary" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">🏦 Informasi Rekening Transfer</h6>

@@ -51,6 +51,20 @@ class ManualPaymentController extends Controller
             }
         }
 
+        // Check if event is free for Telkom University and registrant is from Telkom University
+        $universityOrigin = trim((string) ($request->input('university_origin') ?: $user->institution));
+        $isTelkom = false;
+        if ($universityOrigin !== '') {
+            $lowerUniv = strtolower($universityOrigin);
+            if (str_contains($lowerUniv, 'telkom university') || str_contains($lowerUniv, 'universitas telkom')) {
+                $isTelkom = true;
+            }
+        }
+
+        if ($event->is_free_telkom && $isTelkom) {
+            $finalPrice = 0;
+        }
+
         $isFree = (int) $finalPrice <= 0;
 
         // Free event → register immediately
