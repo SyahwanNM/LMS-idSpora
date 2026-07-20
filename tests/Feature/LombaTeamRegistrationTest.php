@@ -48,6 +48,7 @@ class LombaTeamRegistrationTest extends TestCase
                 'whatsapp_number' => '081234567890',
                 'info_source' => 'Website',
                 'educational_background' => "Bachelor's Degree",
+                'study_program' => 'Computer Science',
             ]);
 
         $response->assertRedirect(route('events.registered.detail', $event));
@@ -108,6 +109,7 @@ class LombaTeamRegistrationTest extends TestCase
                 'whatsapp_number' => '081234567890',
                 'info_source' => 'Website',
                 'educational_background' => "Bachelor's Degree",
+                'study_program' => 'Computer Science',
             ]);
 
         $response->assertRedirect(route('events.registered.detail', $event));
@@ -164,6 +166,7 @@ class LombaTeamRegistrationTest extends TestCase
                 'whatsapp_number' => '081298765432',
                 'info_source' => 'Website',
                 'educational_background' => 'Diploma',
+                'study_program' => 'Computer Science',
             ]);
 
         $response->assertRedirect(route('events.registered.detail', $event));
@@ -235,6 +238,7 @@ class LombaTeamRegistrationTest extends TestCase
                 'whatsapp_number' => '081298765432',
                 'info_source' => 'Website',
                 'educational_background' => 'Diploma',
+                'study_program' => 'Computer Science',
             ]);
 
         $response->assertRedirect(route('events.registered.detail', $event));
@@ -602,6 +606,7 @@ class LombaTeamRegistrationTest extends TestCase
                 'whatsapp_number' => '081298765432',
                 'info_source' => 'Website',
                 'educational_background' => 'Diploma',
+                'study_program' => 'Computer Science',
             ]);
 
         $response->assertRedirect(route('events.registered.detail', $event));
@@ -787,9 +792,71 @@ class LombaTeamRegistrationTest extends TestCase
                 'whatsapp_number' => '081234567890',
                 'info_source' => 'Website',
                 'educational_background' => "Bachelor",
+                'study_program' => 'Computer Science',
             ]);
 
         $response->assertRedirect();
         $response->assertSessionHas('error', 'Tim ini sudah penuh.');
     }
+
+    public function test_admin_can_view_attendance_stats_with_team_and_individual_counts()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $event = Event::create([
+            'title' => 'Lomba Test Stats',
+            'image' => 'lomba.png',
+            'speaker' => 'Speaker Stats',
+            'description' => 'Stats Lomba Description',
+            'location' => 'Online',
+            'price' => 150000.00,
+            'event_time' => '09:00:00',
+            'event_date' => now()->addDays(5)->format('Y-m-d'),
+            'jenis' => 'Lomba',
+            'lomba_kategori' => 'both',
+            'max_team_members' => 3,
+            'is_published' => 1,
+        ]);
+
+        $team = Team::create([
+            'event_id' => $event->id,
+            'name' => 'Team Alpha',
+            'leader_id' => User::factory()->create()->id,
+            'code' => 'TMA123',
+            'status' => 'active',
+        ]);
+
+        // Pending Team Registration (should still be counted)
+        $teamUser = User::factory()->create(['role' => 'user']);
+        EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $teamUser->id,
+            'team_id' => $team->id,
+            'is_team_leader' => 1,
+            'status' => 'pending',
+            'registration_code' => 'REG-TEAM-1',
+        ]);
+
+        // Active Individual Registration (team_id is null)
+        $indivUser = User::factory()->create(['role' => 'user']);
+        EventRegistration::create([
+            'event_id' => $event->id,
+            'user_id' => $indivUser->id,
+            'team_id' => null,
+            'status' => 'active',
+            'registration_code' => 'REG-INDIV-1',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get(route('admin.events.attendance.stats', $event));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'success',
+            'total_active_participants' => 2,
+            'total_team_participants' => 1,
+            'total_individual_participants' => 1,
+        ]);
+    }
 }
+

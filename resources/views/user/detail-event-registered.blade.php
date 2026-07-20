@@ -4369,6 +4369,12 @@
                                 style="display:none; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;"
                                 required>
                         </div>
+                        <div class="mb-3">
+                            <label for="create_study_program" class="form-label fw-semibold" style="color: #334155;">Study Program / Jurusan <span class="text-danger">*</span></label>
+                            <input type="text" name="study_program" id="create_study_program" class="form-control rounded-3 py-2"
+                                placeholder="Example: Teknik Informatika" required
+                                style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
+                        </div>
                     </div>
                     <div class="modal-footer border-top-0 pt-0"
                         style="background-color: #ffffff; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
@@ -4489,6 +4495,12 @@
                                 placeholder="Specify other educational background..."
                                 style="display:none; background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;"
                                 required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="join_study_program" class="form-label fw-semibold" style="color: #334155;">Study Program / Jurusan <span class="text-danger">*</span></label>
+                            <input type="text" name="study_program" id="join_study_program" class="form-control rounded-3 py-2"
+                                placeholder="Example: Teknik Informatika" required
+                                style="background-color: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a;">
                         </div>
                     </div>
                     <div class="modal-footer border-top-0 pt-0"
