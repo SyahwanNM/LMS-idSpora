@@ -1028,6 +1028,7 @@ class EventParticipationController extends Controller
             'whatsapp_number' => 'required|string|max:255',
             'info_source' => 'required|string|max:255',
             'educational_background' => 'required|string|max:255',
+            'study_program' => 'required|string|max:255',
         ]);
 
         // Sync profile fields
@@ -1072,6 +1073,8 @@ class EventParticipationController extends Controller
                 'institution_location' => $request->institution_location,
                 'info_source' => $request->info_source,
                 'educational_background' => $request->educational_background,
+                'study_program' => $request->study_program,
+                'position' => $request->educational_background,
             ]);
         });
 
@@ -1115,6 +1118,7 @@ class EventParticipationController extends Controller
             'whatsapp_number' => 'required|string|max:255',
             'info_source' => 'required|string|max:255',
             'educational_background' => 'required|string|max:255',
+            'study_program' => 'required|string|max:255',
         ]);
 
         // Sync profile fields
@@ -1166,6 +1170,8 @@ class EventParticipationController extends Controller
                 'institution_location' => $request->institution_location,
                 'info_source' => $request->info_source,
                 'educational_background' => $request->educational_background,
+                'study_program' => $request->study_program,
+                'position' => $request->educational_background,
             ]);
         });
 

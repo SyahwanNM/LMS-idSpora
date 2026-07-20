@@ -641,9 +641,29 @@ class EventController extends Controller
             ->whereHas('user', function ($q) {
                 $q->where('role', '!=', 'admin');
             })
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'pending'])
             ->count();
         $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+
+        $totalTeamReg = 0;
+        $totalIndividualReg = 0;
+        if ($isLomba) {
+            $totalTeamReg = $event->registrations()
+                ->whereHas('user', function ($q) {
+                    $q->where('role', '!=', 'admin');
+                })
+                ->whereIn('status', ['active', 'pending'])
+                ->whereNotNull('team_id')
+                ->count();
+
+            $totalIndividualReg = $event->registrations()
+                ->whereHas('user', function ($q) {
+                    $q->where('role', '!=', 'admin');
+                })
+                ->whereIn('status', ['active', 'pending'])
+                ->whereNull('team_id')
+                ->count();
+        }
 
         if ($isLomba) {
             $startDate = $event->start_submission ? \Carbon\Carbon::parse($event->start_submission) : $event->created_at;
@@ -666,7 +686,7 @@ class EventController extends Controller
                     ->whereHas('user', function ($q) {
                         $q->where('role', '!=', 'admin');
                     })
-                    ->where('status', 'active')
+                    ->whereIn('status', ['active', 'pending'])
                     ->whereDate('created_at', $dateStr)
                     ->count();
 
@@ -688,7 +708,7 @@ class EventController extends Controller
                 ->whereHas('user', function ($q) {
                     $q->where('role', '!=', 'admin');
                 })
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending'])
                 ->with('user')
                 ->latest()
                 ->limit(15)
@@ -708,6 +728,8 @@ class EventController extends Controller
             return response()->json([
                 'status' => 'success',
                 'total_active_participants' => $totalActiveReg,
+                'total_team_participants' => $totalTeamReg,
+                'total_individual_participants' => $totalIndividualReg,
                 'days' => $daysData,
                 'logs' => $logs
             ]);
@@ -721,7 +743,7 @@ class EventController extends Controller
             foreach ($dailyQrs as $dqr) {
                 $checkedInCount = \App\Models\EventDailyAttendance::where('event_daily_qr_id', $dqr->id)
                     ->whereHas('registration', function ($q) {
-                        $q->where('status', 'active')
+                        $q->whereIn('status', ['active', 'pending'])
                             ->whereHas('user', function ($qu) {
                                 $qu->where('role', '!=', 'admin');
                             });
@@ -744,7 +766,7 @@ class EventController extends Controller
                     ->from('event_registrations')
                     ->join('users', 'event_registrations.user_id', '=', 'users.id')
                     ->where('event_registrations.event_id', $event->id)
-                    ->where('event_registrations.status', 'active')
+                    ->whereIn('event_registrations.status', ['active', 'pending'])
                     ->where('users.role', '!=', 'admin');
             })
                 ->with('registration.user')
@@ -768,7 +790,7 @@ class EventController extends Controller
                 ->whereHas('user', function ($q) {
                     $q->where('role', '!=', 'admin');
                 })
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending'])
                 ->where(function ($q) {
                     $q->whereNotNull('attended_at')
                         ->orWhere('attendance_status', 'yes');
@@ -788,7 +810,7 @@ class EventController extends Controller
                 ->whereHas('user', function ($q) {
                     $q->where('role', '!=', 'admin');
                 })
-                ->where('status', 'active')
+                ->whereIn('status', ['active', 'pending'])
                 ->whereNotNull('attended_at')
                 ->with('user')
                 ->latest('attended_at')
@@ -810,6 +832,8 @@ class EventController extends Controller
         return response()->json([
             'status' => 'success',
             'total_active_participants' => $totalActiveReg,
+            'total_team_participants' => $totalTeamReg,
+            'total_individual_participants' => $totalIndividualReg,
             'days' => $daysData,
             'logs' => $logs
         ]);

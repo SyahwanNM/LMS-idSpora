@@ -235,12 +235,26 @@
                                                 <div class="col-xl-8">
                                                     <!-- Stats Cards -->
                                                     <div class="row g-3 mb-4" id="dailyStatsGrid">
-                                                        <div class="col-md-4">
-                                                            <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm stats-card stats-card-primary">
+                                                        <div class="col-md-4 static-card">
+                                                            <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm stats-card stats-card-primary" style="border-left: 4px solid #0d6efd !important;">
                                                                 <small class="text-muted d-block mb-1">Total Pendaftar Aktif</small>
                                                                 <h3 class="mb-0 fw-bold text-dark" id="activeParticipantsCount">-</h3>
                                                             </div>
                                                         </div>
+                                                        @if($event->jenis === 'Lomba')
+                                                        <div class="col-md-4 static-card">
+                                                            <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm" style="border-left: 4px solid #198754 !important;">
+                                                                <small class="text-muted d-block mb-1">Total Pendaftar Team</small>
+                                                                <h3 class="mb-0 fw-bold text-dark" id="teamParticipantsCount">-</h3>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4 static-card">
+                                                            <div class="p-3 bg-white border rounded h-100 d-flex flex-column justify-content-center shadow-sm" style="border-left: 4px solid #fd7e14 !important;">
+                                                                <small class="text-muted d-block mb-1">Total Pendaftar Individu</small>
+                                                                <h3 class="mb-0 fw-bold text-dark" id="individualParticipantsCount">-</h3>
+                                                            </div>
+                                                        </div>
+                                                        @endif
                                                     </div>
                                                     <!-- Chart Container -->
                                                     <div class="bg-light p-3 border rounded shadow-sm">
@@ -401,7 +415,7 @@
                                                         <td class="text-muted">{{ $reg->user->email ?? '-' }}</td>
                                                          <td class="text-muted">
                                                              <div class="fw-semibold text-dark">{{ $reg->user->phone ?? '-' }}</div>
-                                                             @if(!empty($reg->university_origin) || !empty($reg->study_program) || !empty($reg->position))
+                                                             @if(!empty($reg->university_origin) || !empty($reg->study_program) || !empty($reg->position) || !empty($reg->educational_background) || !empty($reg->user->profession))
                                                                  <div class="mt-1" style="font-size: 10.5px; line-height: 1.35; max-width: 220px;">
                                                                      @if(!empty($reg->university_origin))
                                                                          <div class="text-dark"><i class="bi bi-bank me-1 text-muted"></i>{{ $reg->university_origin }}</div>
@@ -411,6 +425,10 @@
                                                                      @endif
                                                                      @if(!empty($reg->position))
                                                                          <div class="text-muted"><i class="bi bi-briefcase me-1 text-muted"></i>{{ $reg->position }}</div>
+                                                                     @elseif(!empty($reg->educational_background))
+                                                                         <div class="text-muted"><i class="bi bi-briefcase me-1 text-muted"></i>{{ $reg->educational_background }}</div>
+                                                                     @elseif(!empty($reg->user->profession))
+                                                                         <div class="text-muted"><i class="bi bi-briefcase me-1 text-muted"></i>{{ $reg->user->profession }}</div>
                                                                      @endif
                                                                  </div>
                                                              @endif
@@ -1886,13 +1904,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (activeParticipantsCount) {
                         activeParticipantsCount.textContent = data.total_active_participants;
                     }
+                    const teamParticipantsCount = document.getElementById('teamParticipantsCount');
+                    if (teamParticipantsCount) {
+                        teamParticipantsCount.textContent = data.total_team_participants !== undefined ? data.total_team_participants : 0;
+                    }
+                    const individualParticipantsCount = document.getElementById('individualParticipantsCount');
+                    if (individualParticipantsCount) {
+                        individualParticipantsCount.textContent = data.total_individual_participants !== undefined ? data.total_individual_participants : 0;
+                    }
                     
                     // Update Stats Grid
                     const statsGrid = document.getElementById('dailyStatsGrid');
-                    if (statsGrid && statsGrid.firstElementChild) {
-                        const staticCard = statsGrid.firstElementChild.cloneNode(true);
+                    if (statsGrid) {
+                        const staticCards = Array.from(statsGrid.querySelectorAll('.static-card')).map(el => el.cloneNode(true));
                         statsGrid.innerHTML = '';
-                        statsGrid.appendChild(staticCard);
+                        staticCards.forEach(card => statsGrid.appendChild(card));
                         
                         const labels = [];
                         const chartData = [];
