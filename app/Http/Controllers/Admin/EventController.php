@@ -17,12 +17,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class EventController extends Controller
 {
@@ -2613,28 +2607,6 @@ class EventController extends Controller
         $registrations = $query->get();
         $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Registered Participants');
-
-        // Show grid lines
-        $sheet->setShowGridLines(true);
-
-        // Header Title Banner (Rows 1 - 5)
-        $sheet->setCellValue('A1', 'DATA PESERTA TERDAFTAR EVENT');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->setColor(new Color('1E3A8A'));
-
-        $sheet->setCellValue('A2', $event->title ?: 'Detail Event');
-        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12)->setColor(new Color('475569'));
-
-        $sheet->setCellValue('A3', 'Kategori/Jenis: ' . ($event->jenis ?? '-'));
-        $sheet->setCellValue('D3', 'Tanggal Event: ' . ($event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('d F Y') : '-'));
-
-        $sheet->setCellValue('A4', 'Total Peserta: ' . $registrations->count() . ' orang');
-        $sheet->setCellValue('D4', 'Tanggal Export: ' . now()->format('d F Y H:i:s'));
-
-        $sheet->getStyle('A3:D4')->getFont()->setSize(10)->setColor(new Color('64748B'));
-
         // Table Column Headers (Row 6)
         $headers = [
             'No',
@@ -2670,201 +2642,151 @@ class EventController extends Controller
             ]);
         }
 
-        $headerRow = 6;
-        $sheet->getRowDimension($headerRow)->setRowHeight(28);
-
-        foreach ($headers as $colIndex => $headerText) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
-            $sheet->setCellValue($colLetter . $headerRow, $headerText);
-        }
-
-        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
-
-        // Style Header Row
-        $headerRange = 'A' . $headerRow . ':' . $lastColLetter . $headerRow;
-        $sheet->getStyle($headerRange)->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'color' => ['rgb' => 'FFFFFF'],
-                'size' => 11,
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '1E40AF'], // Deep Blue
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-                'wrapText' => true,
-            ],
-        ]);
-
-        // Fill Table Data
-        $currentRow = 7;
-        foreach ($registrations as $i => $reg) {
-            $subReg = $reg;
-            if ($reg->team_id && !$reg->is_team_leader) {
-                $leaderReg = \App\Models\EventRegistration::where('team_id', $reg->team_id)
-                    ->where('is_team_leader', true)
-                    ->first();
-                if ($leaderReg) {
-                    $subReg = $leaderReg;
-                }
-            }
-
-            // Attendance check
-            $eventFinished = method_exists($event, 'isFinished') && $event->isFinished();
-            $st = strtolower((string) $reg->status);
-            $isAlpha = $eventFinished && $st === 'active' && empty($reg->attended_at) && $reg->dailyAttendances->isEmpty();
-            $displayStatus = $isAlpha ? 'ALPHA' : strtoupper($st);
-
-            $attendanceText = 'Belum Hadir';
-            if ($reg->dailyAttendances->isNotEmpty()) {
-                $days = $reg->dailyAttendances->pluck('day_number')->sort()->implode(', ');
-                $attendanceText = "Hadir (Hari {$days})";
-            } elseif ($reg->attended_at) {
-                $attendanceText = "Hadir (" . \Carbon\Carbon::parse($reg->attended_at)->format('d/m/Y H:i') . ")";
-            } elseif ($reg->attendance_status === 'yes') {
-                $attendanceText = 'Hadir';
-            }
-
-            // Team info
-            $tipePendaftaran = $reg->team_id ? 'Team' : 'Individual';
-            $namaTim = $reg->team ? $reg->team->name : ($reg->team_name ?? '-');
-            $kodeTim = $reg->team ? $reg->team->code : '-';
-            $peranTim = '-';
-            $ketuaTim = '-';
-            $anggotaTim = '-';
-
-            if ($reg->team_id && $reg->team) {
-                $peranTim = $reg->is_team_leader ? 'Leader' : 'Member';
-                $ketuaTim = $reg->team->leader->name ?? '-';
-                $members = $reg->team->registrations
-                    ->where('is_team_leader', false)
-                    ->map(fn($r) => $r->user->name ?? '')
-                    ->filter()
-                    ->implode(', ');
-                $anggotaTim = $members ?: '-';
-            }
-
-            $instansi = $reg->university_origin ?: ($reg->user->institution ?? '-');
-            $prodi = $reg->study_program ?: '-';
-            $jabatan = $reg->position ?: ($reg->user->profession ?? '-');
-            $pendidikan = $reg->educational_background ?: '-';
-
-            $rowData = [
-                $i + 1,
-                $reg->registration_code ?? '-',
-                $reg->user->name ?? '-',
-                $reg->user->email ?? '-',
-                $reg->whatsapp_number ?: ($reg->user->phone ?? '-'),
-                $instansi,
-                $prodi,
-                $jabatan,
-                $pendidikan,
-                $tipePendaftaran,
-                $namaTim,
-                $kodeTim,
-                $peranTim,
-                $ketuaTim,
-                $anggotaTim,
-                $displayStatus,
-                $attendanceText,
-                $reg->created_at ? \Carbon\Carbon::parse($reg->created_at)->format('Y-m-d H:i:s') : '-',
-            ];
-
-            if ($isLomba) {
-                $sub1Status = strtoupper($subReg->submission_status ?? 'PENDING');
-                if (empty($subReg->submission_path)) {
-                    $sub1Status = 'BELUM UPLOAD';
-                }
-                $sub1File = $subReg->submission_path ? url(\Illuminate\Support\Facades\Storage::url($subReg->submission_path)) : '-';
-                $sub1Time = $subReg->submission_uploaded_at ? \Carbon\Carbon::parse($subReg->submission_uploaded_at)->format('Y-m-d H:i:s') : '-';
-                $sub1Notes = $subReg->submission_notes ?? '-';
-
-                $stage2PayStatus = strtoupper($subReg->stage2_payment_status ?? 'UNPAID');
-                $sub2Status = $subReg->submission_path_2 ? 'SUDAH UPLOAD' : 'BELUM UPLOAD';
-                $sub2File = $subReg->submission_path_2 ? url(\Illuminate\Support\Facades\Storage::url($subReg->submission_path_2)) : '-';
-                $sub2Time = $subReg->submission_2_uploaded_at ? \Carbon\Carbon::parse($subReg->submission_2_uploaded_at)->format('Y-m-d H:i:s') : '-';
-
-                $rowData = array_merge($rowData, [
-                    $sub1Status,
-                    $sub1File,
-                    $sub1Time,
-                    $sub1Notes,
-                    $stage2PayStatus,
-                    $sub2Status,
-                    $sub2File,
-                    $sub2Time,
-                ]);
-            }
-
-            $sheet->getRowDimension($currentRow)->setRowHeight(22);
-
-            foreach ($rowData as $colIdx => $val) {
-                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx + 1);
-                $cellPos = $colLetter . $currentRow;
-                $sheet->setCellValue($cellPos, $val);
-            }
-
-            // Zebra Striping & Cell Borders
-            $rowRange = 'A' . $currentRow . ':' . $lastColLetter . $currentRow;
-            $bgColor = ($i % 2 === 0) ? 'FFFFFF' : 'F8FAFC';
-
-            $sheet->getStyle($rowRange)->applyFromArray([
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => $bgColor],
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['rgb' => 'E2E8F0'],
-                    ],
-                ],
-                'alignment' => [
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-            ]);
-
-            // Specific Alignments
-            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('B' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('J' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('L' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('M' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('P' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('Q' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('R' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-
-            // Status Font Styling
-            $statusCell = 'P' . $currentRow;
-            if ($displayStatus === 'ACTIVE') {
-                $sheet->getStyle($statusCell)->getFont()->setBold(true)->setColor(new Color('15803D'));
-            } elseif ($displayStatus === 'PENDING') {
-                $sheet->getStyle($statusCell)->getFont()->setBold(true)->setColor(new Color('C2410C'));
-            } elseif ($displayStatus === 'REJECTED' || $displayStatus === 'ALPHA') {
-                $sheet->getStyle($statusCell)->getFont()->setBold(true)->setColor(new Color('B91C1C'));
-            }
-
-            $currentRow++;
-        }
-
-        // Auto-fit Columns Width
-        for ($c = 1; $c <= count($headers); $c++) {
-            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
-            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
-        }
-
         $titleSlug = \Illuminate\Support\Str::slug($event->title ?: 'event');
-        $filename = "Peserta_Event_{$titleSlug}_" . now()->format('Ymd_His') . ".xlsx";
+        $fileName = "Peserta_Event_{$titleSlug}_" . now()->format('Ymd_His') . ".xls";
 
-        $writer = new Xlsx($spreadsheet);
+        return response()->streamDownload(function () use ($event, $registrations, $headers, $isLomba) {
+            echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+            echo '<head><meta charset="UTF-8" />';
+            echo '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Registered Participants</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+            echo '<style>
+                body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; }
+                .title-banner { font-size: 16pt; font-weight: bold; color: #1E3A8A; margin-bottom: 4px; }
+                .subtitle-banner { font-size: 12pt; font-weight: bold; color: #475569; margin-bottom: 8px; }
+                .meta-info { font-size: 10pt; color: #64748B; margin-bottom: 12px; }
+                table { border-collapse: collapse; width: 100%; }
+                th { background-color: #1E40AF; color: #FFFFFF; font-weight: bold; text-align: center; vertical-align: middle; padding: 8px 12px; border: 1px solid #94A3B8; font-size: 11pt; }
+                td { border: 1px solid #E2E8F0; padding: 6px 10px; vertical-align: middle; font-size: 10pt; }
+                tr.even { background-color: #F8FAFC; }
+                tr.odd { background-color: #FFFFFF; }
+                .text-center { text-align: center; }
+                .status-active { color: #15803D; font-weight: bold; text-align: center; }
+                .status-pending { color: #C2410C; font-weight: bold; text-align: center; }
+                .status-danger { color: #B91C1C; font-weight: bold; text-align: center; }
+            </style>';
+            echo '</head><body>';
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            echo '<div class="title-banner">DATA PESERTA TERDAFTAR EVENT</div>';
+            echo '<div class="subtitle-banner">' . e($event->title ?: 'Detail Event') . '</div>';
+            echo '<div class="meta-info">';
+            echo '<b>Kategori/Jenis:</b> ' . e($event->jenis ?? '-') . ' &nbsp;&nbsp;|&nbsp;&nbsp; ';
+            echo '<b>Tanggal Event:</b> ' . e($event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('d F Y') : '-') . '<br>';
+            echo '<b>Total Peserta:</b> ' . count($registrations) . ' orang &nbsp;&nbsp;|&nbsp;&nbsp; ';
+            echo '<b>Tanggal Export:</b> ' . e(now()->format('d F Y H:i:s'));
+            echo '</div><br>';
+
+            echo '<table><thead><tr>';
+            foreach ($headers as $h) {
+                echo '<th>' . e($h) . '</th>';
+            }
+            echo '</tr></thead><tbody>';
+
+            foreach ($registrations as $i => $reg) {
+                $subReg = $reg;
+                if ($reg->team_id && !$reg->is_team_leader) {
+                    $leaderReg = \App\Models\EventRegistration::where('team_id', $reg->team_id)
+                        ->where('is_team_leader', true)
+                        ->first();
+                    if ($leaderReg) {
+                        $subReg = $leaderReg;
+                    }
+                }
+
+                $eventFinished = method_exists($event, 'isFinished') && $event->isFinished();
+                $st = strtolower((string) $reg->status);
+                $isAlpha = $eventFinished && $st === 'active' && empty($reg->attended_at) && $reg->dailyAttendances->isEmpty();
+                $displayStatus = $isAlpha ? 'ALPHA' : strtoupper($st);
+
+                $attendanceText = 'Belum Hadir';
+                if ($reg->dailyAttendances->isNotEmpty()) {
+                    $days = $reg->dailyAttendances->pluck('day_number')->sort()->implode(', ');
+                    $attendanceText = "Hadir (Hari {$days})";
+                } elseif ($reg->attended_at) {
+                    $attendanceText = "Hadir (" . \Carbon\Carbon::parse($reg->attended_at)->format('d/m/Y H:i') . ")";
+                } elseif ($reg->attendance_status === 'yes') {
+                    $attendanceText = 'Hadir';
+                }
+
+                $tipePendaftaran = $reg->team_id ? 'Team' : 'Individual';
+                $namaTim = $reg->team ? $reg->team->name : ($reg->team_name ?? '-');
+                $kodeTim = $reg->team ? $reg->team->code : '-';
+                $peranTim = '-';
+                $ketuaTim = '-';
+                $anggotaTim = '-';
+
+                if ($reg->team_id && $reg->team) {
+                    $peranTim = $reg->is_team_leader ? 'Leader' : 'Member';
+                    $ketuaTim = $reg->team->leader->name ?? '-';
+                    $members = $reg->team->registrations
+                        ->where('is_team_leader', false)
+                        ->map(fn($r) => $r->user->name ?? '')
+                        ->filter()
+                        ->implode(', ');
+                    $anggotaTim = $members ?: '-';
+                }
+
+                $instansi = $reg->university_origin ?: ($reg->user->institution ?? '-');
+                $prodi = $reg->study_program ?: '-';
+                $jabatan = $reg->position ?: ($reg->user->profession ?? '-');
+                $pendidikan = $reg->educational_background ?: '-';
+
+                $rowClass = ($i % 2 === 0) ? 'even' : 'odd';
+                echo '<tr class="' . $rowClass . '">';
+                echo '<td class="text-center">' . ($i + 1) . '</td>';
+                echo '<td class="text-center">' . e($reg->registration_code ?? '-') . '</td>';
+                echo '<td>' . e($reg->user->name ?? '-') . '</td>';
+                echo '<td>' . e($reg->user->email ?? '-') . '</td>';
+                echo '<td>' . e($reg->whatsapp_number ?: ($reg->user->phone ?? '-')) . '</td>';
+                echo '<td>' . e($instansi) . '</td>';
+                echo '<td>' . e($prodi) . '</td>';
+                echo '<td>' . e($jabatan) . '</td>';
+                echo '<td>' . e($pendidikan) . '</td>';
+                echo '<td class="text-center">' . e($tipePendaftaran) . '</td>';
+                echo '<td>' . e($namaTim) . '</td>';
+                echo '<td class="text-center">' . e($kodeTim) . '</td>';
+                echo '<td class="text-center">' . e($peranTim) . '</td>';
+                echo '<td>' . e($ketuaTim) . '</td>';
+                echo '<td>' . e($anggotaTim) . '</td>';
+
+                $statusClass = 'status-pending';
+                if ($displayStatus === 'ACTIVE') {
+                    $statusClass = 'status-active';
+                } elseif ($displayStatus === 'REJECTED' || $displayStatus === 'ALPHA') {
+                    $statusClass = 'status-danger';
+                }
+                echo '<td class="' . $statusClass . '">' . e($displayStatus) . '</td>';
+                echo '<td class="text-center">' . e($attendanceText) . '</td>';
+                echo '<td class="text-center">' . e($reg->created_at ? \Carbon\Carbon::parse($reg->created_at)->format('Y-m-d H:i:s') : '-') . '</td>';
+
+                if ($isLomba) {
+                    $sub1Status = strtoupper($subReg->submission_status ?? 'PENDING');
+                    if (empty($subReg->submission_path)) {
+                        $sub1Status = 'BELUM UPLOAD';
+                    }
+                    $sub1File = $subReg->submission_path ? url(\Illuminate\Support\Facades\Storage::url($subReg->submission_path)) : '-';
+                    $sub1Time = $subReg->submission_uploaded_at ? \Carbon\Carbon::parse($subReg->submission_uploaded_at)->format('Y-m-d H:i:s') : '-';
+                    $sub1Notes = $subReg->submission_notes ?? '-';
+
+                    $stage2PayStatus = strtoupper($subReg->stage2_payment_status ?? 'UNPAID');
+                    $sub2Status = $subReg->submission_path_2 ? 'SUDAH UPLOAD' : 'BELUM UPLOAD';
+                    $sub2File = $subReg->submission_path_2 ? url(\Illuminate\Support\Facades\Storage::url($subReg->submission_path_2)) : '-';
+                    $sub2Time = $subReg->submission_2_uploaded_at ? \Carbon\Carbon::parse($subReg->submission_2_uploaded_at)->format('Y-m-d H:i:s') : '-';
+
+                    echo '<td class="text-center">' . e($sub1Status) . '</td>';
+                    echo '<td>' . ($sub1File !== '-' ? '<a href="' . e($sub1File) . '">' . e($sub1File) . '</a>' : '-') . '</td>';
+                    echo '<td class="text-center">' . e($sub1Time) . '</td>';
+                    echo '<td>' . e($sub1Notes) . '</td>';
+                    echo '<td class="text-center">' . e($stage2PayStatus) . '</td>';
+                    echo '<td class="text-center">' . e($sub2Status) . '</td>';
+                    echo '<td>' . ($sub2File !== '-' ? '<a href="' . e($sub2File) . '">' . e($sub2File) . '</a>' : '-') . '</td>';
+                    echo '<td class="text-center">' . e($sub2Time) . '</td>';
+                }
+                echo '</tr>';
+            }
+
+            echo '</tbody></table></body></html>';
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=utf-8',
             'Cache-Control' => 'max-age=0',
         ]);
     }
