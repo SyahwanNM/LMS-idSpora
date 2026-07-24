@@ -199,6 +199,7 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/events/{event}/registrations/{registration}/check-in', [EventController::class, 'manualCheckIn'])->name('admin.events.registrations.manual-check-in');
     Route::post('/admin/events/{event}/registrations/{registration}/cancel-day', [EventController::class, 'cancelDailyAttendance'])->name('admin.events.registrations.cancel-day');
     Route::post('/admin/events/{event}/registrations/{registration}/review-submission', [EventController::class, 'reviewSubmission'])->name('admin.events.submissions.review');
+    Route::get('/admin/events/{event}/export-participants', [EventController::class, 'exportParticipants'])->name('admin.events.export-participants');
 
     // Quiz management routes
     Route::get('/admin/courses/{course}/modules/{module}/quiz', [QuizController::class, 'index'])->name('admin.courses.modules.quiz.index');

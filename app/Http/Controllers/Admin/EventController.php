@@ -17,6 +17,12 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use GuzzleHttp\Client;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class EventController extends Controller
 {
@@ -2565,6 +2571,302 @@ class EventController extends Controller
         } catch (\Throwable $e) {
             \Log::error('Event referral commission notification failed: ' . $e->getMessage());
         }
+    }
+
+    public function exportParticipants(Request $request, Event $event)
+    {
+        $user = auth()->user();
+        if ($user && $user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            abort(403, 'You do not have access to this event.');
+        }
+
+        $filter = strtolower(trim((string) $request->query('filter', 'all')));
+        $search = trim((string) $request->query('q', ''));
+
+        $query = $event->registrations()
+            ->whereHas('user', function ($q) {
+                $q->where('role', '!=', 'admin');
+            })
+            ->with(['user', 'paymentProofs', 'dailyAttendances', 'team.leader', 'team.registrations.user'])
+            ->latest();
+
+        if ($filter === 'team') {
+            $query->whereNotNull('team_id');
+        } elseif ($filter === 'individual') {
+            $query->whereNull('team_id');
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($qu) use ($search) {
+                    $qu->where('name', 'like', "%{$search}%")
+                       ->orWhere('email', 'like', "%{$search}%")
+                       ->orWhere('phone', 'like', "%{$search}%");
+                })->orWhereHas('team', function ($qt) use ($search) {
+                    $qt->where('name', 'like', "%{$search}%")
+                       ->orWhere('code', 'like', "%{$search}%");
+                })->orWhere('team_name', 'like', "%{$search}%")
+                  ->orWhere('registration_code', 'like', "%{$search}%");
+            });
+        }
+
+        $registrations = $query->get();
+        $isLomba = strtolower(trim($event->jenis ?? '')) === 'lomba';
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Registered Participants');
+
+        // Show grid lines
+        $sheet->setShowGridLines(true);
+
+        // Header Title Banner (Rows 1 - 5)
+        $sheet->setCellValue('A1', 'DATA PESERTA TERDAFTAR EVENT');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->setColor(new Color('1E3A8A'));
+
+        $sheet->setCellValue('A2', $event->title ?: 'Detail Event');
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(12)->setColor(new Color('475569'));
+
+        $sheet->setCellValue('A3', 'Kategori/Jenis: ' . ($event->jenis ?? '-'));
+        $sheet->setCellValue('D3', 'Tanggal Event: ' . ($event->event_date ? \Carbon\Carbon::parse($event->event_date)->format('d F Y') : '-'));
+
+        $sheet->setCellValue('A4', 'Total Peserta: ' . $registrations->count() . ' orang');
+        $sheet->setCellValue('D4', 'Tanggal Export: ' . now()->format('d F Y H:i:s'));
+
+        $sheet->getStyle('A3:D4')->getFont()->setSize(10)->setColor(new Color('64748B'));
+
+        // Table Column Headers (Row 6)
+        $headers = [
+            'No',
+            'Kode Registrasi',
+            'Nama Peserta',
+            'Email',
+            'No. HP / WhatsApp',
+            'Asal Instansi / Perguruan Tinggi',
+            'Program Studi',
+            'Jabatan / Profesi',
+            'Latar Belakang Pendidikan',
+            'Tipe Pendaftaran',
+            'Nama Tim',
+            'Kode Tim',
+            'Peran di Tim',
+            'Ketua Tim',
+            'Anggota Tim',
+            'Status Registrasi',
+            'Status Kehadiran',
+            'Tanggal Terdaftar',
+        ];
+
+        if ($isLomba) {
+            $headers = array_merge($headers, [
+                'Submission Tahap 1 - Status',
+                'Submission Tahap 1 - File URL',
+                'Submission Tahap 1 - Waktu Upload',
+                'Submission Tahap 1 - Catatan Review',
+                'Pembayaran Tahap 2 - Status',
+                'Submission Tahap 2 - Status',
+                'Submission Tahap 2 - File URL',
+                'Submission Tahap 2 - Waktu Upload',
+            ]);
+        }
+
+        $headerRow = 6;
+        $sheet->getRowDimension($headerRow)->setRowHeight(28);
+
+        foreach ($headers as $colIndex => $headerText) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
+            $sheet->setCellValue($colLetter . $headerRow, $headerText);
+        }
+
+        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers));
+
+        // Style Header Row
+        $headerRange = 'A' . $headerRow . ':' . $lastColLetter . $headerRow;
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 11,
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '1E40AF'], // Deep Blue
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+
+        // Fill Table Data
+        $currentRow = 7;
+        foreach ($registrations as $i => $reg) {
+            $subReg = $reg;
+            if ($reg->team_id && !$reg->is_team_leader) {
+                $leaderReg = \App\Models\EventRegistration::where('team_id', $reg->team_id)
+                    ->where('is_team_leader', true)
+                    ->first();
+                if ($leaderReg) {
+                    $subReg = $leaderReg;
+                }
+            }
+
+            // Attendance check
+            $eventFinished = method_exists($event, 'isFinished') && $event->isFinished();
+            $st = strtolower((string) $reg->status);
+            $isAlpha = $eventFinished && $st === 'active' && empty($reg->attended_at) && $reg->dailyAttendances->isEmpty();
+            $displayStatus = $isAlpha ? 'ALPHA' : strtoupper($st);
+
+            $attendanceText = 'Belum Hadir';
+            if ($reg->dailyAttendances->isNotEmpty()) {
+                $days = $reg->dailyAttendances->pluck('day_number')->sort()->implode(', ');
+                $attendanceText = "Hadir (Hari {$days})";
+            } elseif ($reg->attended_at) {
+                $attendanceText = "Hadir (" . \Carbon\Carbon::parse($reg->attended_at)->format('d/m/Y H:i') . ")";
+            } elseif ($reg->attendance_status === 'yes') {
+                $attendanceText = 'Hadir';
+            }
+
+            // Team info
+            $tipePendaftaran = $reg->team_id ? 'Team' : 'Individual';
+            $namaTim = $reg->team ? $reg->team->name : ($reg->team_name ?? '-');
+            $kodeTim = $reg->team ? $reg->team->code : '-';
+            $peranTim = '-';
+            $ketuaTim = '-';
+            $anggotaTim = '-';
+
+            if ($reg->team_id && $reg->team) {
+                $peranTim = $reg->is_team_leader ? 'Leader' : 'Member';
+                $ketuaTim = $reg->team->leader->name ?? '-';
+                $members = $reg->team->registrations
+                    ->where('is_team_leader', false)
+                    ->map(fn($r) => $r->user->name ?? '')
+                    ->filter()
+                    ->implode(', ');
+                $anggotaTim = $members ?: '-';
+            }
+
+            $instansi = $reg->university_origin ?: ($reg->user->institution ?? '-');
+            $prodi = $reg->study_program ?: '-';
+            $jabatan = $reg->position ?: ($reg->user->profession ?? '-');
+            $pendidikan = $reg->educational_background ?: '-';
+
+            $rowData = [
+                $i + 1,
+                $reg->registration_code ?? '-',
+                $reg->user->name ?? '-',
+                $reg->user->email ?? '-',
+                $reg->whatsapp_number ?: ($reg->user->phone ?? '-'),
+                $instansi,
+                $prodi,
+                $jabatan,
+                $pendidikan,
+                $tipePendaftaran,
+                $namaTim,
+                $kodeTim,
+                $peranTim,
+                $ketuaTim,
+                $anggotaTim,
+                $displayStatus,
+                $attendanceText,
+                $reg->created_at ? \Carbon\Carbon::parse($reg->created_at)->format('Y-m-d H:i:s') : '-',
+            ];
+
+            if ($isLomba) {
+                $sub1Status = strtoupper($subReg->submission_status ?? 'PENDING');
+                if (empty($subReg->submission_path)) {
+                    $sub1Status = 'BELUM UPLOAD';
+                }
+                $sub1File = $subReg->submission_path ? url(\Illuminate\Support\Facades\Storage::url($subReg->submission_path)) : '-';
+                $sub1Time = $subReg->submission_uploaded_at ? \Carbon\Carbon::parse($subReg->submission_uploaded_at)->format('Y-m-d H:i:s') : '-';
+                $sub1Notes = $subReg->submission_notes ?? '-';
+
+                $stage2PayStatus = strtoupper($subReg->stage2_payment_status ?? 'UNPAID');
+                $sub2Status = $subReg->submission_path_2 ? 'SUDAH UPLOAD' : 'BELUM UPLOAD';
+                $sub2File = $subReg->submission_path_2 ? url(\Illuminate\Support\Facades\Storage::url($subReg->submission_path_2)) : '-';
+                $sub2Time = $subReg->submission_2_uploaded_at ? \Carbon\Carbon::parse($subReg->submission_2_uploaded_at)->format('Y-m-d H:i:s') : '-';
+
+                $rowData = array_merge($rowData, [
+                    $sub1Status,
+                    $sub1File,
+                    $sub1Time,
+                    $sub1Notes,
+                    $stage2PayStatus,
+                    $sub2Status,
+                    $sub2File,
+                    $sub2Time,
+                ]);
+            }
+
+            $sheet->getRowDimension($currentRow)->setRowHeight(22);
+
+            foreach ($rowData as $colIdx => $val) {
+                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIdx + 1);
+                $cellPos = $colLetter . $currentRow;
+                $sheet->setCellValue($cellPos, $val);
+            }
+
+            // Zebra Striping & Cell Borders
+            $rowRange = 'A' . $currentRow . ':' . $lastColLetter . $currentRow;
+            $bgColor = ($i % 2 === 0) ? 'FFFFFF' : 'F8FAFC';
+
+            $sheet->getStyle($rowRange)->applyFromArray([
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => $bgColor],
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['rgb' => 'E2E8F0'],
+                    ],
+                ],
+                'alignment' => [
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                ],
+            ]);
+
+            // Specific Alignments
+            $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('B' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('J' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('L' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('M' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('P' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('Q' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('R' . $currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // Status Font Styling
+            $statusCell = 'P' . $currentRow;
+            if ($displayStatus === 'ACTIVE') {
+                $sheet->getStyle($statusCell)->getFont()->setBold(true)->setColor(new Color('15803D'));
+            } elseif ($displayStatus === 'PENDING') {
+                $sheet->getStyle($statusCell)->getFont()->setBold(true)->setColor(new Color('C2410C'));
+            } elseif ($displayStatus === 'REJECTED' || $displayStatus === 'ALPHA') {
+                $sheet->getStyle($statusCell)->getFont()->setBold(true)->setColor(new Color('B91C1C'));
+            }
+
+            $currentRow++;
+        }
+
+        // Auto-fit Columns Width
+        for ($c = 1; $c <= count($headers); $c++) {
+            $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($c);
+            $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+        }
+
+        $titleSlug = \Illuminate\Support\Str::slug($event->title ?: 'event');
+        $filename = "Peserta_Event_{$titleSlug}_" . now()->format('Ymd_His') . ".xlsx";
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
     }
 }
 
