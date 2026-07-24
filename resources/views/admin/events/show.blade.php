@@ -310,6 +310,9 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <h6 class="text-dark mb-0"><i class="bi bi-people me-2"></i>Registered Participants</h6>
                                                 <span id="participantsCountBadge" class="badge {{ $registrations->count() ? 'bg-primary' : 'bg-secondary' }}">Total: {{ $registrations->count() }}</span>
+                                                <a href="{{ route('admin.events.export-participants', $event) }}" class="btn btn-sm btn-success d-inline-flex align-items-center gap-1 ms-2 shadow-sm" id="exportParticipantsExcelBtn" title="Export Excel Registered Participants">
+                                                    <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
+                                                </a>
                                             </div>
                                             <div class="d-flex align-items-center gap-3 flex-wrap">
                                                 @if(strtolower(trim($event->jenis ?? '')) === 'lomba' && in_array($event->lomba_kategori, ['team', 'both']))
@@ -1451,6 +1454,21 @@ document.addEventListener('DOMContentLoaded', function(){
                 qEl.textContent = '';
             }
         }
+
+        var exportBtn = document.getElementById('exportParticipantsExcelBtn');
+        if (exportBtn) {
+            var baseUrl = '{{ route("admin.events.export-participants", $event) }}';
+            var params = new URLSearchParams();
+            if (currentFilter && currentFilter !== 'all') {
+                params.append('filter', currentFilter);
+            }
+            if (raw) {
+                params.append('q', raw);
+            }
+            var queryString = params.toString();
+            exportBtn.href = queryString ? baseUrl + '?' + queryString : baseUrl;
+        }
+
         refreshCounts();
     }
 
