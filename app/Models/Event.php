@@ -408,16 +408,25 @@ class Event extends Model
         if (str_starts_with($normalized, 'public/')) {
             $normalized = ltrim(substr($normalized, 7), '/');
         }
-
-        // Force QR image to be served from /uploads/* (legacy public route).
-        // Do not check filesystem; just map deterministically.
-        if (str_starts_with($normalized, 'uploads/')) {
-            return asset($normalized);
-        }
         if (str_starts_with($normalized, 'storage/')) {
             $normalized = ltrim(substr($normalized, 8), '/');
         }
-        return asset('uploads/' . $normalized);
+
+        if (str_starts_with($normalized, 'uploads/')) {
+            if (file_exists(public_path($normalized))) {
+                return asset($normalized);
+            }
+            $withoutUploads = ltrim(substr($normalized, 8), '/');
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($withoutUploads)) {
+                return \Illuminate\Support\Facades\Storage::disk('public')->url($withoutUploads);
+            }
+        }
+
+        if (file_exists(public_path('uploads/' . $normalized))) {
+            return asset('uploads/' . $normalized);
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($normalized);
     }
 
     private function buildPublicFileUrl(?string $path, bool $forceUploads = false): ?string

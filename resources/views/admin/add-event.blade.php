@@ -685,8 +685,11 @@
                                                         <div class="d-flex gap-1 flex-wrap align-items-center justify-content-end" style="max-width:300px;">
                                                             @foreach($dailyQrs as $dqr)
                                                                 @if($dqr->qr_image_url)
+                                                                    @php
+                                                                        $fallbackApiDaily = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode(url('/events/' . $event->id . '?t=' . $dqr->token . '&d=' . ($dqr->qr_date ? \Carbon\Carbon::parse($dqr->qr_date)->format('Y-m-d') : '')));
+                                                                    @endphp
                                                                     <a href="{{ $dqr->qr_image_url }}" target="_blank" class="position-relative d-inline-block text-decoration-none" title="Hari {{ $dqr->day_number }} ({{ \Carbon\Carbon::parse($dqr->qr_date)->format('d M Y') }})">
-                                                                        <img src="{{ $dqr->qr_image_url }}" alt="QR Hari {{ $dqr->day_number }}" class="rounded border" style="width:36px;height:36px;object-fit:cover;">
+                                                                        <img src="{{ $dqr->qr_image_url }}" alt="QR Hari {{ $dqr->day_number }}" class="rounded border" style="width:36px;height:36px;object-fit:cover;" onerror="this.onerror=null; this.src='{{ $fallbackApiDaily }}';">
                                                                         <span class="position-absolute bottom-0 end-0 bg-dark text-white px-1" style="font-size:8px; border-radius:3px 0 3px 0; opacity:0.85;">H{{ $dqr->day_number }}</span>
                                                                     </a>
                                                                 @else
@@ -703,8 +706,12 @@
                                                         @else
                                                             <a href="{{ Storage::url($event->attendance_path) }}" target="_blank" class="link-primary">Lihat</a>
                                                         @endif
-                                                    @elseif($hasAbsQrImg)
-                                                        <a href="{{ $event->attendance_qr_image_url }}" target="_blank"><img src="{{ $event->attendance_qr_image_url }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;"></a>
+                                                    @elseif($hasAbsQrImg || $hasAbsQrToken)
+                                                        @php
+                                                            $qrSingleUrl = $event->attendance_qr_image_url;
+                                                            $fallbackApiSingle = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode(url('/events/' . $event->id . '?t=' . ($event->attendance_qr_token ?? 'active')));
+                                                        @endphp
+                                                        <a href="{{ $qrSingleUrl ?: $fallbackApiSingle }}" target="_blank"><img src="{{ $qrSingleUrl ?: $fallbackApiSingle }}" alt="QR Absensi" class="rounded border" style="width:56px;height:56px;object-fit:cover;" onerror="this.onerror=null; this.src='{{ $fallbackApiSingle }}';"></a>
                                                     @else
                                                         <span class="badge bg-success">Attendance QR Active</span>
                                                     @endif

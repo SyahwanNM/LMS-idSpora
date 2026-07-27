@@ -73,7 +73,7 @@
 
         return $name;
     };
-    $canUploadMaterials = ($displayMaterialStatus !== 'approved');
+    $canUploadMaterials = true;
 
     $step1State = 'active'; // active, completed
     $step2State = 'inactive'; // inactive, active, completed
@@ -1462,7 +1462,7 @@
                                 <div>
                                     @if($displayMaterialStatus === 'approved')
                                         <h3>Materi telah disetujui</h3>
-                                        <p>Materi Anda telah disetujui oleh admin trainer. Semua proses unggahan baru, pengubahan, atau penghapusan materi dinonaktifkan.</p>
+                                        <p>Materi Anda telah disetujui oleh admin trainer. Anda masih dapat mengunggah berkas baru, mengubah, atau menghapus materi jika diperlukan. Setiap perubahan akan otomatis mengembalikan status ke tahap Review Materi untuk disetujui ulang oleh admin.</p>
                                     @else
                                         <h3>Materi sedang direview</h3>
                                         <p>Seluruh materi Anda telah dikirim dan sedang diperiksa oleh admin. Anda masih dapat mengunggah berkas baru atau mengubah materi jika diperlukan.</p>
@@ -1650,7 +1650,7 @@
                                                 </div>
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                                @if($canUploadMaterials && $module->status !== 'approved')
+                                                @if($canUploadMaterials)
                                                 <button type="button" class="btn-delete-submitted" data-id="{{ $module->id }}"
                                                     style="background: none; border: none; color: #ef4444; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 6px; border-radius: 8px; transition: all 0.2s;"
                                                     onmouseover="this.style.backgroundColor='#fee2e2'"
@@ -1658,12 +1658,10 @@
                                                     title="Hapus Materi">
                                                     <i class="bi bi-trash3-fill"></i>
                                                 </button>
-                                                @endif
-                                                @if($module->status === 'rejected')
-                                                    <button type="button" class="btn-replace-rejected primary-btn" data-id="{{ $module->id }}" data-is-link="{{ $historyIsLink ? '1' : '0' }}"
-                                                        style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; color: #fff; border: none; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
-                                                        <i class="bi bi-arrow-left-right"></i> Ganti
-                                                    </button>
+                                                <button type="button" class="btn-replace-rejected primary-btn" data-id="{{ $module->id }}" data-is-link="{{ $historyIsLink ? '1' : '0' }}"
+                                                    style="font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 8px; background: linear-gradient(135deg, #51376c 0%, #3f2a54 100%) !important; color: #fff; border: none; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                                    <i class="bi bi-arrow-left-right"></i> Ganti
+                                                </button>
                                                 @endif
                                                 @if($historyViewUrl)
                                                     <a href="{{ $historyViewUrl }}" target="_blank" rel="noopener noreferrer"
