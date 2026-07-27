@@ -2128,7 +2128,7 @@
                                                                 @endif
                                                             </div>
                                                         </a>
-                                                        @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        @if(($mod->show_feedback ?? true) && ($event->show_feedback ?? true) && !empty($mod->survey_link ?: $mod->feedback_link))
                                                             <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"
@@ -2193,7 +2193,7 @@
                                                                 @endif
                                                             </div>
                                                         </a>
-                                                        @if(!empty($mod->survey_link ?: $mod->feedback_link))
+                                                        @if(($mod->show_feedback ?? true) && ($event->show_feedback ?? true) && !empty($mod->survey_link ?: $mod->feedback_link))
                                                             <a href="{{ $mod->survey_link ?: $mod->feedback_link }}" target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 class="d-inline-flex align-items-center gap-1 px-3 py-1.5 rounded-3 text-decoration-none"

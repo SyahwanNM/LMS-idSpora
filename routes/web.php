@@ -606,6 +606,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Event document uploads (admin)
         Route::post('/admin/events/{event}/documents', [EventController::class, 'uploadDocuments'])->name('admin.events.documents.upload');
+        Route::post('/admin/events/{event}/toggle-feedback', [EventController::class, 'toggleFeedback'])->name('admin.events.toggle-feedback');
+        Route::post('/admin/events/{event}/modules/{module}/toggle-feedback', [EventController::class, 'toggleModuleFeedback'])->name('admin.events.modules.toggle-feedback');
         // Event QR actions (admin)
         Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
         Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');

@@ -662,7 +662,7 @@
                                                                 <i class="bi {{ $isLink ? 'bi-link-45deg' : 'bi-file-earmark-arrow-down' }} me-1"></i>{{ \Illuminate\Support\Str::limit($etm->original_name, 25) }}
                                                                 @if($etm->trainer)<span class="text-muted">({{ $etm->trainer->name }})</span>@endif
                                                             </a>
-                                                            @if(!empty($etm->survey_link ?: $etm->feedback_link))
+                                                            @if(($etm->show_feedback ?? true) && ($event->show_feedback ?? true) && !empty($etm->survey_link ?: $etm->feedback_link))
                                                                 <a href="{{ $etm->survey_link ?: $etm->feedback_link }}" target="_blank" class="badge bg-warning text-dark text-decoration-none" style="font-size: 0.65rem;" title="Link Feedback">
                                                                     <i class="bi bi-chat-left-text me-1"></i>Feedback
                                                                 </a>

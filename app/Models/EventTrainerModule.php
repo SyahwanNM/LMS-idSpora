@@ -20,11 +20,13 @@ class EventTrainerModule extends Model
         'reviewed_by',
         'reviewed_at',
         'feedback_link',
+        'show_feedback',
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
         'logo_stamped' => 'boolean',
+        'show_feedback' => 'boolean',
     ];
 
     public function event(): BelongsTo

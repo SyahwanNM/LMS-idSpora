@@ -922,10 +922,27 @@
                                                             : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
                                                 @endphp
                                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
-                                                    @if(!$hasModuleItems)
-                                                        <span class="text-muted small">Belum ada</span>
-                                                    @endif
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
+                                                        @php $isFeedbackShown = (bool) ($event->show_feedback ?? true); @endphp
+                                                        <span class="badge {{ $isFeedbackShown ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' }}" style="font-size: 0.65rem;">
+                                                            <i class="bi {{ $isFeedbackShown ? 'bi-eye-fill' : 'bi-eye-slash-fill' }} me-1"></i>
+                                                            Feedback: {{ $isFeedbackShown ? 'Tampil' : 'Disembunyikan' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <form method="POST" action="{{ route('admin.events.toggle-feedback', $event->id) }}" class="d-inline">
+                                                            @csrf
+                                                            <input type="hidden" name="show_feedback" value="{{ $isFeedbackShown ? 0 : 1 }}">
+                                                            <button type="submit" class="btn btn-xs {{ $isFeedbackShown ? 'btn-outline-warning' : 'btn-outline-success' }} py-0 px-2" style="font-size: 11px;" title="{{ $isFeedbackShown ? 'Sembunyikan Tombol Feedback' : 'Tampilkan Tombol Feedback' }}">
+                                                                <i class="bi {{ $isFeedbackShown ? 'bi-eye-slash' : 'bi-eye' }} me-1"></i>
+                                                                {{ $isFeedbackShown ? 'Hide Feedback' : 'Show Feedback' }}
+                                                            </button>
+                                                        </form>
+                                                        @if(!$hasModuleItems)
+                                                            <span class="text-muted small">Belum ada</span>
+                                                        @endif
+                                                    </div>
                                                 </div>
 
                                                 @if($hasModuleItems)
@@ -944,13 +961,30 @@
                                                                             {{ $tm->trainer?->name ?? 'Trainer' }} &bull; {{ $tm->created_at?->format('d/m/Y H:i') }}
                                                                         </div>
                                                                         @if(!empty($tm->survey_link ?: $tm->feedback_link))
-                                                                            <div class="text-warning text-truncate mt-1" style="font-size:0.7rem;">
-                                                                                <i class="bi bi-chat-left-text me-1"></i> Feedback: <a href="{{ $tm->survey_link ?: $tm->feedback_link }}" target="_blank" class="text-warning text-decoration-underline">{{ $tm->survey_link ?: $tm->feedback_link }}</a>
-                                                                            </div>
+                                                                            @php $tmFeedbackShown = (bool) ($tm->show_feedback ?? true) && (bool) ($event->show_feedback ?? true); @endphp
+                                                                            @if($tmFeedbackShown)
+                                                                                <div class="text-warning text-truncate mt-1" style="font-size:0.7rem;">
+                                                                                    <i class="bi bi-chat-left-text me-1"></i> Feedback: <a href="{{ $tm->survey_link ?: $tm->feedback_link }}" target="_blank" class="text-warning text-decoration-underline">{{ $tm->survey_link ?: $tm->feedback_link }}</a>
+                                                                                </div>
+                                                                            @else
+                                                                                <div class="text-muted text-truncate mt-1 opacity-75" style="font-size:0.68rem;">
+                                                                                    <i class="bi bi-chat-left-text me-1"></i> Feedback: {{ $tm->survey_link ?: $tm->feedback_link }} <span class="badge bg-secondary ms-1" style="font-size:0.6rem;">Disembunyikan</span>
+                                                                                </div>
+                                                                            @endif
                                                                         @endif
                                                                     </div>
                                                                 </div>
                                                                 <div class="d-flex align-items-center gap-1">
+                                                                    @if(!empty($tm->survey_link ?: $tm->feedback_link))
+                                                                        @php $tmItemFeedbackShown = (bool) ($tm->show_feedback ?? true); @endphp
+                                                                        <form method="POST" action="{{ route('admin.events.modules.toggle-feedback', [$event->id, $tm->id]) }}" class="d-inline">
+                                                                            @csrf
+                                                                            <input type="hidden" name="show_feedback" value="{{ $tmItemFeedbackShown ? 0 : 1 }}">
+                                                                            <button type="submit" class="btn btn-xs {{ $tmItemFeedbackShown ? 'btn-outline-warning' : 'btn-outline-secondary' }} py-0 px-2" style="font-size:10px;" title="{{ $tmItemFeedbackShown ? 'Sembunyikan Tombol Feedback Modul Ini' : 'Tampilkan Tombol Feedback Modul Ini' }}">
+                                                                                <i class="bi {{ $tmItemFeedbackShown ? 'bi-eye-slash-fill' : 'bi-eye-fill' }} me-1"></i> FB: {{ $tmItemFeedbackShown ? 'Show' : 'Hide' }}
+                                                                            </button>
+                                                                        </form>
+                                                                    @endif
                                                                     <a href="{{ $tm->download_url }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2" title="{{ $isLink ? 'Buka Link' : 'Download File' }}">
                                                                         <i class="bi {{ $isLink ? 'bi-box-arrow-up-right' : 'bi-download' }}"></i>
                                                                     </a>
