@@ -178,6 +178,8 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/events/{event}/publish', [EventController::class, 'publish'])->name('admin.events.publish');
     // Unpublish event (batal publish)
     Route::post('/admin/events/{event}/unpublish', [EventController::class, 'unpublish'])->name('admin.events.unpublish');
+    Route::post('/admin/events/{event}/toggle-feedback', [EventController::class, 'toggleFeedback'])->name('admin.events.toggle-feedback');
+    Route::post('/admin/events/{event}/modules/{module}/toggle-feedback', [EventController::class, 'toggleModuleFeedback'])->name('admin.events.modules.toggle-feedback');
     // Event QR actions (admin)
     Route::post('/admin/events/{event}/qr/generate', [EventController::class, 'generateQr'])->name('admin.events.qr.generate');
     Route::get('/admin/events/{event}/qr/download', [EventController::class, 'downloadQr'])->name('admin.events.qr.download');

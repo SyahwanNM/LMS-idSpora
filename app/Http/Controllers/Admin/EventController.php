@@ -1565,6 +1565,50 @@ class EventController extends Controller
     }
 
     /**
+     * Admin: toggle feedback button visibility for an event.
+     */
+    public function toggleFeedback(Request $request, Event $event)
+    {
+        $user = auth()->user();
+        if ($user && $user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            abort(403, 'You do not have access to this event.');
+        }
+
+        $newStatus = $request->has('show_feedback')
+            ? (bool) $request->input('show_feedback')
+            : !((bool) ($event->show_feedback ?? true));
+
+        $event->update(['show_feedback' => $newStatus]);
+
+        $statusText = $newStatus ? 'ditampilkan' : 'disembunyikan';
+        return back()->with('success', 'Tombol feedback materi berhasil ' . $statusText . '.');
+    }
+
+    /**
+     * Admin: toggle feedback button visibility for a specific trainer module.
+     */
+    public function toggleModuleFeedback(Request $request, Event $event, $moduleId)
+    {
+        $user = auth()->user();
+        if ($user && $user->role === 'event_admin' && !$user->isEventAdmin($event->id)) {
+            abort(403, 'You do not have access to this event.');
+        }
+
+        $module = \App\Models\EventTrainerModule::where('id', $moduleId)
+            ->where('event_id', $event->id)
+            ->firstOrFail();
+
+        $newStatus = $request->has('show_feedback')
+            ? (bool) $request->input('show_feedback')
+            : !((bool) ($module->show_feedback ?? true));
+
+        $module->update(['show_feedback' => $newStatus]);
+
+        $statusText = $newStatus ? 'ditampilkan' : 'disembunyikan';
+        return back()->with('success', 'Tombol feedback modul "' . $module->original_name . '" berhasil ' . $statusText . '.');
+    }
+
+    /**
      * Admin: publish event so it becomes visible on user-facing pages.
      */
     public function publish(Request $request, Event $event)

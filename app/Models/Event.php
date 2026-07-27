@@ -98,9 +98,11 @@ class Event extends Model
         'lomba_kategori',
         'max_team_members',
         'is_free_telkom',
+        'show_feedback',
     ];
 
     protected $casts = [
+        'show_feedback' => 'boolean',
         'event_date' => 'date',
         'event_until_date' => 'date',
         'material_deadline' => 'datetime',
