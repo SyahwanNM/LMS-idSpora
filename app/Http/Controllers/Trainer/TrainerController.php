@@ -2071,11 +2071,16 @@ class TrainerController extends Controller
                 }
             }
         }
-        $updates = [];
+        $updates = [
+            'material_status' => 'pending_review',
+            'material_approved_at' => null,
+            'material_approved_by' => null,
+            'material_rejection_reason' => null,
+        ];
         if ($latestImagePath) {
             $updates['vbg_path'] = $latestImagePath;
         }
-        if (!empty($updates) && ($isPrimaryTrainer || !$assignment)) {
+        if ($isPrimaryTrainer || !$assignment) {
             $event->update($updates);
         }
 
@@ -3194,15 +3199,6 @@ class TrainerController extends Controller
             ? ($event->material_status ?? '')
             : ($assignment->material_status ?? 'pending'));
 
-        if ($effectiveMaterialStatus === 'approved') {
-            return response()->json([
-                'success' => false,
-                'error' => 'Materi event ini telah disetujui oleh admin trainer dan tidak dapat diubah lagi.',
-            ], 403);
-        }
-
-
-
         $invitation = TrainerNotification::query()
             ->where('trainer_id', (int) Auth::id())
             ->where('type', 'event_invitation')
@@ -3236,10 +3232,6 @@ class TrainerController extends Controller
 
             if (!$module) {
                 return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
-            }
-
-            if ($module->status === 'approved') {
-                return response()->json(['success' => false, 'error' => 'Materi yang sudah disetujui tidak dapat diganti.'], 403);
             }
 
             $request->validate([
@@ -3325,7 +3317,7 @@ class TrainerController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Berkas revisi berhasil diunggah dan status diubah ke Menunggu Review.',
+                'message' => 'Berkas berhasil diperbarui dan status diubah ke Menunggu Review.',
             ]);
         }
 
@@ -3342,10 +3334,6 @@ class TrainerController extends Controller
                 return response()->json(['success' => false, 'error' => 'Materi tidak ditemukan.'], 404);
             }
 
-            if ($module->status === 'approved') {
-                return response()->json(['success' => false, 'error' => 'Materi yang sudah disetujui tidak dapat dihapus.'], 403);
-            }
-
             // Delete old file if exists
             if ($module->path && !preg_match('#^https?://#i', $module->path)) {
                 if (\Illuminate\Support\Facades\Storage::disk('public')->exists($module->path)) {
@@ -3356,6 +3344,29 @@ class TrainerController extends Controller
             $module->delete();
 
             $this->syncEventMaterialStatus($event->id, $trainerId);
+
+            $remainingCount = \App\Models\EventTrainerModule::where('event_id', $event->id)
+                ->where('trainer_id', $trainerId)
+                ->count();
+
+            if ($remainingCount > 0) {
+                if ($assignment) {
+                    $assignment->update([
+                        'material_status' => 'pending_review',
+                        'material_approved_at' => null,
+                        'material_approved_by' => null,
+                        'material_rejection_reason' => null,
+                    ]);
+                }
+                if ($isPrimaryTrainer || !$assignment) {
+                    $event->update([
+                        'material_status' => 'pending_review',
+                        'material_approved_at' => null,
+                        'material_approved_by' => null,
+                        'material_rejection_reason' => null,
+                    ]);
+                }
+            }
 
             return response()->json([
                 'success' => true,

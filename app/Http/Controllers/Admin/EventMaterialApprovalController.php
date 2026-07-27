@@ -327,6 +327,8 @@ class EventMaterialApprovalController extends Controller
         $materialReviewedAt = $assignment?->material_approved_at
             ?: $assignment?->material_rejected_at
             ?: $event->material_approved_at;
+        $previousApprovedAt = $materialReviewedAt
+            ?: $event->trainerModules->whereNotNull('reviewed_at')->max('reviewed_at');
         $materialRejectionReason = $assignment?->material_rejection_reason ?: $event->material_rejection_reason;
         $materialTrainer = $assignment?->trainer ?: $event->trainer;
 
@@ -337,6 +339,7 @@ class EventMaterialApprovalController extends Controller
             'materialStatus',
             'materialSubmittedAt',
             'materialReviewedAt',
+            'previousApprovedAt',
             'materialRejectionReason',
             'materialTrainer'
         ));

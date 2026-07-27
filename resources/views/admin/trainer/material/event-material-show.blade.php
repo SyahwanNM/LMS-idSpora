@@ -1511,6 +1511,30 @@
                         @endif
                     </div>
 
+                    {{-- Riwayat Persetujuan Previously Approved Card --}}
+                    @if(!empty($previousApprovedAt))
+                        <div class="card-custom side-card" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                            <div class="side-card-title" style="display:flex; align-items:center; gap:6px; color:#1e1b4b;">
+                                <i class="bi bi-clock-history text-primary"></i> Riwayat Persetujuan
+                            </div>
+                            <div class="info-list-custom" style="font-size:0.82rem;">
+                                <div class="info-item-custom" style="margin-bottom: 6px;">
+                                    <span class="info-label-custom">Persetujuan Terakhir</span>
+                                    <span class="info-val-custom" style="color:#059669; font-weight:700;">
+                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                        {{ \Carbon\Carbon::parse($previousApprovedAt)->format('d M Y H:i') }}
+                                    </span>
+                                </div>
+                                @if(($materialStatus ?? 'pending') === 'pending_review' || ($materialStatus ?? 'pending') === 'pending')
+                                    <div class="alert alert-warning py-2 px-3 mb-0 mt-2" style="font-size:0.78rem; border-radius:10px; background:#fffbe6; border-color:#ffe58f; color:#8c6b00; line-height:1.4;">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                        Materi ini telah pernah disetujui sebelumnya. Trainer melakukan pengubahan/pengunggahan materi terbaru sehingga status dikembalikan ke <strong>Menunggu Review</strong> untuk dilakukan persetujuan ulang.
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Decision Card (Approve All or Reject Event) --}}
                     @if (($materialStatus ?? 'pending') === 'pending' || ($materialStatus ?? 'pending') === 'pending_review')
                         <div class="card-custom side-card">
@@ -1528,7 +1552,8 @@
                                     </label>
                                 </div>
                                 <button type="submit" class="btn-approve">
-                                    Setujui Semua Materi
+                                    <i class="bi bi-check-all me-1"></i>
+                                    {{ !empty($previousApprovedAt) ? 'Setujui Kembali Semua Materi' : 'Setujui Semua Materi' }}
                                 </button>
                             </form>
 

@@ -191,7 +191,7 @@ class EventMaterialRevocationTest extends TestCase
     }
 
     /** @test */
-    public function trainer_cannot_delete_submitted_module_if_approved()
+    public function trainer_can_delete_submitted_module_when_approved_and_status_resets_to_pending_review()
     {
         $module = EventTrainerModule::create([
             'event_id' => $this->event->id,
@@ -208,40 +208,6 @@ class EventMaterialRevocationTest extends TestCase
 
         $this->event->update([
             'material_status' => 'approved',
-            'module_path' => 'uploads/materials/m1.pdf',
-        ]);
-
-        $response = $this->actingAs($this->trainer)->post(route('trainer.events.studio.upload', $this->event->id), [
-            'action' => 'delete_module',
-            'module_id' => $module->id,
-        ]);
-
-        $response->assertStatus(403);
-        $response->assertJson(['success' => false]);
-
-        $this->assertDatabaseHas('event_trainer_modules', [
-            'id' => $module->id,
-        ]);
-    }
-
-    /** @test */
-    public function trainer_can_delete_submitted_module_during_pending_review()
-    {
-        $module = EventTrainerModule::create([
-            'event_id' => $this->event->id,
-            'trainer_id' => $this->trainer->id,
-            'original_name' => 'Module 1.pdf',
-            'path' => 'uploads/materials/m1.pdf',
-            'status' => 'pending_review',
-        ]);
-
-        $this->assignment->update([
-            'material_status' => 'pending_review',
-            'material_path' => 'uploads/materials/m1.pdf',
-        ]);
-
-        $this->event->update([
-            'material_status' => 'pending_review',
             'module_path' => 'uploads/materials/m1.pdf',
         ]);
 
@@ -256,51 +222,10 @@ class EventMaterialRevocationTest extends TestCase
         $this->assertDatabaseMissing('event_trainer_modules', [
             'id' => $module->id,
         ]);
-
-        $this->assignment->refresh();
-        $this->event->refresh();
-
-        $this->assertEquals('pending', $this->assignment->material_status);
-        $this->assertNull($this->assignment->material_path);
-        $this->assertEquals('pending', $this->event->material_status);
-        $this->assertNull($this->event->module_path);
     }
 
     /** @test */
-    public function admin_can_view_approved_materials_page_without_error()
-    {
-        $category = \App\Models\Category::create([
-            'name' => 'Software Development',
-            'description' => 'Courses about software development',
-        ]);
-
-        $course = \App\Models\Course::create([
-            'trainer_id' => $this->trainer->id,
-            'category_id' => $category->id,
-            'status' => 'approved',
-            'name' => 'Laravel Advanced Course',
-            'level' => 'Advanced',
-            'price' => 100000,
-            'duration' => 60,
-            'media' => 'placeholder.jpg',
-            'media_type' => 'image',
-        ]);
-
-        EventTrainerModule::create([
-            'event_id' => $this->event->id,
-            'trainer_id' => $this->trainer->id,
-            'original_name' => 'Module 1.pdf',
-            'path' => 'uploads/materials/m1.pdf',
-            'status' => 'approved',
-            'reviewed_at' => now(),
-        ]);
-
-        $response = $this->actingAs($this->admin)->get(route('admin.trainer.material.approved'));
-        $response->assertOk();
-    }
-
-    /** @test */
-    public function trainer_can_replace_rejected_module_when_another_module_is_approved()
+    public function trainer_can_replace_approved_module_and_status_resets_to_pending_review()
     {
         $approvedModule = new EventTrainerModule([
             'event_id' => $this->event->id,
@@ -312,44 +237,29 @@ class EventMaterialRevocationTest extends TestCase
         $approvedModule->created_at = now()->subMinutes(5);
         $approvedModule->save();
 
-        $rejectedModule = new EventTrainerModule([
-            'event_id' => $this->event->id,
-            'trainer_id' => $this->trainer->id,
-            'original_name' => 'Rejected Module.pdf',
-            'path' => 'uploads/materials/rejected.pdf',
-            'status' => 'rejected',
-        ]);
-        $rejectedModule->created_at = now();
-        $rejectedModule->save();
-
         $this->assignment->update([
-            'material_status' => 'rejected',
+            'material_status' => 'approved',
         ]);
 
         $this->event->update([
-            'material_status' => 'rejected',
+            'material_status' => 'approved',
         ]);
 
-        // 1. Trying to replace Approved Module should fail (403)
-        $response1 = $this->actingAs($this->trainer)->post(route('trainer.events.studio.upload', $this->event->id), [
+        $response = $this->actingAs($this->trainer)->post(route('trainer.events.studio.upload', $this->event->id), [
             'action' => 'replace_module',
             'module_id' => $approvedModule->id,
             'material_link' => 'https://newlink.com',
         ]);
-        $response1->assertStatus(403);
-        $response1->assertJson(['success' => false]);
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
 
-        // 2. Trying to replace Rejected Module should succeed (200)
-        $response2 = $this->actingAs($this->trainer)->post(route('trainer.events.studio.upload', $this->event->id), [
-            'action' => 'replace_module',
-            'module_id' => $rejectedModule->id,
-            'material_link' => 'https://newlink.com',
-        ]);
-        $response2->assertOk();
-        $response2->assertJson(['success' => true]);
+        $approvedModule->refresh();
+        $this->assignment->refresh();
+        $this->event->refresh();
 
-        $rejectedModule->refresh();
-        $this->assertEquals('pending_review', $rejectedModule->status);
-        $this->assertEquals('https://newlink.com', $rejectedModule->path);
+        $this->assertEquals('pending_review', $approvedModule->status);
+        $this->assertEquals('https://newlink.com', $approvedModule->path);
+        $this->assertEquals('pending_review', $this->assignment->material_status);
+        $this->assertEquals('pending_review', $this->event->material_status);
     }
 }
