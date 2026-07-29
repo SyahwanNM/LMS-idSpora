@@ -911,19 +911,18 @@
                                             @if($event->jenis !== 'Lomba')
                                             <li class="list-group-item px-0">
                                                 @php
-                                                    $trainerModules = $event->trainerModules()->with('trainer')->orderByDesc('created_at')->get();
+                                                    $trainerModules = $event->relationLoaded('approvedTrainerModules')
+                                                        ? $event->approvedTrainerModules
+                                                        : $event->approvedTrainerModules()->with('trainer')->orderByDesc('created_at')->get();
+                                                    $trainerModules = $trainerModules->sortByDesc('created_at')->values();
                                                     $hasModuleItems = $trainerModules->isNotEmpty();
-                                                    $moduleApproved = $event->has_approved_modules;
-                                                    $moduleRejected = $trainerModules->isNotEmpty() && $trainerModules->every(fn($m) => $m->status === 'rejected');
-                                                    $modulePending  = $trainerModules->contains('status', 'pending_review');
-                                                    $moduleIcon = $moduleApproved
+                                                    $moduleIcon = $hasModuleItems
                                                         ? 'bi-check-circle text-success'
-                                                        : ($moduleRejected ? 'bi-x-circle text-danger'
-                                                            : ($modulePending ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-danger'));
+                                                        : 'bi-folder2-open text-warning';
                                                 @endphp
                                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                                     <div class="d-flex align-items-center gap-2">
-                                                        <span><i class="bi {{ $moduleIcon }} me-2"></i> Module (Trainer)</span>
+                                                        <span><i class="bi {{ $moduleIcon }} me-2"></i> Approved Module (Trainer)</span>
                                                         @php $isFeedbackShown = (bool) ($event->show_feedback ?? true); @endphp
                                                         <span class="badge {{ $isFeedbackShown ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary-subtle text-secondary border border-secondary-subtle' }}" style="font-size: 0.65rem;">
                                                             <i class="bi {{ $isFeedbackShown ? 'bi-eye-fill' : 'bi-eye-slash-fill' }} me-1"></i>
@@ -940,7 +939,7 @@
                                                             </button>
                                                         </form>
                                                         @if(!$hasModuleItems)
-                                                            <span class="text-muted small">Belum ada</span>
+                                                            <span class="text-muted small">Belum ada module yang disetujui</span>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -988,13 +987,7 @@
                                                                     <a href="{{ $tm->download_url }}" target="_blank" class="btn btn-xs btn-outline-secondary py-0 px-2" title="{{ $isLink ? 'Buka Link' : 'Download File' }}">
                                                                         <i class="bi {{ $isLink ? 'bi-box-arrow-up-right' : 'bi-download' }}"></i>
                                                                     </a>
-                                                                    @if($tm->status === 'approved')
-                                                                        <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
-                                                                    @elseif($tm->status === 'rejected')
-                                                                        <span class="badge bg-danger" style="font-size:0.65rem;">Ditolak</span>
-                                                                    @else
-                                                                        <span class="badge bg-warning text-dark" style="font-size:0.65rem;">Pending</span>
-                                                                    @endif
+                                                                    <span class="badge bg-success" style="font-size:0.65rem;">Approved</span>
                                                                 </div>
                                                             </div>
                                                         @endforeach
@@ -1003,13 +996,6 @@
 
 
                                             </li>
-                                            @if($modulePending ?? false)
-                                                <li class="list-group-item px-0">
-                                                    <div class="mt-2 small text-warning">
-                                                        <i class="bi bi-info-circle me-1"></i>Ada modul yang menunggu review. Approve di halaman <a href="{{ route('admin.trainer.show', $event->trainer ?? 1) }}">Admin Trainer</a>.
-                                                    </div>
-                                                </li>
-                                            @endif
                                             @endif
                                             @if($event->jenis !== 'Lomba')
                                             <li class="list-group-item px-0">
