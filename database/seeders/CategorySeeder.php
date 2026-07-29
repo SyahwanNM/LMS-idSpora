@@ -22,6 +22,11 @@ class CategorySeeder extends Seeder
             ['name' => 'IT Management', 'description' => ''],
             ['name' => 'Programming', 'description' => ''],
             ['name' => 'Graphic Design', 'description' => ''],
+            ['name' => 'Web Development', 'description' => ''],
+            ['name' => 'Mobile Development', 'description' => ''],
+            ['name' => 'Data Science', 'description' => ''],
+            ['name' => 'DevOps', 'description' => ''],
+            ['name' => 'Cybersecurity', 'description' => ''],
         ];
 
         foreach ($categories as $category) {
