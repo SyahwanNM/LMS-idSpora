@@ -1739,7 +1739,7 @@
                         @if(!$isRegistered && $eventFinished)
                             <button class="bookseat" disabled>Event has finished</button>
                         @elseif($evIsFullDetail && !$isRegistered)
-                            <button class="bookseat" disabled style="background:#6b7280;">Full Booked</button>
+                            <button class="bookseat" disabled q style="background:#6b7280;">Full Booked</button>
                         @elseif(!$isRegistered && $eventStarted)
                             @if(strtolower(trim($event->jenis ?? '')) === 'lomba')
                                 <button class="bookseat" disabled>Registration Closed</button>
@@ -2337,6 +2337,7 @@
                     </div>
                 @endif
 
+                {{-- 
                 <div
                     class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
                     <div class="img-resource">
@@ -2380,6 +2381,7 @@
                         @endif
                     </div>
                 </div>
+                --}}
                 @if(!empty($event->zoom_link))
                     <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
                         @php
