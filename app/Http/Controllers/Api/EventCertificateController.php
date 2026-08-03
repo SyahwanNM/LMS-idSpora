@@ -41,7 +41,7 @@ class EventCertificateController extends Controller
         }
 
         // Auto-generate certificate number on first access
-        if (!$registration->certificate_number) {
+        if (!preg_match('/^\d{3}$/', (string) $registration->certificate_number)) {
             $registration->update([
                 'certificate_number'   => CertificateController::generateCertificateNumber($event, $registration),
                 'certificate_issued_at' => now(),
@@ -119,7 +119,7 @@ class EventCertificateController extends Controller
             ], 422);
         }
 
-        if (!$registration->certificate_number) {
+        if (!preg_match('/^\d{3}$/', (string) $registration->certificate_number)) {
             $registration->update([
                 'certificate_number'   => CertificateController::generateCertificateNumber($event, $registration),
                 'certificate_issued_at' => now(),

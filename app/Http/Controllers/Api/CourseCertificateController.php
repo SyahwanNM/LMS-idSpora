@@ -60,7 +60,7 @@ class CourseCertificateController extends Controller
         if (!$enrollment->certificate_issued_at) {
             $enrollment->certificate_issued_at = now();
         }
-        if (empty($enrollment->certificate_number)) {
+        if (!preg_match('/^\d{3}$/', (string) $enrollment->certificate_number)) {
             $enrollment->certificate_number = CertificateController::generateCertificateNumberCourse($course, $enrollment);
         }
         $enrollment->save();
@@ -145,7 +145,7 @@ class CourseCertificateController extends Controller
         }
 
         // Pastikan certificate_number sudah ada
-        if (empty($enrollment->certificate_number)) {
+        if (!preg_match('/^\d{3}$/', (string) $enrollment->certificate_number)) {
             $enrollment->update([
                 'certificate_number'    => CertificateController::generateCertificateNumberCourse($course, $enrollment),
                 'certificate_issued_at' => now(),

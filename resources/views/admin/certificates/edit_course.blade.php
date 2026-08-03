@@ -757,7 +757,7 @@
                                 </div>
 
                                 <div class="verification-tag">VERIFIED BY IDSPORA.COM ACADEMY</div>
-                                <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: CERT-CRS-DEMO-1234</div>
+                                <div class="cert-id" style="background: rgba(251, 191, 36, 0.1); padding: 5px 10px; border-radius: 4px;">Verified Certificate ID: 009</div>
                             </div>
 
                         </div>

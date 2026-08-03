@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Dompdf\Dompdf;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use ZipArchive;
 use Carbon\Carbon;
@@ -260,7 +261,7 @@ class CertificateController extends Controller
         $this->authorizeAccess($event, $registration);
         $certificateReady = $this->isCertificateReady($event, $registration);
         
-        if($certificateReady && !$registration->certificate_number){
+        if($certificateReady && !self::isSequentialCertificateNumber($registration->certificate_number)){
             $registration->update([
                 'certificate_number' => self::generateCertificateNumber($event, $registration),
                 'certificate_issued_at' => now(),
@@ -295,7 +296,7 @@ class CertificateController extends Controller
             return redirect()->back()->with('error', 'Gagal mengunduh: Akun user terkait pendaftaran ini tidak ditemukan di database.');
         }
 
-        if(!$registration->certificate_number) {
+        if(!self::isSequentialCertificateNumber($registration->certificate_number)) {
             $registration->update([
                 'certificate_number' => self::generateCertificateNumber($event, $registration),
                 'certificate_issued_at' => now(),
@@ -334,7 +335,7 @@ class CertificateController extends Controller
             if (empty($registration->user)) {
                 continue; // Lewati registrasi jika data akun user relasi kosong/dihapus
             }
-            if(!$registration->certificate_number) {
+            if(!self::isSequentialCertificateNumber($registration->certificate_number)) {
                 $registration->update([
                     'certificate_number' => $this->generateCertificateNumber($event, $registration),
                     'certificate_issued_at' => now(),
@@ -399,7 +400,7 @@ class CertificateController extends Controller
         }
 
 
-        if(!$enrollment->certificate_number) {
+        if(!self::isSequentialCertificateNumber($enrollment->certificate_number)) {
             $enrollment->update([
                 'certificate_number' => self::generateCertificateNumberCourse($course, $enrollment),
                 'certificate_issued_at' => now(),
@@ -443,7 +444,7 @@ class CertificateController extends Controller
             $enrollment->update(['status' => 'completed']);
         }
 
-        if(!$enrollment->certificate_number) {
+        if(!self::isSequentialCertificateNumber($enrollment->certificate_number)) {
             $enrollment->update([
                 'certificate_number' => self::generateCertificateNumberCourse($course, $enrollment),
                 'certificate_issued_at' => now(),
@@ -656,11 +657,51 @@ class CertificateController extends Controller
     }
 
     public static function generateCertificateNumber($event, $reg) {
-        return 'CERT-EVE-' . ($event->event_date ? $event->event_date->format('Ymd') : '0000') . '-' . $event->id . '-' . $reg->id . '-' . strtoupper(Str::random(4));
+        $registrations = EventRegistration::query()
+            ->with('user:id,name')
+            ->where('event_id', $event->id)
+            ->where('status', 'active')
+            ->get();
+
+        $sequence = self::buildCertificateSequenceNumber($registrations, $reg, fn ($item) => $item->user?->name ?? $item->full_name ?? '');
+
+        return $sequence;
     }
 
     public static function generateCertificateNumberCourse($course, $enrollment) {
-        return 'CERT-CRS-' . now()->format('Ymd') . '-' . $course->id . '-' . $enrollment->id . '-' . strtoupper(Str::random(4));
+        $enrollments = Enrollment::query()
+            ->with('user:id,name')
+            ->where('course_id', $course->id)
+            ->where('status', 'completed')
+            ->get();
+
+        $sequence = self::buildCertificateSequenceNumber($enrollments, $enrollment, fn ($item) => $item->user?->name ?? '');
+
+        return $sequence;
+    }
+
+    private static function buildCertificateSequenceNumber(Collection $records, $currentRecord, callable $nameResolver): string
+    {
+        $sortedRecords = $records->sortBy(function ($record) use ($nameResolver) {
+            $name = trim((string) $nameResolver($record));
+            $id = (int) data_get($record, 'id', 0);
+
+            return Str::lower($name) . '|' . str_pad((string) $id, 12, '0', STR_PAD_LEFT);
+        })->values();
+
+        $currentId = (int) data_get($currentRecord, 'id', 0);
+        $position = $sortedRecords->search(fn ($record) => (int) data_get($record, 'id', 0) === $currentId);
+
+        if ($position === false) {
+            $position = 0;
+        }
+
+        return str_pad((string) (9 + (int) $position), 3, '0', STR_PAD_LEFT);
+    }
+
+    private static function isSequentialCertificateNumber(?string $value): bool
+    {
+        return is_string($value) && preg_match('/^\d{3}$/', $value) === 1;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

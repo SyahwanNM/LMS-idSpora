@@ -153,7 +153,7 @@ class PublicTrainerProfileTest extends TestCase
             'file_path' => 'uploads/certs/cert.pdf',
             'activity_code' => 'ACT-LARAVEL-101',
             'type_code' => 'course',
-            'certificate_number' => 'CERT-12345',
+            'certificate_number' => '009',
             'issued_at' => now(),
         ]);
 

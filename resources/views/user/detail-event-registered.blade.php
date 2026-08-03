@@ -2337,7 +2337,7 @@
                     </div>
                 @endif
 
-                {{-- 
+                
                 <div
                     class="resource-card {{ (isset($isRegistered) && $isRegistered && isset($hasFeedback) && $hasFeedback) ? '' : 'locked' }}">
                     <div class="img-resource">
@@ -2381,7 +2381,7 @@
                         @endif
                     </div>
                 </div>
-                --}}
+               
                 @if(!empty($event->zoom_link))
                     <div class="resource-card{{ !$isRegistered ? ' locked' : '' }}">
                         @php
