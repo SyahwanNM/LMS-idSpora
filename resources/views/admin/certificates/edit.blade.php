@@ -510,6 +510,27 @@
                     @endforeach
                 </div>
                 <input type="hidden" name="certificate_template" id="selected_template" value="{{ $event->certificate_template ?? 'template_1' }}">
+                
+                <div class="d-flex mt-3 justify-content-between align-items-center mb-3">
+                    <label class="form-field-label mb-0">File Tambahan</label>
+                </div>
+                <div id="fileTambahan" class="mb-3">
+                    @if(!empty($event->file_tambahan))
+                        <div class="mb-2 position-relative d-inline-block" style="width: 150px; height: 150px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);" id="existing-file-tambahan-container">
+                            <img src="{{ asset('uploads/' . str_replace('storage/', '', $event->file_tambahan)) }}" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="File Tambahan">
+                            <label class="position-absolute d-flex align-items-center justify-content-center" style="top:5px; right:5px; width:24px; height:24px; background:rgba(255,255,255,0.9); border-radius:6px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.1);" title="Hapus File Tambahan">
+                                <input type="checkbox" name="delete_file_tambahan" value="1" class="d-none" onchange="document.getElementById('existing-file-tambahan-container').style.opacity = this.checked ? '0.3' : '1';">
+                                <i class="bi bi-trash text-danger" style="font-size:0.75rem;"></i>
+                            </label>
+                        </div>
+                    @endif
+                    <div class="mb-2 d-none position-relative" id="new-file-tambahan-preview" style="width: 150px; height: 150px; border-radius: 12px; overflow: hidden; border: 1px solid var(--crm-border);">
+                        <img id="new-file-tambahan-img" src="" style="width: 100%; height: 100%; object-fit: contain; background: #fff;" alt="New File Tambahan">
+                        <span class="position-absolute badge bg-primary" style="bottom: 5px; right: 5px;">Baru</span>
+                    </div>
+                    <input type="file" accept="image/*" name="file_tambahan" class="form-field mb-2" onchange="if(this.files && this.files[0]) { let reader = new FileReader(); reader.onload = function(e) { document.getElementById('new-file-tambahan-img').src = e.target.result; document.getElementById('new-file-tambahan-preview').classList.remove('d-none'); document.getElementById('new-file-tambahan-preview').classList.add('d-inline-block'); }; reader.readAsDataURL(this.files[0]); } else { document.getElementById('new-file-tambahan-preview').classList.add('d-none'); document.getElementById('new-file-tambahan-preview').classList.remove('d-inline-block'); }">
+                    <small class="text-muted d-block mt-1">Opsional. File ini akan digabungkan di halaman kedua PDF sertifikat.</small>
+                </div>
 
                 <div class="mt-4 p-3 rounded-4 bg-light border d-flex justify-content-between align-items-center">
                     <div>

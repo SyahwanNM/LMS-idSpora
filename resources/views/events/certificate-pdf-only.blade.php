@@ -945,5 +945,12 @@
             <div class="cert-id" style="background:rgba(251,191,36,0.1);padding:3px 6px;border-radius:3px;">ID: {{ $certificateNumber }}</div>
         </div>
     @endif
+
+    @if(!empty($fileTambahanBase64))
+        <div style="page-break-before: always;"></div>
+        <div style="width: 100%; height: 100%; position: relative;">
+            <img src="{{ $fileTambahanBase64 }}" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+    @endif
 </body>
 </html>

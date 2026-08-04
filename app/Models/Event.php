@@ -100,6 +100,7 @@ class Event extends Model
         'max_team_members',
         'is_free_telkom',
         'show_feedback',
+        'file_tambahan',
     ];
 
     protected $casts = [

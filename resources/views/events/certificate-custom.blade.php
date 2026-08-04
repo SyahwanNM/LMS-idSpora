@@ -163,6 +163,12 @@
 </div>
 
 @if(!isset($is_preview) || !$is_preview)
+    @if(!empty($fileTambahanBase64))
+        <div style="page-break-before: always;"></div>
+        <div style="width: 100%; height: 100%; position: relative;">
+            <img src="{{ $fileTambahanBase64 }}" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+    @endif
 </body>
 </html>
 @endif

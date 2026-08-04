@@ -84,6 +84,7 @@ class CertificateController extends Controller
             'existing_signature_image'    => 'nullable|array',
             'signature_name'              => 'nullable|array',
             'signature_position'          => 'nullable|array',
+            'file_tambahan'               => 'nullable|image|mimes:jpg,jpeg,png,webp,svg|max:2048',
         ]);
 
         $data = ['certificate_template' => $request->certificate_template];
@@ -107,6 +108,20 @@ class CertificateController extends Controller
 
         // Handle Signatures (new format: array of {image, name, position})
         $data['certificate_signature'] = $this->processSignatures($request, $event->certificate_signature);
+
+        if ($request->has('delete_file_tambahan') && $request->delete_file_tambahan == '1') {
+            if ($event->file_tambahan) {
+                Storage::disk('public')->delete(str_replace('storage/', '', $event->file_tambahan));
+                $data['file_tambahan'] = null;
+            }
+        }
+
+        if ($request->hasFile('file_tambahan')) {
+            if ($event->file_tambahan) {
+                Storage::disk('public')->delete(str_replace('storage/', '', $event->file_tambahan));
+            }
+            $data['file_tambahan'] = $request->file('file_tambahan')->store('certificates', 'public');
+        }
 
         $event->update($data);
         return redirect()->route('admin.crm.certificates.index', ['tab' => 'events'])->with('success', 'Konfigurasi sertifikat event berhasil diperbarui!');
@@ -562,11 +577,22 @@ class CertificateController extends Controller
             }
         }
 
+        $fileTambahanBase64 = null;
+        if ($event->file_tambahan) {
+            $path = str_replace('storage/', '', $event->file_tambahan);
+            if(Storage::disk('public')->exists($path)) {
+                $mime = Storage::disk('public')->mimeType($path);
+                $content = base64_encode(Storage::disk('public')->get($path));
+                $fileTambahanBase64 = "data:$mime;base64,$content";
+            }
+        }
+
         return [
             'event'            => $event,
             'user'             => $registration->user,
             'issuedAt'         => $registration->certificate_issued_at ?? now(),
             'certificateNumber'=> $registration->certificate_number,
+            'fileTambahanBase64'=> $fileTambahanBase64,
             'logosBase64'      => $logosBase64,
             'logosUrl'         => $logosUrl,
             'signaturesBase64' => $signaturesBase64,
